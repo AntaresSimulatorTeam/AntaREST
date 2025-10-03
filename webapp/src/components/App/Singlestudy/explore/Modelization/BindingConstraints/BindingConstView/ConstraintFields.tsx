@@ -16,27 +16,23 @@ import { type BindingConstraint, OPERATORS, OUTPUT_FILTERS, TIME_STEPS } from ".
 
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateString } from "@/utils/validation/string";
-import DatasetIcon from "@mui/icons-material/Dataset";
-import { Box, Button } from "@mui/material";
-import { useMemo, useState } from "react";
+import { Box } from "@mui/material";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { StudyMetadata } from "../../../../../../../types/types";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
-import ConstraintMatrix from "./Matrix";
 
 interface Props {
   study: StudyMetadata;
   constraintId: string;
 }
 
-function Fields({ study, constraintId }: Props) {
+function Fields({ study }: Props) {
   const { t } = useTranslation();
-  const { control, getValues } = useFormContextPlus<BindingConstraint>();
-  const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
-  const currentOperator = getValues("operator");
+  const { control } = useFormContextPlus<BindingConstraint>();
 
   const outputFilterOptions = useMemo(
     () =>
@@ -70,105 +66,79 @@ function Fields({ study, constraintId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <Fieldset legend={t("global.general")} fieldWidth={280} sx={{ py: 1, flexWrap: "wrap" }}>
-        <SwitchFE
-          name="enabled"
-          label={t("study.modelization.bindingConst.enabled")}
-          control={control}
-        />
+    <Fieldset legend={t("global.general")} fieldWidth={280} sx={{ py: 1, mb: 2, flexWrap: "wrap" }}>
+      <StringFE
+        disabled
+        name="name"
+        label={t("global.name")}
+        control={control}
+        rules={{ validate: (v) => validateString(v) }}
+      />
+      {Number(study.version) >= 870 && (
         <StringFE
-          disabled
-          name="name"
-          label={t("global.name")}
+          name="group"
+          label={t("global.group")}
           control={control}
-          rules={{ validate: (v) => validateString(v) }}
-          sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
-        />
-        {Number(study.version) >= 870 && (
-          <StringFE
-            name="group"
-            label={t("global.group")}
-            control={control}
-            rules={{
-              validate: (v) => {
-                if (typeof v === "string") {
-                  return validateString(v, {
-                    maxLength: 20,
-                    specialChars: "-",
-                  });
-                }
-              },
-            }}
-            sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
-          />
-        )}
-        <SelectFE
-          name="timeStep"
-          label={t("study.modelization.bindingConst.type")}
-          variant="outlined"
-          options={timeStepOptions}
-          control={control}
-          sx={{ maxWidth: 180 }}
-        />
-        <SelectFE
-          name="operator"
-          label={t("study.modelization.bindingConst.operator")}
-          variant="outlined"
-          options={operatorOptions}
-          control={control}
-          sx={{ maxWidth: 150 }}
-        />
-        {Number(study.version) >= 830 && (
-          <Box sx={{ display: "flex", gap: 2, width: 1 }}>
-            <SelectFE
-              name="filterYearByYear"
-              label={t("study.outputFilters.filterByYear")}
-              variant="outlined"
-              options={outputFilterOptions}
-              multiple
-              control={control}
-            />
-            <SelectFE
-              name="filterSynthesis"
-              label={t("study.outputFilters.filterSynthesis")}
-              variant="outlined"
-              options={outputFilterOptions}
-              multiple
-              control={control}
-            />
-            <StringFE
-              name="comments"
-              label={t("study.modelization.bindingConst.comments")}
-              control={control}
-              required={false}
-              sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
-            />
-          </Box>
-        )}
-      </Fieldset>
-      <Box>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<DatasetIcon />}
-          onClick={() => setMatrixDialogOpen(true)}
-          sx={{ mt: 2 }}
-        >
-          {t("study.modelization.bindingConst.timeSeries")}
-        </Button>
-      </Box>
-
-      {matrixDialogOpen && (
-        <ConstraintMatrix
-          study={study}
-          constraintId={constraintId}
-          operator={currentOperator}
-          open={matrixDialogOpen}
-          onClose={() => setMatrixDialogOpen(false)}
+          rules={{
+            validate: (v) => {
+              if (typeof v === "string") {
+                return validateString(v, {
+                  maxLength: 20,
+                  specialChars: "-",
+                });
+              }
+            },
+          }}
         />
       )}
-    </>
+      <SelectFE
+        name="timeStep"
+        label={t("study.modelization.bindingConst.type")}
+        variant="outlined"
+        options={timeStepOptions}
+        control={control}
+        sx={{ maxWidth: 165 }}
+      />
+      <SelectFE
+        name="operator"
+        label={t("study.modelization.bindingConst.operator")}
+        variant="outlined"
+        options={operatorOptions}
+        control={control}
+        sx={{ maxWidth: 100 }}
+      />
+      <SwitchFE
+        name="enabled"
+        label={t("study.modelization.bindingConst.enabled")}
+        control={control}
+      />
+      {Number(study.version) >= 830 && (
+        <Box sx={{ display: "flex", gap: 2, width: 1 }}>
+          <SelectFE
+            name="filterYearByYear"
+            label={t("study.outputFilters.filterByYear")}
+            variant="outlined"
+            options={outputFilterOptions}
+            multiple
+            control={control}
+          />
+          <SelectFE
+            name="filterSynthesis"
+            label={t("study.outputFilters.filterSynthesis")}
+            variant="outlined"
+            options={outputFilterOptions}
+            multiple
+            control={control}
+          />
+          <StringFE
+            name="comments"
+            label={t("study.modelization.bindingConst.comments")}
+            control={control}
+            required={false}
+          />
+        </Box>
+      )}
+    </Fieldset>
   );
 }
 

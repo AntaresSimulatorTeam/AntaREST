@@ -205,8 +205,8 @@ function adaptOutputFilterFormat(
  * @param data - The BindingConstraint object to transform.
  * @returns The transformed BindingConstraint object.
  */
-export function bindingConstraintModelAdapter(data: BindingConstraint): BindingConstraint {
-  const result: BindingConstraint = { ...data };
+export function bindingConstraintModelAdapter<T extends Partial<BindingConstraint>>(data: T): T {
+  const result: T = { ...data };
 
   if (data.filterSynthesis !== undefined) {
     const filterSynthesis = adaptOutputFilterFormat(data.filterSynthesis);

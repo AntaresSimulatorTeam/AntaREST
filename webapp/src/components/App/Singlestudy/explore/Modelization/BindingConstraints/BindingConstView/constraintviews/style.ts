@@ -12,17 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Paper, styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
 
-export const ConstraintElementRoot = styled(Paper)(({ theme }) => ({
+export const ConstraintElementRoot = styled(Box)(() => ({
   display: "flex",
   flexDirection: "column",
-  padding: theme.spacing(1),
-  borderRadius: 5,
-  backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
 }));
 
-export const ConstraintElementData = styled(Box)(({ theme }) => ({
+export const ConstraintElementData = styled(Box)(() => ({
   width: "100%",
   display: "flex",
   justifyContent: "center",

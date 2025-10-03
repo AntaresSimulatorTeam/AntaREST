@@ -192,20 +192,27 @@ function ConstraintTermItem({ options, term, constraintTerms, saveValue, deleteT
               }
             />
           </>
-        ) : (
+        ) : null}
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          ml: "auto",
+          gap: 1,
+        }}
+      >
+        {offset === undefined || offset === null ? (
           <Button
             variant="outlined"
             color="secondary"
             startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOffsetAdd}
-            sx={{ ml: 3.5 }}
           >
             {t("study.modelization.bindingConst.offset")}
           </Button>
-        )}
-      </Box>
-
-      <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+        ) : null}
         <Button
           variant="outlined"
           color="error"

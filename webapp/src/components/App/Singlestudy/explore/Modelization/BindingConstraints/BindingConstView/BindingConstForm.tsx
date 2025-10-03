@@ -19,20 +19,15 @@ import { Box, Button } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useFieldArray } from "react-hook-form";
-import { useSnackbar } from "notistack";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { generateTermId, type ConstraintTerm, type BindingConstraint } from "./utils";
 import type { AllClustersAndLinks, StudyMetadata } from "../../../../../../../types/types";
 import ConstraintTermItem from "./ConstraintTerm";
 import { useFormContextPlus } from "../../../../../../common/Form";
-import {
-  deleteConstraintTerm,
-  updateConstraintTerm,
-} from "../../../../../../../services/api/studydata";
+import { deleteConstraintTerm } from "../../../../../../../services/api/studydata";
 import TextSeparator from "../../../../../../common/TextSeparator";
 import AddConstraintTermDialog from "./AddConstraintTermDialog";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
-import useDebounce from "../../../../../../../hooks/useDebounce";
 import Fieldset from "../../../../../../common/Fieldset";
 
 interface Props {
@@ -44,7 +39,6 @@ interface Props {
 // TODO rename ConstraintTermsFields
 function BindingConstForm({ study, options, constraintId }: Props) {
   const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [termToDelete, setTermToDelete] = useState<number>();
   const [openConstraintTermDialog, setOpenConstraintTermDialog] = useState(false);
@@ -65,29 +59,16 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleUpdateTerm = useDebounce(
-    async (index: number, prevTerm: ConstraintTerm, newTerm: ConstraintTerm) => {
-      try {
-        const updatedTerm = {
-          ...prevTerm,
-          weight: newTerm.weight || prevTerm.weight,
-          data: newTerm.data || prevTerm.data,
-          offset: newTerm.offset || undefined,
-        };
+  const handleUpdateTerm = (index: number, prevTerm: ConstraintTerm, newTerm: ConstraintTerm) => {
+    const updatedTerm = {
+      ...prevTerm,
+      weight: newTerm.weight || prevTerm.weight,
+      data: newTerm.data || prevTerm.data,
+      offset: newTerm.offset || undefined,
+    };
 
-        await updateConstraintTerm(study.id, constraintId, updatedTerm);
-
-        update(index, updatedTerm);
-
-        enqueueSnackbar(t("global.update.success"), {
-          variant: "success",
-        });
-      } catch (error) {
-        enqueueErrorSnackbar(t("study.error.updateConstraintTerm"), error as AxiosError);
-      }
-    },
-    500,
-  );
+    update(index, updatedTerm);
+  };
 
   const handleDeleteTerm = async (termToDelete: number) => {
     try {
@@ -107,7 +88,10 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
   return (
     <>
-      <Fieldset legend={t("study.modelization.bindingConst.constraintTerm")} sx={{ py: 2 }}>
+      <Fieldset
+        legend={t("study.modelization.bindingConst.constraintTerm")}
+        sx={{ width: 1, py: 2 }}
+      >
         <Box sx={{ display: "flex", width: 1, flexDirection: "column" }}>
           <Box
             sx={{
