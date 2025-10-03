@@ -15,7 +15,7 @@ from typing import Sequence
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
-from antarest.study.business.model.district_model import District, DistrictDTO
+from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     parse_district,
@@ -32,7 +32,7 @@ class FileStudyDistrictDao(DistrictDao):
         pass
 
     @override
-    def get_districts(self) -> Sequence[DistrictDTO]:
+    def get_districts(self) -> Sequence[District]:
         """
         Returns the list of Data Transfer Objects (DTO) representing districts.
         """
@@ -45,27 +45,7 @@ class FileStudyDistrictDao(DistrictDao):
         except KeyError:
             raise DistrictConfigNotFound(str(path))
 
-        all_areas = list(file_study.config.areas)
-        return [
-            parse_district(district_data, district_id).to_dto(all_areas)
-            for district_id, district_data in districts.items()
-        ]
-
-    @override
-    def get_district_dto(self, district_id: str) -> DistrictDTO:
-        """
-        Get the Data Transfer Objects (DTO) representing the district with the given id.
-        """
-        study_data = self.get_file_study()
-        path = DISTRICTS_PATH + [district_id]
-        try:
-            # may raise KeyError if the path is missing
-            district_data = study_data.tree.get(path)
-        except KeyError:
-            raise DistrictConfigNotFound(str(path))
-
-        all_areas = list(study_data.config.areas)
-        return parse_district(district_data, district_id).to_dto(all_areas)
+        return [parse_district(district_data, district_id) for district_id, district_data in districts.items()]
 
     @override
     def get_district(self, district_id: str) -> District:

@@ -14,28 +14,17 @@ from typing import Sequence
 
 from antarest.study.business.model.district_model import (
     District,
-    DistrictDTO,
 )
 
 
 class ReadOnlyDistrictDao(ABC):
     @abstractmethod
-    def get_districts(self) -> Sequence[DistrictDTO]:
+    def get_districts(self) -> Sequence[District]:
         """
         Get the list of districts defined in this study.
 
         Returns:
             The (unordered) list of Data Transfer Objects (DTO) representing districts.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_district_dto(self, district_id: str) -> DistrictDTO:
-        """
-        Get the district with the given ID.
-
-        Returns:
-            The Data Transfer Object (DTO) representing the district.
         """
         raise NotImplementedError()
 

@@ -27,7 +27,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
-from antarest.study.business.model.district_model import District, DistrictDTO
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -702,12 +702,8 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
-    def get_districts(self) -> Sequence[DistrictDTO]:
-        return [d.to_dto(self._area_names) for d in self._districts.values()]
-
-    @override
-    def get_district_dto(self, district_id: str) -> DistrictDTO:
-        return self._districts[district_id].to_dto(self._area_names)
+    def get_districts(self) -> Sequence[District]:
+        return list(self._districts.values())
 
     @override
     def get_district(self, district_id: str) -> District:

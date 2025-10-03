@@ -50,7 +50,8 @@ class DistrictManager:
         Returns:
             The (unordered) list of districts.
         """
-        return study.get_study_dao().get_districts()
+        all_areas = study.get_study_dao().tmp_get_all_areas()
+        return [district.to_dto(all_areas) for district in study.get_study_dao().get_districts()]
 
     def create_district(
         self,
