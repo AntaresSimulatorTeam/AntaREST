@@ -155,7 +155,7 @@ class FileStudyTreeConfig(DTO):
         study_id: str,
         version: StudyVersion,
         output_path: Optional[Path] = None,
-        sets: Optional[Dict[str, District]] = None,
+        districts: Optional[Dict[str, District]] = None,
         areas: Optional[Dict[str, AreaConfig]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[BindingConstraint]] = None,
@@ -170,7 +170,7 @@ class FileStudyTreeConfig(DTO):
         self.version = version
         self.output_path = output_path
         self.areas = areas or {}
-        self.sets = sets or {}
+        self.districts = districts or {}
         self.outputs = outputs or {}
         self.bindings = bindings or []
         self.store_new_set = store_new_set
@@ -191,7 +191,7 @@ class FileStudyTreeConfig(DTO):
             study_id=self.study_id,
             version=self.version,
             areas=self.areas,
-            sets=self.sets,
+            districts=self.districts,
             outputs=self.outputs,
             bindings=self.bindings,
             store_new_set=self.store_new_set,
@@ -208,7 +208,7 @@ class FileStudyTreeConfig(DTO):
             study_id=self.study_id,
             version=self.version,
             areas=self.areas,
-            sets=self.sets,
+            districts=self.districts,
             outputs=self.outputs,
             bindings=self.bindings,
             store_new_set=self.store_new_set,
@@ -220,7 +220,7 @@ class FileStudyTreeConfig(DTO):
         return list(self.areas)
 
     def set_names(self, only_output: bool = True) -> List[str]:
-        return [k for k, v in self.sets.items() if v.output or not only_output]
+        return [k for k, v in self.districts.items() if v.output or not only_output]
 
     def get_thermal_ids(self, area: str) -> List[str]:
         """
@@ -282,7 +282,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_id: str
     version: StudyVersionInt
     output_path: Optional[Path] = None
-    sets: Dict[str, District] = dict()
+    districts: Dict[str, District] = dict()
     areas: Dict[str, AreaConfig] = dict()
     outputs: Dict[str, Simulation] = dict()
     bindings: List[BindingConstraint] = list()
@@ -302,7 +302,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             version=config.version,
             output_path=config.output_path,
             areas=config.areas,
-            sets=config.sets,
+            districts=config.districts,
             outputs=config.outputs,
             bindings=config.bindings,
             store_new_set=config.store_new_set,
@@ -319,7 +319,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             version=self.version,
             output_path=self.output_path,
             areas=self.areas,
-            sets=self.sets,
+            districts=self.districts,
             outputs=self.outputs,
             bindings=self.bindings,
             store_new_set=self.store_new_set,

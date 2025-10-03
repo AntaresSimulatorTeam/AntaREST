@@ -48,7 +48,7 @@ def config() -> FileStudyTreeConfig:
                 filters_year=[],
             )
         },
-        sets={"s": District(id="s", name="s")},
+        districts={"s": District(id="s", name="s")},
         outputs={
             "o": Simulation(
                 name="o",

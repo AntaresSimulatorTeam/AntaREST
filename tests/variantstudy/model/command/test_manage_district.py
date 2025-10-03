@@ -151,7 +151,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d5.message == "District 'one subtracted zone' has invalid areas: ['unknown_area']"
 
     read_config = build(empty_study.config.study_path, "")
-    assert len(read_config.sets.keys()) == 4
+    assert len(read_config.districts.keys()) == 4
 
     # case remove district
     remove_district3_command: ICommand = RemoveDistrict(

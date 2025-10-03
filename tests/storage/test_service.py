@@ -698,7 +698,7 @@ def test_download_output() -> None:
         study_id=str(uuid.uuid4()),
         version=StudyVersion.parse(input_study.version),
         areas={"east": area},
-        sets={"north": District(id="north", name="north")},
+        districts={"north": District(id="north", name="north")},
         outputs={"output-id": sim},
         store_new_set=False,
     )

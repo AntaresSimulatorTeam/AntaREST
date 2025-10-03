@@ -43,7 +43,7 @@ class RemoveDistrict(ICommand):
     id: str
 
     def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        del study_data.sets[self.id]
+        del study_data.districts[self.id]
         return command_succeeded(message=self.id)
 
     @override

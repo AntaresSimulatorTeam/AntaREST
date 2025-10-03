@@ -103,7 +103,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                 filters_year=[],
             ),
         },
-        sets={"s1": District(id="s1", name="s1", add_areas=["a1"])},
+        districts={"s1": District(id="s1", name="s1", add_areas=["a1"])},
     )
     file_tree_mock = Mock(spec=FileStudyTree, matrix_mapper=Mock(), config=config)
 

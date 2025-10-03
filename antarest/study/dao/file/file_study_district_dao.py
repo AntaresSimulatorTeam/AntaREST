@@ -88,7 +88,7 @@ class FileStudyDistrictDao(DistrictDao):
             raise AreaNotFound(*invalid_areas)
 
         # Update the in-memory config
-        study_data.config.sets[district.id] = district
+        study_data.config.districts[district.id] = district
 
         # Persist the change in the filesystem
         study_data.tree.save(
@@ -106,7 +106,7 @@ class FileStudyDistrictDao(DistrictDao):
         """
         study_data = self.get_file_study()
         study_data.tree.delete(["input", "areas", "sets", district_id])
-        del study_data.config.sets[district_id]
+        del study_data.config.districts[district_id]
 
     @override
     def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
