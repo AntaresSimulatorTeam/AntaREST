@@ -122,10 +122,10 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
     def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
         file_study = self.get_file_study()
 
-        thermal_props = ThermalAreasFileData(**file_study.tree.get(get_thermal_path()))
-        optimization_props = OptimizationFileData(**file_study.tree.get(get_optimization_path(area_id)))
+        thermal_props = ThermalAreasFileData.model_validate(file_study.tree.get(get_thermal_path()))
+        optimization_props = OptimizationFileData.model_validate(file_study.tree.get(get_optimization_path(area_id)))
         adequacy_patch_props = (
-            AdequacyPatchFileData(**file_study.tree.get(get_adequacy_patch_path(area_id)))
+            AdequacyPatchFileData.model_validate(file_study.tree.get(get_adequacy_patch_path(area_id)))
             if file_study.config.version >= STUDY_VERSION_8_3
             else AdequacyPatchFileData()
         )
