@@ -10,8 +10,11 @@
 #
 # This file is part of the Antares project.
 
+from collections import defaultdict
 import logging
+from pathlib import Path
 from typing import List, Optional
+
 
 import numpy as np
 import pandas as pd
@@ -28,6 +31,8 @@ from antarest.study.storage.variantstudy.model.command.common import (
     command_failed,
     command_succeeded,
 )
+from . import outage_counter_utils as oc
+
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -48,6 +53,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         series_mapping: dict[str, dict[str, str]] = {}
+        outage_counter = oc.OutageCounter()
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
         nb_years = study_data.get_timeseries_config().thermal.number
@@ -103,6 +109,19 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     # 8- Generate the time-series
                     results = generator.generate_time_series_for_clusters(cluster, nb_years)
                     generated_matrix = results.available_power
+                    
+                    if len(results.outage_output.forced_outages) ==  len(results.outage_output.planned_outages):
+                        print("They are same")
+
+                    for i in range(len(results.outage_output.forced_outages)):
+                        forced_outage_units = results.outage_output.forced_outages[i]
+                        if (forced_outage_units).any() > 0:
+                            outage_counter.add_forced_outage(area_id, thermal_id, forced_outage_units)
+
+                        planned_outage_units = results.outage_output.planned_outages[i]
+                        if (planned_outage_units).any() > 0:
+                            outage_counter.add_planned_outage(area_id, thermal_id, planned_outage_units)
+
                     # 9- Write the matrix inside the matrix-store and store the id in memory
                     df = pd.DataFrame(data=generated_matrix)
                     df = df[list(df.columns)].astype(int)
@@ -118,9 +137,26 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     return command_failed(f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0])
 
         # 11- Once we've written all matrices inside the matrix-store, modify the input folder.
+        
+        # create outages directory in root of study if not exists
+        # outages path save
+        study_dir = Path(study_data._file_study.config.path)
+        outage_dir = (study_dir / "outages")
+        outage_dir.mkdir(exist_ok=True)
+
         for area_id, values in series_mapping.items():
+            # for each area create directory if not exists in outages/area_id
+            area_dir = outage_dir / area_id
+            area_dir.mkdir(exist_ok=True)
             for thermal_id, series in values.items():
+                # for each element create directory if not exists
+                # thermal id 
+                thermal_dir = area_dir / "thermal" / thermal_id
+                thermal_dir.mkdir(parents=True, exist_ok=True)
+                outage_counter.save_planned_outages(thermal_dir, area_id, thermal_id)
+                outage_counter.save_forced_outages(thermal_dir, area_id, thermal_id)
                 study_data.save_thermal_series(area_id, thermal_id, series)
+                #inside thermal id create planned_outages.txt and forced_outages.txt
 
         return command_succeeded(message="All time series were generated successfully")
 
