@@ -42,7 +42,7 @@ function Filter(props: PropTypes) {
   const {
     type,
     areas,
-    districts: sets,
+    districts,
     filterValue,
     filterInValue,
     filterOutValue,
@@ -61,7 +61,7 @@ function Filter(props: PropTypes) {
           break;
 
         case StudyOutputDownloadType.DISTRICT:
-          res = Object.keys(sets);
+          res = Object.keys(districts);
           break;
 
         default:
@@ -70,7 +70,7 @@ function Filter(props: PropTypes) {
       return res;
     };
     setAreasOrDistrictsList(getAreasOrDistrictsList());
-  }, [areas, sets, type]);
+  }, [areas, districts, type]);
 
   return type !== StudyOutputDownloadType.LINKS ? (
     <Root>
