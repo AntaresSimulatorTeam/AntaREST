@@ -152,4 +152,3 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
             properties.thermal_properties.model_dump(mode="json", by_alias=True),
             get_thermal_path(),
         )
-
