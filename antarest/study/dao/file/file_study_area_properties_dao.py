@@ -29,12 +29,13 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
-ALL_AREAS_PATH = "input/areas"
-THERMAL_AREAS_PATH = "input/thermal/areas"
-
 
 def get_thermal_path() -> List[str]:
     return ["input", "thermal", "areas"]
+
+
+def get_area_path() -> List[str]:
+    return ["input", "areas"]
 
 
 def get_optimization_path(area_id: str) -> List[str]:
@@ -73,7 +74,7 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
     @override
     def get_all_area_properties(self) -> dict[str, AreaProperties]:
         """
-        Retrieves all areas of a study.
+        Retrieves all areas properties of a study.
 
         Args:
             study: The raw study object.
@@ -85,22 +86,22 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
         file_study = self.get_file_study()
 
         # Get the area information from the `/input/areas/<area>` file.
-        path = ALL_AREAS_PATH
+        path = get_area_path()
         try:
-            areas_cfg = file_study.tree.get(path.split("/"), depth=5)
+            areas_cfg = file_study.tree.get(path, depth=5)
         except KeyError:
-            raise ConfigFileNotFound(path) from None
+            raise ConfigFileNotFound("/".join(path)) from None
         else:
             # "list" and "sets" must be removed: we only need areas.
             areas_cfg.pop("list", None)
             areas_cfg.pop("sets", None)
 
         # Get the unserverd and spilled energy costs from the `/input/thermal/areas.ini` file.
-        path = THERMAL_AREAS_PATH
+        path = get_thermal_path()
         try:
-            thermal_cfg = file_study.tree.get(path.split("/"), depth=3)
+            thermal_cfg = file_study.tree.get(path, depth=3)
         except KeyError:
-            raise ConfigFileNotFound(path) from None
+            raise ConfigFileNotFound("/".join(path)) from None
         else:
             thermal_areas = ThermalAreasFileData(**thermal_cfg)
 
@@ -151,3 +152,4 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
             properties.thermal_properties.model_dump(mode="json", by_alias=True),
             get_thermal_path(),
         )
+
