@@ -517,7 +517,6 @@ class StudyMetadataDTO(AntaresBaseModel):
 class StudyMetadataPatchDTO(AntaresBaseModel):
     name: Optional[str] = None
     author: Optional[str] = None
-    editor: Optional[str] = None
     horizon: Optional[str] = None
     tags: List[str] = []
 
