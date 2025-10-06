@@ -20,7 +20,7 @@ from pydantic import Field
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.study_index import StudyIndex
-from antarest.study.model import STUDY_VERSION_9_2, STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_8_7, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
 class ScenarioType(enum.StrEnum):
@@ -105,6 +105,7 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     solar: AreaScenarios = Field(default_factory=dict)
     ntc: LinkScenarios = Field(default_factory=dict)
     renewable: AreaItemsScenarios = Field(default_factory=dict)
+    # Introduced in v8.7
     binding_constraints: BcGroupScenarios = Field(default_factory=dict)
     # Introduced in v9.2
     hydro_final_levels: HydroLevelsScenarios = Field(default_factory=dict)
@@ -243,6 +244,8 @@ def _create_3_levels_scenarios_mapping(
 
 def _get_scenario_types_according_to_version(version: StudyVersion) -> set[ScenarioType]:
     all_scenario_types = set(ScenarioType)
+    if version < STUDY_VERSION_8_7:
+        all_scenario_types.remove(ScenarioType.BINDING_CONSTRAINTS)
     if version < STUDY_VERSION_9_2:
         all_scenario_types.remove(ScenarioType.HYDRO_FINAL_LEVEL)
     if version < STUDY_VERSION_9_3:
@@ -318,6 +321,8 @@ def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
 
 
 def validate_ruleset_against_version(version: StudyVersion, ruleset: Ruleset | RulesetUpdate) -> None:
+    if version < STUDY_VERSION_8_7:
+        _check_min_version(ruleset, "binding_constraints", version)
     if version < STUDY_VERSION_9_2:
         _check_min_version(ruleset, "hydro_final_levels", version)
     if version < STUDY_VERSION_9_3:

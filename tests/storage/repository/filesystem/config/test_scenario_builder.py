@@ -13,7 +13,7 @@ import pytest
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetUpdate
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
     parse_ruleset,
     parse_ruleset_update,
@@ -266,6 +266,18 @@ def test_random_is_not_serialized():
 
 
 def test_ruleset_serializing_version():
+    rules = {
+        "bc,group1,1": 2,
+        "bc,group1,2": 1,
+        "bc,group2,1": 3,
+        "bc,group2,2": 4,
+    }
+    ruleset = parse_ruleset(rules)
+    with pytest.raises(
+        InvalidFieldForVersionError, match="Field binding_constraints is not a valid field for study version 8.6"
+    ):
+        serialize_ruleset(ruleset, STUDY_VERSION_8_6)
+
     rules = {
         "sta,fr,1,battery1,constraint1": 2,
         "sta,fr,2,battery1,constraint1": 1,

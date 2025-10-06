@@ -21,7 +21,7 @@ from antarest.study.business.model.scenario_builder_model import (
     update_ruleset,
 )
 from antarest.study.business.model.study_index import StudyIndex
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
 def test_ruleset__initialization_from_study() -> None:
@@ -106,6 +106,18 @@ def test_update_ruleset_simple_scenarios(scenario_type: ScenarioType) -> None:
 
 
 def test_update_ruleset_with_version() -> None:
+    # Binding constraints
+    error_msg = "Field binding_constraints is not a valid field for study version 8.6"
+    ruleset = Ruleset(binding_constraints={"group": {"1": 3}})
+    update = RulesetUpdate()
+    with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+        update_ruleset(ruleset, update, STUDY_VERSION_8_6)
+
+    ruleset = Ruleset()
+    update = RulesetUpdate(binding_constraints={"group": {"1": 3}})
+    with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+        update_ruleset(ruleset, update, STUDY_VERSION_8_6)
+
     # Hydro final levels
     error_msg = "Field hydro_final_levels is not a valid field for study version 8.8"
     ruleset = Ruleset(hydro_final_levels={"fr": {"1": 0.3}})
