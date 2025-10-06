@@ -53,9 +53,6 @@ class TestArea:
             json={
                 "x": 10,
                 "y": 10,
-                "layerColor": {"0": "100, 100, 100"},
-                "layerX": {"0": 10},
-                "layerY": {"0": 10},
                 "colorRgb": [100, 100, 100],
             },
         )

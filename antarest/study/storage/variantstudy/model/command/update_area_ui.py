@@ -11,7 +11,10 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any
 
+from pydantic import model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.study.business.model.area_model import AreaUIUpdate
@@ -38,6 +41,37 @@ class UpdateAreaUI(ICommand):
     area_id: str
     layer: str
     parameters: AreaUIUpdate
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_parameters(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
+        # Handle version 1 format: {"area_id": "x", "area_ui": {...}, "layer": "0"}
+        if "area_ui" in values:
+            area_ui = values.pop("area_ui")
+            # Extract only x, y, color_rgb from old UpdateAreaUi (ignore layer_x, layer_y, layer_color)
+            if isinstance(area_ui, dict):
+                parameters = {
+                    "x": area_ui.get("x"),
+                    "y": area_ui.get("y"),
+                    "color_rgb": area_ui.get("color_rgb") or area_ui.get("colorRgb"),
+                }
+                # Remove None values
+                parameters = {k: v for k, v in parameters.items() if v is not None}
+                values["parameters"] = parameters
+            else:
+                # If it's already a pydantic model
+                values["parameters"] = {
+                    "x": area_ui.x if hasattr(area_ui, "x") else None,
+                    "y": area_ui.y if hasattr(area_ui, "y") else None,
+                    "color_rgb": area_ui.color_rgb if hasattr(area_ui, "color_rgb") else None,
+                }
+                values["parameters"] = {k: v for k, v in values["parameters"].items() if v is not None}
+
+        # Ensure parameters exists
+        if "parameters" not in values:
+            values["parameters"] = AreaUIUpdate()
+
+        return values
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
@@ -71,8 +105,13 @@ class UpdateAreaUI(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_AREA_UI.value,
-            args={"area_id": self.area_id, "layer": self.layer, "parameters": self.parameters},
+            args={
+                "area_id": self.area_id,
+                "layer": self.layer,
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
+            },
             study_version=self.study_version,
+            version=2,
         )
 
     @override

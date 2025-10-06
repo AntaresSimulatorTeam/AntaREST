@@ -56,7 +56,7 @@ class AreaUIUpdate(AntaresBaseModel):
     Partial update for Area UI properties.
     """
 
-    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     x: Optional[int] = None
     y: Optional[int] = None
