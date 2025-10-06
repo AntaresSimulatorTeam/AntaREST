@@ -61,13 +61,3 @@ class AreaUIUpdate(AntaresBaseModel):
     x: Optional[int] = None
     y: Optional[int] = None
     color_rgb: Optional[tuple[int, int, int]] = Field(default=None, alias="colorRgb")
-
-
-def update_area_ui(current: AreaUI, data: AreaUIUpdate) -> AreaUI:
-    """
-    Updates an area UI according to the provided update data.
-    """
-    current_properties = current.model_dump(mode="json")
-    new_properties = data.model_dump(mode="json", exclude_none=True)
-    current_properties.update(new_properties)
-    return AreaUI.model_validate(current_properties)

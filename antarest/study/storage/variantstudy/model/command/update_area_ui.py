@@ -14,8 +14,7 @@ import typing as t
 
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import AreaUI, AreaUIUpdate, update_area_ui
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUIFileData, AreaUIStyle
+from antarest.study.business.model.area_model import AreaUIUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -42,40 +41,29 @@ class UpdateAreaUI(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        # Retrieve current area UI data from file
-        current_area_data = study_data.tree.get(["input", "areas", self.area_id, "ui"])
-        area_ui_file_data = AreaUIFileData(**current_area_data)
-
-        # Get current style for the specified layer
+        current_area = study_data.tree.get(["input", "areas", self.area_id, "ui"])
         layer_int = int(self.layer)
-        current_style = area_ui_file_data.layer_styles.get(layer_int, area_ui_file_data.style)
 
-        # Convert to business model
-        current_ui = AreaUI(
-            x=current_style.x,
-            y=current_style.y,
-            color_rgb=(current_style.color_r, current_style.color_g, current_style.color_b),
-        )
+        # Apply updates if provided
+        if self.parameters.x is not None:
+            current_area["layerX"][self.layer] = self.parameters.x
+            if layer_int == 0:
+                current_area["ui"]["x"] = self.parameters.x
 
-        # Apply update
-        updated_ui = update_area_ui(current_ui, self.parameters)
+        if self.parameters.y is not None:
+            current_area["layerY"][self.layer] = self.parameters.y
+            if layer_int == 0:
+                current_area["ui"]["y"] = self.parameters.y
 
-        # Convert back to file data model
-        updated_style = AreaUIStyle(
-            x=updated_ui.x,
-            y=updated_ui.y,
-            color_r=updated_ui.color_rgb[0],
-            color_g=updated_ui.color_rgb[1],
-            color_b=updated_ui.color_rgb[2],
-        )
+        if self.parameters.color_rgb is not None:
+            r, g, b = self.parameters.color_rgb
+            current_area["layerColor"][self.layer] = f"{r}, {g}, {b}"
+            if layer_int == 0:
+                current_area["ui"]["color_r"] = r
+                current_area["ui"]["color_g"] = g
+                current_area["ui"]["color_b"] = b
 
-        # Update the appropriate style
-        if layer_int == 0:
-            area_ui_file_data.style = updated_style
-        area_ui_file_data.layer_styles[layer_int] = updated_style
-
-        # Save to file
-        study_data.tree.save(area_ui_file_data.to_config(), ["input", "areas", self.area_id, "ui"])
+        study_data.tree.save(current_area, ["input", "areas", self.area_id, "ui"])
 
         return command_succeeded(message=f"area '{self.area_id}' UI updated")
 
