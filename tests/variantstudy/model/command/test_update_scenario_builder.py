@@ -18,8 +18,9 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 def test_update_scenario_builder(empty_study_880: FileStudy, command_context: CommandContext):
     study = empty_study_880
+    version = study.config.version
 
-    initial_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]))
+    initial_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]), version)
     assert initial_rulesets == {
         "Default Ruleset": Ruleset(
             load={},
@@ -42,13 +43,11 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
         "other ruleset": RulesetUpdate(thermal={"fr": {"cluster": {"1": 2, "2": 1}}}),
     }
 
-    command = UpdateScenarioBuilder(
-        data=rulesets_update, command_context=command_context, study_version=study.config.version
-    )
+    command = UpdateScenarioBuilder(data=rulesets_update, command_context=command_context, study_version=version)
     output = command.apply(study)
     assert output.status
 
-    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]))
+    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]), version)
 
     assert final_rulesets == {
         # Case is unchanged
@@ -87,13 +86,11 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
         "default ruleset": RulesetUpdate(load={"fr": {"2": ""}}),
         "other ruleset": RulesetUpdate(thermal={"fr": {"cluster": {"2": ""}}}),
     }
-    command = UpdateScenarioBuilder(
-        data=rulesets_update, command_context=command_context, study_version=study.config.version
-    )
+    command = UpdateScenarioBuilder(data=rulesets_update, command_context=command_context, study_version=version)
     output = command.apply(study)
     assert output.status
 
-    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]))
+    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]), version)
     assert final_rulesets == {
         # Case is unchanged
         "Default Ruleset": Ruleset(
