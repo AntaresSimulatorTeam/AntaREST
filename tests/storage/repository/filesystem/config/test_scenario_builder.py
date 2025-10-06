@@ -9,9 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetUpdate
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
     parse_ruleset,
     parse_ruleset_update,
@@ -261,3 +263,37 @@ def test_random_is_not_serialized():
         "sta,fr,1,battery1,constraint1": 2,
         "t,fr,1,nuclear": 2,
     }
+
+
+def test_ruleset_serializing_version():
+    rules = {
+        "sta,fr,1,battery1,constraint1": 2,
+        "sta,fr,2,battery1,constraint1": 1,
+    }
+    ruleset = parse_ruleset(rules)
+    with pytest.raises(
+        InvalidFieldForVersionError, match="Field storage_constraints is not a valid field for study version 9.2"
+    ):
+        serialize_ruleset(ruleset, STUDY_VERSION_9_2)
+
+    rules = {
+        "sts,fr,1,battery": 2,
+        "sts,fr,2,battery": 1,
+        "sts,fr,1,cars": 1,
+        "sts,fr,2,cars": 2,
+    }
+    ruleset = parse_ruleset(rules)
+    with pytest.raises(
+        InvalidFieldForVersionError, match="Field storage_inflows is not a valid field for study version 9.2"
+    ):
+        serialize_ruleset(ruleset, STUDY_VERSION_9_2)
+
+    rules = {
+        "hfl,be,1": 0.4,
+        "hfl,be,2": 0.2,
+    }
+    ruleset = parse_ruleset(rules)
+    with pytest.raises(
+        InvalidFieldForVersionError, match="Field hydro_final_levels is not a valid field for study version 8.8"
+    ):
+        serialize_ruleset(ruleset, STUDY_VERSION_8_8)
