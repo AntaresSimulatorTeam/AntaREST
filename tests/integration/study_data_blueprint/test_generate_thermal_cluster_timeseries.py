@@ -73,7 +73,6 @@ class TestGenerateThermalClusterTimeseries:
         task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.COMPLETED
 
-        
         """
         /input/thermal/clusters/area1_id/list.ini -> probably for adding one more test case to check correctness of outages counting 
         """
@@ -81,18 +80,18 @@ class TestGenerateThermalClusterTimeseries:
         res = client.get(f"/v1/studies/{study_id}/raw", params={"path": "", "depth": 5})
         root_listing = res.json()
 
-        
         count_outage_file = 0
         numberOfClusters = 0
         for area in root_listing["outages"]:
             for cluster in root_listing["outages"][area]["thermal"]:
                 numberOfClusters += 1
-                if "forced_outages.txt" in root_listing["outages"][area]["thermal"][cluster] and "planned_outages.txt" in root_listing["outages"][area]["thermal"][cluster]:
+                if (
+                    "forced_outages.txt" in root_listing["outages"][area]["thermal"][cluster]
+                    and "planned_outages.txt" in root_listing["outages"][area]["thermal"][cluster]
+                ):
                     count_outage_file += 2
 
-        assert numberOfClusters*2 == count_outage_file
-
-
+        assert numberOfClusters * 2 == count_outage_file
 
         # Check matrices
         # First one
@@ -119,8 +118,6 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 200
         data = res.json()["data"]
         assert data == 8760 * [[0]]  # no generation c.f. gen-ts parameter -> empty file -> default simulator value
-
-        
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str, study_type: str) -> None:
