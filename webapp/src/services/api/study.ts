@@ -263,7 +263,7 @@ interface RangeWithDefault {
   default: number;
 }
 
-interface Launcher {
+export interface Launcher {
   id: string;
   name: string;
   nbCores: RangeWithDefault;
@@ -294,7 +294,10 @@ interface LauncherMetrics {
 
 export const getLauncherMetrics = async (launcherId?: string): Promise<LauncherMetrics> => {
   const res = await client.get("/v1/launcher/load", {
-    params: { launcher_id: launcherId },
+    params: {
+      // If `launcherId` is `undefined`, the metrics for the default launcher will be returned
+      launcher_id: launcherId,
+    },
   });
   return res.data;
 };
