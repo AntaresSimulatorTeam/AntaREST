@@ -485,6 +485,7 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.area_manager = AreaManager(command_context)
+        self.area_properties_manager = AreaPropertiesManager(command_context)
         self.layer_manager = LayerManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
@@ -507,7 +508,7 @@ class StudyService:
         self.binding_constraint_manager = BindingConstraintManager(command_context)
         self.correlation_manager = CorrelationManager(command_context)
         self.table_mode_manager = TableModeManager(
-            self.area_manager,
+            self.area_properties_manager,
             self.links_manager,
             self.thermal_manager,
             self.renewable_manager,

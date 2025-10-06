@@ -16,6 +16,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -47,6 +48,7 @@ from antarest.study.dao.api.adequacy_patch_parameters_dao import (
     ReadOnlyAdequacyPatchParametersDao,
 )
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
+from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao, ReadOnlyAreaPropertiesDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
@@ -85,6 +87,7 @@ class ReadOnlyStudyDao(
     ReadOnlyLayerDao,
     ReadOnlyPlaylistConfigDao,
     ReadOnlyUserResourcesDao,
+    ReadOnlyAreaPropertiesDao,
     ReadOnlyScenarioBuilderDao,
 ):
     @abstractmethod
@@ -115,6 +118,7 @@ class StudyDao(
     PlaylistConfigDao,
     UserResourcesDao,
     ScenarioBuilderDao,
+    AreaPropertiesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -401,6 +405,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_playlist_config(self) -> Playlist:
         return self._adaptee.get_playlist_config()
+
+    @override
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        return self._adaptee.get_area_properties(area_id)
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._adaptee.get_all_area_properties()
 
     @override
     def get_rulesets(self) -> Rulesets:

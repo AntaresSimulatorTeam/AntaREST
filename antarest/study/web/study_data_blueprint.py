@@ -1379,7 +1379,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.update_area_properties(study_interface, area_id, form_fields)
+        study_service.properties_manager.update_all_area_properties(
+            study_interface,
+            {area_id: form_fields},
+        )
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
