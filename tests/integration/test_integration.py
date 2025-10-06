@@ -662,7 +662,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     res = client.put(
         f"/v1/studies/{study_id}/districts/district%201",
         json={
-            "name": "District 1",
             "output": True,
             "comments": "Your District",
             "areas": [],

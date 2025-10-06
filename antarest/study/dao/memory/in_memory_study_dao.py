@@ -28,6 +28,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -156,10 +157,14 @@ class InMemoryStudyDao(StudyDao):
         self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
         # TimeSeries config
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
+        # Districts
+        self._districts: dict[str, District] = {}
         # Layer
         self._layers: list[Layer] = []
         # Comments
         self._comments = ""
+        # Area names
+        self._area_names: list[str] = []
         # Playlist config
         self._playlist_config = Playlist()
         # User resources
@@ -706,6 +711,35 @@ class InMemoryStudyDao(StudyDao):
     def save_xpansion_weight(self, filename: str, series: str) -> None:
         content = series.encode("utf-8")
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+
+    @override
+    def get_districts(self) -> Sequence[District]:
+        return list(self._districts.values())
+
+    @override
+    def get_district(self, district_id: str) -> District:
+        return self._districts[district_id]
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return district_id in self._districts
+
+    @override
+    def save_district(self, district: District) -> None:
+        self._districts[district.id] = district
+
+    @override
+    def remove_district(self, district_id: str) -> None:
+        del self._districts[district_id]
+
+    @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        # TODO make this actually work once we implement area DAO
+        return list(set(areas) - set(self._area_names))
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._area_names
 
     @override
     def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:

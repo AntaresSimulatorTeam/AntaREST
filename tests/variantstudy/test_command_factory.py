@@ -110,13 +110,18 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
-            args={
-                "name": "id",
-                "filter_items": ["a"],
-                "output": True,
-                "comments": "",
-            },
+            args=[
+                {
+                    "parameters": {
+                        "name": "id",
+                        "areas": ["a"],
+                        "output": True,
+                        "comments": "",
+                    }
+                }
+            ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_district",
@@ -126,13 +131,17 @@ COMMANDS = [
             action=CommandName.CREATE_DISTRICT.value,
             args=[
                 {
-                    "name": "id",
-                    "base_filter": "add-all",
-                    "output": True,
-                    "comments": "",
+                    "parameters": {
+                        "name": "id",
+                        "apply_filter": "add-all",
+                        "output": True,
+                        "areas": [],
+                        "comments": "",
+                    }
                 }
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_district_list",
@@ -529,8 +538,12 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_DISTRICT.value,
-            args={"id": "id", "filter_items": ["a"]},
+            args={
+                "id": "id",
+                "parameters": {"areas": ["a"]},
+            },
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_district",
@@ -538,8 +551,9 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_DISTRICT.value,
-            args=[{"id": "id", "base_filter": "add-all"}],
+            args=[{"id": "id", "parameters": {"apply_filter": "add-all"}}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_district_list",
@@ -1375,3 +1389,75 @@ def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
     assert dto.action == "update_playlist"
     assert dto.version == 2
     assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}
+
+
+def test_parse_legacy_command_create_district(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.CREATE_DISTRICT.value,
+        args={
+            "name": "id",
+            "filter_items": ["a"],
+            "output": True,
+            "comments": "",
+        },
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_district"
+    assert dto.version == 2
+    assert dto.args == {
+        "parameters": {
+            "name": "id",
+            "areas": ["a"],
+            "output": True,
+            "comments": "",
+        }
+    }
+
+    dto = CommandDTO(
+        action=CommandName.CREATE_DISTRICT.value,
+        args={
+            "name": "id",
+            "base_filter": "add-all",
+            "filter_items": ["a"],
+            "output": False,
+            "comments": "",
+        },
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_district"
+    assert dto.version == 2
+    assert dto.args == {
+        "parameters": {
+            "name": "id",
+            "apply_filter": "add-all",
+            "areas": ["a"],
+            "output": False,
+            "comments": "",
+        }
+    }
+
+
+def test_parse_legacy_command_update_district(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_DISTRICT.value,
+        args={"id": "id", "filter_items": ["a"]},
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_district"
+    assert dto.version == 2
+    assert dto.args == {"parameters": {"areas": ["a"]}, "id": "id"}
