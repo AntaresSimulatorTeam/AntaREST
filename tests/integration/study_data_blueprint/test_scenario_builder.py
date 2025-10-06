@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import pytest
+from antares.study.version import StudyVersion
 from starlette.testclient import TestClient
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -21,11 +22,11 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.scenario_builder_model import AreaItemsScenarios, AreaScenarios
 from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, STStorageCreation
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.service import StudyService
 
 
-def _initialize_study(study_service: StudyService, study_id: str):
+def _initialize_study(study_service: StudyService, study_id: str, version: StudyVersion) -> None:
     study_service.create_area(study_id, AreaCreation(name="fr"))
     study_service.create_area(study_id, AreaCreation(name="be"))
     study_service.create_link(study_id, Link(area1="be", area2="fr"))
@@ -35,12 +36,13 @@ def _initialize_study(study_service: StudyService, study_id: str):
         study_interface, "fr", ThermalClusterCreation(name="Nuclear", unit_count=10, nominal_capacity=1000)
     )
     study_service.st_storage_manager.create_storage(study_interface, "fr", STStorageCreation(name="Battery"))
-    study_service.st_storage_manager.create_additional_constraints(
-        study_interface, "fr", "battery", [STStorageAdditionalConstraintCreation(name="C1")]
-    )
+    if version > STUDY_VERSION_9_2:
+        study_service.st_storage_manager.create_additional_constraints(
+            study_interface, "fr", "battery", [STStorageAdditionalConstraintCreation(name="C1")]
+        )
 
 
-def create_raw_study(study_service: StudyService) -> str:
+def create_raw_study(study_service: StudyService, version: StudyVersion) -> str:
     """
     Creates a study with:
      - 2 areas be and fr
@@ -51,12 +53,12 @@ def create_raw_study(study_service: StudyService) -> str:
     """
 
     with db(), current_user_context(DEFAULT_ADMIN_USER):
-        study_id = study_service.create_study(study_name="test", version=STUDY_VERSION_9_3, group_ids=[])
-        _initialize_study(study_service, study_id)
+        study_id = study_service.create_study(study_name="test", version=version, group_ids=[])
+        _initialize_study(study_service, study_id, version)
         return study_id
 
 
-def create_variant_study(study_service: StudyService) -> str:
+def create_variant_study(study_service: StudyService, version: StudyVersion) -> str:
     """
     Creates a study with:
      - 2 areas be and fr
@@ -66,8 +68,8 @@ def create_variant_study(study_service: StudyService) -> str:
      Returns its id.
     """
     with db(), current_user_context(DEFAULT_ADMIN_USER):
-        study_id = study_service.create_study(study_name="test", version=STUDY_VERSION_9_3, group_ids=[])
-        _initialize_study(study_service, study_id)
+        study_id = study_service.create_study(study_name="test", version=version, group_ids=[])
+        _initialize_study(study_service, study_id, version)
         variant_service = study_service.storage_service.variant_study_service
         variant_study = variant_service.create_variant_study(study_id, name="variant")
         return variant_study.id
@@ -76,7 +78,10 @@ def create_variant_study(study_service: StudyService) -> str:
 @pytest.mark.parametrize("variant", [False, True])
 def test_scenario_builder_nominal_case(variant: bool, study_service: StudyService, admin_client: TestClient) -> None:
     client = admin_client
-    study_id = create_variant_study(study_service) if variant else create_raw_study(study_service)
+    if variant:
+        study_id = create_variant_study(study_service, STUDY_VERSION_9_3)
+    else:
+        study_id = create_raw_study(study_service, STUDY_VERSION_9_3)
 
     # Load tests
 
@@ -141,3 +146,19 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/hydroInitialLevels")
     assert res.status_code == 200
     assert res.json() == {"hydroInitialLevels": {"be": {"0": 0.5}, "fr": {"0": ""}}}
+
+
+@pytest.mark.parametrize("version", [STUDY_VERSION_8_8, STUDY_VERSION_9_2])
+def test_scenario_builder_version(version: StudyVersion, study_service: StudyService, admin_client: TestClient) -> None:
+    client = admin_client
+    study_id = create_raw_study(study_service, version)
+
+    # Ensures we cannot ask for scenario types that did not exist in the study version
+    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/hydroFinalLevels")
+    if version == STUDY_VERSION_8_8:
+        assert res.status_code == 422
+        assert res.json()["exception"] == "InvalidFieldForVersionError"
+        assert res.json()["description"] == "Invalid scenario types ['hydroFinalLevels'] provided for version 8.8"
+    else:
+        assert res.status_code == 200
+        assert res.json() == {"hydroFinalLevels": {"fr": {"0": ""}, "be": {"0": ""}}}

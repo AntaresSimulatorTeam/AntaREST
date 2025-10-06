@@ -265,7 +265,9 @@ def initialize_ruleset_with_version(
         scenario_types = acceptable_types
 
     if invalid_types := scenario_types - acceptable_types:
-        raise InvalidFieldForVersionError(f"Invalid scenario types {invalid_types} provided for version {version}")
+        raise InvalidFieldForVersionError(
+            f"Invalid scenario types {[e.value for e in invalid_types]} provided for version {version}"
+        )
 
     return Ruleset(
         load=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
