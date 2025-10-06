@@ -81,7 +81,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
@@ -288,7 +288,7 @@ class StudyUpgraderTask:
     def __init__(
         self,
         study_id: str,
-        target_version: str,
+        target_version: StudyVersion,
         *,
         repository: StudyMetadataRepository,
         storage_service: StudyStorageService,
@@ -305,7 +305,7 @@ class StudyUpgraderTask:
     def _upgrade_study(self) -> None:
         """Run the task (lock the database)."""
         study_id: str = self._study_id
-        target_version: str = self._target_version
+        target_version = self._target_version
         is_study_denormalized = False
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
@@ -324,7 +324,7 @@ class StudyUpgraderTask:
                         is_study_denormalized = True
                     study_upgrader.upgrade()
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = target_version
+                study_to_upgrade.version = f"{target_version:2d}"
                 self.repository.save(study_to_upgrade)
                 self.event_bus.push(
                     Event(
@@ -490,6 +490,7 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.area_manager = AreaManager(command_context)
+        self.area_properties_manager = AreaPropertiesManager(command_context)
         self.layer_manager = LayerManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
@@ -512,7 +513,7 @@ class StudyService:
         self.binding_constraint_manager = BindingConstraintManager(command_context)
         self.correlation_manager = CorrelationManager(command_context)
         self.table_mode_manager = TableModeManager(
-            self.area_manager,
+            self.area_properties_manager,
             self.links_manager,
             self.thermal_manager,
             self.renewable_manager,
@@ -586,10 +587,12 @@ class StudyService:
         empty_log = False
         for log_location in log_locations[err_log]:
             try:
+                # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
+                # especially because of windows error messages
                 log = cast(
                     bytes,
                     file_study.tree.get(log_location, depth=1, formatted=True),
-                ).decode(encoding="utf-8")
+                ).decode(encoding="utf-8", errors="replace")
                 # when missing file, RawFileNode return empty bytes
                 if log:
                     return log
@@ -1284,17 +1287,18 @@ class StudyService:
             _ = study.workspace
             study_info = study.to_enhanced_json_summary()
 
-        if self.storage_service.variant_study_service.has_children(study):
-            if children:
-                if isinstance(study, VariantStudy):
-                    self.storage_service.variant_study_service.walk_children(
-                        study.id,
-                        lambda v: self.delete_study(v.id, True),
-                        bottom_first=True,
-                    )
-                    return
-            else:
+        variant_service = self.storage_service.variant_study_service
+
+        if variant_service.has_children(study):
+            if not children:
                 raise StudyDeletionNotAllowed(study.id, "Study has variant children")
+
+            variant_service.walk_children(
+                study.id,
+                lambda s: self.delete_study(s.id, True),
+                bottom_first=True,
+                include_parent=False,
+            )
 
         # If the study is a variant, and its snapshot is generating,
         # we need to wait until it's done to delete it to avoid any fs issues
@@ -1653,17 +1657,20 @@ class StudyService:
     def get_all_areas(
         self,
         uuid: str,
-        area_type: Optional[AreaType],
-        ui: bool,
-    ) -> List[AreaInfoDTO] | Dict[str, Any]:
+    ) -> List[Area]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
-        return (
-            self.area_manager.get_all_areas_ui_info(study_interface)
-            if ui
-            else self.area_manager.get_all_areas(study_interface, area_type)
-        )
+        return self.area_manager.get_all_areas(study_interface)
+
+    def get_all_areas_ui_info(
+        self,
+        uuid: str,
+    ) -> Dict[str, Any]:
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        study_interface = self.get_study_interface(study)
+        return self.area_manager.get_all_areas_ui_info(study_interface)
 
     def get_all_links(
         self,
@@ -1676,8 +1683,8 @@ class StudyService:
     def create_area(
         self,
         uuid: str,
-        area_creation_dto: AreaCreationDTO,
-    ) -> AreaInfoDTO:
+        area_creation_dto: AreaCreation,
+    ) -> Area:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -2172,12 +2179,14 @@ class StudyService:
             raise StudyVariantUpgradeError(False)
 
         # Checks versions coherence before launching the task
-        if not target_version:
-            target_version = find_next_version(study.version)
+        study_version = StudyVersion.parse(study.version)
+        if target_version:
+            parsed_target_version = StudyVersion.parse(target_version)
+            check_versions_coherence(study_version, parsed_target_version)
         else:
-            check_versions_coherence(study.version, target_version)
+            parsed_target_version = find_next_version(study_version)
 
-        task_name = f"Upgrade study {study.name} ({study.id}) to version {target_version}"
+        task_name = f"Upgrade study {study.name} ({study.id}) to version {parsed_target_version}"
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=study_id,
@@ -2190,7 +2199,7 @@ class StudyService:
 
         study_upgrader_task = StudyUpgraderTask(
             study_id,
-            target_version,
+            parsed_target_version,
             repository=self.repository,
             storage_service=self.storage_service,
             cache_service=self.cache_service,
@@ -2252,10 +2261,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas = cast(
-                List[AreaInfoDTO],
-                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False),
-            )
+            all_areas: List[Area] = self.get_all_areas(study_id)
             if matrix_path.parts[-1] == "allocation":
                 hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
             else:

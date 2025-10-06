@@ -9,23 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Dict, Mapping
 
-
+from antarest.core.model import JSON
 from antarest.study.business.model.area_properties_model import (
-    AreaFileData,
     AreaProperties,
     AreaPropertiesUpdate,
-    get_adequacy_patch_path,
-    get_optimization_path,
-    get_thermal_path,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_3
-from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPathProperties,
-    OptimizationProperties,
-    ThermalAreasProperties,
-)
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -34,37 +25,46 @@ class AreaPropertiesManager:
     def __init__(self, command_context: CommandContext):
         self._command_context = command_context
 
-    def get_area_properties(
-        self,
-        study: StudyInterface,
-        area_id: str,
-    ) -> AreaProperties:
-        file_study = study.get_files()
+    def get_area_properties(self, study: StudyInterface, area_id: str) -> AreaProperties:
+        return study.get_study_dao().get_area_properties(area_id)
 
-        current_thermal_props = file_study.tree.get(get_thermal_path())
-        current_optim_properties = file_study.tree.get(get_optimization_path(area_id))
-        current_adequacy_patch = (
-            file_study.tree.get(get_adequacy_patch_path(area_id)) if study.version >= STUDY_VERSION_8_3 else {}
-        )
+    def get_all_area_properties(self, study: StudyInterface) -> dict[str, AreaProperties]:
+        return study.get_study_dao().get_all_area_properties()
 
-        properties = AreaFileData(
-            thermal_properties=ThermalAreasProperties(**current_thermal_props),
-            optimization_properties=OptimizationProperties(**current_optim_properties),
-            adequacy_properties=AdequacyPathProperties(**current_adequacy_patch),
-        )
+    def update_all_area_properties(
+        self, study: StudyInterface, properties: dict[str, AreaPropertiesUpdate]
+    ) -> Mapping[str, AreaProperties]:
+        """
+        Update the properties of ares.
 
-        return properties.get_area_properties(area_id)
+        Args:
+            study: The raw study object.
+            properties: A mapping of area IDs to area properties.
 
-    def update_area_properties(
-        self,
-        study: StudyInterface,
-        area_id: str,
-        properties: AreaPropertiesUpdate,
-    ) -> None:
+        Returns:
+            A mapping of ALL area IDs to area properties.
+        """
+        old_areas_by_ids = self.get_all_area_properties(study)
+        new_areas_by_ids = dict(old_areas_by_ids)
+
+        areas_properties: Dict[str, AreaPropertiesUpdate] = {}
+
+        for area_id, update_area in properties.items():
+            old_area = old_areas_by_ids[area_id]
+            update_data = update_area.model_dump(exclude_none=True)
+            new_areas_by_ids[area_id] = old_area.model_copy(update=update_data)
+            areas_properties[area_id] = update_area
+
         command = UpdateAreasProperties(
-            properties={area_id: properties},
+            properties=areas_properties,
             command_context=self._command_context,
             study_version=study.version,
         )
 
         study.add_commands([command])
+
+        return new_areas_by_ids
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return AreaProperties.model_json_schema()

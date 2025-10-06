@@ -15,12 +15,12 @@
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { createVariant } from "../../../../../services/api/variant";
 import { createListFromTree } from "../../../../../services/utils";
-import type { GenericInfo, VariantTree } from "../../../../../types/types";
+import type { VariantTree } from "../../../../../types/types";
 import FormDialog from "../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../common/Fieldset";
@@ -36,14 +36,16 @@ interface Props {
 function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const [sourceList, setSourceList] = useState<GenericInfo[]>([]);
   const defaultValues = { name: "", sourceId: parentId };
 
-  const existingVariants = useMemo(() => sourceList.map((variant) => variant.name), [sourceList]);
+  const studiesSource = useMemo(() => createListFromTree(variantTree), [variantTree]);
 
-  useEffect(() => {
-    setSourceList(createListFromTree(variantTree));
-  }, [variantTree]);
+  const studySourceOptions = useMemo(
+    () => studiesSource.map(({ id, name }) => ({ value: id, label: name })),
+    [studiesSource],
+  );
+
+  const existingNames = useMemo(() => studiesSource.map(({ name }) => name), [studiesSource]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -84,17 +86,14 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
             name="name"
             control={control}
             rules={{
-              validate: (v) => validateString(v, { existingValues: existingVariants }),
+              validate: (v) => validateString(v, { existingValues: existingNames }),
             }}
           />
           <SelectFE
             label={t("study.versionSource")}
             name="sourceId"
             variant="outlined"
-            options={sourceList.map((ver) => ({
-              label: ver.name,
-              value: ver.id,
-            }))}
+            options={studySourceOptions}
             control={control}
             rules={{ required: true }}
           />

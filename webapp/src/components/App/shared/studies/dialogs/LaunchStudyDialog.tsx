@@ -40,10 +40,8 @@ import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnac
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../../../redux/selectors";
 import {
-  getLauncherCores,
   getLauncherMetrics,
-  getLaunchers,
-  getLauncherTimeLimit,
+  getLaunchersConfig,
   getLauncherVersions,
   getStudyOutputs,
   launchStudy,
@@ -66,11 +64,9 @@ function LaunchStudyDialog(props: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [options, setOptions] = useState<LaunchOptions>({
-    launcher_id: "local",
-    auto_unzip: true,
-  });
+  const [options, setOptions] = useState<LaunchOptions>({ auto_unzip: true });
   const [solverVersion, setSolverVersion] = useState<string>();
+  const [launcherId, setLauncherId] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
 
@@ -79,49 +75,37 @@ function LaunchStudyDialog(props: Props) {
     shallowEqual,
   );
 
-  const launchers = usePromiseWithSnackbarError(getLaunchers, {
-    errorMessage: t("study.error.launchers"),
-    onDataChange: (launchers) => {
-      if (launchers && options.launcher_id && !launchers.includes(options.launcher_id)) {
-        setOptions((prevOptions) => ({
-          ...prevOptions,
-          launcher_id: launchers[0],
-        }));
-      }
-    },
-  });
+  const launchersConfigRes = usePromiseWithSnackbarError(
+    async () => {
+      const config = await getLaunchersConfig();
 
-  const launcherCores = usePromiseWithSnackbarError(() => getLauncherCores(options.launcher_id), {
-    onDataChange: (cores) => {
-      if (cores) {
-        setOptions((prevOptions) => ({
-          ...prevOptions,
-          nb_cpu: cores.defaultValue,
-        }));
-      }
+      return {
+        ...config,
+        launchersById: R.indexBy(R.prop("id"), config.launchers),
+        launcherOptions: config.launchers.map(({ id, name }) => ({ value: id, label: name })),
+      };
     },
-    errorMessage: t("study.error.launcherCores"),
-    deps: [options.launcher_id],
-  });
-
-  const launcherTimeLimit = usePromiseWithSnackbarError(
-    () => getLauncherTimeLimit(options.launcher_id),
     {
-      errorMessage: t("study.error.launcherTimeLimit"),
-      deps: [options.launcher_id],
+      errorMessage: t("study.error.launchers"),
+      onDataChange: (launchersConfig) => {
+        const defaultLauncher = launchersConfig?.launchersById[launchersConfig.defaultLauncher];
+
+        setLauncherId(defaultLauncher?.id || "");
+        setOptions((prev) => ({
+          ...prev,
+          nb_cpu: defaultLauncher?.nbCores?.default,
+        }));
+      },
     },
   );
 
-  const launcherMetrics = usePromiseWithSnackbarError(
-    () => getLauncherMetrics(options.launcher_id),
-    {
-      errorMessage: t("study.error.launchLoad"),
-      deps: [options.launcher_id],
-    },
-  );
+  const launcherMetricsRes = usePromiseWithSnackbarError(() => getLauncherMetrics(launcherId), {
+    errorMessage: t("study.error.launchLoad"),
+    deps: [launcherId],
+  });
 
   // Refresh launcher metrics every minute
-  useInterval(launcherMetrics.reload, 60_000);
+  useInterval(launcherMetricsRes.reload, 60_000);
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
@@ -140,7 +124,7 @@ function LaunchStudyDialog(props: Props) {
   const handleLaunchClick = () => {
     if (studyIds.length > 0) {
       setIsLaunching(true);
-      Promise.all(studyIds.map((sid) => launchStudy(sid, options, solverVersion)))
+      Promise.all(studyIds.map((sid) => launchStudy(sid, options, solverVersion, launcherId)))
         .then(() => {
           enqueueSnackbar(
             t("studies.studylaunched", {
@@ -209,7 +193,7 @@ function LaunchStudyDialog(props: Props) {
       open={open}
       onClose={onClose}
       maxWidth="md"
-      PaperProps={{ sx: { width: 700 } }}
+      slotProps={{ paper: { sx: { width: 700 } } }}
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
@@ -219,12 +203,7 @@ function LaunchStudyDialog(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={
-              isLaunching ||
-              !launchers.isFulfilled ||
-              !launcherCores.isFulfilled ||
-              !launcherTimeLimit.isFulfilled
-            }
+            disabled={isLaunching || !launchersConfigRes.isFulfilled}
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -263,14 +242,15 @@ function LaunchStudyDialog(props: Props) {
           )}
         </Box>
         <TextField
-          id="launcher-option-output-suffix"
           label={t("global.name")}
           type="text"
           variant="outlined"
           value={options.output_suffix}
           onChange={(e) => handleChange("output_suffix", e.target.value.trim())}
-          InputLabelProps={{
-            shrink: true,
+          slotProps={{
+            inputLabel: {
+              shrink: true,
+            },
           }}
         />
         <Divider
@@ -296,15 +276,16 @@ function LaunchStudyDialog(props: Props) {
             sx={{ flex: 1 }}
           />
           <TextField
-            id="other-options"
             label={t("study.otherOptions")}
             type="text"
             variant="outlined"
             value={options.other_options}
             onChange={(e) => handleChange("other_options", e.target.value)}
             sx={{ flex: 1 }}
-            InputLabelProps={{
-              shrink: true,
+            slotProps={{
+              inputLabel: {
+                shrink: true,
+              },
             }}
           />
         </Box>
@@ -320,14 +301,14 @@ function LaunchStudyDialog(props: Props) {
           <CheckBoxFE
             label={t("launcher.xpress")}
             value={!!options.other_options?.match("xpress")}
-            onChange={(e, checked) =>
+            onChange={(_e, checked) =>
               handleOtherOptionsChange([{ option: "xpress", active: checked }])
             }
           />
           <CheckBoxFE
             label={t("launcher.autoUnzip")}
             value={!!options.auto_unzip}
-            onChange={(e, checked) => handleChange("auto_unzip", checked)}
+            onChange={(_e, checked) => handleChange("auto_unzip", checked)}
           />
         </Box>
         <Divider
@@ -352,7 +333,7 @@ function LaunchStudyDialog(props: Props) {
             <Typography>Xpansion</Typography>
             <SwitchFE
               value={!!options.xpansion}
-              onChange={(e, checked) => {
+              onChange={(_e, checked) => {
                 handleChange("xpansion", checked ? { enabled: true } : undefined);
               }}
             />
@@ -364,7 +345,7 @@ function LaunchStudyDialog(props: Props) {
                   <Checkbox
                     disabled={!!options.xpansion_r_version || !options.xpansion}
                     checked={options.xpansion?.sensitivity_mode || false}
-                    onChange={(e, checked) =>
+                    onChange={(_e, checked) =>
                       handleObjectChange("xpansion", {
                         sensitivity_mode: checked,
                       })
@@ -382,7 +363,7 @@ function LaunchStudyDialog(props: Props) {
                 }))}
                 disabled={!!options.xpansion_r_version || !options.xpansion}
                 data={options.xpansion?.output_id || ""}
-                setValue={(data: string) =>
+                setValue={(data) =>
                   handleObjectChange("xpansion", {
                     output_id: data,
                   })
@@ -404,63 +385,68 @@ function LaunchStudyDialog(props: Props) {
           }}
         >
           <UsePromiseCond
-            response={launchers}
-            ifFulfilled={(launchers) => (
-              <SelectFE
-                label={t("study.cluster")}
-                value={options.launcher_id}
-                options={launchers}
-                onChange={(e) => {
-                  handleChange("launcher_id", e.target.value);
-                }}
-                sx={{ flex: 1 }}
-              />
-            )}
-            ifPending={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
-            ifRejected={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
-          />
-          <UsePromiseCond
-            response={launcherCores}
-            ifFulfilled={({ min, max }) => (
-              <TextField
-                label={t("study.nbCpu")}
-                type="number"
-                variant="outlined"
-                required
-                value={options.nb_cpu}
-                onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
-                  handleChange("nb_cpu", Math.min(Math.max(newValue, min), max));
-                }}
-                inputProps={{
-                  min,
-                  max,
-                  step: 1,
-                }}
-                sx={{ width: 150 }}
-              />
-            )}
-            ifPending={() => <Skeleton width={150} height={60} />}
-            ifRejected={() => <Skeleton width={150} height={60} />}
-          />
-          {/* Field only to display the value, it is not editable */}
-          <UsePromiseCond
-            response={launcherTimeLimit}
-            ifFulfilled={({ defaultValue }) => (
-              <TextField
-                label={t("study.timeLimit")}
-                type="number"
-                variant="outlined"
-                disabled
-                value={defaultValue}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                sx={{ width: 150 }}
-              />
-            )}
-            ifPending={() => <Skeleton width={150} height={60} />}
-            ifRejected={() => <Skeleton width={150} height={60} />}
+            response={launchersConfigRes}
+            ifFulfilled={({ launchersById, launcherOptions }) => {
+              const currentLauncher = launchersById[launcherId || ""];
+              const nbCores = currentLauncher?.nbCores;
+              const minCores = nbCores?.min;
+              const maxCores = nbCores?.max;
+
+              return (
+                <>
+                  <SelectFE
+                    label={t("study.cluster")}
+                    value={launcherId}
+                    options={launcherOptions}
+                    onChange={(e) => {
+                      const newLauncherId = e.target.value;
+
+                      setLauncherId(newLauncherId);
+                      setOptions((prev) => ({
+                        ...prev,
+                        nb_cpu: launchersById[newLauncherId]?.nbCores.default,
+                      }));
+                    }}
+                    sx={{ flex: 1 }}
+                  />
+
+                  <TextField
+                    label={t("study.nbCpu")}
+                    type="number"
+                    variant="outlined"
+                    value={options.nb_cpu}
+                    onChange={(e) => {
+                      handleChange("nb_cpu", R.clamp(minCores, maxCores, Number(e.target.value)));
+                    }}
+                    slotProps={{
+                      htmlInput: {
+                        min: minCores,
+                        max: maxCores,
+                        step: 1,
+                      },
+                    }}
+                    sx={{ width: 150 }}
+                  />
+
+                  {/* Field only to display the value, it is not editable */}
+                  <TextField
+                    label={t("study.timeLimit")}
+                    type="number"
+                    variant="outlined"
+                    disabled
+                    value={currentLauncher?.timeLimit.default}
+                    slotProps={{
+                      inputLabel: {
+                        shrink: true,
+                      },
+                    }}
+                    sx={{ width: 150 }}
+                  />
+                </>
+              );
+            }}
+            ifPending={() => <Skeleton height={60} sx={{ flex: 1 }} />}
+            ifRejected={() => <Skeleton height={60} sx={{ flex: 1 }} />}
           />
         </Box>
         <Box
@@ -474,8 +460,8 @@ function LaunchStudyDialog(props: Props) {
           <UsePromiseCond
             // Reload when launcher changes to see Skeleton
             // because `keepLastResolvedOnReload` is set to true for refresh
-            key={options.launcher_id}
-            response={launcherMetrics}
+            key={launcherId}
+            response={launcherMetricsRes}
             keepLastResolvedOnReload
             ifPending={() => <Skeleton width={500} />}
             ifFulfilled={(data) => (
@@ -487,6 +473,7 @@ function LaunchStudyDialog(props: Props) {
                   value={Math.floor(data.allocatedCpuRate)}
                   tooltip={t("study.allocatedCpuRate")}
                   sx={{ width: 100 }}
+                  colorMode="cluster"
                 />
                 <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
                   {t("study.clusterLoadRate")}
@@ -495,6 +482,7 @@ function LaunchStudyDialog(props: Props) {
                   value={Math.floor(data.clusterLoadRate)}
                   tooltip={t("study.clusterLoadRate")}
                   sx={{ width: 100 }}
+                  colorMode="cluster"
                 />
                 <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
                   {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}

@@ -36,8 +36,4 @@ class ExpansionSettings(IniFileNode):
     """
 
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(
-            config,
-            reader=SimpleKeyValueReader(),
-            writer=SimpleKeyValueWriter(),
-        )
+        super().__init__(config, reader=SimpleKeyValueReader(), writer=SimpleKeyValueWriter())

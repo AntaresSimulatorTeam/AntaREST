@@ -17,7 +17,9 @@ from typing_extensions import override
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
+from antarest.study.dao.file.file_study_area_properties_dao import FileStudyAreaPropertiesDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
+from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
 from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
 from antarest.study.dao.file.file_study_layer_dao import FileStudyLayerDao
@@ -25,6 +27,7 @@ from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
 from antarest.study.dao.file.file_study_optimization_preferences import FileStudyOptimizationPreferencesDao
 from antarest.study.dao.file.file_study_playlist_config_dao import FileStudyPlaylistConfigDao
 from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
+from antarest.study.dao.file.file_study_scenario_builder_dao import FileStudyScenarioBuilderDao
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
 from antarest.study.dao.file.file_study_thematic_trimming_dao import FileStudyThematicTrimmingDao
 from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
@@ -49,9 +52,12 @@ class FileStudyTreeDao(
     FileStudyThematicTrimmingDao,
     FileStudyAdequacyPatchParametersDao,
     FileStudyTimeSeriesConfigDao,
+    FileStudyDistrictDao,
     FileStudyLayerDao,
     FileStudyPlaylistConfigDao,
     FileStudyUserResourceDao,
+    FileStudyAreaPropertiesDao,
+    FileStudyScenarioBuilderDao,
 ):
     """
     Implementation of study DAO over the simulator input format.

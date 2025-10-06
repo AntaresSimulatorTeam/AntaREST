@@ -20,6 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -27,6 +28,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -35,6 +37,11 @@ from antarest.study.business.model.hydro_model import (
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.scenario_builder_model import (
+    AnyScenarios,
+    Rulesets,
+    ScenarioType,
+)
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -44,6 +51,7 @@ from antarest.study.business.model.thematic_trimming_model import ThematicTrimmi
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
     XpansionSettings,
@@ -142,20 +150,30 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_settings: XpansionSettings = XpansionSettings()
         self._xpansion_configuration_exists: bool = False
         self._xpansion_resources: dict[XpansionResourceFileType, dict[str, bytes]] = {}
+        self._xpansion_security_criterion: XpansionAdequacyCriterion = XpansionAdequacyCriterion()
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
         self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
         # TimeSeries config
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
+        # Districts
+        self._districts: dict[str, District] = {}
         # Layer
         self._layers: list[Layer] = []
         # Comments
         self._comments = ""
+        # Area names
+        self._area_names: list[str] = []
         # Playlist config
         self._playlist_config = Playlist()
         # User resources
         self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
+        # Area Properties
+        self._area_properties: dict[str, AreaProperties] = {}
+        # Scenario Builder
+        self.rulesets: Rulesets = {}
+        self.active_ruleset_name: Optional[str] = None
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -641,6 +659,10 @@ class InMemoryStudyDao(StudyDao):
         return
 
     @override
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
+        return self._xpansion_security_criterion
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._thematic_trimming
 
@@ -691,6 +713,39 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
+    def get_districts(self) -> Sequence[District]:
+        return list(self._districts.values())
+
+    @override
+    def get_district(self, district_id: str) -> District:
+        return self._districts[district_id]
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return district_id in self._districts
+
+    @override
+    def save_district(self, district: District) -> None:
+        self._districts[district.id] = district
+
+    @override
+    def remove_district(self, district_id: str) -> None:
+        del self._districts[district_id]
+
+    @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        # TODO make this actually work once we implement area DAO
+        return list(set(areas) - set(self._area_names))
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._area_names
+
+    @override
+    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
+        self._xpansion_security_criterion = criterion
+
+    @override
     def save_layer(self, layer: Layer) -> None:
         new_id = max((int(layer.id) for layer in self._layers if layer.id is not None), default=0) + 1
         layer.id = str(new_id)
@@ -723,3 +778,31 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
         del self._user_resources[resource_path]
+
+    @override
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        return self._area_properties[area_id]
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._area_properties
+
+    @override
+    def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
+        self._area_properties[area_id] = area_properties
+
+    @override
+    def get_rulesets(self) -> Rulesets:
+        return self.rulesets
+
+    @override
+    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
+        return self.active_ruleset_name or default_ruleset
+
+    @override
+    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
+        return self.rulesets[self.get_active_ruleset_name()].get(scenario_type)
+
+    @override
+    def save_scenario_builder(self, rulesets: Rulesets) -> None:
+        self.rulesets = rulesets

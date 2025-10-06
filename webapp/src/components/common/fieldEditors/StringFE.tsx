@@ -35,15 +35,24 @@ interface WithoutDatalist {
 export type StringFEProps = {
   value?: string;
   defaultValue?: string;
+  type?: "text" | "search";
 } & (WithDatalist | WithoutDatalist) &
   Omit<TextFieldProps, "type" | "value" | "defaultValue" | "onChange">;
 
-function StringFE({ value, defaultValue, datalist, onChange, name, ...restProps }: StringFEProps) {
+function StringFE({
+  value,
+  defaultValue,
+  datalist,
+  onChange,
+  name,
+  type = "text",
+  ...restProps
+}: StringFEProps) {
   const commonProps = {
     ...restProps,
     name,
     onChange,
-    type: "text",
+    type,
   };
 
   ////////////////////////////////////////////////////////////////

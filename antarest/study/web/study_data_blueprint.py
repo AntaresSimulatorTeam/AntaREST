@@ -13,11 +13,11 @@
 import enum
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
+from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Query
-from pydantic import ConfigDict, RootModel
+from pydantic import ConfigDict, Field, RootModel
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
@@ -42,8 +42,7 @@ from antarest.study.business.correlation_management import (
     CorrelationFormFields,
     CorrelationMatrix,
 )
-from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -68,6 +67,11 @@ from antarest.study.business.model.config.playlist_model import PlaylistUpdate, 
 from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
+)
+from antarest.study.business.model.district_model import (
+    DistrictCreation,
+    DistrictDTO,
+    DistrictUpdate,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -149,17 +153,30 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
-    # noinspection PyShadowingBuiltins
+    class AreaResponse(Area):
+        """API view for areas with deprecated ``type`` field kept for compatibility."""
+
+        type: Literal[AreaType.AREA] = Field(
+            default=AreaType.AREA,
+            json_schema_extra={"deprecated": True},
+        )
+
     @bp.get(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Get all areas basic info",
-        response_model=List[AreaInfoDTO] | Dict[str, Any],
     )
-    def get_areas(uuid: str, type: AreaType = Query(None), ui: bool = False) -> List[AreaInfoDTO] | Dict[str, Any]:
-        logger.info(f"Fetching area list (type={type}) for study {uuid}")
-        areas_list = study_service.get_all_areas(uuid, type, ui)
-        return areas_list
+    def get_areas(
+        uuid: str,
+        type: Optional[AreaType] = Query(default=None, deprecated=True),
+        ui: bool = Query(default=False),
+    ) -> List[AreaResponse] | Dict[str, Any]:
+        logger.info(f"Fetching area list (type={type}, ui={ui}) for study {uuid}")
+        if ui:
+            return study_service.get_all_areas_ui_info(uuid)
+
+        areas = study_service.get_all_areas(uuid)
+        return [AreaResponse.model_validate(area.model_dump()) for area in areas]
 
     @bp.get("/studies/{uuid}/links", tags=[APITag.study_data], summary="Get all links")
     def get_links(uuid: str) -> List[Link]:
@@ -171,11 +188,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Create a new area",
-        response_model=AreaInfoDTO,
     )
-    def create_area(uuid: str, area_creation_info: AreaCreationDTO) -> Any:
+    def create_area(uuid: str, area_creation_info: AreaCreation) -> AreaResponse:
         logger.info(f"Creating new area for study {uuid}")
-        return study_service.create_area(uuid, area_creation_info)
+        area = study_service.create_area(uuid, area_creation_info)
+        return AreaResponse.model_validate(area.model_dump())
 
     @bp.post("/studies/{uuid}/links", tags=[APITag.study_data], summary="Create a link")
     def create_link(
@@ -277,32 +294,32 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
         summary="Get the list of districts defined in this study",
-        response_model=List[DistrictInfoDTO],
+        response_model=List[DistrictDTO],
     )
-    def get_districts(uuid: str) -> List[DistrictInfoDTO]:
+    def get_districts(uuid: str) -> List[DistrictDTO]:
         logger.info(f"Fetching districts list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.district_manager.get_districts(study_interface)
+        return list(study_service.district_manager.get_districts(study_interface))
 
     @bp.post(
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
         summary="Create a new district in the study",
-        response_model=DistrictInfoDTO,
+        response_model=DistrictDTO,
     )
-    def create_district(uuid: str, dto: DistrictCreationDTO) -> DistrictInfoDTO:
-        logger.info(f"Create district {dto.name} for study {uuid}")
+    def create_district(uuid: str, district_creation: DistrictCreation) -> DistrictDTO:
+        logger.info(f"Create district {district_creation.name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        return study_service.district_manager.create_district(study_interface, dto)
+        return study_service.district_manager.create_district(study_interface, district_creation)
 
     @bp.put(
         "/studies/{uuid}/districts/{district_id}",
         tags=[APITag.study_data],
         summary="Update the properties of a district",
     )
-    def update_district(uuid: str, district_id: str, dto: DistrictUpdateDTO) -> None:
+    def update_district(uuid: str, district_id: str, dto: DistrictUpdate) -> None:
         logger.info(f"Updating district {district_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -461,7 +478,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Getting MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return rulesets_model_to_view(study_service.scenario_builder_manager.get_config(study_interface))
+        return rulesets_model_to_view(study_service.scenario_builder_manager.get_rulesets(study_interface))
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
@@ -546,7 +563,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Updating MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.scenario_builder_manager.update_config(study_interface, rulesets_view_to_model(data))
+        study_service.scenario_builder_manager.update_scenario(study_interface, rulesets_view_to_model(data))
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
@@ -1101,10 +1118,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - the values are the allocation factors.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
-            study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
-        )
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.allocation_manager.get_allocation_matrix(study_interface, all_areas)
 
@@ -1125,10 +1139,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
-            study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
-        )
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.allocation_manager.get_allocation_form_fields(all_areas, study_interface, area_id)
 
@@ -1162,10 +1173,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the updated allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
-            study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
-        )
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.allocation_manager.set_allocation_form_fields(all_areas, study_interface, area_id, data)
 
@@ -1211,10 +1219,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
-            study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
-        )
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.get_correlation_matrix(
             all_areas,
@@ -1257,10 +1262,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the hydraulic/load/solar/wind correlation matrix updated
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
-            study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
-        )
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.set_correlation_matrix(all_areas, study_interface, matrix)
 
@@ -1281,10 +1283,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
-            study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
-        )
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.get_correlation_form_fields(all_areas, study_interface, area_id)
 
@@ -1318,10 +1317,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
-            study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
-        )
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.set_correlation_form_fields(all_areas, study_interface, area_id, data)
 
@@ -1387,7 +1383,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.update_area_properties(study_interface, area_id, form_fields)
+        study_service.properties_manager.update_all_area_properties(
+            study_interface,
+            {area_id: form_fields},
+        )
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

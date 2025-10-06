@@ -29,6 +29,7 @@ from antarest.core.utils.archives import extract_lines_from_archive, is_archive_
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -36,14 +37,14 @@ from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VER
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.district import parse_district
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    DistrictSet,
+    AreaConfig,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
@@ -119,7 +120,7 @@ def build(study_path: Path, study_id: str, output_path: Optional[Path] = None) -
         study_id=study_id,
         version=_parse_version(study_path),
         areas=_parse_areas(study_path),
-        sets=_parse_sets(study_path),
+        districts=_parse_sets(study_path),
         outputs=parse_outputs(outputs_dir),
         bindings=_parse_bindings(study_path),
         store_new_set=sns,
@@ -216,25 +217,18 @@ def _parse_bindings(root: Path) -> List[BindingConstraint]:
     return [parse_binding_constraint(version, bc) for bc in bindings.values()]
 
 
-def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
+def _parse_sets(root: Path) -> Dict[str, District]:
     obj = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/sets.ini"),
         file_type=FileType.MULTI_INI,
         multi_ini_keys=["+", "-"],
     )
-    return {
-        transform_name_to_id(name): DistrictSet(
-            areas=item.get("-" if item.get("apply-filter", "remove-all") == "add-all" else "+"),
-            name=item.get("caption"),
-            inverted_set=item.get("apply-filter", "remove-all") == "add-all",
-            output=item.get("output", True),
-        )
-        for name, item in obj.items()
-    }
+
+    return {transform_name_to_id(name): parse_district(item, transform_name_to_id(name)) for name, item in obj.items()}
 
 
-def _parse_areas(root: Path) -> Dict[str, Area]:
+def _parse_areas(root: Path) -> Dict[str, AreaConfig]:
     areas = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/list.txt"),
@@ -369,7 +363,7 @@ def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
     return {year + 1: weights.get(year, 1) for year in added if year not in removed}
 
 
-def parse_area(root: Path, area: str) -> "Area":
+def parse_area(root: Path, area: str) -> "AreaConfig":
     """
     Parse an area configuration and extract its filtering configuration.
 
@@ -394,7 +388,7 @@ def parse_area(root: Path, area: str) -> "Area":
     filter_year_by_year = extract_filtering(filtering.get("filter-year-by-year", ""))
 
     st_storages = _parse_st_storage(root, area_id)
-    return Area(
+    return AreaConfig(
         name=area,
         links=_parse_links_filtering(root, area_id),
         thermals=_parse_thermal(root, area_id),

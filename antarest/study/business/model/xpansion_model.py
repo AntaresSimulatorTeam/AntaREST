@@ -12,6 +12,7 @@
 from typing import Annotated, Optional, TypeAlias
 
 from pydantic import BeforeValidator, Field, PlainSerializer
+from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import (
     BadCandidateFormatError,
@@ -102,7 +103,7 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     optimality_gap: float = Field(default=1, ge=0)
     relative_gap: float = Field(default=1e-6, ge=0)
     relaxed_optimality_gap: float = Field(default=1e-5, ge=0)
-    max_iteration: int = Field(default=int(1e12), gt=0)
+    max_iteration: int = Field(default=1000, gt=0)
     solver: Solver = Field(default=Solver.XPRESS)
     log_level: int = Field(default=0, ge=0, le=3)
     separation_parameter: float = Field(default=0.5, gt=0, le=1)
@@ -257,3 +258,19 @@ def create_xpansion_candidate(candidate_data: XpansionCandidateCreation) -> Xpan
     candidate = XpansionCandidate.model_validate(candidate_data.model_dump(exclude_none=True))
     validate_xpansion_candidate(candidate)
     return candidate
+
+
+##########################
+# Adequacy criterion part
+##########################
+
+
+class XpansionAdequacyPattern(AntaresBaseModel, populate_by_name=True):
+    area: str
+    criterion: float = Field(ge=0)
+
+
+class XpansionAdequacyCriterion(AntaresBaseModel, populate_by_name=True, alias_generator=to_camel):
+    stopping_threshold: float = Field(default=1e6, ge=0)
+    criterion_count_threshold: float = Field(default=1, ge=0)
+    patterns: list[XpansionAdequacyPattern] = Field(default_factory=list)

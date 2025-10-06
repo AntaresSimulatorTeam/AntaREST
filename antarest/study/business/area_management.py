@@ -11,44 +11,29 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List
 
-from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotFound
-from antarest.core.model import JSON
+from antarest.core.exceptions import DuplicateAreaName, LayerNotFound
 from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_info_map
 from antarest.study.business.model.area_model import (
-    AreaCreationDTO,
-    AreaInfoDTO,
-    AreaOutput,
-    AreaType,
+    Area,
+    AreaCreation,
     UpdateAreaUi,
-)
-from antarest.study.business.model.area_properties_model import (
-    AreaPropertiesUpdate,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AreaFolder,
-    ThermalAreasProperties,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
-from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
-
-
-_ALL_AREAS_PATH = "input/areas"
-_THERMAL_AREAS_PATH = "input/thermal/areas"
 
 
 class AreaManager:
@@ -65,134 +50,19 @@ class AreaManager:
         """
         self._command_context = command_context
 
-    # noinspection SpellCheckingInspection
-    def get_all_area_props(self, study: StudyInterface) -> Mapping[str, AreaOutput]:
-        """
-        Retrieves all areas of a study.
+    def get_all_areas(self, study: StudyInterface) -> List[Area]:
+        """Retrieve all physical areas of a raw study."""
 
-        Args:
-            study: The raw study object.
-        Returns:
-            A mapping of area IDs to area properties.
-        Raises:
-            ConfigFileNotFound: if a configuration file is not found.
-        """
         file_study = study.get_files()
-
-        # Get the area information from the `/input/areas/<area>` file.
-        path = _ALL_AREAS_PATH
-        try:
-            areas_cfg = file_study.tree.get(path.split("/"), depth=5)
-        except KeyError:
-            raise ConfigFileNotFound(path) from None
-        else:
-            # "list" and "sets" must be removed: we only need areas.
-            areas_cfg.pop("list", None)
-            areas_cfg.pop("sets", None)
-
-        # Get the unserverd and spilled energy costs from the `/input/thermal/areas.ini` file.
-        path = _THERMAL_AREAS_PATH
-        try:
-            thermal_cfg = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise ConfigFileNotFound(path) from None
-        else:
-            thermal_areas = ThermalAreasProperties(**thermal_cfg)
-
-        # areas_cfg contains a dictionary where the keys are the area IDs,
-        # and the values are objects that can be converted to `AreaFolder`.
-        area_map = {}
-        for area_id, area_cfg in areas_cfg.items():
-            area_folder = AreaFolder(**area_cfg)
-            area_map[area_id] = AreaOutput.from_model(
-                area_folder,
-                average_unsupplied_energy_cost=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
-                average_spilled_energy_cost=thermal_areas.spilled_energy_cost.get(area_id, 0.0),
+        cfg_areas: Dict[str, AreaConfig] = file_study.config.areas
+        return [
+            Area(
+                id=area_id,
+                name=area.name,
+                thermals=self._get_clusters(file_study, area_id),
             )
-
-        return area_map
-
-    # noinspection SpellCheckingInspection
-    def update_areas_props(
-        self, study: StudyInterface, properties: Mapping[str, AreaOutput]
-    ) -> Mapping[str, AreaOutput]:
-        """
-        Update the properties of ares.
-
-        Args:
-            study: The raw study object.
-            properties: A mapping of area IDs to area properties.
-
-        Returns:
-            A mapping of ALL area IDs to area properties.
-        """
-        old_areas_by_ids = self.get_all_area_props(study)
-        new_areas_by_ids = dict(old_areas_by_ids)
-
-        areas_properties: Dict[str, AreaPropertiesUpdate] = {}
-
-        for area_id, update_area in properties.items():
-            old_area = old_areas_by_ids[area_id]
-            new_area = old_area.model_copy(update=update_area.model_dump(exclude_none=True))
-            new_areas_by_ids[area_id] = new_area
-
-            properties = update_area.model_dump(exclude_none=True, exclude_unset=True, by_alias=True)
-            area_properties = AreaPropertiesUpdate(**properties)
-            areas_properties.update({area_id: area_properties})
-
-        command = UpdateAreasProperties(
-            properties=areas_properties,
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-
-        study.add_commands([command])
-
-        return new_areas_by_ids
-
-    @staticmethod
-    def get_table_schema() -> JSON:
-        return AreaOutput.model_json_schema()
-
-    def get_all_areas(self, study: StudyInterface, area_type: Optional[AreaType] = None) -> List[AreaInfoDTO]:
-        """
-        Retrieves all areas and districts of a raw study based on the area type.
-
-        Args:
-            study: The raw study object.
-            area_type: The type of area. Retrieves areas and districts if `None`.
-
-        Returns:
-            A list of area/district information.
-        """
-        file_study = study.get_files()
-        cfg_areas: Dict[str, Area] = file_study.config.areas
-        result: List[AreaInfoDTO] = []
-
-        if area_type is None or area_type == AreaType.AREA:
-            result.extend(
-                AreaInfoDTO(
-                    id=area_id,
-                    name=area.name,
-                    type=AreaType.AREA,
-                    thermals=self._get_clusters(file_study, area_id),
-                )
-                for area_id, area in cfg_areas.items()
-            )
-
-        if area_type is None or area_type == AreaType.DISTRICT:
-            cfg_sets: Dict[str, DistrictSet] = file_study.config.sets
-            result.extend(
-                AreaInfoDTO(
-                    id=set_id,
-                    name=district.name or set_id,
-                    type=AreaType.DISTRICT,
-                    set=district.get_areas(list(cfg_areas)),
-                )
-                for set_id, district in cfg_sets.items()
-            )
-
-        return result
+            for area_id, area in cfg_areas.items()
+        ]
 
     def get_all_areas_ui_info(self, study: StudyInterface) -> Dict[str, Any]:
         """
@@ -275,7 +145,7 @@ class AreaManager:
 
         study.add_commands(commands)
 
-    def create_area(self, study: StudyInterface, area_creation_info: AreaCreationDTO) -> AreaInfoDTO:
+    def create_area(self, study: StudyInterface, area_creation_info: AreaCreation) -> Area:
         file_study = study.get_files()
 
         # check if area already exists
@@ -291,10 +161,9 @@ class AreaManager:
         )
         study.add_commands([command])
 
-        return AreaInfoDTO(
+        return Area(
             id=area_id,
             name=area_creation_info.name,
-            type=AreaType.AREA,
             # this should always be empty since it's a new area
             thermals=[],
         )

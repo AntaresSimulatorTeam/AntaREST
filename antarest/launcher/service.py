@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
-from antarest.core.config import Config, InvalidConfigurationError, NbCoresConfig
+from antarest.core.config import Config, InvalidConfigurationError
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -44,8 +44,11 @@ from antarest.launcher.model import (
     JobLogType,
     JobResult,
     JobStatus,
+    LauncherInfoDTO,
+    LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
+    LauncherResourceRangeDTO,
     LogType,
     XpansionParametersDTO,
 )
@@ -116,20 +119,28 @@ class LauncherService:
         adequacy_patch_ext = AdequacyPatchExtension(self.study_service, self.config)
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
-    def get_launchers(self) -> List[str]:
-        return list(self.launchers.keys())
-
-    def get_nb_cores(self, launcher: Optional[str]) -> NbCoresConfig:
-        """
-        Retrieve the configuration of the launcher's nb of cores.
-
-        Args:
-            launcher: name of the launcher: "default", "slurm" or "local".
-
-        Returns:
-            Number of cores of the launcher
-        """
-        return self.config.launcher.get_nb_cores(launcher)
+    def get_launchers(self) -> LauncherListDTO:
+        configs = self.config.launcher.configs or []
+        launchers: List[LauncherInfoDTO] = []
+        for launcher_config in configs:
+            launchers.append(
+                LauncherInfoDTO(
+                    id=launcher_config.id,
+                    name=launcher_config.name,
+                    nb_cores=LauncherResourceRangeDTO(
+                        min=launcher_config.nb_cores.min,
+                        max=launcher_config.nb_cores.max,
+                        default=launcher_config.nb_cores.default,
+                    ),
+                    time_limit=LauncherResourceRangeDTO(
+                        min=launcher_config.time_limit.min,
+                        max=launcher_config.time_limit.max,
+                        default=launcher_config.time_limit.default,
+                    ),
+                )
+            )
+        default_launcher = self.config.launcher.default
+        return LauncherListDTO(launchers=launchers, default_launcher=default_launcher)
 
     def _after_export_flat_hooks(
         self,

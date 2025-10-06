@@ -9,24 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.area_properties_model import (
-    AreaFileData,
-    AreaPropertiesUpdate,
-    get_adequacy_patch_path,
-    get_optimization_path,
-    get_thermal_path,
-)
-from antarest.study.model import STUDY_VERSION_8_3
-from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPathProperties,
-    OptimizationProperties,
-    ThermalAreasProperties,
-)
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate, update_area_properties
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -48,59 +36,16 @@ class UpdateAreasProperties(ICommand):
     properties: Dict[str, AreaPropertiesUpdate]
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_properties: AreaFileData = AreaFileData(
-            thermal_properties=ThermalAreasProperties(),
-            optimization_properties=OptimizationProperties(),
-            adequacy_properties=AdequacyPathProperties(),
-        )
-
-        current_thermal_props = ThermalAreasProperties(**study_data.tree.get(get_thermal_path()))
-
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         for area_id, area_properties in self.properties.items():
-            current_optim_properties, current_adequacy_patch = self.fetch_area_properties(study_data, area_id)
+            current_properties = study_data.get_area_properties(area_id)
 
-            current_properties = AreaFileData(
-                thermal_properties=current_thermal_props,
-                optimization_properties=OptimizationProperties(**current_optim_properties),
-                adequacy_properties=AdequacyPathProperties(**current_adequacy_patch),
-            )
+            new_properties = update_area_properties(current_properties, area_properties)
 
-            new_properties = current_properties.get_area_properties(area_id=area_id).model_copy(
-                update=area_properties.model_dump(exclude_none=True)
-            )
-
-            current_properties.set_area_properties(area_id, new_properties)
-
-            current_thermal_props = current_properties.thermal_properties
-
-            self.save_area_properties(study_data, area_id, current_properties)
-
-        study_data.tree.save(
-            current_properties.thermal_properties.model_dump(mode="json", by_alias=True), get_thermal_path()
-        )
+            study_data.save_area_properties(area_id, new_properties)
 
         updated_areas = ", ".join(self.properties.keys())
         return command_succeeded(message=f"Areas properties updated: {updated_areas}")
-
-    def save_area_properties(self, study_data: FileStudy, area_id: str, current_properties: AreaFileData) -> None:
-        study_data.tree.save(
-            current_properties.optimization_properties.model_dump(mode="json", by_alias=True),
-            get_optimization_path(area_id),
-        )
-        if self.study_version >= STUDY_VERSION_8_3:
-            study_data.tree.save(
-                current_properties.adequacy_properties.model_dump(mode="json", by_alias=True),
-                get_adequacy_patch_path(area_id),
-            )
-
-    def fetch_area_properties(self, study_data: FileStudy, area_id: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        current_optim_properties = study_data.tree.get(get_optimization_path(area_id))
-        current_adequacy_patch = (
-            study_data.tree.get(get_adequacy_patch_path(area_id)) if self.study_version >= STUDY_VERSION_8_3 else {}
-        )
-
-        return current_optim_properties, current_adequacy_patch
 
     @override
     def to_dto(self) -> CommandDTO:

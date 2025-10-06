@@ -80,6 +80,8 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             id=study.id,
             name=study.name,
             version=study.version,
+            author=additional_data.author,
+            editor=additional_data.editor,
             created=str(study.created_at),
             updated=str(study.updated_at),
             workspace=study_workspace,
@@ -348,7 +350,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             return False
 
     @override
-    def unarchive_study_output(self, study: Study, output_id: str, keep_src_zip: bool) -> bool:
+    def unarchive_study_output(self, study: Study, output_id: str) -> bool:
         if not (Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}").exists():
             logger.warning(
                 f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
@@ -356,9 +358,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             return False
         try:
             unzip(
-                Path(study.path) / "output" / output_id,
-                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}",
-                remove_source_zip=not keep_src_zip,
+                Path(study.path) / "output" / output_id, Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}"
             )
             remove_from_cache(self.cache, study.id)
             return True

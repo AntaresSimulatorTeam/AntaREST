@@ -16,6 +16,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -23,10 +24,12 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -35,6 +38,7 @@ from antarest.study.business.model.sts_model import (
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
     XpansionSettings,
@@ -45,7 +49,9 @@ from antarest.study.dao.api.adequacy_patch_parameters_dao import (
     ReadOnlyAdequacyPatchParametersDao,
 )
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
+from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao, ReadOnlyAreaPropertiesDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
@@ -56,6 +62,7 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 )
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao, ReadOnlyPlaylistConfigDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
+from antarest.study.dao.api.scenario_builder_dao import ReadOnlyScenarioBuilderDao, ScenarioBuilderDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
@@ -79,9 +86,12 @@ class ReadOnlyStudyDao(
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
     ReadOnlyTimeSeriesConfigDao,
+    ReadOnlyDistrictDao,
     ReadOnlyLayerDao,
     ReadOnlyPlaylistConfigDao,
     ReadOnlyUserResourcesDao,
+    ReadOnlyAreaPropertiesDao,
+    ReadOnlyScenarioBuilderDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -107,9 +117,12 @@ class StudyDao(
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
+    DistrictDao,
     LayerDao,
     PlaylistConfigDao,
     UserResourcesDao,
+    ScenarioBuilderDao,
+    AreaPropertiesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -128,6 +141,10 @@ class StudyDao(
         """
         To ease transition, to be removed when all goes through other methods
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_comments(self, comments: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -370,6 +387,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.checks_xpansion_resource_can_be_deleted(resource_type, filename)
 
     @override
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
+        return self._adaptee.get_xpansion_adequacy_criterion()
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._adaptee.get_thematic_trimming()
 
@@ -382,6 +403,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_timeseries_config()
 
     @override
+    def get_district(self, district_id: str) -> District:
+        return self._adaptee.get_district(district_id)
+
+    @override
+    def get_districts(self) -> Sequence[District]:
+        return self._adaptee.get_districts()
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return self._adaptee.district_exists(district_id)
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._adaptee.tmp_get_all_areas()
+
+    @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        return self._adaptee.get_invalid_areas_in_district(areas)
+
+    @override
     def get_layers(self) -> Sequence[Layer]:
         return self._adaptee.get_layers()
 
@@ -392,3 +433,23 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_playlist_config(self) -> Playlist:
         return self._adaptee.get_playlist_config()
+
+    @override
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        return self._adaptee.get_area_properties(area_id)
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._adaptee.get_all_area_properties()
+
+    @override
+    def get_rulesets(self) -> Rulesets:
+        return self._adaptee.get_rulesets()
+
+    @override
+    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
+        return self._adaptee.get_active_ruleset_name(default_ruleset)
+
+    @override
+    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
+        return self._adaptee.get_scenario_by_type(scenario_type)

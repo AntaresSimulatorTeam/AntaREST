@@ -235,6 +235,19 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
     assert launcher_params.xpansion_mode == "cpp"
     assert launcher_params.other_options == "xpansion_sensitivity"
 
+    launcher_params = apply_params(LauncherParametersDTO(xpansion=XpansionParametersDTO(adequacy_criterion=False)))
+    assert launcher_params.xpansion_mode == "cpp"
+    assert launcher_params.other_options == ""
+
+    launcher_params = apply_params(LauncherParametersDTO(xpansion=XpansionParametersDTO(adequacy_criterion=True)))
+    assert launcher_params.xpansion_mode == "cpp"
+    assert launcher_params.other_options == "adequacy_criterion"
+
+    with pytest.raises(
+        ValueError, match="Cannot launch a sensitivity analysis and an adequacy criterion one at the same time"
+    ):
+        XpansionParametersDTO(adequacy_criterion=True, sensitivity_mode=True)
+
     launcher_params = apply_params(LauncherParametersDTO(post_processing=False))
     assert launcher_params.post_processing is False
 

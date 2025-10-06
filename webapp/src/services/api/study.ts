@@ -249,9 +249,39 @@ export const launchStudy = async (
   sid: string,
   options: LaunchOptions = {},
   version: string | undefined = undefined,
+  launcher: string | undefined = undefined,
 ): Promise<string> => {
-  const versionArg = version ? `?version=${version}` : "";
-  const res = await client.post(`/v1/launcher/run/${sid}${versionArg}`, options);
+  const res = await client.post(`/v1/launcher/run/${sid}`, options, {
+    params: { version, launcher },
+  });
+  return res.data;
+};
+
+interface RangeWithDefault {
+  min: number;
+  max: number;
+  default: number;
+}
+
+interface Launcher {
+  id: string;
+  name: string;
+  nbCores: RangeWithDefault;
+  timeLimit: RangeWithDefault;
+}
+
+interface LaunchersConfig {
+  launchers: Launcher[];
+  defaultLauncher: string;
+}
+
+export const getLaunchersConfig = async () => {
+  const res = await client.get<LaunchersConfig>("/v1/launcher/launchers");
+  return res.data;
+};
+
+export const getLauncherVersions = async (): Promise<string[]> => {
+  const res = await client.get("/v1/launcher/versions");
   return res.data;
 };
 
@@ -261,42 +291,6 @@ interface LauncherMetrics {
   nbQueuedJobs: number;
   status: string;
 }
-
-export const getLaunchers = async () => {
-  const res = await client.get<{ engines: string[] }>("/v1/launcher/engines");
-  return res.data.engines;
-};
-
-export const getLauncherVersions = async (): Promise<string[]> => {
-  const res = await client.get("/v1/launcher/versions");
-  return res.data;
-};
-
-interface NbCoresConfig {
-  defaultValue: number;
-  min: number;
-  max: number;
-}
-
-export const getLauncherCores = async (launcherId?: string) => {
-  const res = await client.get<NbCoresConfig>("/v1/launcher/nbcores", {
-    params: { launcher: launcherId },
-  });
-  return res.data;
-};
-
-interface TimeLimitConfig {
-  defaultValue: number;
-  min: number;
-  max: number;
-}
-
-export const getLauncherTimeLimit = async (launcherId?: string) => {
-  const res = await client.get<TimeLimitConfig>("/v1/launcher/time-limit", {
-    params: { launcher: launcherId },
-  });
-  return res.data;
-};
 
 export const getLauncherMetrics = async (launcherId?: string): Promise<LauncherMetrics> => {
   const res = await client.get("/v1/launcher/load", {
@@ -321,6 +315,7 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
   outputId: j.output_id,
   exitCode: j.exit_code,
   ownerId: j.owner.id,
+  ownerName: j.owner.name,
 });
 
 export const getStudyJobs = (
@@ -478,11 +473,13 @@ export async function updateStudyDistrict(
   output: StudyMapDistrict["output"],
   comments: StudyMapDistrict["comments"],
   areas?: StudyMapDistrict["areas"],
+  applyFilter?: string,
 ): Promise<void> {
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,
     comments,
     areas,
+    applyFilter,
   });
 }
 

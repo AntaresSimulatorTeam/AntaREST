@@ -19,8 +19,39 @@ from antares.study.version.model.study_version import StudyVersion
 from antares.study.version.upgrade_app import UpgradeApp
 
 from antarest.core.exceptions import UnsupportedStudyVersion
+from antarest.study.model import (
+    STUDY_VERSION_7_0,
+    STUDY_VERSION_7_1,
+    STUDY_VERSION_7_2,
+    STUDY_VERSION_8,
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_2,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_7,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
+)
 
-AVAILABLE_VERSIONS = ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880", "920", "930"]
+AVAILABLE_VERSIONS = [
+    STUDY_VERSION_7_0,
+    STUDY_VERSION_7_1,
+    STUDY_VERSION_7_2,
+    STUDY_VERSION_8,
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_2,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_7,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
+]
 
 
 class InvalidUpgrade(HTTPException):
@@ -29,13 +60,8 @@ class InvalidUpgrade(HTTPException):
 
 
 class StudyUpgrader:
-    def __init__(self, study_path: Path, target_version: str):
-        try:
-            version = StudyVersion.parse(target_version)
-        except ValueError as e:
-            raise InvalidUpgrade(str(e)) from e
-        else:
-            self.app = UpgradeApp(study_path, version=version)
+    def __init__(self, study_path: Path, target_version: StudyVersion):
+        self.app = UpgradeApp(study_path, version=target_version)
 
     def upgrade(self) -> None:
         try:
@@ -47,14 +73,15 @@ class StudyUpgrader:
         return self.app.should_denormalize
 
 
-def _get_version_index(version: str) -> int:
+def _get_version_index(version: StudyVersion) -> int:
     try:
         return AVAILABLE_VERSIONS.index(version)
     except ValueError:
-        raise UnsupportedStudyVersion(f"Version '{version}' isn't among supported versions: {AVAILABLE_VERSIONS}")
+        available_versions = [f"{v:2d}" for v in AVAILABLE_VERSIONS]
+        raise UnsupportedStudyVersion(f"Version '{version}' isn't among supported versions: {available_versions}")
 
 
-def find_next_version(from_version: str) -> str:
+def find_next_version(from_version: StudyVersion) -> StudyVersion:
     """
     Find the next study version from the given version.
 
@@ -73,7 +100,7 @@ def find_next_version(from_version: str) -> str:
     return AVAILABLE_VERSIONS[start_pos + 1]
 
 
-def check_versions_coherence(from_version: str, target_version: str) -> None:
+def check_versions_coherence(from_version: StudyVersion, target_version: StudyVersion) -> None:
     start_pos = _get_version_index(from_version)
     final_pos = _get_version_index(target_version)
     if final_pos == start_pos:

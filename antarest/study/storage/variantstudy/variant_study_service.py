@@ -49,7 +49,7 @@ from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
-from antarest.login.utils import get_user_id, require_current_user
+from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     RawStudy,
@@ -230,7 +230,7 @@ class VariantStudyService(AbstractStorageService):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
-                user_id=get_user_id(),
+                user_id=get_user_impersonator(),
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
@@ -490,19 +490,18 @@ class VariantStudyService(AbstractStorageService):
     def walk_children(
         self,
         parent_id: str,
-        fun: Callable[[VariantStudy], None],
+        fun: Callable[[Study], None],
         bottom_first: bool,
+        include_parent: bool = True,
     ) -> None:
-        study = self._get_variant_study(
-            parent_id,
-        )
+        study = self._get_study_by_id(parent_id)
         children = self.get_children(parent_id=parent_id)
         # TODO : the bottom_first should always be True, otherwise we will have an infinite loop
-        if not bottom_first:
+        if include_parent and not bottom_first:
             fun(study)
         for child in children:
             self.walk_children(child.id, fun, bottom_first)
-        if bottom_first:
+        if include_parent and bottom_first:
             fun(study)
 
     def get_variants_parents(self, study_id: str) -> List[StudyMetadataDTO]:

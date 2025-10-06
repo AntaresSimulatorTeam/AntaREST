@@ -27,6 +27,7 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
@@ -52,8 +53,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     parse_simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    DistrictSet,
+    AreaConfig,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
@@ -279,7 +279,38 @@ def test_parse_sets(study_path: Path) -> None:
     """
     (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
-    assert _parse_sets(study_path) == {"hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)}
+    assert _parse_sets(study_path) == {
+        "hello": District(id="hello", name="hello", add_areas=["a", "b"], output=True, apply_filter="remove-all")
+    }
+
+    content = """\
+    [hello]
+    output = true
+    apply-filter = add-all
+    - = a
+    - = b
+    """
+    (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
+
+    assert _parse_sets(study_path) == {
+        "hello": District(id="hello", name="hello", subtract_areas=["a", "b"], output=True, apply_filter="add-all")
+    }
+
+    content = """\
+    [hello]
+    output = false
+    apply-filter = add-all
+    - = a
+    - = b
+    + = c
+    """
+    (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
+
+    assert _parse_sets(study_path) == {
+        "hello": District(
+            id="hello", name="hello", subtract_areas=["a", "b"], add_areas=["c"], output=False, apply_filter="add-all"
+        )
+    }
 
 
 def test_parse_area(study_path: Path) -> None:
@@ -299,7 +330,7 @@ def test_parse_area(study_path: Path) -> None:
         version=0,
         output_path=study_path / "output",
         areas={
-            "fr": Area(
+            "fr": AreaConfig(
                 name="FR",
                 thermals=[],
                 renewables=[],
@@ -335,7 +366,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
         version=0,
         output_path=study_path / "output",
         areas={
-            "fr": Area(
+            "fr": AreaConfig(
                 name="FR",
                 thermals=[],
                 renewables=[],
@@ -343,7 +374,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
                 filters_year=["hourly", "weekly", "annual"],
                 filters_synthesis=["daily", "monthly"],
             ),
-            "de": Area(
+            "de": AreaConfig(
                 name="DE",
                 links={},
                 thermals=[],
@@ -733,7 +764,7 @@ def test_config_to_study_index_8_8():
         study_id="my-study",
         version=STUDY_VERSION_8_8,
         areas={
-            "be": Area(
+            "be": AreaConfig(
                 name="BE",
                 links={"fr": LinkConfig()},
                 thermals=[ThermalCluster(name="Nuclear")],
@@ -743,7 +774,7 @@ def test_config_to_study_index_8_8():
                 st_storages=[STStorage(name="Battery")],
                 st_storages_additional_constraints={},
             ),
-            "fr": Area(
+            "fr": AreaConfig(
                 name="FR",
                 links={},
                 thermals=[],
@@ -774,7 +805,7 @@ def test_config_to_study_index_9_2_additional_constraints():
         study_id="my-study",
         version=STUDY_VERSION_9_2,
         areas={
-            "be": Area(
+            "be": AreaConfig(
                 name="BE",
                 links={},
                 thermals=[ThermalCluster(name="Nuclear")],

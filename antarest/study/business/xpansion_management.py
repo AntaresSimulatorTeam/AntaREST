@@ -22,6 +22,7 @@ from antarest.core.exceptions import (
     XpansionFileAlreadyExistsError,
 )
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
@@ -43,6 +44,9 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
     RemoveXpansionResource,
+)
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
+    ReplaceXpansionAdequacyCriterion,
 )
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
@@ -204,3 +208,15 @@ class XpansionManager:
     def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> list[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
         return study.get_study_dao().get_xpansion_resources(resource_type)
+
+    def get_adequacy_criterion(self, study: StudyInterface) -> XpansionAdequacyCriterion:
+        return study.get_study_dao().get_xpansion_adequacy_criterion()
+
+    def replace_adequacy_criterion(
+        self, study: StudyInterface, criterion: XpansionAdequacyCriterion
+    ) -> XpansionAdequacyCriterion:
+        command = ReplaceXpansionAdequacyCriterion(
+            criterion=criterion, command_context=self._command_context, study_version=study.version
+        )
+        study.add_commands([command])
+        return criterion
