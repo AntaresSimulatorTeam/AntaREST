@@ -317,7 +317,7 @@ def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
         raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
 
 
-def validate_ruleset_against_version(version: StudyVersion, ruleset: Ruleset) -> None:
+def validate_ruleset_against_version(version: StudyVersion, ruleset: Ruleset | RulesetUpdate) -> None:
     if version < STUDY_VERSION_9_2:
         _check_min_version(ruleset, "hydro_final_levels", version)
     if version < STUDY_VERSION_9_3:

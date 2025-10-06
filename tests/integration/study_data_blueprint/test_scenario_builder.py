@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from pathlib import Path
+
 import pytest
 from antares.study.version import StudyVersion
 from starlette.testclient import TestClient
@@ -149,11 +151,14 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
 
 
 @pytest.mark.parametrize("version", [STUDY_VERSION_8_8, STUDY_VERSION_9_2])
-def test_scenario_builder_version(version: StudyVersion, study_service: StudyService, admin_client: TestClient) -> None:
+def test_scenario_builder_version(
+    version: StudyVersion, study_service: StudyService, admin_client: TestClient, tmp_path: Path
+) -> None:
     client = admin_client
     study_id = create_raw_study(study_service, version)
 
     # Ensures we cannot ask for scenario types that did not exist in the study version
+
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/hydroFinalLevels")
     if version == STUDY_VERSION_8_8:
         assert res.status_code == 422
@@ -162,3 +167,42 @@ def test_scenario_builder_version(version: StudyVersion, study_service: StudySer
     else:
         assert res.status_code == 200
         assert res.json() == {"hydroFinalLevels": {"fr": {"0": ""}, "be": {"0": ""}}}
+
+    for scenario_type in ["shortTermStorageAdditionalConstraints", "shortTermStorageInflows"]:
+        res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/{scenario_type}")
+        assert res.status_code == 422
+        assert res.json()["exception"] == "InvalidFieldForVersionError"
+        assert res.json()["description"] == f"Invalid scenario types ['{scenario_type}'] provided for version {version}"
+
+    # The same goes for saving data under invalid scenario types
+
+    sts_ac_scenarios = {"fr": {"battery": {"c1": {"0": 2}}}}
+    res = client.put(
+        f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints",
+        json={"shortTermStorageAdditionalConstraints": sts_ac_scenarios},
+    )
+    assert res.status_code == 422
+    assert res.json()["exception"] == "ValidationError"
+    assert f"Field storage_constraints is not a valid field for study version {version}" in res.json()["description"]
+
+    # If the scenario builder is written with wrong values, the reading should also fail
+
+    # Write data directly in the file to bypass verification
+    file_path = tmp_path / "internal_workspace" / study_id / "settings" / "scenariobuilder.dat"
+    file_path.write_text("""[Default Ruleset]
+sts,fr,1,battery = 2
+sts,fr,4,battery = 11
+""")
+
+    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder")
+    assert res.status_code == 422
+    assert res.json()["exception"] == "InvalidFieldForVersionError"
+    assert res.json()["description"] == f"Field storage_inflows is not a valid field for study version {version}"
+
+    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageInflows")
+    assert res.status_code == 422
+    assert res.json()["exception"] == "InvalidFieldForVersionError"
+    assert (
+        res.json()["description"]
+        == f"Invalid scenario types ['shortTermStorageInflows'] provided for version {version}"
+    )
