@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+from pydantic import ValidationError
+
 from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_rulesets
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -122,3 +125,8 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
             storage_inflows={},
         ),
     }
+
+    # Ensures we cannot give scenario types that do not fit the study version
+    rulesets_update = {"default ruleset": RulesetUpdate(storage_inflows={"fr": {"sts": {"2": ""}}})}
+    with pytest.raises(ValidationError, match="Field storage_inflows is not a valid field for study version 8.8"):
+        UpdateScenarioBuilder(data=rulesets_update, command_context=command_context, study_version=version)
