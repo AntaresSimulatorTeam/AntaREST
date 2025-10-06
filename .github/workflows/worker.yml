@@ -33,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AntaresWebWorker
-          path: dist/AntaresWebWorker
+          path: dist/AntaresWebWorker.exe
