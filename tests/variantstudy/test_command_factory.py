@@ -19,7 +19,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import MatrixService
-from antarest.study.business.model.area_model import UpdateAreaUi
+from antarest.study.business.model.area_model import AreaUIUpdate
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -62,10 +62,8 @@ COMMANDS = [
             action=CommandName.UPDATE_AREA_UI.value,
             args={
                 "area_id": "id",
-                "area_ui": UpdateAreaUi(
-                    x=100, y=100, color_rgb=(100, 100, 100), layer_x={}, layer_y={}, layer_color={}
-                ),
                 "layer": "0",
+                "parameters": AreaUIUpdate(x=100, y=100, color_rgb=(100, 100, 100)),
             },
             study_version=STUDY_VERSION_8_8,
         ),

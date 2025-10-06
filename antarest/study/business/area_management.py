@@ -18,7 +18,7 @@ from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_i
 from antarest.study.business.model.area_model import (
     Area,
     AreaCreation,
-    UpdateAreaUi,
+    AreaUIUpdate,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
@@ -168,11 +168,11 @@ class AreaManager:
             thermals=[],
         )
 
-    def update_area_ui(self, study: StudyInterface, area_id: str, area_ui: UpdateAreaUi, layer: str) -> None:
+    def update_area_ui(self, study: StudyInterface, area_id: str, area_ui: AreaUIUpdate, layer: str) -> None:
         command = UpdateAreaUI(
             area_id=area_id,
-            area_ui=area_ui,
             layer=layer,
+            parameters=area_ui,
             command_context=self._command_context,
             study_version=study.version,
         )

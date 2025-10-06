@@ -80,7 +80,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
@@ -1732,7 +1732,7 @@ class StudyService:
         self,
         uuid: str,
         area_id: str,
-        area_ui: UpdateAreaUi,
+        area_ui: AreaUIUpdate,
         layer: str,
     ) -> None:
         study = self.get_study(uuid)
