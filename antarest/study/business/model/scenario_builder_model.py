@@ -335,7 +335,7 @@ def _update_3_levels_mapping(base: _ThreeLevelScenarios, update: _ThreeLevelScen
         _update_2_levels_mapping(base.setdefault(name, {}), mapping)
 
 
-def update_ruleset(base: Ruleset, update: RulesetUpdate) -> None:
+def update_ruleset(base: Ruleset, update: RulesetUpdate, version: StudyVersion) -> None:
     _update_1_level_mapping(base.load, update.load)
     _update_2_levels_mapping(base.thermal, update.thermal)
     _update_1_level_mapping(base.hydro, update.hydro)
@@ -350,14 +350,16 @@ def update_ruleset(base: Ruleset, update: RulesetUpdate) -> None:
     _update_1_level_mapping(base.hydro_final_levels or {}, update.hydro_final_levels)
     _update_2_levels_mapping(base.storage_inflows or {}, update.storage_inflows)
     _update_3_levels_mapping(base.storage_constraints or {}, update.storage_constraints)
+    # Validate the final ruleset
+    validate_ruleset_against_version(version, base)
 
 
-def update_rulesets(base: Rulesets, update: RulesetsUpdate) -> None:
+def update_rulesets(base: Rulesets, update: RulesetsUpdate, version: StudyVersion) -> None:
     lower_case_base = {k.lower(): v for k, v in base.items()}
     for name, ruleset_update in update.items():
         if name.lower() not in lower_case_base:
             ruleset = Ruleset()
-            update_ruleset(ruleset, ruleset_update)
+            update_ruleset(ruleset, ruleset_update, version)
             base[name] = ruleset
         else:
-            update_ruleset(lower_case_base[name.lower()], ruleset_update)
+            update_ruleset(lower_case_base[name.lower()], ruleset_update, version)

@@ -74,7 +74,7 @@ class UpdateScenarioBuilder(ICommand):
             CommandOutput: The output of the command, indicating the status of the operation.
         """
         rulesets = study_data.get_rulesets()
-        update_rulesets(rulesets, self.data)
+        update_rulesets(rulesets, self.data, self.study_version)
 
         active_rules_scenario = study_data.get_active_ruleset_name()
         if active_rules_scenario and active_rules_scenario.lower() not in {k.lower() for k in rulesets.keys()}:

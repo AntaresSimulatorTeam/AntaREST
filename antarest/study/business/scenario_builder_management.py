@@ -56,5 +56,5 @@ class ScenarioBuilderManager:
 
         # Extract the updated table form for the given scenario type
         ruleset = self.get_rulesets(study)[ruleset_name]
-        update_ruleset(ruleset, ruleset_update)
+        update_ruleset(ruleset, ruleset_update, study.version)
         return ruleset.get(scenario_type)
