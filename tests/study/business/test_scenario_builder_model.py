@@ -20,6 +20,7 @@ from antarest.study.business.model.scenario_builder_model import (
     update_ruleset,
 )
 from antarest.study.business.model.study_index import StudyIndex
+from antarest.study.model import STUDY_VERSION_9_3
 
 
 def test_ruleset__initialization_from_study() -> None:
@@ -33,10 +34,7 @@ def test_ruleset__initialization_from_study() -> None:
         sts_additional_constraints={"be": {}, "fr": {"fr_storage_1": ["c1", "c2"], "fr_storage_2": []}},
     )
 
-    ruleset = initialize_ruleset_with_version(
-        ["1", "2"],
-        index,
-    )
+    ruleset = initialize_ruleset_with_version(["1", "2"], index, STUDY_VERSION_9_3)
 
     # expect RAND value for each year
     expected_mappings = {"1": "", "2": ""}
@@ -91,18 +89,18 @@ def test_update_ruleset_simple_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"1": 2, "2": 1}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
 
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"2": 3}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 3}}
 
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"2": ""}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": ""}}
 
 
@@ -118,18 +116,18 @@ def test_update_ruleset_2_levels_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"1": 2, "2": 1}}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": 1}}}
 
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"2": 3}, "item2": {"1": 2, "2": 1}}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": 3}, "item2": {"1": 2, "2": 1}}}
 
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"2": ""}}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": ""}, "item2": {"1": 2, "2": 1}}}
 
 
@@ -138,18 +136,18 @@ def test_update_ruleset_3_levels_scenarios() -> None:
     ruleset = Ruleset()
     update = Ruleset()
     update.storage_constraints = {"be": {"storage1": {"c1": mapping}}}
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert update.storage_constraints == {"be": {"storage1": {"c1": mapping}}}
 
     update = Ruleset()
     update.storage_constraints = {"be": {"storage1": {"c1": {"2": 3}}}}
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.storage_constraints == {"be": {"storage1": {"c1": {"1": 2, "2": 3}}}}
 
     update = Ruleset()
     update.storage_constraints = {"be": {"storage1": {"c1": {"2": ""}}}}
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.storage_constraints == {"be": {"storage1": {"c1": {"1": 2, "2": ""}}}}
 
 
