@@ -12,7 +12,7 @@
 
 
 import enum
-from typing import Iterable, Literal, Mapping, TypeAlias, cast
+from typing import Any, Iterable, Literal, Mapping, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -263,47 +263,35 @@ def initialize_ruleset(
     if invalid_types := scenario_types - acceptable_types:
         raise InvalidFieldForVersionError(f"Invalid scenario types {invalid_types} provided for version {version}")
 
-    return Ruleset(
-        load=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-        if ScenarioType.LOAD in scenario_types
-        else {},
-        thermal=_create_2_levels_scenarios_mapping(names=index.thermal_ids, years=years)
-        if ScenarioType.THERMAL in scenario_types
-        else {},
-        hydro=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-        if ScenarioType.HYDRO in scenario_types
-        else {},
-        hydro_initial_levels=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-        if ScenarioType.HYDRO_INITIAL_LEVEL in scenario_types
-        else {},
-        hydro_final_levels=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-        if ScenarioType.HYDRO_FINAL_LEVEL in scenario_types
-        else {},
-        hydro_generation_power=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-        if ScenarioType.HYDRO_GENERATION_POWER in scenario_types
-        else {},
-        solar=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-        if ScenarioType.SOLAR in scenario_types
-        else {},
-        wind=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-        if ScenarioType.WIND in scenario_types
-        else {},
-        renewable=_create_2_levels_scenarios_mapping(names=index.renewable_ids, years=years)
-        if ScenarioType.RENEWABLE in scenario_types
-        else {},
-        storage_inflows=_create_2_levels_scenarios_mapping(names=index.storage_ids, years=years)
-        if ScenarioType.SHORT_TERM_STORAGE_INFLOWS in scenario_types
-        else {},
-        binding_constraints=_create_1_level_scenarios_mapping(names=index.bc_group_ids, years=years)
-        if ScenarioType.BINDING_CONSTRAINTS in scenario_types
-        else {},
-        ntc=_create_1_level_scenarios_mapping(names=index.link_ids, years=years)
-        if ScenarioType.LINK in scenario_types
-        else {},
-        storage_constraints=_create_3_levels_scenarios_mapping(names=index.sts_constraint_ids, years=years)
-        if ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS in scenario_types
-        else {},
-    )
+    args: dict[str, Any] = {}
+    if ScenarioType.LOAD in scenario_types:
+        args["load"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+    if ScenarioType.THERMAL in scenario_types:
+        args["thermal"] = _create_2_levels_scenarios_mapping(names=index.thermal_ids, years=years)
+    if ScenarioType.HYDRO in scenario_types:
+        args["hydro"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+    if ScenarioType.HYDRO_INITIAL_LEVEL in scenario_types:
+        args["hydro_initial_levels"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+    if ScenarioType.HYDRO_FINAL_LEVEL in scenario_types:
+        args["hydro_final_levels"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+    if ScenarioType.HYDRO_GENERATION_POWER in scenario_types:
+        args["hydro_generation_power"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+    if ScenarioType.SOLAR in scenario_types:
+        args["solar"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+    if ScenarioType.WIND in scenario_types:
+        args["wind"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+    if ScenarioType.RENEWABLE in scenario_types:
+        args["renewable"] = _create_2_levels_scenarios_mapping(names=index.renewable_ids, years=years)
+    if ScenarioType.SHORT_TERM_STORAGE_INFLOWS in scenario_types:
+        args["storage_inflows"] = _create_2_levels_scenarios_mapping(names=index.storage_ids, years=years)
+    if ScenarioType.BINDING_CONSTRAINTS in scenario_types:
+        args["binding_constraints"] = _create_1_level_scenarios_mapping(names=index.bc_group_ids, years=years)
+    if ScenarioType.LINK in scenario_types:
+        args["ntc"] = _create_1_level_scenarios_mapping(names=index.link_ids, years=years)
+    if ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS in scenario_types:
+        args["storage_constraints"] = _create_3_levels_scenarios_mapping(names=index.sts_constraint_ids, years=years)
+
+    return Ruleset.model_validate(args)
 
 
 def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries | None) -> None:
