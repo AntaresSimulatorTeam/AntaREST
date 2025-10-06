@@ -11,27 +11,17 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List
 
-from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotFound
-from antarest.core.model import JSON
+from antarest.core.exceptions import DuplicateAreaName, LayerNotFound
 from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_info_map
 from antarest.study.business.model.area_model import (
     Area,
     AreaCreation,
     UpdateAreaUi,
 )
-from antarest.study.business.model.area_properties_model import (
-    AreaProperties,
-    AreaPropertiesUpdate,
-)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AreaFileData,
-    AreaPropertiesFileData,
-    ThermalAreasProperties,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
@@ -40,15 +30,10 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
-from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
-
-
-_ALL_AREAS_PATH = "input/areas"
-_THERMAL_AREAS_PATH = "input/thermal/areas"
 
 
 class AreaManager:
@@ -64,93 +49,6 @@ class AreaManager:
         Initializes the AreaManager.
         """
         self._command_context = command_context
-
-    # noinspection SpellCheckingInspection
-    def get_all_area_props(self, study: StudyInterface) -> Mapping[str, AreaProperties]:
-        """
-        Retrieves all areas of a study.
-
-        Args:
-            study: The raw study object.
-        Returns:
-            A mapping of area IDs to area properties.
-        Raises:
-            ConfigFileNotFound: if a configuration file is not found.
-        """
-        file_study = study.get_files()
-
-        # Get the area information from the `/input/areas/<area>` file.
-        path = _ALL_AREAS_PATH
-        try:
-            areas_cfg = file_study.tree.get(path.split("/"), depth=5)
-        except KeyError:
-            raise ConfigFileNotFound(path) from None
-        else:
-            # "list" and "sets" must be removed: we only need areas.
-            areas_cfg.pop("list", None)
-            areas_cfg.pop("sets", None)
-
-        # Get the unserverd and spilled energy costs from the `/input/thermal/areas.ini` file.
-        path = _THERMAL_AREAS_PATH
-        try:
-            thermal_cfg = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise ConfigFileNotFound(path) from None
-        else:
-            thermal_areas = ThermalAreasProperties(**thermal_cfg)
-
-        # areas_cfg contains a dictionary where the keys are the area IDs,
-        # and the values are objects that can be converted to `AreaFolder`.
-        area_map: Dict[str, AreaProperties] = {}
-        for area_id, area_cfg in areas_cfg.items():
-            area_folder = AreaFileData(**area_cfg)
-            props_data = AreaPropertiesFileData(
-                thermal_properties=thermal_areas,
-                optimization_properties=area_folder.optimization,
-                adequacy_patch_properties=area_folder.adequacy_patch,
-            )
-            area_map[area_id] = props_data.get_area_properties(area_id, study.version)
-
-        return area_map
-
-    # noinspection SpellCheckingInspection
-    def update_areas_props(
-        self, study: StudyInterface, properties: Mapping[str, AreaPropertiesUpdate]
-    ) -> Mapping[str, AreaProperties]:
-        """
-        Update the properties of ares.
-
-        Args:
-            study: The raw study object.
-            properties: A mapping of area IDs to area properties.
-
-        Returns:
-            A mapping of ALL area IDs to area properties.
-        """
-        old_areas_by_ids = self.get_all_area_props(study)
-        new_areas_by_ids = dict(old_areas_by_ids)
-
-        areas_properties: Dict[str, AreaPropertiesUpdate] = {}
-
-        for area_id, update_area in properties.items():
-            old_area = old_areas_by_ids[area_id]
-            update_data = update_area.model_dump(exclude_none=True)
-            new_areas_by_ids[area_id] = old_area.model_copy(update=update_data)
-            areas_properties[area_id] = update_area
-
-        command = UpdateAreasProperties(
-            properties=areas_properties,
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-
-        study.add_commands([command])
-
-        return new_areas_by_ids
-
-    @staticmethod
-    def get_table_schema() -> JSON:
-        return AreaProperties.model_json_schema()
 
     def get_all_areas(self, study: StudyInterface) -> List[Area]:
         """Retrieve all physical areas of a raw study."""

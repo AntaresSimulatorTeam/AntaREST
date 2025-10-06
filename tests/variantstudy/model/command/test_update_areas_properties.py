@@ -13,6 +13,8 @@
 
 from antarest.study.business.model.area_properties_model import (
     AreaPropertiesUpdate,
+)
+from antarest.study.dao.file.file_study_area_properties_dao import (
     get_adequacy_patch_path,
     get_optimization_path,
     get_thermal_path,

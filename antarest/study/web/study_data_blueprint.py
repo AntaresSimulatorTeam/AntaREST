@@ -478,7 +478,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Getting MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return rulesets_model_to_view(study_service.scenario_builder_manager.get_config(study_interface))
+        return rulesets_model_to_view(study_service.scenario_builder_manager.get_rulesets(study_interface))
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
@@ -563,7 +563,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Updating MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.scenario_builder_manager.update_config(study_interface, rulesets_view_to_model(data))
+        study_service.scenario_builder_manager.update_scenario(study_interface, rulesets_view_to_model(data))
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
@@ -1383,7 +1383,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.update_area_properties(study_interface, area_id, form_fields)
+        study_service.properties_manager.update_all_area_properties(
+            study_interface,
+            {area_id: form_fields},
+        )
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

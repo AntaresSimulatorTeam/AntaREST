@@ -216,7 +216,7 @@ class AreaFileData(AntaresBaseModel):
 
 
 # noinspection SpellCheckingInspection
-class ThermalAreasProperties(IniProperties):
+class ThermalAreasFileData(IniProperties):
     """
     Object linked to `/input/thermal/areas.ini` information.
     """
@@ -241,7 +241,7 @@ class ThermalAreasProperties(IniProperties):
 
 
 class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    thermal_properties: ThermalAreasProperties
+    thermal_properties: ThermalAreasFileData
     optimization_properties: OptimizationFileData
     adequacy_patch_properties: AdequacyPatchFileData
 
