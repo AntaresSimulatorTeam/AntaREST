@@ -118,4 +118,4 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         """
         study_data = self.get_file_study()
 
-        study_data.tree.save(serialize_rulesets(rulesets), SCENARIO_BUILDER_PATH)
+        study_data.tree.save(serialize_rulesets(rulesets, study_data.config.version), SCENARIO_BUILDER_PATH)

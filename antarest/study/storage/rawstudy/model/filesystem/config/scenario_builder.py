@@ -16,6 +16,8 @@ Serialization and parsing for scenariobuilder.dat file
 
 from typing import Any, TypeVar, cast, overload
 
+from antares.study.version import StudyVersion
+
 from antarest.core.utils.dict_utils import iter_nested, iter_nested_2, iter_nested_3
 from antarest.study.business.model.scenario_builder_model import (
     RANDOM,
@@ -30,6 +32,7 @@ from antarest.study.business.model.scenario_builder_model import (
     RulesetUpdate,
     ScenarioType,
     StorageConstraintsScenarios,
+    validate_ruleset_against_version,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -106,8 +109,9 @@ def _serialize_sts_constraints(section: dict[str, RuleValue], data: StorageConst
             section[f"{symbol},{area},{year},{storage},{constraint}"] = value
 
 
-def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
+def serialize_ruleset(ruleset: Ruleset, version: StudyVersion) -> dict[str, RuleValue]:
     section: dict[str, RuleValue] = {}
+    validate_ruleset_against_version(version, ruleset)
     _serialize_common(section, ScenarioType.LOAD, ruleset.load)
     _serialize_clusters(section, ScenarioType.THERMAL, ruleset.thermal)
     _serialize_common(section, ScenarioType.HYDRO, ruleset.hydro)
@@ -126,10 +130,10 @@ def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
     return dict(sorted(section.items()))
 
 
-def serialize_rulesets(rulesets: Rulesets) -> RulesetsFileData:
+def serialize_rulesets(rulesets: Rulesets, version: StudyVersion) -> RulesetsFileData:
     sections = {}
     for ruleset_name, ruleset in rulesets.items():
-        sections[ruleset_name] = serialize_ruleset(ruleset)
+        sections[ruleset_name] = serialize_ruleset(ruleset, version)
     return sections
 
 
