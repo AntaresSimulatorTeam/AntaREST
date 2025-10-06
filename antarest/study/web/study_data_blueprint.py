@@ -42,7 +42,7 @@ from antarest.study.business.correlation_management import (
     CorrelationFormFields,
     CorrelationMatrix,
 )
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
