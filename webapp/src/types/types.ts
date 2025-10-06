@@ -44,6 +44,8 @@ export enum StudyType {
 
 export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;
+  editor: string;
+  author: string;
   type: StudyType;
   created: string;
   updated: string;
@@ -64,6 +66,8 @@ export interface StudyMetadata {
   creationDate: string;
   modificationDate: string;
   owner: StudyMetadataOwner;
+  editor: string;
+  author: string;
   type: StudyType;
   version: string;
   workspace: string;

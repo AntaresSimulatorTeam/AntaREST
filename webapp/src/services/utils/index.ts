@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import i18n from "@/i18n";
-import { type TFunction } from "i18next";
+import type { TFunction } from "i18next";
 import moment from "moment";
 import * as R from "ramda";
+import i18n from "@/i18n";
 import {
-  RoleType,
   type GenericInfo,
   type JWTGroup,
+  RoleType,
   type StudyMetadata,
   type StudyMetadataDTO,
   type UserInfo,
@@ -36,6 +36,8 @@ export const convertStudyDtoToMetadata = (
   creationDate: metadata.created,
   modificationDate: metadata.updated,
   owner: metadata.owner,
+  author: metadata.author,
+  editor: metadata.editor,
   groups: metadata.groups,
   type: metadata.type,
   publicMode: metadata.public_mode,
@@ -202,46 +204,6 @@ export const createListFromTree = ({ node, children }: VariantTree): GenericInfo
 
 export const sortByName = <T extends { name: string }>(list: T[]) =>
   R.sortBy(R.compose(R.toLower, R.prop("name")), list);
-
-/**
- * Converts a name string to an ID format.
- *
- * @deprecated Please use `nameToId` instead.
- *
- * @param name - The string to transform.
- * @returns The transformed ID string.
- */
-export const transformNameToId = (name: string): string => {
-  let duppl = false;
-  let id = "";
-
-  for (let char, index = 0, str = name, { length } = str; index < length; index += 1) {
-    char = str[index];
-
-    if (
-      (char >= "a" && char <= "z") ||
-      (char >= "A" && char <= "Z") ||
-      (char >= "0" && char <= "9") ||
-      char === "_" ||
-      char === "-" ||
-      char === "(" ||
-      char === ")" ||
-      char === "," ||
-      char === "&" ||
-      char === " "
-    ) {
-      id += char;
-      duppl = false;
-    } else if (!duppl) {
-      id += " ";
-      duppl = true;
-    }
-  }
-
-  const idTrimmed = id.trim();
-
-  return idTrimmed.toLowerCase();
-};
 
 /**
  * Converts a name string to a valid ID string.
