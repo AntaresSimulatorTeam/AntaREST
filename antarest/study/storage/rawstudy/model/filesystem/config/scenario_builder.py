@@ -112,15 +112,16 @@ def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
     _serialize_clusters(section, ScenarioType.THERMAL, ruleset.thermal)
     _serialize_common(section, ScenarioType.HYDRO, ruleset.hydro)
     _serialize_hydro_levels(section, ScenarioType.HYDRO_INITIAL_LEVEL, ruleset.hydro_initial_levels)
-    _serialize_hydro_levels(section, ScenarioType.HYDRO_FINAL_LEVEL, ruleset.hydro_final_levels)
     _serialize_common(section, ScenarioType.HYDRO_GENERATION_POWER, ruleset.hydro_generation_power)
     _serialize_common(section, ScenarioType.WIND, ruleset.wind)
     _serialize_common(section, ScenarioType.SOLAR, ruleset.solar)
     _serialize_links(section, ScenarioType.LINK, ruleset.ntc)
     _serialize_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
     _serialize_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
-    _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.storage_inflows)
-    _serialize_sts_constraints(section, ruleset.storage_constraints)
+    # Optional fields
+    _serialize_hydro_levels(section, ScenarioType.HYDRO_FINAL_LEVEL, ruleset.hydro_final_levels or {})
+    _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.storage_inflows or {})
+    _serialize_sts_constraints(section, ruleset.storage_constraints or {})
 
     return dict(sorted(section.items()))
 

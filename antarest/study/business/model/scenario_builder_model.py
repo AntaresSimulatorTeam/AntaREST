@@ -245,7 +245,7 @@ def _get_scenario_types_according_to_version(version: StudyVersion) -> set[Scena
     if version < STUDY_VERSION_9_3:
         all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
         all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
-    return all_scenario_types
+    return all_scenario_types  # type: ignore
 
 
 def initialize_ruleset_with_version(
@@ -340,15 +340,16 @@ def update_ruleset(base: Ruleset, update: RulesetUpdate) -> None:
     _update_2_levels_mapping(base.thermal, update.thermal)
     _update_1_level_mapping(base.hydro, update.hydro)
     _update_1_level_mapping(base.hydro_initial_levels, update.hydro_initial_levels)
-    _update_1_level_mapping(base.hydro_final_levels, update.hydro_final_levels)
     _update_1_level_mapping(base.hydro_generation_power, update.hydro_generation_power)
     _update_1_level_mapping(base.solar, update.solar)
     _update_1_level_mapping(base.wind, update.wind)
     _update_1_level_mapping(base.binding_constraints, update.binding_constraints)
     _update_2_levels_mapping(base.renewable, update.renewable)
-    _update_2_levels_mapping(base.storage_inflows, update.storage_inflows)
     _update_1_level_mapping(base.ntc, update.ntc)
-    _update_3_levels_mapping(base.storage_constraints, update.storage_constraints)
+    # Optional fields
+    _update_1_level_mapping(base.hydro_final_levels or {}, update.hydro_final_levels)
+    _update_2_levels_mapping(base.storage_inflows or {}, update.storage_inflows)
+    _update_3_levels_mapping(base.storage_constraints or {}, update.storage_constraints)
 
 
 def update_rulesets(base: Rulesets, update: RulesetsUpdate) -> None:
