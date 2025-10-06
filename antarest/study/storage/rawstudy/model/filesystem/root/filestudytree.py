@@ -47,9 +47,13 @@ class FileStudyTree(FolderNode):
         if (self.config.path / "logs").exists():
             children["logs"] = BucketNode(self.matrix_mapper, self.config.next_file("logs"))
 
+
         if self.config.outputs:
             output_config = self.config.next_file("output")
             output_config.path = self.config.output_path or output_config.path
             children["output"] = Output(self.matrix_mapper, output_config)
+
+        if (self.config.path / "outages").exists():
+            children["outages"] = BucketNode(self.matrix_mapper, self.config.next_file("outages"))
 
         return children
