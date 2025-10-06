@@ -48,7 +48,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         """
         study_data = self.get_file_study()
         scenario_builder_data = study_data.tree.get(["settings", "scenariobuilder"])
-        return parse_rulesets_from_any(scenario_builder_data)
+        return parse_rulesets_from_any(scenario_builder_data, study_data.config.version)
 
     @override
     def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:

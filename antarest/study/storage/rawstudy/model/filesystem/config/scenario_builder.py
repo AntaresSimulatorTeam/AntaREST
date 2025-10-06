@@ -241,15 +241,17 @@ def parse_ruleset_update(ruleset_data: RulesetFileData) -> RulesetUpdate:
     return _parse_ruleset(ruleset_data, cls=RulesetUpdate)
 
 
-def parse_rulesets_from_any(data: Any) -> Rulesets:
+def parse_rulesets_from_any(data: Any, version: StudyVersion) -> Rulesets:
     rulesets_data = cast(RulesetsFileData, data)
-    return parse_rulesets(rulesets_data)
+    return parse_rulesets(rulesets_data, version)
 
 
-def parse_rulesets(rulesets_data: RulesetsFileData) -> Rulesets:
+def parse_rulesets(rulesets_data: RulesetsFileData, version: StudyVersion) -> Rulesets:
     rulesets: Rulesets = {}
     for ruleset_name, data in rulesets_data.items():
-        rulesets[ruleset_name] = parse_ruleset(data)
+        ruleset = parse_ruleset(data)
+        validate_ruleset_against_version(version, ruleset)
+        rulesets[ruleset_name] = ruleset
     return rulesets
 
 
