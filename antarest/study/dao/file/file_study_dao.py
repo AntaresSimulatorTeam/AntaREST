@@ -19,6 +19,7 @@ from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import Fil
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
 from antarest.study.dao.file.file_study_area_properties_dao import FileStudyAreaPropertiesDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
+from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
 from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
 from antarest.study.dao.file.file_study_layer_dao import FileStudyLayerDao
@@ -51,6 +52,7 @@ class FileStudyTreeDao(
     FileStudyThematicTrimmingDao,
     FileStudyAdequacyPatchParametersDao,
     FileStudyTimeSeriesConfigDao,
+    FileStudyDistrictDao,
     FileStudyLayerDao,
     FileStudyPlaylistConfigDao,
     FileStudyUserResourceDao,

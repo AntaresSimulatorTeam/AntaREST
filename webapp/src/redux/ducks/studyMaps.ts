@@ -527,6 +527,7 @@ export const updateStudyMapDistrict = createAsyncThunk<
     output: StudyMapDistrict["output"];
     comments: StudyMapDistrict["comments"];
     areas?: StudyMapDistrict["areas"];
+    applyFilter?: string;
   },
   {
     studyId: StudyMetadata["id"];
@@ -534,11 +535,12 @@ export const updateStudyMapDistrict = createAsyncThunk<
     output: StudyMapDistrict["output"];
     comments: StudyMapDistrict["comments"];
     areas?: StudyMapDistrict["areas"];
+    applyFilter?: string;
   }
 >(n("UPDATE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
   try {
-    const { studyId, districtId, output, comments, areas } = data;
-    await studyApi.updateStudyDistrict(studyId, districtId, output, comments, areas);
+    const { studyId, districtId, output, comments, areas, applyFilter } = data;
+    await studyApi.updateStudyDistrict(studyId, districtId, output, comments, areas, applyFilter);
     return { districtId, output, comments, areas };
   } catch (error) {
     return rejectWithValue(error);

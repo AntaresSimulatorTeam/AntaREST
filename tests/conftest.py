@@ -85,7 +85,7 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
         study_id="",
         version=study_version,
         areas={},
-        sets={},
+        districts={},
     )
     # sourcery skip: inline-immediately-returned-variable
     mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
