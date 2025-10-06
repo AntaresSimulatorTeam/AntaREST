@@ -107,13 +107,16 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     renewable: AreaItemsScenarios = Field(default_factory=dict)
     binding_constraints: BcGroupScenarios = Field(default_factory=dict)
     # Introduced in v9.2
-    hydro_final_levels: HydroLevelsScenarios | None = None
+    hydro_final_levels: HydroLevelsScenarios = Field(default_factory=dict)
     # Introduced in v9.3
-    storage_inflows: AreaItemsScenarios | None = None
-    storage_constraints: StorageConstraintsScenarios | None = None
+    storage_inflows: AreaItemsScenarios = Field(default_factory=dict)
+    storage_constraints: StorageConstraintsScenarios = Field(default_factory=dict)
 
     def get(self, scenario_type: ScenarioType) -> AnyScenarios:
-        return _get_by_type(self, scenario_type) or {}
+        res = _get_by_type(self, scenario_type)
+        if res is None:
+            raise ValueError("Should not have a None scenario mapping in Ruleset")
+        return res
 
     def set(self, scenario_type: ScenarioType, scenarios: AnyScenarios) -> None:
         _set_by_type(self, scenario_type, scenarios)
@@ -264,35 +267,47 @@ def initialize_ruleset_with_version(
     if invalid_types := scenario_types - acceptable_types:
         raise InvalidFieldForVersionError(f"Invalid scenario types {invalid_types} provided for version {version}")
 
-    args: dict[str, Any] = {}
-    if ScenarioType.LOAD in scenario_types:
-        args["load"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-    if ScenarioType.THERMAL in scenario_types:
-        args["thermal"] = _create_2_levels_scenarios_mapping(names=index.thermal_ids, years=years)
-    if ScenarioType.HYDRO in scenario_types:
-        args["hydro"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-    if ScenarioType.HYDRO_INITIAL_LEVEL in scenario_types:
-        args["hydro_initial_levels"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-    if ScenarioType.HYDRO_FINAL_LEVEL in scenario_types:
-        args["hydro_final_levels"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-    if ScenarioType.HYDRO_GENERATION_POWER in scenario_types:
-        args["hydro_generation_power"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-    if ScenarioType.SOLAR in scenario_types:
-        args["solar"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-    if ScenarioType.WIND in scenario_types:
-        args["wind"] = _create_1_level_scenarios_mapping(names=index.area_ids, years=years)
-    if ScenarioType.RENEWABLE in scenario_types:
-        args["renewable"] = _create_2_levels_scenarios_mapping(names=index.renewable_ids, years=years)
-    if ScenarioType.SHORT_TERM_STORAGE_INFLOWS in scenario_types:
-        args["storage_inflows"] = _create_2_levels_scenarios_mapping(names=index.storage_ids, years=years)
-    if ScenarioType.BINDING_CONSTRAINTS in scenario_types:
-        args["binding_constraints"] = _create_1_level_scenarios_mapping(names=index.bc_group_ids, years=years)
-    if ScenarioType.LINK in scenario_types:
-        args["ntc"] = _create_1_level_scenarios_mapping(names=index.link_ids, years=years)
-    if ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS in scenario_types:
-        args["storage_constraints"] = _create_3_levels_scenarios_mapping(names=index.sts_constraint_ids, years=years)
-
-    return Ruleset.model_validate(args)
+    return Ruleset(
+        load=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.LOAD in scenario_types
+        else {},
+        thermal=_create_2_levels_scenarios_mapping(names=index.thermal_ids, years=years)
+        if ScenarioType.THERMAL in scenario_types
+        else {},
+        hydro=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.HYDRO in scenario_types
+        else {},
+        hydro_initial_levels=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.HYDRO_INITIAL_LEVEL in scenario_types
+        else {},
+        hydro_final_levels=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.HYDRO_FINAL_LEVEL in scenario_types
+        else {},
+        hydro_generation_power=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.HYDRO_GENERATION_POWER in scenario_types
+        else {},
+        solar=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.SOLAR in scenario_types
+        else {},
+        wind=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.WIND in scenario_types
+        else {},
+        renewable=_create_2_levels_scenarios_mapping(names=index.renewable_ids, years=years)
+        if ScenarioType.RENEWABLE in scenario_types
+        else {},
+        storage_inflows=_create_2_levels_scenarios_mapping(names=index.storage_ids, years=years)
+        if ScenarioType.SHORT_TERM_STORAGE_INFLOWS in scenario_types
+        else {},
+        binding_constraints=_create_1_level_scenarios_mapping(names=index.bc_group_ids, years=years)
+        if ScenarioType.BINDING_CONSTRAINTS in scenario_types
+        else {},
+        ntc=_create_1_level_scenarios_mapping(names=index.link_ids, years=years)
+        if ScenarioType.LINK in scenario_types
+        else {},
+        storage_constraints=_create_3_levels_scenarios_mapping(names=index.sts_constraint_ids, years=years)
+        if ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS in scenario_types
+        else {},
+    )
 
 
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
@@ -340,16 +355,15 @@ def update_ruleset(base: Ruleset, update: RulesetUpdate, version: StudyVersion) 
     _update_2_levels_mapping(base.thermal, update.thermal)
     _update_1_level_mapping(base.hydro, update.hydro)
     _update_1_level_mapping(base.hydro_initial_levels, update.hydro_initial_levels)
+    _update_1_level_mapping(base.hydro_final_levels, update.hydro_final_levels)
     _update_1_level_mapping(base.hydro_generation_power, update.hydro_generation_power)
     _update_1_level_mapping(base.solar, update.solar)
     _update_1_level_mapping(base.wind, update.wind)
     _update_1_level_mapping(base.binding_constraints, update.binding_constraints)
     _update_2_levels_mapping(base.renewable, update.renewable)
+    _update_2_levels_mapping(base.storage_inflows, update.storage_inflows)
     _update_1_level_mapping(base.ntc, update.ntc)
-    # Optional fields
-    _update_1_level_mapping(base.hydro_final_levels or {}, update.hydro_final_levels)
-    _update_2_levels_mapping(base.storage_inflows or {}, update.storage_inflows)
-    _update_3_levels_mapping(base.storage_constraints or {}, update.storage_constraints)
+    _update_3_levels_mapping(base.storage_constraints, update.storage_constraints)
     # Validate the final ruleset
     validate_ruleset_against_version(version, base)
 
