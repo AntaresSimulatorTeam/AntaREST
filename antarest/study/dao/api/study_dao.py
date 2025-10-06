@@ -24,6 +24,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
@@ -50,6 +51,7 @@ from antarest.study.dao.api.adequacy_patch_parameters_dao import (
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao, ReadOnlyAreaPropertiesDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
@@ -84,6 +86,7 @@ class ReadOnlyStudyDao(
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
     ReadOnlyTimeSeriesConfigDao,
+    ReadOnlyDistrictDao,
     ReadOnlyLayerDao,
     ReadOnlyPlaylistConfigDao,
     ReadOnlyUserResourcesDao,
@@ -114,6 +117,7 @@ class StudyDao(
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
+    DistrictDao,
     LayerDao,
     PlaylistConfigDao,
     UserResourcesDao,
@@ -393,6 +397,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         return self._adaptee.get_timeseries_config()
+
+    @override
+    def get_district(self, district_id: str) -> District:
+        return self._adaptee.get_district(district_id)
+
+    @override
+    def get_districts(self) -> Sequence[District]:
+        return self._adaptee.get_districts()
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return self._adaptee.district_exists(district_id)
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._adaptee.tmp_get_all_areas()
+
+    @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        return self._adaptee.get_invalid_areas_in_district(areas)
 
     @override
     def get_layers(self) -> Sequence[Layer]:

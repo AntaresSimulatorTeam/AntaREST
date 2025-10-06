@@ -256,7 +256,7 @@ class StudyDownloader:
             StudyDownloader.select_filter(
                 matrix,
                 year,
-                {k: v for k, v in config.sets.items() if v.output},
+                {k: v for k, v in config.districts.items() if v.output},
                 study,
                 f"{url}/areas",
                 data,

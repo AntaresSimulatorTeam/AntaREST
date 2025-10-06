@@ -1493,33 +1493,15 @@
       "st_storages_additional_constraints": {}
     }
   },
-  "sets": {
+  "districts": {
     "all areas": {
-      "ALL": [
-        "hourly",
-        "daily",
-        "weekly",
-        "monthly",
-        "annual"
-      ],
+      "id": "all areas",
       "name": "All areas",
-      "inverted_set": true,
-      "areas": null,
+      "applyFilter": "add-all",
+      "addAreas": [],
+      "subtractAreas": [],
       "output": false,
-      "filters_synthesis": [
-        "hourly",
-        "daily",
-        "weekly",
-        "monthly",
-        "annual"
-      ],
-      "filters_year": [
-        "hourly",
-        "daily",
-        "weekly",
-        "monthly",
-        "annual"
-      ]
+      "comments": "Spatial aggregates on all areas"
     }
   },
   "outputs": {
