@@ -311,7 +311,7 @@ def initialize_ruleset_with_version(
 
 
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
-    if getattr(data, field) is not None:
+    if getattr(data, field):  # The value should be an empty dict
         raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
 
 
