@@ -248,11 +248,12 @@ def _get_scenario_types_according_to_version(version: StudyVersion) -> set[Scena
     return all_scenario_types
 
 
-def initialize_ruleset(
+def initialize_ruleset_with_version(
     years: list[str], index: StudyIndex, version: StudyVersion, scenario_types: set[ScenarioType] | None = None
 ) -> Ruleset:
     """
     Creates a ruleset initialized with random ("") for all items and years of a study.
+    Only instantiate the rulesets if they existed in the given study version.
 
     Optionally, you may choose to initialize only certain scenario types.
     """
@@ -292,6 +293,19 @@ def initialize_ruleset(
         args["storage_constraints"] = _create_3_levels_scenarios_mapping(names=index.sts_constraint_ids, years=years)
 
     return Ruleset.model_validate(args)
+
+
+def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
+    if getattr(data, field) is not None:
+        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
+
+
+def validate_ruleset_against_version(version: StudyVersion, ruleset: Ruleset) -> None:
+    if version < STUDY_VERSION_9_2:
+        _check_min_version(ruleset, "hydro_final_levels", version)
+    if version < STUDY_VERSION_9_3:
+        _check_min_version(ruleset, "storage_inflows", version)
+        _check_min_version(ruleset, "storage_constraints", version)
 
 
 def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries | None) -> None:

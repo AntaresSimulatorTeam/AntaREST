@@ -16,7 +16,7 @@ from antarest.study.business.model.scenario_builder_model import (
     Ruleset,
     RulesetUpdate,
     ScenarioType,
-    initialize_ruleset,
+    initialize_ruleset_with_version,
     update_ruleset,
 )
 from antarest.study.business.model.study_index import StudyIndex
@@ -33,7 +33,10 @@ def test_ruleset__initialization_from_study() -> None:
         sts_additional_constraints={"be": {}, "fr": {"fr_storage_1": ["c1", "c2"], "fr_storage_2": []}},
     )
 
-    ruleset = initialize_ruleset(["1", "2"], index)
+    ruleset = initialize_ruleset_with_version(
+        ["1", "2"],
+        index,
+    )
 
     # expect RAND value for each year
     expected_mappings = {"1": "", "2": ""}

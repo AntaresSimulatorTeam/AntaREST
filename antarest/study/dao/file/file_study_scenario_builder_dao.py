@@ -19,7 +19,7 @@ from antarest.study.business.model.scenario_builder_model import (
     Ruleset,
     Rulesets,
     ScenarioType,
-    initialize_ruleset,
+    initialize_ruleset_with_version,
     update_ruleset,
 )
 from antarest.study.dao.api.scenario_builder_dao import ScenarioBuilderDao
@@ -90,7 +90,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         nb_years = self._get_nb_years()
         ruleset_config = extract_ruleset_data(study_data, ruleset_name, scenario_type)
 
-        complete_ruleset = initialize_ruleset(
+        complete_ruleset = initialize_ruleset_with_version(
             years=[str(y) for y in range(0, nb_years)],
             index=study_data.tree.config.to_study_index(),
             version=study_data.config.version,
