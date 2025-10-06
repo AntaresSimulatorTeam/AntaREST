@@ -32,7 +32,6 @@ from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_file
