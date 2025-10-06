@@ -93,6 +93,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         complete_ruleset = initialize_ruleset(
             years=[str(y) for y in range(0, nb_years)],
             index=study_data.tree.config.to_study_index(),
+            version=study_data.config.version,
             scenario_types={scenario_type},
         )
         file_ruleset = parse_ruleset_update(ruleset_config)

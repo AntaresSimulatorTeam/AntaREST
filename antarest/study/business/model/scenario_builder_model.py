@@ -14,10 +14,13 @@
 import enum
 from typing import Iterable, Literal, Mapping, TypeAlias, cast
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.study_index import StudyIndex
+from antarest.study.model import STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
 class ScenarioType(enum.StrEnum):
@@ -97,21 +100,20 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     thermal: AreaItemsScenarios = Field(default_factory=dict)
     hydro: AreaScenarios = Field(default_factory=dict)
     hydro_initial_levels: HydroLevelsScenarios = Field(default_factory=dict)
-    hydro_final_levels: HydroLevelsScenarios = Field(default_factory=dict)
     hydro_generation_power: AreaScenarios = Field(default_factory=dict)
     wind: AreaScenarios = Field(default_factory=dict)
     solar: AreaScenarios = Field(default_factory=dict)
     ntc: LinkScenarios = Field(default_factory=dict)
     renewable: AreaItemsScenarios = Field(default_factory=dict)
     binding_constraints: BcGroupScenarios = Field(default_factory=dict)
-    storage_inflows: AreaItemsScenarios = Field(default_factory=dict)
-    storage_constraints: StorageConstraintsScenarios = Field(default_factory=dict)
+    # Introduced in v9.2
+    hydro_final_levels: HydroLevelsScenarios | None = None
+    # Introduced in v9.3
+    storage_inflows: AreaItemsScenarios | None = None
+    storage_constraints: StorageConstraintsScenarios | None = None
 
     def get(self, scenario_type: ScenarioType) -> AnyScenarios:
-        res = _get_by_type(self, scenario_type)
-        if res is None:
-            raise ValueError("Should not have a None scenario mapping in Ruleset")
-        return res
+        return _get_by_type(self, scenario_type) or {}
 
     def set(self, scenario_type: ScenarioType, scenarios: AnyScenarios) -> None:
         _set_by_type(self, scenario_type, scenarios)
@@ -236,14 +238,30 @@ def _create_3_levels_scenarios_mapping(
     return {n: _create_2_levels_scenarios_mapping(item_names, years) for n, item_names in names.items()}
 
 
-def initialize_ruleset(years: list[str], index: StudyIndex, scenario_types: set[ScenarioType] | None = None) -> Ruleset:
+def _get_scenario_types_according_to_version(version: StudyVersion) -> set[ScenarioType]:
+    all_scenario_types = set(ScenarioType)
+    if version < STUDY_VERSION_9_2:
+        all_scenario_types.remove(ScenarioType.HYDRO_FINAL_LEVEL)
+    if version < STUDY_VERSION_9_3:
+        all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
+        all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
+    return all_scenario_types
+
+
+def initialize_ruleset(
+    years: list[str], index: StudyIndex, version: StudyVersion, scenario_types: set[ScenarioType] | None = None
+) -> Ruleset:
     """
     Creates a ruleset initialized with random ("") for all items and years of a study.
 
     Optionally, you may choose to initialize only certain scenario types.
     """
+    acceptable_types = _get_scenario_types_according_to_version(version)
     if scenario_types is None:
-        scenario_types = set(ScenarioType)
+        scenario_types = acceptable_types
+
+    if invalid_types := scenario_types - acceptable_types:
+        raise InvalidFieldForVersionError(f"Invalid scenario types {invalid_types} provided for version {version}")
 
     return Ruleset(
         load=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
