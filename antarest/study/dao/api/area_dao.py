@@ -43,6 +43,34 @@ class ReadOnlyAreaDao(ABC):
 class AreaDao(ReadOnlyAreaDao):
     """
     DAO for area operations.
+
+    Note: Write operations (create, update, delete) are handled through the DAO,
+    which abstracts the storage implementation (filesystem, database, etc.).
     """
 
-    pass
+    @abstractmethod
+    def save_area(self, area_name: str, command_context: Any) -> None:
+        """
+        Create a new area in the study.
+
+        Args:
+            area_name: The name of the area to create.
+            command_context: Command context containing generator constants for matrices.
+
+        Raises:
+            ValueError: If the area already exists.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_area(self, area_id: str) -> None:
+        """
+        Delete an area from the study.
+
+        Args:
+            area_id: The area identifier to delete.
+
+        Raises:
+            AreaNotFound: If the area does not exist.
+        """
+        raise NotImplementedError()

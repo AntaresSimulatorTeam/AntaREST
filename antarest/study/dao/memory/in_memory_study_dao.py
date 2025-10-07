@@ -819,3 +819,22 @@ class InMemoryStudyDao(StudyDao):
         # For in-memory DAO, we don't store UI info
         # This is a simplified implementation for testing purposes
         return {}
+
+    @override
+    def save_area(self, area_name: str, command_context: Any) -> None:
+        # For in-memory DAO, simplified implementation for testing
+        from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+
+        area_id = transform_name_to_id(area_name)
+        if area_id in self._area_names:
+            raise ValueError(f"Area '{area_name}' already exists and could not be created")
+        self._area_names.append(area_id)
+
+    @override
+    def delete_area(self, area_id: str) -> None:
+        # For in-memory DAO, simplified implementation for testing
+        if area_id not in self._area_names:
+            from antarest.core.exceptions import AreaNotFound
+
+            raise AreaNotFound(area_id)
+        self._area_names.remove(area_id)
