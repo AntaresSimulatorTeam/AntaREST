@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Any
+
+import pandas as pd
 from annotated_types import Len
 from pydantic import Field, model_validator
 from pydantic.alias_generators import to_camel
@@ -84,4 +87,14 @@ class AllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, 
 
     @staticmethod
     def from_hydro_allocations(allocations: dict[str, HydroAllocation]) -> "AllocationMatrix":
-        raise NotImplementedError()
+        args: dict[str, Any] = {}
+        for area_id, allocation_list in allocations.items():
+            args[area_id] = {}
+            for allocation in allocation_list.allocations:
+                args["area_id"][allocation.area_id] = allocation.coefficient
+
+        df = pd.DataFrame.from_dict(args)
+        df.fillna(0)
+        args["data"] = df.reindex(df.columns).transpose().to_numpy()
+        args["index"] = args["columns"] = list(df.columns)
+        return AllocationMatrix.model_validate(args)
