@@ -815,20 +815,6 @@ class InMemoryStudyDao(StudyDao):
         return [Area(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
 
     @override
-    def get_area(self, area_id: str) -> Area:
-        # For in-memory DAO, we only store area names, not full Area objects
-        # This is a simplified implementation for testing purposes
-        if area_id not in self._area_names:
-            from antarest.core.exceptions import AreaNotFound
-
-            raise AreaNotFound(area_id)
-        return Area(id=area_id, name=area_id, thermals=[])
-
-    @override
-    def area_exists(self, area_id: str) -> bool:
-        return area_id in self._area_names
-
-    @override
     def get_all_areas_ui_info(self) -> Dict[str, Any]:
         # For in-memory DAO, we don't store UI info
         # This is a simplified implementation for testing purposes

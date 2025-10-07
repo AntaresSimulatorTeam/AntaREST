@@ -459,13 +459,5 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_areas()
 
     @override
-    def get_area(self, area_id: str) -> Area:
-        return self._adaptee.get_area(area_id)
-
-    @override
-    def area_exists(self, area_id: str) -> bool:
-        return self._adaptee.area_exists(area_id)
-
-    @override
     def get_all_areas_ui_info(self) -> Dict[str, Any]:
         return self._adaptee.get_all_areas_ui_info()

@@ -27,35 +27,6 @@ class ReadOnlyAreaDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_area(self, area_id: str) -> Area:
-        """
-        Retrieve a specific area by its ID.
-
-        Args:
-            area_id: The area identifier.
-
-        Returns:
-            The area with its basic information.
-
-        Raises:
-            AreaNotFound: If the area does not exist.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def area_exists(self, area_id: str) -> bool:
-        """
-        Check if an area exists in the study.
-
-        Args:
-            area_id: The area identifier.
-
-        Returns:
-            True if the area exists, False otherwise.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     def get_all_areas_ui_info(self) -> Dict[str, Any]:
         """
         Retrieve information about all areas' user interface (UI) from the study.

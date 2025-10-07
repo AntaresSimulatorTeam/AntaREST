@@ -14,7 +14,7 @@ import logging
 from typing import Any, Dict, List
 
 from antarest.core.exceptions import DuplicateAreaName, LayerNotFound
-from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_info_map
+from antarest.study.business.areas.area_utils import _get_area_layers
 from antarest.study.business.model.area_model import (
     Area,
     AreaCreation,
@@ -22,7 +22,6 @@ from antarest.study.business.model.area_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
@@ -64,9 +63,7 @@ class AreaManager:
         Raises:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
         """
-        file_study = study.get_files()
-        area_ids = list(file_study.config.areas)
-        return _get_ui_info_map(file_study, area_ids)
+        return study.get_study_dao().get_all_areas_ui_info()
 
     def update_layer_areas(self, study: StudyInterface, layer_id: str, areas: List[str]) -> None:
         logger.info(f"Updating layer {layer_id} with areas {areas}")
@@ -173,4 +170,3 @@ class AreaManager:
             study_version=study.version,
         )
         study.add_commands([command])
-
