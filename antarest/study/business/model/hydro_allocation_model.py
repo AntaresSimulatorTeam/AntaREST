@@ -48,7 +48,7 @@ class HydroAllocation(AntaresBaseModel, extra="forbid", populate_by_name=True):
         return self
 
 
-class AllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, arbitrary_types_allowed=True):
+class HydroAllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, arbitrary_types_allowed=True):
     """
     Hydraulic allocation matrix.
     index: List of all study areas
@@ -61,7 +61,7 @@ class AllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, 
     data: NpArray
 
     @model_validator(mode="after")
-    def check_coherence(self) -> "AllocationMatrix":
+    def check_coherence(self) -> "HydroAllocationMatrix":
         if self.data.size == 0:
             raise ValueError("allocation matrix must not be empty")
 
@@ -86,7 +86,7 @@ class AllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, 
         return allocations_dict
 
     @staticmethod
-    def from_hydro_allocations(allocations: dict[str, HydroAllocation]) -> "AllocationMatrix":
+    def from_hydro_allocations(allocations: dict[str, HydroAllocation]) -> "HydroAllocationMatrix":
         args: dict[str, Any] = {}
         for area_id, allocation_list in allocations.items():
             args[area_id] = {}
@@ -97,4 +97,4 @@ class AllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, 
         df.fillna(0)
         args["data"] = df.reindex(df.columns).transpose().to_numpy()
         args["index"] = args["columns"] = list(df.columns)
-        return AllocationMatrix.model_validate(args)
+        return HydroAllocationMatrix.model_validate(args)
