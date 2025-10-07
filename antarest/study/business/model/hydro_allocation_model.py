@@ -58,9 +58,9 @@ class AllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, 
     columns: Annotated[list[str], Len(min_length=1)]
     data: NpArray
 
-    def to_hydro_allocation(self) -> HydroAllocation:
+    def to_hydro_allocations(self) -> dict[str, HydroAllocation]:
         raise NotImplementedError()
 
     @staticmethod
-    def from_hydro_allocation(allocation: HydroAllocation) -> "AllocationMatrix":
+    def from_hydro_allocations(allocations: dict[str, HydroAllocation]) -> "AllocationMatrix":
         raise NotImplementedError()
