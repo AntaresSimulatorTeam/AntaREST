@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+from pydantic import ValidationError
+
 from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_rulesets
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -18,8 +21,9 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 def test_update_scenario_builder(empty_study_880: FileStudy, command_context: CommandContext):
     study = empty_study_880
+    version = study.config.version
 
-    initial_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]))
+    initial_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]), version)
     assert initial_rulesets == {
         "Default Ruleset": Ruleset(
             load={},
@@ -42,13 +46,11 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
         "other ruleset": RulesetUpdate(thermal={"fr": {"cluster": {"1": 2, "2": 1}}}),
     }
 
-    command = UpdateScenarioBuilder(
-        data=rulesets_update, command_context=command_context, study_version=study.config.version
-    )
+    command = UpdateScenarioBuilder(data=rulesets_update, command_context=command_context, study_version=version)
     output = command.apply(study)
     assert output.status
 
-    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]))
+    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]), version)
 
     assert final_rulesets == {
         # Case is unchanged
@@ -87,13 +89,11 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
         "default ruleset": RulesetUpdate(load={"fr": {"2": ""}}),
         "other ruleset": RulesetUpdate(thermal={"fr": {"cluster": {"2": ""}}}),
     }
-    command = UpdateScenarioBuilder(
-        data=rulesets_update, command_context=command_context, study_version=study.config.version
-    )
+    command = UpdateScenarioBuilder(data=rulesets_update, command_context=command_context, study_version=version)
     output = command.apply(study)
     assert output.status
 
-    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]))
+    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]), version)
     assert final_rulesets == {
         # Case is unchanged
         "Default Ruleset": Ruleset(
@@ -125,3 +125,8 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
             storage_inflows={},
         ),
     }
+
+    # Ensures we cannot give scenario types that do not fit the study version
+    rulesets_update = {"default ruleset": RulesetUpdate(storage_inflows={"fr": {"sts": {"2": ""}}})}
+    with pytest.raises(ValidationError, match="Field storage_inflows is not a valid field for study version 8.8"):
+        UpdateScenarioBuilder(data=rulesets_update, command_context=command_context, study_version=version)
