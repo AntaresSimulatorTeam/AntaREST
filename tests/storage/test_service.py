@@ -1476,6 +1476,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
+@with_admin_user
 def test_edit_study_with_command() -> None:
     study_id = str(uuid.uuid4())
 

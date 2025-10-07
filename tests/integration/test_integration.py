@@ -1904,8 +1904,17 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     client.post("/v1/users", json={"name": "creator_2", "password": "password123"})
     client.post("/v1/users", json={"name": "editor_2", "password": "password456"})
 
+    # creating a bot with the admin as an impersonator
+    bots_res = client.post(
+        "/v1/bots",
+        headers={"Authorization": f"Bearer {admin_access_token}"},
+        json={"name": "bots_2", "roles": [{"group": "admin", "role": 40}], "is_author": False},
+    )
+    header_bots = {"Authorization": f"Bearer {bots_res.json()}"}
+
     # Log in as 'creator' to get ID
     res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "password123"})
+    res_creator.raise_for_status()
     creator_creds = res_creator.json()
     creator_id = creator_creds["user"]
 
@@ -1932,6 +1941,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     )
     creator_creds = res_creator.json()
     creator_token = creator_creds["access_token"]
+    headers_creator = {"Authorization": f"Bearer {creator_token}"}
 
     res_editor = client.post(
         "/v1/refresh",
@@ -1942,14 +1952,13 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     headers_editor = {"Authorization": f"Bearer {editor_token}"}
 
     # 2. 'creator' creates a new study associated with the group
-    headers_creator = {"Authorization": f"Bearer {creator_token}"}
     study_name = "test_author_preservation_on_copy"
     res_create = client.post(f"/v1/studies?name={study_name}&groups={group_id}", headers=headers_creator)
     study_id = res_create.json()
 
     # 3. Verify that 'author' and 'editor' are set to 'creator'
-    res_raw_initial = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator)
-    initial_antares_data = res_raw_initial.json()["antares"]
+    res_raw_initial = client.get(f"/v1/studies/{study_id}/", headers=headers_creator)
+    initial_antares_data = res_raw_initial.json()
     assert initial_antares_data["author"] == "creator_2"
     assert initial_antares_data["editor"] == "creator_2"
 
@@ -1957,8 +1966,8 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
 
     comment = "updated comment"
     client.put(f"/v1/studies/{study_id}/comments", json={"comments": comment}, headers=headers_editor)
-    res_raw_changed = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_editor)
-    changed_antares_data = res_raw_changed.json()["antares"]
+    res_raw_changed = client.get(f"/v1/studies/{study_id}/")
+    changed_antares_data = res_raw_changed.json()
     assert changed_antares_data["author"] == "creator_2"
     assert changed_antares_data["editor"] == "editor_2"
 
@@ -1970,13 +1979,13 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
             "type": "AREA",
             "metadata": {"country": "FR"},
         },
-        headers=headers_creator,
+        headers=header_bots,
     )
     assert res.status_code == 200, res.json()
 
-    res_creating_area = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_editor).json()["antares"]
+    res_creating_area = client.get(f"/v1/studies/{study_id}/").json()
     assert res_creating_area["author"] == "creator_2"
-    assert res_creating_area["editor"] == "creator_2"
+    assert res_creating_area["editor"] == "admin"
     # END CREATING AREA
 
     # START EDITING AREA
@@ -1994,24 +2003,153 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
             "filterByYear": ["hourly", "daily", "annual"],
             "adequacyPatchMode": "inside",
         },
-        headers=headers_editor,
+        headers=header_bots,
     )
     assert res_config.status_code == 200
 
-    res_area_initial = client.get(f"/v1/studies/{study_id}/raw?path=study").json()["antares"]
+    res_area_initial = client.get(f"/v1/studies/{study_id}/").json()
     assert res_area_initial["author"] == "creator_2"
-    assert res_area_initial["editor"] == "editor_2"
+    assert res_area_initial["editor"] == "admin"
     # END EDITING AREA
 
     # START DELETING AREA
     res_delete = client.delete(f"/v1/studies/{study_id}/areas/area_1", headers=headers_creator)
     assert res_delete.status_code == 200, res.json()
-    res_area_delete = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator).json()["antares"]
+    res_area_delete = client.get(f"/v1/studies/{study_id}/").json()
     assert res_area_delete["author"] == "creator_2"
     assert res_area_delete["editor"] == "creator_2"
     # END DELETING AREA
 
+
 def test_update_variant_with_editor(client: TestClient, admin_access_token: str):
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # 1. Create a group and two users
+    group_name = "test_copy_group"
+    res = client.post("/v1/groups", json={"name": group_name})
+    group_id = res.json()["id"]
+
     proxy_variant = PreparerProxy(client, admin_access_token)
-    study = proxy_variant.create_study("test_study", version=880)
-    study_variant = proxy_variant.create_variant(study, "test_variant_study")
+    study_id = proxy_variant.create_study("test_study", version=880)
+    client.put(f"/v1/studies/{study_id}/public_mode/FULL")
+    study_variant = proxy_variant.create_variant(study_id, name="test_variant_study")
+    client.put(f"/v1/studies/{study_variant}/public_mode/FULL")
+
+    client.post("/v1/users", json={"name": "creator_2", "password": "password123"})
+    client.post("/v1/users", json={"name": "editor_2", "password": "password456"})
+
+    bots_res = client.post(
+        "/v1/bots",
+        headers={"Authorization": f"Bearer {admin_access_token}"},
+        json={"name": "bots_2", "roles": [{"group": "admin", "role": 40}], "is_author": False},
+    )
+    header_bots = {"Authorization": f"Bearer {bots_res.json()}"}
+
+    # Log in as 'creator' to get ID
+    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "password123"})
+    res_creator.raise_for_status()
+    creator_creds = res_creator.json()
+    creator_id = creator_creds["user"]
+
+    # Log in as 'editor' to get ID
+    res_editor = client.post("/v1/login", json={"username": "editor_2", "password": "password456"})
+    res_editor.raise_for_status()
+    editor_creds = res_editor.json()
+    editor_id = editor_creds["user"]
+
+    # Add users to the group
+    client.post(
+        "/v1/roles",
+        json={"type": 40, "group_id": group_id, "identity_id": creator_id},  # ADMIN
+    )
+    client.post(
+        "/v1/roles",
+        json={"type": 30, "group_id": group_id, "identity_id": editor_id},  # WRITER
+    )
+
+    # Refresh tokens to update permissions
+    res_creator = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f"Bearer {creator_creds['refresh_token']}"},
+    )
+    creator_creds = res_creator.json()
+
+    res_editor = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f"Bearer {editor_creds['refresh_token']}"},
+    )
+    editor_creds = res_editor.json()
+
+    creator_header = {"Authorization": f"Bearer {creator_creds['access_token']}"}
+    editor_header = {"Authorization": f"Bearer {editor_creds['access_token']}"}
+
+    # checking the variant study has been correctly made
+    res_initial_variant_study = client.get(f"/v1/studies/{study_variant}/")
+    json_variant = res_initial_variant_study.json()
+    assert res_initial_variant_study.status_code == 200
+    assert json_variant["type"] == "variantstudy"
+    assert json_variant["author"] == "admin"
+    assert json_variant["editor"] == "Unknown"
+
+    # creating two areas
+    res = client.post(
+        f"/v1/studies/{study_variant}/areas",
+        json={
+            "name": "area_1",
+            "type": "AREA",
+            "metadata": {"country": "FR"},
+        },
+        headers=creator_header,
+    )
+    assert res.status_code == 200, res.json()
+    res = client.post(
+        f"/v1/studies/{study_variant}/areas",
+        json={
+            "name": "area_2",
+            "type": "AREA",
+            "metadata": {"country": "BE"},
+        },
+        headers=creator_header,
+    )
+    assert res.status_code == 200, res.json()
+
+    res_config = client.put(
+        f"/v1/studies/{study_variant}/areas/area_1/properties/form",
+        json={
+            "energyCostUnsupplied": 2.0,
+            "energyCostSpilled": 4.0,
+            "nonDispatchPower": False,
+            "dispatchHydroPower": False,
+            "otherDispatchPower": False,
+            "spreadUnsuppliedEnergyCost": -10.0,
+            "spreadSpilledEnergyCost": 10.0,
+            "filterSynthesis": ["monthly", "annual"],
+            "filterByYear": ["hourly", "daily", "annual"],
+            "adequacyPatchMode": "inside",
+        },
+        headers=header_bots,
+    )
+    assert res_config.status_code == 200
+
+    res_edit_area = client.get(f"/v1/studies/{study_variant}/").json()
+    assert res_edit_area["author"] == "admin"
+    assert res_edit_area["editor"] == "admin"
+
+    # create a link between the two areas
+    res_create_link = client.post(
+        f"/v1/studies/{study_variant}/links",
+        json={"area1": "area_1", "area2": "area_2"},
+        headers=editor_header,
+    )
+    assert res_create_link.status_code == 200, res.json()
+
+    res_links = client.get(f"/v1/studies/{study_variant}/").json()
+    assert res_links["author"] == "admin"
+    assert res_links["editor"] == "editor_2"
+
+    res_delete = client.delete(f"/v1/studies/{study_variant}/areas/area_1", headers=creator_header)
+    assert res_delete.status_code == 200, res_delete.json()
+
+    res_delete_area = client.get(f"/v1/studies/{study_variant}/").json()
+    assert res_delete_area["author"] == "admin"
+    assert res_delete_area["editor"] == "creator_2"

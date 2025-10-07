@@ -34,7 +34,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.study_download_utils import BadOutputFormat
-from tests.helpers import assert_study, with_admin_user
+from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
@@ -489,6 +489,7 @@ def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
 
 
 @with_admin_user
+@with_db_context
 @pytest.mark.integration_test
 def test_sta_mini_copy(storage_service, tmp_path: Path, matrix_service: ISimpleMatrixService) -> None:
     source_study_name = UUID

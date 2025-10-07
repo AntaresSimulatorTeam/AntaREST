@@ -87,8 +87,9 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
 
     if metadata.additional_data:
         author = metadata.additional_data.author
-        if metadata.additional_data.editor is None:
-            editor = metadata.additional_data.author
+        editor = metadata.additional_data.editor
+        # if metadata.additional_data.editor is None:
+        # editor = metadata.additional_data.author
 
     # Update basic fields
     antares_info["caption"] = metadata.name

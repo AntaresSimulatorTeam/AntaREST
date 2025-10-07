@@ -48,7 +48,6 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
-from antarest.login.model import Identity
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
@@ -126,30 +125,6 @@ class VariantStudyService(AbstractStorageService):
             study.additional_data = study.additional_data or StudyAdditionalData()
             study.additional_data.editor = user_name
             self.repository.save(study_db)
-
-    def _update_db_study_editor(self, study_id: str) -> None:
-        user_id = get_user_id()
-        study_db = self.repository.get(study_id)
-
-        if user_id and study_db:
-            user_name = self._get_user_name_from_id(int(user_id))
-
-            if user_name:
-                study_db.additional_data.editor = user_name
-                self.repository.save(study_db)
-
-    @staticmethod
-    def _get_user_name_from_id(user_id: int) -> str:
-        """
-        Utility method that retrieves a user's name based on their id.
-        Args:
-            user_id: user id (user must exist)
-        Returns: String representing the user's name
-        """
-        user_obj: Identity | None = db.session.get(Identity, user_id)
-        if user_obj is None:
-            return "Unnamed"
-        return str(user_obj.name)
 
     def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
         """

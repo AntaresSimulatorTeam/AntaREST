@@ -30,7 +30,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import create_raw_study, with_db_context
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 class TestRawStudyService:
@@ -66,6 +66,7 @@ class TestRawStudyService:
         ],
     )
     @with_db_context
+    @with_admin_user
     def test_export_study_flat(
         self,
         tmp_path: Path,
