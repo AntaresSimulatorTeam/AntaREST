@@ -25,11 +25,11 @@ class HydroAllocationArea(AntaresBaseModel, extra="forbid", populate_by_name=Tru
 
 
 class HydroAllocation(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    allocation: list[HydroAllocationArea]
+    allocations: list[HydroAllocationArea]
 
     @model_validator(mode="after")
     def check_allocation(self) -> "HydroAllocation":
-        allocation = self.allocation
+        allocation = self.allocations
 
         if not allocation:
             raise ValueError("allocation must not be empty")
@@ -63,16 +63,25 @@ class AllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, 
         if self.data.size == 0:
             raise ValueError("allocation matrix must not be empty")
 
-        index_size = len(self.index)
-        if index_size != len(self.columns):
-            raise ValueError("allocation matrix must have square shape")
-        elif self.data.shape != (index_size, index_size):
+        if self.data.shape != (len(self.index), len(self.columns)):
             raise ValueError("allocation matrix shape is inconsistent")
+
+        if self.index != self.columns:
+            raise ValueError("allocation matrix index and columns should be the same")
 
         return self
 
     def to_hydro_allocations(self) -> dict[str, HydroAllocation]:
-        raise NotImplementedError()
+        allocations_dict = {}
+        N = len(self.index)
+        for k in range(N):
+            allocations = []
+            for n in range(N):
+                coefficient = self.data[k][n]
+                if coefficient != 0:
+                    allocations.append(HydroAllocationArea(area_id=self.index[n], coefficient=coefficient))
+            allocations_dict[self.index[k]] = HydroAllocation(allocations=allocations)
+        return allocations_dict
 
     @staticmethod
     def from_hydro_allocations(allocations: dict[str, HydroAllocation]) -> "AllocationMatrix":
