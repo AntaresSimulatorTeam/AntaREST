@@ -19,7 +19,7 @@ from antarest.study.business.model.scenario_builder_model import (
     Ruleset,
     Rulesets,
     ScenarioType,
-    initialize_ruleset,
+    initialize_ruleset_with_version,
     update_ruleset,
 )
 from antarest.study.dao.api.scenario_builder_dao import ScenarioBuilderDao
@@ -48,7 +48,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         """
         study_data = self.get_file_study()
         scenario_builder_data = study_data.tree.get(["settings", "scenariobuilder"])
-        return parse_rulesets_from_any(scenario_builder_data)
+        return parse_rulesets_from_any(scenario_builder_data, study_data.config.version)
 
     @override
     def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
@@ -86,17 +86,19 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         Read a ruleset JSON file by name from the rulesets directory.
         """
         study_data = self.get_file_study()
+        study_version = study_data.config.version
         ruleset_name = self.get_active_ruleset_name()
         nb_years = self._get_nb_years()
         ruleset_config = extract_ruleset_data(study_data, ruleset_name, scenario_type)
 
-        complete_ruleset = initialize_ruleset(
+        complete_ruleset = initialize_ruleset_with_version(
             years=[str(y) for y in range(0, nb_years)],
             index=study_data.tree.config.to_study_index(),
+            version=study_version,
             scenario_types={scenario_type},
         )
         file_ruleset = parse_ruleset_update(ruleset_config)
-        update_ruleset(complete_ruleset, file_ruleset)
+        update_ruleset(complete_ruleset, file_ruleset, study_version)
         return complete_ruleset
 
     @override
@@ -116,4 +118,4 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         """
         study_data = self.get_file_study()
 
-        study_data.tree.save(serialize_rulesets(rulesets), SCENARIO_BUILDER_PATH)
+        study_data.tree.save(serialize_rulesets(rulesets, study_data.config.version), SCENARIO_BUILDER_PATH)

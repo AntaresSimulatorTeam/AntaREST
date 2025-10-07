@@ -12,12 +12,15 @@
 
 
 import enum
-from typing import Iterable, Literal, Mapping, TypeAlias, cast
+from typing import Any, Iterable, Literal, Mapping, TypeAlias, cast
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.study_index import StudyIndex
+from antarest.study.model import STUDY_VERSION_8_7, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
 class ScenarioType(enum.StrEnum):
@@ -97,13 +100,16 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     thermal: AreaItemsScenarios = Field(default_factory=dict)
     hydro: AreaScenarios = Field(default_factory=dict)
     hydro_initial_levels: HydroLevelsScenarios = Field(default_factory=dict)
-    hydro_final_levels: HydroLevelsScenarios = Field(default_factory=dict)
     hydro_generation_power: AreaScenarios = Field(default_factory=dict)
     wind: AreaScenarios = Field(default_factory=dict)
     solar: AreaScenarios = Field(default_factory=dict)
     ntc: LinkScenarios = Field(default_factory=dict)
     renewable: AreaItemsScenarios = Field(default_factory=dict)
+    # Introduced in v8.7
     binding_constraints: BcGroupScenarios = Field(default_factory=dict)
+    # Introduced in v9.2
+    hydro_final_levels: HydroLevelsScenarios = Field(default_factory=dict)
+    # Introduced in v9.3
     storage_inflows: AreaItemsScenarios = Field(default_factory=dict)
     storage_constraints: StorageConstraintsScenarios = Field(default_factory=dict)
 
@@ -236,14 +242,35 @@ def _create_3_levels_scenarios_mapping(
     return {n: _create_2_levels_scenarios_mapping(item_names, years) for n, item_names in names.items()}
 
 
-def initialize_ruleset(years: list[str], index: StudyIndex, scenario_types: set[ScenarioType] | None = None) -> Ruleset:
+def _get_scenario_types_according_to_version(version: StudyVersion) -> set[ScenarioType]:
+    all_scenario_types = set(ScenarioType)
+    if version < STUDY_VERSION_8_7:
+        all_scenario_types.remove(ScenarioType.BINDING_CONSTRAINTS)
+    if version < STUDY_VERSION_9_2:
+        all_scenario_types.remove(ScenarioType.HYDRO_FINAL_LEVEL)
+    if version < STUDY_VERSION_9_3:
+        all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
+        all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
+    return all_scenario_types  # type: ignore
+
+
+def initialize_ruleset_with_version(
+    years: list[str], index: StudyIndex, version: StudyVersion, scenario_types: set[ScenarioType] | None = None
+) -> Ruleset:
     """
     Creates a ruleset initialized with random ("") for all items and years of a study.
+    Only instantiate the rulesets if they existed in the given study version.
 
     Optionally, you may choose to initialize only certain scenario types.
     """
+    acceptable_types = _get_scenario_types_according_to_version(version)
     if scenario_types is None:
-        scenario_types = set(ScenarioType)
+        scenario_types = acceptable_types
+
+    if invalid_types := scenario_types - acceptable_types:
+        raise InvalidFieldForVersionError(
+            f"Invalid scenario types {[e.value for e in invalid_types]} provided for version {version}"
+        )
 
     return Ruleset(
         load=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
@@ -288,6 +315,21 @@ def initialize_ruleset(years: list[str], index: StudyIndex, scenario_types: set[
     )
 
 
+def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
+    if getattr(data, field):  # The value should be an empty dict
+        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
+
+
+def validate_ruleset_against_version(version: StudyVersion, ruleset: Ruleset | RulesetUpdate) -> None:
+    if version < STUDY_VERSION_8_7:
+        _check_min_version(ruleset, "binding_constraints", version)
+    if version < STUDY_VERSION_9_2:
+        _check_min_version(ruleset, "hydro_final_levels", version)
+    if version < STUDY_VERSION_9_3:
+        _check_min_version(ruleset, "storage_inflows", version)
+        _check_min_version(ruleset, "storage_constraints", version)
+
+
 def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries | None) -> None:
     if update is None:
         return
@@ -315,7 +357,7 @@ def _update_3_levels_mapping(base: _ThreeLevelScenarios, update: _ThreeLevelScen
         _update_2_levels_mapping(base.setdefault(name, {}), mapping)
 
 
-def update_ruleset(base: Ruleset, update: RulesetUpdate) -> None:
+def update_ruleset(base: Ruleset, update: RulesetUpdate, version: StudyVersion) -> None:
     _update_1_level_mapping(base.load, update.load)
     _update_2_levels_mapping(base.thermal, update.thermal)
     _update_1_level_mapping(base.hydro, update.hydro)
@@ -329,14 +371,16 @@ def update_ruleset(base: Ruleset, update: RulesetUpdate) -> None:
     _update_2_levels_mapping(base.storage_inflows, update.storage_inflows)
     _update_1_level_mapping(base.ntc, update.ntc)
     _update_3_levels_mapping(base.storage_constraints, update.storage_constraints)
+    # Validate the final ruleset
+    validate_ruleset_against_version(version, base)
 
 
-def update_rulesets(base: Rulesets, update: RulesetsUpdate) -> None:
+def update_rulesets(base: Rulesets, update: RulesetsUpdate, version: StudyVersion) -> None:
     lower_case_base = {k.lower(): v for k, v in base.items()}
     for name, ruleset_update in update.items():
         if name.lower() not in lower_case_base:
             ruleset = Ruleset()
-            update_ruleset(ruleset, ruleset_update)
+            update_ruleset(ruleset, ruleset_update, version)
             base[name] = ruleset
         else:
-            update_ruleset(lower_case_base[name.lower()], ruleset_update)
+            update_ruleset(lower_case_base[name.lower()], ruleset_update, version)

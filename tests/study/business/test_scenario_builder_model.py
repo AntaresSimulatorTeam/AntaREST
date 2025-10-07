@@ -12,14 +12,16 @@
 
 import pytest
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.scenario_builder_model import (
     Ruleset,
     RulesetUpdate,
     ScenarioType,
-    initialize_ruleset,
+    initialize_ruleset_with_version,
     update_ruleset,
 )
 from antarest.study.business.model.study_index import StudyIndex
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
 def test_ruleset__initialization_from_study() -> None:
@@ -33,7 +35,7 @@ def test_ruleset__initialization_from_study() -> None:
         sts_additional_constraints={"be": {}, "fr": {"fr_storage_1": ["c1", "c2"], "fr_storage_2": []}},
     )
 
-    ruleset = initialize_ruleset(["1", "2"], index)
+    ruleset = initialize_ruleset_with_version(["1", "2"], index, STUDY_VERSION_9_3)
 
     # expect RAND value for each year
     expected_mappings = {"1": "", "2": ""}
@@ -88,19 +90,71 @@ def test_update_ruleset_simple_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"1": 2, "2": 1}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
 
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"2": 3}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 3}}
 
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"2": ""}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": ""}}
+
+
+def test_update_ruleset_with_version() -> None:
+    # Binding constraints
+    error_msg = "Field binding_constraints is not a valid field for study version 8.6"
+    ruleset = Ruleset(binding_constraints={"group": {"1": 3}})
+    update = RulesetUpdate()
+    with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+        update_ruleset(ruleset, update, STUDY_VERSION_8_6)
+
+    ruleset = Ruleset()
+    update = RulesetUpdate(binding_constraints={"group": {"1": 3}})
+    with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+        update_ruleset(ruleset, update, STUDY_VERSION_8_6)
+
+    # Hydro final levels
+    error_msg = "Field hydro_final_levels is not a valid field for study version 8.8"
+    ruleset = Ruleset(hydro_final_levels={"fr": {"1": 0.3}})
+    update = RulesetUpdate()
+    with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+        update_ruleset(ruleset, update, STUDY_VERSION_8_8)
+
+    ruleset = Ruleset()
+    update = RulesetUpdate(hydro_final_levels={"fr": {"1": 0.3}})
+    with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+        update_ruleset(ruleset, update, STUDY_VERSION_8_8)
+
+    # Storage inflows
+    for version in [STUDY_VERSION_8_8, STUDY_VERSION_9_2]:
+        error_msg = f"Field storage_inflows is not a valid field for study version {version}"
+        ruleset = Ruleset(storage_inflows={"fr": {"sts": {"1": 0.3}}})
+        update = RulesetUpdate()
+        with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+            update_ruleset(ruleset, update, version)
+
+        ruleset = Ruleset()
+        update = RulesetUpdate(storage_inflows={"fr": {"sts": {"1": 0.3}}})
+        with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+            update_ruleset(ruleset, update, version)
+
+    # Storage constraints
+    for version in [STUDY_VERSION_8_8, STUDY_VERSION_9_2]:
+        error_msg = f"Field storage_constraints is not a valid field for study version {version}"
+        ruleset = Ruleset(storage_constraints={"fr": {"sts": {"c1": {"1": 0.3}}}})
+        update = RulesetUpdate()
+        with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+            update_ruleset(ruleset, update, version)
+
+        ruleset = Ruleset()
+        update = RulesetUpdate(storage_constraints={"fr": {"sts": {"c1": {"1": 0.3}}}})
+        with pytest.raises(InvalidFieldForVersionError, match=error_msg):
+            update_ruleset(ruleset, update, version)
 
 
 @pytest.mark.parametrize(
@@ -115,38 +169,38 @@ def test_update_ruleset_2_levels_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"1": 2, "2": 1}}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": 1}}}
 
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"2": 3}, "item2": {"1": 2, "2": 1}}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": 3}, "item2": {"1": 2, "2": 1}}}
 
     update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"2": ""}}})
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": ""}, "item2": {"1": 2, "2": 1}}}
 
 
 def test_update_ruleset_3_levels_scenarios() -> None:
     mapping = {"1": 2, "2": 1}
     ruleset = Ruleset()
-    update = Ruleset()
+    update = RulesetUpdate()
     update.storage_constraints = {"be": {"storage1": {"c1": mapping}}}
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert update.storage_constraints == {"be": {"storage1": {"c1": mapping}}}
 
-    update = Ruleset()
+    update = RulesetUpdate()
     update.storage_constraints = {"be": {"storage1": {"c1": {"2": 3}}}}
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.storage_constraints == {"be": {"storage1": {"c1": {"1": 2, "2": 3}}}}
 
-    update = Ruleset()
+    update = RulesetUpdate()
     update.storage_constraints = {"be": {"storage1": {"c1": {"2": ""}}}}
-    update_ruleset(ruleset, update)
+    update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.storage_constraints == {"be": {"storage1": {"c1": {"1": 2, "2": ""}}}}
 
 
