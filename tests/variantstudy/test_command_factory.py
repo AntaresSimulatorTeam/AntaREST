@@ -1419,6 +1419,27 @@ def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory):
         "layer": "0",
         "parameters": {"x": 100, "y": 200, "colorRgb": [255, 128, 64]},
     }
+    # Verify old layer_* fields are not in the converted parameters
+    assert "layer_x" not in dto.args
+    assert "layer_y" not in dto.args
+    assert "layer_color" not in dto.args
+    assert "area_ui" not in dto.args
+
+
+def test_update_area_ui_invalid_layer(command_factory: CommandFactory):
+    """Test that invalid layer value raises validation error"""
+    dto = CommandDTO(
+        action=CommandName.UPDATE_AREA_UI.value,
+        args={
+            "area_id": "area1",
+            "layer": "invalid",  # Invalid: not an integer
+            "parameters": {"x": 100, "y": 200, "colorRgb": [255, 128, 64]},
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=2,
+    )
+    with pytest.raises(ValueError, match="Layer must be a valid integer string"):
+        command_factory.to_command(dto)
 
 
 def test_parse_legacy_command_create_district(command_factory: CommandFactory):

@@ -56,8 +56,8 @@ class AreaUIUpdate(AntaresBaseModel):
     Partial update for Area UI properties.
     """
 
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     x: Optional[int] = None
     y: Optional[int] = None
-    color_rgb: Optional[tuple[int, int, int]] = Field(default=None, alias="colorRgb")
+    color_rgb: Optional[tuple[int, int, int]] = None

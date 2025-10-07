@@ -13,7 +13,7 @@
 import typing as t
 from typing import Any
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
@@ -42,6 +42,16 @@ class UpdateAreaUI(ICommand):
     layer: str
     parameters: AreaUIUpdate
 
+    @field_validator("layer")
+    @classmethod
+    def _validate_layer(cls, v: str) -> str:
+        """Validate that layer is a valid integer string."""
+        try:
+            int(v)
+            return v
+        except ValueError:
+            raise ValueError(f"Layer must be a valid integer string, got: {v}")
+
     @model_validator(mode="before")
     @classmethod
     def _validate_parameters(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
@@ -50,10 +60,15 @@ class UpdateAreaUI(ICommand):
             area_ui = values.pop("area_ui")
             # Extract only x, y, color_rgb from old UpdateAreaUi (ignore layer_x, layer_y, layer_color)
             if isinstance(area_ui, dict):
+                color_value = area_ui.get("color_rgb") or area_ui.get("colorRgb")
+                # Convert list to tuple if necessary
+                if color_value is not None and isinstance(color_value, list):
+                    color_value = tuple(color_value)
+
                 parameters = {
                     "x": area_ui.get("x"),
                     "y": area_ui.get("y"),
-                    "color_rgb": area_ui.get("color_rgb") or area_ui.get("colorRgb"),
+                    "color_rgb": color_value,
                 }
                 # Remove None values
                 parameters = {k: v for k, v in parameters.items() if v is not None}
