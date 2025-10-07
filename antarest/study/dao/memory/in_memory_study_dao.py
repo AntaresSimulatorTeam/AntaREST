@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -20,6 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import Area
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -806,3 +807,28 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
         self.rulesets = rulesets
+
+    @override
+    def get_all_areas(self) -> List[Area]:
+        # For in-memory DAO, we only store area names, not full Area objects
+        # This is a simplified implementation for testing purposes
+        return [Area(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
+
+    @override
+    def get_area(self, area_id: str) -> Area:
+        # For in-memory DAO, we only store area names, not full Area objects
+        # This is a simplified implementation for testing purposes
+        if area_id not in self._area_names:
+            from antarest.core.exceptions import AreaNotFound
+            raise AreaNotFound(area_id)
+        return Area(id=area_id, name=area_id, thermals=[])
+
+    @override
+    def area_exists(self, area_id: str) -> bool:
+        return area_id in self._area_names
+
+    @override
+    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+        # For in-memory DAO, we don't store UI info
+        # This is a simplified implementation for testing purposes
+        return {}
