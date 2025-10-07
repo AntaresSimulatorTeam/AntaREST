@@ -1372,7 +1372,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Getting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.properties_manager.get_area_properties(study_interface, area_id)
+        return study_service.area_manager.get_area_properties(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
@@ -1383,7 +1383,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.update_all_area_properties(
+        study_service.area_manager.update_all_area_properties(
             study_interface,
             {area_id: form_fields},
         )

@@ -9,11 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
 from abc import abstractmethod
 from typing import Any, Dict, List
 
 from typing_extensions import override
 
+from antarest.core.exceptions import LayerNotFound
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import Area, AreaUIUpdate
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -319,10 +321,9 @@ class FileStudyAreaDao(AreaDao):
         Delete an area from the study.
         Removes all associated files, configurations, and references.
         """
-        import contextlib
         import logging
 
-        from antarest.core.exceptions import ChildNotFoundError, ReferencedObjectDeletionNotAllowed
+        from antarest.core.exceptions import ReferencedObjectDeletionNotAllowed
         from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 
         logger = logging.getLogger(__name__)
@@ -540,3 +541,61 @@ class FileStudyAreaDao(AreaDao):
                 current_area["ui"]["color_b"] = b
 
         study_data.tree.save(current_area, ["input", "areas", area_id, "ui"])
+
+    @staticmethod
+    def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
+        """Extract the list of layers from an area's UI configuration."""
+        if area in area_uis and "ui" in area_uis[area] and "layers" in area_uis[area]["ui"]:
+            layers_str = str(area_uis[area]["ui"]["layers"]).strip()
+            return re.split(r"\s+", layers_str) if layers_str else []
+        return []
+
+    @override
+    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+        study_data = self.get_file_study()
+
+        # Verify that the layer exists
+        layers = study_data.tree.get(["layers", "layers", "layers"])
+        if layer_id not in [str(layer) for layer in list(layers.keys())]:
+            raise LayerNotFound
+
+        # Get all areas UI configuration
+        areas_ui = study_data.tree.get(["input", "areas", ",".join(study_data.config.areas), "ui"])
+
+        # Standardize 'areas_ui' to a dictionary format even if only one area exists
+        cfg_areas = list(study_data.config.areas)
+        if len(cfg_areas) == 1:
+            areas_ui = {cfg_areas[0]: areas_ui}
+
+        # Determine which areas currently have this layer
+        existing_areas = [
+            area for area in areas_ui if "ui" in areas_ui[area] and layer_id in self._get_area_layers(areas_ui, area)
+        ]
+
+        # Calculate areas to add and remove
+        to_remove_areas = [area for area in existing_areas if area not in area_ids]
+        to_add_areas = [area for area in area_ids if area not in existing_areas]
+
+        # Remove layer from areas
+        for area in to_remove_areas:
+            area_layers = self._get_area_layers(areas_ui, area)
+            if layer_id in areas_ui[area]["layerX"]:
+                del areas_ui[area]["layerX"][layer_id]
+            if layer_id in areas_ui[area]["layerY"]:
+                del areas_ui[area]["layerY"][layer_id]
+            if layer_id in area_layers:
+                areas_ui[area]["ui"]["layers"] = " ".join([layer for layer in area_layers if layer != layer_id])
+
+        # Add layer to areas
+        for area in to_add_areas:
+            area_layers = self._get_area_layers(areas_ui, area)
+            if layer_id not in areas_ui[area]["layerX"]:
+                areas_ui[area]["layerX"][layer_id] = areas_ui[area]["ui"]["x"]
+            if layer_id not in areas_ui[area]["layerY"]:
+                areas_ui[area]["layerY"][layer_id] = areas_ui[area]["ui"]["y"]
+            if layer_id not in area_layers:
+                areas_ui[area]["ui"]["layers"] = " ".join(area_layers + [layer_id])
+
+        # Save all modified areas
+        for area in to_remove_areas + to_add_areas:
+            study_data.tree.save(areas_ui[area], ["input", "areas", area, "ui"])

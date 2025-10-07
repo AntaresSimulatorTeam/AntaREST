@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
-from antarest.study.business.areas.properties_management import AreaPropertiesManager
+from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
@@ -102,14 +102,14 @@ def _parse_area_properties_update(data: Mapping[_TableColumn, _CellValue]) -> Ar
 class TableModeManager:
     def __init__(
         self,
-        area_properties_manager: AreaPropertiesManager,
+        area_manager: AreaManager,
         link_manager: LinkManager,
         thermal_manager: ThermalManager,
         renewable_manager: RenewableManager,
         st_storage_manager: STStorageManager,
         binding_constraint_manager: BindingConstraintManager,
     ) -> None:
-        self._area_properties_manager = area_properties_manager
+        self._area_manager = area_manager
         self._link_manager = link_manager
         self._thermal_manager = thermal_manager
         self._renewable_manager = renewable_manager
@@ -118,7 +118,7 @@ class TableModeManager:
 
     def _get_table_data_unsafe(self, study: StudyInterface, table_type: TableModeType) -> TableDataDTO:
         if table_type == TableModeType.AREA:
-            areas_map = self._area_properties_manager.get_all_area_properties(study)
+            areas_map = self._area_manager.get_all_area_properties(study)
             data = {}
             for area_id, area in areas_map.items():
                 area_dict = area.model_dump(by_alias=True, exclude_none=True)
@@ -224,7 +224,7 @@ class TableModeManager:
         """
         if table_type == TableModeType.AREA:
             area_props_by_ids = {key: _parse_area_properties_update(values) for key, values in data.items()}
-            areas_map = self._area_properties_manager.update_all_area_properties(study, area_props_by_ids)
+            areas_map = self._area_manager.update_all_area_properties(study, area_props_by_ids)
             data = {}
             for area_id, area in areas_map.items():
                 area_dict = area.model_dump(by_alias=True, exclude_none=True)
@@ -324,7 +324,7 @@ class TableModeManager:
             JSON Schema which allows to know the name, title and type of each column.
         """
         if table_type == TableModeType.AREA:
-            return self._area_properties_manager.get_table_schema()
+            return self._area_manager.get_table_schema()
         elif table_type == TableModeType.LINK:
             return self._link_manager.get_table_schema()
         elif table_type == TableModeType.THERMAL:
