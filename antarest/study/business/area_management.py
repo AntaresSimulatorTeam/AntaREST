@@ -11,19 +11,25 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping
 
 from antarest.core.exceptions import DuplicateAreaName
+from antarest.core.model import JSON
 from antarest.study.business.model.area_model import (
     Area,
     AreaCreation,
     AreaUIUpdate,
+)
+from antarest.study.business.model.area_properties_model import (
+    AreaProperties,
+    AreaPropertiesUpdate,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
+from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_layer_areas import UpdateLayerAreas
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -114,3 +120,47 @@ class AreaManager:
             study_version=study.version,
         )
         study.add_commands([command])
+
+    def get_area_properties(self, study: StudyInterface, area_id: str) -> AreaProperties:
+        return study.get_study_dao().get_area_properties(area_id)
+
+    def get_all_area_properties(self, study: StudyInterface) -> dict[str, AreaProperties]:
+        return study.get_study_dao().get_all_area_properties()
+
+    def update_all_area_properties(
+        self, study: StudyInterface, properties: dict[str, AreaPropertiesUpdate]
+    ) -> Mapping[str, AreaProperties]:
+        """
+        Update the properties of ares.
+
+        Args:
+            study: The raw study object.
+            properties: A mapping of area IDs to area properties.
+
+        Returns:
+            A mapping of ALL area IDs to area properties.
+        """
+        old_areas_by_ids = self.get_all_area_properties(study)
+        new_areas_by_ids = dict(old_areas_by_ids)
+
+        areas_properties: Dict[str, AreaPropertiesUpdate] = {}
+
+        for area_id, update_area in properties.items():
+            old_area = old_areas_by_ids[area_id]
+            update_data = update_area.model_dump(exclude_none=True)
+            new_areas_by_ids[area_id] = old_area.model_copy(update=update_data)
+            areas_properties[area_id] = update_area
+
+        command = UpdateAreasProperties(
+            properties=areas_properties,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+
+        study.add_commands([command])
+
+        return new_areas_by_ids
+
+    @staticmethod
+    def get_table_schema() -> JSON:
+        return AreaProperties.model_json_schema()

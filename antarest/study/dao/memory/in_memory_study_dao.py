@@ -863,3 +863,14 @@ class InMemoryStudyDao(StudyDao):
 
         if area_id not in self._area_names:
             raise AreaNotFound(area_id)
+
+    @override
+    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+        # For in-memory DAO, we don't store layer-area associations
+        # This is a simplified implementation for testing purposes
+        # We just verify that the areas exist
+        from antarest.core.exceptions import AreaNotFound
+
+        for area_id in area_ids:
+            if area_id not in self._area_names:
+                raise AreaNotFound(area_id)

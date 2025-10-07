@@ -21,9 +21,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestUpdateLayerAreas:
     @pytest.mark.unit_test
-    def test_update_layer_areas_add_success(
-        self, empty_study_880: FileStudy, command_context: CommandContext
-    ) -> None:
+    def test_update_layer_areas_add_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """Test adding areas to a layer."""
         empty_study = empty_study_880
 
@@ -163,9 +161,7 @@ class TestUpdateLayerAreas:
         assert "Layer not found" in output.message
 
     @pytest.mark.unit_test
-    def test_update_layer_areas_empty_list(
-        self, empty_study_880: FileStudy, command_context: CommandContext
-    ) -> None:
+    def test_update_layer_areas_empty_list(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """Test updating layer with an empty list of areas (removes all areas)."""
         empty_study = empty_study_880
 

@@ -89,3 +89,18 @@ class AreaDao(ReadOnlyAreaDao):
             AreaNotFound: If the area does not exist.
         """
         raise NotImplementedError()
+
+    @abstractmethod
+    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+        """
+        Update the areas associated with a specific layer.
+
+        Args:
+            layer_id: The layer identifier.
+            area_ids: List of area identifiers to associate with the layer.
+                     Areas not in this list will be removed from the layer.
+
+        Raises:
+            LayerNotFound: If the layer does not exist.
+        """
+        raise NotImplementedError()
