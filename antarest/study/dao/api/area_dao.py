@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.area_model import Area, AreaUIUpdate
 
 
 class ReadOnlyAreaDao(ABC):
@@ -69,6 +69,21 @@ class AreaDao(ReadOnlyAreaDao):
 
         Args:
             area_id: The area identifier to delete.
+
+        Raises:
+            AreaNotFound: If the area does not exist.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_area_ui(self, area_id: str, layer: str, area_ui_update: AreaUIUpdate) -> None:
+        """
+        Update an area's UI properties (position and color) for a specific layer.
+
+        Args:
+            area_id: The area identifier.
+            layer: The layer identifier (typically "0", "1", etc.).
+            area_ui_update: The UI properties to update (x, y, color_rgb).
 
         Raises:
             AreaNotFound: If the area does not exist.

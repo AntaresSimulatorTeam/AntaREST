@@ -15,7 +15,7 @@ from typing import Any, Dict, List
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.area_model import Area, AreaUIUpdate
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6
@@ -510,3 +510,33 @@ class FileStudyAreaDao(AreaDao):
                 with contextlib.suppress(ValueError):
                     set_.subtract_areas.remove(area_id)
                     config.districts[id_] = set_
+
+    @override
+    def save_area_ui(self, area_id: str, layer: str, area_ui_update: AreaUIUpdate) -> None:
+        """
+        Update an area's UI properties (position and color) for a specific layer.
+        """
+        study_data = self.get_file_study()
+        current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
+        layer_int = int(layer)
+
+        # Apply updates if provided
+        if area_ui_update.x is not None:
+            current_area["layerX"][layer] = area_ui_update.x
+            if layer_int == 0:
+                current_area["ui"]["x"] = area_ui_update.x
+
+        if area_ui_update.y is not None:
+            current_area["layerY"][layer] = area_ui_update.y
+            if layer_int == 0:
+                current_area["ui"]["y"] = area_ui_update.y
+
+        if area_ui_update.color_rgb is not None:
+            r, g, b = area_ui_update.color_rgb
+            current_area["layerColor"][layer] = f"{r}, {g}, {b}"
+            if layer_int == 0:
+                current_area["ui"]["color_r"] = r
+                current_area["ui"]["color_g"] = g
+                current_area["ui"]["color_b"] = b
+
+        study_data.tree.save(current_area, ["input", "areas", area_id, "ui"])

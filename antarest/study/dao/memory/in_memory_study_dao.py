@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.area_model import Area, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -854,3 +854,12 @@ class InMemoryStudyDao(StudyDao):
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
 
         self._area_names.remove(area_id)
+
+    @override
+    def save_area_ui(self, area_id: str, layer: str, area_ui_update: AreaUIUpdate) -> None:
+        # For in-memory DAO, we don't store UI info
+        # This is a simplified implementation for testing purposes
+        from antarest.core.exceptions import AreaNotFound
+
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
