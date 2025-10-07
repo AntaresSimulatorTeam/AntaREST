@@ -81,7 +81,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaUIUpdate
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaUI, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -141,7 +141,7 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO, Simulation
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
@@ -240,15 +240,19 @@ class StudyXpansionDTO(AntaresBaseModel):
     constraint: bytes
 
 
-class StudyShortTermStorageDTO(AntaresBaseModel):
-    cluster: STStorage
+class StudyShortTermStorageDTO(STStorage):
     constraints: list[STStorageAdditionalConstraint]
+
+
+class StudyOutputDTO(AntaresBaseModel):
+    name: str
+    archived: bool
 
 
 class StudyAreasDTO(AntaresBaseModel):
     id: str
     properties: AreaProperties
-    ui: dict[str, Any]
+    ui: AreaUI
     thermals: list[ThermalCluster]
     renewables: list[RenewableCluster]
     st_storages: list[StudyShortTermStorageDTO]
@@ -269,7 +273,7 @@ class StudyDataDTO(AntaresBaseModel):
     binding_constraints: list[BindingConstraint]
     settings: StudySettingsDTO
     xpansion: StudyXpansionDTO | None
-    outputs: dict[str, Simulation]
+    outputs: list[StudyOutputDTO]
 
 
 class TaskProgressRecorder(ICommandListener):
@@ -2456,7 +2460,7 @@ class StudyService:
         # Areas
         ##########################
 
-        area_properties = self.area_manager.get_all_area_props(study_interface)
+        area_properties = self.area_properties_manager.get_all_area_properties(study_interface)
         area_ui = self.area_manager.get_all_areas_ui_info(study_interface)
         thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
         st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
@@ -2482,20 +2486,28 @@ class StudyService:
             storage_dict = st_storages.get(area_id, {})
             for storage_id, storage in storage_dict.items():
                 sts_constraints = st_storages_constraints.get(area_id, {}).get(storage_id, [])
-                area["st_storages"].append({"cluster": storage, "constraints": sts_constraints})
+                area["st_storages"].append({**storage.model_dump(), "constraints": sts_constraints})
 
             areas.append(area)
 
         obj["areas"] = areas
 
         ##########################
-        # Links, BCs and outputs
+        # Links and BCs
         ##########################
 
         obj["links"] = self.links_manager.get_all_links(study_interface)
         obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
+
+        ##########################
+        # Outputs
+        ##########################
+
         # We don't have access to the output service, so we have to do it like this
-        obj["outputs"] = study_interface.get_files().config.outputs
+        outputs = []
+        for output in study_interface.get_files().config.outputs.values():
+            outputs.append(StudyOutputDTO(name=output.name, archived=output.archived))
+        obj["outputs"] = outputs
 
         ##########################
         # Settings
