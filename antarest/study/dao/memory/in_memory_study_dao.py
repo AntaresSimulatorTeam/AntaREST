@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -20,6 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import Area, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -806,3 +807,70 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
         self.rulesets = rulesets
+
+    @override
+    def get_all_areas(self) -> List[Area]:
+        # For in-memory DAO, we only store area names, not full Area objects
+        # This is a simplified implementation for testing purposes
+        return [Area(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
+
+    @override
+    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+        # For in-memory DAO, we don't store UI info
+        # This is a simplified implementation for testing purposes
+        return {}
+
+    @override
+    def save_area(self, area_name: str, command_context: Any) -> None:
+        # For in-memory DAO, simplified implementation for testing
+        from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+
+        area_id = transform_name_to_id(area_name)
+        if area_id in self._area_names:
+            raise ValueError(f"Area '{area_name}' already exists and could not be created")
+        self._area_names.append(area_id)
+
+    @override
+    def delete_area(self, area_id: str) -> None:
+        # For in-memory DAO, simplified implementation for testing
+        from antarest.core.exceptions import AreaNotFound, ReferencedObjectDeletionNotAllowed
+        from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
+
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+        # Check that the area is not referenced in any binding constraint
+        referencing_binding_constraints = []
+        for bc in self._constraints.values():
+            for term in bc.terms:
+                data = term.data
+                if (isinstance(data, ClusterTerm) and data.area == area_id) or (
+                    isinstance(data, LinkTerm) and (data.area1 == area_id or data.area2 == area_id)
+                ):
+                    referencing_binding_constraints.append(bc)
+                    break
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+
+        self._area_names.remove(area_id)
+
+    @override
+    def save_area_ui(self, area_id: str, layer: str, area_ui_update: AreaUIUpdate) -> None:
+        # For in-memory DAO, we don't store UI info
+        # This is a simplified implementation for testing purposes
+        from antarest.core.exceptions import AreaNotFound
+
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+    @override
+    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+        # For in-memory DAO, we don't store layer-area associations
+        # This is a simplified implementation for testing purposes
+        # We just verify that the areas exist
+        from antarest.core.exceptions import AreaNotFound
+
+        for area_id in area_ids:
+            if area_id not in self._area_names:
+                raise AreaNotFound(area_id)

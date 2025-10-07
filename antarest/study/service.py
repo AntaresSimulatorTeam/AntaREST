@@ -69,7 +69,6 @@ from antarest.study.business.advanced_parameters_management import AdvancedParam
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
-from antarest.study.business.areas.properties_management import AreaPropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
@@ -80,7 +79,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
@@ -485,7 +484,6 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.area_manager = AreaManager(command_context)
-        self.area_properties_manager = AreaPropertiesManager(command_context)
         self.layer_manager = LayerManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
@@ -496,7 +494,6 @@ class StudyService:
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
-        self.properties_manager = AreaPropertiesManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
         self.thermal_manager = ThermalManager(command_context)
         self.st_storage_manager = STStorageManager(command_context)
@@ -508,7 +505,7 @@ class StudyService:
         self.binding_constraint_manager = BindingConstraintManager(command_context)
         self.correlation_manager = CorrelationManager(command_context)
         self.table_mode_manager = TableModeManager(
-            self.area_properties_manager,
+            self.area_manager,
             self.links_manager,
             self.thermal_manager,
             self.renewable_manager,
@@ -1732,7 +1729,7 @@ class StudyService:
         self,
         uuid: str,
         area_id: str,
-        area_ui: UpdateAreaUi,
+        area_ui: AreaUIUpdate,
         layer: str,
     ) -> None:
         study = self.get_study(uuid)

@@ -42,7 +42,7 @@ from antarest.study.business.correlation_management import (
     CorrelationFormFields,
     CorrelationMatrix,
 )
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -213,7 +213,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update area information",
         response_model=None,
     )
-    def update_area_ui(uuid: str, area_id: str, area_ui: UpdateAreaUi, layer: str = "0") -> Any:
+    def update_area_ui(uuid: str, area_id: str, area_ui: AreaUIUpdate, layer: str = "0") -> Any:
         logger.info(f"Updating area ui {area_id} for study {uuid}")
         return study_service.update_area_ui(uuid, area_id, area_ui, layer)
 
@@ -1372,7 +1372,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Getting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.properties_manager.get_area_properties(study_interface, area_id)
+        return study_service.area_manager.get_area_properties(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
@@ -1383,7 +1383,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.update_all_area_properties(
+        study_service.area_manager.update_all_area_properties(
             study_interface,
             {area_id: form_fields},
         )

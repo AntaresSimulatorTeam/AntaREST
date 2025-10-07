@@ -19,7 +19,6 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import MatrixService
-from antarest.study.business.model.area_model import UpdateAreaUi
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -62,12 +61,11 @@ COMMANDS = [
             action=CommandName.UPDATE_AREA_UI.value,
             args={
                 "area_id": "id",
-                "area_ui": UpdateAreaUi(
-                    x=100, y=100, color_rgb=(100, 100, 100), layer_x={}, layer_y={}, layer_color={}
-                ),
                 "layer": "0",
+                "parameters": {"x": 100, "y": 100, "colorRgb": [100, 100, 100]},
             },
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_area_ui",
@@ -106,6 +104,15 @@ COMMANDS = [
         ),
         None,
         id="update_layer",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_LAYER_AREAS.value,
+            args={"layer_id": "layer_id", "area_ids": ["area1", "area2"]},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_layer_areas",
     ),
     pytest.param(
         CommandDTO(
@@ -1389,6 +1396,59 @@ def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
     assert dto.action == "update_playlist"
     assert dto.version == 2
     assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}
+
+
+def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory):
+    """Test conversion from v1 format (area_ui) to v2 format (parameters)"""
+    dto = CommandDTO(
+        action=CommandName.UPDATE_AREA_UI.value,
+        args={
+            "area_id": "area1",
+            "area_ui": {
+                "x": 100,
+                "y": 200,
+                "color_rgb": [255, 128, 64],
+                "layer_x": {"0": 100},  # Should be ignored
+                "layer_y": {"0": 200},  # Should be ignored
+                "layer_color": {"0": "255, 128, 64"},  # Should be ignored
+            },
+            "layer": "0",
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_area_ui"
+    assert dto.version == 2
+    assert dto.args == {
+        "area_id": "area1",
+        "layer": "0",
+        "parameters": {"x": 100, "y": 200, "colorRgb": [255, 128, 64]},
+    }
+    # Verify old layer_* fields are not in the converted parameters
+    assert "layer_x" not in dto.args
+    assert "layer_y" not in dto.args
+    assert "layer_color" not in dto.args
+    assert "area_ui" not in dto.args
+
+
+def test_update_area_ui_invalid_layer(command_factory: CommandFactory):
+    """Test that invalid layer value raises validation error"""
+    dto = CommandDTO(
+        action=CommandName.UPDATE_AREA_UI.value,
+        args={
+            "area_id": "area1",
+            "layer": "invalid",  # Invalid: not an integer
+            "parameters": {"x": 100, "y": 200, "colorRgb": [255, 128, 64]},
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=2,
+    )
+    with pytest.raises(ValueError, match="Layer must be a valid integer string"):
+        command_factory.to_command(dto)
 
 
 def test_parse_legacy_command_create_district(command_factory: CommandFactory):

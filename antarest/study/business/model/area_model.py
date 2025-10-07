@@ -11,11 +11,12 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import List, Mapping, Optional, Sequence
+from typing import List, Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_camel_case
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 
 
@@ -38,10 +39,25 @@ class AreaCreation(AntaresBaseModel):
     )
 
 
-class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    x: int = Field(title="X position")
-    y: int = Field(title="Y position")
-    color_rgb: Sequence[int] = Field(title="RGB color", alias="colorRgb")
-    layer_x: Mapping[int, int] = Field(default_factory=dict, title="X position of each layer", alias="layerX")
-    layer_y: Mapping[int, int] = Field(default_factory=dict, title="Y position of each layer", alias="layerY")
-    layer_color: Mapping[int, str] = Field(default_factory=dict, title="Color of each layer", alias="layerColor")
+class AreaUI(AntaresBaseModel):
+    """
+    Area UI properties for a specific layer.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    x: int = Field(description="X position")
+    y: int = Field(description="Y position")
+    color_rgb: tuple[int, int, int] = Field(description="RGB color")
+
+
+class AreaUIUpdate(AntaresBaseModel):
+    """
+    Partial update for Area UI properties.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    x: Optional[int] = None
+    y: Optional[int] = None
+    color_rgb: Optional[tuple[int, int, int]] = None

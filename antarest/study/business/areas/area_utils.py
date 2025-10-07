@@ -12,7 +12,7 @@
 import re
 from typing import Any, Dict, List, Sequence
 
-from antarest.study.storage.rawstudy.model.filesystem.config.area import UIProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUIFileData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -45,8 +45,8 @@ def _get_ui_info_map(file_study: FileStudy, area_ids: Sequence[str]) -> Dict[str
     if len(area_ids) == 1:
         ui_info_map = {area_ids[0]: ui_info_map}
 
-    # Convert to UIProperties to ensure that the UI object is valid.
-    ui_info_map = {area_id: UIProperties(**ui_info).to_config() for area_id, ui_info in ui_info_map.items()}
+    # Convert to AreaUIFileData to ensure that the UI object is valid.
+    ui_info_map = {area_id: AreaUIFileData(**ui_info).to_config() for area_id, ui_info in ui_info_map.items()}
 
     return ui_info_map
 
