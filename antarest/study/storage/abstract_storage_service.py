@@ -316,7 +316,13 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             raise StudyOutputNotFoundError()
         stopwatch = StopWatch()
         if not path_output_zip.exists():
-            archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
+            # Create zip on scratch disk to reduce I/O on CALIN server
+            with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
+                tmp_zip_path = Path(tmpdir) / f"{output_id}.zip"
+                archive_dir(path_output, tmp_zip_path, archive_format=ArchiveFormat.ZIP)
+                stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} archived on scratch in {x}s"))
+                # Move the complete zip to CALIN server in a single operation
+                shutil.move(str(tmp_zip_path), str(target))
         stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {metadata.path} exported in {x}s"))
 
     def _read_additional_data_from_files(self, file_study: FileStudy) -> StudyAdditionalData:
