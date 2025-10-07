@@ -65,14 +65,12 @@ function UpdateDistrictDialog(props: Props) {
 
   const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
     const { districtId, output, comments } = data.values;
-    const districtAreas = districtsById[districtId].areas;
     dispatch(
       updateStudyMapDistrict({
         studyId: study.id,
         districtId,
         output,
         comments,
-        areas: districtAreas,
       }),
     );
     onClose();

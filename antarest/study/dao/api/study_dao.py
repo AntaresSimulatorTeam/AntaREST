@@ -16,6 +16,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -23,6 +24,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
@@ -47,7 +49,9 @@ from antarest.study.dao.api.adequacy_patch_parameters_dao import (
     ReadOnlyAdequacyPatchParametersDao,
 )
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
+from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao, ReadOnlyAreaPropertiesDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
@@ -82,9 +86,11 @@ class ReadOnlyStudyDao(
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
     ReadOnlyTimeSeriesConfigDao,
+    ReadOnlyDistrictDao,
     ReadOnlyLayerDao,
     ReadOnlyPlaylistConfigDao,
     ReadOnlyUserResourcesDao,
+    ReadOnlyAreaPropertiesDao,
     ReadOnlyScenarioBuilderDao,
 ):
     @abstractmethod
@@ -111,10 +117,12 @@ class StudyDao(
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
+    DistrictDao,
     LayerDao,
     PlaylistConfigDao,
     UserResourcesDao,
     ScenarioBuilderDao,
+    AreaPropertiesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -391,6 +399,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_timeseries_config()
 
     @override
+    def get_district(self, district_id: str) -> District:
+        return self._adaptee.get_district(district_id)
+
+    @override
+    def get_districts(self) -> Sequence[District]:
+        return self._adaptee.get_districts()
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return self._adaptee.district_exists(district_id)
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._adaptee.tmp_get_all_areas()
+
+    @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        return self._adaptee.get_invalid_areas_in_district(areas)
+
+    @override
     def get_layers(self) -> Sequence[Layer]:
         return self._adaptee.get_layers()
 
@@ -401,6 +429,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_playlist_config(self) -> Playlist:
         return self._adaptee.get_playlist_config()
+
+    @override
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        return self._adaptee.get_area_properties(area_id)
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._adaptee.get_all_area_properties()
 
     @override
     def get_rulesets(self) -> Rulesets:

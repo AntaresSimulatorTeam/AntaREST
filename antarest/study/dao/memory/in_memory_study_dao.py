@@ -20,6 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -27,6 +28,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -155,14 +157,20 @@ class InMemoryStudyDao(StudyDao):
         self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
         # TimeSeries config
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
+        # Districts
+        self._districts: dict[str, District] = {}
         # Layer
         self._layers: list[Layer] = []
         # Comments
         self._comments = ""
+        # Area names
+        self._area_names: list[str] = []
         # Playlist config
         self._playlist_config = Playlist()
         # User resources
         self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
+        # Area Properties
+        self._area_properties: dict[str, AreaProperties] = {}
         # Scenario Builder
         self.rulesets: Rulesets = {}
         self.active_ruleset_name: Optional[str] = None
@@ -705,6 +713,35 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
+    def get_districts(self) -> Sequence[District]:
+        return list(self._districts.values())
+
+    @override
+    def get_district(self, district_id: str) -> District:
+        return self._districts[district_id]
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return district_id in self._districts
+
+    @override
+    def save_district(self, district: District) -> None:
+        self._districts[district.id] = district
+
+    @override
+    def remove_district(self, district_id: str) -> None:
+        del self._districts[district_id]
+
+    @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        # TODO make this actually work once we implement area DAO
+        return list(set(areas) - set(self._area_names))
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._area_names
+
+    @override
     def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
         self._xpansion_security_criterion = criterion
 
@@ -741,6 +778,18 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
         del self._user_resources[resource_path]
+
+    @override
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        return self._area_properties[area_id]
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._area_properties
+
+    @override
+    def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
+        self._area_properties[area_id] = area_properties
 
     @override
     def get_rulesets(self) -> Rulesets:

@@ -42,8 +42,7 @@ from antarest.study.business.correlation_management import (
     CorrelationFormFields,
     CorrelationMatrix,
 )
-from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -68,6 +67,11 @@ from antarest.study.business.model.config.playlist_model import PlaylistUpdate, 
 from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
+)
+from antarest.study.business.model.district_model import (
+    DistrictCreation,
+    DistrictDTO,
+    DistrictUpdate,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -208,7 +212,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update area information",
         response_model=None,
     )
-    def update_area_ui(uuid: str, area_id: str, area_ui: UpdateAreaUi, layer: str = "0") -> Any:
+    def update_area_ui(uuid: str, area_id: str, area_ui: AreaUIUpdate, layer: str = "0") -> Any:
         logger.info(f"Updating area ui {area_id} for study {uuid}")
         return study_service.update_area_ui(uuid, area_id, area_ui, layer)
 
@@ -289,32 +293,32 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
         summary="Get the list of districts defined in this study",
-        response_model=List[DistrictInfoDTO],
+        response_model=List[DistrictDTO],
     )
-    def get_districts(uuid: str) -> List[DistrictInfoDTO]:
+    def get_districts(uuid: str) -> List[DistrictDTO]:
         logger.info(f"Fetching districts list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.district_manager.get_districts(study_interface)
+        return list(study_service.district_manager.get_districts(study_interface))
 
     @bp.post(
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
         summary="Create a new district in the study",
-        response_model=DistrictInfoDTO,
+        response_model=DistrictDTO,
     )
-    def create_district(uuid: str, dto: DistrictCreationDTO) -> DistrictInfoDTO:
-        logger.info(f"Create district {dto.name} for study {uuid}")
+    def create_district(uuid: str, district_creation: DistrictCreation) -> DistrictDTO:
+        logger.info(f"Create district {district_creation.name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        return study_service.district_manager.create_district(study_interface, dto)
+        return study_service.district_manager.create_district(study_interface, district_creation)
 
     @bp.put(
         "/studies/{uuid}/districts/{district_id}",
         tags=[APITag.study_data],
         summary="Update the properties of a district",
     )
-    def update_district(uuid: str, district_id: str, dto: DistrictUpdateDTO) -> None:
+    def update_district(uuid: str, district_id: str, dto: DistrictUpdate) -> None:
         logger.info(f"Updating district {district_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -1365,7 +1369,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.update_area_properties(study_interface, area_id, form_fields)
+        study_service.properties_manager.update_all_area_properties(
+            study_interface,
+            {area_id: form_fields},
+        )
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

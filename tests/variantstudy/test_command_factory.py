@@ -19,7 +19,6 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import MatrixService
-from antarest.study.business.model.area_model import UpdateAreaUi
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -62,12 +61,11 @@ COMMANDS = [
             action=CommandName.UPDATE_AREA_UI.value,
             args={
                 "area_id": "id",
-                "area_ui": UpdateAreaUi(
-                    x=100, y=100, color_rgb=(100, 100, 100), layer_x={}, layer_y={}, layer_color={}
-                ),
                 "layer": "0",
+                "parameters": {"x": 100, "y": 100, "colorRgb": [100, 100, 100]},
             },
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_area_ui",
@@ -110,13 +108,18 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
-            args={
-                "name": "id",
-                "filter_items": ["a"],
-                "output": True,
-                "comments": "",
-            },
+            args=[
+                {
+                    "parameters": {
+                        "name": "id",
+                        "areas": ["a"],
+                        "output": True,
+                        "comments": "",
+                    }
+                }
+            ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_district",
@@ -126,13 +129,17 @@ COMMANDS = [
             action=CommandName.CREATE_DISTRICT.value,
             args=[
                 {
-                    "name": "id",
-                    "base_filter": "add-all",
-                    "output": True,
-                    "comments": "",
+                    "parameters": {
+                        "name": "id",
+                        "apply_filter": "add-all",
+                        "output": True,
+                        "areas": [],
+                        "comments": "",
+                    }
                 }
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_district_list",
@@ -529,8 +536,12 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_DISTRICT.value,
-            args={"id": "id", "filter_items": ["a"]},
+            args={
+                "id": "id",
+                "parameters": {"areas": ["a"]},
+            },
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_district",
@@ -538,8 +549,9 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_DISTRICT.value,
-            args=[{"id": "id", "base_filter": "add-all"}],
+            args=[{"id": "id", "parameters": {"apply_filter": "add-all"}}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_district_list",
@@ -1375,3 +1387,128 @@ def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
     assert dto.action == "update_playlist"
     assert dto.version == 2
     assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}
+
+
+def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory):
+    """Test conversion from v1 format (area_ui) to v2 format (parameters)"""
+    dto = CommandDTO(
+        action=CommandName.UPDATE_AREA_UI.value,
+        args={
+            "area_id": "area1",
+            "area_ui": {
+                "x": 100,
+                "y": 200,
+                "color_rgb": [255, 128, 64],
+                "layer_x": {"0": 100},  # Should be ignored
+                "layer_y": {"0": 200},  # Should be ignored
+                "layer_color": {"0": "255, 128, 64"},  # Should be ignored
+            },
+            "layer": "0",
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_area_ui"
+    assert dto.version == 2
+    assert dto.args == {
+        "area_id": "area1",
+        "layer": "0",
+        "parameters": {"x": 100, "y": 200, "colorRgb": [255, 128, 64]},
+    }
+    # Verify old layer_* fields are not in the converted parameters
+    assert "layer_x" not in dto.args
+    assert "layer_y" not in dto.args
+    assert "layer_color" not in dto.args
+    assert "area_ui" not in dto.args
+
+
+def test_update_area_ui_invalid_layer(command_factory: CommandFactory):
+    """Test that invalid layer value raises validation error"""
+    dto = CommandDTO(
+        action=CommandName.UPDATE_AREA_UI.value,
+        args={
+            "area_id": "area1",
+            "layer": "invalid",  # Invalid: not an integer
+            "parameters": {"x": 100, "y": 200, "colorRgb": [255, 128, 64]},
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=2,
+    )
+    with pytest.raises(ValueError, match="Layer must be a valid integer string"):
+        command_factory.to_command(dto)
+
+
+def test_parse_legacy_command_create_district(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.CREATE_DISTRICT.value,
+        args={
+            "name": "id",
+            "filter_items": ["a"],
+            "output": True,
+            "comments": "",
+        },
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_district"
+    assert dto.version == 2
+    assert dto.args == {
+        "parameters": {
+            "name": "id",
+            "areas": ["a"],
+            "output": True,
+            "comments": "",
+        }
+    }
+
+    dto = CommandDTO(
+        action=CommandName.CREATE_DISTRICT.value,
+        args={
+            "name": "id",
+            "base_filter": "add-all",
+            "filter_items": ["a"],
+            "output": False,
+            "comments": "",
+        },
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_district"
+    assert dto.version == 2
+    assert dto.args == {
+        "parameters": {
+            "name": "id",
+            "apply_filter": "add-all",
+            "areas": ["a"],
+            "output": False,
+            "comments": "",
+        }
+    }
+
+
+def test_parse_legacy_command_update_district(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_DISTRICT.value,
+        args={"id": "id", "filter_items": ["a"]},
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_district"
+    assert dto.version == 2
+    assert dto.args == {"parameters": {"areas": ["a"]}, "id": "id"}

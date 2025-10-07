@@ -81,7 +81,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -551,6 +551,7 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.area_manager = AreaManager(command_context)
+        self.area_properties_manager = AreaPropertiesManager(command_context)
         self.layer_manager = LayerManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
@@ -573,7 +574,7 @@ class StudyService:
         self.binding_constraint_manager = BindingConstraintManager(command_context)
         self.correlation_manager = CorrelationManager(command_context)
         self.table_mode_manager = TableModeManager(
-            self.area_manager,
+            self.area_properties_manager,
             self.links_manager,
             self.thermal_manager,
             self.renewable_manager,
@@ -647,10 +648,12 @@ class StudyService:
         empty_log = False
         for log_location in log_locations[err_log]:
             try:
+                # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
+                # especially because of windows error messages
                 log = cast(
                     bytes,
                     file_study.tree.get(log_location, depth=1, formatted=True),
-                ).decode(encoding="utf-8")
+                ).decode(encoding="utf-8", errors="replace")
                 # when missing file, RawFileNode return empty bytes
                 if log:
                     return log
@@ -1795,7 +1798,7 @@ class StudyService:
         self,
         uuid: str,
         area_id: str,
-        area_ui: UpdateAreaUi,
+        area_ui: AreaUIUpdate,
         layer: str,
     ) -> None:
         study = self.get_study(uuid)

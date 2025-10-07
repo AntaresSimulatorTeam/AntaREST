@@ -10,19 +10,19 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Final, List, Optional
 
+from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.business.model.district_model import DistrictUpdate, update_district
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
     command_failed,
     command_succeeded,
 )
-from antarest.study.storage.variantstudy.model.command.create_district import DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -42,51 +42,46 @@ class UpdateDistrict(ICommand):
     # ==================
 
     id: str
-    base_filter: Optional[DistrictBaseFilter] = None
-    filter_items: Optional[List[str]] = None
-    output: Optional[bool] = None
-    comments: Optional[str] = None
 
-    def update_in_config(self, study_data: FileStudyTreeConfig) -> Dict[str, Any]:
-        base_set = study_data.sets[self.id]
+    parameters: DistrictUpdate
+    # version 2: rename filter_items to areas, move all parameters under "parameters"
+    _SERIALIZATION_VERSION: Final[int] = 2
 
-        if self.base_filter:
-            inverted_set = self.base_filter == DistrictBaseFilter.add_all
-        else:
-            inverted_set = base_set.inverted_set
-        study_data.sets[self.id].areas = self.filter_items or base_set.areas
-        study_data.sets[self.id].output = self.output if self.output is not None else base_set.output
-        study_data.sets[self.id].inverted_set = inverted_set
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                parameters = {}
+                if "base_filter" in values:
+                    parameters["apply_filter"] = values.pop("base_filter")
+                if "filter_items" in values:
+                    parameters["areas"] = values.pop("filter_items")
+                if "output" in values:
+                    parameters["output"] = values.pop("output")
+                if "comments" in values:
+                    parameters["comments"] = values.pop("comments")
+                values["parameters"] = parameters
+        return values
 
-        item_key = "-" if inverted_set else "+"
-        return {
-            "district_id": self.id,
-            "item_key": item_key,
-        }
+    class Config:
+        populate_by_name = True
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        if self.id not in study_data.config.sets:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        if not study_data.district_exists(self.id):
             return command_failed(message=f"District '{self.id}' does not exist and should be created")
 
-        data = self.update_in_config(study_data.config)
+        invalid_areas = study_data.get_invalid_areas_in_district(self.parameters.areas or [])
+        if invalid_areas:
+            return command_failed(message=f"District '{self.id}' has invalid areas: {invalid_areas}")
 
-        sets = study_data.tree.get(["input", "areas", "sets"])
-        district_id = data["district_id"]
-        item_key = data["item_key"]
-        apply_filter = (
-            self.base_filter.value if self.base_filter else sets.get("apply-filter", DistrictBaseFilter.remove_all)
-        )
-        study_data.tree.save(
-            {
-                "caption": sets[district_id]["caption"],
-                "apply-filter": apply_filter,
-                item_key: self.filter_items,
-                "output": study_data.config.sets[district_id].output,
-                "comments": self.comments,
-            },
-            ["input", "areas", "sets", district_id],
-        )
+        district = study_data.get_district(self.id)
+
+        updated_district = update_district(district, self.parameters)
+
+        study_data.save_district(updated_district)
 
         return command_succeeded(message=self.id)
 
@@ -96,11 +91,9 @@ class UpdateDistrict(ICommand):
             action=CommandName.UPDATE_DISTRICT.value,
             args={
                 "id": self.id,
-                "base_filter": self.base_filter.value if self.base_filter else None,
-                "filter_items": self.filter_items,
-                "output": self.output,
-                "comments": self.comments,
+                "parameters": self.parameters.model_dump(mode="json", exclude_none=True),
             },
+            version=self._SERIALIZATION_VERSION,
             study_version=self.study_version,
         )
 

@@ -10,15 +10,14 @@
 #
 # This file is part of the Antares project.
 
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Final, List, Optional
 
-from pydantic import field_validator
+from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
+from antarest.study.business.model.district_model import DistrictCreation, create_district
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -28,11 +27,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-class DistrictBaseFilter(Enum):
-    add_all = "add-all"
-    remove_all = "remove-all"
 
 
 class CreateDistrict(ICommand):
@@ -48,72 +42,63 @@ class CreateDistrict(ICommand):
     # Command parameters
     # ==================
 
-    name: str
-    base_filter: Optional[DistrictBaseFilter] = None
-    filter_items: Optional[List[str]] = None
-    output: bool = True
-    comments: str = ""
+    parameters: DistrictCreation
 
-    @field_validator("name")
-    def validate_district_name(cls, val: str) -> str:
-        valid_name = transform_name_to_id(val, lower=False)
-        if valid_name != val:
+    # version 2: rename filter_items to areas, move all parameters under "parameters"
+    _SERIALIZATION_VERSION: Final[int] = 2
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                parameters = {}
+                if "name" in values:
+                    parameters["name"] = values.pop("name")
+                if "base_filter" in values:
+                    parameters["apply_filter"] = values.pop("base_filter")
+                if "filter_items" in values:
+                    parameters["areas"] = values.pop("filter_items")
+                if "output" in values:
+                    parameters["output"] = values.pop("output")
+                if "comments" in values:
+                    parameters["comments"] = values.pop("comments")
+                values["parameters"] = parameters
+        return values
+
+    @field_validator("parameters")
+    def validate_district_name(cls, val: DistrictCreation) -> DistrictCreation:
+        valid_name = transform_name_to_id(val.name, lower=False)
+        if valid_name != val.name:
             raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
-    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        district_id = transform_name_to_id(self.name)
-        if district_id in study_data.sets:
-            return (
-                command_failed(message=f"District '{self.name}' already exists and could not be created"),
-                dict(),
-            )
-
-        base_filter = self.base_filter or DistrictBaseFilter.remove_all
-        inverted_set = base_filter == DistrictBaseFilter.add_all
-        study_data.sets[district_id] = DistrictSet(
-            name=self.name,
-            areas=self.filter_items or [],
-            output=self.output,
-            inverted_set=inverted_set,
-        )
-        item_key = "-" if inverted_set else "+"
-        return command_succeeded(message=district_id), {
-            "district_id": district_id,
-            "item_key": item_key,
-        }
-
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self.update_in_config(study_data.config)
-        if not output.status:
-            return output
-        district_id = data["district_id"]
-        item_key = data["item_key"]
-        study_data.tree.save(
-            {
-                "caption": self.name,
-                "apply-filter": (self.base_filter or DistrictBaseFilter.remove_all).value,
-                item_key: self.filter_items or [],
-                "output": study_data.config.sets[district_id].output,
-                "comments": self.comments,
-            },
-            ["input", "areas", "sets", district_id],
-        )
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        district_id = transform_name_to_id(self.parameters.name)
 
-        return output
+        if study_data.district_exists(district_id):
+            return command_failed(message=f"District '{self.parameters.name}' already exists and could not be created")
+
+        invalid_areas = study_data.get_invalid_areas_in_district(self.parameters.areas or [])
+        if invalid_areas:
+            return command_failed(message=f"District '{self.parameters.name}' has invalid areas: {invalid_areas}")
+
+        new_district_definition = create_district(self.parameters, district_id)
+
+        study_data.save_district(new_district_definition)
+
+        return command_succeeded(message=district_id)
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
             args={
-                "name": self.name,
-                "base_filter": self.base_filter.value if self.base_filter else None,
-                "filter_items": self.filter_items,
-                "output": self.output,
-                "comments": self.comments,
+                "parameters": self.parameters.model_dump(mode="json", exclude_none=True),
             },
+            version=self._SERIALIZATION_VERSION,
             study_version=self.study_version,
         )
 
