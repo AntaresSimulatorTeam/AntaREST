@@ -58,6 +58,19 @@ class AllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=True, 
     columns: Annotated[list[str], Len(min_length=1)]
     data: NpArray
 
+    @model_validator(mode="after")
+    def check_coherence(self) -> "AllocationMatrix":
+        if self.data.size == 0:
+            raise ValueError("allocation matrix must not be empty")
+
+        index_size = len(self.index)
+        if index_size != len(self.columns):
+            raise ValueError("allocation matrix must have square shape")
+        elif self.data.shape != (index_size, index_size):
+            raise ValueError("allocation matrix shape is inconsistent")
+
+        return self
+
     def to_hydro_allocations(self) -> dict[str, HydroAllocation]:
         raise NotImplementedError()
 
