@@ -107,6 +107,15 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_LAYER_AREAS.value,
+            args={"layer_id": "layer_id", "area_ids": ["area1", "area2"]},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_layer_areas",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
             args=[
                 {
