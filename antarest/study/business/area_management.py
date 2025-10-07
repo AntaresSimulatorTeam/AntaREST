@@ -20,11 +20,8 @@ from antarest.study.business.model.area_model import (
     AreaCreation,
     AreaUIUpdate,
 )
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -52,17 +49,7 @@ class AreaManager:
 
     def get_all_areas(self, study: StudyInterface) -> List[Area]:
         """Retrieve all physical areas of a raw study."""
-
-        file_study = study.get_files()
-        cfg_areas: Dict[str, AreaConfig] = file_study.config.areas
-        return [
-            Area(
-                id=area_id,
-                name=area.name,
-                thermals=self._get_clusters(file_study, area_id),
-            )
-            for area_id, area in cfg_areas.items()
-        ]
+        return study.get_study_dao().get_all_areas()
 
     def get_all_areas_ui_info(self, study: StudyInterface) -> Dict[str, Any]:
         """
@@ -187,11 +174,3 @@ class AreaManager:
         )
         study.add_commands([command])
 
-    @staticmethod
-    def _get_clusters(file_study: FileStudy, area: str) -> List[ThermalCluster]:
-        thermal_clusters_data = file_study.tree.get(["input", "thermal", "clusters", area, "list"])
-        result = []
-        for tid, obj in thermal_clusters_data.items():
-            cluster_info = parse_thermal_cluster(file_study.config.version, obj)
-            result.append(cluster_info)
-        return result
