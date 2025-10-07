@@ -72,8 +72,6 @@ class ReadOnlyAreaDao(ABC):
 class AreaDao(ReadOnlyAreaDao):
     """
     DAO for area operations.
-
-    Note: Write operations (create, update, delete) are handled through commands,
-    not through the DAO layer. This ensures proper variant study management.
     """
+
     pass

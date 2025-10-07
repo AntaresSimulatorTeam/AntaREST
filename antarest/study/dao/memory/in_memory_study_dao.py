@@ -820,6 +820,7 @@ class InMemoryStudyDao(StudyDao):
         # This is a simplified implementation for testing purposes
         if area_id not in self._area_names:
             from antarest.core.exceptions import AreaNotFound
+
             raise AreaNotFound(area_id)
         return Area(id=area_id, name=area_id, thermals=[])
 
