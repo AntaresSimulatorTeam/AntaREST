@@ -833,8 +833,24 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_area(self, area_id: str) -> None:
         # For in-memory DAO, simplified implementation for testing
-        if area_id not in self._area_names:
-            from antarest.core.exceptions import AreaNotFound
+        from antarest.core.exceptions import AreaNotFound, ReferencedObjectDeletionNotAllowed
+        from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 
+        if area_id not in self._area_names:
             raise AreaNotFound(area_id)
+
+        # Check that the area is not referenced in any binding constraint
+        referencing_binding_constraints = []
+        for bc in self._constraints.values():
+            for term in bc.terms:
+                data = term.data
+                if (isinstance(data, ClusterTerm) and data.area == area_id) or (
+                    isinstance(data, LinkTerm) and (data.area1 == area_id or data.area2 == area_id)
+                ):
+                    referencing_binding_constraints.append(bc)
+                    break
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+
         self._area_names.remove(area_id)

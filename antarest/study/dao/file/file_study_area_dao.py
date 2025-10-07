@@ -317,5 +317,196 @@ class FileStudyAreaDao(AreaDao):
     def delete_area(self, area_id: str) -> None:
         """
         Delete an area from the study.
+        Removes all associated files, configurations, and references.
         """
-        raise NotImplementedError("delete_area will be implemented next")
+        import contextlib
+        import logging
+
+        from antarest.core.exceptions import ChildNotFoundError, ReferencedObjectDeletionNotAllowed
+        from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
+
+        logger = logging.getLogger(__name__)
+
+        study_data = self.get_file_study()
+
+        # Check that the area is not referenced in any binding constraint
+        referencing_binding_constraints = []
+        for bc in study_data.config.bindings:
+            for term in bc.terms:
+                data = term.data
+                if (isinstance(data, ClusterTerm) and data.area == area_id) or (
+                    isinstance(data, LinkTerm) and (data.area1 == area_id or data.area2 == area_id)
+                ):
+                    referencing_binding_constraints.append(bc)
+                    break
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+
+        # Delete all area files from the tree
+        self._delete_area_files(area_id, study_data)
+
+        # Clean up all references to the area
+        self._remove_area_from_links(area_id, study_data, logger)
+        self._remove_area_from_correlation_matrices(area_id, study_data)
+        self._remove_area_from_hydro_allocation(area_id, study_data)
+        self._remove_area_from_districts(area_id, study_data)
+        self._remove_area_from_scenario_builder(area_id, study_data)
+
+        # Remove from config
+        self._remove_from_config(area_id, study_data.config)
+
+        # Update area list
+        new_area_data: JSON = {"input": {"areas": {"list": [area.name for area in study_data.config.areas.values()]}}}
+        study_data.tree.save(new_area_data)
+
+    def _delete_area_files(self, area_id: str, study_data: Any) -> None:
+        """Delete all files associated with an area from the tree."""
+        import contextlib
+
+        from antarest.core.exceptions import ChildNotFoundError
+
+        # Delete basic area files
+        study_data.tree.delete(["input", "areas", area_id])
+        study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{area_id}"])
+        study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{area_id}"])
+        study_data.tree.delete(["input", "hydro", "prepro", area_id])
+        study_data.tree.delete(["input", "hydro", "series", area_id])
+        study_data.tree.delete(["input", "hydro", "hydro", "inter-daily-breakdown", area_id])
+        study_data.tree.delete(["input", "hydro", "hydro", "intra-daily-modulation", area_id])
+        study_data.tree.delete(["input", "hydro", "hydro", "inter-monthly-breakdown", area_id])
+        study_data.tree.delete(["input", "load", "prepro", area_id])
+        study_data.tree.delete(["input", "load", "series", f"load_{area_id}"])
+        study_data.tree.delete(["input", "misc-gen", f"miscgen-{area_id}"])
+        study_data.tree.delete(["input", "reserves", area_id])
+        study_data.tree.delete(["input", "solar", "prepro", area_id])
+        study_data.tree.delete(["input", "solar", "series", f"solar_{area_id}"])
+        study_data.tree.delete(["input", "thermal", "clusters", area_id])
+        study_data.tree.delete(["input", "thermal", "prepro", area_id])
+        study_data.tree.delete(["input", "thermal", "series", area_id])
+        study_data.tree.delete(["input", "thermal", "areas", "unserverdenergycost", area_id])
+        study_data.tree.delete(["input", "thermal", "areas", "spilledenergycost", area_id])
+        study_data.tree.delete(["input", "wind", "prepro", area_id])
+        study_data.tree.delete(["input", "wind", "series", f"wind_{area_id}"])
+        study_data.tree.delete(["input", "links", area_id])
+
+        # Version-specific deletions
+        study_version = study_data.config.version
+        if study_version > STUDY_VERSION_6_5:
+            study_data.tree.delete(["input", "hydro", "hydro", "initialize reservoir date", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "leeway low", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "leeway up", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "pumping efficiency", area_id])
+            study_data.tree.delete(["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"])
+            study_data.tree.delete(["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"])
+            study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{area_id}"])
+
+        if study_version >= STUDY_VERSION_8_1:
+            with contextlib.suppress(ChildNotFoundError):
+                study_data.tree.delete(["input", "renewables", "clusters", area_id])
+                study_data.tree.delete(["input", "renewables", "series", area_id])
+
+        if study_version >= STUDY_VERSION_8_6:
+            study_data.tree.delete(["input", "st-storage", "clusters", area_id])
+            study_data.tree.delete(["input", "st-storage", "series", area_id])
+
+    def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
+        """Remove all links associated with the area."""
+        from antarest.core.exceptions import ChildNotFoundError
+        from antarest.study.model import STUDY_VERSION_8_2
+
+        for area_name, area in study_data.config.areas.items():
+            for link in area.links:
+                if link == area_id:
+                    study_data.tree.delete(["input", "links", area_name, "properties", area_id])
+                    try:
+                        if study_data.config.version < STUDY_VERSION_8_2:
+                            study_data.tree.delete(["input", "links", area_name, area_id])
+                        else:
+                            study_data.tree.delete(["input", "links", area_name, f"{area_id}_parameters"])
+                            study_data.tree.delete(["input", "links", area_name, "capacities", f"{area_id}_indirect"])
+                            study_data.tree.delete(["input", "links", area_name, "capacities", f"{area_id}_direct"])
+                    except ChildNotFoundError as e:
+                        logger.warning(
+                            f"Failed to clean link data when deleting area {area_id}"
+                            f" in study {study_data.config.study_id}",
+                            exc_info=e,
+                        )
+
+    def _remove_area_from_correlation_matrices(self, area_id: str, study_data: Any) -> None:
+        """Remove the area from correlation matrices."""
+        url = ["input", "hydro", "prepro", "correlation"]
+        correlation_cfg = study_data.tree.get(url)
+        for section, correlation in correlation_cfg.items():
+            if section == "general":
+                continue
+            for key in list(correlation):
+                a1, a2 = key.split("%")
+                if a1 == area_id or a2 == area_id:
+                    del correlation[key]
+        study_data.tree.save(correlation_cfg, url)
+
+    def _remove_area_from_hydro_allocation(self, area_id: str, study_data: Any) -> None:
+        """Remove the area from hydraulic allocation configuration."""
+        study_data.tree.delete(["input", "hydro", "allocation", area_id])
+        allocation_cfg = study_data.tree.get(["input", "hydro", "allocation", "*"])
+        if len(allocation_cfg) == 1:
+            allocation_cfg = {area_id: allocation_cfg}
+        allocation_cfg.pop(area_id, None)
+        for prod_area, allocation_dict in allocation_cfg.items():
+            for name, allocations in allocation_dict.items():
+                allocations.pop(area_id, None)
+        study_data.tree.save(allocation_cfg, ["input", "hydro", "allocation"])
+
+    def _remove_area_from_districts(self, area_id: str, study_data: Any) -> None:
+        """Remove the area from all districts."""
+        import contextlib
+
+        districts = study_data.tree.get(["input", "areas", "sets"])
+        for district in districts.values():
+            if district.get("+", None):
+                with contextlib.suppress(ValueError):
+                    district["+"].remove(area_id)
+            elif district.get("-", None):
+                with contextlib.suppress(ValueError):
+                    district["-"].remove(area_id)
+
+        study_data.tree.save(districts, ["input", "areas", "sets"])
+
+    def _remove_area_from_scenario_builder(self, area_id: str, study_data: Any) -> None:
+        """Remove the area from scenario builder configuration."""
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        area_keys = {"l", "h", "w", "s", "t", "r", "hl", "hfl", "hgp"}
+        link_keys = {"ntc"}
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                symbol, *parts = key.split(",")
+                if (symbol in area_keys and parts[0] == area_id) or (
+                    symbol in link_keys and (parts[0] == area_id or parts[1] == area_id)
+                ):
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+    def _remove_from_config(self, area_id: str, config: Any) -> None:
+        """Remove the area from the configuration and clean up references."""
+        import contextlib
+
+        del config.areas[area_id]
+
+        link_to_remove = [
+            (area_name, link) for area_name, area in config.areas.items() for link in area.links if link == area_id
+        ]
+        for area_name, link in link_to_remove:
+            del config.areas[area_name].links[link]
+
+        for id_, set_ in config.districts.items():
+            if set_.add_areas and area_id in set_.add_areas:
+                with contextlib.suppress(ValueError):
+                    set_.add_areas.remove(area_id)
+                    config.districts[id_] = set_
+            if set_.subtract_areas and area_id in set_.subtract_areas:
+                with contextlib.suppress(ValueError):
+                    set_.subtract_areas.remove(area_id)
+                    config.districts[id_] = set_
