@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from annotated_types import Len
 from pydantic import Field, model_validator
 from pydantic.alias_generators import to_camel
