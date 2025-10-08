@@ -17,14 +17,19 @@ from typing import Any, Dict, List
 
 from typing_extensions import override
 
-from antarest.core.exceptions import LayerNotFound, ReferencedObjectDeletionNotAllowed, ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import Area, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6, \
-    STUDY_VERSION_8_2
+from antarest.study.model import (
+    STUDY_VERSION_6_5,
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_2,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_6,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster

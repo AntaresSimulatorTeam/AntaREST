@@ -18,7 +18,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound, AreaNotFound, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import Area, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties
