@@ -41,11 +41,18 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
       output_suffix: values.name,
       other_options: values.otherOptions,
       auto_unzip: values.autoUnzip,
-      xpansion: {
-        enabled: values.xpansion,
-        sensitivity_mode: values.sensitivityMode,
-        output_id: values.output,
-      },
+      // Note: fields can be set event if Xpansion is disabled.
+      // This can happen if the user enables Xpansion, fills these fields,
+      // and then disables Xpansion before submitting the form.
+      xpansion: values.xpansion
+        ? {
+            enabled: true,
+            adequacy_criterions: values.adequacyCriterions,
+            sensitivity_mode: values.sensitivityMode,
+            // `output_id` has to be provided only if `sensitivity_mode` is enabled.
+            output_id: values.sensitivityMode ? values.output : undefined,
+          }
+        : { enabled: false },
       nb_cpu: values.nbCores,
     };
 

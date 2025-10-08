@@ -93,6 +93,16 @@ function Fields() {
     return true;
   };
 
+  const validateAdequacyCriterions = (
+    value: FormValues["adequacyCriterions"],
+    { sensitivityMode }: FormValues,
+  ) => {
+    if (value && sensitivityMode) {
+      return "'Reliability criterion' and 'Sensitivity mode' cannot be both enabled.";
+    }
+    return true;
+  };
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -115,6 +125,18 @@ function Fields() {
 
   const handleXpressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     updateOtherOptions({ xpress: event.target.checked });
+  };
+
+  const handleAdequacyCriterionsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked && getValues("sensitivityMode")) {
+      setValue("sensitivityMode", false);
+    }
+  };
+
+  const handleSensitivityModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked && getValues("adequacyCriterions")) {
+      setValue("adequacyCriterions", false);
+    }
   };
 
   const handleLauncherChange = (event: SelectFEChangeEvent<FormValues["launcher"]>) => {
@@ -168,22 +190,39 @@ function Fields() {
 
       <Fieldset legend={t("launcher.legend.xpansion")}>
         <SwitchFE label={t("global.enable")} name="xpansion" control={control} />
-        {isSingleStudy && (
+        {isXpansionEnabled && (
           <>
             <SwitchFE
-              label={t("launcher.field.sensitivityMode")}
-              name="sensitivityMode"
+              label={t("launcher.field.adequacyCriterions")}
+              name="adequacyCriterions"
               control={control}
-              disabled={!isXpansionEnabled}
+              onChange={handleAdequacyCriterionsChange}
+              rules={{ validate: validateAdequacyCriterions }}
             />
-            <SelectFE
-              label={t("global.output")}
-              name="output"
-              options={outputOptions}
-              control={control}
-              disabled={!isXpansionEnabled || !isSensitivityModeEnabled}
-              sx={{ flex: 1 }}
-            />
+            {isSingleStudy && (
+              <>
+                <SwitchFE
+                  label={t("launcher.field.sensitivityMode")}
+                  name="sensitivityMode"
+                  control={control}
+                  onChange={handleSensitivityModeChange}
+                  rules={{ deps: ["adequacyCriterions"] }}
+                />
+                {isSensitivityModeEnabled && (
+                  <>
+                    <Fieldset.Break />
+                    <SelectFE
+                      label={t("global.output")}
+                      name="output"
+                      options={outputOptions}
+                      control={control}
+                      rules={{ required: t("form.field.required") }}
+                      sx={{ flex: 1 }}
+                    />
+                  </>
+                )}
+              </>
+            )}
           </>
         )}
       </Fieldset>

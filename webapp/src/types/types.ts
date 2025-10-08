@@ -142,6 +142,7 @@ export interface XpansionParams {
   enabled: boolean;
   sensitivity_mode?: boolean;
   output_id?: string;
+  adequacy_criterions?: boolean;
 }
 
 export interface LaunchOptions {

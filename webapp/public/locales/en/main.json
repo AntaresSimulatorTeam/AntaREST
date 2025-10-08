@@ -307,6 +307,8 @@
   "launcher.field.otherOptions.error.xpress": "'xpress' option is available from version 8.3",
   "launcher.field.xpress": "Xpress (>= 8.3)",
   "launcher.field.autoUnzip": "Automatically unzip",
+  "launcher.field.adequacyCriterions": "Reliability criterion",
+  "launcher.field.adequacyCriterions.error": "'Reliability criterion' and 'Sensitivity mode' cannot be both enabled.",
   "launcher.field.sensitivityMode": "Sensitivity mode",
   "launcher.field.launcher": "Cluster",
   "launcher.field.nbCores": "Number of cores",
