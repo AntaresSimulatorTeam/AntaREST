@@ -1144,7 +1144,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         data: HydroAllocation = Body(
             ...,
             example=HydroAllocation(
-                allocations=[
+                allocation=[
                     HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
                     HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
                 ]

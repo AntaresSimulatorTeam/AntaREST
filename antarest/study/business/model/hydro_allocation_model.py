@@ -27,11 +27,11 @@ class HydroAllocationArea(AntaresBaseModel, extra="forbid", populate_by_name=Tru
 
 
 class HydroAllocation(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    allocations: list[HydroAllocationArea]
+    allocation: list[HydroAllocationArea]
 
     @model_validator(mode="after")
     def check_allocation(self) -> "HydroAllocation":
-        allocation = self.allocations
+        allocation = self.allocation
 
         if not allocation:
             raise ValueError("allocation must not be empty")
@@ -82,7 +82,7 @@ class HydroAllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=T
                 coefficient = self.data[k][n]
                 if coefficient != 0:
                     allocations.append(HydroAllocationArea(area_id=self.index[n], coefficient=coefficient))
-            allocations_dict[self.index[k]] = HydroAllocation(allocations=allocations)
+            allocations_dict[self.index[k]] = HydroAllocation(allocation=allocations)
         return allocations_dict
 
     @staticmethod
@@ -90,7 +90,7 @@ class HydroAllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=T
         args: dict[str, Any] = {}
         for area_id, allocation_list in allocations.items():
             args[area_id] = {}
-            for allocation in allocation_list.allocations:
+            for allocation in allocation_list.allocation:
                 args[area_id][allocation.area_id] = allocation.coefficient
 
         df = pd.DataFrame.from_dict(args)

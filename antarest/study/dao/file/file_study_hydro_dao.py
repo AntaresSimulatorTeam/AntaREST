@@ -12,7 +12,8 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 
-from antarest.study.business.model.hydro_allocation_model import HydroAllocation
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -78,7 +79,14 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        ini_content = file_study.tree.get(["input", "hydro", "allocation", area_id])
+        # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
+        allocation_data = ini_content.get("[allocation]", ini_content.get("allocation", {}))
+        allocations = []
+        for area_name, coefficient in allocation_data.items():
+            allocations.append(HydroAllocationArea(area_id=transform_name_to_id(area_name), coefficient=coefficient))
+        return HydroAllocation(allocation=allocations)
 
     @override
     def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
