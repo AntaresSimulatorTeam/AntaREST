@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Dict, List, Mapping
+from typing import Any, Dict, List, Mapping
 
 from antarest.core.exceptions import DuplicateAreaName
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import (
     Area,
     AreaCreation,
-    AreaUI,
     AreaUIUpdate,
 )
 from antarest.study.business.model.area_properties_model import (
@@ -55,7 +54,7 @@ class AreaManager:
         """Retrieve all physical areas of a raw study."""
         return study.get_study_dao().get_all_areas()
 
-    def get_all_areas_ui_info(self, study: StudyInterface) -> dict[str, AreaUI]:
+    def get_all_areas_ui_info(self, study: StudyInterface) -> Dict[str, Any]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
@@ -63,7 +62,7 @@ class AreaManager:
             study: The raw study object containing the study's data.
 
         Returns:
-            A dictionary mapping area IDs to their UI properties (position and color for layer 0).
+            A dictionary containing information about the user interface for the areas.
 
         Raises:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
