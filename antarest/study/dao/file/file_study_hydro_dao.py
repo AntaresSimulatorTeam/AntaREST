@@ -12,6 +12,7 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 
+from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
@@ -35,6 +36,10 @@ HYDRO_PATH = ["input", "hydro", "hydro"]
 
 def get_inflow_path(area_id: str) -> list[str]:
     return ["input", "hydro", "prepro", area_id, "prepro", "prepro"]
+
+
+def get_allocation_path(area_id: str) -> list[str]:
+    return ["input", "hydro", "allocation", area_id]
 
 
 class FileStudyHydroDao(HydroDao):
@@ -80,12 +85,16 @@ class FileStudyHydroDao(HydroDao):
     @override
     def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
         file_study = self.get_file_study()
-        ini_content = file_study.tree.get(["input", "hydro", "allocation", area_id])
+        ini_content = file_study.tree.get(get_allocation_path(area_id))
         # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
         allocation_data = ini_content.get("[allocation]", ini_content.get("allocation", {}))
         allocations = []
         for area_name, coefficient in allocation_data.items():
-            allocations.append(HydroAllocationArea(area_id=transform_name_to_id(area_name), coefficient=coefficient))
+            # Checks the written area exists in the study
+            area_id = transform_name_to_id(area_name)
+            if area_id not in file_study.config.areas:
+                raise AreaNotFound(area_id)
+            allocations.append(HydroAllocationArea(area_id=area_id, coefficient=coefficient))
         return HydroAllocation(allocation=allocations)
 
     @override
@@ -111,4 +120,16 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        # Checks the given areas exist in the study
+        existing_areas = file_study.config.areas
+        if area_id not in existing_areas:
+            raise AreaNotFound(area_id)
+        data = {}
+        for alloc in allocation.allocation:
+            if alloc.area_id not in existing_areas:
+                raise AreaNotFound(area_id)
+            data[alloc.area_id] = alloc.coefficient
+        # Saves the data inside the file
+        url = get_allocation_path(area_id)
+        file_study.tree.save({"[allocation]": data}, url)
