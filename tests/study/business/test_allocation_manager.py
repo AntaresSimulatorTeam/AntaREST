@@ -12,6 +12,7 @@
 
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
 from antares.study.version import StudyVersion
 
@@ -21,10 +22,12 @@ from antarest.study.business.model.hydro_allocation_model import (
     HydroAllocationArea,
     HydroAllocationMatrix,
 )
-from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -39,6 +42,23 @@ def create_study_interface(tree: FileStudyTree, version: StudyVersion = STUDY_VE
     study.version = version
     file_study.config.version = version
     return study
+
+
+def _set_up(command_context: CommandContext, study: FileStudy) -> None:
+    allocation_cfg = {
+        "n": {"[allocation]": {"n": 1}},
+        "e": {"allocation": {"e": 3, "s": 1}},
+        "s": {"[allocation]": {"s": 0.1, "n": 0.2, "w": 0.6}},
+        "w": {"[allocation]": {"w": 1}},
+    }
+
+    for area_name in ["N?", "s", "e", "w"]:
+        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(
+            study
+        )
+
+        area_id = transform_name_to_id(area_name)
+        study.tree.save(allocation_cfg[area_id], ["input", "hydro", "allocation", area_id])
 
 
 @pytest.fixture
@@ -100,3 +120,26 @@ def test_error_cases() -> None:
     # Check that the matrix is not empty
     with pytest.raises(ValueError, match="empty"):
         HydroAllocationMatrix.from_hydro_allocations({})
+
+
+def test_get_allocation_matrix__nominal_case(
+    manager, empty_study_920: FileStudy, command_context: CommandContext
+) -> None:
+    _set_up(command_context, empty_study_920)
+
+    study = FileStudyInterface(empty_study_920)
+    matrix = manager.get_allocation_matrix(study)
+
+    # Check
+    assert matrix.index == matrix.columns == ["n", "s", "e", "w"]
+    assert np.array_equal(
+        matrix.data,
+        np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.2, 0.1, 0.0, 0.6],
+                [0.0, 1.0, 3.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]
+        ),
+    )
