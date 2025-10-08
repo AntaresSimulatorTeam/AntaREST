@@ -23,6 +23,7 @@ from antarest.study.business.model.area_model import (
 from antarest.study.business.model.area_properties_model import (
     AreaProperties,
     AreaPropertiesUpdate,
+    update_area_properties,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -80,11 +81,11 @@ class AreaManager:
         study.add_commands([command])
 
     def create_area(self, study: StudyInterface, area_creation_info: AreaCreation) -> Area:
-        file_study = study.get_files()
-
         # check if area already exists
         area_id = transform_name_to_id(area_creation_info.name)
-        if area_id in set(file_study.config.areas):
+        existing_areas = study.get_study_dao().get_all_areas()
+        existing_area_ids = {area.id for area in existing_areas}
+        if area_id in existing_area_ids:
             raise DuplicateAreaName(area_creation_info.name)
 
         # Create area and apply changes in the study
@@ -147,8 +148,7 @@ class AreaManager:
 
         for area_id, update_area in properties.items():
             old_area = old_areas_by_ids[area_id]
-            update_data = update_area.model_dump(exclude_none=True)
-            new_areas_by_ids[area_id] = old_area.model_copy(update=update_data)
+            new_areas_by_ids[area_id] = update_area_properties(old_area, update_area)
             areas_properties[area_id] = update_area
 
         command = UpdateAreasProperties(
