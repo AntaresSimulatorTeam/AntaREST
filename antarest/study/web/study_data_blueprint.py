@@ -26,7 +26,6 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
     STStorageManager,
@@ -72,6 +71,11 @@ from antarest.study.business.model.district_model import (
     DistrictCreation,
     DistrictDTO,
     DistrictUpdate,
+)
+from antarest.study.business.model.hydro_allocation_model import (
+    HydroAllocation,
+    HydroAllocationArea,
+    HydroAllocationMatrix,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -1103,32 +1107,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/hydro/allocation/matrix",
         tags=[APITag.study_data],
         summary="Get the hydraulic allocation matrix for all areas",
-        response_model=AllocationMatrix,
     )
-    def get_allocation_matrix(uuid: str) -> AllocationMatrix:
-        """
-        Get the hydraulic allocation matrix for all areas.
-
-        Args:
-        - `uuid`: The study UUID.
-
-        Returns the data frame matrix, where:
-        - the rows are the areas,
-        - the columns are the hydraulic structures,
-        - the values are the allocation factors.
-        """
+    def get_allocation_matrix(uuid: str) -> HydroAllocationMatrix:
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.allocation_manager.get_allocation_matrix(study_interface, all_areas)
+        return study_service.allocation_manager.get_allocation_matrix(study_interface)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
         tags=[APITag.study_data],
         summary="Get the form fields used for the allocation form",
-        response_model=AllocationFormFields,
     )
-    def get_allocation_form_fields(uuid: str, area_id: str) -> AllocationFormFields:
+    def get_allocation_form_fields(uuid: str, area_id: str) -> HydroAllocation:
         """
         Get the form fields used for the allocation form.
 
@@ -1139,30 +1129,28 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.allocation_manager.get_allocation_form_fields(all_areas, study_interface, area_id)
+        return study_service.allocation_manager.get_allocation_for_area(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
         tags=[APITag.study_data],
         summary="Update the form fields used for the allocation form",
         status_code=HTTPStatus.OK,
-        response_model=AllocationFormFields,
     )
     def set_allocation_form_fields(
         uuid: str,
         area_id: str,
-        data: AllocationFormFields = Body(
+        data: HydroAllocation = Body(
             ...,
-            example=AllocationFormFields(
+            example=HydroAllocation(
                 allocation=[
-                    AllocationField.model_validate({"areaId": "EAST", "coefficient": 1}),
-                    AllocationField.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
+                    HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
+                    HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
                 ]
             ),
         ),
-    ) -> AllocationFormFields:
+    ) -> HydroAllocation:
         """
         Update the hydraulic allocation of a given area.
 
@@ -1173,9 +1161,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the updated allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.allocation_manager.set_allocation_form_fields(all_areas, study_interface, area_id, data)
+        return study_service.allocation_manager.set_allocation_for_area(study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/areas/hydro/correlation/matrix",
