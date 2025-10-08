@@ -60,6 +60,8 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
     launcher: launcher.id,
     nbCores: launcher.nbCores.default,
     timeLimit: launcher.timeLimit.default,
+    // Replace by implementing metadata in `Form` if it's not implemented yet by react-hook-form
+    // https://github.com/react-hook-form/react-hook-form/issues/13036
     _data: {
       launchersById,
       launcherOptions,
