@@ -14,17 +14,13 @@
 
 import FormDialog from "@/components/common/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudy } from "@/redux/selectors";
 import { launchStudy } from "@/services/api/study";
 import type { LaunchOptions, StudyMetadata } from "@/types/types";
-import { buildKey } from "@/utils/reactUtils";
 import BoltIcon from "@mui/icons-material/Bolt";
-import { Box, Chip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { shallowEqual } from "react-redux";
 import Fields from "./Fields";
 import LauncherMetrics from "./LauncherMetrics";
+import StudyList from "./StudyList";
 import { getDefaultValues, type FormValues } from "./utils";
 
 interface Props {
@@ -35,11 +31,6 @@ interface Props {
 
 function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
   const { t } = useTranslation();
-
-  const studyNames = useAppSelector(
-    (state) => studyIds.map((id) => getStudy(state, id)?.name || id),
-    shallowEqual,
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -91,11 +82,7 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
       onSubmitSuccessful={onClose}
       allowSubmitOnPristine
     >
-      <Box sx={{ mx: 1, mb: 2, maxHeight: 100, overflowY: "auto", overflowX: "hidden" }}>
-        {studyNames.map((name, index) => (
-          <Chip key={buildKey(name, index)} label={name} sx={{ mr: 1, mb: 1 }} />
-        ))}
-      </Box>
+      <StudyList studyIds={studyIds} />
       <Fields />
       <LauncherMetrics />
     </FormDialog>
