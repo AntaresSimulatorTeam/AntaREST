@@ -10,12 +10,10 @@
 #
 # This file is part of the Antares project.
 
-import copy
 from typing import Optional, Type, TypeVar, cast
 
 from pydantic import BaseModel, Field, create_model
 from pydantic.alias_generators import to_camel
-from pydantic_core import PydanticUndefined
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 
