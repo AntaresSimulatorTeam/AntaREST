@@ -131,14 +131,14 @@ def test_get_allocation_matrix__nominal_case(
     matrix = manager.get_allocation_matrix(study)
 
     # Check
-    assert matrix.index == matrix.columns == ["n", "s", "e", "w"]
+    assert matrix.index == matrix.columns == ["e", "n", "s", "w"]
     assert np.array_equal(
         matrix.data,
         np.array(
             [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.2, 0.1, 0.0, 0.6],
-                [0.0, 1.0, 3.0, 0.0],
+                [3.0, 0.0, 1.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.2, 0.1, 0.6],
                 [0.0, 0.0, 0.0, 1.0],
             ]
         ),
