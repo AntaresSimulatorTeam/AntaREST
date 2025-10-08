@@ -39,8 +39,30 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
     study = empty_study_930
     _set_up(study, command_context)
 
-    pass
+    cmd = ReplaceHydroAllocation(
+        area_id="e",
+        allocation=HydroAllocation(
+            allocation=[
+                HydroAllocationArea(area_id="w", coefficient=1),
+                HydroAllocationArea(area_id="n", coefficient=2.3),
+            ]
+        ),
+        command_context=command_context,
+        study_version=study.config.version,
+    )
+    output = cmd.apply(study)
+    assert output.status
+
     # Checks the ini content
+    ini_path = study.config.study_path / "input" / "hydro" / "allocation" / "e.ini"
+    assert (
+        ini_path.read_text()
+        == """[[allocation]]
+w = 1.0
+n = 2.3
+
+"""
+    )
 
 
 def test_error_case(empty_study_930: FileStudy, command_context: CommandContext):
