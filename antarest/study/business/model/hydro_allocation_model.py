@@ -12,10 +12,8 @@
 from typing import Any
 
 import pandas as pd
-from annotated_types import Len
 from pydantic import Field, model_validator
 from pydantic.alias_generators import to_camel
-from typing_extensions import Annotated
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.np_array import NpArray
@@ -56,37 +54,15 @@ class HydroAllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=T
     data: 2D-array matrix of consumption coefficients
     """
 
-    index: Annotated[list[str], Len(min_length=1)]
-    columns: Annotated[list[str], Len(min_length=1)]
+    index: list[str]
+    columns: list[str]
     data: NpArray
-
-    @model_validator(mode="after")
-    def check_coherence(self) -> "HydroAllocationMatrix":
-        if self.data.size == 0:
-            raise ValueError("allocation matrix must not be empty")
-
-        if self.data.shape != (len(self.index), len(self.columns)):
-            raise ValueError("allocation matrix shape is inconsistent")
-
-        if self.index != self.columns:
-            raise ValueError("allocation matrix index and columns should be the same")
-
-        return self
-
-    def to_hydro_allocations(self) -> dict[str, HydroAllocation]:
-        allocations_dict = {}
-        N = len(self.index)
-        for k in range(N):
-            allocations = []
-            for n in range(N):
-                coefficient = self.data[k][n]
-                if coefficient != 0:
-                    allocations.append(HydroAllocationArea(area_id=self.index[n], coefficient=coefficient))
-            allocations_dict[self.index[k]] = HydroAllocation(allocation=allocations)
-        return allocations_dict
 
     @staticmethod
     def from_hydro_allocations(allocations: dict[str, HydroAllocation]) -> "HydroAllocationMatrix":
+        if not allocations:
+            raise ValueError("allocation matrix must not be empty")
+
         df_args: dict[str, Any] = {}
         for area_id, allocation_list in allocations.items():
             df_args[area_id] = {}

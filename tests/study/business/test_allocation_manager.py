@@ -10,27 +10,21 @@
 #
 # This file is part of the Antares project.
 
-import re
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
-import numpy as np
 import pytest
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
-from antarest.study.business.allocation_management import (
-    AllocationField,
-    AllocationFormFields,
-    AllocationManager,
-    AllocationMatrix,
+from antarest.study.business.allocation_management import AllocationManager
+from antarest.study.business.model.hydro_allocation_model import (
+    HydroAllocation,
+    HydroAllocationArea,
+    HydroAllocationMatrix,
 )
-from antarest.study.business.model.area_model import Area
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -52,346 +46,57 @@ def manager(command_context: CommandContext) -> AllocationManager:
     return AllocationManager(command_context)
 
 
-class TestAllocationField:
-    def test_base(self):
-        field = AllocationField(area_id="NORTH", coefficient=1)
-        assert field.area_id == "NORTH"
-        assert field.coefficient == 1
+def test_error_cases() -> None:
+    # Check that the allocation is not empty
+    with pytest.raises(ValueError, match="empty"):
+        HydroAllocation(allocation=[])
 
-    def test_camel_case(self):
-        field = AllocationField(area_id="NORTH", coefficient=1)
-        assert field.model_dump(by_alias=True) == {
-            "areaId": "NORTH",
-            "coefficient": 1,
-        }
-
-
-class TestAllocationFormFields:
-    def test_base_case(self):
-        fields = AllocationFormFields(
+    # Check that the allocation does not contain duplicate area IDs
+    with pytest.raises(ValueError, match="duplicate"):
+        HydroAllocation(
             allocation=[
-                AllocationField(area_id="NORTH", coefficient=0.75),
-                AllocationField(area_id="SOUTH", coefficient=0.25),
-            ]
+                HydroAllocationArea(area_id="north", coefficient=0.75),
+                HydroAllocationArea(area_id="north", coefficient=0.25),
+            ],
         )
-        assert fields.allocation == [
-            AllocationField(area_id="NORTH", coefficient=0.75),
-            AllocationField(area_id="SOUTH", coefficient=0.25),
+
+    # Check that negative coefficients are accepted
+    fields = HydroAllocation(
+        allocation=[
+            HydroAllocationArea(area_id="NORTH", coefficient=-0.75),
+            HydroAllocationArea(area_id="SOUTH", coefficient=1.25),
         ]
+    )
+    assert fields.allocation[0].coefficient == -0.75
+    assert fields.allocation[1].coefficient == 1.25
 
-    def test_fields_not_empty(self):
-        """Check that the coefficients column is not empty"""
-        with pytest.raises(ValueError, match="empty"):
-            AllocationFormFields(
-                allocation=[],
-            )
-
-    def test_validation_fields_no_duplicate_area_id(self):
-        """Check that the coefficients column does not contain duplicate area IDs"""
-        with pytest.raises(ValueError, match="duplicate"):
-            AllocationFormFields(
-                allocation=[
-                    AllocationField(area_id="NORTH", coefficient=0.75),
-                    AllocationField(area_id="NORTH", coefficient=0.25),
-                ],
-            )
-
-    def test_validation_fields_allow_negative_coefficients(self):
-        """Check that negative coefficients are accepted"""
-        fields = AllocationFormFields(
+    # Check that at least one coefficient should be non-zero
+    with pytest.raises(ValueError, match="non-zero"):
+        HydroAllocation(
             allocation=[
-                AllocationField(area_id="NORTH", coefficient=-0.75),
-                AllocationField(area_id="SOUTH", coefficient=1.25),
-            ]
-        )
-        assert fields.allocation[0].coefficient == -0.75
-        assert fields.allocation[1].coefficient == 1.25
-
-    def test_validation_fields_not_all_zero_coefficients(self):
-        """Check that at least one coefficient is non-zero"""
-        with pytest.raises(ValueError, match="non-zero"):
-            AllocationFormFields(
-                allocation=[
-                    AllocationField(area_id="NORTH", coefficient=0),
-                    AllocationField(area_id="SOUTH", coefficient=0),
-                ],
-            )
-
-    def test_validation_fields_positive_sum(self):
-        """Check that the coefficients sum is positive"""
-        with pytest.raises(ValueError, match="positive"):
-            AllocationFormFields(
-                allocation=[
-                    AllocationField(area_id="NORTH", coefficient=-0.75),
-                    AllocationField(area_id="SOUTH", coefficient=-0.25),
-                ],
-            )
-
-    def test_validation_fields_no_nan_coefficient(self):
-        """Check that the coefficients values does not contain NaN coefficients"""
-        with pytest.raises(ValueError, match="NaN"):
-            AllocationFormFields(
-                allocation=[
-                    AllocationField(area_id="NORTH", coefficient=0.75),
-                    AllocationField(area_id="SOUTH", coefficient=float("nan")),
-                ],
-            )
-
-
-class TestAllocationMatrix:
-    def test_base_case(self):
-        field = AllocationMatrix(
-            index=["NORTH", "SOUTH"],
-            columns=["NORTH", "SOUTH"],
-            data=np.array([[0.75, 0.25], [0.25, 0.75]]),
-        )
-        assert field.index == ["NORTH", "SOUTH"]
-        assert field.columns == ["NORTH", "SOUTH"]
-        assert np.array_equal(field.data, np.array([[0.75, 0.25], [0.25, 0.75]]))
-
-    def test_validation_coefficients_not_empty(self):
-        """Check that the coefficients matrix is not empty"""
-        with pytest.raises(ValueError, match="empty"):
-            AllocationMatrix(
-                index=[],
-                columns=[],
-                data=np.array([]),
-            )
-
-    def test_validation_matrix_shape(self):
-        """Check that the coefficients matrix is square"""
-        with pytest.raises(ValueError, match="square"):
-            AllocationMatrix(
-                index=["NORTH", "SOUTH"],
-                columns=["NORTH"],
-                data=np.array([[0.75, 0.25], [0.25, 0.75]]),
-            )
-
-    def test_validation_matrix_no_nan(self):
-        """Check that the coefficients matrix does not contain NaN values"""
-        with pytest.raises(ValueError, match="NaN"):
-            AllocationMatrix(
-                index=["NORTH", "SOUTH"],
-                columns=["NORTH", "SOUTH"],
-                data=np.array([[0.75, 0.25], [0.25, float("nan")]]),
-            )
-
-    def test_validation_matrix_no_non_null_values(self):
-        """Check that the coefficients matrix does not contain only null values"""
-        with pytest.raises(ValueError, match="(?:all|zero)"):
-            AllocationMatrix(
-                index=["NORTH", "SOUTH"],
-                columns=["NORTH", "SOUTH"],
-                data=np.array([[0, 0], [0, 0]]),
-            )
-
-
-class TestAllocationManager:
-    def test_get_allocation_matrix__nominal_case(self, manager):
-        # Prepare the mocks
-        allocation_cfg = {
-            "n": {"[allocation]": {"n": 1}},
-            "e": {"[allocation]": {"e": 3, "s": 1}},
-            "s": {"[allocation]": {"s": 0.1, "n": 0.2, "w": 0.6}},
-            "w": {"[allocation]": {"w": 1}},
-        }
-
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(return_value=allocation_cfg),
-            )
+                HydroAllocationArea(area_id="NORTH", coefficient=0),
+                HydroAllocationArea(area_id="SOUTH", coefficient=0),
+            ],
         )
 
-        # Given the following arguments
-        all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
-        ]
-
-        # run
-        matrix = manager.get_allocation_matrix(study, all_areas)
-
-        # Check
-        assert matrix == AllocationMatrix(
-            index=["n", "e", "s", "w"],
-            columns=["n", "e", "s", "w"],
-            data=np.array(
-                [
-                    [1.0, 0.0, 0.2, 0.0],
-                    [0.0, 3.0, 0.0, 0.0],
-                    [0.0, 1.0, 0.1, 0.0],
-                    [0.0, 0.0, 0.6, 1.0],
-                ]
-            ),
-        )
-
-    def test_get_allocation_matrix__no_allocation(self, manager):
-        # Prepare the mocks
-        allocation_cfg = {}
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(return_value=allocation_cfg),
-            )
-        )
-
-        # Given the following arguments
-        all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
-        ]
-
-        with pytest.raises(AllocationDataNotFound) as ctx:
-            manager.get_allocation_matrix(study, all_areas)
-        assert re.fullmatch(r"Allocation data.*is not found", ctx.value.detail)
-
-    def test_get_allocation_form_fields__nominal_case(self, manager):
-        allocation_cfg = {
-            "n": {"[allocation]": {"n": 1}},
-            "e": {"[allocation]": {"e": 3, "s": 1}},
-            "s": {"[allocation]": {"s": 0.1, "n": 0.2, "w": 0.6}},
-            "w": {"[allocation]": {"w": 1}},
-        }
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(return_value=allocation_cfg["n"]),
-            )
-        )
-
-        all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
-        ]
-
-        area_id = "n"
-
-        fields = manager.get_allocation_for_area(all_areas=all_areas, study=study, area_id=area_id)
-
-        expected_allocation = [
-            AllocationField.model_construct(area_id=area, coefficient=value)
-            for area, value in allocation_cfg[area_id]["[allocation]"].items()
-        ]
-        assert fields.allocation == expected_allocation
-
-    def test_get_allocation_form_fields__no_allocation_data(self, manager):
-        allocation_cfg = {"n": {}}
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(return_value=allocation_cfg["n"]),
-            )
-        )
-
-        all_areas = [
-            Area(id="n", name="North"),
-        ]
-
-        area_id = "n"
-
-        with pytest.raises(AllocationDataNotFound) as ctx:
-            manager.get_allocation_for_area(all_areas=all_areas, study=study, area_id=area_id)
-        assert "n" in ctx.value.detail
-
-    def test_set_allocation_form_fields__nominal_case(self, manager):
-        all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
-        ]
-        area_id = "n"
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-            ),
-            version=STUDY_VERSION_8_8,
-        )
-        with patch(
-            "antarest.study.business.allocation_management.AllocationManager.get_allocation_data",
-            return_value={"e": 0.5, "s": 0.25, "w": 0.25},
-        ):
-            manager.set_allocation_form_fields(
-                all_areas=all_areas,
-                study=study,
-                area_id=area_id,
-                data=AllocationFormFields.model_construct(
-                    allocation=[
-                        AllocationField.model_construct(area_id="e", coefficient=0.5),
-                        AllocationField.model_construct(area_id="s", coefficient=0.25),
-                        AllocationField.model_construct(area_id="w", coefficient=0.25),
-                    ],
-                ),
-            )
-
-        assert study.add_commands.call_count == 1
-        mock_call = study.add_commands.mock_calls[0]
-        (actual_commands,) = mock_call.args
-        assert len(actual_commands) == 1
-        cmd: UpdateConfig = actual_commands[0]
-        assert cmd.command_name == CommandName.UPDATE_CONFIG
-        assert cmd.target == f"input/hydro/allocation/{area_id}/[allocation]"
-        assert cmd.data == {"e": 0.5, "s": 0.25, "w": 0.25}
-
-    def test_set_allocation_form_fields__no_allocation_data(self, manager):
-        all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
-        ]
-
-        area_id = "n"
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-            ),
-            version=STUDY_VERSION_8_8,
-        )
-        with patch(
-            "antarest.study.business.allocation_management.AllocationManager.get_allocation_data",
-            side_effect=AllocationDataNotFound(area_id),
-        ):
-            with pytest.raises(AllocationDataNotFound) as ctx:
-                manager.set_allocation_form_fields(
-                    all_areas=all_areas,
-                    study=study,
-                    area_id=area_id,
-                    data=AllocationFormFields.model_construct(
-                        allocation=[
-                            AllocationField.model_construct(area_id="e", coefficient=0.5),
-                            AllocationField.model_construct(area_id="s", coefficient=0.25),
-                            AllocationField.model_construct(area_id="w", coefficient=0.25),
-                        ],
-                    ),
-                )
-        assert "n" in ctx.value.detail
-
-    def test_set_allocation_form_fields__invalid_area_ids(self, manager):
-        all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
-        ]
-
-        area_id = "n"
-        data = AllocationFormFields.model_construct(
+    # Check that the coefficients sum is positive
+    with pytest.raises(ValueError, match="positive"):
+        HydroAllocation(
             allocation=[
-                AllocationField.model_construct(area_id="e", coefficient=0.5),
-                AllocationField.model_construct(area_id="s", coefficient=0.25),
-                AllocationField.model_construct(area_id="invalid_area", coefficient=0.25),
-            ]
+                HydroAllocationArea(area_id="NORTH", coefficient=-0.75),
+                HydroAllocationArea(area_id="SOUTH", coefficient=-0.25),
+            ],
         )
 
-        with pytest.raises(AreaNotFound) as ctx:
-            manager.set_allocation_form_fields(all_areas=all_areas, study=Mock(), area_id=area_id, data=data)
+    # Check that the coefficients do not contain NaN coefficients
+    with pytest.raises(ValueError, match="Input should be a finite number"):
+        HydroAllocation(
+            allocation=[
+                HydroAllocationArea(area_id="NORTH", coefficient=0.75),
+                HydroAllocationArea(area_id="SOUTH", coefficient=float("nan")),
+            ],
+        )
 
-        assert "invalid_area" in ctx.value.detail
+    # Check that the matrix is not empty
+    with pytest.raises(ValueError, match="empty"):
+        HydroAllocationMatrix.from_hydro_allocations({})
