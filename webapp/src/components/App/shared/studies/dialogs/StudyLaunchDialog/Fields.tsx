@@ -35,7 +35,7 @@ function Fields() {
   const { isSingleStudy, versionOptions, outputOptions, launcherOptions } =
     getValues("_data") || {};
 
-  const [version, isXpansionEnabled, isSensitiveModeEnabled = NULL_LAUNCHER] = watch([
+  const [version, isXpansionEnabled, isSensitivityModeEnabled = NULL_LAUNCHER] = watch([
     "version",
     "xpansion",
     "sensitivityMode",
@@ -47,21 +47,18 @@ function Fields() {
 
   const updateOtherOptions = ({ xpress }: { xpress: boolean }) => {
     const currentOtherOptions = getValues("otherOptions");
-    let options = otherOptionsToArray(currentOtherOptions);
+    const options = otherOptionsToArray(currentOtherOptions);
+    const hasXpress = options.includes(XPRESS_OPTION);
 
-    if (xpress) {
-      if (!options.includes(XPRESS_OPTION)) {
-        options.push(XPRESS_OPTION);
-      }
-    } else {
-      options = options.filter((opt) => opt !== XPRESS_OPTION);
+    if (xpress === hasXpress) {
+      return;
     }
 
-    const newOtherOptions = options.join(" ");
+    const newOptions = xpress
+      ? [...options, XPRESS_OPTION]
+      : options.filter((opt) => opt !== XPRESS_OPTION);
 
-    if (newOtherOptions !== currentOtherOptions) {
-      setValue("otherOptions", newOtherOptions);
-    }
+    setValue("otherOptions", newOptions.join(" "));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -184,7 +181,7 @@ function Fields() {
               name="output"
               options={outputOptions}
               control={control}
-              disabled={!isXpansionEnabled || !isSensitiveModeEnabled}
+              disabled={!isXpansionEnabled || !isSensitivityModeEnabled}
               sx={{ flex: 1 }}
             />
           </>

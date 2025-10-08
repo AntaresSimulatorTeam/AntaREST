@@ -37,31 +37,21 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
-    const {
-      name,
-      version,
-      otherOptions,
-      autoUnzip,
-      xpansion,
-      sensitivityMode,
-      output,
-      launcher,
-      nbCores,
-    } = values;
-
     const options: LaunchOptions = {
-      output_suffix: name,
-      other_options: otherOptions,
-      auto_unzip: autoUnzip,
+      output_suffix: values.name,
+      other_options: values.otherOptions,
+      auto_unzip: values.autoUnzip,
       xpansion: {
-        enabled: xpansion,
-        sensitivity_mode: sensitivityMode,
-        output_id: output,
+        enabled: values.xpansion,
+        sensitivity_mode: values.sensitivityMode,
+        output_id: values.output,
       },
-      nb_cpu: nbCores,
+      nb_cpu: values.nbCores,
     };
 
-    return Promise.all(studyIds.map((id) => launchStudy(id, options, version, launcher)));
+    return Promise.all(
+      studyIds.map((id) => launchStudy(id, options, values.version, values.launcher)),
+    );
   };
 
   ////////////////////////////////////////////////////////////////
