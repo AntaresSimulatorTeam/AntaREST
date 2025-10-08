@@ -73,6 +73,7 @@ from antarest.study.business.model.district_model import (
     DistrictDTO,
     DistrictUpdate,
 )
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -1126,9 +1127,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
         tags=[APITag.study_data],
         summary="Get the form fields used for the allocation form",
-        response_model=AllocationFormFields,
     )
-    def get_allocation_form_fields(uuid: str, area_id: str) -> AllocationFormFields:
+    def get_allocation_form_fields(uuid: str, area_id: str) -> HydroAllocation:
         """
         Get the form fields used for the allocation form.
 
@@ -1139,9 +1139,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.allocation_manager.get_allocation_form_fields(all_areas, study_interface, area_id)
+        return study_service.allocation_manager.get_allocation_for_area(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",

@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -30,6 +31,14 @@ class ReadOnlyHydroDao(ABC):
 
     @abstractmethod
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
         raise NotImplementedError()
 
 

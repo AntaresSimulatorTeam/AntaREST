@@ -29,6 +29,7 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -115,6 +116,7 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_co2_cost: Dict[ClusterKey, str] = {}
         # Hydro
         self._hydro_properties: Dict[str, HydroProperties] = {}
+        self._hydro_allocation: dict[str, HydroAllocation] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -317,6 +319,14 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
         return self._hydro_properties[area_id].inflow_structure
+
+    @override
+    def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
+        return self._hydro_allocation[area_id]
+
+    @override
+    def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
+        return self._hydro_allocation
 
     @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:

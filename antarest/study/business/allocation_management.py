@@ -20,6 +20,7 @@ from typing_extensions import Annotated, override
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
 from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -148,33 +149,8 @@ class AllocationManager:
         # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
         return allocation_data.get("[allocation]", allocation_data.get("allocation", {}))  # type: ignore
 
-    def get_allocation_form_fields(
-        self, all_areas: List[Area], study: StudyInterface, area_id: str
-    ) -> AllocationFormFields:
-        """
-        Get hydraulic allocation coefficients.
-
-        Args:
-            all_areas: list of all areas in the study.
-            study: study to get the allocation coefficients from.
-            area_id: area to get the allocation coefficients from.
-
-        Returns:
-            The allocation coefficients.
-
-        Raises:
-            AllocationDataNotFound: if the allocation data is not found.
-        """
-
-        areas_ids = {area.id for area in all_areas}
-        allocations: Dict[str, float] = self.get_allocation_data(study, area_id)
-
-        filtered_allocations = {area: value for area, value in allocations.items() if area in areas_ids}
-        final_allocations = [
-            AllocationField.model_construct(area_id=area, coefficient=value)
-            for area, value in filtered_allocations.items()
-        ]
-        return AllocationFormFields.model_validate({"allocation": final_allocations})
+    def get_allocation_for_area(self, study: StudyInterface, area_id: str) -> HydroAllocation:
+        return study.get_study_dao().get_hydro_allocation(area_id)
 
     def set_allocation_form_fields(
         self,

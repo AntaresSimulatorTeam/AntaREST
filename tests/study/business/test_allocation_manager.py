@@ -273,7 +273,7 @@ class TestAllocationManager:
 
         area_id = "n"
 
-        fields = manager.get_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
+        fields = manager.get_allocation_for_area(all_areas=all_areas, study=study, area_id=area_id)
 
         expected_allocation = [
             AllocationField.model_construct(area_id=area, coefficient=value)
@@ -297,7 +297,7 @@ class TestAllocationManager:
         area_id = "n"
 
         with pytest.raises(AllocationDataNotFound) as ctx:
-            manager.get_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
+            manager.get_allocation_for_area(all_areas=all_areas, study=study, area_id=area_id)
         assert "n" in ctx.value.detail
 
     def test_set_allocation_form_fields__nominal_case(self, manager):

@@ -12,6 +12,8 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
+
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
@@ -73,6 +75,14 @@ class FileStudyHydroDao(HydroDao):
         file_study = self.get_file_study()
         file_data = file_study.tree.get(get_inflow_path(area_id))
         return parse_inflow_structure(file_data)
+
+    @override
+    def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
+        raise NotImplementedError()
+
+    @override
+    def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
+        raise NotImplementedError()
 
     @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
