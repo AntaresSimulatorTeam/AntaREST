@@ -1474,6 +1474,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
 
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
 
+
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
     "tree_node,url,data,expected_name",
