@@ -13,6 +13,7 @@
 
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationMatrix
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -28,7 +29,11 @@ class AllocationManager:
         return study.get_study_dao().get_hydro_allocation(area_id)
 
     def set_allocation_for_area(self, study: StudyInterface, area_id: str, data: HydroAllocation) -> HydroAllocation:
-        raise NotImplementedError()
+        command = ReplaceHydroAllocation(
+            command_context=self._command_context, study_version=study.version, area_id=area_id, allocation=data
+        )
+        study.add_commands([command])
+        return data
 
     def get_allocation_matrix(self, study: StudyInterface) -> HydroAllocationMatrix:
         allocation_matrix_as_dict = study.get_study_dao().get_hydro_allocation_matrix()
