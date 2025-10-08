@@ -14,12 +14,10 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ReferencedObjectDeletionNotAllowed
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -39,11 +37,8 @@ class RemoveArea(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        try:
-            study_data.delete_area(self.id)
-            return command_succeeded(message=f"Area '{self.id}' deleted")
-        except ReferencedObjectDeletionNotAllowed as e:
-            return command_failed(message=str(e))
+        study_data.delete_area(self.id)
+        return command_succeeded(message=f"Area '{self.id}' deleted")
 
     @override
     def to_dto(self) -> CommandDTO:

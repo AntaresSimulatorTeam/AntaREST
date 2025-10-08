@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Sequence, Any
+from typing import Any, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion

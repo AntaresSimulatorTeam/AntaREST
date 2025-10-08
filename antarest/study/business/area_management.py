@@ -29,9 +29,9 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
-from antarest.study.storage.variantstudy.model.command.update_layer_areas import UpdateLayerAreas
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -71,8 +71,8 @@ class AreaManager:
         return study.get_study_dao().get_all_areas_ui_info()
 
     def update_layer_areas(self, study: StudyInterface, layer_id: str, areas: List[str]) -> None:
-        logger.info(f"Updating layer {layer_id} with areas {areas}")
-        command = UpdateLayerAreas(
+        logger.info(f"Replacing layer {layer_id} areas with {areas}")
+        command = ReplaceLayerAreas(
             layer_id=layer_id,
             area_ids=areas,
             command_context=self._command_context,

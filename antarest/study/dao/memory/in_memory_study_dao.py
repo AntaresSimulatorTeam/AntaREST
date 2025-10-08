@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.area_model import Area, AreaUIUpdate, AreaUI
+from antarest.study.business.model.area_model import Area, AreaUI
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters

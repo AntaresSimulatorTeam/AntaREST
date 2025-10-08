@@ -62,6 +62,7 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_configura
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
+from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
     ReplaceXpansionAdequacyCriterion,
@@ -83,7 +84,6 @@ from antarest.study.storage.variantstudy.model.command.update_general_config imp
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
 from antarest.study.storage.variantstudy.model.command.update_layer import UpdateLayer
-from antarest.study.storage.variantstudy.model.command.update_layer_areas import UpdateLayerAreas
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_optimization_preferences import (
     UpdateOptimizationPreferences,
@@ -111,7 +111,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_LAYER.value: CreateLayer,
     CommandName.REMOVE_LAYER.value: RemoveLayer,
     CommandName.UPDATE_LAYER.value: UpdateLayer,
-    CommandName.UPDATE_LAYER_AREAS.value: UpdateLayerAreas,
+    CommandName.REPLACE_LAYER_AREAS.value: ReplaceLayerAreas,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,

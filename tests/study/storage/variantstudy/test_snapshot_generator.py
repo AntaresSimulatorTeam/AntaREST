@@ -1125,7 +1125,9 @@ class TestSnapshotGenerator:
         )
 
         err_msg = (
-            f"Failed to generate variant study {variant_study.id}: Area 'North' already exists and could not be created"
+            f"Failed to generate variant study {variant_study.id}: "
+            f"Unexpected exception occurred when trying to apply command CommandName.CREATE_AREA: "
+            f"Area 'North' already exists and could not be created"
         )
         with pytest.raises(VariantGenerationError, match=re.escape(err_msg)):
             generator.generate_snapshot(

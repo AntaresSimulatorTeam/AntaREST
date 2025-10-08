@@ -10,16 +10,16 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, Final, List, Optional
 
-from pydantic import Field
+from pydantic import model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -48,31 +48,35 @@ class CreateArea(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_AREA
+    # version 2: remove unused `metadata` field
+    _SERIALIZATION_VERSION: Final[int] = 2
 
     # Command parameters
     # ==================
 
     area_name: str
 
-    # The `metadata` attribute is added to ensure upward compatibility with previous versions.
-    # Ideally, this attribute should be of type `PatchArea`, but as it is not used,
-    # we choose to declare it as an empty dictionary.
-    # fixme: remove this attribute in the next version if it is not used by the "Script R" team,
-    #  or if we don't want to support this feature.
-    metadata: Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_metadata(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        # Handle version 1 format: {"area_name": "x", "metadata": {...}}
+        # The metadata field was never used and is dropped in version 2
+        if "metadata" in values:
+            values.pop("metadata")
+        return values
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        try:
-            study_data.save_area(self.area_name, self.command_context)
-            return command_succeeded(message=f"Area '{self.area_name}' created")
-        except ValueError as e:
-            return command_failed(message=str(e))
+        study_data.save_area(self.area_name, self.command_context)
+        return command_succeeded(message=f"Area '{self.area_name}' created")
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.CREATE_AREA.value, args={"area_name": self.area_name}, study_version=self.study_version
+            action=CommandName.CREATE_AREA.value,
+            args={"area_name": self.area_name},
+            study_version=self.study_version,
+            version=self._SERIALIZATION_VERSION,
         )
 
     @override

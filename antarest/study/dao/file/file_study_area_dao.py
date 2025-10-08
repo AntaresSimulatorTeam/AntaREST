@@ -12,6 +12,7 @@
 import contextlib
 import logging
 import re
+import typing as t
 from abc import abstractmethod
 from typing import Any, Dict, List
 
@@ -19,9 +20,9 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
-from antarest.study.business.model.area_model import Area, AreaUIUpdate, AreaUI
+from antarest.study.business.model.area_model import Area, AreaUI
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.model import (
     STUDY_VERSION_6_5,
@@ -32,8 +33,10 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+if t.TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
 class FileStudyAreaDao(AreaDao):
@@ -41,23 +44,9 @@ class FileStudyAreaDao(AreaDao):
     def get_file_study(self) -> FileStudy:
         pass
 
-    def _get_thermal_clusters(self, area_id: str) -> List[ThermalCluster]:
-        """
-        Retrieve thermal clusters for a specific area.
-
-        Args:
-            area_id: The area identifier.
-
-        Returns:
-            The list of thermal clusters for the area.
-        """
-        file_study = self.get_file_study()
-        thermal_clusters_data = file_study.tree.get(["input", "thermal", "clusters", area_id, "list"])
-        result = []
-        for tid, obj in thermal_clusters_data.items():
-            cluster_info = parse_thermal_cluster(file_study.config.version, obj)
-            result.append(cluster_info)
-        return result
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
+        pass
 
     @override
     def get_all_areas(self) -> List[Area]:
@@ -70,7 +59,7 @@ class FileStudyAreaDao(AreaDao):
             Area(
                 id=area_id,
                 name=area.name,
-                thermals=self._get_thermal_clusters(area_id),
+                thermals=list(self.get_impl().get_all_thermals_for_area(area_id)),
             )
             for area_id, area in cfg_areas.items()
         ]
@@ -170,14 +159,16 @@ class FileStudyAreaDao(AreaDao):
         """Helper method to build the complete area data structure."""
         # Import here to avoid circular import
         from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
-        from antarest.study.storage.variantstudy.model.command.create_area import NodalOptimization
 
         study_data = self.get_file_study()
 
+        # Use AreaProperties defaults for area initialization
+        default_props = AreaProperties()
+
         # Generate thermal areas ini
         thermal_areas_ini = study_data.tree.get(["input", "thermal", "areas"])
-        thermal_areas_ini.setdefault("unserverdenergycost", {})[area_id] = NodalOptimization.UNSERVERDDENERGYCOST
-        thermal_areas_ini.setdefault("spilledenergycost", {})[area_id] = NodalOptimization.SPILLEDENERGYCOST
+        thermal_areas_ini.setdefault("unserverdenergycost", {})[area_id] = default_props.energy_cost_unsupplied
+        thermal_areas_ini.setdefault("spilledenergycost", {})[area_id] = default_props.energy_cost_spilled
 
         # Ensure the "annual" key exists in the hydro correlation configuration
         new_correlation = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
@@ -190,11 +181,11 @@ class FileStudyAreaDao(AreaDao):
                     area_id: {
                         "optimization": {
                             "nodal optimization": {
-                                "non-dispatchable-power": NodalOptimization.NON_DISPATCHABLE_POWER,
-                                "dispatchable-hydro-power": NodalOptimization.DISPATCHABLE_HYDRO_POWER,
-                                "other-dispatchable-power": NodalOptimization.OTHER_DISPATCHABLE_POWER,
-                                "spread-unsupplied-energy-cost": NodalOptimization.SPREAD_UNSUPPLIED_ENERGY_COST,
-                                "spread-spilled-energy-cost": NodalOptimization.SPREAD_SPILLED_ENERGY_COST,
+                                "non-dispatchable-power": default_props.non_dispatch_power,
+                                "dispatchable-hydro-power": default_props.dispatch_hydro_power,
+                                "other-dispatchable-power": default_props.other_dispatch_power,
+                                "spread-unsupplied-energy-cost": default_props.spread_unsupplied_energy_cost,
+                                "spread-spilled-energy-cost": default_props.spread_spilled_energy_cost,
                             },
                             "filtering": {
                                 "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,

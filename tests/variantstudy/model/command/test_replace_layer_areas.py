@@ -15,13 +15,13 @@ from antarest.study.business.model.layer_model import LayerCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
-from antarest.study.storage.variantstudy.model.command.update_layer_areas import UpdateLayerAreas
+from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-class TestUpdateLayerAreas:
+class TestReplaceLayerAreas:
     @pytest.mark.unit_test
-    def test_update_layer_areas_add_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
+    def test_replace_layer_areas_add_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """Test adding areas to a layer."""
         empty_study = empty_study_880
 
@@ -52,7 +52,7 @@ class TestUpdateLayerAreas:
         assert output.status
 
         # Add areas to the layer
-        update_command = UpdateLayerAreas(
+        update_command = ReplaceLayerAreas(
             layer_id="1",
             area_ids=["area1", "area2"],
             command_context=command_context,
@@ -60,7 +60,7 @@ class TestUpdateLayerAreas:
         )
         output = update_command.apply(study_data=empty_study)
         assert output.status
-        assert "Layer '1' areas updated" in output.message
+        assert "Layer '1' areas replaced" in output.message
 
         # Verify areas are in the layer
         area1_ui = empty_study.tree.get(["input", "areas", "area1", "ui"])
@@ -74,7 +74,7 @@ class TestUpdateLayerAreas:
         assert "1" in str(area2_ui["ui"]["layers"])
 
     @pytest.mark.unit_test
-    def test_update_layer_areas_remove_success(
+    def test_replace_layer_areas_remove_success(
         self, empty_study_880: FileStudy, command_context: CommandContext
     ) -> None:
         """Test removing areas from a layer."""
@@ -100,7 +100,7 @@ class TestUpdateLayerAreas:
         assert output.status
 
         # Add all three areas to the layer
-        update_command1 = UpdateLayerAreas(
+        update_command1 = ReplaceLayerAreas(
             layer_id="1",
             area_ids=["area1", "area2", "area3"],
             command_context=command_context,
@@ -110,7 +110,7 @@ class TestUpdateLayerAreas:
         assert output.status
 
         # Remove one area from the layer
-        update_command2 = UpdateLayerAreas(
+        update_command2 = ReplaceLayerAreas(
             layer_id="1",
             area_ids=["area1", "area3"],  # area2 removed
             command_context=command_context,
@@ -133,10 +133,10 @@ class TestUpdateLayerAreas:
         assert "1" not in str(area2_ui["ui"]["layers"])
 
     @pytest.mark.unit_test
-    def test_update_layer_areas_layer_not_found(
+    def test_replace_layer_areas_layer_not_found(
         self, empty_study_880: FileStudy, command_context: CommandContext
     ) -> None:
-        """Test updating a non-existent layer returns an error."""
+        """Test replacing areas in a non-existent layer returns an error."""
         empty_study = empty_study_880
 
         # Create an area
@@ -148,8 +148,8 @@ class TestUpdateLayerAreas:
         output = create_area.apply(study_data=empty_study)
         assert output.status
 
-        # Try to update a non-existent layer
-        update_command = UpdateLayerAreas(
+        # Try to replace a non-existent layer
+        update_command = ReplaceLayerAreas(
             layer_id="999",
             area_ids=["area1"],
             command_context=command_context,
@@ -161,8 +161,8 @@ class TestUpdateLayerAreas:
         assert "Layer not found" in output.message
 
     @pytest.mark.unit_test
-    def test_update_layer_areas_empty_list(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
-        """Test updating layer with an empty list of areas (removes all areas)."""
+    def test_replace_layer_areas_empty_list(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
+        """Test replacing layer with an empty list of areas (removes all areas)."""
         empty_study = empty_study_880
 
         # Create an area
@@ -184,7 +184,7 @@ class TestUpdateLayerAreas:
         assert output.status
 
         # Add area to the layer
-        update_command1 = UpdateLayerAreas(
+        update_command1 = ReplaceLayerAreas(
             layer_id="1",
             area_ids=["area1"],
             command_context=command_context,
@@ -194,7 +194,7 @@ class TestUpdateLayerAreas:
         assert output.status
 
         # Remove all areas from the layer
-        update_command2 = UpdateLayerAreas(
+        update_command2 = ReplaceLayerAreas(
             layer_id="1",
             area_ids=[],
             command_context=command_context,

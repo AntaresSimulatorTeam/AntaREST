@@ -33,7 +33,10 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 COMMANDS = [
     pytest.param(
         CommandDTO(
-            action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8
+            action=CommandName.CREATE_AREA.value,
+            args={"area_name": "area_name"},
+            study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_area",
@@ -43,6 +46,7 @@ COMMANDS = [
             action=CommandName.CREATE_AREA.value,
             args=[{"area_name": "area_name"}, {"area_name": "area2"}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_area2",
@@ -107,12 +111,12 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_LAYER_AREAS.value,
+            action=CommandName.REPLACE_LAYER_AREAS.value,
             args={"layer_id": "layer_id", "area_ids": ["area1", "area2"]},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_layer_areas",
+        id="replace_layer_areas",
     ),
     pytest.param(
         CommandDTO(
