@@ -91,7 +91,7 @@ class HydroAllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=T
         for area_id, allocation_list in allocations.items():
             args[area_id] = {}
             for allocation in allocation_list.allocations:
-                args["area_id"][allocation.area_id] = allocation.coefficient
+                args[area_id][allocation.area_id] = allocation.coefficient
 
         df = pd.DataFrame.from_dict(args)
         df.fillna(0)
