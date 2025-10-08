@@ -14,28 +14,29 @@ from pathlib import Path
 from typing import DefaultDict
 
 import numpy as np
+from numpy.typing import NDArray
 
 
 class OutageCounter:
     def __init__(self) -> None:
-        # Nested defaultdict: area_id -> resource_id -> count
-        self.forced_outages_data: DefaultDict[str, DefaultDict[str, np.ndarray]] = defaultdict(
-            lambda: defaultdict(np.ndarray)
+        # Nested defaultdict: area_id -> resource_id -> array of outage counts (ints)
+        self.forced_outages_data: DefaultDict[str, DefaultDict[str, NDArray[np.int_]]] = defaultdict(
+            lambda: defaultdict(lambda: np.array([], dtype=int))
         )
-        self.planned_outages_data: DefaultDict[str, DefaultDict[str, np.ndarray]] = defaultdict(
-            lambda: defaultdict(np.ndarray)
+        self.planned_outages_data: DefaultDict[str, DefaultDict[str, NDArray[np.int_]]] = defaultdict(
+            lambda: defaultdict(lambda: np.array([], dtype=int))
         )
 
-    def add_forced_outage(self, area_id: str, power_system_resource_id: str, count: np.ndarray) -> None:
+    def add_forced_outage(self, area_id: str, power_system_resource_id: str, count: NDArray[np.int_]) -> None:
         self.forced_outages_data[area_id][power_system_resource_id] = count
 
-    def add_planned_outage(self, area_id: str, power_system_resource_id: str, count: np.ndarray) -> None:
+    def add_planned_outage(self, area_id: str, power_system_resource_id: str, count: NDArray[np.int_]) -> None:
         self.planned_outages_data[area_id][power_system_resource_id] = count
 
-    def get_forced_outages(self, area_id: str, power_system_resource_id: str) -> int:
+    def get_forced_outages(self, area_id: str, power_system_resource_id: str) -> NDArray[np.int_]:
         return self.forced_outages_data[area_id][power_system_resource_id]
 
-    def get_planned_outages(self, area_id: str, power_system_resource_id: str) -> int:
+    def get_planned_outages(self, area_id: str, power_system_resource_id: str) -> NDArray[np.int_]:
         return self.planned_outages_data[area_id][power_system_resource_id]
 
     def save_planned_outages(self, file_path: Path, area_id: str, power_system_resource_id: str) -> None:
