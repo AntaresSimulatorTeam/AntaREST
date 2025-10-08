@@ -2207,7 +2207,7 @@ class StudyService:
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
             all_areas: List[Area] = self.get_all_areas(study_id)
             if matrix_path.parts[-1] == "allocation":
-                hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
+                hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface)
             else:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study_interface, [])  # type: ignore
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)

@@ -990,6 +990,22 @@ COMMANDS = [
         None,
         id="replace_xpansion_adequacy_criterion",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_ALLOCATION.value,
+            args=[
+                {
+                    "area_id": "fr",
+                    "allocation": {
+                        "allocation": [{"area_id": "fr", "coefficient": 100}, {"area_id": "be", "coefficient": 2.4}]
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_hydro_allocation",
+    ),
 ]
 
 
