@@ -1,4 +1,4 @@
-Antares-Launcher==1.4.5
+Antares-Launcher==1.4.6
 antares-study-version==1.0.20
 antares-timeseries-generation==0.1.8
 
@@ -45,5 +45,4 @@ PyYAML~=6.0.3
 redis~=6.4.0
 SQLAlchemy~=2.0.41
 tables==3.9.2
-typing_extensions~=4.12.2
 xlsxwriter~=3.2.0
