@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, List
 
-from antarest.study.business.model.area_model import Area, AreaUIUpdate
+from antarest.study.business.model.area_model import Area, AreaUI, AreaUIUpdate
 
 
 class ReadOnlyAreaDao(ABC):
@@ -27,12 +27,12 @@ class ReadOnlyAreaDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self) -> dict[str, AreaUI]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
         Returns:
-            A dictionary containing information about the user interface for the areas.
+            A dictionary mapping area IDs to their UI properties (position and color for layer 0).
 
         Raises:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.

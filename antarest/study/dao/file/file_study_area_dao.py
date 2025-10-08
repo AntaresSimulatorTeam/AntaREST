@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
-from antarest.study.business.model.area_model import Area, AreaUIUpdate
+from antarest.study.business.model.area_model import Area, AreaUI, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.area_dao import AreaDao
@@ -76,12 +76,12 @@ class FileStudyAreaDao(AreaDao):
         ]
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self) -> dict[str, AreaUI]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
         Returns:
-            Dictionary where keys are area IDs, and values are UI objects.
+            A dictionary mapping area IDs to their UI properties (position and color for layer 0).
 
         Raises:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
@@ -103,10 +103,19 @@ class FileStudyAreaDao(AreaDao):
         if len(area_ids) == 1:
             ui_info_map = {area_ids[0]: ui_info_map}
 
-        # Convert to AreaUIFileData to ensure that the UI object is valid
-        ui_info_map = {area_id: AreaUIFileData(**ui_info).to_config() for area_id, ui_info in ui_info_map.items()}
+        # Convert to AreaUI objects with layer 0 information
+        result: dict[str, AreaUI] = {}
+        for area_id, ui_info in ui_info_map.items():
+            area_ui_data = AreaUIFileData(**ui_info)
+            # Get the style from layer 0 (default layer)
+            style = area_ui_data.style
+            result[area_id] = AreaUI(
+                x=style.x,
+                y=style.y,
+                color_rgb=(style.color_r, style.color_g, style.color_b),
+            )
 
-        return ui_info_map
+        return result
 
     @override
     def save_area(self, area_name: str, command_context: Any) -> None:

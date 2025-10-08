@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.area_model import Area, AreaUIUpdate
+from antarest.study.business.model.area_model import Area, AreaUI, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -830,7 +830,7 @@ class InMemoryStudyDao(StudyDao):
         return [Area(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self) -> dict[str, AreaUI]:
         # For in-memory DAO, we don't store UI info
         # This is a simplified implementation for testing purposes
         return {}

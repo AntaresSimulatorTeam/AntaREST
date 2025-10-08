@@ -10,13 +10,13 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Any, Dict, List, Sequence
+from typing import Dict, List, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.area_model import Area, AreaUI
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -468,5 +468,5 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_areas()
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self) -> dict[str, AreaUI]:
         return self._adaptee.get_all_areas_ui_info()
