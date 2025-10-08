@@ -87,14 +87,13 @@ class HydroAllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=T
 
     @staticmethod
     def from_hydro_allocations(allocations: dict[str, HydroAllocation]) -> "HydroAllocationMatrix":
-        args: dict[str, Any] = {}
+        df_args: dict[str, Any] = {}
         for area_id, allocation_list in allocations.items():
-            args[area_id] = {}
+            df_args[area_id] = {}
             for allocation in allocation_list.allocation:
-                args[area_id][allocation.area_id] = allocation.coefficient
+                df_args[area_id][allocation.area_id] = allocation.coefficient
 
-        df = pd.DataFrame.from_dict(args)
-        df.fillna(0)
-        args["data"] = df.reindex(df.columns).transpose().to_numpy()
+        df = pd.DataFrame.from_dict(df_args).fillna(0)
+        args: dict[str, Any] = {"data": df.reindex(df.columns).transpose().to_numpy()}
         args["index"] = args["columns"] = list(df.columns)
         return HydroAllocationMatrix.model_validate(args)
