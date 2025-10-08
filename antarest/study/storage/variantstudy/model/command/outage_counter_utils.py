@@ -12,19 +12,19 @@
 from collections import defaultdict
 from pathlib import Path
 from typing import DefaultDict
-
+import numpy as np
 
 class OutageCounter:
     def __init__(self) -> None:
         # Nested defaultdict: area_id -> resource_id -> count
-        self.forced_outages_data: DefaultDict[str, DefaultDict[str, int]] = defaultdict(lambda: defaultdict(int))
-        self.planned_outages_data: DefaultDict[str, DefaultDict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self.forced_outages_data: DefaultDict[str, DefaultDict[str, np.ndarray]] = defaultdict(lambda: defaultdict(np.ndarray))
+        self.planned_outages_data: DefaultDict[str, DefaultDict[str, np.ndarray]] = defaultdict(lambda: defaultdict(np.ndarray))
 
-    def add_forced_outage(self, area_id: str, power_system_resource_id: str, count: int) -> None:
-        self.forced_outages_data[area_id][power_system_resource_id] += count
+    def add_forced_outage(self, area_id: str, power_system_resource_id: str, count : np.ndarray) -> None:
+        self.forced_outages_data[area_id][power_system_resource_id] = count
 
-    def add_planned_outage(self, area_id: str, power_system_resource_id: str, count: int) -> None:
-        self.planned_outages_data[area_id][power_system_resource_id] += count
+    def add_planned_outage(self, area_id: str, power_system_resource_id: str, count: np.ndarray) -> None:
+        self.planned_outages_data[area_id][power_system_resource_id] = count
 
     def get_forced_outages(self, area_id: str, power_system_resource_id: str) -> int:
         return self.forced_outages_data[area_id][power_system_resource_id]
@@ -36,12 +36,15 @@ class OutageCounter:
         path = file_path / "planned_outages.txt"
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8") as f:
-            f.write(
-                f"Number of units planned in outage: {self.get_planned_outages(area_id, power_system_resource_id)}\n"
-            )
-
+            planned_outages = self.get_planned_outages(area_id, power_system_resource_id)
+            np.savetxt(f, planned_outages, fmt='%d')
     def save_forced_outages(self, file_path: Path, area_id: str, power_system_resource_id: str) -> None:
         path = file_path / "forced_outages.txt"
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8") as f:
-            f.write(f"Number of units forced in outage: {self.get_forced_outages(area_id, power_system_resource_id)}\n")
+            forced_outages = self.get_forced_outages(area_id, power_system_resource_id)
+            np.savetxt(f, forced_outages, fmt='%d')
+
+
+    def checkIfPowerSystemResourceIdExists(self, area_id: str, power_system_resource_id: str) -> bool:
+        return power_system_resource_id in self.forced_outages_data[area_id] or power_system_resource_id in self.planned_outages_data[area_id]

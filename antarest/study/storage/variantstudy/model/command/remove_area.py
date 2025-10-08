@@ -162,6 +162,21 @@ class RemoveArea(ICommand):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
+    def _remove_area_timeseries(self, study_data: FileStudy) -> None:
+        """
+        Remove the thermal time series associated with the area to remove.
+
+        Args:
+            study_data: FileStudy to update.
+
+        """
+        if (study_data.tree.config.path / "ts-generator" / self.id).exists():
+            study_data.tree.delete(["ts-generator", self.id])
+
+        # Note: we do not delete the prepro file because it can be useful for
+        # other areas if they share the same cluster.
+
+
     # noinspection SpellCheckingInspection
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -228,9 +243,10 @@ class RemoveArea(ICommand):
         self._remove_area_from_hydro_allocation(study_data)
         self._remove_area_from_districts(study_data)
         self._remove_area_from_scenario_builder(study_data)
-
+        self._remove_area_timeseries(study_data)
         self.remove_from_config(study_data.config)
-
+        
+        
         new_area_data: JSON = {"input": {"areas": {"list": [area.name for area in study_data.config.areas.values()]}}}
         study_data.tree.save(new_area_data)
 

@@ -109,16 +109,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     results = generator.generate_time_series_for_clusters(cluster, nb_years)
                     generated_matrix = results.available_power
 
-                    for i in range(len(results.outage_output.forced_outages)):
-                        if results.outage_output.forced_outages[i].size == 1:
-                            forced_outage_units = results.outage_output.forced_outages[i].item()
-                            if forced_outage_units > 0:
-                                outage_counter.add_forced_outage(area_id, thermal_id, forced_outage_units)
-
-                        if results.outage_output.planned_outages[i].size == 1:
-                            planned_outage_units = results.outage_output.planned_outages[i].item()
-                            if planned_outage_units > 0:
-                                outage_counter.add_planned_outage(area_id, thermal_id, planned_outage_units)
+                    outage_counter.add_forced_outage(area_id, thermal_id, results.outage_output.forced_outages)
+                    outage_counter.add_planned_outage(area_id, thermal_id, results.outage_output.planned_outages)
 
                     # 9- Write the matrix inside the matrix-store and store the id in memory
                     df = pd.DataFrame(data=generated_matrix)
@@ -136,9 +128,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
         # 11- Once we've written all matrices inside the matrix-store, modify the input folder.
 
-        # create outages directory in root of study if not exists
+        
         study_dir = study_data.get_study_path()
-        outage_dir = study_dir / "outages"
+        outage_dir = study_dir / "ts-generator"
         outage_dir.mkdir(exist_ok=True)
 
         for area_id, values in series_mapping.items():
@@ -147,7 +139,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
             for thermal_id, series in values.items():
                 thermal_dir = area_dir / "thermal" / thermal_id
                 thermal_dir.mkdir(parents=True, exist_ok=True)
-
+                    
                 study_data.save_thermal_series(area_id, thermal_id, series)
                 outage_counter.save_planned_outages(thermal_dir, area_id, thermal_id)
                 outage_counter.save_forced_outages(thermal_dir, area_id, thermal_id)

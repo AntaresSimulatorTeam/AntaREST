@@ -52,7 +52,7 @@ class FileStudyTree(FolderNode):
             output_config.path = self.config.output_path or output_config.path
             children["output"] = Output(self.matrix_mapper, output_config)
 
-        if (self.config.path / "outages").exists():
-            children["outages"] = BucketNode(self.matrix_mapper, self.config.next_file("outages"))
+        if (self.config.path / "ts-generator").exists():
+            children["ts-generator"] = BucketNode(self.matrix_mapper, self.config.next_file("ts-generator"))
 
         return children

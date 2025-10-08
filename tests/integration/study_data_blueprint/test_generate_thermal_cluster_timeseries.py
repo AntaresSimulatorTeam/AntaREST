@@ -82,12 +82,12 @@ class TestGenerateThermalClusterTimeseries:
 
         count_outage_file = 0
         numberOfClusters = 0
-        for area in root_listing["outages"]:
-            for cluster in root_listing["outages"][area]["thermal"]:
+        for area in root_listing["ts-generator"]:
+            for cluster in root_listing["ts-generator"][area]["thermal"]:
                 numberOfClusters += 1
                 if (
-                    "forced_outages.txt" in root_listing["outages"][area]["thermal"][cluster]
-                    and "planned_outages.txt" in root_listing["outages"][area]["thermal"][cluster]
+                    "forced_outages.txt" in root_listing["ts-generator"][area]["thermal"][cluster]
+                    and "planned_outages.txt" in root_listing["ts-generator"][area]["thermal"][cluster]
                 ):
                     count_outage_file += 2
 
