@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
-from antarest.study.business.model.area_model import Area, AreaUIUpdate
+from antarest.study.business.model.area_model import Area, AreaUIUpdate, AreaUI
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.area_dao import AreaDao
@@ -508,32 +508,29 @@ class FileStudyAreaDao(AreaDao):
                     config.districts[id_] = set_
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui_update: AreaUIUpdate) -> None:
+    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
         """
-        Update an area's UI properties (position and color) for a specific layer.
+        Save an area's UI properties (position and color) for a specific layer.
         """
         study_data = self.get_file_study()
         current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
         layer_int = int(layer)
 
-        # Apply updates if provided
-        if area_ui_update.x is not None:
-            current_area["layerX"][layer] = area_ui_update.x
-            if layer_int == 0:
-                current_area["ui"]["x"] = area_ui_update.x
+        # Save all UI properties
+        current_area["layerX"][layer] = area_ui.x
+        if layer_int == 0:
+            current_area["ui"]["x"] = area_ui.x
 
-        if area_ui_update.y is not None:
-            current_area["layerY"][layer] = area_ui_update.y
-            if layer_int == 0:
-                current_area["ui"]["y"] = area_ui_update.y
+        current_area["layerY"][layer] = area_ui.y
+        if layer_int == 0:
+            current_area["ui"]["y"] = area_ui.y
 
-        if area_ui_update.color_rgb is not None:
-            r, g, b = area_ui_update.color_rgb
-            current_area["layerColor"][layer] = f"{r}, {g}, {b}"
-            if layer_int == 0:
-                current_area["ui"]["color_r"] = r
-                current_area["ui"]["color_g"] = g
-                current_area["ui"]["color_b"] = b
+        r, g, b = area_ui.color_rgb
+        current_area["layerColor"][layer] = f"{r}, {g}, {b}"
+        if layer_int == 0:
+            current_area["ui"]["color_r"] = r
+            current_area["ui"]["color_g"] = g
+            current_area["ui"]["color_b"] = b
 
         study_data.tree.save(current_area, ["input", "areas", area_id, "ui"])
 

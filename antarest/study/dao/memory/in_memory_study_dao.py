@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.area_model import Area, AreaUIUpdate
+from antarest.study.business.model.area_model import Area, AreaUIUpdate, AreaUI
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -175,6 +175,10 @@ class InMemoryStudyDao(StudyDao):
         self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
         # Area Properties
         self._area_properties: dict[str, AreaProperties] = {}
+        # Area UI
+        self._area_ui: dict[str, AreaUI] = {}
+        # Layer-Area associations (layer_id -> set of area_ids)
+        self._layer_areas: dict[str, set[str]] = {}
         # Scenario Builder
         self.rulesets: Rulesets = {}
         self.active_ruleset_name: Optional[str] = None
@@ -831,9 +835,7 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_areas_ui_info(self) -> Dict[str, Any]:
-        # For in-memory DAO, we don't store UI info
-        # This is a simplified implementation for testing purposes
-        return {}
+        return self._area_ui
 
     @override
     def save_area(self, area_name: str, command_context: Any) -> None:
@@ -842,6 +844,9 @@ class InMemoryStudyDao(StudyDao):
         if area_id in self._area_names:
             raise ValueError(f"Area '{area_name}' already exists and could not be created")
         self._area_names.append(area_id)
+
+        # Initialize default UI for the new area
+        self._area_ui[area_id] = AreaUI(x=0, y=0, color_rgb=(230, 108, 44))
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -866,18 +871,23 @@ class InMemoryStudyDao(StudyDao):
 
         self._area_names.remove(area_id)
 
+        # Clean up UI info
+        self._area_ui.pop(area_id, None)
+
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui_update: AreaUIUpdate) -> None:
-        # For in-memory DAO, we don't store UI info
-        # This is a simplified implementation for testing purposes
+    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
         if area_id not in self._area_names:
             raise AreaNotFound(area_id)
 
+        # Store UI info for this area (we only track layer 0 in memory for simplicity)
+        self._area_ui[area_id] = area_ui
+
     @override
     def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
-        # For in-memory DAO, we don't store layer-area associations
-        # This is a simplified implementation for testing purposes
-        # We just verify that the areas exist
+        # Verify that all areas exist
         for area_id in area_ids:
             if area_id not in self._area_names:
                 raise AreaNotFound(area_id)
+
+        # Store the layer-area associations
+        self._layer_areas[layer_id] = set(area_ids)

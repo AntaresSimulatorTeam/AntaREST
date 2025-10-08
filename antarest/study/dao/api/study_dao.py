@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Any, Dict, List, Sequence
+from typing import Sequence, Any
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -318,7 +318,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
 
     @override
-    def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
+    def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
         return self._adaptee.get_all_hydro_properties()
 
     @override
@@ -464,9 +464,9 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_scenario_by_type(scenario_type)
 
     @override
-    def get_all_areas(self) -> List[Area]:
+    def get_all_areas(self) -> list[Area]:
         return self._adaptee.get_all_areas()
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self) -> dict[str, Any]:
         return self._adaptee.get_all_areas_ui_info()

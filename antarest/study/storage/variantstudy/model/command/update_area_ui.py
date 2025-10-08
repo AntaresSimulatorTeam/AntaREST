@@ -17,7 +17,7 @@ from pydantic import field_validator, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import AreaUIUpdate
+from antarest.study.business.model.area_model import AreaUI, AreaUIUpdate
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -90,7 +90,22 @@ class UpdateAreaUI(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        study_data.save_area_ui(self.area_id, self.layer, self.parameters)
+        # Get current UI info for all areas
+        all_areas_ui = study_data.get_all_areas_ui_info()
+        current_ui = all_areas_ui.get(self.area_id)
+
+        # If area doesn't exist in UI info, use defaults
+        if current_ui is None:
+            current_ui = AreaUI(x=0, y=0, color_rgb=(230, 108, 44))
+
+        # Apply the update: merge current values with new values
+        area_ui = AreaUI(
+            x=self.parameters.x if self.parameters.x is not None else current_ui.x,
+            y=self.parameters.y if self.parameters.y is not None else current_ui.y,
+            color_rgb=self.parameters.color_rgb if self.parameters.color_rgb is not None else current_ui.color_rgb,
+        )
+
+        study_data.save_area_ui(self.area_id, self.layer, area_ui)
         return command_succeeded(message=f"area '{self.area_id}' UI updated")
 
     @override
