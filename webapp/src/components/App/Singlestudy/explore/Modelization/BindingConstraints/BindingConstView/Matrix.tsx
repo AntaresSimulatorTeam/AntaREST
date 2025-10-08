@@ -14,21 +14,25 @@
 
 import { useTranslation } from "react-i18next";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import type { Operator } from "./utils";
+import type { BindingConstraint } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
 import { Box, Button } from "@mui/material";
 import BasicDialog, { type BasicDialogProps } from "../../../../../../common/dialogs/BasicDialog";
 import Matrix from "../../../../../../common/Matrix";
+import { useFormContextPlus } from "@/components/common/Form";
 
 interface Props {
   study: StudyMetadata;
-  operator: Operator;
   constraintId: string;
   open: boolean;
   onClose: () => void;
 }
 
-function ConstraintMatrix({ study, operator, constraintId, open, onClose }: Props) {
+function ConstraintMatrix({ study, constraintId, open, onClose }: Props) {
+  const { getValues } = useFormContextPlus<BindingConstraint>();
+  const operator = getValues("operator");
+  console.log(operator);
+
   const { t } = useTranslation();
   const dialogProps: BasicDialogProps = {
     open,

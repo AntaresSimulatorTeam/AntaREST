@@ -177,7 +177,6 @@ function BindingConstView({ constraintId }: Props) {
               <ConstraintMatrix
                 study={study}
                 constraintId={constraintId}
-                operator={defaultValues.operator}
                 open={matrixDialogOpen}
                 onClose={() => setMatrixDialogOpen(false)}
               />
