@@ -108,3 +108,7 @@ class FileStudyHydroDao(HydroDao):
         inflow_path = get_inflow_path(area_id)
         file_data = serialize_inflow_structure(inflow_structure)
         file_study.tree.save(file_data, inflow_path)
+
+    @override
+    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
+        raise NotImplementedError()

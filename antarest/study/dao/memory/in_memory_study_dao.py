@@ -337,6 +337,10 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_properties[area_id].inflow_structure = inflow_structure
 
     @override
+    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
+        self._hydro_allocation[area_id] = allocation
+
+    @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
         all_renewables: dict[str, dict[str, RenewableCluster]] = {}
         for key, renewable_cluster in self._renewables.items():

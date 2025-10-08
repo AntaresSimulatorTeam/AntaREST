@@ -50,3 +50,7 @@ class HydroDao(ReadOnlyHydroDao):
     @abstractmethod
     def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
+        raise NotImplementedError()
