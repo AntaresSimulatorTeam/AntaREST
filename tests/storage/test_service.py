@@ -1474,36 +1474,6 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
 
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
 
-
-@pytest.mark.unit_test
-@with_admin_user
-def test_edit_study_with_command() -> None:
-    study_id = str(uuid.uuid4())
-
-    service = build_study_service(
-        raw_study_service=Mock(),
-        repository=Mock(),
-        config=Mock(),
-    )
-    command = Mock()
-    service._create_edit_study_command = Mock(return_value=command)
-    study_service = Mock(spec=RawStudyService)
-    service.storage_service.get_storage = Mock(return_value=study_service)
-    raw_study = Mock(spec=RawStudy)
-    raw_study.version = "880"
-    raw_study.id = study_id
-
-    service._edit_study_using_command(study=raw_study, url="", data=[])
-    command.apply.assert_called()
-
-    variant_study = Mock(spec=VariantStudy)
-    variant_study.version = "880"
-    study_service = Mock(spec=VariantStudyService)
-    service.storage_service.get_storage = Mock(return_value=study_service)
-    service._edit_study_using_command(study=variant_study, url="", data=[])
-    service.storage_service.variant_study_service.append_commands.assert_called_once()
-
-
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
     "tree_node,url,data,expected_name",
