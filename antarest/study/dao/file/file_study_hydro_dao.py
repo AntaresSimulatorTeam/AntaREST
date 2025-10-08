@@ -82,7 +82,9 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        all_areas = file_study.config.areas
+        return {area_id: self.get_hydro_allocation(area_id) for area_id in all_areas}
 
     @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
