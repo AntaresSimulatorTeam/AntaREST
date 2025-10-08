@@ -168,3 +168,19 @@ def test_get_allocation_for_area(manager, empty_study_920: FileStudy, command_co
     for area_id in expected_allocations:
         allocation = manager.get_allocation_for_area(study, area_id)
         assert allocation == expected_allocations[area_id]
+
+
+def test_set_allocation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    _set_up(command_context, empty_study_920)
+
+    study = FileStudyInterface(empty_study_920)
+
+    new_allocation = HydroAllocation(
+        allocation=[
+            HydroAllocationArea(area_id="s", coefficient=3.0),
+            HydroAllocationArea(area_id="n", coefficient=12.1),
+        ]
+    )
+    alloc = manager.set_allocation_for_area(study, "e", new_allocation)
+    assert alloc == new_allocation
+    assert manager.get_allocation_for_area(study, "e") == new_allocation
