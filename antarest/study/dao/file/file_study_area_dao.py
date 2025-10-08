@@ -9,18 +9,22 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import contextlib
+import logging
 import re
 from abc import abstractmethod
 from typing import Any, Dict, List
 
 from typing_extensions import override
 
-from antarest.core.exceptions import LayerNotFound
+from antarest.core.exceptions import LayerNotFound, ReferencedObjectDeletionNotAllowed, ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import Area, AreaUIUpdate
+from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6, \
+    STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
@@ -159,6 +163,7 @@ class FileStudyAreaDao(AreaDao):
         null_matrix: str,
     ) -> JSON:
         """Helper method to build the complete area data structure."""
+        # Import here to avoid circular import
         from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
         from antarest.study.storage.variantstudy.model.command.create_area import NodalOptimization
 
@@ -321,11 +326,6 @@ class FileStudyAreaDao(AreaDao):
         Delete an area from the study.
         Removes all associated files, configurations, and references.
         """
-        import logging
-
-        from antarest.core.exceptions import ReferencedObjectDeletionNotAllowed
-        from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
-
         logger = logging.getLogger(__name__)
 
         study_data = self.get_file_study()
@@ -363,10 +363,6 @@ class FileStudyAreaDao(AreaDao):
 
     def _delete_area_files(self, area_id: str, study_data: Any) -> None:
         """Delete all files associated with an area from the tree."""
-        import contextlib
-
-        from antarest.core.exceptions import ChildNotFoundError
-
         # Delete basic area files
         study_data.tree.delete(["input", "areas", area_id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{area_id}"])
@@ -413,8 +409,6 @@ class FileStudyAreaDao(AreaDao):
 
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
-        from antarest.core.exceptions import ChildNotFoundError
-        from antarest.study.model import STUDY_VERSION_8_2
 
         for area_name, area in study_data.config.areas.items():
             for link in area.links:
@@ -461,8 +455,6 @@ class FileStudyAreaDao(AreaDao):
 
     def _remove_area_from_districts(self, area_id: str, study_data: Any) -> None:
         """Remove the area from all districts."""
-        import contextlib
-
         districts = study_data.tree.get(["input", "areas", "sets"])
         for district in districts.values():
             if district.get("+", None):
@@ -492,8 +484,6 @@ class FileStudyAreaDao(AreaDao):
 
     def _remove_from_config(self, area_id: str, config: Any) -> None:
         """Remove the area from the configuration and clean up references."""
-        import contextlib
-
         del config.areas[area_id]
 
         link_to_remove = [
