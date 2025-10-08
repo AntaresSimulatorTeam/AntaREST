@@ -69,7 +69,7 @@ class HydroAllocationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=T
             for allocation in allocation_list.allocation:
                 df_args[area_id][allocation.area_id] = allocation.coefficient
 
-        df = pd.DataFrame.from_dict(df_args).fillna(0)
-        args: dict[str, Any] = {"data": df.reindex(df.columns).transpose().to_numpy()}
+        df = pd.DataFrame.from_dict(df_args)
+        args: dict[str, Any] = {"data": df.reindex(df.columns).transpose().fillna(0).to_numpy()}
         args["index"] = args["columns"] = list(df.columns)
         return HydroAllocationMatrix.model_validate(args)
