@@ -18,11 +18,11 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound
+from antarest.core.exceptions import LinkNotFound, AreaNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import Area, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
@@ -60,6 +60,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -837,8 +838,6 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_area(self, area_name: str, command_context: Any) -> None:
         # For in-memory DAO, simplified implementation for testing
-        from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-
         area_id = transform_name_to_id(area_name)
         if area_id in self._area_names:
             raise ValueError(f"Area '{area_name}' already exists and could not be created")
@@ -847,8 +846,6 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_area(self, area_id: str) -> None:
         # For in-memory DAO, simplified implementation for testing
-        from antarest.core.exceptions import AreaNotFound, ReferencedObjectDeletionNotAllowed
-        from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 
         if area_id not in self._area_names:
             raise AreaNotFound(area_id)
@@ -873,8 +870,6 @@ class InMemoryStudyDao(StudyDao):
     def save_area_ui(self, area_id: str, layer: str, area_ui_update: AreaUIUpdate) -> None:
         # For in-memory DAO, we don't store UI info
         # This is a simplified implementation for testing purposes
-        from antarest.core.exceptions import AreaNotFound
-
         if area_id not in self._area_names:
             raise AreaNotFound(area_id)
 
@@ -883,8 +878,6 @@ class InMemoryStudyDao(StudyDao):
         # For in-memory DAO, we don't store layer-area associations
         # This is a simplified implementation for testing purposes
         # We just verify that the areas exist
-        from antarest.core.exceptions import AreaNotFound
-
         for area_id in area_ids:
             if area_id not in self._area_names:
                 raise AreaNotFound(area_id)
