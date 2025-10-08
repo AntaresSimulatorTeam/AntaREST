@@ -46,7 +46,7 @@ def create_study_interface(tree: FileStudyTree, version: StudyVersion = STUDY_VE
 
 def _set_up(command_context: CommandContext, study: FileStudy) -> None:
     allocation_cfg = {
-        "n": {"[allocation]": {"n": 1}},
+        "n": {"[allocation]": {"N?": 1}},  # Write the area name in the file to ensure we're able to read the data
         "e": {"allocation": {"e": 3, "s": 1}},
         "s": {"[allocation]": {"s": 0.1, "n": 0.2, "w": 0.6}},
         "w": {"[allocation]": {"w": 1}},
@@ -122,9 +122,7 @@ def test_error_cases() -> None:
         HydroAllocationMatrix.from_hydro_allocations({})
 
 
-def test_get_allocation_matrix__nominal_case(
-    manager, empty_study_920: FileStudy, command_context: CommandContext
-) -> None:
+def test_get_allocation_matrix(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
     _set_up(command_context, empty_study_920)
 
     study = FileStudyInterface(empty_study_920)
@@ -143,3 +141,30 @@ def test_get_allocation_matrix__nominal_case(
             ]
         ),
     )
+
+
+def test_get_allocation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    _set_up(command_context, empty_study_920)
+
+    expected_allocations = {
+        "e": HydroAllocation(
+            allocation=[
+                HydroAllocationArea(area_id="e", coefficient=3.0),
+                HydroAllocationArea(area_id="s", coefficient=1.0),
+            ]
+        ),
+        "n": HydroAllocation(allocation=[HydroAllocationArea(area_id="n", coefficient=1.0)]),
+        "s": HydroAllocation(
+            allocation=[
+                HydroAllocationArea(area_id="s", coefficient=0.1),
+                HydroAllocationArea(area_id="n", coefficient=0.2),
+                HydroAllocationArea(area_id="w", coefficient=0.6),
+            ]
+        ),
+        "w": HydroAllocation(allocation=[HydroAllocationArea(area_id="w", coefficient=1.0)]),
+    }
+
+    study = FileStudyInterface(empty_study_920)
+    for area_id in expected_allocations:
+        allocation = manager.get_allocation_for_area(study, area_id)
+        assert allocation == expected_allocations[area_id]
