@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import EditIcon from "@mui/icons-material/Edit";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { Box } from "@mui/material";
 
@@ -30,16 +30,15 @@ function EditorIcon() {
       <PersonOutlineIcon
         sx={{
           color: "text.secondary",
-          fontSize: "inherit",
         }}
       />
-      <EditOutlinedIcon
+      <EditIcon
         sx={{
           color: "text.secondary",
-          fontSize: "inherit",
+          fontSize: "small",
           position: "absolute",
-          bottom: -2,
-          left: 8,
+          bottom: 0,
+          left: 11,
         }}
       />
     </Box>
