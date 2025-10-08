@@ -128,7 +128,7 @@ class FileStudyHydroDao(HydroDao):
         data = {}
         for alloc in allocation.allocation:
             if alloc.area_id not in existing_areas:
-                raise AreaNotFound(area_id)
+                raise AreaNotFound(alloc.area_id)
             data[alloc.area_id] = alloc.coefficient
         # Saves the data inside the file
         url = get_allocation_path(area_id)

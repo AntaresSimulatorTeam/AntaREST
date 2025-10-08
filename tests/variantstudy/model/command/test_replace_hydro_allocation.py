@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -47,6 +47,24 @@ def test_error_case(empty_study_930: FileStudy, command_context: CommandContext)
     study = empty_study_930
     _set_up(study, command_context)
 
-    pass
-    # Unexisting area id
-    # Unexisting area id inside the allocation parameter
+    # Fake area
+    cmd = ReplaceHydroAllocation(
+        area_id="fake_area",
+        allocation=HydroAllocation(allocation=[HydroAllocationArea(area_id="e", coefficient=1)]),
+        command_context=command_context,
+        study_version=study.config.version,
+    )
+    output = cmd.apply(study)
+    assert not output.status
+    assert "Area is not found: 'fake_area'" in output.message
+
+    # Fake area inside the allocation parameter
+    cmd = ReplaceHydroAllocation(
+        area_id="e",
+        allocation=HydroAllocation(allocation=[HydroAllocationArea(area_id="fake_area", coefficient=1)]),
+        command_context=command_context,
+        study_version=study.config.version,
+    )
+    output = cmd.apply(study)
+    assert not output.status
+    assert "Area is not found: 'fake_area'" in output.message
