@@ -198,6 +198,7 @@ function Fields() {
               control={control}
               onChange={handleAdequacyCriterionsChange}
               rules={{ validate: validateAdequacyCriterions }}
+              sx={{ minWidth: 250 }}
             />
             {isSingleStudy && (
               <>
