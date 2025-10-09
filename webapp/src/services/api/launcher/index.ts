@@ -13,7 +13,7 @@
  */
 
 import client from "../client";
-import type { LauncherParamsDTO, LaunchStudyParams } from "./types";
+import type { JobCreationDTO, LauncherParamsDTO, LaunchStudyParams } from "./types";
 
 const BASE_URL = "/v1/launcher";
 
@@ -31,7 +31,7 @@ export async function launchStudy({ studyId, launcherId, version, config }: Laun
     other_options: config?.otherOptions,
   };
 
-  const { data } = await client.post(`${BASE_URL}/run/${studyId}`, launcherParams, {
+  const { data } = await client.post<JobCreationDTO>(`${BASE_URL}/run/${studyId}`, launcherParams, {
     params: { version, launcher: launcherId },
   });
 
