@@ -174,7 +174,7 @@ class TestHydroCorrelation:
         expected: List[List[float]],
     ):
         """Check `get_correlation_matrix` end point"""
-        query = f"columns={columns}" if columns else ""
+        query = ""
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix?{query}",
             headers={"Authorization": f"Bearer {user_access_token}"},

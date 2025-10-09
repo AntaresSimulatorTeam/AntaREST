@@ -30,7 +30,7 @@ from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
-from antarest.study.business.model.hydro_correlation_model import HydroCorrelation
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -335,8 +335,8 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_correlation[area_id]
 
     @override
-    def get_hydro_correlation_matrix(self) -> dict[str, HydroCorrelation]:
-        return self._hydro_correlation
+    def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
+        return HydroCorrelationMatrix.from_hydro_correlations(self._hydro_correlation)
 
     @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
@@ -351,8 +351,8 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_allocation[area_id] = allocation
 
     @override
-    def save_hydro_correlation(self, correlation: dict[str, HydroCorrelation]) -> None:
-        self._hydro_correlation = correlation
+    def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
+        self._hydro_correlation = correlation.to_hydro_correlations()
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:

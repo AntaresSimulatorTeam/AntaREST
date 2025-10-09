@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
-from antarest.study.business.model.hydro_correlation_model import HydroCorrelation
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -47,7 +47,7 @@ class ReadOnlyHydroDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_correlation_matrix(self) -> dict[str, HydroCorrelation]:
+    def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
         raise NotImplementedError()
 
 
@@ -65,5 +65,5 @@ class HydroDao(ReadOnlyHydroDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_correlation(self, correlation: dict[str, HydroCorrelation]) -> None:
+    def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
         raise NotImplementedError()

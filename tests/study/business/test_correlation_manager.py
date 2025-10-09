@@ -72,6 +72,13 @@ def test_error_cases() -> None:
                 ]
             )
 
+        with pytest.raises(ValueError, match="correlation matrix must not contain"):
+            HydroCorrelationMatrix(
+                index=["fr", "de"],
+                columns=["fr", "de"],
+                data=np.array([[np.nan, np.nan], [np.nan, np.nan]]),
+            )
+
     # matrix cannot be empty
     with pytest.raises(ValueError, match="must not be empty"):
         HydroCorrelationMatrix(index=[], columns=[], data=np.array([]))

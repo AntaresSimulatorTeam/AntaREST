@@ -41,7 +41,7 @@ class CorrelationManager:
         return data
 
     def get_correlation_matrix(self, study: StudyInterface) -> HydroCorrelationMatrix:
-        return HydroCorrelationMatrix.from_hydro_correlations(study.get_study_dao().get_hydro_correlation_matrix())
+        return study.get_study_dao().get_hydro_correlation_matrix()
 
     def set_correlation_matrix(self, study: StudyInterface, matrix: HydroCorrelationMatrix) -> HydroCorrelationMatrix:
         correlation = matrix.to_hydro_correlations()

@@ -12,9 +12,14 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 
-from antarest.core.exceptions import AreaNotFound
+import numpy as np
+
+from antarest.core.exceptions import AreaNotFound, ChildNotFoundError
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
-from antarest.study.business.model.hydro_correlation_model import HydroCorrelation
+from antarest.study.business.model.hydro_correlation_model import (
+    HydroCorrelation,
+    HydroCorrelationMatrix,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -33,6 +38,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 HYDRO_PATH = ["input", "hydro", "hydro"]
+CORRELATION_PATH = ["input", "hydro", "prepro", "correlation", "annual"]
 
 
 def get_inflow_path(area_id: str) -> list[str]:
@@ -106,14 +112,36 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
-        return self.get_hydro_correlation_matrix()[area_id]
+        return self.get_hydro_correlation_matrix().to_hydro_correlations()[area_id]
 
     @override
-    def get_hydro_correlation_matrix(self) -> dict[str, HydroCorrelation]:
-        raise NotImplementedError()
+    def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
+        file_study = self.get_file_study()
+        all_areas = file_study.config.areas
+        area_ids = sorted(list(all_areas))
+        array = np.identity(len(area_ids))
+        try:
+            ini_content = file_study.tree.get(CORRELATION_PATH)
+
+            for key, value in ini_content.items():
+                area_name1, area_name2 = key.split("%")
+                area1, area2 = transform_name_to_id(area_name1), transform_name_to_id(area_name2)
+                if area1 == area2:
+                    if value != 1:
+                        raise ValueError(f"Hydraulic correlation of area {area1} is not 1. It was {value}.")
+                    continue
+                i = area_ids.index(area1)
+                j = area_ids.index(area2)
+                array[i][j] = value
+                array[j][i] = value
+
+            return HydroCorrelationMatrix(index=area_ids, columns=all_areas, data=array)
+
+        except ChildNotFoundError:
+            return HydroCorrelationMatrix(index=area_ids, columns=all_areas, data=array)
 
     @override
-    def save_hydro_correlation(self, correlation: dict[str, HydroCorrelation]) -> None:
+    def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
         raise NotImplementedError()
 
     @override

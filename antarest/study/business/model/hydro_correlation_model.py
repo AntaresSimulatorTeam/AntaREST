@@ -59,6 +59,12 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
         if self.index != self.columns:
             raise ValueError("correlation matrix must have the same rows and columns")
 
+        if np.any((self.data < -1) | np.any(self.data > 1)):
+            raise ValueError("coefficients must be between -1 and 1")
+
+        if np.any(np.isnan(self.data)):
+            raise ValueError("correlation matrix must not contain NaN coefficients")
+
         n = len(self.index)
         if self.data.shape != (n, n):
             raise ValueError(f"correlation matrix must have shape ({n}×{n})")

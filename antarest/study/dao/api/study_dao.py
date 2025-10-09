@@ -26,7 +26,7 @@ from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
-from antarest.study.business.model.hydro_correlation_model import HydroCorrelation
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
@@ -336,11 +336,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
 
     @override
     def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
-        raise NotImplementedError()
+        return self._adaptee.get_hydro_correlation(area_id)
 
     @override
-    def get_hydro_correlation_matrix(self) -> dict[str, HydroCorrelation]:
-        raise NotImplementedError()
+    def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
+        return self._adaptee.get_hydro_correlation_matrix()
 
     @override
     def get_general_config(self) -> GeneralConfig:

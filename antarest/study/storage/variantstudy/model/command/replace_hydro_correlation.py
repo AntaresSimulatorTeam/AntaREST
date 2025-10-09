@@ -14,7 +14,7 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.hydro_correlation_model import HydroCorrelation
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -39,7 +39,7 @@ class ReplaceHydroCorrelation(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        study_data.save_hydro_correlation(self.correlation)
+        study_data.save_hydro_correlation(HydroCorrelationMatrix.from_hydro_correlations(self.correlation))
         return command_succeeded(message="Hydro correlation replaced successfully")
 
     @override
