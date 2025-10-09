@@ -28,7 +28,6 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
-from antarest.login.utils import get_user_impersonator
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
@@ -300,7 +299,7 @@ class RawStudyService(AbstractStorageService):
             additional_data = StudyAdditionalData(
                 horizon=src_study.additional_data.horizon,
                 author=src_study.additional_data.author,
-                editor=self._get_user_name_from_id(get_user_impersonator()),
+                editor=self._get_current_user_name(),
             )
         dest_id = str(uuid4())
         dest_study = RawStudy(

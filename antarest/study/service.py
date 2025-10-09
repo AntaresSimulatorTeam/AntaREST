@@ -424,21 +424,21 @@ class RawStudyInterface(StudyInterface):
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
-        self.update_editor(file_study)
+        self._update_editor(file_study)
 
-    def update_editor(self, file_study: FileStudy) -> None:
-        jwt_user = get_user_impersonator()
-        if jwt_user:
-            user = self._user_service.get_identity(jwt_user)
-            if user and user.name:
-                study_antares = file_study.tree.get(["study", "antares"])
-                study_antares["editor"] = user.name
-                file_study.tree.save(study_antares, ["study", "antares"])
-                study_db = self._repository.get(self._study.id)
-
-                if study_db and study_db.additional_data:
-                    study_db.additional_data.editor = user.name
-                    self._repository.save(study_db)
+    def _update_editor(self, file_study: FileStudy) -> None:
+        user_id = get_user_impersonator()
+        user = self._user_service.get_identity(user_id)
+        if user and user.name:
+            user_name = user.name or ""
+            study_antares = file_study.tree.get(["study", "antares"])
+            study_antares["editor"] = user.name
+            file_study.tree.save(study_antares, ["study", "antares"])
+            if not self._study.additional_data:
+                self._study.additional_data = StudyAdditionalData(author=user_name, editor=user_name)
+            else:
+                self._study.additional_data.editor = user_name
+            self._repository.save(self._study)
 
 
 class VariantStudyInterface(StudyInterface):

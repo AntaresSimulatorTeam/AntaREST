@@ -117,14 +117,10 @@ class VariantStudyService(AbstractStorageService):
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
     def _update_editor(self, study: VariantStudy) -> None:
-        user_id = get_user_impersonator()
-        study_db = self.repository.get(study.id)
-
-        if user_id and study_db:
-            user_name = self._get_user_name_from_id(int(user_id))
-            study.additional_data = study.additional_data or StudyAdditionalData()
-            study.additional_data.editor = user_name
-            self.repository.save(study_db)
+        user_name = self._get_current_user_name()
+        study.additional_data = study.additional_data or StudyAdditionalData()
+        study.additional_data.editor = user_name
+        self.repository.save(study)
 
     def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
         """
@@ -233,7 +229,6 @@ class VariantStudyService(AbstractStorageService):
         ]
         study.commands.extend(new_commands)
         self._update_editor(study)
-        # self._update_db_study_editor(study.id)
         self.on_variant_advance(study)
         self.event_bus.push(
             Event(
@@ -270,7 +265,6 @@ class VariantStudyService(AbstractStorageService):
             for i, command in enumerate(validated_commands)
         ]
         self._update_editor(study)
-        # self._update_db_study_editor(study.id)
         self.on_variant_rebase(study)
         return str(study.id)
 
@@ -294,7 +288,6 @@ class VariantStudyService(AbstractStorageService):
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
             self._update_editor(study)
-            # self._update_db_study_editor(study.id)
             self.on_variant_rebase(study)
 
     def remove_command(self, study_id: str, command_id: str) -> None:
@@ -314,7 +307,6 @@ class VariantStudyService(AbstractStorageService):
             for idx, command in enumerate(study.commands):
                 command.index = idx
             self._update_editor(study)
-            # self._update_db_study_editor(study.id)
             self.on_variant_rebase(study)
 
     def remove_all_commands(self, study_id: str) -> None:
@@ -329,7 +321,6 @@ class VariantStudyService(AbstractStorageService):
 
         study.commands = []
         self._update_editor(study)
-        # self._update_db_study_editor(study.id)
         self.on_variant_rebase(study)
 
     def update_command(self, study_id: str, command_id: str, command: CommandDTO) -> None:
@@ -351,7 +342,6 @@ class VariantStudyService(AbstractStorageService):
             study.commands[index].command = validated_commands[0].action
             study.commands[index].args = to_json_string(validated_commands[0].args)
             self._update_editor(study)
-            # self._update_db_study_editor(study.id)
             self.on_variant_rebase(study)
 
     def export_commands_matrices(self, study_id: str) -> FileDownloadTaskDTO:
@@ -640,12 +630,14 @@ class VariantStudyService(AbstractStorageService):
         assert_permission(study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
+        user_name = self._get_current_user_name()
         if study.additional_data is None:
-            additional_data = StudyAdditionalData()
+            additional_data = StudyAdditionalData(editor=user_name)
         else:
             additional_data = StudyAdditionalData(
                 horizon=study.additional_data.horizon,
                 author=study.additional_data.author,
+                editor=user_name,
             )
 
         variant_study = VariantStudy(

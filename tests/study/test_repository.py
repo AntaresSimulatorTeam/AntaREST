@@ -29,7 +29,7 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import create_raw_study, create_variant_study, with_db_context
+from tests.helpers import create_raw_study, create_variant_study
 
 
 @pytest.mark.parametrize(
@@ -1250,31 +1250,3 @@ def test_count_studies__general_case(
     # test that the expected studies are returned
     if expected_ids is not None:
         assert count == len(expected_ids)
-
-@with_db_context
-def test_editor_study(
-    db_session: Session,
-) -> None:
-    test_workspace = "test-repository"
-    #icache: Mock = Mock(spec=ICache)
-    #repository = StudyMetadataRepository(cache_service=icache, session=db_session)
-
-    group_1 = Group(id=101, name="group1")
-    group_2 = Group(id=102, name="group2")
-
-    user_1 = User(id=101, name="user1")
-    user_2 = User(id=102, name="user2")
-
-
-    study_1 = create_variant_study(id="1", name="study-1", owner=user_1, groups=[group_1])
-    study_2 = create_raw_study(id="2", name="study-2", owner=user_2, groups=[group_2], workspace=test_workspace)
-
-    db_session.add_all([study_1, study_2])
-    db_session.commit()
-
-    #with DBStatementRecorder(db_session.bind) as db_recorder:
-
-        #get_study_1 = repository.get("1")
-        #print(get_study_1)
-        #get_study_1.
-        #repository.get("2").

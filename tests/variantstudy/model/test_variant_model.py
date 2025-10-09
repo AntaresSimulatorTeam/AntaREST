@@ -349,7 +349,7 @@ class TestVariantStudyService:
         assert study.id == saved_id
         assert study.parent_id == root_study_id
         assert study.additional_data.author == "john.doe"
-        assert study.additional_data.editor == "Unknown"
+        assert study.additional_data.editor == "john.doe"  # editor is the user who created the study
 
         # creating area by the author, making him the editor of the study
         command_1 = CommandDTO(action="create_area", args={"area_name": "area_be"}, study_version=study_version)

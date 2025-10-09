@@ -28,6 +28,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_arc
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO, Identity
+from antarest.login.utils import get_user_impersonator
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
@@ -176,6 +177,9 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         if user_obj is None:
             return "Unnamed"
         return str(user_obj.name)
+
+    def _get_current_user_name(self) -> str:
+        return self._get_user_name_from_id(get_user_impersonator())
 
     @override
     def get_study_sim_result(
