@@ -2089,7 +2089,7 @@ def test_update_variant_with_editor(client: TestClient, admin_access_token: str)
     assert res_initial_variant_study.status_code == 200
     assert json_variant["type"] == "variantstudy"
     assert json_variant["author"] == "admin"
-    assert json_variant["editor"] == "Unknown"
+    assert json_variant["editor"] == "admin"
 
     # creating two areas
     res = client.post(
