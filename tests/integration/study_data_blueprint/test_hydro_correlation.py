@@ -92,9 +92,9 @@ class TestHydroCorrelation:
         actual = res.json()
         expected = {
             "correlation": [
-                {"areaId": "fr", "coefficient": 100.0},
                 {"areaId": "de", "coefficient": 20.0},
                 {"areaId": "es", "coefficient": -82.8},
+                {"areaId": "fr", "coefficient": 100.0},
             ]
         }
         assert actual == expected

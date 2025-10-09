@@ -25,7 +25,7 @@ class HydroCorrelationArea(AntaresBaseModel, extra="forbid", populate_by_name=Tr
 
 
 def _correlation_serializer(correlation: list[HydroCorrelationArea]) -> list[dict[str, str | float]]:
-    return [corr.model_dump(by_alias=True) for corr in correlation if corr.coefficient]
+    return [corr.model_dump(by_alias=True) for corr in sorted(correlation, key=lambda c: c.area_id) if corr.coefficient]
 
 
 HydroCorrelationType: TypeAlias = Annotated[list[HydroCorrelationArea], PlainSerializer(_correlation_serializer)]
@@ -97,6 +97,22 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
                 array[i][j] = array[j][i] = correlation.coefficient / 100
 
         return HydroCorrelationMatrix.model_validate({"index": area_ids, "columns": area_ids, "data": array})
+
+    def add_correlation(self, area_id: str, data: HydroCorrelation) -> dict[str, HydroCorrelation]:
+        correlation_dict = self.to_hydro_correlations()
+        correlation_dict[area_id] = data
+        for data_corr in data.correlation:
+            existing_correlation = correlation_dict[data_corr.area_id]
+            new_list = []
+            for corr in existing_correlation.correlation:
+                if corr.area_id == area_id:
+                    new_list.append(HydroCorrelationArea(area_id=area_id, coefficient=data_corr.coefficient))
+                else:
+                    new_list.append(corr)
+            existing_correlation.correlation = new_list
+
+        # Round trip to validate the data
+        return HydroCorrelationMatrix.from_hydro_correlations(correlation_dict).to_hydro_correlations()
 
     def to_hydro_correlations(self) -> dict[str, HydroCorrelation]:
         correlations_dict = {}
