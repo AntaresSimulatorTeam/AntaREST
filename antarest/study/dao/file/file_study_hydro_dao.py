@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Dict
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -102,6 +103,22 @@ class FileStudyHydroDao(HydroDao):
         file_study = self.get_file_study()
         all_areas = file_study.config.areas
         return {area_id: self.get_hydro_allocation(area_id) for area_id in sorted(all_areas)}
+
+    @override
+    def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
+        raise NotImplementedError()
+
+    @override
+    def get_hydro_correlation_matrix(self) -> dict[str, HydroCorrelation]:
+        raise NotImplementedError()
+
+    @override
+    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_hydro_correlation_matrix(self, correlation: dict[str, HydroCorrelation]) -> None:
+        raise NotImplementedError()
 
     @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
