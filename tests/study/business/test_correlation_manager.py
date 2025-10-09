@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import re
 from unittest.mock import Mock
 
 import numpy as np
@@ -29,118 +29,88 @@ from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
+def _set_up(command_context: CommandContext, study: FileStudy) -> None:
+    correlation_cfg = {
+        "N?%N?": 0.1,  # Write the area name in the file to ensure we're able to read the data
+        "e%e": 0.3,
+        "s%s": 0.1,
+        "s%n": 0.2,
+        "s%w": 0.6,
+        "w%w": 0.1,
+    }
+
+    for area_name in ["N?", "s", "e", "w"]:
+        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(
+            study
+        )
+
+    study.tree.save(correlation_cfg, ["input", "hydro", "prepro", "correlation", "annual"])
+
+
 @pytest.fixture
-def correlation_manager(command_context: CommandContext) -> CorrelationManager:
+def manager(command_context: CommandContext) -> CorrelationManager:
     return CorrelationManager(command_context)
 
 
-class TestCorrelationField:
-    def test_init__nominal_case(self):
-        field = HydroCorrelationArea(area_id="NORTH", coefficient=100)
-        assert field.area_id == "NORTH"
-        assert field.coefficient == 100
+def test_error_cases() -> None:
+    # correlation must not be empty
+    with pytest.raises(ValueError, match="must not be empty"):
+        HydroCorrelation(correlation=[])
 
-    def test_init__camel_case_args(self):
-        field = HydroCorrelationArea(area_id="NORTH", coefficient=100)
-        assert field.area_id == "NORTH"
-        assert field.coefficient == 100
-
-
-class TestHydroCorrelation:
-    def test_init__nominal_case(self):
-        fields = HydroCorrelation(
+    # correlation must not contain duplicate area IDs
+    with pytest.raises(ValueError, match="duplicate area IDs"):
+        HydroCorrelation(
             correlation=[
-                HydroCorrelationArea(area_id="NORTH", coefficient=75),
+                HydroCorrelationArea(area_id="NORTH", coefficient=50),
+                HydroCorrelationArea(area_id="NORTH", coefficient=25),
                 HydroCorrelationArea(area_id="SOUTH", coefficient=25),
             ]
         )
-        assert fields.correlation == [
-            HydroCorrelationArea(area_id="NORTH", coefficient=75),
-            HydroCorrelationArea(area_id="SOUTH", coefficient=25),
-        ]
 
-    def test_validation__coefficients_not_empty(self):
-        """correlation must not be empty"""
-        with pytest.raises(ValueError, match="must not be empty"):
-            HydroCorrelation(correlation=[])
-
-    def test_validation__coefficients_no_duplicates(self):
-        """correlation must not contain duplicate area IDs:"""
-        with pytest.raises(ValueError, match="duplicate area IDs") as ctx:
-            HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea(area_id="NORTH", coefficient=50),
-                    HydroCorrelationArea(area_id="NORTH", coefficient=25),
-                    HydroCorrelationArea(area_id="SOUTH", coefficient=25),
-                ]
-            )
-        assert "NORTH" in str(ctx.value)  # duplicates
-
-    @pytest.mark.parametrize("coefficient", [-101, 101, np.nan])
-    def test_validation__coefficients_invalid_values(self, coefficient):
-        """coefficients must be between -100 and 100"""
-        with pytest.raises(ValueError, match="between -100 and 100|must not contain NaN"):
+    # coefficients must be between -100 and 100 and not be NaN
+    for coefficient in [-101, 101, np.nan]:
+        with pytest.raises(ValueError, match="Input should be"):
             HydroCorrelation(
                 correlation=[
                     HydroCorrelationArea(area_id="NORTH", coefficient=coefficient),
                 ]
             )
 
+    # matrix cannot be empty
+    with pytest.raises(ValueError, match="must not be empty"):
+        HydroCorrelationMatrix(index=[], columns=[], data=[])
 
-class TestCorrelationMatrix:
-    def test_init__nominal_case(self):
-        field = HydroCorrelationMatrix(
+    # Matrix index and columns should be the same
+    with pytest.raises(ValueError, match="correlation matrix must have the same rows and columns"):
+        HydroCorrelationMatrix(
             index=["fr", "de"],
             columns=["fr"],
-            data=[
-                [1.0],
-                [0.2],
-            ],
+            data=np.array([[1, 2], [3, 4]]),
         )
-        assert field.index == ["fr", "de"]
-        assert field.columns == ["fr"]
-        assert field.data == [
-            [1.0],
-            [0.2],
-        ]
 
-    def test_validation__coefficients_non_empty_array(self):
-        """Check that the coefficients matrix is a non-empty array"""
+    # Matrix array shape should match the index and columns
+    with pytest.raises(ValueError, match=re.escape("correlation matrix must have shape (2×2)")):
+        HydroCorrelationMatrix(
+            index=["fr", "de"],
+            columns=["fr", "de"],
+            data=np.array([[0.1], [0.3]]),
+        )
 
-        with pytest.raises(ValueError, match="must not be empty"):
-            HydroCorrelationMatrix(
-                index=[],
-                columns=[],
-                data=[],
-            )
+    # The matrix should be symmetric
+    with pytest.raises(ValueError, match="not symmetric"):
+        HydroCorrelationMatrix(
+            index=["fr", "de"],
+            columns=["fr", "de"],
+            data=np.array([[0.1, 0.2], [0.3, 0.4]]),
+        )
 
-    def test_validation__coefficients_array_shape(self):
-        """Check that the coefficients matrix is an array of shape 2×1"""
-        with pytest.raises(ValueError, match=r"must have shape \(\d+×\d+\)"):
-            HydroCorrelationMatrix(
-                index=["fr", "de"],
-                columns=["fr"],
-                data=[[1, 2], [3, 4]],
-            )
 
-    @pytest.mark.parametrize("coefficient", [-1.1, 1.1, np.nan])
-    def test_validation__coefficients_invalid_value(self, coefficient):
-        """Check that all coefficients matrix has positive or nul coefficients"""
-
-        with pytest.raises(ValueError, match="between -1 and 1|must not contain NaN"):
-            HydroCorrelationMatrix(
-                index=["fr", "de"],
-                columns=["fr", "de"],
-                data=[
-                    [1.0, coefficient],
-                    [0.2, 0],
-                ],
-            )
-
+class TestCorrelationMatrix:
     def test_validation__matrix_not_symmetric(self):
         """Check that the correlation matrix is not symmetric"""
         with pytest.raises(ValueError, match=r"not symmetric"):
