@@ -1641,14 +1641,14 @@ class StudyService:
             get_user_id(),
         )
 
-    def get_all_areas(
+    def get_all_areas_info(
         self,
         uuid: str,
     ) -> List[AreaInfo]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
-        return self.area_manager.get_all_areas(study_interface)
+        return self.area_manager.get_all_areas_info(study_interface)
 
     def get_all_areas_ui_info(
         self,
@@ -2202,7 +2202,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas: List[AreaInfo] = self.get_all_areas(study_id)
+            all_areas: List[AreaInfo] = self.get_all_areas_info(study_id)
             if matrix_path.parts[-1] == "allocation":
                 hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface)
             else:

@@ -27,18 +27,6 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-# Constants kept here for backward compatibility with NodalOptimization import
-# These are now used in the DAO layer
-class NodalOptimization:
-    NON_DISPATCHABLE_POWER: bool = True
-    DISPATCHABLE_HYDRO_POWER: bool = True
-    OTHER_DISPATCHABLE_POWER: bool = True
-    SPREAD_UNSUPPLIED_ENERGY_COST: float = 0.000000
-    SPREAD_SPILLED_ENERGY_COST: float = 0.000000
-    UNSERVERDDENERGYCOST: float = 0.000000
-    SPILLEDENERGYCOST: float = 0.000000
-
-
 class CreateArea(ICommand):
     """
     Command used to create a new area in the study.

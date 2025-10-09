@@ -47,10 +47,7 @@ class ReplaceLayerAreas(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REPLACE_LAYER_AREAS.value,
-            args={
-                "layer_id": self.layer_id,
-                "area_ids": self.area_ids,
-            },
+            args={"layer_id": self.layer_id, "area_ids": self.area_ids},
             study_version=self.study_version,
         )
 

@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
-from antarest.study.business.model.area_model import AreaInfo, AreaUI
+from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
@@ -49,7 +49,7 @@ class FileStudyAreaDao(AreaDao):
         pass
 
     @override
-    def get_all_areas(self) -> List[AreaInfo]:
+    def get_all_areas_info(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.
         """
@@ -65,12 +65,12 @@ class FileStudyAreaDao(AreaDao):
         ]
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
         Returns:
-            Dictionary where keys are area IDs, and values are UI objects.
+            Dictionary where keys are area IDs, and values are AreaUIData objects.
 
         Raises:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
@@ -92,10 +92,58 @@ class FileStudyAreaDao(AreaDao):
         if len(area_ids) == 1:
             ui_info_map = {area_ids[0]: ui_info_map}
 
-        # Convert to AreaUIFileData to ensure that the UI object is valid
-        ui_info_map = {area_id: AreaUIFileData(**ui_info).to_config() for area_id, ui_info in ui_info_map.items()}
+        # Convert to AreaUIFileData to ensure that the UI object is valid, then to Pydantic model
+        return {
+            area_id: AreaUIData.model_validate(AreaUIFileData(**ui_info).to_config())
+            for area_id, ui_info in ui_info_map.items()
+        }
 
-        return ui_info_map
+    @override
+    def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
+        """
+        Retrieve UI information for a specific area and layer.
+
+        Args:
+            area_id: The area identifier.
+            layer: The layer identifier (typically "0", "1", etc"). Defaults to "0".
+
+        Returns:
+            The UI properties for the area (x, y, color_rgb).
+
+        Raises:
+            ChildNotFoundError: If the area does not exist.
+        """
+        file_study = self.get_file_study()
+
+        # Check if area exists in config
+        if area_id not in file_study.config.areas:
+            from antarest.core.exceptions import AreaNotFound
+
+            raise AreaNotFound(area_id)
+
+        # Import AreaUIFileData here to avoid circular import
+        from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUIFileData
+
+        # Get the UI info for this specific area
+        ui_info = file_study.tree.get(["input", "areas", area_id, "ui"])
+
+        # Convert to AreaUIFileData to ensure that the UI object is valid
+        area_ui_data = AreaUIFileData(**ui_info)
+
+        # Extract the UI for the specific layer
+        layer_int = int(layer)
+        if layer_int in area_ui_data.layer_styles:
+            style = area_ui_data.layer_styles[layer_int]
+            x = style.x
+            y = style.y
+            color_rgb = (style.color_r, style.color_g, style.color_b)
+        else:
+            # Fall back to default style
+            x = area_ui_data.style.x
+            y = area_ui_data.style.y
+            color_rgb = (area_ui_data.style.color_r, area_ui_data.style.color_g, area_ui_data.style.color_b)
+
+        return AreaUI(x=x, y=y, color_rgb=color_rgb)
 
     @override
     def save_area(self, area_name: str, command_context: Any) -> None:
@@ -135,7 +183,6 @@ class FileStudyAreaDao(AreaDao):
 
         new_area_data: JSON = self._build_area_data_structure(
             area_id=area_id,
-            area_name=area_name,
             config=config,
             version=version,
             hydro_config=hydro_config,
@@ -149,7 +196,6 @@ class FileStudyAreaDao(AreaDao):
     def _build_area_data_structure(
         self,
         area_id: str,
-        area_name: str,
         config: Any,
         version: Any,
         hydro_config: Dict[str, Any],

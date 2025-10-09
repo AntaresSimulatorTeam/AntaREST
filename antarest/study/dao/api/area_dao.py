@@ -12,12 +12,12 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from antarest.study.business.model.area_model import AreaInfo, AreaUI
+from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 
 
 class ReadOnlyAreaDao(ABC):
     @abstractmethod
-    def get_all_areas(self) -> List[AreaInfo]:
+    def get_all_areas_info(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.
 
@@ -27,15 +27,32 @@ class ReadOnlyAreaDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_areas_ui_info(self) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
         Returns:
-            A dictionary containing information about the user interface for the areas.
+            A dictionary mapping area IDs to their UI data.
 
         Raises:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
+        """
+        Retrieve UI information for a specific area and layer.
+
+        Args:
+            area_id: The area identifier.
+            layer: The layer identifier (typically "0", "1", etc.). Defaults to "0".
+
+        Returns:
+            The UI properties for the area (x, y, color_rgb).
+
+        Raises:
+            AreaNotFound: If the area does not exist.
         """
         raise NotImplementedError()
 

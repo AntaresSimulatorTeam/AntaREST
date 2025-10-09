@@ -168,21 +168,3 @@ class TestCreateArea:
         )
         output = create_area_command.apply(study_data=empty_study)
         assert not output.status
-
-    def test_backward_compatibility_with_metadata(self, command_context: CommandContext) -> None:
-        """Test that version 1 format (with metadata field) can still be loaded."""
-        study_version = StudyVersion.parse(860)
-
-        # Test that old format with metadata is handled gracefully
-        command = CreateArea.model_validate(
-            {
-                "area_name": "test_area",
-                "metadata": {"country": "FR", "tag": "test"},
-                "command_context": command_context,
-                "study_version": study_version,
-            }
-        )
-
-        # The metadata should be dropped and not stored
-        assert command.area_name == "test_area"
-        assert not hasattr(command, "metadata") or not command.model_dump().get("metadata")

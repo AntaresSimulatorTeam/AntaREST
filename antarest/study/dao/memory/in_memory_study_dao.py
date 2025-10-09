@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.area_model import AreaInfo, AreaUI
+from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -828,14 +828,40 @@ class InMemoryStudyDao(StudyDao):
         self.rulesets = rulesets
 
     @override
-    def get_all_areas(self) -> List[AreaInfo]:
+    def get_all_areas_info(self) -> List[AreaInfo]:
         # For in-memory DAO, we only store area names, not full AreaInfo objects
         # This is a simplified implementation for testing purposes
         return [AreaInfo(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, Any]:
-        return self._area_ui
+    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
+        # Convert internal AreaUI storage to AreaUIData format
+        result: Dict[str, AreaUIData] = {}
+        for area_id, area_ui in self._area_ui.items():
+            # Build the complete UI data structure expected by AreaUIData
+            r, g, b = area_ui.color_rgb
+            result[area_id] = AreaUIData(
+                ui={
+                    "x": area_ui.x,
+                    "y": area_ui.y,
+                    "color_r": r,
+                    "color_g": g,
+                    "color_b": b,
+                    "layers": "0",
+                },
+                layerX={"0": area_ui.x},
+                layerY={"0": area_ui.y},
+                layerColor={"0": f"{r}, {g}, {b}"},
+            )
+        return result
+
+    @override
+    def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+        # Return the UI for this area, or default values if not found
+        return self._area_ui.get(area_id, AreaUI())
 
     @override
     def save_area(self, area_name: str, command_context: Any) -> None:
@@ -846,7 +872,7 @@ class InMemoryStudyDao(StudyDao):
         self._area_names.append(area_id)
 
         # Initialize default UI for the new area
-        self._area_ui[area_id] = AreaUI(x=0, y=0, color_rgb=(230, 108, 44))
+        self._area_ui[area_id] = AreaUI()
 
     @override
     def delete_area(self, area_id: str) -> None:

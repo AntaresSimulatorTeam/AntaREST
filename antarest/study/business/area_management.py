@@ -11,13 +11,14 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Any, Dict, List, Mapping
+from typing import Dict, List, Mapping
 
 from antarest.core.exceptions import DuplicateAreaName
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import (
     AreaCreation,
     AreaInfo,
+    AreaUIData,
     AreaUIUpdate,
 )
 from antarest.study.business.model.area_properties_model import (
@@ -51,11 +52,11 @@ class AreaManager:
         """
         self._command_context = command_context
 
-    def get_all_areas(self, study: StudyInterface) -> List[AreaInfo]:
+    def get_all_areas_info(self, study: StudyInterface) -> List[AreaInfo]:
         """Retrieve all physical areas of a raw study."""
-        return study.get_study_dao().get_all_areas()
+        return study.get_study_dao().get_all_areas_info()
 
-    def get_all_areas_ui_info(self, study: StudyInterface) -> Dict[str, Any]:
+    def get_all_areas_ui_info(self, study: StudyInterface) -> Dict[str, AreaUIData]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
@@ -63,7 +64,7 @@ class AreaManager:
             study: The raw study object containing the study's data.
 
         Returns:
-            A dictionary containing information about the user interface for the areas.
+            A dictionary mapping area IDs to their UI data.
 
         Raises:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
@@ -83,7 +84,7 @@ class AreaManager:
     def create_area(self, study: StudyInterface, area_creation_info: AreaCreation) -> AreaInfo:
         # check if area already exists
         area_id = transform_name_to_id(area_creation_info.name)
-        existing_areas = study.get_study_dao().get_all_areas()
+        existing_areas = study.get_study_dao().get_all_areas_info()
         existing_area_ids = {area.id for area in existing_areas}
         if area_id in existing_area_ids:
             raise DuplicateAreaName(area_creation_info.name)
