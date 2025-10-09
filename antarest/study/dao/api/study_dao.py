@@ -16,7 +16,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.area_model import AreaInfo
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -464,7 +464,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_scenario_by_type(scenario_type)
 
     @override
-    def get_all_areas(self) -> list[Area]:
+    def get_all_areas(self) -> list[AreaInfo]:
         return self._adaptee.get_all_areas()
 
     @override

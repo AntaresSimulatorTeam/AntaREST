@@ -23,7 +23,7 @@ from pydantic import ValidationInfo, field_validator
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.serde.np_array import NpArray
-from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.area_model import AreaInfo
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -36,7 +36,7 @@ class AreaCoefficientItem(FormFieldsBaseModel):
     Model for correlation coefficients of a given area.
 
     Attributes:
-        area_id: Area identifier.
+        area_id: AreaInfo identifier.
         coefficient: correlation coefficients in percentage (-100 <= coefficient <= 100).
     """
 
@@ -234,7 +234,7 @@ class CorrelationManager:
         study.add_commands([command])
 
     def get_correlation_form_fields(
-        self, all_areas: List[Area], study: StudyInterface, area_id: str
+        self, all_areas: List[AreaInfo], study: StudyInterface, area_id: str
     ) -> CorrelationFormFields:
         """
         Get the correlation form fields (percentage values) for a given area.
@@ -269,7 +269,7 @@ class CorrelationManager:
 
     def set_correlation_form_fields(
         self,
-        all_areas: List[Area],
+        all_areas: List[AreaInfo],
         study: StudyInterface,
         area_id: str,
         data: CorrelationFormFields,
@@ -313,7 +313,7 @@ class CorrelationManager:
         )
 
     def get_correlation_matrix(
-        self, all_areas: List[Area], study: StudyInterface, columns: List[str]
+        self, all_areas: List[AreaInfo], study: StudyInterface, columns: List[str]
     ) -> CorrelationMatrix:
         """
         Read the correlation coefficients and get the correlation matrix (values in the range -1 to 1).
@@ -337,7 +337,7 @@ class CorrelationManager:
 
     def set_correlation_matrix(
         self,
-        all_areas: List[Area],
+        all_areas: List[AreaInfo],
         study: StudyInterface,
         matrix: CorrelationMatrix,
     ) -> CorrelationMatrix:

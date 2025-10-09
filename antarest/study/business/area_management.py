@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Mapping
 from antarest.core.exceptions import DuplicateAreaName
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import (
-    Area,
     AreaCreation,
+    AreaInfo,
     AreaUIUpdate,
 )
 from antarest.study.business.model.area_properties_model import (
@@ -51,7 +51,7 @@ class AreaManager:
         """
         self._command_context = command_context
 
-    def get_all_areas(self, study: StudyInterface) -> List[Area]:
+    def get_all_areas(self, study: StudyInterface) -> List[AreaInfo]:
         """Retrieve all physical areas of a raw study."""
         return study.get_study_dao().get_all_areas()
 
@@ -80,7 +80,7 @@ class AreaManager:
         )
         study.add_commands([command])
 
-    def create_area(self, study: StudyInterface, area_creation_info: AreaCreation) -> Area:
+    def create_area(self, study: StudyInterface, area_creation_info: AreaCreation) -> AreaInfo:
         # check if area already exists
         area_id = transform_name_to_id(area_creation_info.name)
         existing_areas = study.get_study_dao().get_all_areas()
@@ -96,7 +96,7 @@ class AreaManager:
         )
         study.add_commands([command])
 
-        return Area(
+        return AreaInfo(
             id=area_id,
             name=area_creation_info.name,
             # this should always be empty since it's a new area

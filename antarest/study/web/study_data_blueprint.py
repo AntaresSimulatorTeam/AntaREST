@@ -41,7 +41,7 @@ from antarest.study.business.correlation_management import (
     CorrelationFormFields,
     CorrelationMatrix,
 )
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, AreaUIUpdate
+from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaType, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -157,7 +157,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
-    class AreaResponse(Area):
+    class AreaResponse(AreaInfo):
         """API view for areas with deprecated ``type`` field kept for compatibility."""
 
         type: Literal[AreaType.AREA] = Field(
@@ -1206,7 +1206,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
+        all_areas: List[AreaInfo] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.get_correlation_matrix(
             all_areas,
@@ -1249,7 +1249,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the hydraulic/load/solar/wind correlation matrix updated
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
+        all_areas: List[AreaInfo] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.set_correlation_matrix(all_areas, study_interface, matrix)
 
@@ -1270,7 +1270,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
+        all_areas: List[AreaInfo] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.get_correlation_form_fields(all_areas, study_interface, area_id)
 
@@ -1304,7 +1304,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
+        all_areas: List[AreaInfo] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.set_correlation_form_fields(all_areas, study_interface, area_id, data)
 

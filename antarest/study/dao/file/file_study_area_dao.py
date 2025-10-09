@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
-from antarest.study.business.model.area_model import Area, AreaUI
+from antarest.study.business.model.area_model import AreaInfo, AreaUI
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
@@ -49,14 +49,14 @@ class FileStudyAreaDao(AreaDao):
         pass
 
     @override
-    def get_all_areas(self) -> List[Area]:
+    def get_all_areas(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.
         """
         file_study = self.get_file_study()
         cfg_areas: Dict[str, AreaConfig] = file_study.config.areas
         return [
-            Area(
+            AreaInfo(
                 id=area_id,
                 name=area.name,
                 thermals=list(self.get_impl().get_all_thermals_for_area(area_id)),

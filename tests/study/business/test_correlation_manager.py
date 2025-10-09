@@ -23,7 +23,7 @@ from antarest.study.business.correlation_management import (
     CorrelationManager,
     CorrelationMatrix,
 )
-from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.area_model import AreaInfo
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -185,10 +185,10 @@ class TestCorrelationManager:
 
         # Given the following arguments
         all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
+            AreaInfo(id="n", name="North"),
+            AreaInfo(id="e", name="East"),
+            AreaInfo(id="s", name="South"),
+            AreaInfo(id="w", name="West"),
         ]
 
         # run
@@ -220,10 +220,10 @@ class TestCorrelationManager:
 
         # Given the following arguments
         all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
+            AreaInfo(id="n", name="North"),
+            AreaInfo(id="e", name="East"),
+            AreaInfo(id="s", name="South"),
+            AreaInfo(id="w", name="West"),
         ]
         area_id = "s"  # South
         fields = correlation_manager.get_correlation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
@@ -247,10 +247,10 @@ class TestCorrelationManager:
 
         # Given the following arguments
         all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
+            AreaInfo(id="n", name="North"),
+            AreaInfo(id="e", name="East"),
+            AreaInfo(id="s", name="South"),
+            AreaInfo(id="w", name="West"),
         ]
         area_id = "s"  # South
         correlation_manager.set_correlation_form_fields(
@@ -289,10 +289,10 @@ class TestCorrelationManager:
 
         # Given the following arguments
         all_areas = [
-            Area(id="n", name="North"),
-            Area(id="e", name="East"),
-            Area(id="s", name="South"),
-            Area(id="w", name="West"),
+            AreaInfo(id="n", name="North"),
+            AreaInfo(id="e", name="East"),
+            AreaInfo(id="s", name="South"),
+            AreaInfo(id="w", name="West"),
         ]
         area_id = "n"  # South
 

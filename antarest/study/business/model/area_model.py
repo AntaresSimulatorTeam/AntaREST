@@ -25,7 +25,12 @@ class AreaType(enum.Enum):
     DISTRICT = "DISTRICT"
 
 
-class Area(AntaresBaseModel):
+class AreaInfo(AntaresBaseModel):
+    """
+    Basic information about an area.
+    Used for listing areas with their thermal clusters.
+    """
+
     id: str
     name: str
     thermals: Optional[List[ThermalCluster]] = None

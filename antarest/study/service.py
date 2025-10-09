@@ -79,7 +79,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaUIUpdate
+from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
@@ -1644,7 +1644,7 @@ class StudyService:
     def get_all_areas(
         self,
         uuid: str,
-    ) -> List[Area]:
+    ) -> List[AreaInfo]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -1671,7 +1671,7 @@ class StudyService:
         self,
         uuid: str,
         area_creation_dto: AreaCreation,
-    ) -> Area:
+    ) -> AreaInfo:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -2202,7 +2202,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas: List[Area] = self.get_all_areas(study_id)
+            all_areas: List[AreaInfo] = self.get_all_areas(study_id)
             if matrix_path.parts[-1] == "allocation":
                 hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface)
             else:

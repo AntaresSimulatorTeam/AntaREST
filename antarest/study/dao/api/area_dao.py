@@ -12,12 +12,12 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from antarest.study.business.model.area_model import Area, AreaUI
+from antarest.study.business.model.area_model import AreaInfo, AreaUI
 
 
 class ReadOnlyAreaDao(ABC):
     @abstractmethod
-    def get_all_areas(self) -> List[Area]:
+    def get_all_areas(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.
 
