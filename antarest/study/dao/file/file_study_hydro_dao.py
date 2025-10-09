@@ -106,7 +106,7 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
-        raise NotImplementedError()
+        return self.get_hydro_correlation_matrix()[area_id]
 
     @override
     def get_hydro_correlation_matrix(self) -> dict[str, HydroCorrelation]:
