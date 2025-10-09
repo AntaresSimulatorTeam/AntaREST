@@ -96,3 +96,4 @@ class CommandName(Enum):
     UPDATE_ADEQUACY_PATCH_PARAMETERS = "update_adequacy_patch_parameters"
     UPDATE_TIMESERIES_CONFIG = "update_time"
     REPLACE_HYDRO_ALLOCATION = "replace_hydro_allocation"
+    REPLACE_HYDRO_CORRELATION = "replace_hydro_correlation"

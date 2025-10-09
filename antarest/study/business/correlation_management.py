@@ -17,6 +17,7 @@ The generators are of the same category and can be hydraulic, wind, load or sola
 
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -47,7 +48,11 @@ class CorrelationManager:
         Returns:
             The updated correlation coefficients.
         """
-        raise NotImplementedError()
+        command = ReplaceHydroCorrelation(
+            command_context=self._command_context, study_version=study.version, correlation={area_id: data}
+        )
+        study.add_commands([command])
+        return data
 
     def get_correlation_matrix(self, study: StudyInterface) -> HydroCorrelationMatrix:
         return HydroCorrelationMatrix.from_hydro_correlations(study.get_study_dao().get_hydro_correlation_matrix())
@@ -57,11 +62,15 @@ class CorrelationManager:
         Set the correlation coefficients from the coefficient matrix (values in the range -1 to 1).
 
         Args:
-            all_areas: list of all areas in the study.
             study: study to get the correlation matrix from.
             matrix: correlation matrix to update
 
         Returns:
             The updated correlation matrix.
         """
-        raise NotImplementedError()
+        correlation = matrix.to_hydro_correlations()
+        command = ReplaceHydroCorrelation(
+            command_context=self._command_context, study_version=study.version, correlation=correlation
+        )
+        study.add_commands([command])
+        return matrix

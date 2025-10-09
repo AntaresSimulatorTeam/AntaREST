@@ -113,11 +113,7 @@ class FileStudyHydroDao(HydroDao):
         raise NotImplementedError()
 
     @override
-    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
-        raise NotImplementedError()
-
-    @override
-    def save_hydro_correlation_matrix(self, correlation: dict[str, HydroCorrelation]) -> None:
+    def save_hydro_correlation(self, correlation: dict[str, HydroCorrelation]) -> None:
         raise NotImplementedError()
 
     @override
