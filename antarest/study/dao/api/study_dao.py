@@ -25,6 +25,7 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
@@ -323,6 +324,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
         return self._adaptee.get_inflow_structure(area_id)
+
+    @override
+    def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
+        return self._adaptee.get_hydro_allocation(area_id)
+
+    @override
+    def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
+        return self._adaptee.get_hydro_allocation_matrix()
 
     @override
     def get_general_config(self) -> GeneralConfig:
