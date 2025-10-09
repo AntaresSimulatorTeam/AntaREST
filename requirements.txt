@@ -45,4 +45,5 @@ PyYAML~=6.0.3
 redis~=6.4.0
 SQLAlchemy~=2.0.41
 tables==3.9.2
+typing_extensions~=4.14.1
 xlsxwriter~=3.2.0
