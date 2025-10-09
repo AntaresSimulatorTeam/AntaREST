@@ -118,27 +118,27 @@ class FileStudyHydroDao(HydroDao):
     def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
         file_study = self.get_file_study()
         all_areas = file_study.config.areas
-        area_ids = sorted(list(all_areas))
+        area_ids = sorted(all_areas)
         array = np.identity(len(area_ids))
+
         try:
             ini_content = file_study.tree.get(CORRELATION_PATH)
-
-            for key, value in ini_content.items():
-                area_name1, area_name2 = key.split("%")
-                area1, area2 = transform_name_to_id(area_name1), transform_name_to_id(area_name2)
-                if area1 == area2:
-                    if value != 1:
-                        raise ValueError(f"Hydraulic correlation of area {area1} is not 1. It was {value}.")
-                    continue
-                i = area_ids.index(area1)
-                j = area_ids.index(area2)
-                array[i][j] = value
-                array[j][i] = value
-
-            return HydroCorrelationMatrix(index=area_ids, columns=all_areas, data=array)
-
         except ChildNotFoundError:
-            return HydroCorrelationMatrix(index=area_ids, columns=all_areas, data=array)
+            ini_content = {}
+
+        for key, value in ini_content.items():
+            area_name1, area_name2 = key.split("%")
+            area1, area2 = transform_name_to_id(area_name1), transform_name_to_id(area_name2)
+            if area1 == area2:
+                if value != 1:
+                    raise ValueError(f"Hydraulic correlation of area {area1} is not 1. It was {value}.")
+                continue
+            i = area_ids.index(area1)
+            j = area_ids.index(area2)
+            array[i][j] = value
+            array[j][i] = value
+
+        return HydroCorrelationMatrix(index=area_ids, columns=all_areas, data=array)
 
     @override
     def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
