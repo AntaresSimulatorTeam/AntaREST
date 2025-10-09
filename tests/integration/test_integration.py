@@ -198,6 +198,22 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     )
     assert copied.status_code == 201
 
+    # Create directory structure 'foo/bar' before moving the study
+    res = client.post(
+        "/v1/directories",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+        json={"name": "foo"},
+    )
+    assert res.status_code == 201, res.json()
+    foo_id = res.json()["id"]
+
+    res = client.post(
+        "/v1/directories",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+        json={"name": "bar", "parentId": foo_id},
+    )
+    assert res.status_code == 201, res.json()
+
     updated = client.put(
         f"/v1/studies/{copied.json()}/move?folder_dest=foo/bar",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},

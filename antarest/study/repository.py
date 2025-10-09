@@ -26,7 +26,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, StudyAdditionalData, Tag
 
 
 def escape_like(string: str, escape_char: str = "\\") -> str:
@@ -105,6 +105,7 @@ class StudyFilter(AntaresBaseModel, frozen=True, extra="forbid"):
         exists: if raw study missing
         workspace: optional workspace of the study
         folder: optional folder prefix of the study
+        directory_id: optional directory ID to filter studies by
         access_permissions: query user ID, groups and admins status
     """
 
@@ -120,6 +121,7 @@ class StudyFilter(AntaresBaseModel, frozen=True, extra="forbid"):
     exists: Optional[bool] = None
     workspace: str = ""
     folder: str = ""
+    directory_id: str = ""
     access_permissions: AccessPermissions = AccessPermissions()
 
 
@@ -352,6 +354,8 @@ class StudyMetadataRepository:
         if study_filter.folder:
             regex = f"{escape_like(study_filter.folder, escape_char)}%"
             q = q.filter(entity.folder.ilike(regex, escape=escape_char))
+        if study_filter.directory_id:
+            q = q.filter(entity.directory_id == study_filter.directory_id)
         if study_filter.workspace:
             q = q.filter(RawStudy.workspace == study_filter.workspace)
         if study_filter.variant is not None:
@@ -452,5 +456,316 @@ class StudyMetadataRepository:
         """
 
         stmt = select(exists(select(Study).where(Study.parent_id == uuid)))
+        result = self.session.scalar(stmt)
+        return bool(result) if result is not None else False
+
+
+class DirectoryRepository:
+    """
+    Database repository to manage Directory entities with permission checks.
+    """
+
+    def __init__(self, session: Optional[Session] = None):
+        """
+        Initialize the repository.
+
+        Args:
+            session: Optional SQLAlchemy session to be used.
+        """
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """
+        Get the SQLAlchemy session for the repository.
+
+        Returns:
+            SQLAlchemy session.
+        """
+        if self._session is None:
+            # Get or create the session from a context variable (thread local variable)
+            return db.session
+        # Get the user-defined session
+        return self._session
+
+    def save(self, directory: Directory) -> Directory:
+        """
+        Save or update a directory in the database.
+
+        Args:
+            directory: The directory to save.
+
+        Returns:
+            The saved directory.
+        """
+        session = self.session
+        directory.groups = [session.merge(g) for g in directory.groups]
+        if directory.owner:
+            directory.owner = session.merge(directory.owner)
+        session.add(directory)
+        session.commit()
+        session.refresh(directory)
+        return directory
+
+    def get(self, directory_id: str) -> Optional[Directory]:
+        """
+        Get a directory by ID.
+
+        Args:
+            directory_id: The directory ID.
+
+        Returns:
+            The directory or None if not found.
+        """
+        return (
+            self.session.execute(
+                select(Directory)
+                .options(joinedload(Directory.owner))
+                .options(joinedload(Directory.groups))
+                .options(joinedload(Directory.parent))
+                .where(Directory.id == directory_id)
+            )
+            .unique()
+            .scalar_one_or_none()
+        )
+
+    def one(self, directory_id: str) -> Directory:
+        """
+        Get a directory by ID or raise an exception.
+
+        Args:
+            directory_id: The directory ID.
+
+        Returns:
+            The directory.
+
+        Raises:
+            NoResultFound: If the directory is not found.
+        """
+        stmt = (
+            select(Directory)
+            .options(joinedload(Directory.owner))
+            .options(joinedload(Directory.groups))
+            .options(joinedload(Directory.parent))
+            .where(Directory.id == directory_id)
+        )
+        result = self.session.scalar(stmt.execution_options(unique=True))
+        if result is None:
+            raise NoResultFound(f"Directory with ID {directory_id} not found")
+        return result
+
+    def get_all(self, access_permissions: AccessPermissions = AccessPermissions()) -> Sequence[Directory]:
+        """
+        Get all directories the user has access to.
+
+        Args:
+            access_permissions: User permissions for filtering.
+
+        Returns:
+            List of directories the user can access.
+        """
+        stmt = (
+            select(Directory)
+            .options(joinedload(Directory.owner))
+            .options(joinedload(Directory.groups))
+            .options(joinedload(Directory.parent))
+        )
+
+        # Apply permission filtering
+        if not access_permissions.is_admin and access_permissions.user_id is not None:
+            # User can see directories they own OR directories shared with their groups
+            stmt = stmt.where(
+                or_(
+                    Directory.owner_id == access_permissions.user_id,
+                    Directory.groups.any(Group.id.in_(access_permissions.user_groups)),
+                )
+            )
+        elif not access_permissions.is_admin and access_permissions.user_id is None:
+            # No user, return empty result
+            stmt = stmt.where(sql.false())
+
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())
+
+    def delete(self, directory_id: str) -> None:
+        """
+        Delete a directory.
+
+        Args:
+            directory_id: The directory ID to delete.
+        """
+        session = self.session
+        stmt = delete(Directory).where(Directory.id == directory_id)
+        session.execute(stmt)
+        session.commit()
+
+    def get_children(self, directory_id: str, access_permissions: AccessPermissions = AccessPermissions()) -> Sequence[Directory]:
+        """
+        Get all direct child directories of a parent directory.
+
+        Args:
+            directory_id: The parent directory ID.
+            access_permissions: User permissions for filtering.
+
+        Returns:
+            List of child directories the user can access.
+        """
+        stmt = (
+            select(Directory)
+            .options(joinedload(Directory.owner))
+            .options(joinedload(Directory.groups))
+            .options(joinedload(Directory.parent))
+            .where(Directory.parent_id == directory_id)
+        )
+
+        # Apply permission filtering
+        if not access_permissions.is_admin and access_permissions.user_id is not None:
+            # User can see directories they own OR directories shared with their groups
+            stmt = stmt.where(
+                or_(
+                    Directory.owner_id == access_permissions.user_id,
+                    Directory.groups.any(Group.id.in_(access_permissions.user_groups)),
+                )
+            )
+        elif not access_permissions.is_admin and access_permissions.user_id is None:
+            # No user, return empty result
+            stmt = stmt.where(sql.false())
+
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())
+
+    def has_children_directories(self, directory_id: str) -> bool:
+        """
+        Check if a directory has child directories.
+
+        Args:
+            directory_id: The directory ID.
+
+        Returns:
+            True if the directory has children, False otherwise.
+        """
+        stmt = select(exists(select(Directory).where(Directory.parent_id == directory_id)))
+        result = self.session.scalar(stmt)
+        return bool(result) if result is not None else False
+
+    def has_studies(self, directory_id: str) -> bool:
+        """
+        Check if a directory contains studies.
+
+        Args:
+            directory_id: The directory ID.
+
+        Returns:
+            True if the directory contains studies, False otherwise.
+        """
+        stmt = select(exists(select(Study).where(Study.directory_id == directory_id)))
+        result = self.session.scalar(stmt)
+        return bool(result) if result is not None else False
+
+    def count_studies(self, directory_id: str) -> int:
+        """
+        Count the number of studies in a directory.
+
+        Args:
+            directory_id: The directory ID.
+
+        Returns:
+            Number of studies in the directory.
+        """
+        stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
+        result = self.session.scalar(stmt)
+        return int(result) if result is not None else 0
+
+    def has_permission(
+        self, directory: Directory, access_permissions: AccessPermissions, write_access: bool = False
+    ) -> bool:
+        """
+        Check if the user has permission to access a directory.
+
+        Permissions are granted if:
+        - User is admin
+        - User is the owner
+        - User belongs to one of the directory's groups
+
+        Args:
+            directory: The directory to check.
+            access_permissions: User permissions.
+            write_access: If True, check write permissions (currently same as read).
+
+        Returns:
+            True if the user has permission, False otherwise.
+        """
+        if access_permissions.is_admin:
+            return True
+
+        if access_permissions.user_id is None:
+            return False
+
+        # Check if user is owner
+        if directory.owner_id == access_permissions.user_id:
+            return True
+
+        # Check if user belongs to one of the directory's groups
+        directory_group_ids = {g.id for g in directory.groups}
+        if any(group_id in directory_group_ids for group_id in access_permissions.user_groups):
+            return True
+
+        return False
+
+    def check_cycle(self, directory_id: str, new_parent_id: Optional[str]) -> bool:
+        """
+        Check if moving a directory to a new parent would create a cycle.
+
+        Args:
+            directory_id: The directory to move.
+            new_parent_id: The new parent directory ID.
+
+        Returns:
+            True if a cycle would be created, False otherwise.
+        """
+        if new_parent_id is None:
+            return False
+
+        if directory_id == new_parent_id:
+            return True
+
+        # Traverse up the parent chain to detect cycles
+        current_id = new_parent_id
+        visited = {directory_id}
+
+        while current_id is not None:
+            if current_id in visited:
+                return True  # Cycle detected
+            visited.add(current_id)
+
+            # Get the parent of the current directory
+            stmt = select(Directory.parent_id).where(Directory.id == current_id)
+            current_id = self.session.scalar(stmt)
+
+        return False
+
+    def has_duplicate_name(self, name: str, parent_id: Optional[str], exclude_id: Optional[str] = None) -> bool:
+        """
+        Check if a directory with the same name already exists under the same parent.
+
+        Args:
+            name: The directory name to check.
+            parent_id: The parent directory ID.
+            exclude_id: Optional directory ID to exclude from the check (for updates).
+
+        Returns:
+            True if a duplicate exists, False otherwise.
+        """
+        stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
+
+        if exclude_id:
+            stmt = select(
+                exists(
+                    select(Directory).where(
+                        Directory.name == name, Directory.parent_id == parent_id, Directory.id != exclude_id
+                    )
+                )
+            )
+
         result = self.session.scalar(stmt)
         return bool(result) if result is not None else False

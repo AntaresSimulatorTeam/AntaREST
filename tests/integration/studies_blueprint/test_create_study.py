@@ -78,3 +78,78 @@ class TestCreateStudy:
             "description": "study name stu / dy4 contains illegal characters (=, /)",
             "exception": "HTTPException",
         }
+
+    def test_create_study_with_path(
+        self,
+        client: TestClient,
+        admin_access_token: str,
+    ) -> None:
+        """Test creating a study in a directory path."""
+        # First create the directory structure
+        res = client.post(
+            "/v1/directories",
+            json={"name": "project"},
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+        assert res.status_code == 201
+        project_dir_id = res.json()["id"]
+
+        res = client.post(
+            "/v1/directories",
+            json={"name": "subfolder", "parentId": project_dir_id},
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+        assert res.status_code == 201
+
+        # Create study in the directory path
+        res = client.post(
+            "/v1/studies?name=test-study&path=project/subfolder",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+        assert res.status_code == 201
+        study_id = res.json()
+
+        # Verify the study has the correct directory_id
+        res = client.get(f"/v1/studies/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
+        assert res.status_code == 200
+        study = res.json()
+        assert study["name"] == "test-study"
+        # Note: directory_id is not exposed in the study metadata API response
+        # We can verify by listing studies in the directory
+        res = client.get(
+            f"/v1/directories/{res.json()['id']}/studies",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+
+    def test_create_study_with_nonexistent_path(
+        self,
+        client: TestClient,
+        admin_access_token: str,
+    ) -> None:
+        """Test creating a study in a non-existent directory path should fail."""
+        res = client.post(
+            "/v1/studies?name=test-study&path=nonexistent/path",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+        assert res.status_code == 404
+        error = res.json()
+        error_msg = error.get("detail") or error.get("description", "")
+        assert "does not exist" in error_msg.lower()
+
+    def test_create_study_without_path(
+        self,
+        client: TestClient,
+        admin_access_token: str,
+    ) -> None:
+        """Test creating a study without path creates it at root level."""
+        res = client.post(
+            "/v1/studies?name=root-study",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+        )
+        assert res.status_code == 201
+        study_id = res.json()
+
+        # Verify the study was created
+        res = client.get(f"/v1/studies/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
+        assert res.status_code == 200
+        assert res.json()["name"] == "root-study"

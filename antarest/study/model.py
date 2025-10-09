@@ -160,6 +160,123 @@ class StudyTag(Base):
         return f"{cls_name}({study_id=}, {tag=})"
 
 
+class DirectoryGroup(Base):
+    """
+    A table to manage the many-to-many relationship between `Directory` and `Group`
+
+    Attributes:
+        directory_id: The ID of the directory associated with the group.
+        group_id: The ID of the group associated with the directory.
+    """
+
+    __tablename__ = "directory_group"
+    __table_args__ = (PrimaryKeyConstraint("directory_id", "group_id"),)
+
+    directory_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("directory.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    group_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+
+    @override
+    def __str__(self) -> str:  # pragma: no cover
+        cls_name = self.__class__.__name__
+        return f"[{cls_name}] directory_id={self.directory_id}, group={self.group_id}"
+
+    @override
+    def __repr__(self) -> str:  # pragma: no cover
+        cls_name = self.__class__.__name__
+        directory_id = self.directory_id
+        group_id = self.group_id
+        return f"{cls_name}({directory_id=}, {group_id=})"
+
+
+class Directory(Base):
+    """
+    Represents a logical directory for organizing studies in the managed workspace.
+
+    Directories are stored in the database and provide a hierarchical organization
+    for studies, independent of the physical filesystem structure.
+
+    Attributes:
+        id: The unique identifier of the directory (UUID).
+        name: The non-qualified name of the directory (e.g., "project1").
+        parent_id: The ID of the parent directory, or None for root directories.
+        owner_id: The ID of the owner of the directory.
+        created_at: The timestamp when the directory was created.
+        updated_at: The timestamp when the directory was last updated.
+    """
+
+    __tablename__ = "directory"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+        unique=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    parent_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("directory.id", name="fk_directory_parent_id"), nullable=True, index=True
+    )
+    owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    # Relationships
+    owner = relationship(Identity, uselist=False)
+    groups = relationship(Group, secondary=DirectoryGroup.__table__, cascade="")
+    parent = relationship("Directory", remote_side=[id], uselist=False)
+
+    @override
+    def __str__(self) -> str:
+        cls = self.__class__.__name__
+        return (
+            f"[{cls}]"
+            f" id={self.id},"
+            f" name={self.name},"
+            f" parent_id={self.parent_id},"
+            f" owner={self.owner},"
+            f" groups={[str(g) + ',' for g in self.groups]}"
+        )
+
+    @override
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Directory):
+            return False
+        return bool(
+            other.id == self.id
+            and other.name == self.name
+            and other.parent_id == self.parent_id
+            and other.owner_id == self.owner_id
+            and other.created_at == self.created_at
+            and other.updated_at == self.updated_at
+        )
+
+    @override
+    def __repr__(self) -> str:
+        return f'Directory(id="{self.id}", name="{self.name}", parent_id="{self.parent_id}")'
+
+    def get_path(self) -> str:
+        """
+        Recursively builds the full path of this directory from root.
+
+        Returns:
+            The full path in POSIX format (e.g., "folder1/subfolder2").
+        """
+        if self.parent_id is None:
+            return self.name
+        # Note: In production, this should use a cache to avoid recursive queries
+        # The parent relationship will need to be loaded for this to work
+        if self.parent is not None:
+            parent_path = self.parent.get_path()
+            return f"{parent_path}/{self.name}"
+        return self.name
+
+
 class Tag(Base):
     """
     Represents a tag in the database.
@@ -245,6 +362,9 @@ class Study(Base):
         folder: Where the study is located in the workspace, from the user point of view.
                 Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
                 folder presented to the user, not the way we organize data internally.
+                This field is kept for backward compatibility but will be progressively replaced by directory_id.
+        directory_id: The ID of the directory containing this study. None for studies not in a directory.
+                     When a directory is deleted, studies are orphaned (directory_id is set to NULL).
         parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
         public_mode: Defines the actions any user logged in is allowed to take on the study.
         owner_id: The ID of the owner of the study.
@@ -270,6 +390,9 @@ class Study(Base):
     last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     path: Mapped[str] = mapped_column(String())
     folder: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    directory_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("directory.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     parent_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("study.id", name="fk_study_study_id"), nullable=True, index=True
     )
@@ -280,6 +403,7 @@ class Study(Base):
     tags: Mapped[List[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
+    directory = relationship("Directory", uselist=False)
     additional_data: Mapped[StudyAdditionalData | None] = relationship(
         StudyAdditionalData,
         uselist=False,
@@ -689,3 +813,76 @@ class MatrixAggregationResult(AntaresBaseModel):
 class ReferenceStudy(AntaresBaseModel):
     version: str
     template_name: str
+
+
+# ==========================================
+# Directory DTOs
+# ==========================================
+
+
+class DirectoryDTO(AntaresBaseModel):
+    """
+    DTO representing a directory with full details.
+
+    Used for API responses when retrieving directory information.
+    """
+
+    id: str
+    name: str
+    parent_id: Optional[str] = Field(None, alias="parentId")
+    owner: OwnerInfo
+    groups: List[GroupDTO]
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class DirectoryCreateDTO(AntaresBaseModel):
+    """
+    DTO for creating a new directory.
+
+    Used in POST /v1/directories requests.
+    """
+
+    name: str = Field(..., min_length=1, max_length=255, description="Directory name (non-qualified)")
+    parent_id: Optional[str] = Field(None, alias="parentId", description="Parent directory ID, or null for root")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate directory name."""
+        name = v.strip()
+        if not name:
+            raise ValueError("Directory name cannot be empty")
+        if "/" in name or "\\" in name:
+            raise ValueError("Directory name cannot contain path separators (/ or \\)")
+        return name
+
+
+class DirectoryUpdateDTO(AntaresBaseModel):
+    """
+    DTO for updating an existing directory.
+
+    Used in PUT /v1/directories/{id} requests.
+    """
+
+    name: Optional[str] = Field(None, min_length=1, max_length=255, description="New directory name")
+    parent_id: Optional[str] = Field(None, alias="parentId", description="New parent directory ID")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        """Validate directory name."""
+        if v is None:
+            return v
+        name = v.strip()
+        if not name:
+            raise ValueError("Directory name cannot be empty")
+        if "/" in name or "\\" in name:
+            raise ValueError("Directory name cannot contain path separators (/ or \\)")
+        return name

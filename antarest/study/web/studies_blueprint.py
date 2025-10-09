@@ -248,13 +248,18 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Import Study",
         response_model=str,
     )
-    def import_study(study: UploadFile, groups: str = "") -> str:
+    def import_study(
+        study: UploadFile,
+        groups: str = "",
+        path: str = Query("", description="Directory path for the imported study (e.g., 'project/subfolder')"),
+    ) -> str:
         """
         Upload and import a compressed study from your computer to the Antares Web server.
 
         Args:
         - `study`: The binary content of the study file in ZIP or 7z format.
         - `groups`: The groups your study will belong to (Default: current user's groups).
+        - `path`: Directory path where the imported study will be placed.
 
         Returns:
         - The ID of the imported study.
@@ -267,9 +272,10 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         user = require_current_user()
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
+        path_sanitized = validate_folder_path(path) if path else ""
 
         try:
-            uuid = study_service.import_study(study.file, group_ids)
+            uuid = study_service.import_study(study.file, group_ids, path=path_sanitized)
         except BadArchiveContent as e:
             raise BadZipBinary(str(e))
 
@@ -319,6 +325,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         groups: str = "",
         use_task: bool = True,
         destination_folder: str = "",
+        path: str = Query("", description="Directory path for the copied study (e.g., 'project/subfolder')"),
     ) -> str:
         """
         This endpoint enables you to duplicate a study and place it in a specified location.
@@ -333,6 +340,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             It is recommended and set as the default value: True.
         - `destination_folder`: The destination path where the study will be copied.
         - `output_ids`: A list of output names that you want to include in the destination study.
+        - `path`: Directory path where the copied study will be placed.
 
         Returns:
         - The unique identifier of the task copying the study.
@@ -345,6 +353,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = validate_study_name(escape(study_name))
+        path_sanitized = validate_folder_path(path) if path else ""
 
         task_id = study_service.copy_study(
             src_uuid=uuid_sanitized,
@@ -354,6 +363,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             use_task=use_task,
             destination_folder=PurePosixPath(destination_folder),
             output_ids=output_ids,
+            path=path_sanitized,
         )
 
         return task_id
@@ -374,13 +384,20 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Create a new empty study",
         response_model=str,
     )
-    def create_study(name: str, version: StudyVersionStr | None = None, groups: str = "") -> Any:
+    def create_study(
+        name: str,
+        version: StudyVersionStr | None = None,
+        groups: str = "",
+        path: str = Query("", description="Directory path where the study will be created (e.g., 'project/subfolder')"),
+    ) -> Any:
         logger.info(f"Creating new study '{name}'")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
-        uuid = study_service.create_study(name_sanitized, version, group_ids)
+        path_sanitized = validate_folder_path(path) if path else ""
+
+        uuid = study_service.create_study(name_sanitized, version, group_ids, path=path_sanitized)
 
         return uuid
 

@@ -22,7 +22,8 @@ from antarest.launcher.repository import JobResultRepository
 from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.directory_service import DirectoryService
+from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -32,6 +33,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.study.web.directory_blueprint import create_directory_routes
 from antarest.study.web.output_blueprint import create_output_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
@@ -130,6 +132,14 @@ def build_study_service(
         event_bus=event_bus,
     )
 
+    # Initialize directory service with study_service for cascade deletions
+    directory_repository = DirectoryRepository()
+    directory_service = DirectoryService(
+        directory_repository=directory_repository,
+        study_repository=metadata_repository,
+        study_service=study_service,
+    )
+
     if app_ctxt:
         api_root = app_ctxt.api_root
         api_root.include_router(create_study_routes(study_service, config))
@@ -143,5 +153,6 @@ def build_study_service(
         )
         api_root.include_router(create_xpansion_routes(study_service, config))
         api_root.include_router(create_output_routes(output_service, config))
+        api_root.include_router(create_directory_routes(directory_service, config))
 
     return study_service

@@ -834,7 +834,9 @@ class StudyService:
         logger.info("study %s path asked by user %s", uuid, get_user_id())
         return self.storage_service.get_storage(study).get_study_path(study)
 
-    def create_study(self, study_name: str, version: Optional[StudyVersion], group_ids: List[str]) -> str:
+    def create_study(
+        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], path: str = ""
+    ) -> str:
         """
         Creates a study with the specified study name, version, group IDs, and user parameters.
 
@@ -842,6 +844,7 @@ class StudyService:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
+            path: Optional directory path where the study will be created (e.g., 'project/subfolder').
 
         Returns:
             str: The ID of the newly created study.
@@ -850,6 +853,9 @@ class StudyService:
         study_path = self.config.get_workspace_path() / sid
 
         author = self.get_user_name()
+
+        # Get directory from path (raises 404 if not found)
+        directory_id = self._get_directory_from_path(path) if path else None
 
         raw = RawStudy(
             id=sid,
@@ -860,6 +866,7 @@ class StudyService:
             updated_at=datetime.utcnow(),
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author, editor=author),
+            directory_id=directory_id,
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -1089,6 +1096,7 @@ class StudyService:
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
+        path: str = "",
     ) -> str:
         """
         Create a new study by copying a reference study.
@@ -1111,6 +1119,7 @@ class StudyService:
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
+            path: Optional directory path where the copied study will be placed (e.g., 'project/subfolder').
 
         Returns:
             The newly created study.
@@ -1133,6 +1142,11 @@ class StudyService:
                 with_outputs,
                 self.get_user_name(),
             )
+
+            # Set directory_id from path (raises 404 if not found)
+            directory_id = self._get_directory_from_path(path) if path else None
+            if directory_id:
+                study.directory_id = directory_id
 
             self._save_study(study, group_ids)
             self.normalize_study(study)
@@ -1180,15 +1194,69 @@ class StudyService:
 
         return task_or_study_id
 
+    def _get_directory_from_path(self, folder_path: str) -> Optional[str]:
+        """
+        Get directory ID from a folder path.
+
+        Args:
+            folder_path: POSIX folder path like "project/subfolder"
+
+        Returns:
+            Directory ID of the leaf directory, or None if path is empty
+
+        Raises:
+            HTTPException: If the directory path does not exist
+        """
+        if not folder_path:
+            return None
+
+        from http import HTTPStatus
+        from pathlib import PurePosixPath
+
+        from fastapi import HTTPException
+        from sqlalchemy import select
+
+        from antarest.study.model import Directory
+
+        # Parse path
+        path = PurePosixPath(folder_path)
+        path_parts = list(path.parts)
+
+        if not path_parts:
+            return None
+
+        # Navigate directory hierarchy
+        parent_id = None
+        for dir_name in path_parts:
+            # Check if directory exists
+            stmt = select(Directory).where(Directory.name == dir_name, Directory.parent_id == parent_id)
+            existing_dir = self.repository.session.scalar(stmt)
+
+            if not existing_dir:
+                raise HTTPException(
+                    status_code=HTTPStatus.NOT_FOUND,
+                    detail=f"Directory path '{folder_path}' does not exist. Please create it first using POST /v1/directories.",
+                )
+
+            parent_id = existing_dir.id
+
+        return parent_id
+
     def move_study(self, study_id: str, folder_dest: str) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+
         if folder_dest:
             new_folder = folder_dest.rstrip("/") + f"/{study.id}"
+            # Get directory from path (raises 404 if not found)
+            directory_id = self._get_directory_from_path(folder_dest)
+            study.directory_id = directory_id
         else:
             new_folder = None
+            study.directory_id = None
+
         study.folder = new_folder
         self.repository.save(study, update_modification_date=False)
         self.event_bus.push(
@@ -1321,6 +1389,7 @@ class StudyService:
         self,
         stream: BinaryIO,
         group_ids: List[str],
+        path: str = "",
     ) -> str:
         """
         Import a compressed study.
@@ -1328,6 +1397,7 @@ class StudyService:
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
+            path: Optional directory path where the imported study will be placed (e.g., 'project/subfolder').
 
         Returns:
             New study UUID.
@@ -1336,14 +1406,19 @@ class StudyService:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         sid = str(uuid4())
-        path = str(self.config.get_workspace_path() / sid)
+        study_path = str(self.config.get_workspace_path() / sid)
+
+        # Get directory from path (raises 404 if not found)
+        directory_id = self._get_directory_from_path(path) if path else None
+
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=path,
+            path=study_path,
             additional_data=StudyAdditionalData(editor=self.get_user_name()),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
+            directory_id=directory_id,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.utcnow()
