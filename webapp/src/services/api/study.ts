@@ -21,7 +21,6 @@ import type {
   FileStudyTreeConfigDTO,
   LaunchJob,
   LaunchJobDTO,
-  LaunchOptions,
   MatrixAggregationResult,
   StudyLayer,
   StudyMetadata,
@@ -242,18 +241,6 @@ export const importStudy = async (
     },
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
-  return res.data;
-};
-
-export const launchStudy = async (
-  sid: string,
-  options: LaunchOptions = {},
-  version: string | undefined = undefined,
-  launcher: string | undefined = undefined,
-): Promise<string> => {
-  const res = await client.post(`/v1/launcher/run/${sid}`, options, {
-    params: { version, launcher },
-  });
   return res.data;
 };
 

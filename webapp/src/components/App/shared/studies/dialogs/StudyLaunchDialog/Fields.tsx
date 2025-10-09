@@ -19,6 +19,7 @@ import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import { useFormContextPlus } from "@/components/common/Form";
 import { validateNumber } from "@/utils/validation/number";
+import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import {
   isXpressAvailableForVersion,
@@ -40,6 +41,8 @@ function Fields() {
     "xpansion",
     "sensitivityMode",
   ]);
+
+  const isXpansionOutputEnabled = isXpansionEnabled && isSensitivityModeEnabled;
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -185,47 +188,56 @@ function Fields() {
           onChange={handleXpressChange}
           disabled={!isXpressAvailableForVersion(version)}
         />
-        <SwitchFE label={t("launcher.field.autoUnzip")} name="autoUnzip" control={control} />
+        <SwitchFE
+          label={t("launcher.field.autoUnzip")}
+          name="autoUnzip"
+          control={control}
+          sx={{ flex: 1 }}
+        />
       </Fieldset>
 
-      <Fieldset legend={t("launcher.legend.xpansion")}>
-        <SwitchFE label={t("global.enable")} name="xpansion" control={control} />
-        {isXpansionEnabled && (
-          <>
-            <SwitchFE
-              label={t("launcher.field.adequacyCriterions")}
-              name="adequacyCriterions"
-              control={control}
-              onChange={handleAdequacyCriterionsChange}
-              rules={{ validate: validateAdequacyCriterions }}
-              sx={{ minWidth: 250 }}
-            />
-            {isSingleStudy && (
-              <>
-                <SwitchFE
-                  label={t("launcher.field.sensitivityMode")}
-                  name="sensitivityMode"
-                  control={control}
-                  onChange={handleSensitivityModeChange}
-                  rules={{ deps: ["adequacyCriterions"] }}
-                />
-                {isSensitivityModeEnabled && (
-                  <>
-                    <Fieldset.Break />
-                    <SelectFE
-                      label={t("global.output")}
-                      name="output"
-                      options={outputOptions}
-                      control={control}
-                      rules={{ required: t("form.field.required") }}
-                      sx={{ flex: 1 }}
-                    />
-                  </>
-                )}
-              </>
-            )}
-          </>
-        )}
+      <Fieldset
+        legend={
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {t("launcher.legend.xpansion")}
+            <SwitchFE name="xpansion" control={control} />
+          </Box>
+        }
+      >
+        <>
+          <SwitchFE
+            label={t("launcher.field.adequacyCriterions")}
+            name="adequacyCriterions"
+            control={control}
+            onChange={handleAdequacyCriterionsChange}
+            rules={{ validate: validateAdequacyCriterions }}
+            sx={{ minWidth: 250 }}
+            disabled={!isXpansionEnabled}
+          />
+          {isSingleStudy && (
+            <>
+              <Fieldset.Break />
+              <SwitchFE
+                label={t("launcher.field.sensitivityMode")}
+                name="sensitivityMode"
+                control={control}
+                onChange={handleSensitivityModeChange}
+                rules={{ deps: ["adequacyCriterions"] }}
+                disabled={!isXpansionEnabled}
+              />
+
+              <SelectFE
+                label={t("global.output")}
+                name="output"
+                options={outputOptions}
+                control={control}
+                rules={{ required: isXpansionOutputEnabled ? t("form.field.required") : false }}
+                sx={{ flex: 1 }}
+                disabled={!isXpansionOutputEnabled}
+              />
+            </>
+          )}
+        </>
       </Fieldset>
 
       <Fieldset legend={t("launcher.legend.launcher")}>

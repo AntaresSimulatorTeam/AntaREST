@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { LauncherParamsDTO } from "@/services/api/launcher/types";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -134,30 +135,6 @@ export interface VariantTree {
   children: VariantTree[];
 }
 
-export interface AdequacyPatchParams {
-  legacy?: boolean;
-}
-
-export interface XpansionParams {
-  enabled: boolean;
-  sensitivity_mode?: boolean;
-  output_id?: string;
-  adequacy_criterions?: boolean;
-}
-
-export interface LaunchOptions {
-  xpansion?: XpansionParams;
-  xpansion_r_version?: boolean;
-  nb_cpu?: number;
-  time_limit?: number;
-  post_processing?: boolean;
-  adequacy_patch?: AdequacyPatchParams;
-  output_suffix?: string;
-  other_options?: string;
-  auto_unzip?: boolean;
-  archive_output?: boolean;
-}
-
 export type JobStatus = "running" | "pending" | "success" | "failed";
 
 export interface LaunchJob {
@@ -166,7 +143,7 @@ export interface LaunchJob {
   status: JobStatus;
   creationDate: string;
   completionDate: string;
-  launcherParams?: LaunchOptions;
+  launcherParams?: LauncherParamsDTO;
   msg: string;
   outputId: string;
   exitCode: number;
