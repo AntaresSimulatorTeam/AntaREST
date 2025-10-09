@@ -117,7 +117,8 @@ class FileStudyHydroDao(HydroDao):
     @override
     def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
         file_study = self.get_file_study()
-        area_ids = sorted(file_study.config.areas)
+        all_areas = file_study.config.areas
+        area_ids = sorted(all_areas)
         array = np.identity(len(area_ids))
 
         try:
@@ -128,6 +129,11 @@ class FileStudyHydroDao(HydroDao):
         for key, value in ini_content.items():
             area_name1, area_name2 = key.split("%")
             area1, area2 = transform_name_to_id(area_name1), transform_name_to_id(area_name2)
+            # Checks area existence
+            for area_id in [area1, area2]:
+                if area_id not in all_areas:
+                    raise AreaNotFound(area_id)
+
             i = area_ids.index(area1)
             j = area_ids.index(area2)
             array[i][j] = value
@@ -138,7 +144,13 @@ class FileStudyHydroDao(HydroDao):
     @override
     def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
         file_study = self.get_file_study()
-        area_ids = sorted(file_study.config.areas)
+        all_areas = file_study.config.areas
+        area_ids = sorted(all_areas)
+        # Checks area existence
+        for area_id in correlation.index:
+            if area_id not in all_areas:
+                raise AreaNotFound(area_id)
+        # Save data inside the file
         correlation_cfg: dict[str, float] = {}
         count = len(area_ids)
         for i in range(count):
