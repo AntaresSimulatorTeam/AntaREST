@@ -12,22 +12,22 @@
  * This file is part of the Antares project.
  */
 
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import usePromise from "../../../../../../hooks/usePromise";
+import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
+import { getBindingConst, getCurrentBindingConstId } from "../../../../../../redux/selectors";
+import { getBindingConstraintList } from "../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../types/types";
 import EmptyView from "../../../../../common/page/EmptyView";
-import BindingConstPropsView from "./BindingConstPropsView";
-import { getBindingConst, getCurrentBindingConstId } from "../../../../../../redux/selectors";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
-import BindingConstView from "./BindingConstView";
-import usePromise from "../../../../../../hooks/usePromise";
-import { getBindingConstraintList } from "../../../../../../services/api/studydata";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import { useEffect } from "react";
 import SplitView from "../../../../../common/SplitView";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
-import { useTranslation } from "react-i18next";
+import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import BindingConstPropsView from "./BindingConstPropsView";
+import BindingConstView from "./BindingConstView";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -82,7 +82,10 @@ function BindingConstraints() {
           {/* Right */}
           <ViewWrapper>
             {data.length > 0 && currentConstraintId ? (
-              <BindingConstView constraintId={currentConstraintId} />
+              <BindingConstView
+                constraintId={currentConstraintId}
+                reloadConstraintsList={constraintsRes.reload}
+              />
             ) : (
               <EmptyView title={t("study.bindingConstraints.empty")} />
             )}

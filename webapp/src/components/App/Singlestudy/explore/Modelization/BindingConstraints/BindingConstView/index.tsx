@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import ContentCopy from "@mui/icons-material/ContentCopy";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import Delete from "@mui/icons-material/Delete";
 import { Box, Button, Skeleton } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { toError } from "@/utils/fnUtils";
@@ -28,6 +29,7 @@ import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../redux/selectors";
 import {
+  createBindingConstraint,
   getBindingConstraint,
   getBindingConstraintList,
   updateBindingConstraint,
@@ -39,6 +41,7 @@ import Form from "../../../../../../common/Form";
 import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import UsePromiseCond, { mergeResponses } from "../../../../../../common/utils/UsePromiseCond";
 import { CommandEnum } from "../../../../CommandsDrawer/EditionView/commandTypes";
+import DuplicateDialog from "../DuplicateDialog";
 import BindingConstForm from "./BindingConstForm";
 import ConstraintFields from "./ConstraintFields";
 import ConstraintMatrix from "./Matrix";
@@ -46,10 +49,11 @@ import type { BindingConstraint } from "./utils";
 
 interface Props {
   constraintId: string;
+  reloadConstraintsList: VoidFunction;
 }
 
 // TODO rename Form (its the constraint form => properties form + terms form)
-function BindingConstView({ constraintId }: Props) {
+function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
@@ -58,6 +62,7 @@ function BindingConstView({ constraintId }: Props) {
   const studyVersion = Number(study.version);
   const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] = useState(false);
   const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
+  const [duplicateConstraintDialogOpen, setDuplicateConstraintDialogOpen] = useState(false);
 
   const constraint = usePromise(
     () => getBindingConstraint(study.id, constraintId),
@@ -68,6 +73,13 @@ function BindingConstView({ constraintId }: Props) {
     studyId: study.id,
     selector: (state) => getLinksAndClusters(state, study.id),
   });
+
+  const constraintsList = usePromise(() => getBindingConstraintList(study.id), [study.id]);
+
+  const existingConstraints = useMemo(
+    () => constraintsList.data?.map(({ name }) => name) ?? [],
+    [constraintsList.data],
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -86,6 +98,27 @@ function BindingConstView({ constraintId }: Props) {
       }
     } catch (error) {
       enqueueErrorSnackbar(t("study.error.updateConstraint"), toError(error));
+    }
+  };
+
+  const handleDuplicateConstraint = async (newName: string) => {
+    const constraintData = constraint.data;
+    if (!constraintData) {
+      return;
+    }
+
+    const { id, name, ...duplicatedData } = constraintData;
+
+    const duplicatedConstraint = await createBindingConstraint(study.id, {
+      ...duplicatedData,
+      name: newName,
+    });
+
+    reloadConstraintsList();
+
+    if (duplicatedConstraint) {
+      // Redirecting to the new duplicated constraint
+      dispatch(setCurrentBindingConst(duplicatedConstraint.id));
     }
   };
 
@@ -149,6 +182,13 @@ function BindingConstView({ constraintId }: Props) {
                 </Button>
                 <Button
                   variant="outlined"
+                  startIcon={<ContentCopy />}
+                  onClick={() => setDuplicateConstraintDialogOpen(true)}
+                >
+                  {t("global.duplicate")}
+                </Button>
+                <Button
+                  variant="outlined"
                   startIcon={<Delete />}
                   color="error"
                   onClick={() => setDeleteConstraintDialogOpen(true)}
@@ -185,6 +225,16 @@ function BindingConstView({ constraintId }: Props) {
         )}
         ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
       />
+
+      {duplicateConstraintDialogOpen && constraint.data && (
+        <DuplicateDialog
+          open={duplicateConstraintDialogOpen}
+          onClose={() => setDuplicateConstraintDialogOpen(false)}
+          constraintName={constraint.data.name}
+          existingConstraints={existingConstraints}
+          onDuplicate={handleDuplicateConstraint}
+        />
+      )}
 
       {deleteConstraintDialogOpen && (
         <ConfirmationDialog
