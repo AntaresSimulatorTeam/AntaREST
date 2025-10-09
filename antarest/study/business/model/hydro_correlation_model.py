@@ -9,9 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Annotated, TypeAlias
 
 import numpy as np
-from pydantic import Field, model_validator
+from pydantic import Field, PlainSerializer, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
@@ -23,8 +24,15 @@ class HydroCorrelationArea(AntaresBaseModel, extra="forbid", populate_by_name=Tr
     coefficient: float = Field(allow_inf_nan=False, ge=-100, le=100)
 
 
+def _correlation_serializer(correlation: list[HydroCorrelationArea]) -> list[dict[str, str | float]]:
+    return [corr.model_dump(by_alias=True) for corr in correlation if corr.coefficient]
+
+
+HydroCorrelationType: TypeAlias = Annotated[list[HydroCorrelationArea], PlainSerializer(_correlation_serializer)]
+
+
 class HydroCorrelation(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    correlation: list[HydroCorrelationArea]
+    correlation: HydroCorrelationType
 
     @model_validator(mode="after")
     def check_correlation(self) -> "HydroCorrelation":
@@ -93,8 +101,9 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
     def to_hydro_correlations(self) -> dict[str, HydroCorrelation]:
         correlations_dict = {}
         for k, area_id in enumerate(self.index):
-            correlations = [
-                HydroCorrelationArea(area_id=self.index[m], coefficient=n * 100) for m, n in enumerate(self.data[k])
-            ]
+            correlations = []
+            for m, n in enumerate(self.data[k]):
+                if n:
+                    correlations.append(HydroCorrelationArea(area_id=self.index[m], coefficient=n * 100))
             correlations_dict[area_id] = HydroCorrelation(correlation=correlations)
         return correlations_dict
