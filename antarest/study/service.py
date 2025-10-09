@@ -427,9 +427,8 @@ class RawStudyInterface(StudyInterface):
         self._update_editor(file_study)
 
     def _update_editor(self, file_study: FileStudy) -> None:
-        user_id = get_user_impersonator()
-        user = self._user_service.get_identity(user_id)
-        if user and user.name:
+        user = self._user_service.get_identity(get_user_impersonator())
+        if user:
             user_name = user.name or ""
             study_antares = file_study.tree.get(["study", "antares"])
             study_antares["editor"] = user.name
