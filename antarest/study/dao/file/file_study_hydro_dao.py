@@ -131,7 +131,7 @@ class FileStudyHydroDao(HydroDao):
             area1, area2 = transform_name_to_id(area_name1), transform_name_to_id(area_name2)
             if area1 == area2:
                 if value != 1:
-                    raise ValueError(f"Hydraulic correlation of area {area1} is not 1. It was {value}.")
+                    raise ValueError(f"Hydraulic correlation of area {area1} should be 1. It was {value}.")
                 continue
             i = area_ids.index(area1)
             j = area_ids.index(area2)
