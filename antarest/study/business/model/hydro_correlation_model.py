@@ -101,9 +101,8 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
     def to_hydro_correlations(self) -> dict[str, HydroCorrelation]:
         correlations_dict = {}
         for k, area_id in enumerate(self.index):
-            correlations = []
-            for m, n in enumerate(self.data[k]):
-                if n:
-                    correlations.append(HydroCorrelationArea(area_id=self.index[m], coefficient=n * 100))
+            correlations = [
+                HydroCorrelationArea(area_id=self.index[m], coefficient=n * 100) for m, n in enumerate(self.data[k])
+            ]
             correlations_dict[area_id] = HydroCorrelation(correlation=correlations)
         return correlations_dict
