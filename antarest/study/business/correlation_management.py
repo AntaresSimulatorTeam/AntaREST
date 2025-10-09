@@ -34,8 +34,10 @@ class CorrelationManager:
         return study.get_study_dao().get_hydro_correlation(area_id)
 
     def set_correlation_for_area(self, study: StudyInterface, area_id: str, data: HydroCorrelation) -> HydroCorrelation:
+        correlations_dict = study.get_study_dao().get_hydro_correlation_matrix().to_hydro_correlations()
+        correlations_dict[area_id] = data
         command = ReplaceHydroCorrelation(
-            command_context=self._command_context, study_version=study.version, correlation={area_id: data}
+            command_context=self._command_context, study_version=study.version, correlation=correlations_dict
         )
         study.add_commands([command])
         return data
