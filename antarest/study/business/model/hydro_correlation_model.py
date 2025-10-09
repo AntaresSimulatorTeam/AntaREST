@@ -79,7 +79,17 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
 
     @staticmethod
     def from_hydro_correlations(correlations: dict[str, HydroCorrelation]) -> "HydroCorrelationMatrix":
-        raise NotImplementedError()
+        area_ids = sorted(correlations)
+        array = np.identity(len(correlations))
+
+        for area_id, corr in correlations.items():
+            for correlation in corr.correlation:
+                i = area_ids.index(area_id)
+                j = area_ids.index(correlation.area_id)
+                array[i][j] = correlation.coefficient
+                array[j][i] = correlation.coefficient
+
+        return HydroCorrelationMatrix.model_validate({"index": area_ids, "columns": area_ids, "data": array})
 
     def to_hydro_correlations(self) -> dict[str, HydroCorrelation]:
         correlations_dict = {}
