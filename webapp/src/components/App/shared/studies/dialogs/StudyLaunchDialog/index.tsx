@@ -14,8 +14,9 @@
 
 import FormDialog from "@/components/common/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import { launchStudy } from "@/services/api/study";
-import type { LaunchOptions, StudyMetadata } from "@/types/types";
+import { launchStudy } from "@/services/api/launcher/index";
+import type { LauncherConfig } from "@/services/api/launcher/types";
+import type { StudyMetadata } from "@/types/types";
 import BoltIcon from "@mui/icons-material/Bolt";
 import { useTranslation } from "react-i18next";
 import Fields from "./Fields";
@@ -37,20 +38,34 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
-    const options: LaunchOptions = {
-      output_suffix: values.name,
-      other_options: values.otherOptions,
-      auto_unzip: values.autoUnzip,
-      xpansion: {
-        enabled: values.xpansion,
-        sensitivity_mode: values.sensitivityMode,
-        output_id: values.output,
-      },
-      nb_cpu: values.nbCores,
+    const config: LauncherConfig = {
+      outputSuffix: values.name,
+      otherOptions: values.otherOptions,
+      autoUnzip: values.autoUnzip,
+      // Note: fields can be set event if Xpansion is disabled.
+      // This can happen if the user enables Xpansion, fills these fields,
+      // and then disables Xpansion before submitting the form.
+      xpansion: values.xpansion
+        ? {
+            enabled: true,
+            adequacyCriterions: values.adequacyCriterions,
+            sensitivityMode: values.sensitivityMode,
+            // `output_id` has to be provided only if `sensitivity_mode` is enabled.
+            outputId: values.sensitivityMode ? values.output : undefined,
+          }
+        : { enabled: false },
+      nbCores: values.nbCores,
     };
 
     return Promise.all(
-      studyIds.map((id) => launchStudy(id, options, values.version, values.launcher)),
+      studyIds.map((id) =>
+        launchStudy({
+          studyId: id,
+          launcherId: values.launcher,
+          config,
+          version: values.version,
+        }),
+      ),
     );
   };
 

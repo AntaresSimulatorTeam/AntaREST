@@ -34,7 +34,7 @@ function StudyList({ studyIds }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ mx: 1, mb: 2, maxHeight: 100, overflowY: "auto", overflowX: "hidden" }}>
+    <Box sx={{ mx: 1, mb: 2, maxHeight: 95, overflowY: "auto", overflowX: "hidden" }}>
       {studyNames.map((name, index) => (
         <Chip key={buildKey(name, index)} label={name} sx={{ mr: 1, mb: 1 }} />
       ))}

@@ -69,13 +69,13 @@ function LauncherMetrics() {
             <Typography>{toError(err).message}</Typography>
           </>
         )}
-        ifFulfilled={(data) => (
+        ifFulfilled={(metrics) => (
           <>
             <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
               {t("study.allocatedCpuRate")}
             </Typography>
             <LinearProgressWithLabel
-              value={Math.floor(data.allocatedCpuRate)}
+              value={Math.floor(metrics.allocatedCpuRate)}
               tooltip={t("study.allocatedCpuRate")}
               sx={{ width: 100 }}
               colorMode="cluster"
@@ -84,13 +84,13 @@ function LauncherMetrics() {
               {t("study.clusterLoadRate")}
             </Typography>
             <LinearProgressWithLabel
-              value={Math.floor(data.clusterLoadRate)}
+              value={Math.floor(metrics.clusterLoadRate)}
               tooltip={t("study.clusterLoadRate")}
               sx={{ width: 100 }}
               colorMode="cluster"
             />
             <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
-              {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}
+              {t("study.nbQueuedJobs")}: {metrics.nbQueuedJobs}
             </Typography>
           </>
         )}
