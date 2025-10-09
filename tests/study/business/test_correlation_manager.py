@@ -106,3 +106,11 @@ def test_error_cases() -> None:
             columns=["fr", "de"],
             data=np.array([[0.1, 0.2], [0.3, 0.4]]),
         )
+
+    # The matrix diagonal should only contain "1"
+    with pytest.raises(ValueError, match="correlation diagonal should be filled with 1"):
+        HydroCorrelationMatrix(
+            index=["fr", "de"],
+            columns=["fr", "de"],
+            data=np.array([[0.1, 0.0], [0.0, 1.0]]),
+        )

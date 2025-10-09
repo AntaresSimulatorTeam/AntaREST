@@ -72,6 +72,9 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
         if not np.array_equal(self.data, self.data.T):
             raise ValueError("correlation matrix is not symmetric")
 
+        if np.any(np.diag(self.data) != 1):
+            raise ValueError("correlation diagonal should be filled with 1")
+
         return self
 
     @staticmethod

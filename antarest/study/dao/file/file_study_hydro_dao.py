@@ -117,8 +117,7 @@ class FileStudyHydroDao(HydroDao):
     @override
     def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
         file_study = self.get_file_study()
-        all_areas = file_study.config.areas
-        area_ids = sorted(all_areas)
+        area_ids = sorted(file_study.config.areas)
         array = np.identity(len(area_ids))
 
         try:
@@ -129,20 +128,31 @@ class FileStudyHydroDao(HydroDao):
         for key, value in ini_content.items():
             area_name1, area_name2 = key.split("%")
             area1, area2 = transform_name_to_id(area_name1), transform_name_to_id(area_name2)
-            if area1 == area2:
-                if value != 1:
-                    raise ValueError(f"Hydraulic correlation of area {area1} should be 1. It was {value}.")
-                continue
             i = area_ids.index(area1)
             j = area_ids.index(area2)
             array[i][j] = value
             array[j][i] = value
 
-        return HydroCorrelationMatrix(index=area_ids, columns=all_areas, data=array)
+        return HydroCorrelationMatrix(index=area_ids, columns=area_ids, data=array)
 
     @override
     def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        area_ids = sorted(file_study.config.areas)
+        correlation_cfg: dict[str, float] = {}
+        count = len(area_ids)
+        for i in range(count):
+            # not saved: values from the diagonal are always == 1.0
+            for j in range(i + 1, count):
+                coefficient = correlation.data[i][j]
+                if not coefficient:
+                    # null values are not saved
+                    continue
+                a1 = area_ids[i]
+                a2 = area_ids[j]
+                correlation_cfg[f"{a1}%{a2}"] = coefficient
+
+        file_study.tree.save(correlation_cfg, CORRELATION_PATH)
 
     @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
