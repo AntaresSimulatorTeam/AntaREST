@@ -31,7 +31,6 @@ interface Props {
 function ConstraintMatrix({ study, constraintId, open, onClose }: Props) {
   const { getValues } = useFormContextPlus<BindingConstraint>();
   const operator = getValues("operator");
-  console.log(operator);
 
   const { t } = useTranslation();
   const dialogProps: BasicDialogProps = {
