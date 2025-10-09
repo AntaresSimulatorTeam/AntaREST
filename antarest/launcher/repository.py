@@ -16,7 +16,7 @@ from typing import List, Optional
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult
+from antarest.launcher.model import JobResult, LauncherConfigModel
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -89,3 +89,45 @@ class JobResultRepository:
         stmt = delete(JobResult).where(JobResult.study_id == study_id)
         db.session.execute(stmt)
         db.session.commit()
+
+
+class LauncherConfigRepository:
+    def __init__(self) -> None:
+        pass
+
+    def exists(self, id: str) -> bool:
+        logger.debug(f"Checking existence of LauncherConfigModel {id}")
+        stmt = select(LauncherConfigModel).where(LauncherConfigModel.id == id)
+        existing_config = db.session.scalar(stmt)
+        return existing_config is not None
+
+    def save(self, config: LauncherConfigModel) -> LauncherConfigModel:
+        logger.debug(f"Saving LauncherConfigModel {config.id}")
+
+        stmt = select(LauncherConfigModel).where(LauncherConfigModel.id == config.id)
+        existing_config = db.session.scalar(stmt)
+
+        if existing_config:
+            merged_config = db.session.merge(config)
+        else:
+            db.session.add(config)
+            merged_config = config
+
+        db.session.commit()
+        return merged_config
+
+    def get(self, id: str) -> Optional[LauncherConfigModel]:
+        logger.debug(f"Retrieving LauncherConfigModel {id}")
+        return db.session.get(LauncherConfigModel, id)
+
+    def get_all(self) -> List[LauncherConfigModel]:
+        logger.debug("Retrieving all LauncherConfigModels")
+        stmt = select(LauncherConfigModel)
+        return list(db.session.scalars(stmt).all())
+
+    def delete(self, id: str) -> None:
+        logger.debug(f"Deleting LauncherConfigModel {id}")
+        config = db.session.get(LauncherConfigModel, id)
+        if config:
+            db.session.delete(config)
+            db.session.commit()

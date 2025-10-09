@@ -44,6 +44,8 @@ from antarest.launcher.model import (
     JobLogType,
     JobResult,
     JobStatus,
+    LauncherConfigDTO,
+    LauncherConfigModel,
     LauncherInfoDTO,
     LauncherListDTO,
     LauncherLoadDTO,
@@ -51,13 +53,15 @@ from antarest.launcher.model import (
     LauncherResourceRangeDTO,
     LogType,
     XpansionParametersDTO,
+    apply_update_launcher_config,
 )
-from antarest.launcher.repository import JobResultRepository
+from antarest.launcher.repository import JobResultRepository, LauncherConfigRepository
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
 logger = logging.getLogger(__name__)
@@ -87,6 +91,7 @@ class LauncherService:
         output_service: OutputService,
         login_service: LoginService,
         job_result_repository: JobResultRepository,
+        launcher_config_repository: LauncherConfigRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -98,6 +103,7 @@ class LauncherService:
         self.output_service = output_service
         self.login_service = login_service
         self.job_result_repository = job_result_repository
+        self.launcher_config_repository = launcher_config_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -238,6 +244,7 @@ class LauncherService:
         study_uuid: str,
         launcher: str,
         launcher_parameters: LauncherParametersDTO,
+        launcher_configuration_id: Optional[str] = None,
         study_version: Optional[str] = None,
     ) -> str:
         job_uuid = self._generate_new_id()
@@ -678,3 +685,52 @@ class LauncherService:
             "progress": 0
         }
         return launch_progress_json.get("progress", 0)
+
+    def create_launcher_config(self, launcher_config_creation: LauncherConfigDTO) -> LauncherConfigDTO:
+        """
+        Create a new launcher configuration using LauncherParametersDTO.
+        """
+        with db():
+            launcher_config_creation.id = transform_name_to_id(launcher_config_creation.name)
+            if self.launcher_config_repository.exists(launcher_config_creation.id):
+                raise InvalidConfigurationError(
+                    f"A configuration with id '{launcher_config_creation.id}' already exists."
+                )
+            launcher_config = LauncherConfigModel.from_dto(launcher_config_creation)  # validate dto
+            config = self.launcher_config_repository.save(launcher_config)
+            return config.to_dto()
+
+    def get_launcher_config(self, configuration_id: str) -> LauncherConfigDTO:
+        """
+        Retrieve a launcher configuration by its ID.
+        """
+        with db():
+            config = self.launcher_config_repository.get(configuration_id)
+            if not config:
+                raise InvalidConfigurationError(configuration_id)
+            return config.to_dto()
+
+    def get_launcher_configs(self) -> List[LauncherConfigDTO]:
+        """
+        Retrieve all launcher configurations.
+        """
+        with db():
+            configs = self.launcher_config_repository.get_all()
+            return [config.to_dto() for config in configs]
+
+    def update_launcher_config(
+        self, configuration_id: str, launcher_config_update: LauncherConfigDTO
+    ) -> LauncherConfigDTO:
+        """
+        Update an existing launcher configuration using LauncherParametersDTO.
+        """
+        with db():
+            launcher_config = self.launcher_config_repository.get(configuration_id)
+            if not launcher_config:
+                raise InvalidConfigurationError(configuration_id)
+            # Update only the fields that are provided in the update DTO
+            updated_launcher_config = apply_update_launcher_config(launcher_config, launcher_config_update)
+            config = self.launcher_config_repository.save(updated_launcher_config)
+            if not config:
+                raise InvalidConfigurationError(configuration_id)
+            return config.to_dto()

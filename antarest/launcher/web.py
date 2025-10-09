@@ -22,6 +22,7 @@ from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
+    LauncherConfigDTO,
     LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
@@ -50,6 +51,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         study_id: str,
         launcher: Optional[str] = None,
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
+        launcher_configuration_id: Optional[str] = None,
         version: Optional[str] = None,
     ) -> Any:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
@@ -181,5 +183,45 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         """
         logger.info(f"Fetching the list of solver versions for the '{solver}' configuration")
         return service.get_solver_versions(solver)
+
+    @bp.post(
+        "/configurations",
+        tags=[APITag.launcher],
+        summary="Create a new launcher configuration",
+        response_model=LauncherConfigDTO,
+    )
+    def create_launcher_config(launcher_config_creation: LauncherConfigDTO) -> LauncherConfigDTO:
+        logger.info("Creating a new launcher configuration")
+        return service.create_launcher_config(launcher_config_creation)
+
+    @bp.get(
+        "/configurations/{configuration_id}",
+        tags=[APITag.launcher],
+        summary="Retrieve a launcher configuration by ID",
+        response_model=LauncherConfigDTO,
+    )
+    def get_launcher_config(configuration_id: str) -> LauncherConfigDTO:
+        logger.info(f"Retrieving launcher configuration for ID {configuration_id}")
+        return service.get_launcher_config(configuration_id)
+
+    @bp.get(
+        "/configurations/",
+        tags=[APITag.launcher],
+        summary="Retrieve all launcher configurations",
+        response_model=List[LauncherConfigDTO],
+    )
+    def get_launcher_configs() -> List[LauncherConfigDTO]:
+        logger.info("Retrieving launcher configurations")
+        return service.get_launcher_configs()
+
+    @bp.put(
+        "/configurations/{configuration_id}",
+        tags=[APITag.launcher],
+        summary="Update an existing launcher configuration",
+        response_model=LauncherConfigDTO,
+    )
+    def update_launcher_config(configuration_id: str, launcher_config_update: LauncherConfigDTO) -> Any:
+        logger.info(f"Updating launcher configuration for ID {configuration_id}")
+        return service.update_launcher_config(configuration_id, launcher_config_update)
 
     return bp

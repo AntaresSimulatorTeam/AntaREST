@@ -11,14 +11,16 @@
 # This file is part of the Antares project.
 
 import enum
+import json
 import typing
 from datetime import datetime
-from typing import Any, Dict, List, MutableMapping, Optional
+from typing import Any, Dict, List, MutableMapping, Optional, Tuple
 from uuid import uuid4
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -26,6 +28,9 @@ from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.login.model import Identity, UserInfo
+from antarest.study.model import STUDY_VERSION_6_5
+
+SolverParams = List[Tuple[str, str]]
 
 
 class XpansionParametersDTO(AntaresBaseModel):
@@ -324,3 +329,182 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
         description="The status of the launcher: 'SUCCESS' or 'FAILED'",
         title="Launcher Status",
     )
+
+
+class LauncherConfigDTO(AntaresBaseModel):
+    id: Optional[str] = None
+    name: str
+    linear_solver: str
+    min_antares_version: Optional[StudyVersion] = None
+    max_antares_version: Optional[StudyVersion] = None
+    linear_solver_param_optim_1: Optional[SolverParams] = None
+    linear_solver_param_optim_2: Optional[SolverParams] = None
+    linear_solver_param: Optional[SolverParams] = None
+    use_optim_1_basis_next_week: bool = True
+    use_optim_1_basis_optim_2: bool = True
+
+
+class LauncherConfigModel(Base):
+    __tablename__ = "launcher_configuration"
+
+    id = mapped_column(String(36), primary_key=True)
+    name = mapped_column(String)
+    linear_solver = mapped_column(String)
+    min_antares_version = mapped_column(JSON, nullable=True)
+    max_antares_version = mapped_column(JSON, nullable=True)
+    linear_solver_param_optim_1 = mapped_column(JSON, nullable=True)
+    linear_solver_param_optim_2 = mapped_column(JSON, nullable=True)
+    linear_solver_param = mapped_column(JSON, nullable=True)
+    use_optim_1_basis_next_week = mapped_column(Boolean)
+    use_optim_1_basis_optim_2 = mapped_column(Boolean)
+
+    def to_dto(self) -> LauncherConfigDTO:
+        min_version = None
+        if self.min_antares_version is not None:
+            try:
+                min_version = StudyVersion.parse(self.min_antares_version)
+            except Exception as e:
+                raise ValueError(f"Failed to parse min_antares_version '{self.min_antares_version}': {e}") from e
+
+        max_version = None
+        if self.max_antares_version is not None:
+            try:
+                max_version = StudyVersion.parse(self.max_antares_version)
+            except Exception as e:
+                raise ValueError(f"Failed to parse max_antares_version '{self.max_antares_version}': {e}") from e
+
+        param_optim_1 = None
+        if self.linear_solver_param_optim_1 is not None:
+            try:
+                param_optim_1 = (
+                    json.loads(self.linear_solver_param_optim_1)
+                    if isinstance(self.linear_solver_param_optim_1, str)
+                    else self.linear_solver_param_optim_1
+                )
+            except Exception as e:
+                raise ValueError(f"Failed to parse linear_solver_param_optim_1: {e}") from e
+
+        param_optim_2 = None
+        if self.linear_solver_param_optim_2 is not None:
+            try:
+                param_optim_2 = (
+                    json.loads(self.linear_solver_param_optim_2)
+                    if isinstance(self.linear_solver_param_optim_2, str)
+                    else self.linear_solver_param_optim_2
+                )
+            except Exception as e:
+                raise ValueError(f"Failed to parse linear_solver_param_optim_2: {e}") from e
+
+        param = None
+        if self.linear_solver_param is not None:
+            try:
+                param = (
+                    json.loads(self.linear_solver_param)
+                    if isinstance(self.linear_solver_param, str)
+                    else self.linear_solver_param
+                )
+            except Exception as e:
+                raise ValueError(f"Failed to parse linear_solver_param: {e}") from e
+
+        return LauncherConfigDTO(
+            id=self.id,
+            name=self.name,
+            linear_solver=self.linear_solver,
+            min_antares_version=min_version,
+            max_antares_version=max_version,
+            linear_solver_param_optim_1=param_optim_1,
+            linear_solver_param_optim_2=param_optim_2,
+            linear_solver_param=param,
+            use_optim_1_basis_next_week=self.use_optim_1_basis_next_week,
+            use_optim_1_basis_optim_2=self.use_optim_1_basis_optim_2,
+        )
+
+    @classmethod
+    def from_dto(cls, dto: LauncherConfigDTO) -> "LauncherConfigModel":
+        data = dto.model_dump(exclude_none=True)
+        # Convert StudyVersion fields to string if present
+        if dto.min_antares_version is not None:
+            data["min_antares_version"] = f"{dto.min_antares_version:2d}"
+        if dto.max_antares_version is not None:
+            data["max_antares_version"] = f"{dto.max_antares_version:2d}"
+        # Convert solver params fields to JSON strings if present
+        for key in [
+            "linear_solver_param_optim_1",
+            "linear_solver_param_optim_2",
+            "linear_solver_param",
+        ]:
+            if key in data and data[key] is not None:
+                data[key] = json.dumps(data[key])
+        # Convert StudyVersion fields to string if present
+        return cls(**data)
+
+    @override
+    def __str__(self) -> str:
+        return f"Launcher configuration #{self.id} '{self.name}' (solver: {self.linear_solver})"
+
+    @override
+    def __repr__(self) -> str:
+        return (
+            f"<LauncherConfigModel(id={self.id!r},"
+            f" name={self.name!r},"
+            f" linear_solver={self.linear_solver!r},"
+            f" min_antares_version={self.min_antares_version!r},"
+            f" max_antares_version={self.max_antares_version!r},"
+            f" linear_solver_param_optim_1={self.linear_solver_param_optim_1!r},"
+            f" linear_solver_param_optim_2={self.linear_solver_param_optim_2!r},"
+            f" linear_solver_param={self.linear_solver_param!r},"
+            f" use_optim_1_basis_next_week={self.use_optim_1_basis_next_week!r},"
+            f" use_optim_1_basis_optim_2={self.use_optim_1_basis_optim_2!r})>"
+        )
+
+
+def apply_update_launcher_config(
+    launcher_config: LauncherConfigModel,
+    launcher_config_update: LauncherConfigDTO,
+) -> LauncherConfigModel:
+    return LauncherConfigModel.from_dto(
+        LauncherConfigDTO.model_validate(
+            {**launcher_config.to_dto().model_dump(), **launcher_config_update.model_dump(exclude_unset=True)}
+        )
+    )
+
+
+def apply_launcher_config_to_params(
+    launcher_params: LauncherParametersDTO,
+    launcher_config: Optional[LauncherConfigModel],
+    study_version: StudyVersion,
+) -> LauncherParametersDTO:
+    if not launcher_config:
+        return launcher_params
+
+    # Determine which optim to use based on study version and launcher parameters
+    if study_version >= STUDY_VERSION_6_5:
+        optim = 2 if launcher_params.xpansion_r_version else 1
+    else:
+        optim = 1 if launcher_params.xpansion_r_version else 2
+
+    # Apply linear solver parameters from the configuration if not already set in the parameters
+    if optim == 1 and launcher_config.linear_solver_param_optim_1:
+        if not launcher_params.other_options:
+            launcher_params.other_options = " ".join(
+                f"--{param[0]} {param[1]}" for param in launcher_config.linear_solver_param_optim_1
+            )
+    elif optim == 2 and launcher_config.linear_solver_param_optim_2:
+        if not launcher_params.other_options:
+            launcher_params.other_options = " ".join(
+                f"--{param[0]} {param[1]}" for param in launcher_config.linear_solver_param_optim_2
+            )
+
+    # Always apply general linear solver parameters if not already set in the parameters
+    if launcher_config.linear_solver_param:
+        if not launcher_params.other_options:
+            launcher_params.other_options = " ".join(
+                f"--{param[0]} {param[1]}" for param in launcher_config.linear_solver_param
+            )
+        else:
+            # Append general parameters to existing options
+            additional_options = " ".join(f"--{param[0]} {param[1]}" for param in launcher_config.linear_solver_param)
+            if additional_options not in launcher_params.other_options:
+                launcher_params.other_options += " " + additional_options
+
+    return launcher_params
