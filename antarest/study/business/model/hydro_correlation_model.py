@@ -66,3 +66,10 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
             raise ValueError("correlation matrix is not symmetric")
 
         return self
+
+    @staticmethod
+    def from_hydro_correlations(correlations: dict[str, HydroCorrelation]) -> "HydroCorrelationMatrix":
+        raise NotImplementedError()
+
+    def to_hydro_correlations(self) -> dict[str, HydroCorrelation]:
+        raise NotImplementedError()

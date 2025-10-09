@@ -226,7 +226,7 @@ class TestCorrelationManager:
             Area(id="w", name="West"),
         ]
         area_id = "s"  # South
-        fields = correlation_manager.get_correlation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
+        fields = correlation_manager.get_correlation_for_area(all_areas=all_areas, study=study, area_id=area_id)
         assert fields == CorrelationFormFields(
             correlation=[
                 AreaCoefficientItem(area_id="s", coefficient=100.0),
