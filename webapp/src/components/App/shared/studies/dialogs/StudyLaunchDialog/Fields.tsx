@@ -130,15 +130,34 @@ function Fields() {
     updateOtherOptions({ xpress: event.target.checked });
   };
 
+  const handleXpansionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.checked) {
+      setValues({
+        adequacyCriterions: false,
+        sensitivityMode: false,
+        output: "",
+      });
+    }
+  };
+
   const handleAdequacyCriterionsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked && getValues("sensitivityMode")) {
-      setValue("sensitivityMode", false);
+      setValues({
+        sensitivityMode: false,
+        output: "",
+      });
     }
   };
 
   const handleSensitivityModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked && getValues("adequacyCriterions")) {
+    const isChecked = event.target.checked;
+
+    if (isChecked && getValues("adequacyCriterions")) {
       setValue("adequacyCriterions", false);
+    }
+
+    if (!isChecked && getValues("output")) {
+      setValue("output", "");
     }
   };
 
@@ -200,7 +219,7 @@ function Fields() {
         legend={
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {t("launcher.legend.xpansion")}
-            <SwitchFE name="xpansion" control={control} />
+            <SwitchFE name="xpansion" control={control} onChange={handleXpansionChange} />
           </Box>
         }
       >
