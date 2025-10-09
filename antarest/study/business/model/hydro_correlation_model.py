@@ -20,7 +20,7 @@ from antarest.core.serde.np_array import NpArray
 
 class HydroCorrelationArea(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     area_id: str
-    coefficient: float = Field(allow_inf_nan=False, gt=-100, lt=100)
+    coefficient: float = Field(allow_inf_nan=False, ge=-100, le=100)
 
 
 class HydroCorrelation(AntaresBaseModel, extra="forbid", populate_by_name=True):
@@ -86,8 +86,7 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
             for correlation in corr.correlation:
                 i = area_ids.index(area_id)
                 j = area_ids.index(correlation.area_id)
-                array[i][j] = correlation.coefficient
-                array[j][i] = correlation.coefficient
+                array[i][j] = array[j][i] = correlation.coefficient / 100
 
         return HydroCorrelationMatrix.model_validate({"index": area_ids, "columns": area_ids, "data": array})
 
@@ -95,7 +94,7 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
         correlations_dict = {}
         for k, area_id in enumerate(self.index):
             correlations = [
-                HydroCorrelationArea(area_id=self.index[m], coefficient=n) for m, n in enumerate(self.data[k])
+                HydroCorrelationArea(area_id=self.index[m], coefficient=n * 100) for m, n in enumerate(self.data[k])
             ]
             correlations_dict[area_id] = HydroCorrelation(correlation=correlations)
         return correlations_dict
