@@ -55,7 +55,7 @@ if TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
-NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("9.2")
+NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("9.3")
 STUDY_VERSION_6_5 = StudyVersion.parse("6.5")
 STUDY_VERSION_7_0 = StudyVersion.parse("7.0")
 STUDY_VERSION_7_1 = StudyVersion.parse("7.1")
@@ -71,8 +71,8 @@ STUDY_VERSION_8_7 = StudyVersion.parse("8.7")
 STUDY_VERSION_8_8 = StudyVersion.parse("8.8")
 STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
-STUDY_VERSION_9_2 = NEW_DEFAULT_STUDY_VERSION
-STUDY_VERSION_9_3 = StudyVersion.parse("9.3")
+STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
+STUDY_VERSION_9_3 = NEW_DEFAULT_STUDY_VERSION
 
 StudyVersionStr: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
 StudyVersionInt: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
