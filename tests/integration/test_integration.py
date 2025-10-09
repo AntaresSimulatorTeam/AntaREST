@@ -2020,6 +2020,17 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     assert res_area_delete["editor"] == "creator_2"
     # END DELETING AREA
 
+    # START COPY STUDY
+    copied = client.post(
+        f"/v1/studies/{study_id}/copy?study_name=copied&use_task=false",
+        headers=header_bots,
+    )
+    assert copied.status_code == 201
+    res_copy = client.get(f"/v1/studies/{copied.json()}/").json()
+    assert res_copy["author"] == "creator_2"
+    assert res_copy["editor"] == "admin"
+    # END DELETING AREA
+
 
 def test_update_variant_with_editor(client: TestClient, admin_access_token: str):
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
@@ -2153,3 +2164,14 @@ def test_update_variant_with_editor(client: TestClient, admin_access_token: str)
     res_delete_area = client.get(f"/v1/studies/{study_variant}/").json()
     assert res_delete_area["author"] == "admin"
     assert res_delete_area["editor"] == "creator_2"
+
+    # START COPY STUDY
+    copied = client.post(
+        f"/v1/studies/{study_id}/copy?study_name=copied&use_task=false",
+        headers=header_bots,
+    )
+    assert copied.status_code == 201
+    res_copy = client.get(f"/v1/studies/{copied.json()}/").json()
+    assert res_copy["author"] == "admin"
+    assert res_copy["editor"] == "admin"
+    # END DELETING AREA
