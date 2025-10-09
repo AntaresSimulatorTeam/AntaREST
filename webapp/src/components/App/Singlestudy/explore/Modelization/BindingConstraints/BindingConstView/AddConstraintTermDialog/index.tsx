@@ -12,20 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import type { AxiosError } from "axios";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
 import type { UseFieldArrayAppend } from "react-hook-form";
-import FormDialog, { type FormDialogProps } from "../../../../../../../common/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { isLinkTerm, type BindingConstraint, type ConstraintTerm } from "../utils";
-import AddConstraintTermForm from "./AddConstraintTermForm";
-import { createConstraintTerm } from "../../../../../../../../services/api/studydata";
-import type { AllClustersAndLinks } from "../../../../../../../../types/types";
 import useStudySynthesis from "../../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
+import type { AllClustersAndLinks } from "../../../../../../../../types/types";
+import FormDialog, { type FormDialogProps } from "../../../../../../../common/dialogs/FormDialog";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
+import { type BindingConstraint, type ConstraintTerm, isLinkTerm } from "../utils";
+import AddConstraintTermForm from "./AddConstraintTermForm";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;
@@ -82,10 +77,7 @@ function AddConstraintTermDialog({
   append,
   ...dialogProps
 }: Props) {
-  const [t] = useTranslation();
   const { onCancel } = dialogProps;
-  const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const linksAndClusters = useStudySynthesis({
     studyId,
@@ -96,48 +88,18 @@ function AddConstraintTermDialog({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  /**
-   * @deprecated Due to the challenges and limitations associated with dynamically determining term types
-   * and constructing term data based on runtime checks, this method is deprecated. Future implementations
-   * should consider using separate and explicit handling for different term types to enhance type safety,
-   * reduce complexity, and improve code maintainability.
-   *
-   * Potential future optimizations include adopting separate forms for link and cluster terms, leveraging
-   * TypeScript's type system more effectively, and implementing robust form validation.
-   *
-   * @param root0 - The first parameter object containing all form values.
-   * @param root0.values - The structured data of the form, including details about the term being submitted.
-   * It includes both link and cluster term fields due to the unified form design.
-   * @param _event - The event object for the form submission. May not be
-   * used explicitly in the function but is included to match the expected handler signature.
-   *
-   * @returns A promise that resolves when the term has been successfully submitted
-   * and processed or rejects in case of an error.
-   */
-  const handleSubmit = async (
-    { values }: SubmitHandlerPlus<ConstraintTerm>,
-    _event?: React.BaseSyntheticEvent,
-  ) => {
-    try {
-      const newTerm = {
-        ...values,
-        data: isLinkTerm(values.data)
-          ? { area1: values.data.area1, area2: values.data.area2 }
-          : { area: values.data.area, cluster: values.data.cluster },
-      };
+  const handleSubmit = ({ values }: SubmitHandlerPlus) => {
+    const newTerm: ConstraintTerm = {
+      id: values.id,
+      weight: values.weight,
+      offset: values.offset,
+      data: isLinkTerm(values.data)
+        ? { area1: values.data.area1, area2: values.data.area2 }
+        : { area: values.data.area, cluster: values.data.cluster },
+    };
 
-      await createConstraintTerm(studyId, constraintId, newTerm);
-
-      append(newTerm);
-
-      enqueueSnackbar(t("study.success.createConstraintTerm"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("study.error.createConstraintTerm"), e as AxiosError);
-    } finally {
-      onCancel();
-    }
+    append(newTerm);
+    onCancel();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -145,13 +107,7 @@ function AddConstraintTermDialog({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <FormDialog
-      maxWidth="lg"
-      config={{ defaultValues }}
-      // @ts-expect-error // TODO fix
-      onSubmit={handleSubmit}
-      {...dialogProps}
-    >
+    <FormDialog maxWidth="lg" config={{ defaultValues }} onSubmit={handleSubmit} {...dialogProps}>
       <UsePromiseCond
         response={linksAndClusters}
         ifFulfilled={(data) => (

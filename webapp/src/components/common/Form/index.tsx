@@ -314,6 +314,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    event.stopPropagation(); // Prevent bubbling to parent forms
     requestSubmit();
   };
 
