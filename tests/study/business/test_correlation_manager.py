@@ -17,13 +17,13 @@ import pytest
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.correlation_management import (
-    AreaCoefficientItem,
-    CorrelationFormFields,
-    CorrelationManager,
-    CorrelationMatrix,
-)
+from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.hydro_correlation_model import (
+    HydroCorrelation,
+    HydroCorrelationArea,
+    HydroCorrelationMatrix,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -40,42 +40,42 @@ def correlation_manager(command_context: CommandContext) -> CorrelationManager:
 
 class TestCorrelationField:
     def test_init__nominal_case(self):
-        field = AreaCoefficientItem(area_id="NORTH", coefficient=100)
+        field = HydroCorrelationArea(area_id="NORTH", coefficient=100)
         assert field.area_id == "NORTH"
         assert field.coefficient == 100
 
     def test_init__camel_case_args(self):
-        field = AreaCoefficientItem(area_id="NORTH", coefficient=100)
+        field = HydroCorrelationArea(area_id="NORTH", coefficient=100)
         assert field.area_id == "NORTH"
         assert field.coefficient == 100
 
 
-class TestCorrelationFormFields:
+class TestHydroCorrelation:
     def test_init__nominal_case(self):
-        fields = CorrelationFormFields(
+        fields = HydroCorrelation(
             correlation=[
-                AreaCoefficientItem(area_id="NORTH", coefficient=75),
-                AreaCoefficientItem(area_id="SOUTH", coefficient=25),
+                HydroCorrelationArea(area_id="NORTH", coefficient=75),
+                HydroCorrelationArea(area_id="SOUTH", coefficient=25),
             ]
         )
         assert fields.correlation == [
-            AreaCoefficientItem(area_id="NORTH", coefficient=75),
-            AreaCoefficientItem(area_id="SOUTH", coefficient=25),
+            HydroCorrelationArea(area_id="NORTH", coefficient=75),
+            HydroCorrelationArea(area_id="SOUTH", coefficient=25),
         ]
 
     def test_validation__coefficients_not_empty(self):
         """correlation must not be empty"""
         with pytest.raises(ValueError, match="must not be empty"):
-            CorrelationFormFields(correlation=[])
+            HydroCorrelation(correlation=[])
 
     def test_validation__coefficients_no_duplicates(self):
         """correlation must not contain duplicate area IDs:"""
         with pytest.raises(ValueError, match="duplicate area IDs") as ctx:
-            CorrelationFormFields(
+            HydroCorrelation(
                 correlation=[
-                    AreaCoefficientItem(area_id="NORTH", coefficient=50),
-                    AreaCoefficientItem(area_id="NORTH", coefficient=25),
-                    AreaCoefficientItem(area_id="SOUTH", coefficient=25),
+                    HydroCorrelationArea(area_id="NORTH", coefficient=50),
+                    HydroCorrelationArea(area_id="NORTH", coefficient=25),
+                    HydroCorrelationArea(area_id="SOUTH", coefficient=25),
                 ]
             )
         assert "NORTH" in str(ctx.value)  # duplicates
@@ -84,16 +84,16 @@ class TestCorrelationFormFields:
     def test_validation__coefficients_invalid_values(self, coefficient):
         """coefficients must be between -100 and 100"""
         with pytest.raises(ValueError, match="between -100 and 100|must not contain NaN"):
-            CorrelationFormFields(
+            HydroCorrelation(
                 correlation=[
-                    AreaCoefficientItem(area_id="NORTH", coefficient=coefficient),
+                    HydroCorrelationArea(area_id="NORTH", coefficient=coefficient),
                 ]
             )
 
 
 class TestCorrelationMatrix:
     def test_init__nominal_case(self):
-        field = CorrelationMatrix(
+        field = HydroCorrelationMatrix(
             index=["fr", "de"],
             columns=["fr"],
             data=[
@@ -112,7 +112,7 @@ class TestCorrelationMatrix:
         """Check that the coefficients matrix is a non-empty array"""
 
         with pytest.raises(ValueError, match="must not be empty"):
-            CorrelationMatrix(
+            HydroCorrelationMatrix(
                 index=[],
                 columns=[],
                 data=[],
@@ -121,7 +121,7 @@ class TestCorrelationMatrix:
     def test_validation__coefficients_array_shape(self):
         """Check that the coefficients matrix is an array of shape 2×1"""
         with pytest.raises(ValueError, match=r"must have shape \(\d+×\d+\)"):
-            CorrelationMatrix(
+            HydroCorrelationMatrix(
                 index=["fr", "de"],
                 columns=["fr"],
                 data=[[1, 2], [3, 4]],
@@ -132,7 +132,7 @@ class TestCorrelationMatrix:
         """Check that all coefficients matrix has positive or nul coefficients"""
 
         with pytest.raises(ValueError, match="between -1 and 1|must not contain NaN"):
-            CorrelationMatrix(
+            HydroCorrelationMatrix(
                 index=["fr", "de"],
                 columns=["fr", "de"],
                 data=[
@@ -144,7 +144,7 @@ class TestCorrelationMatrix:
     def test_validation__matrix_not_symmetric(self):
         """Check that the correlation matrix is not symmetric"""
         with pytest.raises(ValueError, match=r"not symmetric"):
-            CorrelationMatrix(
+            HydroCorrelationMatrix(
                 index=["fr", "de"],
                 columns=["fr", "de"],
                 data=[[0.1, 0.2], [0.3, 0.4]],
@@ -195,7 +195,7 @@ class TestCorrelationManager:
         matrix = correlation_manager.get_correlation_matrix(all_areas=all_areas, study=study, columns=[])
 
         # Check
-        assert matrix == CorrelationMatrix(
+        assert matrix == HydroCorrelationMatrix(
             index=["n", "e", "s", "w"],
             columns=["n", "e", "s", "w"],
             data=[
@@ -227,10 +227,10 @@ class TestCorrelationManager:
         ]
         area_id = "s"  # South
         fields = correlation_manager.get_correlation_for_area(all_areas=all_areas, study=study, area_id=area_id)
-        assert fields == CorrelationFormFields(
+        assert fields == HydroCorrelation(
             correlation=[
-                AreaCoefficientItem(area_id="s", coefficient=100.0),
-                AreaCoefficientItem(area_id="n", coefficient=20.0),
+                HydroCorrelationArea(area_id="s", coefficient=100.0),
+                HydroCorrelationArea(area_id="n", coefficient=20.0),
             ]
         )
 
@@ -257,11 +257,11 @@ class TestCorrelationManager:
             all_areas=all_areas,
             study=study,
             area_id=area_id,
-            data=CorrelationFormFields(
+            data=HydroCorrelation(
                 correlation=[
-                    AreaCoefficientItem(area_id="s", coefficient=100),
-                    AreaCoefficientItem(area_id="e", coefficient=30),
-                    AreaCoefficientItem(area_id="n", coefficient=40),
+                    HydroCorrelationArea(area_id="s", coefficient=100),
+                    HydroCorrelationArea(area_id="e", coefficient=30),
+                    HydroCorrelationArea(area_id="n", coefficient=40),
                 ]
             ),
         )
@@ -301,9 +301,9 @@ class TestCorrelationManager:
                 all_areas=all_areas,
                 study=study,
                 area_id=area_id,
-                data=CorrelationFormFields(
+                data=HydroCorrelation(
                     correlation=[
-                        AreaCoefficientItem(area_id="UNKNOWN", coefficient=3.14),
+                        HydroCorrelationArea(area_id="UNKNOWN", coefficient=3.14),
                     ]
                 ),
             )
