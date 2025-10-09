@@ -34,20 +34,6 @@ class CorrelationManager:
         return study.get_study_dao().get_hydro_correlation(area_id)
 
     def set_correlation_for_area(self, study: StudyInterface, area_id: str, data: HydroCorrelation) -> HydroCorrelation:
-        """
-        Set the correlation coefficients of a given area from the form fields (percentage values).
-
-        Args:
-            study: study to set the correlation coefficients to.
-            area_id: area to set the correlation coefficients to.
-            data: correlation coefficients to set.
-
-        Raises:
-            AreaNotFound: if the area is not found or invalid.
-
-        Returns:
-            The updated correlation coefficients.
-        """
         command = ReplaceHydroCorrelation(
             command_context=self._command_context, study_version=study.version, correlation={area_id: data}
         )
@@ -58,16 +44,6 @@ class CorrelationManager:
         return HydroCorrelationMatrix.from_hydro_correlations(study.get_study_dao().get_hydro_correlation_matrix())
 
     def set_correlation_matrix(self, study: StudyInterface, matrix: HydroCorrelationMatrix) -> HydroCorrelationMatrix:
-        """
-        Set the correlation coefficients from the coefficient matrix (values in the range -1 to 1).
-
-        Args:
-            study: study to get the correlation matrix from.
-            matrix: correlation matrix to update
-
-        Returns:
-            The updated correlation matrix.
-        """
         correlation = matrix.to_hydro_correlations()
         command = ReplaceHydroCorrelation(
             command_context=self._command_context, study_version=study.version, correlation=correlation
