@@ -98,7 +98,7 @@ function Fields() {
     { sensitivityMode }: FormValues,
   ) => {
     if (value && sensitivityMode) {
-      return "'Reliability criterion' and 'Sensitivity mode' cannot be both enabled.";
+      return t("launcher.field.adequacyCriterions.error");
     }
     return true;
   };
