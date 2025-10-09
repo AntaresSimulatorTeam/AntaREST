@@ -56,3 +56,14 @@ export interface LaunchStudyParams {
   version: StudyMetadata["version"];
   config?: LauncherConfig;
 }
+
+export interface LaunchStudyParams {
+  studyId: StudyMetadata["id"];
+  launcherId: Launcher["id"];
+  version: StudyMetadata["version"];
+  config?: LauncherConfig;
+}
+
+export interface JobCreationDTO {
+  job_id: string;
+}
