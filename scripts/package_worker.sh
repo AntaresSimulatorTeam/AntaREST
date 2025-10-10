@@ -13,5 +13,3 @@ echo "INFO: Generating the Worker Application..."
 pushd ${PROJECT_DIR}
 pyinstaller --distpath ${DIST_DIR} AntaresWebWorker.spec
 popd
-
-chmod +x "${DIST_DIR}/AntaresWebWorker"

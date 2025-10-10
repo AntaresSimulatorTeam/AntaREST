@@ -93,7 +93,12 @@ class LauncherArgs(argparse.Namespace):
         self.other_options = f"{self.other_options} {option}" if self.other_options else option
 
     def apply_xpansion_mode(self, launcher_params: LauncherParametersDTO) -> None:
-        if launcher_params.xpansion:  # not None and not False
+        if isinstance(launcher_params.xpansion, XpansionParametersDTO):
+            should_run_xpansion = launcher_params.xpansion.enabled
+        else:
+            should_run_xpansion = launcher_params.xpansion is True
+
+        if should_run_xpansion:
             self.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
             if isinstance(launcher_params.xpansion, XpansionParametersDTO):
                 if launcher_params.xpansion.sensitivity_mode:

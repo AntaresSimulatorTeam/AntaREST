@@ -74,7 +74,3 @@ def run_archive_worker(args: ArgsType = None) -> None:
     worker = create_archive_worker(config, workspace, Path(local_root))
     worker.start(threaded=False)
     logger.info("Archive Worker task is done, bye.")
-
-
-if __name__ == "__main__":
-    run_archive_worker()

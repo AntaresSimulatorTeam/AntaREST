@@ -45,6 +45,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
+from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.service_creator import SESSION_ARGS
 from antarest.study.repository import StudyMetadataRepository
@@ -521,10 +522,13 @@ nominalcapacity = 14.0
     variant_study_service.command_factory = command_factory
     config = Mock(spec=Config)
 
+    user_service = Mock(spec=LoginService)
+    user_service.get_identity.return_value = regular_user
     study_service = build_study_service(
         raw_study_service,
         study_metadata_repository,
         config,
+        user_service=user_service,
         task_service=task_job_service,
         event_bus=event_bus,
         variant_study_service=variant_study_service,
