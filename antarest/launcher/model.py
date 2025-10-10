@@ -28,7 +28,7 @@ from antarest.core.serde.json import from_json
 from antarest.login.model import Identity, UserInfo
 
 
-class XpansionParametersDTO(AntaresBaseModel):
+class XpansionParametersDTO(AntaresBaseModel, extra="forbid"):
     output_id: Optional[str] = None
     sensitivity_mode: bool = False
     enabled: bool = True
@@ -41,7 +41,7 @@ class XpansionParametersDTO(AntaresBaseModel):
         return self
 
 
-class LauncherParametersDTO(AntaresBaseModel):
+class LauncherParametersDTO(AntaresBaseModel, extra="forbid"):
     # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added

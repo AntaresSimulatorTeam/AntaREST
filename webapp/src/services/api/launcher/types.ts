@@ -19,7 +19,7 @@ export interface XpansionParamsDTO {
   enabled?: boolean;
   sensitivity_mode?: boolean;
   output_id?: string;
-  adequacy_criterions?: boolean;
+  adequacy_criterion?: boolean;
 }
 
 export interface LauncherParamsDTO {
