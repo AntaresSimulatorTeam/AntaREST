@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -878,16 +878,20 @@ class InMemoryStudyDao(StudyDao):
         return self._area_ui.get(area_id, AreaUI())
 
     @override
-    def save_area(self, area_name: str) -> None:
+    def save_area(self, area_name: str, command_context: Any) -> None:
+        # For in-memory DAO, simplified implementation for testing
         area_id = transform_name_to_id(area_name)
         if area_id in self._area_names:
             raise ValueError(f"Area '{area_name}' already exists and could not be created")
         self._area_names.append(area_id)
 
+        # Initialize default UI for the new area
         self._area_ui[area_id] = AreaUI()
 
     @override
     def delete_area(self, area_id: str) -> None:
+        # For in-memory DAO, simplified implementation for testing
+
         if area_id not in self._area_names:
             raise AreaNotFound(area_id)
 
