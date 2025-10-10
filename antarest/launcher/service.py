@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, cast
 from uuid import UUID, uuid4
 
-from antares.study.version import SolverVersion
+from antares.study.version import SolverVersion, StudyVersion
 from fastapi import HTTPException
 
 from antarest.core.config import Config, InvalidConfigurationError
@@ -53,7 +53,9 @@ from antarest.launcher.model import (
     LauncherResourceRangeDTO,
     LogType,
     XpansionParametersDTO,
+    apply_launcher_config_to_params,
     apply_update_launcher_config,
+    is_launcher_config_compatible,
 )
 from antarest.launcher.repository import JobResultRepository, LauncherConfigRepository
 from antarest.login.service import LoginService
@@ -70,6 +72,11 @@ logger = logging.getLogger(__name__)
 class JobNotFound(HTTPException):
     def __init__(self) -> None:
         super(JobNotFound, self).__init__(HTTPStatus.NOT_FOUND)
+
+
+class IncompatibleLauncherConfig(HTTPException):
+    def __init__(self) -> None:
+        super(IncompatibleLauncherConfig, self).__init__(HTTPStatus.BAD_REQUEST)
 
 
 class LauncherServiceNotAvailableException(HTTPException):
@@ -247,6 +254,14 @@ class LauncherService:
         launcher_configuration_id: Optional[str] = None,
         study_version: Optional[str] = None,
     ) -> str:
+        if launcher_configuration_id is not None:
+            launcher_config = self.get_launcher_config(launcher_configuration_id)
+            if not is_launcher_config_compatible(launcher_config, StudyVersion.parse(study_version)):
+                raise IncompatibleLauncherConfig()
+            launcher_params = apply_launcher_config_to_params(
+                launcher_parameters, launcher_config, StudyVersion.parse(study_version)
+            )
+
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid)
@@ -265,12 +280,12 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
-            launcher_params=launcher_parameters.model_dump_json() if launcher_parameters else None,
+            launcher_params=launcher_params.model_dump_json() if launcher_params else None,
             owner_id=(owner_id or None),
         )
         self.job_result_repository.save(job_status)
 
-        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters)
+        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_params)
 
         self.event_bus.push(
             Event(

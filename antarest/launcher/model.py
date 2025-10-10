@@ -28,7 +28,6 @@ from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.login.model import Identity, UserInfo
-from antarest.study.model import STUDY_VERSION_6_5
 
 SolverParams = List[Tuple[str, str]]
 
@@ -471,17 +470,14 @@ def apply_update_launcher_config(
 
 def apply_launcher_config_to_params(
     launcher_params: LauncherParametersDTO,
-    launcher_config: Optional[LauncherConfigModel],
+    launcher_config: Optional[LauncherConfigDTO],
     study_version: StudyVersion,
 ) -> LauncherParametersDTO:
     if not launcher_config:
         return launcher_params
 
     # Determine which optim to use based on study version and launcher parameters
-    if study_version >= STUDY_VERSION_6_5:
-        optim = 2 if launcher_params.xpansion_r_version else 1
-    else:
-        optim = 1 if launcher_params.xpansion_r_version else 2
+    optim = 2 if launcher_params.xpansion_r_version else 1
 
     # Apply linear solver parameters from the configuration if not already set in the parameters
     if optim == 1 and launcher_config.linear_solver_param_optim_1:
@@ -508,3 +504,25 @@ def apply_launcher_config_to_params(
                 launcher_params.other_options += " " + additional_options
 
     return launcher_params
+
+
+def is_launcher_config_compatible(
+    launcher_config: LauncherConfigDTO,
+    study_version: StudyVersion,
+) -> bool:
+    """
+    Check if the given launcher configuration is compatible with the specified Antares study version.
+
+    :param launcher_config: The launcher configuration to check.
+    :param study_version: The Antares study version to check against.
+    :return: True if the configuration is compatible, False otherwise.
+    """
+    if launcher_config.min_antares_version:
+        if study_version < launcher_config.min_antares_version:
+            return False
+
+    if launcher_config.max_antares_version:
+        if study_version > launcher_config.max_antares_version:
+            return False
+
+    return True
