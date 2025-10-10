@@ -10,16 +10,8 @@
 #
 # This file is part of the Antares project.
 
+
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
-import collections
-from typing import Dict, List, Sequence, Union
-
-import numpy as np
-from pydantic import ValidationInfo, field_validator
-
-from antarest.core.exceptions import AreaNotFound
-from antarest.core.serde.np_array import NpArray
-from antarest.study.business.model.area_model import AreaInfo
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
 from antarest.study.storage.variantstudy.model.command_context import CommandContext

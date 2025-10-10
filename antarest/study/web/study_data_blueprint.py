@@ -36,13 +36,7 @@ from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import ConstraintFilters
-from antarest.study.business.correlation_management import (
-    AreaCoefficientItem,
-    CorrelationFormFields,
-    CorrelationMatrix,
-)
 from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaType, AreaUIUpdate
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
