@@ -61,13 +61,16 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
 
     @model_validator(mode="after")
     def check_model(self) -> "HydroCorrelationMatrix":
+        return self._validate_model()
+
+    def _validate_model(self) -> "HydroCorrelationMatrix":
         if self.data.size == 0:
             raise ValueError("correlation matrix must not be empty")
 
         if self.index != self.columns:
             raise ValueError("correlation matrix must have the same rows and columns")
 
-        if np.any((self.data < -1) | np.any(self.data > 1)):
+        if np.any((self.data < -1) | (self.data > 1)):
             raise ValueError("coefficients must be between -1 and 1")
 
         if np.any(np.isnan(self.data)):
@@ -80,7 +83,7 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
         if not np.array_equal(self.data, self.data.T):
             raise ValueError("correlation matrix is not symmetric")
 
-        if np.any(np.diag(self.data) != 1):
+        if not np.allclose(np.diag(self.data), 1.0):
             raise ValueError("correlation diagonal should be filled with 1")
 
         return self
@@ -111,8 +114,8 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
             if other_index not in modified_indexes:
                 self.data[index][other_index] = self.data[other_index][index] = 0
 
-        # Round trip to validate the data
-        HydroCorrelationMatrix.from_hydro_correlations(self.to_hydro_correlations())
+        # Validate the data we modified
+        self._validate_model()
 
     def to_hydro_correlations(self) -> dict[str, HydroCorrelation]:
         correlations_dict = {}
