@@ -10,20 +10,13 @@
 #
 # This file is part of the Antares project.
 
-"""
-Antares Web
+import multiprocessing
 
-This module contains the project metadata.
-"""
+if __name__ == "__main__":
+    # Freeze support needed for pyinstaller. Important to run it before other imports,
+    # because some of them call multiprocessing functions.
+    multiprocessing.freeze_support()
 
-from pathlib import Path
+    from antarest.worker.archive_worker_service import run_archive_worker
 
-# Standard project metadata
-
-__version__ = "2.25.0"
-__author__ = "RTE, Antares Web Team"
-__date__ = "2025-10-14"
-# noinspection SpellCheckingInspection
-__credits__ = "(c) Réseau de Transport de l’Électricité (RTE)"
-
-ROOT_DIR: Path = Path(__file__).resolve().parent
+    run_archive_worker()

@@ -28,6 +28,7 @@ from antarest.login.utils import current_user_context
 from antarest.study.model import StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -312,3 +313,76 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             variant_study_service.get_commands(variant_study.id)  # execute database query
         assert nb_queries == 2  # Ensure only two queries were made (one for study, one for user)
+
+    @with_admin_user
+    @pytest.mark.parametrize("root_study_id", [False], indirect=True)
+    @with_db_context
+    def test_update_editor(
+        self,
+        jwt_user: JWTUser,
+        variant_study_service: VariantStudyService,
+        root_study_id: str,
+    ):
+        """
+        Test two different users, one that is the author and the other that is an editor on one study of the service
+        Set up:
+            Retrieve the user that will be the owner of the study and variant
+            Create a second user that will be the editor
+            Create a variant study
+
+        Tests:
+        """
+        admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
+        test_user_editor = User(id=2, name="jane.editor", type="users")
+        jwt_user_editor = JWTUser(
+            id=test_user_editor.id, impersonator=test_user_editor.id, type="users", groups=[admin_group]
+        )
+        db.session.add(test_user_editor)
+        db.session.commit()
+
+        with current_user_context(jwt_user):
+            variant_study = variant_study_service.create_variant_study(root_study_id, "new_variant_1")
+        study_version = StudyVersion.parse(variant_study.version)
+        saved_id = variant_study.id
+        study = variant_study_service.repository.get(saved_id)
+        assert study is not None
+        assert study.id == saved_id
+        assert study.parent_id == root_study_id
+        assert study.additional_data.author == "john.doe"
+        assert study.additional_data.editor == "john.doe"  # editor is the user who created the study
+
+        # creating area by the author, making him the editor of the study
+        command_1 = CommandDTO(action="create_area", args={"area_name": "area_be"}, study_version=study_version)
+        command_2 = CommandDTO(action="create_area", args={"area_name": "area_fr"}, study_version=study_version)
+
+        with current_user_context(jwt_user):
+            variant_study_service.append_commands(variant_study.id, [command_1, command_2])
+
+        study = variant_study_service.repository.get(saved_id)
+        assert study.additional_data.author == "john.doe"
+        assert study.additional_data.editor == "john.doe"
+        # end creating area
+
+        # creating a link between two areas with another user, making him the editor
+        command_3 = CommandDTO(
+            action="create_link", args={"area1": "area_be", "area2": "area_fr"}, study_version=study_version
+        )
+
+        with current_user_context(jwt_user_editor):
+            variant_study_service.append_command(variant_study.id, command_3)
+
+        study_db = db.session.get(VariantStudy, variant_study.id)
+        assert study_db.additional_data.author == "john.doe"
+        assert study_db.additional_data.editor == "jane.editor"
+        # end creating link
+
+        # deleting an area with the author, making him the editor, again
+        command_4 = CommandDTO(action="remove_area", args={"id": "area_fr"}, study_version=study_version)
+
+        with current_user_context(jwt_user):
+            variant_study_service.append_command(variant_study.id, command_4)
+
+        study_db = db.session.get(VariantStudy, variant_study.id)
+        assert study_db.additional_data.author == "john.doe"
+        assert study_db.additional_data.editor == "john.doe"
+        # end deleting area
