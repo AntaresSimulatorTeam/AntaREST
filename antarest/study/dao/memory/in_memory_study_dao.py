@@ -351,8 +351,8 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_allocation[area_id] = allocation
 
     @override
-    def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
-        self._hydro_correlation = correlation.to_hydro_correlations()
+    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+        self._hydro_correlation[area_id] = correlation
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:

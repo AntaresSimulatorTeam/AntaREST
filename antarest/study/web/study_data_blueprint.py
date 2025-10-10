@@ -1185,43 +1185,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.get_correlation_matrix(study_interface)
 
-    @bp.put(
-        path="/studies/{uuid}/areas/hydro/correlation/matrix",
-        tags=[APITag.study_data],
-        summary="Set the hydraulic/load/solar/wind correlation matrix of a study",
-        status_code=HTTPStatus.OK,
-    )
-    def set_correlation_matrix(
-        uuid: str,
-        matrix: HydroCorrelationMatrix = Body(
-            ...,
-            example={
-                "columns": ["north", "east", "south", "west"],
-                "data": [
-                    [0.0, 0.0, 0.25, 0.0],
-                    [0.0, 0.0, 0.75, 0.12],
-                    [0.25, 0.75, 0.0, 0.75],
-                    [0.0, 0.12, 0.75, 0.0],
-                ],
-                "index": ["north", "east", "south", "west"],
-            },
-        ),
-    ) -> HydroCorrelationMatrix:
-        """
-        Set the hydraulic/load/solar/wind correlation matrix of a study.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `index`: a list of all study areas.
-        - `columns`: a list of selected production areas.
-        - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
-
-        Returns the hydraulic/load/solar/wind correlation matrix updated
-        """
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.set_correlation_matrix(study_interface, matrix)
-
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
         tags=[APITag.study_data],

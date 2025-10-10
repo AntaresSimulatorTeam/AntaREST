@@ -98,7 +98,7 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
 
         return HydroCorrelationMatrix.model_validate({"index": area_ids, "columns": area_ids, "data": array})
 
-    def add_correlation(self, area_id: str, data: HydroCorrelation) -> dict[str, HydroCorrelation]:
+    def add_correlation(self, area_id: str, data: HydroCorrelation) -> "HydroCorrelationMatrix":
         correlation_dict = self.to_hydro_correlations()
         correlation_dict[area_id] = data
         for data_corr in data.correlation:
@@ -112,7 +112,7 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
             existing_correlation.correlation = new_list
 
         # Round trip to validate the data
-        return HydroCorrelationMatrix.from_hydro_correlations(correlation_dict).to_hydro_correlations()
+        return HydroCorrelationMatrix.from_hydro_correlations(correlation_dict)
 
     def to_hydro_correlations(self) -> dict[str, HydroCorrelation]:
         correlations_dict = {}

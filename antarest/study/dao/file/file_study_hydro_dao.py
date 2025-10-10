@@ -142,12 +142,14 @@ class FileStudyHydroDao(HydroDao):
         return HydroCorrelationMatrix(index=area_ids, columns=area_ids, data=array)
 
     @override
-    def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
+    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+        current_correlation_matrix = self.get_hydro_correlation_matrix()
+        new_correlation = current_correlation_matrix.add_correlation(area_id, correlation)
         file_study = self.get_file_study()
         all_areas = file_study.config.areas
         area_ids = sorted(all_areas)
         # Checks area existence
-        for area_id in correlation.index:
+        for area_id in new_correlation.index:
             if area_id not in all_areas:
                 raise AreaNotFound(area_id)
         # Save data inside the file
@@ -156,7 +158,7 @@ class FileStudyHydroDao(HydroDao):
         for i in range(count):
             # not saved: values from the diagonal are always == 1.0
             for j in range(i + 1, count):
-                coefficient = correlation.data[i][j]
+                coefficient = new_correlation.data[i][j]
                 if not coefficient:
                     # null values are not saved
                     continue

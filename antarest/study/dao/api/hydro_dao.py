@@ -65,5 +65,5 @@ class HydroDao(ReadOnlyHydroDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_correlation(self, correlation: HydroCorrelationMatrix) -> None:
+    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
         raise NotImplementedError()
