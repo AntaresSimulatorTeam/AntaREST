@@ -821,34 +821,26 @@ class ReferenceStudy(AntaresBaseModel):
 
 
 class DirectoryDTO(AntaresBaseModel):
-    """
-    DTO representing a directory with full details.
-
-    Used for API responses when retrieving directory information.
-    """
+    """DTO representing a directory with full details."""
 
     id: str
     name: str
-    parent_id: Optional[str] = Field(None, alias="parentId")
+    parent_id: Optional[str] = None
     owner: OwnerInfo
     groups: List[GroupDTO]
-    created_at: str = Field(alias="createdAt")
-    updated_at: str = Field(alias="updatedAt")
+    created_at: str
+    updated_at: str
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
 
 class DirectoryCreateDTO(AntaresBaseModel):
-    """
-    DTO for creating a new directory.
+    """DTO for creating a new directory."""
 
-    Used in POST /v1/directories requests.
-    """
+    name: str = Field(..., min_length=1, max_length=255)
+    parent_id: Optional[str] = None
 
-    name: str = Field(..., min_length=1, max_length=255, description="Directory name (non-qualified)")
-    parent_id: Optional[str] = Field(None, alias="parentId", description="Parent directory ID, or null for root")
-
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
     @field_validator("name")
     @classmethod
@@ -863,16 +855,12 @@ class DirectoryCreateDTO(AntaresBaseModel):
 
 
 class DirectoryUpdateDTO(AntaresBaseModel):
-    """
-    DTO for updating an existing directory.
+    """DTO for updating a directory."""
 
-    Used in PUT /v1/directories/{id} requests.
-    """
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    parent_id: Optional[str] = None
 
-    name: Optional[str] = Field(None, min_length=1, max_length=255, description="New directory name")
-    parent_id: Optional[str] = Field(None, alias="parentId", description="New parent directory ID")
-
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
     @field_validator("name")
     @classmethod

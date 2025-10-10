@@ -461,43 +461,19 @@ class StudyMetadataRepository:
 
 
 class DirectoryRepository:
-    """
-    Database repository to manage Directory entities with permission checks.
-    """
+    """Repository for directory operations."""
 
     def __init__(self, session: Optional[Session] = None):
-        """
-        Initialize the repository.
-
-        Args:
-            session: Optional SQLAlchemy session to be used.
-        """
         self._session = session
 
     @property
     def session(self) -> Session:
-        """
-        Get the SQLAlchemy session for the repository.
-
-        Returns:
-            SQLAlchemy session.
-        """
         if self._session is None:
-            # Get or create the session from a context variable (thread local variable)
             return db.session
-        # Get the user-defined session
         return self._session
 
     def save(self, directory: Directory) -> Directory:
-        """
-        Save or update a directory in the database.
-
-        Args:
-            directory: The directory to save.
-
-        Returns:
-            The saved directory.
-        """
+        """Save or update a directory."""
         session = self.session
         directory.groups = [session.merge(g) for g in directory.groups]
         if directory.owner:
@@ -508,15 +484,7 @@ class DirectoryRepository:
         return directory
 
     def get(self, directory_id: str) -> Optional[Directory]:
-        """
-        Get a directory by ID.
-
-        Args:
-            directory_id: The directory ID.
-
-        Returns:
-            The directory or None if not found.
-        """
+        """Get a directory by ID."""
         return (
             self.session.execute(
                 select(Directory)
@@ -530,18 +498,7 @@ class DirectoryRepository:
         )
 
     def one(self, directory_id: str) -> Directory:
-        """
-        Get a directory by ID or raise an exception.
-
-        Args:
-            directory_id: The directory ID.
-
-        Returns:
-            The directory.
-
-        Raises:
-            NoResultFound: If the directory is not found.
-        """
+        """Get a directory by ID or raise NoResultFound."""
         stmt = (
             select(Directory)
             .options(joinedload(Directory.owner))
@@ -555,15 +512,7 @@ class DirectoryRepository:
         return result
 
     def get_all(self, access_permissions: AccessPermissions = AccessPermissions()) -> Sequence[Directory]:
-        """
-        Get all directories the user has access to.
-
-        Args:
-            access_permissions: User permissions for filtering.
-
-        Returns:
-            List of directories the user can access.
-        """
+        """Get all directories the user has access to."""
         stmt = (
             select(Directory)
             .options(joinedload(Directory.owner))
@@ -571,9 +520,7 @@ class DirectoryRepository:
             .options(joinedload(Directory.parent))
         )
 
-        # Apply permission filtering
         if not access_permissions.is_admin and access_permissions.user_id is not None:
-            # User can see directories they own OR directories shared with their groups
             stmt = stmt.where(
                 or_(
                     Directory.owner_id == access_permissions.user_id,
@@ -581,35 +528,22 @@ class DirectoryRepository:
                 )
             )
         elif not access_permissions.is_admin and access_permissions.user_id is None:
-            # No user, return empty result
             stmt = stmt.where(sql.false())
 
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
     def delete(self, directory_id: str) -> None:
-        """
-        Delete a directory.
-
-        Args:
-            directory_id: The directory ID to delete.
-        """
+        """Delete a directory."""
         session = self.session
         stmt = delete(Directory).where(Directory.id == directory_id)
         session.execute(stmt)
         session.commit()
 
-    def get_children(self, directory_id: str, access_permissions: AccessPermissions = AccessPermissions()) -> Sequence[Directory]:
-        """
-        Get all direct child directories of a parent directory.
-
-        Args:
-            directory_id: The parent directory ID.
-            access_permissions: User permissions for filtering.
-
-        Returns:
-            List of child directories the user can access.
-        """
+    def get_children(
+        self, directory_id: str, access_permissions: AccessPermissions = AccessPermissions()
+    ) -> Sequence[Directory]:
+        """Get direct child directories of a parent."""
         stmt = (
             select(Directory)
             .options(joinedload(Directory.owner))
@@ -618,9 +552,7 @@ class DirectoryRepository:
             .where(Directory.parent_id == directory_id)
         )
 
-        # Apply permission filtering
         if not access_permissions.is_admin and access_permissions.user_id is not None:
-            # User can see directories they own OR directories shared with their groups
             stmt = stmt.where(
                 or_(
                     Directory.owner_id == access_permissions.user_id,
@@ -628,50 +560,25 @@ class DirectoryRepository:
                 )
             )
         elif not access_permissions.is_admin and access_permissions.user_id is None:
-            # No user, return empty result
             stmt = stmt.where(sql.false())
 
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
     def has_children_directories(self, directory_id: str) -> bool:
-        """
-        Check if a directory has child directories.
-
-        Args:
-            directory_id: The directory ID.
-
-        Returns:
-            True if the directory has children, False otherwise.
-        """
+        """Check if a directory has child directories."""
         stmt = select(exists(select(Directory).where(Directory.parent_id == directory_id)))
         result = self.session.scalar(stmt)
         return bool(result) if result is not None else False
 
     def has_studies(self, directory_id: str) -> bool:
-        """
-        Check if a directory contains studies.
-
-        Args:
-            directory_id: The directory ID.
-
-        Returns:
-            True if the directory contains studies, False otherwise.
-        """
+        """Check if a directory contains studies."""
         stmt = select(exists(select(Study).where(Study.directory_id == directory_id)))
         result = self.session.scalar(stmt)
         return bool(result) if result is not None else False
 
     def count_studies(self, directory_id: str) -> int:
-        """
-        Count the number of studies in a directory.
-
-        Args:
-            directory_id: The directory ID.
-
-        Returns:
-            Number of studies in the directory.
-        """
+        """Count studies in a directory."""
         stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
         result = self.session.scalar(stmt)
         return int(result) if result is not None else 0
@@ -679,33 +586,15 @@ class DirectoryRepository:
     def has_permission(
         self, directory: Directory, access_permissions: AccessPermissions, write_access: bool = False
     ) -> bool:
-        """
-        Check if the user has permission to access a directory.
-
-        Permissions are granted if:
-        - User is admin
-        - User is the owner
-        - User belongs to one of the directory's groups
-
-        Args:
-            directory: The directory to check.
-            access_permissions: User permissions.
-            write_access: If True, check write permissions (currently same as read).
-
-        Returns:
-            True if the user has permission, False otherwise.
-        """
+        """Check if user has permission to access a directory."""
         if access_permissions.is_admin:
             return True
 
         if access_permissions.user_id is None:
             return False
 
-        # Check if user is owner
         if directory.owner_id == access_permissions.user_id:
             return True
-
-        # Check if user belongs to one of the directory's groups
         directory_group_ids = {g.id for g in directory.groups}
         if any(group_id in directory_group_ids for group_id in access_permissions.user_groups):
             return True
@@ -713,49 +602,28 @@ class DirectoryRepository:
         return False
 
     def check_cycle(self, directory_id: str, new_parent_id: Optional[str]) -> bool:
-        """
-        Check if moving a directory to a new parent would create a cycle.
-
-        Args:
-            directory_id: The directory to move.
-            new_parent_id: The new parent directory ID.
-
-        Returns:
-            True if a cycle would be created, False otherwise.
-        """
+        """Check if moving a directory would create a cycle."""
         if new_parent_id is None:
             return False
 
         if directory_id == new_parent_id:
             return True
 
-        # Traverse up the parent chain to detect cycles
         current_id = new_parent_id
         visited = {directory_id}
 
         while current_id is not None:
             if current_id in visited:
-                return True  # Cycle detected
+                return True
             visited.add(current_id)
 
-            # Get the parent of the current directory
             stmt = select(Directory.parent_id).where(Directory.id == current_id)
             current_id = self.session.scalar(stmt)
 
         return False
 
     def has_duplicate_name(self, name: str, parent_id: Optional[str], exclude_id: Optional[str] = None) -> bool:
-        """
-        Check if a directory with the same name already exists under the same parent.
-
-        Args:
-            name: The directory name to check.
-            parent_id: The parent directory ID.
-            exclude_id: Optional directory ID to exclude from the check (for updates).
-
-        Returns:
-            True if a duplicate exists, False otherwise.
-        """
+        """Check if a directory with same name exists under same parent."""
         stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
 
         if exclude_id:
