@@ -19,7 +19,6 @@ from zipfile import ZipFile
 
 import py7zr
 import pytest
-from sqlalchemy import create_engine
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import (
@@ -31,8 +30,6 @@ from antarest.core.config import (
     WorkspaceConfig,
 )
 from antarest.core.tasks.service import ITaskService
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.dbmodel import Base
 from antarest.login.model import User
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
@@ -72,14 +69,6 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
 
 @pytest.fixture
 def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> StudyService:
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
     path_studies = tmp_path / "studies"
 
     path_resources = project_path / "resources"

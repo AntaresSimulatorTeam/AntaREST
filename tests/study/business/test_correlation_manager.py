@@ -17,13 +17,13 @@ import pytest
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.area_management import AreaInfoDTO, AreaType
 from antarest.study.business.correlation_management import (
     AreaCoefficientItem,
     CorrelationFormFields,
     CorrelationManager,
     CorrelationMatrix,
 )
+from antarest.study.business.model.area_model import Area
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -45,7 +45,7 @@ class TestCorrelationField:
         assert field.coefficient == 100
 
     def test_init__camel_case_args(self):
-        field = AreaCoefficientItem(areaId="NORTH", coefficient=100)
+        field = AreaCoefficientItem(area_id="NORTH", coefficient=100)
         assert field.area_id == "NORTH"
         assert field.coefficient == 100
 
@@ -54,8 +54,8 @@ class TestCorrelationFormFields:
     def test_init__nominal_case(self):
         fields = CorrelationFormFields(
             correlation=[
-                {"area_id": "NORTH", "coefficient": 75},
-                {"area_id": "SOUTH", "coefficient": 25},
+                AreaCoefficientItem(area_id="NORTH", coefficient=75),
+                AreaCoefficientItem(area_id="SOUTH", coefficient=25),
             ]
         )
         assert fields.correlation == [
@@ -73,9 +73,9 @@ class TestCorrelationFormFields:
         with pytest.raises(ValueError, match="duplicate area IDs") as ctx:
             CorrelationFormFields(
                 correlation=[
-                    {"area_id": "NORTH", "coefficient": 50},
-                    {"area_id": "NORTH", "coefficient": 25},
-                    {"area_id": "SOUTH", "coefficient": 25},
+                    AreaCoefficientItem(area_id="NORTH", coefficient=50),
+                    AreaCoefficientItem(area_id="NORTH", coefficient=25),
+                    AreaCoefficientItem(area_id="SOUTH", coefficient=25),
                 ]
             )
         assert "NORTH" in str(ctx.value)  # duplicates
@@ -86,7 +86,7 @@ class TestCorrelationFormFields:
         with pytest.raises(ValueError, match="between -100 and 100|must not contain NaN"):
             CorrelationFormFields(
                 correlation=[
-                    {"area_id": "NORTH", "coefficient": coefficient},
+                    AreaCoefficientItem(area_id="NORTH", coefficient=coefficient),
                 ]
             )
 
@@ -185,10 +185,10 @@ class TestCorrelationManager:
 
         # Given the following arguments
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
 
         # run
@@ -220,10 +220,10 @@ class TestCorrelationManager:
 
         # Given the following arguments
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
         area_id = "s"  # South
         fields = correlation_manager.get_correlation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
@@ -247,10 +247,10 @@ class TestCorrelationManager:
 
         # Given the following arguments
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
         area_id = "s"  # South
         correlation_manager.set_correlation_form_fields(
@@ -289,10 +289,10 @@ class TestCorrelationManager:
 
         # Given the following arguments
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
         area_id = "n"  # South
 

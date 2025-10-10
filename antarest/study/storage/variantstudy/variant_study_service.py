@@ -48,8 +48,7 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
-from antarest.login.model import Identity
-from antarest.login.utils import get_user_id, require_current_user
+from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     RawStudy,
@@ -117,18 +116,11 @@ class VariantStudyService(AbstractStorageService):
         self.generator = VariantCommandGenerator(self.study_factory)
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
-    @staticmethod
-    def _get_user_name_from_id(user_id: int) -> str:
-        """
-        Utility method that retrieves a user's name based on their id.
-        Args:
-            user_id: user id (user must exist)
-        Returns: String representing the user's name
-        """
-        user_obj: Identity | None = db.session.get(Identity, user_id)
-        if user_obj is None:
-            return "Unnamed"
-        return str(user_obj.name)
+    def _update_editor(self, study: VariantStudy) -> None:
+        user_name = self._get_current_user_name()
+        study.additional_data = study.additional_data or StudyAdditionalData()
+        study.additional_data.editor = user_name
+        self.repository.save(study)
 
     def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
         """
@@ -230,12 +222,13 @@ class VariantStudyService(AbstractStorageService):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
-                user_id=get_user_id(),
+                user_id=get_user_impersonator(),
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
         ]
         study.commands.extend(new_commands)
+        self._update_editor(study)
         self.on_variant_advance(study)
         self.event_bus.push(
             Event(
@@ -271,6 +264,7 @@ class VariantStudyService(AbstractStorageService):
             )
             for i, command in enumerate(validated_commands)
         ]
+        self._update_editor(study)
         self.on_variant_rebase(study)
         return str(study.id)
 
@@ -293,6 +287,7 @@ class VariantStudyService(AbstractStorageService):
             study.commands.insert(new_index, command)
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
+            self._update_editor(study)
             self.on_variant_rebase(study)
 
     def remove_command(self, study_id: str, command_id: str) -> None:
@@ -311,6 +306,7 @@ class VariantStudyService(AbstractStorageService):
             study.commands.pop(index)
             for idx, command in enumerate(study.commands):
                 command.index = idx
+            self._update_editor(study)
             self.on_variant_rebase(study)
 
     def remove_all_commands(self, study_id: str) -> None:
@@ -324,6 +320,7 @@ class VariantStudyService(AbstractStorageService):
         self._check_update_authorization(study)
 
         study.commands = []
+        self._update_editor(study)
         self.on_variant_rebase(study)
 
     def update_command(self, study_id: str, command_id: str, command: CommandDTO) -> None:
@@ -344,6 +341,7 @@ class VariantStudyService(AbstractStorageService):
         if index >= 0:
             study.commands[index].command = validated_commands[0].action
             study.commands[index].args = to_json_string(validated_commands[0].args)
+            self._update_editor(study)
             self.on_variant_rebase(study)
 
     def export_commands_matrices(self, study_id: str) -> FileDownloadTaskDTO:
@@ -490,19 +488,18 @@ class VariantStudyService(AbstractStorageService):
     def walk_children(
         self,
         parent_id: str,
-        fun: Callable[[VariantStudy], None],
+        fun: Callable[[Study], None],
         bottom_first: bool,
+        include_parent: bool = True,
     ) -> None:
-        study = self._get_variant_study(
-            parent_id,
-        )
+        study = self._get_study_by_id(parent_id)
         children = self.get_children(parent_id=parent_id)
         # TODO : the bottom_first should always be True, otherwise we will have an infinite loop
-        if not bottom_first:
+        if include_parent and not bottom_first:
             fun(study)
         for child in children:
             self.walk_children(child.id, fun, bottom_first)
-        if bottom_first:
+        if include_parent and bottom_first:
             fun(study)
 
     def get_variants_parents(self, study_id: str) -> List[StudyMetadataDTO]:
@@ -633,12 +630,14 @@ class VariantStudyService(AbstractStorageService):
         assert_permission(study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
+        user_name = self._get_current_user_name()
         if study.additional_data is None:
-            additional_data = StudyAdditionalData()
+            additional_data = StudyAdditionalData(editor=user_name)
         else:
             additional_data = StudyAdditionalData(
                 horizon=study.additional_data.horizon,
                 author=study.additional_data.author,
+                editor=user_name,
             )
 
         variant_study = VariantStudy(
@@ -800,7 +799,6 @@ class VariantStudyService(AbstractStorageService):
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
-        editor: str,
     ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
@@ -812,7 +810,6 @@ class VariantStudyService(AbstractStorageService):
             destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
-            editor: The name of the editor that created the destination study.
 
         Returns:
             The newly created study.
@@ -834,7 +831,7 @@ class VariantStudyService(AbstractStorageService):
             dest_output_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
             copy_output_folders(src_path, dest_output_path, with_outputs, output_ids)
 
-        update_antares_info(dest_study, file_study.tree, update_author=True, editor=editor)
+        update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:

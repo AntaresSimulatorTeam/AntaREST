@@ -31,7 +31,7 @@ import {
   getCapacity,
   xpansionConfigurationExist,
 } from "../../../../../../services/api/xpansion";
-import { transformNameToId, removeEmptyFields } from "../../../../../../services/utils/index";
+import { nameToId, removeEmptyFields } from "../../../../../../services/utils/index";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import XpansionPropsView from "./XpansionPropsView";
 import CreateCandidateDialog from "./CreateCandidateDialog";
@@ -77,8 +77,7 @@ function Candidates() {
           tempCandidates[i].link = tempCandidates.map((item: { link: string }) =>
             item.link
               .split(" - ")
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              .map((index: any) => transformNameToId(index))
+              .map((index) => nameToId(index))
               .join(" - "),
           )[i];
         }
@@ -226,7 +225,7 @@ function Candidates() {
 
   return (
     <>
-      <SplitView id="xpansion" sizes={[10, 90]}>
+      <SplitView splitId="xpansion">
         <Box>
           <XpansionPropsView
             candidateList={candidates || []}

@@ -51,6 +51,9 @@ class STStorageFileData(AntaresBaseModel):
     penalize_variation_injection: Optional[bool] = Field(default=None, alias="penalize-variation-injection")
     penalize_variation_withdrawal: Optional[bool] = Field(default=None, alias="penalize-variation-withdrawal")
 
+    # Added in 9.3
+    allow_overflow: Optional[bool] = Field(default=None, alias="allow-overflow")
+
     def to_model(self) -> STStorage:
         return STStorage.model_validate(self.model_dump(exclude_none=True))
 

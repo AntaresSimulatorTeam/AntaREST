@@ -93,13 +93,18 @@ class LauncherArgs(argparse.Namespace):
         self.other_options = f"{self.other_options} {option}" if self.other_options else option
 
     def apply_xpansion_mode(self, launcher_params: LauncherParametersDTO) -> None:
-        if launcher_params.xpansion:  # not None and not False
+        if isinstance(launcher_params.xpansion, XpansionParametersDTO):
+            should_run_xpansion = launcher_params.xpansion.enabled
+        else:
+            should_run_xpansion = launcher_params.xpansion is True
+
+        if should_run_xpansion:
             self.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
-            if (
-                isinstance(launcher_params.xpansion, XpansionParametersDTO)
-                and launcher_params.xpansion.sensitivity_mode
-            ):
-                self._append_other_option("xpansion_sensitivity")
+            if isinstance(launcher_params.xpansion, XpansionParametersDTO):
+                if launcher_params.xpansion.sensitivity_mode:
+                    self._append_other_option("xpansion_sensitivity")
+                if launcher_params.xpansion.adequacy_criterion:
+                    self._append_other_option("adequacy_criterion")
 
     def apply_time_limit(self, launcher_params: LauncherParametersDTO, time_limit_cfg: TimeLimitConfig) -> None:
         # The `time_limit` parameter could be `None`, in that case, the default value is used.
@@ -337,11 +342,7 @@ class SlurmLauncher(AbstractLauncher):
                 unzipped_output_path = (
                     self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output" / output_path.name[:-4]
                 )
-                unzip(
-                    unzipped_output_path,
-                    output_path,
-                    remove_source_zip=True,
-                )
+                unzip(unzipped_output_path, output_path)
                 output_path = unzipped_output_path
 
             if xpansion_mode == "r":

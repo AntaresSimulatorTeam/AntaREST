@@ -63,11 +63,11 @@ function FilterTags() {
             onDelete={() => setFilterValue("archived", false)}
           />
         )}
-        {filters.variant && (
+        {filters.type !== "all" && (
           <Chip
-            label={t("studies.variant").toLowerCase()}
+            label={filters.type === "references" ? t("studies.references") : t("studies.variants")}
             color="secondary"
-            onDelete={() => setFilterValue("variant", false)}
+            onDelete={() => setFilterValue("type", "all")}
           />
         )}
         {filters.versions.map((version) => (

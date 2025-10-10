@@ -35,8 +35,8 @@ import { useTranslation } from "react-i18next";
 import CopyStudyDialog from "./dialogs/CopyStudyDialog";
 import DeleteStudyDialog from "./dialogs/DeleteStudyDialog";
 import ExportModal from "./dialogs/ExportModal";
-import LaunchStudyDialog from "./dialogs/LaunchStudyDialog";
 import MoveStudyDialog from "./dialogs/MoveStudyDialog";
+import StudyLaunchDialog from "./dialogs/StudyLaunchDialog";
 import UpdateStudyDialog from "./dialogs/UpdateStudyDialog";
 import UpgradeStudyDialog from "./dialogs/UpgradeStudyDialog";
 
@@ -152,7 +152,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
       </Menu>
       {/* Keep conditional rendering for dialogs and not use only `open` property, because API calls are made on mount */}
       {openDialog === "launch" && (
-        <LaunchStudyDialog open studyIds={[study.id]} onClose={closeDialog} />
+        <StudyLaunchDialog open studyIds={[study.id]} onClose={closeDialog} />
       )}
       {openDialog === "properties" && (
         <UpdateStudyDialog open study={study} onClose={closeDialog} />

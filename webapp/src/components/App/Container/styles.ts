@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Drawer, styled, type CSSObject, type Theme } from "@mui/material";
+import { type CSSObject, Drawer, styled, type Theme } from "@mui/material";
 
 const DRAWER_WIDTH = 240;
 

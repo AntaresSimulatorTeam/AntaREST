@@ -76,8 +76,8 @@ class OutputStorageDispatcher(IOutputStorage):
         return self._get_storage(study).archive_study_output(study, output_id)
 
     @override
-    def unarchive_study_output(self, study: Study, output_id: str, keep_src_zip: bool) -> bool:
-        return self._get_storage(study).unarchive_study_output(study, output_id, keep_src_zip)
+    def unarchive_study_output(self, study: Study, output_id: str) -> bool:
+        return self._get_storage(study).unarchive_study_output(study, output_id)
 
     @override
     def get_output_path(self, study: Study, output_id: str) -> Path:

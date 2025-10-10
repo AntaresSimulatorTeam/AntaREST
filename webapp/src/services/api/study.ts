@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
@@ -20,7 +21,6 @@ import type {
   FileStudyTreeConfigDTO,
   LaunchJob,
   LaunchJobDTO,
-  LaunchOptions,
   MatrixAggregationResult,
   StudyLayer,
   StudyMetadata,
@@ -33,7 +33,6 @@ import type {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -245,13 +244,31 @@ export const importStudy = async (
   return res.data;
 };
 
-export const launchStudy = async (
-  sid: string,
-  options: LaunchOptions = {},
-  version: string | undefined = undefined,
-): Promise<string> => {
-  const versionArg = version ? `?version=${version}` : "";
-  const res = await client.post(`/v1/launcher/run/${sid}${versionArg}`, options);
+interface RangeWithDefault {
+  min: number;
+  max: number;
+  default: number;
+}
+
+export interface Launcher {
+  id: string;
+  name: string;
+  nbCores: RangeWithDefault;
+  timeLimit: RangeWithDefault;
+}
+
+interface LaunchersConfig {
+  launchers: Launcher[];
+  defaultLauncher: string;
+}
+
+export const getLaunchersConfig = async () => {
+  const res = await client.get<LaunchersConfig>("/v1/launcher/launchers");
+  return res.data;
+};
+
+export const getLauncherVersions = async (): Promise<string[]> => {
+  const res = await client.get("/v1/launcher/versions");
   return res.data;
 };
 
@@ -262,29 +279,13 @@ interface LauncherMetrics {
   status: string;
 }
 
-export const getLauncherVersions = async (): Promise<string[]> => {
-  const res = await client.get("/v1/launcher/versions");
-  return res.data;
-};
-
-export const getLauncherCores = async (): Promise<Record<string, number>> => {
-  const res = await client.get("/v1/launcher/nbcores");
-  return res.data;
-};
-
-/**
- * Time limit for SLURM jobs.
- * If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
- *
- * @returns The min, defaultValue and max for the time limit in hours.
- */
-export const getLauncherTimeLimit = async (): Promise<Record<string, number>> => {
-  const res = await client.get("/v1/launcher/time-limit");
-  return res.data;
-};
-
-export const getLauncherMetrics = async (): Promise<LauncherMetrics> => {
-  const res = await client.get("/v1/launcher/load");
+export const getLauncherMetrics = async (launcherId?: string): Promise<LauncherMetrics> => {
+  const res = await client.get("/v1/launcher/load", {
+    params: {
+      // If `launcherId` is `undefined`, the metrics for the default launcher will be returned
+      launcher_id: launcherId,
+    },
+  });
   return res.data;
 };
 
@@ -304,6 +305,7 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
   outputId: j.output_id,
   exitCode: j.exit_code,
   ownerId: j.owner.id,
+  ownerName: j.owner.name,
 });
 
 export const getStudyJobs = (

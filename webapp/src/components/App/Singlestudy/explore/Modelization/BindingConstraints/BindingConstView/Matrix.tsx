@@ -74,7 +74,7 @@ function ConstraintMatrix({ study, operator, constraintId, open, onClose }: Prop
             />
           )}
           {operator === "both" && (
-            <SplitView id="binding-constraints-matrix" sizes={[50, 50]}>
+            <SplitView splitId="binding-constraints-matrix" sizes={[50, 50]}>
               <Box sx={{ px: 2 }}>
                 <Matrix
                   title={t("study.modelization.bindingConst.timeSeries.less")}

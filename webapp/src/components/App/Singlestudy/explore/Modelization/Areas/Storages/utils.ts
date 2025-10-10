@@ -55,6 +55,8 @@ export interface Storage<LegacyGroup extends boolean = false> {
   efficiencyWithdrawal: number | null;
   penalizeVariationInjection: boolean | null;
   penalizeVariationWithdrawal: boolean | null;
+  // Since v9.3
+  allowOverflow: boolean | null;
 }
 
 export type FormalizedStorage = ExcludeNullFromProps<Storage>;
@@ -105,6 +107,7 @@ function formalizeStorage(storage: Storage): FormalizedStorage {
     efficiencyWithdrawal: storage.efficiencyWithdrawal ?? -1,
     penalizeVariationInjection: storage.penalizeVariationInjection ?? false,
     penalizeVariationWithdrawal: storage.penalizeVariationWithdrawal ?? false,
+    allowOverflow: storage.allowOverflow ?? false,
   };
 }
 

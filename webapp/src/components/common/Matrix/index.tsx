@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Skeleton, Tooltip } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
 import type { StudyMetadata } from "../../../types/types";
 import type { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import CustomScrollbar from "../CustomScrollbar";
@@ -28,7 +28,7 @@ import { MatrixProvider } from "./context/MatrixContext";
 import { useMatrixColumns } from "./hooks/useMatrixColumns";
 import { useMatrixData } from "./hooks/useMatrixData";
 import { useMatrixMutations } from "./hooks/useMatrixMutations";
-import { isNonEmptyMatrix, type AggregateConfig, type RowCountSource } from "./shared/types";
+import { type AggregateConfig, isNonEmptyMatrix, type RowCountSource } from "./shared/types";
 import { getAggregateTypes } from "./shared/utils";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 
@@ -37,6 +37,10 @@ interface MatrixProps {
   title?: string;
   customRowHeaders?: string[];
   dateTimeColumn?: boolean;
+  /**
+   * Enables time series features like temporal filters, resize, and calculated columns.
+   * Note: For specific cases (e.g., hourly time series that shouldn't resize), use enableFilters/enableResize to override.
+   */
   isTimeSeries?: boolean;
   aggregateColumns?: AggregateConfig;
   rowHeaders?: boolean;
@@ -47,6 +51,16 @@ interface MatrixProps {
   fetchMatrixData?: fetchMatrixFn;
   canImport?: boolean;
   rowCountSource?: RowCountSource;
+  /**
+   * Feature flag for data filtering functionality.
+   * Useful for matrices that need filtering but can't be resized.
+   */
+  enableFilters?: boolean;
+  /**
+   * Feature flag for data resizing functionality.
+   * Some matrices have temporal structure but fixed dimensions.
+   */
+  enableResize?: boolean;
 }
 
 function Matrix({
@@ -64,6 +78,8 @@ function Matrix({
   fetchMatrixData,
   canImport = true,
   rowCountSource,
+  enableFilters = isTimeSeries,
+  enableResize = isTimeSeries,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -161,6 +177,8 @@ function Matrix({
                 onSave={handleSaveUpdates}
                 onMatrixUpdated={reload}
                 canImport={canImport}
+                enableFilters={enableFilters}
+                enableResize={enableResize}
                 onImport={(_, index) => {
                   setUploadType(index === 0 ? "file" : "database");
                 }}

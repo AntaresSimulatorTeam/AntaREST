@@ -16,8 +16,6 @@ import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
-from antarest.core.config import Config
-
 HERE = pathlib.Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
@@ -101,18 +99,3 @@ def test_empty_study_zip(tmp_path: pathlib.Path, version: StudyVersion):
     else:
         expected_files = FILES_SINCE_V92
     assert existing_files == expected_files
-
-
-def test_resources_config():
-    """
-    Check that the "resources/config.yaml" file is valid.
-
-    The launcher section must be configured to use a local launcher
-    with NB Cores detection enabled.
-    """
-    config_path = RESOURCES_DIR.joinpath("deploy/config.yaml")
-    config = Config.from_yaml_file(config_path, res=RESOURCES_DIR)
-    assert config.launcher.default == "local"
-    config = config.launcher.get_launcher("local")
-    assert config is not None
-    assert config.enable_nb_cores_detection is True

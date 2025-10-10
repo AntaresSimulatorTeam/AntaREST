@@ -339,13 +339,13 @@ class ResourceDeletionNotAllowed(HTTPException):
         super().__init__(HTTPStatus.FORBIDDEN, msg)
 
 
-class FolderCreationNotAllowed(HTTPException):
+class ResourceCreationNotAllowed(HTTPException):
     """
-    Exception raised when creating a folder which isn't inside the 'User' folder.
+    Exception raised when creating a resource which isn't inside the 'User' folder.
     """
 
     def __init__(self, message: str) -> None:
-        msg = f"Folder creation failed because {message}"
+        msg = f"Resource creation failed because {message}"
         super().__init__(HTTPStatus.FORBIDDEN, msg)
 
 
@@ -455,15 +455,6 @@ class BadZipBinary(HTTPException):
 class IncorrectPathError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
-
-
-class FileTooLargeError(HTTPException):
-    def __init__(self, estimated_size: int, maximum_size: int) -> None:
-        message = (
-            f"Cannot aggregate output data."
-            f" The expected size: {estimated_size}Mo exceeds the max supported size: {maximum_size}"
-        )
-        super().__init__(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, message)
 
 
 class UrlNotMatchJsonDataError(HTTPException):
@@ -841,3 +832,9 @@ class STStorageAdditionalConstraintNotFound(HTTPException):
     def __init__(self, area_id: str, constraint_id: str) -> None:
         msg = f"The constraint '{constraint_id}' inside area {area_id} was not found."
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class OutputAggregationError(HTTPException):
+    def __init__(self, output_id: str, message: str) -> None:
+        msg = f"Could not aggregate output data for output '{output_id}' : {message}."
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, msg)

@@ -12,6 +12,9 @@
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode, RegisteredFile
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.adequacy_criterion import (
+    ExpansionAdequacyCriterion,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.candidates import ExpansionCandidates
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.constraint_resources import (
     ExpansionConstraintResources,
@@ -31,6 +34,7 @@ class Expansion(BucketNode):
         RegisteredFile(key="weights", node=ExpansionMatrixResources),
         RegisteredFile(key="constraints", node=ExpansionConstraintResources),
         RegisteredFile(key="sensitivity", node=SensitivityConfig),
+        RegisteredFile(key="adequacy_criterion", node=ExpansionAdequacyCriterion),
     ]
 
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):

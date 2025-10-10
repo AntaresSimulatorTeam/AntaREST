@@ -56,7 +56,7 @@ def _check_endpoint_response(
         assert res.status_code == 417
         response = res.json()
         assert response["exception"] == "VariantGenerationError"
-        assert response["description"] == f"Error while generating variant {study_id} : {expected_msg}"
+        assert expected_msg in response["description"]
         # We have to delete the command to make the variant "clean" again.
         res = client.get(f"/v1/studies/{study_id}/commands")
         cmd_id = res.json()[-1]["id"]
@@ -191,10 +191,11 @@ class TestFetchRawData:
             res = client.get(f"/v1/studies/{internal_study_id}/commands")
             commands = res.json()
             # First command is created automatically to respect owners, we ignore it.
+            assert len(commands) == 2
             assert commands[1]["action"] == "create_user_resource"
-            assert commands[1]["args"] == [{"data": {"path": "somewhere/something.txt", "resource_type": "file"}}]
-            assert commands[2]["action"] == "update_file"
-            assert commands[2]["args"] == [{"target": file_to_create, "b64Data": "R29vZGJ5ZSBDcnVlbCBXb3JsZCE="}]
+            assert commands[1]["args"] == {
+                "data": {"path": "somewhere/something.txt", "resource_type": "file", "content": "Goodbye Cruel World!"}
+            }
 
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
         # The expected status code should be 204 No Content.
@@ -260,28 +261,6 @@ class TestFetchRawData:
             "use-phase-shifter": False,
         }
 
-        # If we ask for a matrix, we should have a JSON content if formatted is True
-        rel_path = "/input/links/de/fr"
-        res = client.get(raw_url, params={"path": rel_path, "formatted": True})
-        assert res.status_code == 200, res.json()
-        actual = res.json()
-        assert actual == {"index": ANY, "columns": ANY, "data": ANY}
-
-        # If we ask for a matrix, we should have a CSV content if formatted is False
-        res = client.get(raw_url, params={"path": rel_path, "formatted": False})
-        assert res.status_code == 200, res.json()
-        actual = res.json()
-        actual_lines = actual.splitlines()
-        first_row = [float(x) for x in actual_lines[0].split("\t")]
-        assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
-
-        # If ask for an empty matrix, we should return its default value
-        res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
-        assert res.status_code == 200, res.json()
-        assert res.json()["index"] == list(range(365))
-        assert res.json()["columns"] == list(range(6))
-        assert res.json()["data"] == default_data_matrix.tolist()
-
         # We can access to the configuration the classic way,
         # for instance, we can get the list of areas:
         res = client.get(raw_url, params={"path": "/input/areas/list", "depth": 1})
@@ -299,6 +278,45 @@ class TestFetchRawData:
             res = client.get(raw_url, params={"path": path, "depth": depth})
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
 
+        # asserts that the GET /raw endpoint is able to read link URLs, which don't map
+        # 1 to 1 with filesystem path (which is "output/20201014-1427eco/economy/mc-all/links/de - fr/" for
+        # example)
+        if study_type == "raw":
+            res = client.get(raw_url, params={"path": "output/20201014-1427eco/economy/mc-all/links/de/"})
+            assert res.status_code == 200
+            assert res.json() == {"fr": {}}
+
+        ####### Matrices #######
+
+        # We should have a JSON content if formatted is True
+        rel_path = "/input/links/de/fr"
+        res = client.get(raw_url, params={"path": rel_path, "formatted": True})
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        assert actual == {"index": ANY, "columns": ANY, "data": ANY}
+
+        # We should have a CSV content if formatted is False
+        res = client.get(raw_url, params={"path": rel_path, "formatted": False})
+        assert res.status_code == 200
+        actual = res.text
+        actual_lines = actual.splitlines()
+        first_row = [float(x) for x in actual_lines[0].split("\t")]
+        assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
+
+        # We can fetch the matrix in arrow format
+        for arrow_format in ["arrow compressed", "arrow uncompressed"]:
+            res = client.get(raw_url, params={"path": rel_path, "matrix_format": arrow_format})
+            assert res.status_code == 200
+            df = pd.read_feather(io.BytesIO(res.content))
+            assert df.shape == (8760, 8)
+
+        # If the matrix is empty, we should return its default value
+        res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
+        assert res.status_code == 200, res.json()
+        assert res.json()["index"] == list(range(365))
+        assert res.json()["columns"] == list(range(6))
+        assert res.json()["data"] == default_data_matrix.tolist()
+
         # =============================
         #  ERRORS
         # =============================
@@ -315,6 +333,20 @@ class TestFetchRawData:
         assert res.status_code == 422
         assert res.json()["exception"] == "MatrixImportFailed"
         assert res.json()["description"] == "Could not parse the given matrix"
+
+        # Use a wrong format
+        res = client.get(raw_url, params={"path": rel_path, "matrix_format": "my format"})
+        assert res.status_code == 422
+        assert res.json()["exception"] == "RequestValidationError"
+        assert (
+            res.json()["description"] == "Input should be 'json', 'arrow compressed', 'arrow uncompressed' or 'plain'"
+        )
+
+        # Asks for content in arrow for a file that's not a matrix
+        res = client.get(raw_url, params={"path": "/input/areas/list", "matrix_format": "arrow compressed"})
+        assert res.status_code == 404
+        assert res.json()["exception"] == "IncorrectPathError"
+        assert res.json()["description"] == "The provided path does not point to a valid matrix: '/input/areas/list'"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_delete_raw(
@@ -463,22 +495,22 @@ class TestFetchRawData:
         expected_msg = f"the given path isn't inside the 'User' folder: {wrong_folder}"
         res = client.put(raw_url, params={"path": wrong_folder, **additional_params})
         assert res.status_code == 403
-        assert res.json()["exception"] == "FolderCreationNotAllowed"
+        assert res.json()["exception"] == "ResourceCreationNotAllowed"
         assert expected_msg in res.json()["description"]
 
         # try to create a folder inside the 'expansion` folder
         expansion_folder = "user/expansion/wrong_folder"
-        expected_msg = "Folder creation failed because the given path is inside the `expansion` folder: user/expansion/wrong_folder"
+        expected_msg = "Resource creation failed because the given path is inside the `expansion` folder: user/expansion/wrong_folder"
         res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
         assert res.status_code == 403
-        assert res.json()["exception"] == "FolderCreationNotAllowed"
+        assert res.json()["exception"] == "ResourceCreationNotAllowed"
         assert expected_msg in res.json()["description"]
 
         # try to create an already existing folder
         existing_folder = "user/folder_1"
         expected_msg = "the given resource already exists: folder_1"
         res = client.put(raw_url, params={"path": existing_folder, **additional_params})
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
+        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceCreationNotAllowed")
 
     def test_retrieve_from_archive(self, client: TestClient, user_access_token: str) -> None:
         # client headers

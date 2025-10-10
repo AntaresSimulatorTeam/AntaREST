@@ -163,6 +163,7 @@ function JobTableView(props: Props) {
                     value={Math.floor(data.allocatedCpuRate)}
                     tooltip={t("study.allocatedCpuRate")}
                     sx={{ width: 100 }}
+                    colorMode="cluster"
                   />
                   <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
                     {t("study.clusterLoadRate")}
@@ -171,6 +172,7 @@ function JobTableView(props: Props) {
                     value={Math.floor(data.clusterLoadRate)}
                     tooltip={t("study.clusterLoadRate")}
                     sx={{ width: 100 }}
+                    colorMode="cluster"
                   />
                   <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
                     {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}

@@ -33,12 +33,12 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
-    FolderCreationNotAllowed,
     IncorrectArgumentsForCopy,
     IncorrectPathError,
     MatrixImportFailed,
     NotAManagedStudyException,
     ReferencedObjectDeletionNotAllowed,
+    ResourceCreationNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -62,7 +62,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user, get_user_id
+from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -80,9 +80,10 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
@@ -127,7 +128,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -143,8 +144,6 @@ from antarest.study.storage.utils import (
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.create_user_resource import (
     CreateUserResource,
-    CreateUserResourceData,
-    ResourceType,
 )
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
@@ -152,7 +151,6 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import (
     RemoveUserResource,
-    RemoveUserResourceData,
 )
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -187,7 +185,7 @@ def get_disk_usage(path: str | Path) -> int:
 
 
 def _get_path_inside_user_folder(
-    path: str, exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed]
+    path: str, exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed]
 ) -> str:
     """
     Retrieves the path inside the `user` folder for a given user path
@@ -288,7 +286,7 @@ class StudyUpgraderTask:
     def __init__(
         self,
         study_id: str,
-        target_version: str,
+        target_version: StudyVersion,
         *,
         repository: StudyMetadataRepository,
         storage_service: StudyStorageService,
@@ -305,7 +303,7 @@ class StudyUpgraderTask:
     def _upgrade_study(self) -> None:
         """Run the task (lock the database)."""
         study_id: str = self._study_id
-        target_version: str = self._target_version
+        target_version = self._target_version
         is_study_denormalized = False
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
@@ -324,7 +322,7 @@ class StudyUpgraderTask:
                         is_study_denormalized = True
                     study_upgrader.upgrade()
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = target_version
+                study_to_upgrade.version = f"{target_version:2d}"
                 self.repository.save(study_to_upgrade)
                 self.event_bus.push(
                     Event(
@@ -373,10 +371,14 @@ class RawStudyInterface(StudyInterface):
         self,
         raw_service: RawStudyService,
         variant_service: VariantStudyService,
+        user_service: LoginService,
+        repository: StudyMetadataRepository,
         study: RawStudy,
     ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
+        self._user_service = user_service
+        self._repository = repository
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
@@ -406,6 +408,7 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         should_invalidate_cache = False
         file_study = self.get_files()
+
         for command in commands:
             result = command.apply(FileStudyTreeDao(file_study), listener)
             if result.should_invalidate_cache:
@@ -421,6 +424,20 @@ class RawStudyInterface(StudyInterface):
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
+        self._update_editor(file_study)
+
+    def _update_editor(self, file_study: FileStudy) -> None:
+        user = self._user_service.get_identity(get_user_impersonator())
+        if user:
+            user_name = user.name or ""
+            study_antares = file_study.tree.get(["study", "antares"])
+            study_antares["editor"] = user.name
+            file_study.tree.save(study_antares, ["study", "antares"])
+            if not self._study.additional_data:
+                self._study.additional_data = StudyAdditionalData(author=user_name, editor=user_name)
+            else:
+                self._study.additional_data.editor = user_name
+            self._repository.save(self._study)
 
 
 class VariantStudyInterface(StudyInterface):
@@ -583,10 +600,12 @@ class StudyService:
         empty_log = False
         for log_location in log_locations[err_log]:
             try:
+                # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
+                # especially because of windows error messages
                 log = cast(
                     bytes,
                     file_study.tree.get(log_location, depth=1, formatted=True),
-                ).decode(encoding="utf-8")
+                ).decode(encoding="utf-8", errors="replace")
                 # when missing file, RawFileNode return empty bytes
                 if log:
                     return log
@@ -810,6 +829,8 @@ class StudyService:
             return RawStudyInterface(
                 self.storage_service.raw_study_service,
                 self.storage_service.variant_study_service,
+                self.user_service,
+                self.repository,
                 study,
             )
         else:
@@ -1130,7 +1151,6 @@ class StudyService:
                 destination_folder,
                 output_ids,
                 with_outputs,
-                self.get_user_name(),
             )
 
             self._save_study(study, group_ids)
@@ -1277,17 +1297,18 @@ class StudyService:
             _ = study.workspace
             study_info = study.to_enhanced_json_summary()
 
-        if self.storage_service.variant_study_service.has_children(study):
-            if children:
-                if isinstance(study, VariantStudy):
-                    self.storage_service.variant_study_service.walk_children(
-                        study.id,
-                        lambda v: self.delete_study(v.id, True),
-                        bottom_first=True,
-                    )
-                    return
-            else:
+        variant_service = self.storage_service.variant_study_service
+
+        if variant_service.has_children(study):
+            if not children:
                 raise StudyDeletionNotAllowed(study.id, "Study has variant children")
+
+            variant_service.walk_children(
+                study.id,
+                lambda s: self.delete_study(s.id, True),
+                bottom_first=True,
+                include_parent=False,
+            )
 
         # If the study is a variant, and its snapshot is generating,
         # we need to wait until it's done to delete it to avoid any fs issues
@@ -1435,18 +1456,11 @@ class StudyService:
         create_missing &= not file_path.exists()
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
-            user_path = _get_path_inside_user_folder(str(file_relpath), FolderCreationNotAllowed)
-            args = {"path": user_path, "resource_type": ResourceType.FILE}
-            command_data = CreateUserResourceData.model_validate(args)
+            user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
+            args = {"path": user_path, "resource_type": ResourceType.FILE, "content": data or b""}
+            command_data = UserResourceDataCreation.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
-            assert isinstance(data, bytes)
-            cmd_2 = UpdateRawFile(
-                target=url,
-                b64Data=base64.b64encode(data).decode("utf-8"),
-                command_context=context,
-                study_version=version,
-            )
-            commands.extend([cmd_1, cmd_2])
+            commands.append(cmd_1)
         else:
             # A 404 Not Found error is raised if the file does not exist.
             tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
@@ -1652,17 +1666,20 @@ class StudyService:
     def get_all_areas(
         self,
         uuid: str,
-        area_type: Optional[AreaType],
-        ui: bool,
-    ) -> List[AreaInfoDTO] | Dict[str, Any]:
+    ) -> List[Area]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
-        return (
-            self.area_manager.get_all_areas_ui_info(study_interface)
-            if ui
-            else self.area_manager.get_all_areas(study_interface, area_type)
-        )
+        return self.area_manager.get_all_areas(study_interface)
+
+    def get_all_areas_ui_info(
+        self,
+        uuid: str,
+    ) -> Dict[str, Any]:
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        study_interface = self.get_study_interface(study)
+        return self.area_manager.get_all_areas_ui_info(study_interface)
 
     def get_all_links(
         self,
@@ -1675,8 +1692,8 @@ class StudyService:
     def create_area(
         self,
         uuid: str,
-        area_creation_dto: AreaCreationDTO,
-    ) -> AreaInfoDTO:
+        area_creation_dto: AreaCreation,
+    ) -> Area:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -2125,12 +2142,14 @@ class StudyService:
             raise StudyVariantUpgradeError(False)
 
         # Checks versions coherence before launching the task
-        if not target_version:
-            target_version = find_next_version(study.version)
+        study_version = StudyVersion.parse(study.version)
+        if target_version:
+            parsed_target_version = StudyVersion.parse(target_version)
+            check_versions_coherence(study_version, parsed_target_version)
         else:
-            check_versions_coherence(study.version, target_version)
+            parsed_target_version = find_next_version(study_version)
 
-        task_name = f"Upgrade study {study.name} ({study.id}) to version {target_version}"
+        task_name = f"Upgrade study {study.name} ({study.id}) to version {parsed_target_version}"
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=study_id,
@@ -2143,7 +2162,7 @@ class StudyService:
 
         study_upgrader_task = StudyUpgraderTask(
             study_id,
-            target_version,
+            parsed_target_version,
             repository=self.repository,
             storage_service=self.storage_service,
             cache_service=self.cache_service,
@@ -2205,10 +2224,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas = cast(
-                List[AreaInfoDTO],
-                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False),
-            )
+            all_areas: List[Area] = self.get_all_areas(study_id)
             if matrix_path.parts[-1] == "allocation":
                 hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
             else:
@@ -2282,7 +2298,7 @@ class StudyService:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
         args = {"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
-        cmd_data = RemoveUserResourceData(**args)
+        cmd_data = UserResourceDataRemoval(**args)
         self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed)
 
     def create_user_folder(self, study_id: str, path: str) -> None:
@@ -2296,21 +2312,22 @@ class StudyService:
             path: Path corresponding to the resource to be deleted
 
         Raises:
-            FolderCreationNotAllowed: if the path does not comply with the above rules
+            ResourceCreationNotAllowed: if the path does not comply with the above rules
         """
         args = {
-            "path": _get_path_inside_user_folder(path, FolderCreationNotAllowed),
+            "path": _get_path_inside_user_folder(path, ResourceCreationNotAllowed),
             "resource_type": ResourceType.FOLDER,
+            "content": None,
         }
-        command_data = CreateUserResourceData.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed)
+        command_data = UserResourceDataCreation.model_validate(args)
+        self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
-        command_data: CreateUserResourceData | RemoveUserResourceData,
+        command_data: UserResourceDataCreation | UserResourceDataRemoval,
         command_class: Type[CreateUserResource | RemoveUserResource],
-        exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed],
+        exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
@@ -2353,3 +2370,26 @@ class StudyService:
         It will put every matrix in the study in the matrix-store.
         """
         self.storage_service.get_storage(study).get_raw(study).tree.normalize()
+
+    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
+        """
+        Returns the content of a node based on the provided arguments.
+
+        Depending on the type of node, it may return the following types of data:
+          - an arbitrary dictionary (ini files ...)
+          - a dataframe (input matrices ...)
+          - raw file content (arbitrary user files ...)
+
+        This allows callers to handle the result as most appropriate.
+        """
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        file_study = self.get_file_study(study)
+        url = [item for item in path.split("/") if item]
+        node, relative_url = file_study.tree.get_node_and_remainder(url)
+
+        # Return a datframe when possible instead of less memory & computation - efficient python objects
+        if isinstance(node, MatrixNode):
+            return node.parse_as_dataframe()
+
+        return node.get(url=relative_url, depth=depth, formatted=formatted)

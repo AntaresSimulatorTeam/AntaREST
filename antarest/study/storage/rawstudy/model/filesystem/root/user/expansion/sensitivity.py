@@ -21,8 +21,4 @@ from antarest.study.storage.rawstudy.model.filesystem.json_file_node import Json
 class SensitivityConfig(FolderNode):
     @override
     def build(self) -> TREE:
-        return {
-            "sensitivity_in": JsonFileNode(
-                self.config.next_file("sensitivity_in.json"),
-            )
-        }
+        return {"sensitivity_in": JsonFileNode(self.config.next_file("sensitivity_in.json"))}

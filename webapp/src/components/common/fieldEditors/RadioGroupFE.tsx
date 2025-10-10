@@ -79,6 +79,10 @@ function RadioGroupFE({
             disableTypography={typeof label !== "string"}
             disabled={disabled}
             inputRef={inputRef}
+            sx={{
+              // Ensures disabled color is applied for non-string labels.
+              color: "text.disabled",
+            }}
           />
         ))}
       </RadioGroup>

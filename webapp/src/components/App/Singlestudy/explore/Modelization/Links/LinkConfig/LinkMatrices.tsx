@@ -70,13 +70,14 @@ function LinkMatrices({ area1, area2, isOldStudy }: Props) {
                 t("study.modelization.links.matrix.columns.pShiftMax"),
               ]}
               isTimeSeries={false}
+              enableFilters
             />
           ),
         },
         {
           label: t("study.modelization.links.matrix.capacities"),
           content: (
-            <SplitView id="link-transCapaDirect-transCapaIndirect" sizes={[50, 50]}>
+            <SplitView splitId="link-transCapaDirect-transCapaIndirect" sizes={[50, 50]}>
               <Box sx={{ pr: 2 }}>
                 <Matrix
                   url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`}

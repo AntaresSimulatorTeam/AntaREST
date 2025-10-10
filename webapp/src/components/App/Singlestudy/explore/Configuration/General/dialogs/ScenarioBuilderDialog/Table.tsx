@@ -14,15 +14,17 @@
 
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
+import type {
+  ScenarioDisplay,
+  ScenarioType,
+} from "@/services/api/studies/config/scenarioBuilder/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { toError } from "../../../../../../../../utils/fnUtils";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import EmptyView from "../../../../../../../common/page/EmptyView";
 import TableForm from "../../../../../../../common/TableForm";
-import { adaptScenarioFormToDto } from "./adapters";
-import { updateScenarioBuilderConfig } from "./services";
-import type { ScenarioDisplay, ScenarioType } from "./types";
 
 interface Props {
   config: ScenarioDisplay;
@@ -41,8 +43,12 @@ function Table({ config, type, areaId }: Props) {
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
     try {
-      const updatedScenario = adaptScenarioFormToDto(type, dirtyValues, areaId);
-      await updateScenarioBuilderConfig(study.id, updatedScenario, type);
+      await updateScenarioBuilderForm({
+        studyId: study.id,
+        scenarioType: type,
+        values: dirtyValues,
+        areaId,
+      });
     } catch (error) {
       enqueueErrorSnackbar(
         t("study.configuration.general.mcScenarioBuilder.update.error", {

@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
+from pathlib import PurePosixPath
 from typing import Dict, Optional, Sequence
 
 import pandas as pd
@@ -34,6 +35,11 @@ from antarest.study.business.model.hydro_model import (
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.scenario_builder_model import (
+    AnyScenarios,
+    Rulesets,
+    ScenarioType,
+)
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -41,7 +47,9 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
     XpansionSettings,
@@ -140,6 +148,7 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_settings: XpansionSettings = XpansionSettings()
         self._xpansion_configuration_exists: bool = False
         self._xpansion_resources: dict[XpansionResourceFileType, dict[str, bytes]] = {}
+        self._xpansion_security_criterion: XpansionAdequacyCriterion = XpansionAdequacyCriterion()
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
@@ -152,6 +161,11 @@ class InMemoryStudyDao(StudyDao):
         self._comments = ""
         # Playlist config
         self._playlist_config = Playlist()
+        # User resources
+        self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
+        # Scenario Builder
+        self.rulesets: Rulesets = {}
+        self.active_ruleset_name: Optional[str] = None
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -637,6 +651,10 @@ class InMemoryStudyDao(StudyDao):
         return
 
     @override
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
+        return self._xpansion_security_criterion
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._thematic_trimming
 
@@ -687,6 +705,10 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
+    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
+        self._xpansion_security_criterion = criterion
+
+    @override
     def save_layer(self, layer: Layer) -> None:
         new_id = max((int(layer.id) for layer in self._layers if layer.id is not None), default=0) + 1
         layer.id = str(new_id)
@@ -711,3 +733,27 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
         self._playlist_config = playlist
+
+    @override
+    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
+        self._user_resources[resource_data.path] = resource_data.content
+
+    @override
+    def delete_user_resource(self, resource_path: PurePosixPath) -> None:
+        del self._user_resources[resource_path]
+
+    @override
+    def get_rulesets(self) -> Rulesets:
+        return self.rulesets
+
+    @override
+    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
+        return self.active_ruleset_name or default_ruleset
+
+    @override
+    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
+        return self.rulesets[self.get_active_ruleset_name()].get(scenario_type)
+
+    @override
+    def save_scenario_builder(self, rulesets: Rulesets) -> None:
+        self.rulesets = rulesets

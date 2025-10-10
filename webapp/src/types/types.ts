@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { LauncherParamsDTO } from "@/services/api/launcher/types";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -44,6 +45,8 @@ export enum StudyType {
 
 export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;
+  editor: string;
+  author: string;
   type: StudyType;
   created: string;
   updated: string;
@@ -64,6 +67,8 @@ export interface StudyMetadata {
   creationDate: string;
   modificationDate: string;
   owner: StudyMetadataOwner;
+  editor: string;
+  author: string;
   type: StudyType;
   version: string;
   workspace: string;
@@ -130,28 +135,6 @@ export interface VariantTree {
   children: VariantTree[];
 }
 
-export interface AdequacyPatchParams {
-  legacy?: boolean;
-}
-
-export interface XpansionParams {
-  enabled: boolean;
-  sensitivity_mode?: boolean;
-  output_id?: string;
-}
-
-export interface LaunchOptions {
-  xpansion?: XpansionParams;
-  xpansion_r_version?: boolean;
-  nb_cpu?: number;
-  time_limit?: number;
-  post_processing?: boolean;
-  adequacy_patch?: AdequacyPatchParams;
-  output_suffix?: string;
-  other_options?: string;
-  auto_unzip?: boolean;
-}
-
 export type JobStatus = "running" | "pending" | "success" | "failed";
 
 export interface LaunchJob {
@@ -160,11 +143,12 @@ export interface LaunchJob {
   status: JobStatus;
   creationDate: string;
   completionDate: string;
-  launcherParams?: LaunchOptions;
+  launcherParams?: LauncherParamsDTO;
   msg: string;
   outputId: string;
   exitCode: number;
   ownerId: number;
+  ownerName: string;
 }
 
 export interface LaunchJobDTO {
@@ -593,4 +577,10 @@ export interface SingleMatrixContent {
 export interface MatrixItem {
   titleKey: string;
   content: SplitMatrixContent | SingleMatrixContent;
+}
+
+export interface RangeWithDefault {
+  min: number;
+  max: number;
+  default: number;
 }

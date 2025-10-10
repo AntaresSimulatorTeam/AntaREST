@@ -13,24 +13,20 @@
  */
 
 import { Box } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import type {
+  ScenarioDisplay,
+  ScenarioType,
+} from "@/services/api/studies/config/scenarioBuilder/types";
 import PropertiesView from "../../../../../../../common/PropertiesView";
 import SplitView from "../../../../../../../common/SplitView";
 import ListElement from "../../../../common/ListElement";
-import {
-  requiresAreaSelection,
-  hasAreaSelection,
-  isLevel2Display,
-  isLevel3Display,
-  type ScenarioData,
-  type ScenarioType,
-  type ScenarioDisplay,
-} from "./types";
-import { getConfigByScenario } from "./utils";
+import { hasAreaSelection, isLevel2Display, isLevel3Display } from "./types";
+import { requiresAreaSelection } from "./utils";
 
 interface ScenarioTableProps {
   type: ScenarioType;
-  config: ScenarioData;
+  config: ScenarioDisplay;
   areaId?: string;
 }
 
@@ -46,41 +42,38 @@ function withAreas(
     const [areas, setAreas] = useState<string[]>([]);
     const [configByArea, setConfigByArea] = useState<ScenarioDisplay>({});
 
-    const scenarioConfig = useMemo(() => getConfigByScenario(config, type), [config, type]);
-
     useEffect(() => {
-      if (scenarioConfig && hasAreaSelection(scenarioConfig)) {
-        setAreas(scenarioConfig.areas);
+      if (config && hasAreaSelection(config)) {
+        setAreas(config.areas);
 
         // Set selected area ID only if it hasn't been selected yet or current selection is not valid anymore.
-        if (!selectedAreaId || !scenarioConfig.areas.includes(selectedAreaId)) {
-          setSelectedAreaId(scenarioConfig.areas[0]);
+        if (!selectedAreaId || !config.areas.includes(selectedAreaId)) {
+          setSelectedAreaId(config.areas[0]);
         }
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [scenarioConfig]);
+    }, [config, selectedAreaId]);
 
     useEffect(() => {
-      if (scenarioConfig && hasAreaSelection(scenarioConfig) && selectedAreaId) {
-        if (isLevel2Display(scenarioConfig)) {
-          setConfigByArea(scenarioConfig.entities[selectedAreaId]);
-        } else if (isLevel3Display(scenarioConfig)) {
-          setConfigByArea(scenarioConfig.flattenedEntities[selectedAreaId]);
+      if (config && hasAreaSelection(config) && selectedAreaId) {
+        if (isLevel2Display(config)) {
+          setConfigByArea(config.entities[selectedAreaId]);
+        } else if (isLevel3Display(config)) {
+          setConfigByArea(config.flattenedEntities[selectedAreaId]);
         }
       }
-    }, [selectedAreaId, scenarioConfig]);
+    }, [selectedAreaId, config]);
 
     ////////////////////////////////////////////////////////////////
     // JSX
     ////////////////////////////////////////////////////////////////
 
     // Handle Level 1 scenarios (no area selection needed)
-    if (!requiresAreaSelection(type) && scenarioConfig) {
-      return <Component {...props} config={scenarioConfig} type={type} />;
+    if (!requiresAreaSelection(type) && config) {
+      return <Component {...props} config={config} type={type} />;
     }
 
     return (
-      <SplitView id="scenario-builder" sizes={[15, 85]}>
+      <SplitView splitId="scenario-builder">
         <PropertiesView
           sx={{ p: 1, ".SearchFE": { mx: 0 } }}
           mainContent={
