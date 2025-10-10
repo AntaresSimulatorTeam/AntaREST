@@ -20,6 +20,7 @@ from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelationArea,
     HydroCorrelationMatrix,
 )
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -27,12 +28,11 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 def _set_up(command_context: CommandContext, study: FileStudy) -> None:
     correlation_cfg = {
-        "N?%N?": 0.1,  # Write the area name in the file to ensure we're able to read the data
-        "e%e": 0.3,
-        "s%s": 0.1,
+        "N?%N?": 1.0,  # Write the area name in the file to ensure we're able to read the data
+        "e%e": 1.0,
         "s%n": 0.2,
         "s%w": 0.6,
-        "w%w": 0.1,
+        "e%w": 0.1,
     }
 
     for area_name in ["N?", "s", "e", "w"]:
@@ -114,3 +114,76 @@ def test_error_cases() -> None:
             columns=["fr", "de"],
             data=np.array([[0.1, 0.0], [0.0, 1.0]]),
         )
+
+
+def test_get_correlation_matrix(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    _set_up(command_context, empty_study_920)
+
+    study = FileStudyInterface(empty_study_920)
+    matrix = manager.get_correlation_matrix(study)
+
+    # Check
+    assert matrix.index == matrix.columns == ["e", "n", "s", "w"]
+    assert np.array_equal(
+        matrix.data,
+        np.array(
+            [
+                [1.0, 0.0, 0.0, 0.1],
+                [0.0, 1.0, 0.2, 0.0],
+                [0.0, 0.2, 1.0, 0.6],
+                [0.1, 0.0, 0.6, 1.0],
+            ]
+        ),
+    )
+
+
+"""
+def test_get_correlation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    _set_up(command_context, empty_study_920)
+
+    expected_allocations = {
+        "e": HydroAllocation(
+            allocation=[
+                HydroAllocationArea(area_id="e", coefficient=3.0),
+                HydroAllocationArea(area_id="s", coefficient=1.0),
+            ]
+        ),
+        "n": HydroAllocation(allocation=[HydroAllocationArea(area_id="n", coefficient=1.0)]),
+        "s": HydroAllocation(
+            allocation=[
+                HydroAllocationArea(area_id="s", coefficient=0.1),
+                HydroAllocationArea(area_id="n", coefficient=0.2),
+                HydroAllocationArea(area_id="w", coefficient=0.6),
+            ]
+        ),
+        "w": HydroAllocation(allocation=[HydroAllocationArea(area_id="w", coefficient=1.0)]),
+    }
+
+    study = FileStudyInterface(empty_study_920)
+    for area_id in expected_allocations:
+        allocation = manager.get_allocation_for_area(study, area_id)
+        assert allocation == expected_allocations[area_id]
+"""
+
+
+def test_set_correlation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    _set_up(command_context, empty_study_920)
+
+    study = FileStudyInterface(empty_study_920)
+
+    new_correlation = HydroCorrelation(
+        correlation=[
+            HydroCorrelationArea(area_id="s", coefficient=3.0),
+            HydroCorrelationArea(area_id="n", coefficient=12.1),
+        ]
+    )
+    corr = manager.set_correlation_for_area(study, "e", new_correlation)
+    assert corr == new_correlation
+    assert manager.get_correlation_for_area(study, "e") == HydroCorrelation(
+        correlation=[
+            HydroCorrelationArea(area_id="e", coefficient=100.0),
+            HydroCorrelationArea(area_id="n", coefficient=12.1),
+            HydroCorrelationArea(area_id="s", coefficient=3.0),
+            HydroCorrelationArea(area_id="w", coefficient=0.0),  # Should be reset to 0 as it wasn't modified
+        ]
+    )

@@ -153,14 +153,14 @@ class FileStudyHydroDao(HydroDao):
             if corr.area_id not in all_areas:
                 raise AreaNotFound(corr.area_id)
         current_correlation_matrix = self.get_hydro_correlation_matrix()
-        new_correlation = current_correlation_matrix.add_correlation(area_id, correlation)
+        current_correlation_matrix.set_correlation(area_id, correlation)
         # Save data inside the file
         correlation_cfg: dict[str, float] = {}
         count = len(area_ids)
         for i in range(count):
             # not saved: values from the diagonal are always == 1.0
             for j in range(i + 1, count):
-                coefficient = new_correlation.data[i][j]
+                coefficient = current_correlation_matrix.data[i][j]
                 if not coefficient:
                     # null values are not saved
                     continue

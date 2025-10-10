@@ -98,21 +98,21 @@ class HydroCorrelationMatrix(AntaresBaseModel, extra="forbid", populate_by_name=
 
         return HydroCorrelationMatrix.model_validate({"index": area_ids, "columns": area_ids, "data": array})
 
-    def add_correlation(self, area_id: str, data: HydroCorrelation) -> "HydroCorrelationMatrix":
-        correlation_dict = self.to_hydro_correlations()
-        correlation_dict[area_id] = data
-        for data_corr in data.correlation:
-            existing_correlation = correlation_dict[data_corr.area_id]
-            new_list = []
-            for corr in existing_correlation.correlation:
-                if corr.area_id == area_id:
-                    new_list.append(HydroCorrelationArea(area_id=area_id, coefficient=data_corr.coefficient))
-                else:
-                    new_list.append(corr)
-            existing_correlation.correlation = new_list
+    def set_correlation(self, area_id: str, data: HydroCorrelation) -> None:
+        index = self.index.index(area_id)
+        modified_indexes = {index}
+        for correlation in data.correlation:
+            other_index = self.index.index(correlation.area_id)
+            self.data[index][other_index] = self.data[other_index][index] = correlation.coefficient / 100
+            modified_indexes.add(other_index)
+
+        # Reset existing values that were not modified
+        for other_index in range(len(self.index)):
+            if other_index not in modified_indexes:
+                self.data[index][other_index] = self.data[other_index][index] = 0
 
         # Round trip to validate the data
-        return HydroCorrelationMatrix.from_hydro_correlations(correlation_dict)
+        HydroCorrelationMatrix.from_hydro_correlations(self.to_hydro_correlations())
 
     def to_hydro_correlations(self) -> dict[str, HydroCorrelation]:
         correlations_dict = {}
