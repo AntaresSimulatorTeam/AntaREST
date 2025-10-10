@@ -12,8 +12,14 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 
-from antarest.core.exceptions import AreaNotFound
+import numpy as np
+
+from antarest.core.exceptions import AreaNotFound, ChildNotFoundError
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
+from antarest.study.business.model.hydro_correlation_model import (
+    HydroCorrelation,
+    HydroCorrelationMatrix,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -32,6 +38,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 HYDRO_PATH = ["input", "hydro", "hydro"]
+CORRELATION_PATH = ["input", "hydro", "prepro", "correlation", "annual"]
 
 
 def get_inflow_path(area_id: str) -> list[str]:
@@ -102,6 +109,66 @@ class FileStudyHydroDao(HydroDao):
         file_study = self.get_file_study()
         all_areas = file_study.config.areas
         return {area_id: self.get_hydro_allocation(area_id) for area_id in sorted(all_areas)}
+
+    @override
+    def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
+        return self.get_hydro_correlation_matrix().to_hydro_correlations()[area_id]
+
+    @override
+    def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
+        file_study = self.get_file_study()
+        all_areas = file_study.config.areas
+        area_ids = sorted(all_areas)
+        array = np.identity(len(area_ids))
+
+        try:
+            ini_content = file_study.tree.get(CORRELATION_PATH)
+        except (ChildNotFoundError, KeyError):
+            ini_content = {}
+
+        for key, value in ini_content.items():
+            area_name1, area_name2 = key.split("%")
+            area1, area2 = transform_name_to_id(area_name1), transform_name_to_id(area_name2)
+            # Checks area existence
+            for area_id in [area1, area2]:
+                if area_id not in all_areas:
+                    raise AreaNotFound(area_id)
+
+            i = area_ids.index(area1)
+            j = area_ids.index(area2)
+            array[i][j] = value
+            array[j][i] = value
+
+        return HydroCorrelationMatrix(index=area_ids, columns=area_ids, data=array)
+
+    @override
+    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+        file_study = self.get_file_study()
+        all_areas = file_study.config.areas
+        area_ids = sorted(all_areas)
+        # Checks area existence
+        if area_id not in all_areas:
+            raise AreaNotFound(area_id)
+        for corr in correlation.correlation:
+            if corr.area_id not in all_areas:
+                raise AreaNotFound(corr.area_id)
+        current_correlation_matrix = self.get_hydro_correlation_matrix()
+        current_correlation_matrix.set_correlation(area_id, correlation)
+        # Save data inside the file
+        correlation_cfg: dict[str, float] = {}
+        count = len(area_ids)
+        for i in range(count):
+            # not saved: values from the diagonal are always == 1.0
+            for j in range(i + 1, count):
+                coefficient = current_correlation_matrix.data[i][j]
+                if not coefficient:
+                    # null values are not saved
+                    continue
+                a1 = area_ids[i]
+                a2 = area_ids[j]
+                correlation_cfg[f"{a1}%{a2}"] = coefficient
+
+        file_study.tree.save(correlation_cfg, CORRELATION_PATH)
 
     @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:

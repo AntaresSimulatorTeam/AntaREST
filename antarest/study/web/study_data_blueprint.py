@@ -42,6 +42,7 @@ from antarest.study.business.correlation_management import (
     CorrelationMatrix,
 )
 from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaType, AreaUIUpdate
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -76,6 +77,11 @@ from antarest.study.business.model.hydro_allocation_model import (
     HydroAllocation,
     HydroAllocationArea,
     HydroAllocationMatrix,
+)
+from antarest.study.business.model.hydro_correlation_model import (
+    HydroCorrelation,
+    HydroCorrelationArea,
+    HydroCorrelationMatrix,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -1167,38 +1173,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         path="/studies/{uuid}/areas/hydro/correlation/matrix",
         tags=[APITag.study_data],
-        summary="Get the hydraulic/load/solar/wind correlation matrix of a study",
-        response_model=CorrelationMatrix,
+        summary="Get the hydraulic correlation matrix of a study",
     )
-    def get_correlation_matrix(
-        uuid: str,
-        columns: Optional[str] = Query(
-            default=None,
-            openapi_examples={
-                "all areas": {
-                    "description": "get the correlation matrix for all areas (by default)",
-                    "value": "",
-                },
-                "single area": {
-                    "description": "get the correlation column for a single area",
-                    "value": "north",
-                },
-                "selected areas": {
-                    "description": "get the correlation columns for a selected list of areas",
-                    "value": "north,east",
-                },
-            },
-        ),
-    ) -> CorrelationMatrix:
+    def get_correlation_matrix(uuid: str) -> HydroCorrelationMatrix:
         """
-        Get the hydraulic/load/solar/wind correlation matrix of a study.
+        Get the hydraulic correlation matrix of a study.
 
         Args:
         - `uuid`: The UUID of the study.
-        - `columns`: a filter on the area identifiers:
-          - Use no parameter to select all areas.
-          - Use an area identifier to select a single area.
-          - Use a comma-separated list of areas to select those areas.
 
         Returns the hydraulic/load/solar/wind correlation matrix with the following attributes:
         - `index`: a list of all study areas.
@@ -1206,60 +1188,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[AreaInfo] = study_service.get_all_areas_info(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.get_correlation_matrix(
-            all_areas,
-            study_interface,
-            columns.split(",") if columns else [],
-        )
-
-    @bp.put(
-        path="/studies/{uuid}/areas/hydro/correlation/matrix",
-        tags=[APITag.study_data],
-        summary="Set the hydraulic/load/solar/wind correlation matrix of a study",
-        status_code=HTTPStatus.OK,
-        response_model=CorrelationMatrix,
-    )
-    def set_correlation_matrix(
-        uuid: str,
-        matrix: CorrelationMatrix = Body(
-            ...,
-            example={
-                "columns": ["north", "east", "south", "west"],
-                "data": [
-                    [0.0, 0.0, 0.25, 0.0],
-                    [0.0, 0.0, 0.75, 0.12],
-                    [0.25, 0.75, 0.0, 0.75],
-                    [0.0, 0.12, 0.75, 0.0],
-                ],
-                "index": ["north", "east", "south", "west"],
-            },
-        ),
-    ) -> CorrelationMatrix:
-        """
-        Set the hydraulic/load/solar/wind correlation matrix of a study.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `index`: a list of all study areas.
-        - `columns`: a list of selected production areas.
-        - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
-
-        Returns the hydraulic/load/solar/wind correlation matrix updated
-        """
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[AreaInfo] = study_service.get_all_areas_info(uuid)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.set_correlation_matrix(all_areas, study_interface, matrix)
+        return study_service.correlation_manager.get_correlation_matrix(study_interface)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
         tags=[APITag.study_data],
         summary="Get the form fields used for the correlation form",
-        response_model=CorrelationFormFields,
     )
-    def get_correlation_form_fields(uuid: str, area_id: str) -> CorrelationFormFields:
+    def get_correlation(uuid: str, area_id: str) -> HydroCorrelation:
         """
         Get the form fields used for the correlation form.
 
@@ -1270,32 +1207,30 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[AreaInfo] = study_service.get_all_areas_info(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.get_correlation_form_fields(all_areas, study_interface, area_id)
+        return study_service.correlation_manager.get_correlation_for_area(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
         tags=[APITag.study_data],
         summary="Set the form fields used for the correlation form",
         status_code=HTTPStatus.OK,
-        response_model=CorrelationFormFields,
     )
-    def set_correlation_form_fields(
+    def set_correlation(
         uuid: str,
         area_id: str,
-        data: CorrelationFormFields = Body(
+        data: HydroCorrelation = Body(
             ...,
-            example=CorrelationFormFields(
+            example=HydroCorrelation(
                 correlation=[
-                    AreaCoefficientItem.model_validate({"areaId": "east", "coefficient": 80}),
-                    AreaCoefficientItem.model_validate({"areaId": "north", "coefficient": 20}),
+                    HydroCorrelationArea.model_validate({"areaId": "east", "coefficient": 80}),
+                    HydroCorrelationArea.model_validate({"areaId": "north", "coefficient": 20}),
                 ]
             ),
         ),
-    ) -> CorrelationFormFields:
+    ) -> HydroCorrelation:
         """
-        Update the hydraulic/load/solar/wind correlation of a given area.
+        Update the hydraulic correlation of a given area.
 
         Args:
         - `uuid`: The UUID of the study.
@@ -1304,9 +1239,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[AreaInfo] = study_service.get_all_areas_info(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.set_correlation_form_fields(all_areas, study_interface, area_id, data)
+        return study_service.correlation_manager.set_correlation_for_area(study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/config/advancedparameters/form",
