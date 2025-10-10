@@ -137,33 +137,48 @@ def test_get_correlation_matrix(manager, empty_study_920: FileStudy, command_con
     )
 
 
-"""
 def test_get_correlation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
     _set_up(command_context, empty_study_920)
 
-    expected_allocations = {
-        "e": HydroAllocation(
-            allocation=[
-                HydroAllocationArea(area_id="e", coefficient=3.0),
-                HydroAllocationArea(area_id="s", coefficient=1.0),
+    expected_correlations = {
+        "e": HydroCorrelation(
+            correlation=[
+                HydroCorrelationArea(area_id="e", coefficient=100.0),
+                HydroCorrelationArea(area_id="n", coefficient=0.0),
+                HydroCorrelationArea(area_id="s", coefficient=0.0),
+                HydroCorrelationArea(area_id="w", coefficient=10.0),
             ]
         ),
-        "n": HydroAllocation(allocation=[HydroAllocationArea(area_id="n", coefficient=1.0)]),
-        "s": HydroAllocation(
-            allocation=[
-                HydroAllocationArea(area_id="s", coefficient=0.1),
-                HydroAllocationArea(area_id="n", coefficient=0.2),
-                HydroAllocationArea(area_id="w", coefficient=0.6),
+        "n": HydroCorrelation(
+            correlation=[
+                HydroCorrelationArea(area_id="e", coefficient=0.0),
+                HydroCorrelationArea(area_id="n", coefficient=100.0),
+                HydroCorrelationArea(area_id="s", coefficient=20.0),
+                HydroCorrelationArea(area_id="w", coefficient=0.0),
+            ],
+        ),
+        "s": HydroCorrelation(
+            correlation=[
+                HydroCorrelationArea(area_id="e", coefficient=0.0),
+                HydroCorrelationArea(area_id="n", coefficient=20.0),
+                HydroCorrelationArea(area_id="s", coefficient=100.0),
+                HydroCorrelationArea(area_id="w", coefficient=60.0),
             ]
         ),
-        "w": HydroAllocation(allocation=[HydroAllocationArea(area_id="w", coefficient=1.0)]),
+        "w": HydroCorrelation(
+            correlation=[
+                HydroCorrelationArea(area_id="e", coefficient=10.0),
+                HydroCorrelationArea(area_id="n", coefficient=0.0),
+                HydroCorrelationArea(area_id="s", coefficient=60.0),
+                HydroCorrelationArea(area_id="w", coefficient=100.0),
+            ]
+        ),
     }
 
     study = FileStudyInterface(empty_study_920)
-    for area_id in expected_allocations:
-        allocation = manager.get_allocation_for_area(study, area_id)
-        assert allocation == expected_allocations[area_id]
-"""
+    for area_id in expected_correlations:
+        correlation = manager.get_correlation_for_area(study, area_id)
+        assert correlation == expected_correlations[area_id]
 
 
 def test_set_correlation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
