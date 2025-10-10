@@ -19,7 +19,6 @@ import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import { useFormContextPlus } from "@/components/common/Form";
 import { validateNumber } from "@/utils/validation/number";
-import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import {
   isXpressAvailableForVersion,
@@ -96,12 +95,12 @@ function Fields() {
     return true;
   };
 
-  const validateAdequacyCriterions = (
-    value: FormValues["adequacyCriterions"],
+  const validateAdequacyCriterion = (
+    value: FormValues["adequacyCriterion"],
     { sensitivityMode }: FormValues,
   ) => {
     if (value && sensitivityMode) {
-      return t("launcher.field.adequacyCriterions.error");
+      return t("launcher.field.adequacyCriterion.error");
     }
     return true;
   };
@@ -133,14 +132,14 @@ function Fields() {
   const handleXpansionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.checked) {
       setValues({
-        adequacyCriterions: false,
+        adequacyCriterion: false,
         sensitivityMode: false,
         output: "",
       });
     }
   };
 
-  const handleAdequacyCriterionsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAdequacyCriterionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked && getValues("sensitivityMode")) {
       setValues({
         sensitivityMode: false,
@@ -152,8 +151,8 @@ function Fields() {
   const handleSensitivityModeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = event.target.checked;
 
-    if (isChecked && getValues("adequacyCriterions")) {
-      setValue("adequacyCriterions", false);
+    if (isChecked && getValues("adequacyCriterion")) {
+      setValue("adequacyCriterion", false);
     }
 
     if (!isChecked && getValues("output")) {
@@ -217,19 +216,23 @@ function Fields() {
 
       <Fieldset
         legend={
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            {t("launcher.legend.xpansion")}
-            <SwitchFE name="xpansion" control={control} onChange={handleXpansionChange} />
-          </Box>
+          <SwitchFE
+            label={t("launcher.legend.xpansion")}
+            labelPlacement="start"
+            name="xpansion"
+            control={control}
+            onChange={handleXpansionChange}
+            sx={{ ".MuiFormControlLabel-root": { ml: 0 } }}
+          />
         }
       >
         <>
           <SwitchFE
-            label={t("launcher.field.adequacyCriterions")}
-            name="adequacyCriterions"
+            label={t("launcher.field.adequacyCriterion")}
+            name="adequacyCriterion"
             control={control}
-            onChange={handleAdequacyCriterionsChange}
-            rules={{ validate: validateAdequacyCriterions }}
+            onChange={handleAdequacyCriterionChange}
+            rules={{ validate: validateAdequacyCriterion }}
             sx={{ minWidth: 250 }}
             disabled={!isXpansionEnabled}
           />
@@ -241,10 +244,9 @@ function Fields() {
                 name="sensitivityMode"
                 control={control}
                 onChange={handleSensitivityModeChange}
-                rules={{ deps: ["adequacyCriterions"] }}
+                rules={{ deps: ["adequacyCriterion"] }}
                 disabled={!isXpansionEnabled}
               />
-
               <SelectFE
                 label={t("global.output")}
                 name="output"
