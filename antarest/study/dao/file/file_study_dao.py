@@ -9,12 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Self
+from typing import TYPE_CHECKING, Optional, Self
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.dao.api.study_dao import StudyDao
+
+if TYPE_CHECKING:
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
 from antarest.study.dao.file.file_study_area_dao import FileStudyAreaDao
@@ -65,8 +68,11 @@ class FileStudyTreeDao(
     Implementation of study DAO over the simulator input format.
     """
 
-    def __init__(self, study: FileStudy) -> None:
+    def __init__(
+        self, study: FileStudy, generator_matrix_constants: Optional["GeneratorMatrixConstants"] = None
+    ) -> None:
         self._file_study = study
+        self._generator_matrix_constants = generator_matrix_constants
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -75,6 +81,15 @@ class FileStudyTreeDao(
     @override
     def get_impl(self) -> Self:
         return self
+
+    @override
+    def get_generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+        if self._generator_matrix_constants is None:
+            raise RuntimeError(
+                "GeneratorMatrixConstants not available. "
+                "This DAO was created without matrix constants, which are required for area creation operations."
+            )
+        return self._generator_matrix_constants
 
     @override
     def get_version(self) -> StudyVersion:
