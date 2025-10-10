@@ -1006,6 +1006,22 @@ COMMANDS = [
         None,
         id="replace_hydro_allocation",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_CORRELATION.value,
+            args=[
+                {
+                    "area_id": "fr",
+                    "correlation": {
+                        "correlation": [{"areaId": "be", "coefficient": 2.4}, {"areaId": "fr", "coefficient": 100}]
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_hydro_correlation",
+    ),
 ]
 
 
