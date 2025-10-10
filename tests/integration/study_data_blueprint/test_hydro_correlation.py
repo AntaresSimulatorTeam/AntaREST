@@ -203,3 +203,4 @@ class TestHydroCorrelation:
 
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form")
         assert res.status_code == HTTPStatus.OK, res.json()
+        assert res.json() == {"correlation": [{"areaId": "it", "coefficient": 100.0}]}
