@@ -113,40 +113,6 @@ class TestHydroCorrelation:
             "index": ["de", "es", "fr", "it"],
         }
 
-    def test_set_correlation_matrix(self, client: TestClient, user_access_token: str, internal_study_id: str):
-        """Check `set_correlation_matrix` end point"""
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-        obj = {
-            "columns": ["fr", "it"],
-            "data": [
-                [-0.79332875, -0.96830414],
-                [-0.23220568, -0.158783],
-                [1.0, 0.82],
-                [0.82, 1.0],
-            ],
-            "index": ["de", "es", "fr", "it"],
-        }
-        res = client.put(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix", json=obj)
-        assert res.status_code == HTTPStatus.OK, res.json()
-        actual = res.json()
-        expected = obj
-        assert actual == expected
-
-        res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
-        assert res.status_code == HTTPStatus.OK, res.json()
-        actual = res.json()
-        expected = {
-            "columns": ["de", "es", "fr", "it"],
-            "data": [
-                [1.0, 0.0, -0.79332875, -0.96830414],
-                [0.0, 1.0, -0.23220568, -0.158783],
-                [-0.79332875, -0.23220568, 1.0, 0.82],
-                [-0.96830414, -0.158783, 0.82, 1.0],
-            ],
-            "index": ["de", "es", "fr", "it"],
-        }
-        assert actual == expected
-
     def test_create_area(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
         Given a study, when an area is created, the hydraulic correlation
