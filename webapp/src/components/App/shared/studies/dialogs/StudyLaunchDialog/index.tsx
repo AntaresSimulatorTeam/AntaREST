@@ -48,7 +48,7 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
       xpansion: values.xpansion
         ? {
             enabled: true,
-            adequacyCriterion: values.adequacyCriterions,
+            adequacyCriterions: values.adequacyCriterions,
             sensitivityMode: values.sensitivityMode,
             // `output_id` has to be provided only if `sensitivity_mode` is enabled.
             outputId: values.sensitivityMode ? values.output : undefined,

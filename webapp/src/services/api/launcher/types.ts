@@ -37,7 +37,7 @@ export interface LauncherParamsDTO {
 
 interface XpansionConfig {
   enabled?: boolean;
-  adequacyCriterion?: boolean;
+  adequacyCriterions?: boolean;
   sensitivityMode?: boolean;
   outputId?: string;
 }
