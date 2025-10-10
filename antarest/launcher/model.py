@@ -31,7 +31,7 @@ from antarest.login.model import Identity, UserInfo
 class XpansionParametersDTO(AntaresBaseModel, extra="forbid"):
     output_id: Optional[str] = None
     sensitivity_mode: bool = False
-    enabled: bool = False
+    enabled: bool = True
     adequacy_criterion: bool = False
 
     @model_validator(mode="after")
