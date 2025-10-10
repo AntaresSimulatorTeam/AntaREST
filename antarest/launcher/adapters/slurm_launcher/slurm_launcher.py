@@ -94,12 +94,13 @@ class LauncherArgs(argparse.Namespace):
 
     def apply_xpansion_mode(self, launcher_params: LauncherParametersDTO) -> None:
         if launcher_params.xpansion:  # not None and not False
-            self.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
-            if isinstance(launcher_params.xpansion, XpansionParametersDTO):
-                if launcher_params.xpansion.sensitivity_mode:
-                    self._append_other_option("xpansion_sensitivity")
-                if launcher_params.xpansion.adequacy_criterion:
-                    self._append_other_option("adequacy_criterion")
+            if launcher_params.xpansion.enabled:
+                self.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
+                if isinstance(launcher_params.xpansion, XpansionParametersDTO):
+                    if launcher_params.xpansion.sensitivity_mode:
+                        self._append_other_option("xpansion_sensitivity")
+                    if launcher_params.xpansion.adequacy_criterion:
+                        self._append_other_option("adequacy_criteri&on")
 
     def apply_time_limit(self, launcher_params: LauncherParametersDTO, time_limit_cfg: TimeLimitConfig) -> None:
         # The `time_limit` parameter could be `None`, in that case, the default value is used.
