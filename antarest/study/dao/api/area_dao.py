@@ -10,9 +10,10 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class ReadOnlyAreaDao(ABC):
@@ -66,13 +67,13 @@ class AreaDao(ReadOnlyAreaDao):
     """
 
     @abstractmethod
-    def save_area(self, area_name: str, command_context: Any) -> None:
+    def save_area(self, area_name: str, generator_matrix_constants: GeneratorMatrixConstants) -> None:
         """
         Create a new area in the study.
 
         Args:
             area_name: The name of the area to create.
-            command_context: Command context containing generator constants for matrices.
+            generator_matrix_constants: Service for generating constant matrices needed for area creation.
 
         Raises:
             ValueError: If the area already exists.

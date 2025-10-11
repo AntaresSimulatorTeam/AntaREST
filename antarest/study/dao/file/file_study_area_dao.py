@@ -37,6 +37,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if t.TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class FileStudyAreaDao(AreaDao):
@@ -146,7 +147,7 @@ class FileStudyAreaDao(AreaDao):
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
 
     @override
-    def save_area(self, area_name: str, command_context: Any) -> None:
+    def save_area(self, area_name: str, generator_matrix_constants: "GeneratorMatrixConstants") -> None:
         """
         Create a new area in the study with all necessary files and configurations.
         """
@@ -177,7 +178,7 @@ class FileStudyAreaDao(AreaDao):
         hydro_config.setdefault("inter-monthly-breakdown", {})[area_id] = 1
 
         # Get matrix constants
-        null_matrix = command_context.generator_matrix_constants.get_null_matrix()
+        null_matrix = generator_matrix_constants.get_null_matrix()
 
         # Build the new area data structure
 
@@ -186,7 +187,7 @@ class FileStudyAreaDao(AreaDao):
             config=config,
             version=version,
             hydro_config=hydro_config,
-            command_context=command_context,
+            generator_matrix_constants=generator_matrix_constants,
             null_matrix=null_matrix,
         )
 
@@ -199,7 +200,7 @@ class FileStudyAreaDao(AreaDao):
         config: Any,
         version: Any,
         hydro_config: Dict[str, Any],
-        command_context: Any,
+        generator_matrix_constants: "GeneratorMatrixConstants",
         null_matrix: str,
     ) -> JSON:
         """Helper method to build the complete area data structure."""
@@ -258,12 +259,8 @@ class FileStudyAreaDao(AreaDao):
                     "allocation": {area_id: {"[allocation]": {area_id: 1}}},
                     "common": {
                         "capacity": {
-                            f"maxpower_{area_id}": command_context.generator_matrix_constants.get_hydro_max_power(
-                                version=version
-                            ),
-                            f"reservoir_{area_id}": command_context.generator_matrix_constants.get_hydro_reservoir(
-                                version=version
-                            ),
+                            f"maxpower_{area_id}": generator_matrix_constants.get_hydro_max_power(version=version),
+                            f"reservoir_{area_id}": generator_matrix_constants.get_hydro_reservoir(version=version),
                         }
                     },
                     "prepro": {
@@ -284,31 +281,31 @@ class FileStudyAreaDao(AreaDao):
                 "load": {
                     "prepro": {
                         area_id: {
-                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_prepro_data(),
+                            "conversion": generator_matrix_constants.get_prepro_conversion(),
+                            "data": generator_matrix_constants.get_prepro_data(),
                             "k": null_matrix,
                             "settings": {},
                             "translation": null_matrix,
                         }
                     },
                     "series": {
-                        f"load_{area_id}": command_context.generator_matrix_constants.get_null_scenario_matrix(),
+                        f"load_{area_id}": generator_matrix_constants.get_null_scenario_matrix(),
                     },
                 },
-                "misc-gen": {f"miscgen-{area_id}": command_context.generator_matrix_constants.get_default_miscgen()},
-                "reserves": {area_id: command_context.generator_matrix_constants.get_default_reserves()},
+                "misc-gen": {f"miscgen-{area_id}": generator_matrix_constants.get_default_miscgen()},
+                "reserves": {area_id: generator_matrix_constants.get_default_reserves()},
                 "solar": {
                     "prepro": {
                         area_id: {
-                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_prepro_data(),
+                            "conversion": generator_matrix_constants.get_prepro_conversion(),
+                            "data": generator_matrix_constants.get_prepro_data(),
                             "k": null_matrix,
                             "settings": {},
                             "translation": null_matrix,
                         }
                     },
                     "series": {
-                        f"solar_{area_id}": command_context.generator_matrix_constants.get_null_scenario_matrix(),
+                        f"solar_{area_id}": generator_matrix_constants.get_null_scenario_matrix(),
                     },
                 },
                 "thermal": {
@@ -318,16 +315,14 @@ class FileStudyAreaDao(AreaDao):
                 "wind": {
                     "prepro": {
                         area_id: {
-                            "conversion": command_context.generator_matrix_constants.get_prepro_conversion(),
-                            "data": command_context.generator_matrix_constants.get_prepro_data(),
+                            "conversion": generator_matrix_constants.get_prepro_conversion(),
+                            "data": generator_matrix_constants.get_prepro_data(),
                             "k": null_matrix,
                             "settings": {},
                             "translation": null_matrix,
                         }
                     },
-                    "series": {
-                        f"wind_{area_id}": command_context.generator_matrix_constants.get_null_scenario_matrix()
-                    },
+                    "series": {f"wind_{area_id}": generator_matrix_constants.get_null_scenario_matrix()},
                 },
             }
         }
@@ -340,10 +335,10 @@ class FileStudyAreaDao(AreaDao):
             hydro_config.setdefault("pumping efficiency", {})[area_id] = 1
 
             new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
-                command_context.generator_matrix_constants.get_hydro_credit_modulations()
+                generator_matrix_constants.get_hydro_credit_modulations()
             )
             new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
-                command_context.generator_matrix_constants.get_hydro_inflow_pattern()
+                generator_matrix_constants.get_hydro_inflow_pattern()
             )
             new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
 
