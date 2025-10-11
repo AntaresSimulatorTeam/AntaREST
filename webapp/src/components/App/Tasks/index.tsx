@@ -149,7 +149,7 @@ function JobsListing() {
   const renderTags = (job: LaunchJob) => {
     return (
       <Box sx={{ ml: 2 }}>
-        {job.launcherParams?.xpansion && (
+        {job.launcherParams?.xpansion?.enabled && (
           <Chip label="Xpansion" sx={{ m: 0.25, color: "white", bgcolor: colors.indigo[300] }} />
         )}
         {job.launcherParams?.adequacy_patch && (

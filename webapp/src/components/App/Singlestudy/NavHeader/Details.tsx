@@ -14,10 +14,10 @@
 
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
-import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
+import EditorIcon from "@/components/common/icons/EditorIcon";
 import { Box, Divider, Tooltip, Typography, styled } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -51,6 +51,7 @@ const StyledDivider = styled(Divider)(({ theme }) => ({
 const Item = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: theme.spacing(1),
+  alignItems: "center",
 }));
 
 interface Props {
@@ -100,8 +101,8 @@ function Details({ study, parentStudy, variantNb }: Props) {
       </Item>
       <StyledDivider />
       <Item>
-        <PersonOutlineOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
-        <TinyText>{study.owner.name}</TinyText>
+        <EditorIcon />
+        <TinyText>{study.editor}</TinyText>
       </Item>
       <Item>
         <SecurityOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
