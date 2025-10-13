@@ -22,7 +22,7 @@ export async function launchStudy({ studyId, launcherId, version, config }: Laun
     nb_cpu: config?.nbCores,
     xpansion: config?.xpansion && {
       enabled: config.xpansion?.enabled,
-      adequacy_criterion: config.xpansion?.adequacyCriterions,
+      adequacy_criterion: config.xpansion?.adequacyCriterion,
       sensitivity_mode: config.xpansion?.sensitivityMode,
       output_id: config.xpansion?.outputId,
     },
