@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation

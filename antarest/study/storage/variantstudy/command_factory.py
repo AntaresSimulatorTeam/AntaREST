@@ -63,6 +63,7 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
+from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
     ReplaceXpansionAdequacyCriterion,
@@ -111,6 +112,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_LAYER.value: CreateLayer,
     CommandName.REMOVE_LAYER.value: RemoveLayer,
     CommandName.UPDATE_LAYER.value: UpdateLayer,
+    CommandName.REPLACE_LAYER_AREAS.value: ReplaceLayerAreas,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,

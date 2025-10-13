@@ -36,7 +36,7 @@ from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import ConstraintFilters
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, AreaUIUpdate
+from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaType, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -157,7 +157,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
-    class AreaResponse(Area):
+    class AreaResponse(AreaInfo):
         """API view for areas with deprecated ``type`` field kept for compatibility."""
 
         type: Literal[AreaType.AREA] = Field(
@@ -174,12 +174,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         type: Optional[AreaType] = Query(default=None, deprecated=True),
         ui: bool = Query(default=False),
-    ) -> List[AreaResponse] | Dict[str, Any]:
+    ) -> List[AreaResponse] | Dict[str, AreaUIData]:
         logger.info(f"Fetching area list (type={type}, ui={ui}) for study {uuid}")
         if ui:
             return study_service.get_all_areas_ui_info(uuid)
 
-        areas = study_service.get_all_areas(uuid)
+        areas = study_service.get_all_areas_info(uuid)
         return [AreaResponse.model_validate(area.model_dump()) for area in areas]
 
     @bp.get("/studies/{uuid}/links", tags=[APITag.study_data], summary="Get all links")
@@ -215,19 +215,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/ui",
         tags=[APITag.study_data],
         summary="Update area information",
-        response_model=None,
     )
-    def update_area_ui(uuid: str, area_id: str, area_ui: AreaUIUpdate, layer: str = "0") -> Any:
+    def update_area_ui(uuid: str, area_id: str, area_ui: AreaUIUpdate, layer: str = "0") -> None:
         logger.info(f"Updating area ui {area_id} for study {uuid}")
-        return study_service.update_area_ui(uuid, area_id, area_ui, layer)
+        study_service.update_area_ui(uuid, area_id, area_ui, layer)
 
     @bp.delete(
         "/studies/{uuid}/areas/{area_id}",
         tags=[APITag.study_data],
         summary="Delete an area",
-        response_model=str,
     )
-    def delete_area(uuid: str, area_id: str) -> Any:
+    def delete_area(uuid: str, area_id: str) -> str:
         logger.info(f"Removing area {area_id} in study {uuid}")
         uuid = sanitize_uuid(uuid)
         area_id = transform_name_to_id(area_id)
@@ -1287,7 +1285,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Getting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.properties_manager.get_area_properties(study_interface, area_id)
+        return study_service.area_manager.get_area_properties(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
@@ -1298,7 +1296,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.update_all_area_properties(
+        study_service.area_manager.update_all_area_properties(
             study_interface,
             {area_id: form_fields},
         )
