@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion

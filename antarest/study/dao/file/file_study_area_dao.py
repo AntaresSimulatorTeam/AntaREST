@@ -49,7 +49,6 @@ class FileStudyAreaDao(AreaDao):
     def get_impl(self) -> "FileStudyTreeDao":
         pass
 
-
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:
         """
@@ -178,7 +177,6 @@ class FileStudyAreaDao(AreaDao):
         hydro_config.setdefault("intra-daily-modulation", {})[area_id] = 24
         hydro_config.setdefault("inter-monthly-breakdown", {})[area_id] = 1
 
-
         matrix_service = study_data.tree.matrix_mapper.matrix_service
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
         generator_matrix_constants.init_constant_matrices()
@@ -207,7 +205,6 @@ class FileStudyAreaDao(AreaDao):
     ) -> JSON:
         """Helper method to build the complete area data structure."""
         # Import here to avoid circular import
-        from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
         from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 
         study_data = self.get_file_study()

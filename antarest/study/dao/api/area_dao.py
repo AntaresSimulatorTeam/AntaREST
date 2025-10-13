@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 
