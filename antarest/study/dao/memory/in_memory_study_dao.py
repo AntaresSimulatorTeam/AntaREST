@@ -843,16 +843,12 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:
-        # For in-memory DAO, we only store area names, not full AreaInfo objects
-        # This is a simplified implementation for testing purposes
         return [AreaInfo(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
 
     @override
     def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
-        # Convert internal AreaUI storage to AreaUIData format
         result: Dict[str, AreaUIData] = {}
         for area_id, area_ui in self._area_ui.items():
-            # Build the complete UI data structure expected by AreaUIData
             r, g, b = area_ui.color_rgb
             result[area_id] = AreaUIData(
                 ui={
@@ -874,12 +870,10 @@ class InMemoryStudyDao(StudyDao):
         if area_id not in self._area_names:
             raise AreaNotFound(area_id)
 
-        # Return the UI for this area, or default values if not found
         return self._area_ui.get(area_id, AreaUI())
 
     @override
-    def save_area(self, area_name: str, command_context: Any) -> None:
-        # For in-memory DAO, simplified implementation for testing
+    def save_area(self, area_name: str) -> None:
         area_id = transform_name_to_id(area_name)
         if area_id in self._area_names:
             raise ValueError(f"Area '{area_name}' already exists and could not be created")
@@ -890,8 +884,6 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def delete_area(self, area_id: str) -> None:
-        # For in-memory DAO, simplified implementation for testing
-
         if area_id not in self._area_names:
             raise AreaNotFound(area_id)
 
@@ -919,7 +911,6 @@ class InMemoryStudyDao(StudyDao):
         if area_id not in self._area_names:
             raise AreaNotFound(area_id)
 
-        # Store UI info for this area (we only track layer 0 in memory for simplicity)
         self._area_ui[area_id] = area_ui
 
     @override
@@ -929,5 +920,4 @@ class InMemoryStudyDao(StudyDao):
             if area_id not in self._area_names:
                 raise AreaNotFound(area_id)
 
-        # Store the layer-area associations
         self._layer_areas[layer_id] = set(area_ids)

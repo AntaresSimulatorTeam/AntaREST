@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import typing as t
 from typing import Self
 
 from antares.study.version import StudyVersion
@@ -36,6 +37,9 @@ from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTim
 from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserResourceDao
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+if t.TYPE_CHECKING:
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class FileStudyTreeDao(
@@ -65,8 +69,11 @@ class FileStudyTreeDao(
     Implementation of study DAO over the simulator input format.
     """
 
-    def __init__(self, study: FileStudy) -> None:
+    def __init__(
+        self, study: FileStudy, generator_matrix_constants: t.Optional["GeneratorMatrixConstants"] = None
+    ) -> None:
         self._file_study = study
+        self._generator_matrix_constants = generator_matrix_constants
 
     @override
     def get_file_study(self) -> FileStudy:
