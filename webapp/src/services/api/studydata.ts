@@ -12,13 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import type { UpdateAreaUi } from "../../types/types";
 import {
-  bindingConstraintModelAdapter,
   type BindingConstraint,
-  type ConstraintTerm,
+  bindingConstraintModelAdapter,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import type { StudyMapNode } from "../../redux/ducks/studyMaps";
+import type { UpdateAreaUi } from "../../types/types";
 import client from "./client";
 
 export const createArea = async (uuid: string, name: string): Promise<StudyMapNode> => {
@@ -41,43 +40,6 @@ export const updateAreaUI = async (
 
 export const deleteArea = async (uuid: string, areaId: string): Promise<string> => {
   const res = await client.delete(`/v1/studies/${uuid}/areas/${areaId}`);
-  return res.data;
-};
-
-export const updateConstraintTerm = async (
-  studyId: string,
-  constraintId: string,
-  term: Partial<ConstraintTerm>,
-): Promise<string> => {
-  const res = await client.put(
-    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(constraintId)}/term`,
-    term,
-  );
-  return res.data;
-};
-
-export const createConstraintTerm = async (
-  studyId: string,
-  constraintId: string,
-  term: ConstraintTerm,
-): Promise<void> => {
-  const res = await client.post(
-    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(constraintId)}/term`,
-    term,
-  );
-  return res.data;
-};
-
-export const deleteConstraintTerm = async (
-  studyId: string,
-  constraintId: string,
-  termId: ConstraintTerm["id"],
-): Promise<void> => {
-  const res = await client.delete(
-    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
-      constraintId,
-    )}/term/${encodeURIComponent(termId)}`,
-  );
   return res.data;
 };
 
@@ -116,5 +78,20 @@ export const createBindingConstraint = async (
   data: Partial<BindingConstraint>,
 ): Promise<BindingConstraint> => {
   const res = await client.post(`/v1/studies/${studyId}/bindingconstraints`, data);
+  return res.data;
+};
+
+export const duplicateBindingConstraint = async (
+  studyId: string,
+  constraintId: string,
+  newConstraintName: string,
+): Promise<BindingConstraint> => {
+  const res = await client.post(
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(constraintId)}`,
+    null,
+    {
+      params: { new_constraint_name: newConstraintName },
+    },
+  );
   return res.data;
 };

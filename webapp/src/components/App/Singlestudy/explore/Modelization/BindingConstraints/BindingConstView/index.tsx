@@ -29,7 +29,7 @@ import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../redux/selectors";
 import {
-  createBindingConstraint,
+  duplicateBindingConstraint,
   getBindingConstraint,
   getBindingConstraintList,
   updateBindingConstraint,
@@ -119,23 +119,21 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
   };
 
   const handleDuplicateConstraint = async (newName: string) => {
-    const constraintData = constraint.data;
-    if (!constraintData) {
-      return;
-    }
+    try {
+      const duplicatedConstraint = await duplicateBindingConstraint(
+        study.id,
+        constraintId,
+        newName,
+      );
 
-    const { id, name, ...duplicatedData } = constraintData;
+      reloadConstraintsList();
 
-    const duplicatedConstraint = await createBindingConstraint(study.id, {
-      ...duplicatedData,
-      name: newName,
-    });
-
-    reloadConstraintsList();
-
-    if (duplicatedConstraint) {
-      // Redirecting to the new duplicated constraint
-      dispatch(setCurrentBindingConst(duplicatedConstraint.id));
+      if (duplicatedConstraint) {
+        // Redirecting to the new duplicated constraint
+        dispatch(setCurrentBindingConst(duplicatedConstraint.id));
+      }
+    } catch (error) {
+      enqueueErrorSnackbar(t("study.error.duplicateConstraint"), toError(error));
     }
   };
 
@@ -164,12 +162,8 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
         // Trigger a reload redirecting to the first constraint
         dispatch(setCurrentBindingConst(updatedConstraints[0].id));
       }
-
-      enqueueSnackbar(t("study.success.deleteConstraint"), {
-        variant: "success",
-      });
     } catch (e) {
-      enqueueErrorSnackbar(t("study.error.deleteConstraint"), e as AxiosError);
+      enqueueErrorSnackbar(t("study.error.deleteConstraint"), toError(e));
     } finally {
       setDeleteConstraintDialogOpen(false);
     }
@@ -187,6 +181,7 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
           <Form
             config={{ defaultValues }}
             onSubmit={handleSubmit}
+            enableUndoRedo
             extraActions={
               <>
                 <Button
