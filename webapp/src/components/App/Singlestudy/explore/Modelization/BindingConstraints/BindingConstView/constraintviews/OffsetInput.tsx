@@ -34,7 +34,7 @@ export default function OffsetInput(props: React.PropsWithChildren<Props>) {
         sx={{
           position: "absolute",
           top: "-15px",
-          right: "-25px",
+          right: "-15px",
           color: "error.main",
           cursor: "pointer",
           "&:hover": {
