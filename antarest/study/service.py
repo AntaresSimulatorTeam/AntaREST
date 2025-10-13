@@ -876,8 +876,10 @@ class StudyService:
 
         author = self.get_user_name()
 
-        # Get directory from path (raises 404 if not found)
-        directory_id = self._get_directory_from_path(path) if path else None
+        # Get or create directory from path
+        current_user = get_current_user()
+        owner_id = current_user.id if current_user else 0
+        directory_id = self._get_directory_from_path(path, owner_id, group_ids) if path else None
 
         raw = RawStudy(
             id=sid,
@@ -1164,8 +1166,10 @@ class StudyService:
                 with_outputs,
             )
 
-            # Set directory_id from path (raises 404 if not found)
-            directory_id = self._get_directory_from_path(path) if path else None
+            # Get or create directory from path
+            current_user = get_current_user()
+            owner_id = current_user.id if current_user else 0
+            directory_id = self._get_directory_from_path(path, owner_id, group_ids) if path else None
             if directory_id:
                 study.directory_id = directory_id
 
@@ -1215,28 +1219,28 @@ class StudyService:
 
         return task_or_study_id
 
-    def _get_directory_from_path(self, folder_path: str) -> Optional[str]:
+    def _get_directory_from_path(self, folder_path: str, owner_id: int, group_ids: List[str]) -> Optional[str]:
         """
-        Get directory ID from a folder path.
+        Get or create directory ID from a folder path.
+        Creates missing directories automatically with the specified owner and groups.
 
         Args:
             folder_path: POSIX folder path like "project/subfolder"
+            owner_id: Owner ID for newly created directories
+            group_ids: List of group IDs for newly created directories
 
         Returns:
             Directory ID of the leaf directory, or None if path is empty
-
-        Raises:
-            HTTPException: If the directory path does not exist
         """
         if not folder_path:
             return None
 
-        from http import HTTPStatus
+        import uuid
         from pathlib import PurePosixPath
 
-        from fastapi import HTTPException
         from sqlalchemy import select
 
+        from antarest.login.model import Group
         from antarest.study.model import Directory
 
         # Parse path
@@ -1246,7 +1250,7 @@ class StudyService:
         if not path_parts:
             return None
 
-        # Navigate directory hierarchy
+        # Navigate/create directory hierarchy
         parent_id = None
         for dir_name in path_parts:
             # Check if directory exists
@@ -1254,12 +1258,24 @@ class StudyService:
             existing_dir = self.repository.session.scalar(stmt)
 
             if not existing_dir:
-                raise HTTPException(
-                    status_code=HTTPStatus.NOT_FOUND,
-                    detail=f"Directory path '{folder_path}' does not exist. Please create it first using POST /v1/directories.",
+                # Create missing directory
+                new_dir = Directory(
+                    id=str(uuid.uuid4()),
+                    name=dir_name,
+                    parent_id=parent_id,
+                    owner_id=owner_id,
                 )
-
-            parent_id = existing_dir.id
+                # Add groups
+                new_dir.groups = [
+                    self.repository.session.get(Group, gid)
+                    for gid in group_ids
+                    if self.repository.session.get(Group, gid)
+                ]
+                self.repository.session.add(new_dir)
+                self.repository.session.flush()
+                parent_id = new_dir.id
+            else:
+                parent_id = existing_dir.id
 
         return parent_id
 
@@ -1271,8 +1287,10 @@ class StudyService:
 
         if folder_dest:
             new_folder = folder_dest.rstrip("/") + f"/{study.id}"
-            # Get directory from path (raises 404 if not found)
-            directory_id = self._get_directory_from_path(folder_dest)
+            # Get or create directory from path, using study's owner and groups
+            group_ids = [g.id for g in study.groups]
+            owner_id = study.owner_id or 0
+            directory_id = self._get_directory_from_path(folder_dest, owner_id, group_ids)
             study.directory_id = directory_id
         else:
             new_folder = None
@@ -1429,8 +1447,10 @@ class StudyService:
         sid = str(uuid4())
         study_path = str(self.config.get_workspace_path() / sid)
 
-        # Get directory from path (raises 404 if not found)
-        directory_id = self._get_directory_from_path(path) if path else None
+        # Get or create directory from path
+        current_user = get_current_user()
+        owner_id = current_user.id if current_user else 0
+        directory_id = self._get_directory_from_path(path, owner_id, group_ids) if path else None
 
         study = RawStudy(
             id=sid,

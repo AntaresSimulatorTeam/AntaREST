@@ -121,20 +121,42 @@ class TestCreateStudy:
             headers={"Authorization": f"Bearer {admin_access_token}"},
         )
 
-    def test_create_study_with_nonexistent_path(
+    def test_create_study_with_auto_directory_creation(
         self,
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        """Test creating a study in a non-existent directory path should fail."""
+        """Test that creating a study creates missing directories automatically."""
         res = client.post(
-            "/v1/studies?name=test-study&path=nonexistent/path",
+            "/v1/studies?name=test-study&path=workspace/experiments/test",
             headers={"Authorization": f"Bearer {admin_access_token}"},
         )
-        assert res.status_code == 404
-        error = res.json()
-        error_msg = error.get("detail") or error.get("description", "")
-        assert "does not exist" in error_msg.lower()
+        assert res.status_code == 201
+        study_id = res.json()
+
+        # Verify the study was created
+        res = client.get(f"/v1/studies/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
+        assert res.status_code == 200
+        assert res.json()["name"] == "test-study"
+
+        # Verify directories were created
+        res = client.get("/v1/directories", headers={"Authorization": f"Bearer {admin_access_token}"})
+        assert res.status_code == 200
+        directories = res.json()
+        dir_names = [d["name"] for d in directories]
+        assert "workspace" in dir_names
+        assert "experiments" in dir_names
+        assert "test" in dir_names
+
+        # Verify hierarchy
+        workspace_dir = next(d for d in directories if d["name"] == "workspace")
+        assert workspace_dir["parentId"] is None
+
+        experiments_dir = next(d for d in directories if d["name"] == "experiments")
+        assert experiments_dir["parentId"] == workspace_dir["id"]
+
+        test_dir = next(d for d in directories if d["name"] == "test")
+        assert test_dir["parentId"] == experiments_dir["id"]
 
     def test_create_study_without_path(
         self,

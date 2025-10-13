@@ -14,12 +14,8 @@
 
 import logging
 import uuid
-from datetime import datetime
 from typing import TYPE_CHECKING, List, Sequence
 
-from sqlalchemy import update
-
-from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.model import Group, GroupDTO
 from antarest.study.directory_exceptions import (
@@ -30,16 +26,13 @@ from antarest.study.directory_exceptions import (
     DirectoryPermissionError,
 )
 from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
     Directory,
-    DirectoryCreateDTO,
-    DirectoryDTO,
-    DirectoryUpdateDTO,
+    DirectoryCreation,
+    DirectoryMetadata,
+    DirectoryUpdate,
     OwnerInfo,
-    StudyAdditionalData,
-    StudyMetadataDTO,
 )
-from antarest.study.repository import AccessPermissions, DirectoryRepository, StudyFilter, StudyMetadataRepository
+from antarest.study.repository import AccessPermissions, DirectoryRepository, StudyMetadataRepository
 
 if TYPE_CHECKING:
     from antarest.study.service import StudyService
@@ -60,29 +53,18 @@ class DirectoryService:
         self.study_repository = study_repository
         self.study_service = study_service
 
-    def list_directories(self, access_permissions: AccessPermissions) -> List[DirectoryDTO]:
+    def list_directories(self, access_permissions: AccessPermissions) -> List[DirectoryMetadata]:
         """List all directories the user has access to."""
         directories = self.directory_repository.get_all(access_permissions)
         return [self._to_dto(directory) for directory in directories]
 
-    def get_directory(self, directory_id: str, access_permissions: AccessPermissions) -> DirectoryDTO:
-        """Get a directory by ID."""
-        directory = self.directory_repository.get(directory_id)
-        if directory is None:
-            raise DirectoryNotFoundError(directory_id)
-
-        if not self.directory_repository.has_permission(directory, access_permissions):
-            raise UserHasNotPermissionError()
-
-        return self._to_dto(directory)
-
     def create_directory(
         self,
-        data: DirectoryCreateDTO,
+        data: DirectoryCreation,
         owner_id: int,
         group_ids: Sequence[str],
         access_permissions: AccessPermissions,
-    ) -> DirectoryDTO:
+    ) -> DirectoryMetadata:
         """Create a new directory."""
         if data.parent_id:
             parent = self.directory_repository.get(data.parent_id)
@@ -100,8 +82,6 @@ class DirectoryService:
             name=data.name,
             parent_id=data.parent_id,
             owner_id=owner_id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
 
         session = self.directory_repository.session
@@ -113,9 +93,9 @@ class DirectoryService:
     def update_directory(
         self,
         directory_id: str,
-        data: DirectoryUpdateDTO,
+        data: DirectoryUpdate,
         access_permissions: AccessPermissions,
-    ) -> DirectoryDTO:
+    ) -> DirectoryMetadata:
         """Update a directory (name or parent)."""
         directory = self.directory_repository.get(directory_id)
         if directory is None:
@@ -143,21 +123,17 @@ class DirectoryService:
 
             directory.parent_id = data.parent_id if data.parent_id != "" else None
 
-        directory.updated_at = datetime.utcnow()
         updated_directory = self.directory_repository.save(directory)
         return self._to_dto(updated_directory)
 
     def delete_directory(
         self,
         directory_id: str,
-        cascade: bool = False,
-        force: bool = False,
         access_permissions: AccessPermissions = AccessPermissions(),
     ) -> None:
         """
-        Delete a directory.
-        - cascade=True: delete all subdirectories and studies
-        - force=True: orphan subdirectories and studies
+        Delete a directory only if it and all its subdirectories contain no studies.
+        Empty subdirectories are deleted recursively along with the parent.
         """
         directory = self.directory_repository.get(directory_id)
         if directory is None:
@@ -166,121 +142,44 @@ class DirectoryService:
         if not self.directory_repository.has_permission(directory, access_permissions, write_access=True):
             raise UserHasNotPermissionError()
 
-        if self.directory_repository.has_children_directories(directory_id):
-            if not (cascade or force):
-                raise DirectoryNotEmptyError(
-                    "Cannot delete directory: it contains subdirectories. Use cascade=true or force=true."
-                )
+        # Check if directory or any subdirectory contains studies
+        if self._has_studies_recursive(directory_id):
+            raise DirectoryNotEmptyError("Cannot delete directory: it or one of its subdirectories contains studies.")
 
-            if cascade:
-                self._delete_children_recursive(directory_id, access_permissions)
-            elif force:
-                self._orphan_subdirectories(directory_id)
-
-        study_count = self.directory_repository.count_studies(directory_id)
-        if study_count > 0:
-            if not (cascade or force):
-                raise DirectoryNotEmptyError(
-                    f"Cannot delete directory: it contains {study_count} studies. "
-                    f"Use cascade=true to delete them or force=true to orphan them."
-                )
-
-            if cascade:
-                self._delete_studies_in_directory(directory_id)
-
-        # TODO: may need to handle outputs cleanup in cascade mode
+        # Delete all empty subdirectories recursively, then the directory itself
+        self._delete_empty_children_recursive(directory_id, access_permissions)
         self.directory_repository.delete(directory_id)
 
-    def list_studies_in_directory(
-        self,
-        directory_id: str,
-        access_permissions: AccessPermissions,
-    ) -> List[StudyMetadataDTO]:
-        """List all studies in a directory."""
-        directory = self.directory_repository.get(directory_id)
-        if directory is None:
-            raise DirectoryNotFoundError(directory_id)
+    def _has_studies_recursive(self, directory_id: str) -> bool:
+        """Check if directory or any of its subdirectories contains studies."""
+        # Check current directory
+        if self.directory_repository.count_studies(directory_id) > 0:
+            return True
 
-        if not self.directory_repository.has_permission(directory, access_permissions):
-            raise UserHasNotPermissionError()
+        # Check all subdirectories recursively
+        children = self.directory_repository.get_children(directory_id, AccessPermissions(is_admin=True))
+        for child in children:
+            if self._has_studies_recursive(child.id):
+                return True
 
-        study_filter = StudyFilter(access_permissions=access_permissions)
-        all_studies = self.study_repository.get_all(study_filter)
-        studies_in_dir = [study for study in all_studies if study.directory_id == directory_id]
+        return False
 
-        result = []
-        for study in studies_in_dir:
-            additional_data = study.additional_data or StudyAdditionalData()
-            study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-            folder = getattr(study, "folder", None)
-
-            owner_info = (
-                OwnerInfo(id=study.owner.id, name=study.owner.name)
-                if study.owner is not None
-                else OwnerInfo(name=additional_data.author or "Unknown")
-            )
-
-            dto = StudyMetadataDTO(
-                id=study.id,
-                name=study.name,
-                version=study.version,
-                author=additional_data.author,
-                editor=additional_data.editor,
-                created=str(study.created_at),
-                updated=str(study.updated_at),
-                workspace=study_workspace,
-                managed=study_workspace == DEFAULT_WORKSPACE_NAME,
-                type=study.type,
-                archived=study.archived if study.archived is not None else False,
-                owner=owner_info,
-                groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
-                public_mode=study.public_mode or PublicMode.NONE,
-                horizon=additional_data.horizon,
-                folder=folder,
-                tags=[tag.label for tag in study.tags],
-            )
-            result.append(dto)
-
-        return result
-
-    def _orphan_subdirectories(self, directory_id: str) -> None:
-        """Set parent_id to NULL for all subdirectories."""
-        session = self.directory_repository.session
-        stmt = update(Directory).where(Directory.parent_id == directory_id).values(parent_id=None)
-        session.execute(stmt)
-        session.commit()
-
-    def _delete_children_recursive(self, directory_id: str, access_permissions: AccessPermissions) -> None:
-        """Recursively delete all subdirectories and their studies."""
+    def _delete_empty_children_recursive(self, directory_id: str, access_permissions: AccessPermissions) -> None:
+        """Recursively delete all empty subdirectories."""
         children = self.directory_repository.get_children(directory_id, access_permissions)
 
         for child in children:
-            self._delete_children_recursive(child.id, access_permissions)
-            self._delete_studies_in_directory(child.id)
+            self._delete_empty_children_recursive(child.id, access_permissions)
             self.directory_repository.delete(child.id)
 
-    def _delete_studies_in_directory(self, directory_id: str) -> None:
-        """Delete all studies in a directory."""
-        study_filter = StudyFilter(directory_id=directory_id)
-        studies = self.study_repository.get_all(study_filter)
-
-        for study in studies:
-            try:
-                # delete with children to handle variants
-                self.study_service.delete_study(study.id, children=True)
-            except Exception as e:
-                logger.error(f"Failed to delete study {study.id} during cascade: {e}")
-
-    def _to_dto(self, directory: Directory) -> DirectoryDTO:
+    def _to_dto(self, directory: Directory) -> DirectoryMetadata:
         """Convert Directory entity to DTO."""
         owner_info = OwnerInfo(id=directory.owner_id, name=directory.owner.name if directory.owner else "Unknown")
 
-        return DirectoryDTO(
+        return DirectoryMetadata(
             id=directory.id,
             name=directory.name,
             parent_id=directory.parent_id,
             owner=owner_info,
             groups=[GroupDTO(id=g.id, name=g.name) for g in directory.groups],
-            created_at=directory.created_at.isoformat() if directory.created_at else "",
-            updated_at=directory.updated_at.isoformat() if directory.updated_at else "",
         )

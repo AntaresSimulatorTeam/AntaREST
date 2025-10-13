@@ -21,7 +21,6 @@ Tests the repository layer for directory management including:
 """
 
 import uuid
-from datetime import datetime
 
 import pytest
 from sqlalchemy.orm import Session
@@ -70,8 +69,6 @@ class TestDirectoryRepository:
             name="Test Directory",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
 
         # Save
@@ -99,8 +96,6 @@ class TestDirectoryRepository:
                 name=f"Directory {i}",
                 parent_id=None,
                 owner_id=test_user.id,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
             )
             directory_repo.save(directory)
 
@@ -121,8 +116,6 @@ class TestDirectoryRepository:
             name="To Delete",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(directory)
 
@@ -147,8 +140,6 @@ class TestDirectoryRepository:
             name="Owner Directory",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(directory)
 
@@ -177,8 +168,6 @@ class TestDirectoryRepository:
             name="Group Directory",
             parent_id=None,
             owner_id=owner.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory.groups = [test_group]
         directory_repo.save(directory)
@@ -207,8 +196,6 @@ class TestDirectoryRepository:
             name="Private Directory",
             parent_id=None,
             owner_id=owner.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(directory)
 
@@ -236,8 +223,6 @@ class TestDirectoryRepository:
             name="Any Directory",
             parent_id=None,
             owner_id=owner.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(directory)
 
@@ -267,8 +252,6 @@ class TestDirectoryRepository:
             name="A",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(dir_a)
 
@@ -278,8 +261,6 @@ class TestDirectoryRepository:
             name="B",
             parent_id=dir_a.id,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(dir_b)
 
@@ -301,8 +282,6 @@ class TestDirectoryRepository:
             name="A",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(dir_a)
 
@@ -311,8 +290,6 @@ class TestDirectoryRepository:
             name="B",
             parent_id=dir_a.id,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(dir_b)
 
@@ -321,8 +298,6 @@ class TestDirectoryRepository:
             name="C",
             parent_id=dir_b.id,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(dir_c)
 
@@ -344,8 +319,6 @@ class TestDirectoryRepository:
             name="A",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(dir_a)
 
@@ -354,8 +327,6 @@ class TestDirectoryRepository:
             name="B",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(dir_b)
 
@@ -365,8 +336,6 @@ class TestDirectoryRepository:
             name="C",
             parent_id=dir_a.id,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(dir_c)
 
@@ -388,8 +357,6 @@ class TestDirectoryRepository:
             name="Parent",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(parent)
 
@@ -399,8 +366,6 @@ class TestDirectoryRepository:
             name="Child",
             parent_id=parent.id,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(child)
 
@@ -422,8 +387,6 @@ class TestDirectoryRepository:
             name="Parent1",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(parent1)
 
@@ -432,8 +395,6 @@ class TestDirectoryRepository:
             name="Parent2",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(parent2)
 
@@ -443,8 +404,6 @@ class TestDirectoryRepository:
             name="SameName",
             parent_id=parent1.id,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(child)
 
@@ -466,8 +425,6 @@ class TestDirectoryRepository:
             name="ExistingName",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(directory)
 
@@ -489,8 +446,6 @@ class TestDirectoryRepository:
             name="Parent",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(parent)
 
@@ -503,8 +458,6 @@ class TestDirectoryRepository:
             name="Child",
             parent_id=parent.id,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(child)
 
@@ -526,8 +479,6 @@ class TestDirectoryRepository:
             name="Study Directory",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         directory_repo.save(directory)
 

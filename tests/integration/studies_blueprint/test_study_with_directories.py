@@ -49,8 +49,8 @@ class TestStudyWithDirectories:
         assert res.status_code == 200
         assert res.json()["name"] == "copied-study"
 
-    def test_copy_study_with_nonexistent_path(self, client: TestClient, user_access_token: str) -> None:
-        """Test copying a study to non-existent directory should fail."""
+    def test_copy_study_with_auto_directory_creation(self, client: TestClient, user_access_token: str) -> None:
+        """Test that copying creates missing directories automatically."""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create source study
@@ -58,15 +58,37 @@ class TestStudyWithDirectories:
         assert res.status_code == 201
         source_study_id = res.json()
 
-        # Try to copy to non-existent path
+        # Copy to non-existent path - should succeed and create directories
         res = client.post(
             f"/v1/studies/{source_study_id}/copy",
-            params={"study_name": "copied-study", "use_task": False, "path": "nonexistent/path"},
+            params={"study_name": "copied-study", "use_task": False, "path": "archives/projects/2025"},
         )
-        assert res.status_code == 404
-        error = res.json()
-        error_msg = error.get("detail") or error.get("description", "")
-        assert "does not exist" in error_msg.lower()
+        assert res.status_code == 201
+        copied_study_id = res.json()
+
+        # Verify copied study exists
+        res = client.get(f"/v1/studies/{copied_study_id}")
+        assert res.status_code == 200
+        assert res.json()["name"] == "copied-study"
+
+        # Verify directories were created
+        res = client.get("/v1/directories")
+        assert res.status_code == 200
+        directories = res.json()
+        dir_names = [d["name"] for d in directories]
+        assert "archives" in dir_names
+        assert "projects" in dir_names
+        assert "2025" in dir_names
+
+        # Verify hierarchy
+        archives_dir = next(d for d in directories if d["name"] == "archives")
+        assert archives_dir["parentId"] is None
+
+        projects_dir = next(d for d in directories if d["name"] == "projects")
+        assert projects_dir["parentId"] == archives_dir["id"]
+
+        year_dir = next(d for d in directories if d["name"] == "2025")
+        assert year_dir["parentId"] == projects_dir["id"]
 
     def test_copy_study_without_path(self, client: TestClient, user_access_token: str) -> None:
         """Test copying a study without path creates it at root level."""
@@ -123,8 +145,8 @@ class TestStudyWithDirectories:
         res = client.get(f"/v1/studies/{study_id}")
         assert res.status_code == 200
 
-    def test_import_study_with_nonexistent_path(self, client: TestClient, user_access_token: str) -> None:
-        """Test importing a study to non-existent directory should fail."""
+    def test_import_study_with_auto_directory_creation(self, client: TestClient, user_access_token: str) -> None:
+        """Test that importing creates missing directories automatically."""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create a simple zip file
@@ -134,13 +156,34 @@ class TestStudyWithDirectories:
 
         zip_buffer.seek(0)
 
-        # Try to import to non-existent path
+        # Import to non-existent path - should succeed and create directories
         res = client.post(
             "/v1/studies/_import",
-            params={"path": "nonexistent/path"},
+            params={"path": "uploads/incoming/batch1"},
             files={"study": ("study.zip", zip_buffer, "application/zip")},
         )
-        assert res.status_code == 404
-        error = res.json()
-        error_msg = error.get("detail") or error.get("description", "")
-        assert "does not exist" in error_msg.lower()
+        assert res.status_code == 201
+        study_id = res.json()
+
+        # Verify imported study exists
+        res = client.get(f"/v1/studies/{study_id}")
+        assert res.status_code == 200
+
+        # Verify directories were created
+        res = client.get("/v1/directories")
+        assert res.status_code == 200
+        directories = res.json()
+        dir_names = [d["name"] for d in directories]
+        assert "uploads" in dir_names
+        assert "incoming" in dir_names
+        assert "batch1" in dir_names
+
+        # Verify hierarchy
+        uploads_dir = next(d for d in directories if d["name"] == "uploads")
+        assert uploads_dir["parentId"] is None
+
+        incoming_dir = next(d for d in directories if d["name"] == "incoming")
+        assert incoming_dir["parentId"] == uploads_dir["id"]
+
+        batch_dir = next(d for d in directories if d["name"] == "batch1")
+        assert batch_dir["parentId"] == incoming_dir["id"]

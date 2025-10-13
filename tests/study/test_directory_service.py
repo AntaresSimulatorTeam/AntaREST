@@ -21,7 +21,6 @@ Tests the service layer business logic including:
 """
 
 import uuid
-from datetime import datetime
 from unittest.mock import Mock
 
 import pytest
@@ -30,7 +29,7 @@ from fastapi import HTTPException
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.model import Group, Identity
 from antarest.study.directory_service import DirectoryService
-from antarest.study.model import Directory, DirectoryCreateDTO, DirectoryUpdateDTO
+from antarest.study.model import Directory, DirectoryCreation, DirectoryUpdate
 from antarest.study.repository import AccessPermissions, DirectoryRepository, StudyMetadataRepository
 
 
@@ -90,7 +89,7 @@ class TestDirectoryService:
         Test successful directory creation.
         """
         # Setup
-        data = DirectoryCreateDTO(name="New Directory", parent_id=None)
+        data = DirectoryCreation(name="New Directory", parent_id=None)
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.has_duplicate_name.return_value = False
@@ -99,8 +98,6 @@ class TestDirectoryService:
             name="New Directory",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         mock_directory_repo.session.get.return_value = test_group
 
@@ -123,7 +120,7 @@ class TestDirectoryService:
         """
         # Setup
         fake_parent_id = str(uuid.uuid4())
-        data = DirectoryCreateDTO(name="Child Directory", parent_id=fake_parent_id)
+        data = DirectoryCreation(name="Child Directory", parent_id=fake_parent_id)
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = None
@@ -150,10 +147,8 @@ class TestDirectoryService:
             name="Parent",
             parent_id=None,
             owner_id=2,  # Different owner
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
-        data = DirectoryCreateDTO(name="Child", parent_id=parent.id)
+        data = DirectoryCreation(name="Child", parent_id=parent.id)
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = parent
@@ -175,7 +170,7 @@ class TestDirectoryService:
         Test that creating directory with duplicate name fails.
         """
         # Setup
-        data = DirectoryCreateDTO(name="Duplicate", parent_id=None)
+        data = DirectoryCreation(name="Duplicate", parent_id=None)
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.has_duplicate_name.return_value = True
@@ -203,10 +198,8 @@ class TestDirectoryService:
             name="Old Name",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
-        data = DirectoryUpdateDTO(name="New Name")
+        data = DirectoryUpdate(name="New Name")
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = existing_directory
@@ -232,7 +225,7 @@ class TestDirectoryService:
         """
         # Setup
         directory_id = str(uuid.uuid4())
-        data = DirectoryUpdateDTO(name="New Name")
+        data = DirectoryUpdate(name="New Name")
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = None
@@ -259,10 +252,8 @@ class TestDirectoryService:
             name="Directory",
             parent_id=None,
             owner_id=2,  # Different owner
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
-        data = DirectoryUpdateDTO(name="New Name")
+        data = DirectoryUpdate(name="New Name")
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = existing_directory
@@ -289,10 +280,8 @@ class TestDirectoryService:
             name="Directory",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
-        data = DirectoryUpdateDTO(parent_id=new_parent_id)
+        data = DirectoryUpdate(parent_id=new_parent_id)
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = existing_directory
@@ -322,66 +311,69 @@ class TestDirectoryService:
             name="Empty Directory",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
-        mock_directory_repo.has_children_directories.return_value = False
         mock_directory_repo.count_studies.return_value = 0
+        mock_directory_repo.get_children.return_value = []
 
         # Execute
-        directory_service.delete_directory(
-            directory_id, cascade=False, force=False, access_permissions=access_permissions
-        )
+        directory_service.delete_directory(directory_id, access_permissions=access_permissions)
 
         # Verify
         mock_directory_repo.delete.assert_called_once_with(directory_id)
 
-    def test_delete_non_empty_directory_without_flags(
+    def test_delete_directory_with_empty_subdirectories(
         self,
         directory_service: DirectoryService,
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
         """
-        Test that deleting non-empty directory without cascade/force fails.
+        Test that deleting directory with empty subdirectories succeeds and deletes them.
         """
         # Setup
         directory_id = str(uuid.uuid4())
+        child_id = str(uuid.uuid4())
         directory = Directory(
             id=directory_id,
-            name="Non-Empty Directory",
+            name="Parent Directory",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+        )
+        child = Directory(
+            id=child_id,
+            name="Empty Child",
+            parent_id=directory_id,
+            owner_id=test_user.id,
         )
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
-        mock_directory_repo.has_children_directories.return_value = True
+        mock_directory_repo.count_studies.return_value = 0
+        # get_children is called 3 times: once for checking studies recursively on parent,
+        # once for checking studies recursively on child, and once for deleting
+        mock_directory_repo.get_children.side_effect = [[child], [], [child], []]
 
-        # Execute & Verify
-        with pytest.raises(HTTPException) as exc_info:
-            directory_service.delete_directory(
-                directory_id, cascade=False, force=False, access_permissions=access_permissions
-            )
+        # Execute
+        directory_service.delete_directory(directory_id, access_permissions=access_permissions)
 
-        assert exc_info.value.status_code == 409
-        assert "subdirectories" in str(exc_info.value.detail)
+        # Verify - both child and parent should be deleted
+        assert mock_directory_repo.delete.call_count == 2
+        mock_directory_repo.delete.assert_any_call(child_id)
+        mock_directory_repo.delete.assert_any_call(directory_id)
 
-    def test_delete_directory_with_studies_without_flags(
+    def test_delete_directory_with_studies_fails(
         self,
         directory_service: DirectoryService,
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
         """
-        Test that deleting directory with studies without cascade/force fails.
+        Test that deleting directory with studies fails.
         """
         # Setup
         directory_id = str(uuid.uuid4())
@@ -390,117 +382,67 @@ class TestDirectoryService:
             name="Directory with Studies",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
-        mock_directory_repo.has_children_directories.return_value = False
         mock_directory_repo.count_studies.return_value = 5
+        mock_directory_repo.get_children.return_value = []
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.delete_directory(
-                directory_id, cascade=False, force=False, access_permissions=access_permissions
-            )
+            directory_service.delete_directory(directory_id, access_permissions=access_permissions)
 
         assert exc_info.value.status_code == 409
-        assert "5 studies" in str(exc_info.value.detail)
+        assert "studies" in str(exc_info.value.detail).lower()
 
-    def test_delete_directory_with_force(
+    def test_delete_directory_with_studies_in_subdirectory_fails(
         self,
         directory_service: DirectoryService,
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
         """
-        Test deleting directory with force flag (orphans studies).
+        Test that deleting directory fails if a subdirectory contains studies.
         """
         # Setup
         directory_id = str(uuid.uuid4())
+        child_id = str(uuid.uuid4())
         directory = Directory(
             id=directory_id,
-            name="Directory with Studies",
+            name="Parent Directory",
             parent_id=None,
             owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+        )
+        child = Directory(
+            id=child_id,
+            name="Child with Studies",
+            parent_id=directory_id,
+            owner_id=test_user.id,
         )
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
-        mock_directory_repo.has_children_directories.return_value = False
-        mock_directory_repo.count_studies.return_value = 3
 
-        # Execute
-        directory_service.delete_directory(
-            directory_id, cascade=False, force=True, access_permissions=access_permissions
-        )
+        # Parent has no studies, but child has studies
+        def count_studies_side_effect(dir_id: str) -> int:
+            if dir_id == directory_id:
+                return 0
+            elif dir_id == child_id:
+                return 3
+            return 0
 
-        # Verify - directory should be deleted, studies orphaned by DB constraint
-        mock_directory_repo.delete.assert_called_once_with(directory_id)
+        mock_directory_repo.count_studies.side_effect = count_studies_side_effect
+        mock_directory_repo.get_children.side_effect = [[child], []]
 
-    def test_delete_directory_with_cascade(
-        self,
-        directory_service: DirectoryService,
-        mock_directory_repo: Mock,
-        mock_study_repo: Mock,
-        mock_study_service: Mock,
-        test_user: Identity,
-    ) -> None:
-        """
-        Test deleting directory with cascade flag (deletes studies).
-        """
-        # Setup
-        directory_id = str(uuid.uuid4())
-        directory = Directory(
-            id=directory_id,
-            name="Directory with Studies",
-            parent_id=None,
-            owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-        )
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
+        # Execute & Verify
+        with pytest.raises(HTTPException) as exc_info:
+            directory_service.delete_directory(directory_id, access_permissions=access_permissions)
 
-        # Mock studies in directory
-        from antarest.study.model import Study, StudyAdditionalData
-
-        study1 = Study(
-            id="study1",
-            name="Study 1",
-            directory_id=directory_id,
-            additional_data=StudyAdditionalData(),
-        )
-        study2 = Study(
-            id="study2",
-            name="Study 2",
-            directory_id=directory_id,
-            additional_data=StudyAdditionalData(),
-        )
-
-        mock_directory_repo.get.return_value = directory
-        mock_directory_repo.has_permission.return_value = True
-        mock_directory_repo.has_children_directories.return_value = False
-        mock_directory_repo.count_studies.return_value = 2
-
-        # Mock study repository to return studies in directory
-
-        mock_study_repo.get_all.return_value = [study1, study2]
-
-        # Execute
-        directory_service.delete_directory(
-            directory_id, cascade=True, force=False, access_permissions=access_permissions
-        )
-
-        # Verify - studies should be deleted, then directory
-        mock_study_service.delete_study.assert_any_call("study1", children=True)
-        mock_study_service.delete_study.assert_any_call("study2", children=True)
-        assert mock_study_service.delete_study.call_count == 2
-        mock_directory_repo.delete.assert_called_once_with(directory_id)
+        assert exc_info.value.status_code == 409
+        assert "studies" in str(exc_info.value.detail).lower()
 
     def test_delete_directory_no_permission(
         self,
@@ -518,8 +460,6 @@ class TestDirectoryService:
             name="Directory",
             parent_id=None,
             owner_id=2,  # Different owner
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
         )
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
@@ -528,63 +468,7 @@ class TestDirectoryService:
 
         # Execute & Verify
         with pytest.raises(UserHasNotPermissionError):
-            directory_service.delete_directory(
-                directory_id, cascade=False, force=False, access_permissions=access_permissions
-            )
-
-    def test_get_directory_success(
-        self,
-        directory_service: DirectoryService,
-        mock_directory_repo: Mock,
-        test_user: Identity,
-    ) -> None:
-        """
-        Test getting directory with permission.
-        """
-        # Setup
-        directory_id = str(uuid.uuid4())
-        directory = Directory(
-            id=directory_id,
-            name="Test Directory",
-            parent_id=None,
-            owner_id=test_user.id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-        )
-        directory.owner = test_user
-        directory.groups = []
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
-
-        mock_directory_repo.get.return_value = directory
-        mock_directory_repo.has_permission.return_value = True
-
-        # Execute
-        result = directory_service.get_directory(directory_id, access_permissions)
-
-        # Verify
-        assert result.id == directory_id
-        assert result.name == "Test Directory"
-
-    def test_get_directory_not_found(
-        self,
-        directory_service: DirectoryService,
-        mock_directory_repo: Mock,
-        test_user: Identity,
-    ) -> None:
-        """
-        Test getting non-existent directory fails.
-        """
-        # Setup
-        directory_id = str(uuid.uuid4())
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
-
-        mock_directory_repo.get.return_value = None
-
-        # Execute & Verify
-        with pytest.raises(HTTPException) as exc_info:
-            directory_service.get_directory(directory_id, access_permissions)
-
-        assert exc_info.value.status_code == 404
+            directory_service.delete_directory(directory_id, access_permissions=access_permissions)
 
     def test_list_directories(
         self,
@@ -602,8 +486,6 @@ class TestDirectoryService:
                 name=f"Directory {i}",
                 parent_id=None,
                 owner_id=test_user.id,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
             )
             for i in range(3)
         ]

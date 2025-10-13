@@ -51,8 +51,6 @@ def upgrade() -> None:
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("parent_id", sa.String(36), nullable=True),
         sa.Column("owner_id", sa.Integer(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(
             ["parent_id"], ["directory.id"], name="fk_directory_parent_id", ondelete="CASCADE"
         ),
@@ -135,8 +133,8 @@ def upgrade() -> None:
                 dir_id = str(uuid.uuid4())
                 connection.execute(
                     text("""
-                        INSERT INTO directory (id, name, parent_id, owner_id, created_at, updated_at)
-                        VALUES (:id, :name, :parent_id, :owner_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                        INSERT INTO directory (id, name, parent_id, owner_id)
+                        VALUES (:id, :name, :parent_id, :owner_id)
                     """),
                     {
                         "id": dir_id,

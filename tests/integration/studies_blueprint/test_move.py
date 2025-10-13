@@ -21,13 +21,7 @@ class TestMove:
         assert res.status_code == 201
         study_id = res.json()
 
-        # Create directories first (required since move now validates directory existence)
-        res = client.post("/v1/directories", json={"name": "folder1"})
-        assert res.status_code == 201
-
-        res = client.post("/v1/directories", json={"name": "folder2"})
-        assert res.status_code == 201
-
+        # Move creates directories automatically if they don't exist
         # asserts move with a given folder adds the /study_id at the end of the path
         res = client.put(f"/v1/studies/{study_id}/move", params={"folder_dest": "folder1"})
         res.raise_for_status()
@@ -57,8 +51,8 @@ class TestMove:
         res = client.get(f"/v1/studies/{study_id}")
         assert res.json()["folder"] is None
 
-    def test_move_with_directory_validation(self, client: TestClient, user_access_token: str) -> None:
-        """Test that move validates directory existence."""
+    def test_move_with_auto_directory_creation(self, client: TestClient, user_access_token: str) -> None:
+        """Test that move creates missing directories automatically."""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create a study
@@ -66,26 +60,30 @@ class TestMove:
         assert res.status_code == 201
         study_id = res.json()
 
-        # Try to move to non-existent directory - should fail
-        res = client.put(f"/v1/studies/{study_id}/move", params={"folder_dest": "nonexistent/folder"})
-        assert res.status_code == 404
-        error = res.json()
-        error_msg = error.get("detail") or error.get("description", "")
-        assert "does not exist" in error_msg.lower()
-
-        # Create directory structure
-        res = client.post("/v1/directories", json={"name": "project"})
-        assert res.status_code == 201
-        project_id = res.json()["id"]
-
-        res = client.post("/v1/directories", json={"name": "folder", "parentId": project_id})
-        assert res.status_code == 201
-
-        # Now move should succeed
-        res = client.put(f"/v1/studies/{study_id}/move", params={"folder_dest": "project/folder"})
+        # Move to non-existent directory - should succeed and create directories
+        res = client.put(f"/v1/studies/{study_id}/move", params={"folder_dest": "project/subfolder/deep"})
         assert res.status_code == 200
 
         # Verify the study moved
         res = client.get(f"/v1/studies/{study_id}")
         assert res.status_code == 200
-        assert res.json()["folder"] == f"project/folder/{study_id}"
+        assert res.json()["folder"] == f"project/subfolder/deep/{study_id}"
+
+        # Verify directories were created
+        res = client.get("/v1/directories")
+        assert res.status_code == 200
+        directories = res.json()
+        dir_names = [d["name"] for d in directories]
+        assert "project" in dir_names
+        assert "subfolder" in dir_names
+        assert "deep" in dir_names
+
+        # Verify hierarchy
+        project_dir = next(d for d in directories if d["name"] == "project")
+        assert project_dir["parentId"] is None
+
+        subfolder_dir = next(d for d in directories if d["name"] == "subfolder")
+        assert subfolder_dir["parentId"] == project_dir["id"]
+
+        deep_dir = next(d for d in directories if d["name"] == "deep")
+        assert deep_dir["parentId"] == subfolder_dir["id"]

@@ -70,31 +70,6 @@ class TestDirectoryManagement:
         assert root_dir_id in dir_ids
         assert sub_dir["id"] in dir_ids
 
-    def test_get_directory_details(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test getting directory details by ID.
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # Create directory
-        res = client.post(
-            "/v1/directories",
-            json={"name": "Test Directory"},
-        )
-        assert res.status_code == 201
-        directory_id = res.json()["id"]
-
-        # Get directory details
-        res = client.get(f"/v1/directories/{directory_id}")
-        assert res.status_code == 200
-        directory = res.json()
-        assert directory["id"] == directory_id
-        assert directory["name"] == "Test Directory"
-        assert "owner" in directory
-        assert "groups" in directory
-        assert "createdAt" in directory
-        assert "updatedAt" in directory
-
     def test_update_directory_name(self, client: TestClient, user_access_token: str) -> None:
         """
         Test updating a directory's name.
@@ -118,10 +93,13 @@ class TestDirectoryManagement:
         updated_dir = res.json()
         assert updated_dir["name"] == "Updated Name"
 
-        # Verify update
-        res = client.get(f"/v1/directories/{directory_id}")
+        # Verify update by listing all directories
+        res = client.get("/v1/directories")
         assert res.status_code == 200
-        assert res.json()["name"] == "Updated Name"
+        directories = res.json()
+        updated_dir = next((d for d in directories if d["id"] == directory_id), None)
+        assert updated_dir is not None
+        assert updated_dir["name"] == "Updated Name"
 
     def test_move_directory_to_new_parent(self, client: TestClient, user_access_token: str) -> None:
         """
@@ -170,39 +148,16 @@ class TestDirectoryManagement:
         res = client.delete(f"/v1/directories/{directory_id}")
         assert res.status_code == 204
 
-        # Verify deletion
-        res = client.get(f"/v1/directories/{directory_id}")
-        assert res.status_code == 404
+        # Verify deletion by listing directories
+        res = client.get("/v1/directories")
+        assert res.status_code == 200
+        directories = res.json()
+        dir_ids = [d["id"] for d in directories]
+        assert directory_id not in dir_ids
 
-    def test_delete_non_empty_directory_fails(self, client: TestClient, user_access_token: str) -> None:
+    def test_delete_directory_with_empty_subdirectories(self, client: TestClient, user_access_token: str) -> None:
         """
-        Test that deleting a non-empty directory fails in default mode.
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # Create parent directory
-        res = client.post("/v1/directories", json={"name": "Parent"})
-        assert res.status_code == 201
-        parent_id = res.json()["id"]
-
-        # Create child directory
-        res = client.post(
-            "/v1/directories",
-            json={"name": "Child", "parentId": parent_id},
-        )
-        assert res.status_code == 201
-
-        # Try to delete parent (should fail)
-        res = client.delete(f"/v1/directories/{parent_id}")
-        assert res.status_code == 409
-        error_response = res.json()
-        # Check if error message contains "subdirectories" in either detail or description
-        error_msg = error_response.get("detail") or error_response.get("description", "")
-        assert "subdirectories" in str(error_msg).lower()
-
-    def test_delete_directory_with_force_mode(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test deleting a directory with force mode (orphans subdirectories).
+        Test that deleting a directory with empty subdirectories succeeds and deletes them all.
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -211,7 +166,7 @@ class TestDirectoryManagement:
         assert res.status_code == 201
         parent_id = res.json()["id"]
 
-        # Create child directory
+        # Create child directory (empty)
         res = client.post(
             "/v1/directories",
             json={"name": "Child", "parentId": parent_id},
@@ -219,18 +174,17 @@ class TestDirectoryManagement:
         assert res.status_code == 201
         child_id = res.json()["id"]
 
-        # Delete parent with force=true
-        res = client.delete(f"/v1/directories/{parent_id}?force=true")
+        # Delete parent (should succeed and delete child as well)
+        res = client.delete(f"/v1/directories/{parent_id}")
         assert res.status_code == 204
 
-        # Verify parent is deleted
-        res = client.get(f"/v1/directories/{parent_id}")
-        assert res.status_code == 404
-
-        # Verify child still exists but is now at root (parent_id = null)
-        res = client.get(f"/v1/directories/{child_id}")
+        # Verify both parent and child are deleted
+        res = client.get("/v1/directories")
         assert res.status_code == 200
-        assert res.json()["parentId"] is None
+        directories = res.json()
+        dir_ids = [d["id"] for d in directories]
+        assert parent_id not in dir_ids
+        assert child_id not in dir_ids
 
     def test_prevent_directory_cycle(self, client: TestClient, user_access_token: str) -> None:
         """
@@ -313,40 +267,6 @@ class TestDirectoryManagement:
         )
         assert res.status_code == 201
 
-    def test_list_studies_in_directory(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test listing studies in a directory.
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # Create directory
-        res = client.post("/v1/directories", json={"name": "Study Container"})
-        assert res.status_code == 201
-        directory_id = res.json()["id"]
-
-        # Create a study
-        res = client.post("/v1/studies?name=test-study&version=8.8")
-        assert res.status_code == 201
-        # Note: Moving a study to a directory requires updating study.directory_id
-        # This would be done via PATCH /v1/studies/{study_id}
-        # For now, we just test that the endpoint works (returns empty list)
-
-        # List studies in directory
-        res = client.get(f"/v1/directories/{directory_id}/studies")
-        assert res.status_code == 200
-        studies = res.json()
-        assert isinstance(studies, list)
-
-    def test_directory_not_found(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test accessing a non-existent directory returns 404.
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        fake_id = "00000000-0000-0000-0000-000000000000"
-        res = client.get(f"/v1/directories/{fake_id}")
-        assert res.status_code == 404
-
     def test_invalid_directory_name(self, client: TestClient, user_access_token: str) -> None:
         """
         Test that invalid directory names are rejected.
@@ -382,7 +302,9 @@ class TestDirectoryManagement:
             assert res.status_code == 201, f"Failed at depth {i}"
             parent_id = res.json()["id"]
 
-        # Verify the deepest directory exists
-        res = client.get(f"/v1/directories/{parent_id}")
+        # Verify all directories were created by listing them
+        res = client.get("/v1/directories")
         assert res.status_code == 200
-        assert res.json()["name"] == f"Level{depth - 1}"
+        directories = res.json()
+        level_dirs = [d for d in directories if d["name"].startswith("Level")]
+        assert len(level_dirs) == depth

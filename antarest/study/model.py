@@ -204,8 +204,6 @@ class Directory(Base):
         name: The non-qualified name of the directory (e.g., "project1").
         parent_id: The ID of the parent directory, or None for root directories.
         owner_id: The ID of the owner of the directory.
-        created_at: The timestamp when the directory was created.
-        updated_at: The timestamp when the directory was last updated.
     """
 
     __tablename__ = "directory"
@@ -221,10 +219,6 @@ class Directory(Base):
         String(36), ForeignKey("directory.id", name="fk_directory_parent_id"), nullable=True, index=True
     )
     owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
 
     # Relationships
     owner = relationship(Identity, uselist=False)
@@ -252,8 +246,6 @@ class Directory(Base):
             and other.name == self.name
             and other.parent_id == self.parent_id
             and other.owner_id == self.owner_id
-            and other.created_at == self.created_at
-            and other.updated_at == self.updated_at
         )
 
     @override
@@ -820,22 +812,20 @@ class ReferenceStudy(AntaresBaseModel):
 # ==========================================
 
 
-class DirectoryDTO(AntaresBaseModel):
-    """DTO representing a directory with full details."""
+class DirectoryMetadata(AntaresBaseModel):
+    """Represents a directory with full details."""
 
     id: str
     name: str
     parent_id: Optional[str] = None
     owner: OwnerInfo
     groups: List[GroupDTO]
-    created_at: str
-    updated_at: str
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
 
-class DirectoryCreateDTO(AntaresBaseModel):
-    """DTO for creating a new directory."""
+class DirectoryCreation(AntaresBaseModel):
+    """Data for creating a new directory."""
 
     name: str = Field(..., min_length=1, max_length=255)
     parent_id: Optional[str] = None
@@ -854,8 +844,8 @@ class DirectoryCreateDTO(AntaresBaseModel):
         return name
 
 
-class DirectoryUpdateDTO(AntaresBaseModel):
-    """DTO for updating a directory."""
+class DirectoryUpdate(AntaresBaseModel):
+    """Data for updating a directory."""
 
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     parent_id: Optional[str] = None
