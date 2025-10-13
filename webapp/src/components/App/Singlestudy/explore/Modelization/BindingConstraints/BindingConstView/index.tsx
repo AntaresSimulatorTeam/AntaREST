@@ -16,9 +16,8 @@ import ContentCopy from "@mui/icons-material/ContentCopy";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import Delete from "@mui/icons-material/Delete";
 import { Box, Button, Skeleton } from "@mui/material";
-import type { AxiosError } from "axios";
-import { useSnackbar } from "notistack";
 import { useMemo, useRef, useState } from "react";
+import { FormProvider } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { toError } from "@/utils/fnUtils";
@@ -29,20 +28,18 @@ import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../redux/selectors";
 import {
+  deleteBindingConstraint,
   duplicateBindingConstraint,
   getBindingConstraint,
   getBindingConstraintList,
   updateBindingConstraint,
 } from "../../../../../../../services/api/studydata";
-import { appendCommands } from "../../../../../../../services/api/variant";
 import type { StudyMetadata } from "../../../../../../../types/types";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import OkDialog from "../../../../../../common/dialogs/OkDialog";
 import Form from "../../../../../../common/Form";
 import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import { FormProvider } from "react-hook-form";
 import UsePromiseCond, { mergeResponses } from "../../../../../../common/utils/UsePromiseCond";
-import { CommandEnum } from "../../../../CommandsDrawer/EditionView/commandTypes";
 import DuplicateDialog from "../DuplicateDialog";
 import BindingConstForm from "./BindingConstForm";
 import ConstraintFields from "./ConstraintFields";
@@ -59,7 +56,6 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
-  const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const studyVersion = Number(study.version);
   const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] = useState(false);
@@ -137,33 +133,19 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
     }
   };
 
-  /**
-   * @deprecated
-   * We should use a dedicated DELETE endpoint for removing binding constraints. This endpoint is
-   * not currently exposed by the API, but it is recommended to transition to it once available.
-   *
-   * This function sends a commandto remove the binding constraint by its ID.
-   * After successful deletion, it triggers a UI update to reflect the removal.
-   */
   const handleDeleteConstraint = async () => {
     try {
-      await appendCommands(study.id, [
-        {
-          action: CommandEnum.REMOVE_BINDING_CONSTRAINT,
-          args: {
-            id: constraintId,
-          },
-        },
-      ]);
+      await deleteBindingConstraint(study.id, constraintId);
 
       const updatedConstraints = await getBindingConstraintList(study.id);
 
+      reloadConstraintsList();
+
       if (updatedConstraints && updatedConstraints.length > 0) {
-        // Trigger a reload redirecting to the first constraint
         dispatch(setCurrentBindingConst(updatedConstraints[0].id));
       }
-    } catch (e) {
-      enqueueErrorSnackbar(t("study.error.deleteConstraint"), toError(e));
+    } catch (error) {
+      enqueueErrorSnackbar(t("study.error.deleteConstraint"), toError(error));
     } finally {
       setDeleteConstraintDialogOpen(false);
     }

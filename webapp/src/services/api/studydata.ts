@@ -95,3 +95,13 @@ export const duplicateBindingConstraint = async (
   );
   return res.data;
 };
+
+export const deleteBindingConstraint = async (
+  studyId: string,
+  constraintId: string,
+): Promise<void> => {
+  const res = await client.delete(
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(constraintId)}`,
+  );
+  return res.data;
+};

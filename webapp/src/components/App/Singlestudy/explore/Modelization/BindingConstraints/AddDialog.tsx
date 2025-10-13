@@ -12,26 +12,25 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import { validateString } from "@/utils/validation/string";
 import { Box } from "@mui/material";
-import { useSnackbar } from "notistack";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import { validateString } from "@/utils/validation/string";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../types/types";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import {
   BindingConstraintOperator,
   TimeStep,
 } from "../../../CommandsDrawer/EditionView/commandTypes";
-import { OPERATORS, TIME_STEPS, type BindingConstraint } from "./BindingConstView/utils";
+import { type BindingConstraint, OPERATORS, TIME_STEPS } from "./BindingConstView/utils";
 
 interface Props {
   open: boolean;
@@ -43,7 +42,6 @@ interface Props {
 // TODO rename AddConstraintDialog
 function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
   const studyVersion = Number(study.version);
@@ -107,9 +105,6 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
      */
     reloadConstraintsList();
     dispatch(setCurrentBindingConst(createdConstraint.id));
-    enqueueSnackbar(t("study.success.addBindingConst"), {
-      variant: "success",
-    });
     onClose();
   };
 
