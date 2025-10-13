@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import time
 from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
@@ -363,6 +364,9 @@ class AggregatorManager:
         # checks if the mc root folder exists
         self._check_mc_root_folder_exists()
 
+        # POC
+        self._get_variables()
+
         # filters files to consider
         all_output_files = sorted(self._gather_all_files_to_consider())
 
@@ -375,3 +379,92 @@ class AggregatorManager:
         )
         # builds final dataframe
         return self._build_dataframes(all_output_files)
+
+    @staticmethod
+    def _filter_files_with_same_prefix(files: list[str]) -> dict[str, str]:
+        temp_dict = {}
+        for file in files:
+            splitted_file = file.removesuffix(".txt").split("-")
+            if len(splitted_file) == 2:
+                file_type, freq = splitted_file
+            else:
+                file_type1, file_type2, freq = splitted_file
+                file_type = f"{file_type1}-{file_type2}"
+            temp_dict[file_type] = freq
+        return temp_dict
+
+    @staticmethod
+    def _read_header_only(file_path: Path, mc_root: MCRoot, freq: str, file_type: str) -> set[str]:
+        csv_file = pd.read_csv(file_path, sep="\t", skiprows=4, header=[0, 1, 2], nrows=0)
+        date_serializer = FactoryDateSerializer.create(freq, "")
+        _, body = date_serializer.extract_date(csv_file)
+        df = rename_unnamed(body)
+
+        if file_type.split("-")[0] == "details":
+            cols = set()
+            for col in df.columns:
+                for sub_col in col:
+                    if sub_col:
+                        cols.add(sub_col)
+            return cols
+
+        new_cols = []
+        for col in df.columns:
+            if mc_root == MCRoot.MC_IND:
+                name_to_consider = col[0] if file_type == MCIndAreasQueryFile.VALUES.value else " ".join(col)
+            else:
+                name_to_consider = " ".join([col[0], col[2]])
+            new_cols.append(name_to_consider.upper().strip())
+
+        return set(new_cols)
+
+    def _get_variables(self) -> dict[str, Any]:
+        start = time.time()
+        # Final dict
+        variables: dict[str, Any] = {"mc-ind": {"areas": [], "links": []}, "mc-all": {"areas": [], "links": []}}
+        # Define mappings
+        area_ind_mapping = {
+            "details": "thermalClusters",
+            "details-res": "renewableClusters",
+            "details-STstorage": "shortTermStorages",
+            "id": "variables",
+            "values": "variables",
+        }
+
+        # MC-ind
+        first_mc_year = [d.name for d in self.mc_ind_path.iterdir()][0]
+        # Areas
+        areas_folder = self.mc_ind_path / first_mc_year / "areas"
+        for area in areas_folder.iterdir():
+            areas_dict: dict[str, Any] = {"name": area.name}
+            parent_path = areas_folder / area
+            all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
+            for file_type, freq in all_files.items():
+                file_path = parent_path / f"{file_type}-{freq}.txt"
+                cols = self._read_header_only(file_path, MCRoot.MC_IND, freq, file_type)
+                key = area_ind_mapping[file_type]
+                areas_dict[key] = areas_dict.get(key, set()) | cols
+
+            variables["mc-ind"]["areas"].append(areas_dict)
+
+        # Links
+        links_folder = self.mc_ind_path / first_mc_year / "links"
+        for link_name in links_folder.iterdir():
+            area1, area2 = link_name.name.split("-")
+            links_dict: dict[str, Any] = {"area1Name": area1, "area2Name": area2}
+            parent_path = areas_folder / link_name
+            all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
+            for file_type, freq in all_files.items():
+                file_path = parent_path / f"{file_type}-{freq}.txt"
+                cols = self._read_header_only(file_path, MCRoot.MC_IND, freq, file_type)
+                links_dict["variables"] = links_dict.get("variables", set()) | cols
+
+            print(links_dict)
+            variables["mc-ind"]["links"].append(links_dict)
+
+        end = time.time()
+        print(f"Headers duration {end - start} seconds")
+
+        return variables
+
+        # MC-all
