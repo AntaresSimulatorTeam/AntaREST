@@ -66,12 +66,13 @@ class AreaDao(ReadOnlyAreaDao):
     """
 
     @abstractmethod
-    def save_area(self, area_name: str) -> None:
+    def save_area(self, area_name: str, command_context: Any) -> None:
         """
         Create a new area in the study.
 
         Args:
             area_name: The name of the area to create.
+            command_context: Command context containing generator constants for matrices.
 
         Raises:
             ValueError: If the area already exists.

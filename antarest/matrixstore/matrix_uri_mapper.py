@@ -67,12 +67,6 @@ class MatrixUriMapper(ABC):
     - is_managed: Property indicating if the mapper is managed.
     """
 
-    @property
-    @abstractmethod
-    def matrix_service(self) -> ISimpleMatrixService:
-        """Access to the underlying matrix service."""
-        pass
-
     @abstractmethod
     def get_matrix(self, uri: str) -> pd.DataFrame:
         pass
@@ -136,12 +130,6 @@ class BaseMatrixUriMapper(MatrixUriMapper):
 
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self._matrix_service = matrix_service
-
-    @property
-    @override
-    def matrix_service(self) -> ISimpleMatrixService:
-        """Access to the underlying matrix service."""
-        return self._matrix_service
 
     @override
     def get_matrix(self, uri: str) -> pd.DataFrame:
