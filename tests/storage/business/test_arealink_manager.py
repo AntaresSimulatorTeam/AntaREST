@@ -179,7 +179,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "id": "a3",
         },
     ]
-    areas = area_manager.get_all_areas(study_interface)
+    areas = area_manager.get_all_areas_info(study_interface)
     assert [area.model_dump() for area in areas] == expected_areas
 
     # `AreaType.DISTRICT` is now ignored but kept for backward compatibility.
@@ -214,7 +214,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "id": "a3",
         },
     ]
-    all_areas = area_manager.get_all_areas(study_interface)
+    all_areas = area_manager.get_all_areas_info(study_interface)
     assert expected_all == [area.model_dump() for area in all_areas]
 
     file_tree_mock.get.side_effect = [

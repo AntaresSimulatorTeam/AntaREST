@@ -17,8 +17,8 @@ from pydantic import field_validator, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import AreaUIUpdate
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.business.model.area_model import AreaUIUpdate, update_area_ui
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -89,31 +89,14 @@ class UpdateAreaUI(ICommand):
         return values
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        current_area = study_data.tree.get(["input", "areas", self.area_id, "ui"])
-        layer_int = int(self.layer)
+    def _apply_dao(self, study_data: StudyDao, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+        # Get current UI info for this specific area (more performant than loading all areas)
+        current_ui = study_data.get_area_ui(self.area_id, self.layer)
 
-        # Apply updates if provided
-        if self.parameters.x is not None:
-            current_area["layerX"][self.layer] = self.parameters.x
-            if layer_int == 0:
-                current_area["ui"]["x"] = self.parameters.x
+        # Apply the update: merge current values with new values
+        area_ui = update_area_ui(current_ui, self.parameters)
 
-        if self.parameters.y is not None:
-            current_area["layerY"][self.layer] = self.parameters.y
-            if layer_int == 0:
-                current_area["ui"]["y"] = self.parameters.y
-
-        if self.parameters.color_rgb is not None:
-            r, g, b = self.parameters.color_rgb
-            current_area["layerColor"][self.layer] = f"{r}, {g}, {b}"
-            if layer_int == 0:
-                current_area["ui"]["color_r"] = r
-                current_area["ui"]["color_g"] = g
-                current_area["ui"]["color_b"] = b
-
-        study_data.tree.save(current_area, ["input", "areas", self.area_id, "ui"])
-
+        study_data.save_area_ui(self.area_id, self.layer, area_ui)
         return command_succeeded(message=f"area '{self.area_id}' UI updated")
 
     @override
