@@ -75,11 +75,7 @@ class TestLauncherConfiguration:
         study_id = res.json()
 
         # launch a job with the admin user
-        res = client.post(
-            f"/v1/launcher/run/{study_id}",
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-            json={"launcher": "local"},
-        )
+        res = client.post(f"/v1/launcher/run/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
         res.raise_for_status()
         job_id = res.json()["job_id"]
 

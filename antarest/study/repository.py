@@ -189,6 +189,10 @@ class StudyMetadataRepository:
         metadata.groups = [session.merge(g) for g in metadata.groups]
         if metadata.owner:
             metadata.owner = session.merge(metadata.owner)
+
+        if metadata.additional_data:
+            metadata.additional_data = session.merge(metadata.additional_data)
+
         session.add(metadata)
         session.commit()
 

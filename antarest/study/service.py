@@ -62,7 +62,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user, get_user_id
+from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -82,6 +82,8 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import Area, AreaCreation, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
@@ -371,10 +373,14 @@ class RawStudyInterface(StudyInterface):
         self,
         raw_service: RawStudyService,
         variant_service: VariantStudyService,
+        user_service: LoginService,
+        repository: StudyMetadataRepository,
         study: RawStudy,
     ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
+        self._user_service = user_service
+        self._repository = repository
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
@@ -404,6 +410,7 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         should_invalidate_cache = False
         file_study = self.get_files()
+
         for command in commands:
             result = command.apply(FileStudyTreeDao(file_study), listener)
             if result.should_invalidate_cache:
@@ -419,6 +426,20 @@ class RawStudyInterface(StudyInterface):
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
+        self._update_editor(file_study)
+
+    def _update_editor(self, file_study: FileStudy) -> None:
+        user = self._user_service.get_identity(get_user_impersonator())
+        if user:
+            user_name = user.name or ""
+            study_antares = file_study.tree.get(["study", "antares"])
+            study_antares["editor"] = user.name
+            file_study.tree.save(study_antares, ["study", "antares"])
+            if not self._study.additional_data:
+                self._study.additional_data = StudyAdditionalData(author=user_name, editor=user_name)
+            else:
+                self._study.additional_data.editor = user_name
+            self._repository.save(self._study)
 
 
 class VariantStudyInterface(StudyInterface):
@@ -811,6 +832,8 @@ class StudyService:
             return RawStudyInterface(
                 self.storage_service.raw_study_service,
                 self.storage_service.variant_study_service,
+                self.user_service,
+                self.repository,
                 study,
             )
         else:
@@ -1140,7 +1163,6 @@ class StudyService:
                 destination_folder,
                 output_ids,
                 with_outputs,
-                self.get_user_name(),
             )
 
             # Set directory_id from path (raises 404 if not found)
@@ -2280,11 +2302,12 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas: List[Area] = self.get_all_areas(study_id)
             if matrix_path.parts[-1] == "allocation":
-                hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface)
+                hydro_matrix: HydroCorrelationMatrix | HydroAllocationMatrix = (
+                    self.allocation_manager.get_allocation_matrix(study_interface)
+                )
             else:
-                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study_interface, [])  # type: ignore
+                hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         # Gets the data and checks given path existence
