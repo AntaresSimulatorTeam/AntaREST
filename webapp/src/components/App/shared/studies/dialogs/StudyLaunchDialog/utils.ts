@@ -55,7 +55,7 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
     xpress: false,
     autoUnzip: true,
     xpansion: false,
-    adequacyCriterions: false,
+    adequacyCriterion: false,
     sensitivityMode: false,
     output: "",
     launcher: launcher.id,
