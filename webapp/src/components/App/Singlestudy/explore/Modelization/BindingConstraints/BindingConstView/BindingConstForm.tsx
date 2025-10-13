@@ -12,23 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import type { AxiosError } from "axios";
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Box, Button } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { Box, Button } from "@mui/material";
+import { useMemo, useState } from "react";
 import { useFieldArray } from "react-hook-form";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { generateTermId, type ConstraintTerm, type BindingConstraint } from "./utils";
+import { useTranslation } from "react-i18next";
 import type { AllClustersAndLinks, StudyMetadata } from "../../../../../../../types/types";
-import ConstraintTermItem from "./ConstraintTerm";
+import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
-import { deleteConstraintTerm } from "../../../../../../../services/api/studydata";
 import TextSeparator from "../../../../../../common/TextSeparator";
 import AddConstraintTermDialog from "./AddConstraintTermDialog";
-import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
-import Fieldset from "../../../../../../common/Fieldset";
+import ConstraintTermItem from "./ConstraintTerm";
+import { type BindingConstraint, type ConstraintTerm, generateTermId } from "./utils";
 
 interface Props {
   study: StudyMetadata;
@@ -39,8 +34,6 @@ interface Props {
 // TODO rename ConstraintTermsFields
 function BindingConstForm({ study, options, constraintId }: Props) {
   const [t] = useTranslation();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [termToDelete, setTermToDelete] = useState<number>();
   const [openConstraintTermDialog, setOpenConstraintTermDialog] = useState(false);
 
   const { control } = useFormContextPlus<BindingConstraint>();
@@ -70,16 +63,8 @@ function BindingConstForm({ study, options, constraintId }: Props) {
     update(index, updatedTerm);
   };
 
-  const handleDeleteTerm = async (termToDelete: number) => {
-    try {
-      const termId = generateTermId(constraintTerms[termToDelete].data);
-      await deleteConstraintTerm(study.id, constraintId, termId);
-      remove(termToDelete);
-    } catch (error) {
-      enqueueErrorSnackbar(t("study.error.deleteConstraintTerm"), error as AxiosError);
-    } finally {
-      setTermToDelete(undefined);
-    }
+  const handleDeleteTerm = (termToDelete: number) => {
+    remove(termToDelete);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -114,7 +99,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
                 options={options}
                 saveValue={(newTerm) => handleUpdateTerm(index, term, newTerm)}
                 term={term}
-                deleteTerm={() => setTermToDelete(index)}
+                deleteTerm={() => handleDeleteTerm(index)}
                 constraintTerms={constraintTerms}
               />
             </Box>
@@ -133,18 +118,6 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           constraintTerms={constraintTerms}
           options={options}
         />
-      )}
-
-      {termToDelete !== undefined && (
-        <ConfirmationDialog
-          titleIcon={DeleteIcon}
-          onCancel={() => setTermToDelete(undefined)}
-          onConfirm={() => handleDeleteTerm(termToDelete)}
-          alert="warning"
-          open
-        >
-          {t("study.modelization.bindingConst.question.deleteConstraintTerm")}
-        </ConfirmationDialog>
       )}
     </>
   );
