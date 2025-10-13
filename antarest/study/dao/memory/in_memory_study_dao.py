@@ -12,16 +12,17 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound
+from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
@@ -60,6 +61,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -175,6 +177,10 @@ class InMemoryStudyDao(StudyDao):
         self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
         # Area Properties
         self._area_properties: dict[str, AreaProperties] = {}
+        # Area UI
+        self._area_ui: dict[str, AreaUI] = {}
+        # Layer-Area associations (layer_id -> set of area_ids)
+        self._layer_areas: dict[str, set[str]] = {}
         # Scenario Builder
         self.rulesets: Rulesets = {}
         self.active_ruleset_name: Optional[str] = None
@@ -834,3 +840,84 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
         self.rulesets = rulesets
+
+    @override
+    def get_all_areas_info(self) -> List[AreaInfo]:
+        return [AreaInfo(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
+
+    @override
+    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
+        result: Dict[str, AreaUIData] = {}
+        for area_id, area_ui in self._area_ui.items():
+            r, g, b = area_ui.color_rgb
+            result[area_id] = AreaUIData(
+                ui={
+                    "x": area_ui.x,
+                    "y": area_ui.y,
+                    "color_r": r,
+                    "color_g": g,
+                    "color_b": b,
+                    "layers": "0",
+                },
+                layerX={"0": area_ui.x},
+                layerY={"0": area_ui.y},
+                layerColor={"0": f"{r}, {g}, {b}"},
+            )
+        return result
+
+    @override
+    def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+        return self._area_ui.get(area_id, AreaUI())
+
+    @override
+    def save_area(self, area_name: str) -> None:
+        area_id = transform_name_to_id(area_name)
+        if area_id in self._area_names:
+            raise ValueError(f"Area '{area_name}' already exists and could not be created")
+        self._area_names.append(area_id)
+
+        # Initialize default UI for the new area
+        self._area_ui[area_id] = AreaUI()
+
+    @override
+    def delete_area(self, area_id: str) -> None:
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+        # Check that the area is not referenced in any binding constraint
+        referencing_binding_constraints = []
+        for bc in self._constraints.values():
+            for term in bc.terms:
+                data = term.data
+                if (isinstance(data, ClusterTerm) and data.area == area_id) or (
+                    isinstance(data, LinkTerm) and (data.area1 == area_id or data.area2 == area_id)
+                ):
+                    referencing_binding_constraints.append(bc)
+                    break
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+
+        self._area_names.remove(area_id)
+
+        # Clean up UI info
+        self._area_ui.pop(area_id, None)
+
+    @override
+    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+        self._area_ui[area_id] = area_ui
+
+    @override
+    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+        # Verify that all areas exist
+        for area_id in area_ids:
+            if area_id not in self._area_names:
+                raise AreaNotFound(area_id)
+
+        self._layer_areas[layer_id] = set(area_ids)

@@ -33,7 +33,10 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 COMMANDS = [
     pytest.param(
         CommandDTO(
-            action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8
+            action=CommandName.CREATE_AREA.value,
+            args={"area_name": "area_name"},
+            study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_area",
@@ -43,6 +46,7 @@ COMMANDS = [
             action=CommandName.CREATE_AREA.value,
             args=[{"area_name": "area_name"}, {"area_name": "area2"}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_area2",
@@ -104,6 +108,15 @@ COMMANDS = [
         ),
         None,
         id="update_layer",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_LAYER_AREAS.value,
+            args={"layer_id": "layer_id", "area_ids": ["area1", "area2"]},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_layer_areas",
     ),
     pytest.param(
         CommandDTO(
@@ -1544,3 +1557,22 @@ def test_parse_legacy_command_update_district(command_factory: CommandFactory):
     assert dto.action == "update_district"
     assert dto.version == 2
     assert dto.args == {"parameters": {"areas": ["a"]}, "id": "id"}
+
+
+def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory):
+    """Test that version 1 format (with metadata field) can still be loaded and metadata is dropped."""
+    dto = CommandDTO(
+        action=CommandName.CREATE_AREA.value,
+        args={"area_name": "test_area", "metadata": {"country": "FR", "tag": "test"}},
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_area"
+    assert dto.version == 2
+    # The metadata should be dropped and not stored in the converted command
+    assert dto.args == {"area_name": "test_area"}
+    assert "metadata" not in dto.args

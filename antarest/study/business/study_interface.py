@@ -128,7 +128,9 @@ class FileStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         for command in commands:
-            result = command.apply(FileStudyTreeDao(self.file_study))
+            result = command.apply(
+                FileStudyTreeDao(self.file_study, command.command_context.generator_matrix_constants), listener
+            )
             if not result.status:
                 raise CommandApplicationError(result.message)
 
