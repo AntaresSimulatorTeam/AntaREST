@@ -55,7 +55,7 @@ class CreateArea(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        study_data.save_area(self.area_name, self.command_context)
+        study_data.save_area(self.area_name)
         return command_succeeded(message=f"Area '{self.area_name}' created")
 
     @override

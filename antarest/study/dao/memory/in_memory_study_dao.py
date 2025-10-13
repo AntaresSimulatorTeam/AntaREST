@@ -878,7 +878,7 @@ class InMemoryStudyDao(StudyDao):
         return self._area_ui.get(area_id, AreaUI())
 
     @override
-    def save_area(self, area_name: str, command_context: Any) -> None:
+    def save_area(self, area_name: str) -> None:
         # For in-memory DAO, simplified implementation for testing
         area_id = transform_name_to_id(area_name)
         if area_id in self._area_names:
