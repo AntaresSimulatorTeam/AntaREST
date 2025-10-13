@@ -405,7 +405,7 @@ class AggregatorManager:
             for col in df.columns:
                 for sub_col in col:
                     if sub_col:
-                        cols.add(sub_col)
+                        cols.add(sub_col.upper())
             return cols
 
         new_cols = []
@@ -422,18 +422,19 @@ class AggregatorManager:
         start = time.time()
         # Final dict
         variables: dict[str, Any] = {"mc-ind": {"areas": [], "links": []}, "mc-all": {"areas": [], "links": []}}
-        # Define mappings
-        area_ind_mapping = {
+
+        ##########################
+        # MC-IND
+        ##########################
+
+        first_mc_year = [d.name for d in self.mc_ind_path.iterdir()][0]
+        # Areas
+        areas_mapping = {
             "details": "thermalClusters",
             "details-res": "renewableClusters",
             "details-STstorage": "shortTermStorages",
-            "id": "variables",
             "values": "variables",
         }
-
-        # MC-ind
-        first_mc_year = [d.name for d in self.mc_ind_path.iterdir()][0]
-        # Areas
         areas_folder = self.mc_ind_path / first_mc_year / "areas"
         for area in areas_folder.iterdir():
             areas_dict: dict[str, Any] = {"name": area.name}
@@ -442,8 +443,7 @@ class AggregatorManager:
             for file_type, freq in all_files.items():
                 file_path = parent_path / f"{file_type}-{freq}.txt"
                 cols = self._read_header_only(file_path, MCRoot.MC_IND, freq, file_type)
-                key = area_ind_mapping[file_type]
-                areas_dict[key] = areas_dict.get(key, set()) | cols
+                areas_dict[areas_mapping[file_type]] = cols
 
             variables["mc-ind"]["areas"].append(areas_dict)
 
@@ -457,14 +457,43 @@ class AggregatorManager:
             for file_type, freq in all_files.items():
                 file_path = parent_path / f"{file_type}-{freq}.txt"
                 cols = self._read_header_only(file_path, MCRoot.MC_IND, freq, file_type)
+                links_dict["variables"] = cols
+
+            variables["mc-ind"]["links"].append(links_dict)
+
+        ##########################
+        # MC-ALL
+        ##########################
+
+        # Areas
+        areas_mapping["id"] = "variables"
+        areas_folder = self.mc_all_path / "areas"
+        for area in areas_folder.iterdir():
+            areas_dict: dict[str, Any] = {"name": area.name}
+            parent_path = areas_folder / area
+            all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
+            for file_type, freq in all_files.items():
+                file_path = parent_path / f"{file_type}-{freq}.txt"
+                cols = self._read_header_only(file_path, MCRoot.MC_ALL, freq, file_type)
+                areas_dict[areas_mapping[file_type]] = cols
+
+            variables["mc-all"]["areas"].append(areas_dict)
+
+        # Links
+        links_folder = self.mc_all_path / "links"
+        for link_name in links_folder.iterdir():
+            area1, area2 = link_name.name.split("-")
+            links_dict: dict[str, Any] = {"area1Name": area1, "area2Name": area2}
+            parent_path = areas_folder / link_name
+            all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
+            for file_type, freq in all_files.items():
+                file_path = parent_path / f"{file_type}-{freq}.txt"
+                cols = self._read_header_only(file_path, MCRoot.MC_ALL, freq, file_type)
                 links_dict["variables"] = links_dict.get("variables", set()) | cols
 
-            print(links_dict)
-            variables["mc-ind"]["links"].append(links_dict)
+            variables["mc-all"]["links"].append(links_dict)
 
         end = time.time()
         print(f"Headers duration {end - start} seconds")
 
         return variables
-
-        # MC-all
