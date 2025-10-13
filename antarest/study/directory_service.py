@@ -15,15 +15,20 @@
 import logging
 import uuid
 from datetime import datetime
-from http import HTTPStatus
 from typing import TYPE_CHECKING, List, Sequence
 
-from fastapi import HTTPException
 from sqlalchemy import update
 
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.model import Group, GroupDTO
+from antarest.study.directory_exceptions import (
+    DirectoryAlreadyExistsError,
+    DirectoryCycleError,
+    DirectoryNotEmptyError,
+    DirectoryNotFoundError,
+    DirectoryPermissionError,
+)
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     Directory,
@@ -64,7 +69,7 @@ class DirectoryService:
         """Get a directory by ID."""
         directory = self.directory_repository.get(directory_id)
         if directory is None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Directory '{directory_id}' not found")
+            raise DirectoryNotFoundError(directory_id)
 
         if not self.directory_repository.has_permission(directory, access_permissions):
             raise UserHasNotPermissionError()
@@ -82,21 +87,13 @@ class DirectoryService:
         if data.parent_id:
             parent = self.directory_repository.get(data.parent_id)
             if parent is None:
-                raise HTTPException(
-                    status_code=HTTPStatus.NOT_FOUND, detail=f"Parent directory '{data.parent_id}' not found"
-                )
+                raise DirectoryNotFoundError(data.parent_id)
 
             if not self.directory_repository.has_permission(parent, access_permissions, write_access=True):
-                raise HTTPException(
-                    status_code=HTTPStatus.FORBIDDEN,
-                    detail="You don't have permission to create directories in this parent",
-                )
+                raise DirectoryPermissionError("You don't have permission to create directories in this parent")
 
         if self.directory_repository.has_duplicate_name(data.name, data.parent_id):
-            raise HTTPException(
-                status_code=HTTPStatus.CONFLICT,
-                detail=f"A directory named '{data.name}' already exists in this location",
-            )
+            raise DirectoryAlreadyExistsError(data.name)
 
         directory = Directory(
             id=str(uuid.uuid4()),
@@ -122,38 +119,27 @@ class DirectoryService:
         """Update a directory (name or parent)."""
         directory = self.directory_repository.get(directory_id)
         if directory is None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Directory '{directory_id}' not found")
+            raise DirectoryNotFoundError(directory_id)
 
         if not self.directory_repository.has_permission(directory, access_permissions, write_access=True):
             raise UserHasNotPermissionError()
 
         if data.name is not None:
             if self.directory_repository.has_duplicate_name(data.name, directory.parent_id, exclude_id=directory_id):
-                raise HTTPException(
-                    status_code=HTTPStatus.CONFLICT,
-                    detail=f"A directory named '{data.name}' already exists in this location",
-                )
+                raise DirectoryAlreadyExistsError(data.name)
             directory.name = data.name
 
         if data.parent_id is not None:
             if self.directory_repository.check_cycle(directory_id, data.parent_id):
-                raise HTTPException(
-                    status_code=HTTPStatus.BAD_REQUEST,
-                    detail="Cannot move directory: this would create a cycle in the directory tree",
-                )
+                raise DirectoryCycleError()
 
             if data.parent_id != "":
                 new_parent = self.directory_repository.get(data.parent_id)
                 if new_parent is None:
-                    raise HTTPException(
-                        status_code=HTTPStatus.NOT_FOUND, detail=f"Parent directory '{data.parent_id}' not found"
-                    )
+                    raise DirectoryNotFoundError(data.parent_id)
 
                 if not self.directory_repository.has_permission(new_parent, access_permissions, write_access=True):
-                    raise HTTPException(
-                        status_code=HTTPStatus.FORBIDDEN,
-                        detail="You don't have permission to move directories to this parent",
-                    )
+                    raise DirectoryPermissionError("You don't have permission to move directories to this parent")
 
             directory.parent_id = data.parent_id if data.parent_id != "" else None
 
@@ -175,16 +161,15 @@ class DirectoryService:
         """
         directory = self.directory_repository.get(directory_id)
         if directory is None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Directory '{directory_id}' not found")
+            raise DirectoryNotFoundError(directory_id)
 
         if not self.directory_repository.has_permission(directory, access_permissions, write_access=True):
             raise UserHasNotPermissionError()
 
         if self.directory_repository.has_children_directories(directory_id):
             if not (cascade or force):
-                raise HTTPException(
-                    status_code=HTTPStatus.CONFLICT,
-                    detail="Cannot delete directory: it contains subdirectories. Use cascade=true or force=true.",
+                raise DirectoryNotEmptyError(
+                    "Cannot delete directory: it contains subdirectories. Use cascade=true or force=true."
                 )
 
             if cascade:
@@ -195,10 +180,9 @@ class DirectoryService:
         study_count = self.directory_repository.count_studies(directory_id)
         if study_count > 0:
             if not (cascade or force):
-                raise HTTPException(
-                    status_code=HTTPStatus.CONFLICT,
-                    detail=f"Cannot delete directory: it contains {study_count} studies. "
-                    f"Use cascade=true to delete them or force=true to orphan them.",
+                raise DirectoryNotEmptyError(
+                    f"Cannot delete directory: it contains {study_count} studies. "
+                    f"Use cascade=true to delete them or force=true to orphan them."
                 )
 
             if cascade:
@@ -215,7 +199,7 @@ class DirectoryService:
         """List all studies in a directory."""
         directory = self.directory_repository.get(directory_id)
         if directory is None:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"Directory '{directory_id}' not found")
+            raise DirectoryNotFoundError(directory_id)
 
         if not self.directory_repository.has_permission(directory, access_permissions):
             raise UserHasNotPermissionError()
