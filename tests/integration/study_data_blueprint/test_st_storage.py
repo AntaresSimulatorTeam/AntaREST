@@ -159,29 +159,6 @@ class TestSTStorage:
         #  SHORT-TERM STORAGE MATRICES
         # =============================
 
-        # updating the matrix of a short-term storage with specific endpoint
-        array = np.random.randint(0, 1000, size=(8760, 1))
-        array_list = array.tolist()
-        res = client.put(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
-            json={
-                "index": list(range(array.shape[0])),
-                "columns": list(range(array.shape[1])),
-                "data": array_list,
-            },
-        )
-        assert res.status_code == 200, res.json()
-        assert res.json() is None
-
-        # reading the matrix of a short-term storage with specific endpoint
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/storages/{siemens_battery_id}/series/inflows",
-        )
-        assert res.status_code == 200, res.json()
-        matrix = res.json()
-        actual = np.array(matrix["data"], dtype=np.float64)
-        assert actual.all() == array.all()
-
         # updating the matrix of a short-term storage
         array = np.random.randint(0, 1000, size=(8760, 1))
         array_list = array.tolist()
@@ -274,8 +251,7 @@ class TestSTStorage:
 
         # check with matrix specific endpoint too
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/storages/{duplicated_id}/series/inflows",
-            headers={"Authorization": f"Bearer {user_access_token}"},
+            f"/v1/studies/{internal_study_id}/raw?path=input/st-storage/series/{area_id}/{duplicated_id}/inflows"
         )
         assert res.status_code == 200
         assert res.json()["data"] == array_list
