@@ -424,79 +424,55 @@ class AggregatorManager:
         variables: dict[str, Any] = {"mc-ind": {"areas": [], "links": []}, "mc-all": {"areas": [], "links": []}}
 
         ##########################
-        # MC-IND
-        ##########################
+        # AREAS
+        #########################
+
         areas_mapping = {
             "details": "thermalClusters",
             "details-res": "renewableClusters",
             "details-STstorage": "shortTermStorages",
             "values": "variables",
+            "id": "variables",
         }
+
+        mc_ind_path = None
         if self.mc_ind_path.exists():
             first_mc_year = [d.name for d in self.mc_ind_path.iterdir()][0]
-            # Areas
-            areas_folder = self.mc_ind_path / first_mc_year / "areas"
-            if areas_folder.exists():
-                for area in areas_folder.iterdir():
-                    areas_ind_dict: dict[str, Any] = {"name": area.name}
-                    parent_path = areas_folder / area
-                    all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
-                    for file_type, freq in all_files.items():
-                        file_path = parent_path / f"{file_type}-{freq}.txt"
-                        cols = self._read_header_only(file_path, MCRoot.MC_IND, freq, file_type)
-                        areas_ind_dict[areas_mapping[file_type]] = cols
+            mc_ind_path = self.mc_ind_path / first_mc_year
 
-                    variables["mc-ind"]["areas"].append(areas_ind_dict)
+        for mc_path in [mc_ind_path, self.mc_all_path]:
+            if mc_path and mc_path.exists():
+                mc_root = MCRoot.MC_IND if mc_path == mc_ind_path else MCRoot.MC_ALL
 
-            # Links
-            links_folder = self.mc_ind_path / first_mc_year / "links"
-            if links_folder.exists():
-                for link_name in links_folder.iterdir():
-                    area1, area2 = link_name.name.split("-")
-                    links_ind_dict: dict[str, Any] = {"area1Name": area1, "area2Name": area2}
-                    parent_path = areas_folder / link_name
-                    all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
-                    for file_type, freq in all_files.items():
-                        file_path = parent_path / f"{file_type}-{freq}.txt"
-                        cols = self._read_header_only(file_path, MCRoot.MC_IND, freq, file_type)
-                        links_ind_dict["variables"] = cols
+                # Areas
+                areas_folder = mc_path / "areas"
+                if areas_folder.exists():
+                    for area in areas_folder.iterdir():
+                        areas_dict: dict[str, Any] = {"name": area.name}
+                        parent_path = areas_folder / area
+                        all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
+                        for file_type, freq in all_files.items():
+                            file_path = parent_path / f"{file_type}-{freq}.txt"
+                            cols = self._read_header_only(file_path, mc_root, freq, file_type)
+                            key = areas_mapping[file_type]
+                            areas_dict[key] = areas_dict.get(key, set()) | cols
 
-                    variables["mc-ind"]["links"].append(links_ind_dict)
+                        variables[mc_root.value]["areas"].append(areas_dict)
 
-        ##########################
-        # MC-ALL
-        ##########################
+                # Links
+                links_folder = mc_path / "links"
+                if links_folder.exists():
+                    for link_name in links_folder.iterdir():
+                        area1, area2 = link_name.name.split("-")
+                        links_dict: dict[str, Any] = {"area1Name": area1, "area2Name": area2}
+                        parent_path = areas_folder / link_name
+                        all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
+                        for file_type, freq in all_files.items():
+                            file_path = parent_path / f"{file_type}-{freq}.txt"
+                            cols = self._read_header_only(file_path, mc_root, freq, file_type)
+                            links_dict["variables"] = links_dict.get("variables", set()) | cols
 
-        if self.mc_all_path.exists():
-            # Areas
-            areas_mapping["id"] = "variables"
-            areas_folder = self.mc_all_path / "areas"
-            if areas_folder.exists():
-                for area in areas_folder.iterdir():
-                    areas_dict: dict[str, Any] = {"name": area.name}
-                    parent_path = areas_folder / area
-                    all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
-                    for file_type, freq in all_files.items():
-                        file_path = parent_path / f"{file_type}-{freq}.txt"
-                        cols = self._read_header_only(file_path, MCRoot.MC_ALL, freq, file_type)
-                        areas_dict[areas_mapping[file_type]] = cols
-
-                    variables["mc-all"]["areas"].append(areas_dict)
-
-            # Links
-            links_folder = self.mc_all_path / "links"
-            if links_folder.exists():
-                for link_name in links_folder.iterdir():
-                    area1, area2 = link_name.name.split("-")
-                    links_dict: dict[str, Any] = {"area1Name": area1, "area2Name": area2}
-                    parent_path = areas_folder / link_name
-                    all_files = self._filter_files_with_same_prefix([d.name for d in parent_path.iterdir()])
-                    for file_type, freq in all_files.items():
-                        file_path = parent_path / f"{file_type}-{freq}.txt"
-                        cols = self._read_header_only(file_path, MCRoot.MC_ALL, freq, file_type)
-                        links_dict["variables"] = links_dict.get("variables", set()) | cols
-
-                    variables["mc-all"]["links"].append(links_dict)
+                        variables[mc_root.value]["links"].append(links_dict)
 
         end = time.time()
         print(f"Headers duration {end - start} seconds")
