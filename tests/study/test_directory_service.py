@@ -323,7 +323,7 @@ class TestDirectoryService:
         directory_service.delete_directory(directory_id, access_permissions=access_permissions)
 
         # Verify
-        mock_directory_repo.delete.assert_called_once_with(directory_id)
+        mock_directory_repo.delete_batch.assert_called_once_with([directory_id])
 
     def test_delete_directory_with_empty_subdirectories(
         self,
@@ -354,17 +354,15 @@ class TestDirectoryService:
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 0
-        # get_children is called 3 times: once for checking studies recursively on parent,
-        # once for checking studies recursively on child, and once for deleting
+        # get_children is called twice: once for checking studies recursively,
+        # and once for collecting directories to delete
         mock_directory_repo.get_children.side_effect = [[child], [], [child], []]
 
         # Execute
         directory_service.delete_directory(directory_id, access_permissions=access_permissions)
 
-        # Verify - both child and parent should be deleted
-        assert mock_directory_repo.delete.call_count == 2
-        mock_directory_repo.delete.assert_any_call(child_id)
-        mock_directory_repo.delete.assert_any_call(directory_id)
+        # Verify - delete_batch should be called with both directories
+        mock_directory_repo.delete_batch.assert_called_once_with([child_id, directory_id])
 
     def test_delete_directory_with_studies_fails(
         self,

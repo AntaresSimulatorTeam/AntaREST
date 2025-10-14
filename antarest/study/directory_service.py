@@ -134,6 +134,7 @@ class DirectoryService:
         """
         Delete a directory only if it and all its subdirectories contain no studies.
         Empty subdirectories are deleted recursively along with the parent.
+        All deletions are performed in a single transaction for consistency.
         """
         directory = self.directory_repository.get(directory_id)
         if directory is None:
@@ -146,9 +147,11 @@ class DirectoryService:
         if self._has_studies_recursive(directory_id):
             raise DirectoryNotEmptyError("Cannot delete directory: it or one of its subdirectories contains studies.")
 
-        # Delete all empty subdirectories recursively, then the directory itself
-        self._delete_empty_children_recursive(directory_id, access_permissions)
-        self.directory_repository.delete(directory_id)
+        # Collect all directories to delete (depth-first)
+        directories_to_delete = self._collect_directories_to_delete(directory_id, access_permissions)
+
+        # Delete all directories in a single transaction
+        self.directory_repository.delete_batch(directories_to_delete)
 
     def _has_studies_recursive(self, directory_id: str) -> bool:
         """Check if directory or any of its subdirectories contains studies."""
@@ -164,13 +167,22 @@ class DirectoryService:
 
         return False
 
-    def _delete_empty_children_recursive(self, directory_id: str, access_permissions: AccessPermissions) -> None:
-        """Recursively delete all empty subdirectories."""
-        children = self.directory_repository.get_children(directory_id, access_permissions)
+    def _collect_directories_to_delete(self, directory_id: str, access_permissions: AccessPermissions) -> List[str]:
+        """
+        Collect all directory IDs to delete in depth-first order.
+        Returns a list with children before parents for proper deletion order.
+        """
+        directories_to_delete = []
 
+        # Recursively collect all children first
+        children = self.directory_repository.get_children(directory_id, access_permissions)
         for child in children:
-            self._delete_empty_children_recursive(child.id, access_permissions)
-            self.directory_repository.delete(child.id)
+            directories_to_delete.extend(self._collect_directories_to_delete(child.id, access_permissions))
+
+        # Add the current directory after all its children
+        directories_to_delete.append(directory_id)
+
+        return directories_to_delete
 
     def _to_dto(self, directory: Directory) -> DirectoryMetadata:
         """Convert Directory entity to DTO."""

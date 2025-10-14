@@ -544,6 +544,31 @@ class DirectoryRepository:
         session.execute(stmt)
         session.commit()
 
+    def delete_batch(self, directory_ids: List[str]) -> None:
+        """
+        Delete multiple directories in a single transaction.
+
+        Args:
+            directory_ids: List of directory IDs to delete, in the order they should be deleted
+                          (children before parents).
+        """
+        if not directory_ids:
+            return
+
+        session = self.session
+        try:
+            # Delete all directories in a single transaction
+            for directory_id in directory_ids:
+                stmt = delete(Directory).where(Directory.id == directory_id)
+                session.execute(stmt)
+
+            # Commit only once at the end
+            session.commit()
+        except Exception:
+            # Rollback if any error occurs
+            session.rollback()
+            raise
+
     def get_children(
         self, directory_id: str, access_permissions: AccessPermissions = AccessPermissions()
     ) -> Sequence[Directory]:
