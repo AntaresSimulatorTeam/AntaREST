@@ -92,7 +92,7 @@ class OutputVariablesManager:
                 # Areas
                 areas_folder = mc_path / "areas"
                 if areas_folder.exists():
-                    for area in areas_folder.iterdir():
+                    for area in sorted(areas_folder.iterdir()):
                         areas_dict: dict[str, Any] = {"name": area.name}
                         parent_path = areas_folder / area
                         file_type_class = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
@@ -115,7 +115,7 @@ class OutputVariablesManager:
                 # Links
                 links_folder = mc_path / "links"
                 if links_folder.exists():
-                    for link_name in links_folder.iterdir():
+                    for link_name in sorted(links_folder.iterdir()):
                         area1, area2 = link_name.name.split("-")
                         links_dict: dict[str, Any] = {"area_1_name": area1, "area_2_name": area2}
                         parent_path = areas_folder / link_name

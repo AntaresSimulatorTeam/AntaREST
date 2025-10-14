@@ -28,4 +28,4 @@ def test_get_output_variables_metadata(
     output_id = "20201014-1425eco-goodbye"
     res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-metadata")
     expected_content = from_json((ASSETS_DIR / "res1.json").read_bytes())
-    assert res.json() == expected_content
+    assert expected_content == res.json()

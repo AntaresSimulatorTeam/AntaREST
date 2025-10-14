@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Annotated, TypeAlias
 
-
+from pydantic import BeforeValidator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import (
     ForeignKey,
@@ -23,24 +24,31 @@ from sqlalchemy.orm import Mapped, mapped_column
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 
+Variables: TypeAlias = Annotated[list[str], BeforeValidator(lambda x: sorted(x))]
+
 
 class AreaClusterVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     name: str
-    variables: list[str] = []
+    variables: Variables = []
+
+
+ClusterVariables: TypeAlias = Annotated[
+    list[AreaClusterVariables], BeforeValidator(lambda x: sorted(x, key=lambda a: a["name"]))
+]
 
 
 class AreaVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     name: str
-    variables: list[str] = []
-    thermal_clusters: list[AreaClusterVariables] = []
-    renewable_clusters: list[AreaClusterVariables] = []
-    short_term_storages: list[AreaClusterVariables] = []
+    variables: Variables = []
+    thermal_clusters: ClusterVariables = []
+    renewable_clusters: ClusterVariables = []
+    short_term_storages: ClusterVariables = []
 
 
 class LinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     area_1_name: str
     area_2_name: str
-    variables: list[str] = []
+    variables: Variables = []
 
 
 class AreaAndLinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
