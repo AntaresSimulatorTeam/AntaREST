@@ -501,20 +501,6 @@ class DirectoryRepository:
             .scalar_one_or_none()
         )
 
-    def one(self, directory_id: str) -> Directory:
-        """Get a directory by ID or raise NoResultFound."""
-        stmt = (
-            select(Directory)
-            .options(joinedload(Directory.owner))
-            .options(joinedload(Directory.groups))
-            .options(joinedload(Directory.parent))
-            .where(Directory.id == directory_id)
-        )
-        result = self.session.scalar(stmt.execution_options(unique=True))
-        if result is None:
-            raise NoResultFound(f"Directory with ID {directory_id} not found")
-        return result
-
     def get_all(self, access_permissions: AccessPermissions = AccessPermissions()) -> Sequence[Directory]:
         """Get all directories the user has access to."""
         stmt = (
@@ -597,12 +583,6 @@ class DirectoryRepository:
     def has_children_directories(self, directory_id: str) -> bool:
         """Check if a directory has child directories."""
         stmt = select(exists(select(Directory).where(Directory.parent_id == directory_id)))
-        result = self.session.scalar(stmt)
-        return bool(result) if result is not None else False
-
-    def has_studies(self, directory_id: str) -> bool:
-        """Check if a directory contains studies."""
-        stmt = select(exists(select(Study).where(Study.directory_id == directory_id)))
         result = self.session.scalar(stmt)
         return bool(result) if result is not None else False
 

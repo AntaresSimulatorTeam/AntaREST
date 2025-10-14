@@ -17,10 +17,7 @@ from starlette.testclient import TestClient
 
 
 class TestStudyWithDirectories:
-    """Test study operations (copy, import) with directory path parameter."""
-
     def test_copy_study_with_path(self, client: TestClient, user_access_token: str) -> None:
-        """Test copying a study to a specific directory path."""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create source study
@@ -50,7 +47,6 @@ class TestStudyWithDirectories:
         assert res.json()["name"] == "copied-study"
 
     def test_copy_study_with_auto_directory_creation(self, client: TestClient, user_access_token: str) -> None:
-        """Test that copying creates missing directories automatically."""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create source study
@@ -91,7 +87,6 @@ class TestStudyWithDirectories:
         assert year_dir["parentId"] == projects_dir["id"]
 
     def test_copy_study_without_path(self, client: TestClient, user_access_token: str) -> None:
-        """Test copying a study without path creates it at root level."""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create source study
@@ -113,7 +108,6 @@ class TestStudyWithDirectories:
         assert res.json()["name"] == "copied-study"
 
     def test_import_study_with_path(self, client: TestClient, user_access_token: str) -> None:
-        """Test importing a study to a specific directory path."""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create a simple zip file (minimal study structure)
@@ -146,7 +140,6 @@ class TestStudyWithDirectories:
         assert res.status_code == 200
 
     def test_import_study_with_auto_directory_creation(self, client: TestClient, user_access_token: str) -> None:
-        """Test that importing creates missing directories automatically."""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create a simple zip file

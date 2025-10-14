@@ -10,12 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""Business exceptions for directory management.
-
-These exceptions inherit from HTTPException to automatically provide
-the correct HTTP status codes when raised from the service layer.
-"""
-
 from http import HTTPStatus
 
 from fastapi import HTTPException

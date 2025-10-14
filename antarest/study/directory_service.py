@@ -9,9 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-"""Service layer for Directory management."""
-
 import logging
 import uuid
 from typing import TYPE_CHECKING, List, Sequence

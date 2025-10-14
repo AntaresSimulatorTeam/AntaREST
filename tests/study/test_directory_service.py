@@ -10,16 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""
-Unit tests for DirectoryService.
-
-Tests the service layer business logic including:
-- Directory creation with validation
-- Permission checks
-- Update operations
-- Deletion modes (simple, cascade, force)
-"""
-
 import uuid
 from unittest.mock import Mock
 
@@ -35,19 +25,16 @@ from antarest.study.repository import AccessPermissions, DirectoryRepository, St
 
 @pytest.fixture
 def mock_directory_repo() -> Mock:
-    """Create a mock directory repository."""
     return Mock(spec=DirectoryRepository)
 
 
 @pytest.fixture
 def mock_study_repo() -> Mock:
-    """Create a mock study repository."""
     return Mock(spec=StudyMetadataRepository)
 
 
 @pytest.fixture
 def mock_study_service() -> Mock:
-    """Create a mock study service."""
     from antarest.study.service import StudyService
 
     return Mock(spec=StudyService)
@@ -55,7 +42,6 @@ def mock_study_service() -> Mock:
 
 @pytest.fixture
 def directory_service(mock_directory_repo: Mock, mock_study_repo: Mock, mock_study_service: Mock) -> DirectoryService:
-    """Create a directory service with mock repositories and study service."""
     return DirectoryService(
         directory_repository=mock_directory_repo,
         study_repository=mock_study_repo,
@@ -65,19 +51,15 @@ def directory_service(mock_directory_repo: Mock, mock_study_repo: Mock, mock_stu
 
 @pytest.fixture
 def test_user() -> Identity:
-    """Create a test user."""
     return Identity(id=1, name="test_user")
 
 
 @pytest.fixture
 def test_group() -> Group:
-    """Create a test group."""
     return Group(id="test-group", name="Test Group")
 
 
 class TestDirectoryService:
-    """Unit tests for DirectoryService."""
-
     def test_create_directory_success(
         self,
         directory_service: DirectoryService,
@@ -85,9 +67,6 @@ class TestDirectoryService:
         test_user: Identity,
         test_group: Group,
     ) -> None:
-        """
-        Test successful directory creation.
-        """
         # Setup
         data = DirectoryCreation(name="New Directory", parent_id=None)
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
@@ -115,9 +94,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test that creating a directory with non-existent parent fails.
-        """
         # Setup
         fake_parent_id = str(uuid.uuid4())
         data = DirectoryCreation(name="Child Directory", parent_id=fake_parent_id)
@@ -138,9 +114,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test that creating directory in parent without permission fails.
-        """
         # Setup
         parent = Directory(
             id=str(uuid.uuid4()),
@@ -166,9 +139,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test that creating directory with duplicate name fails.
-        """
         # Setup
         data = DirectoryCreation(name="Duplicate", parent_id=None)
         access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
@@ -188,9 +158,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test updating directory name.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         existing_directory = Directory(
@@ -220,9 +187,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test updating non-existent directory fails.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         data = DirectoryUpdate(name="New Name")
@@ -242,9 +206,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test updating directory without permission fails.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         existing_directory = Directory(
@@ -269,9 +230,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test that moving directory to create cycle is prevented.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         new_parent_id = str(uuid.uuid4())
@@ -302,9 +260,6 @@ class TestDirectoryService:
         test_user: Identity,
         test_group: Group,
     ) -> None:
-        """
-        Test updating directory groups.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         new_group = Group(id="new-group", name="New Group")
@@ -337,9 +292,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test deleting an empty directory.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         directory = Directory(
@@ -367,9 +319,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test that deleting directory with empty subdirectories succeeds and deletes them.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         child_id = str(uuid.uuid4())
@@ -406,9 +355,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test that deleting directory with studies fails.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         directory = Directory(
@@ -437,9 +383,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test that deleting directory fails if a subdirectory contains studies.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         child_id = str(uuid.uuid4())
@@ -484,9 +427,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test deleting directory without permission fails.
-        """
         # Setup
         directory_id = str(uuid.uuid4())
         directory = Directory(
@@ -510,9 +450,6 @@ class TestDirectoryService:
         mock_directory_repo: Mock,
         test_user: Identity,
     ) -> None:
-        """
-        Test listing directories.
-        """
         # Setup
         directories = [
             Directory(

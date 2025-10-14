@@ -10,8 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""FastAPI routes for directory management."""
-
 import logging
 from http import HTTPStatus
 from typing import List

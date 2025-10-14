@@ -9,35 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-"""
-Integration tests for directory management API endpoints.
-
-These tests verify the complete flow of directory operations including:
-- Creating, reading, updating, and deleting directories
-- Permission checks and access control
-- Hierarchical directory structure
-- Study organization within directories
-"""
-
 from starlette.testclient import TestClient
 
 
 class TestDirectoryManagement:
-    """
-    Integration tests for directory management endpoints.
-    """
-
     def test_create_and_list_directories(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test creating directories and listing them.
-
-        Scenario:
-        1. Create a root directory
-        2. Create a subdirectory
-        3. List all directories
-        4. Verify the hierarchy
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create root directory
@@ -71,9 +47,6 @@ class TestDirectoryManagement:
         assert sub_dir["id"] in dir_ids
 
     def test_update_directory_name(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test updating a directory's name.
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create directory
@@ -102,9 +75,6 @@ class TestDirectoryManagement:
         assert updated_dir["name"] == "Updated Name"
 
     def test_move_directory_to_new_parent(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test moving a directory to a new parent.
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create parent directories
@@ -134,9 +104,6 @@ class TestDirectoryManagement:
         assert res.json()["parentId"] == parent_b_id
 
     def test_delete_empty_directory(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test deleting an empty directory (default mode).
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create directory
@@ -156,9 +123,6 @@ class TestDirectoryManagement:
         assert directory_id not in dir_ids
 
     def test_delete_directory_with_empty_subdirectories(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test that deleting a directory with empty subdirectories succeeds and deletes them all.
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create parent directory
@@ -187,9 +151,6 @@ class TestDirectoryManagement:
         assert child_id not in dir_ids
 
     def test_prevent_directory_cycle(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test that moving a directory cannot create a cycle.
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create hierarchy: A -> B -> C
@@ -224,9 +185,6 @@ class TestDirectoryManagement:
         assert "cycle" in str(error_msg).lower()
 
     def test_duplicate_directory_name_in_same_parent(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test that duplicate directory names are not allowed in the same parent.
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create directory
@@ -240,9 +198,6 @@ class TestDirectoryManagement:
         assert "already exists" in str(error_msg).lower()
 
     def test_same_name_allowed_in_different_parents(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test that the same directory name is allowed in different parents.
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create two parent directories
@@ -268,9 +223,6 @@ class TestDirectoryManagement:
         assert res.status_code == 201
 
     def test_invalid_directory_name(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test that invalid directory names are rejected.
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Empty name
@@ -285,9 +237,6 @@ class TestDirectoryManagement:
         assert res.status_code == 422
 
     def test_deep_directory_hierarchy(self, client: TestClient, user_access_token: str) -> None:
-        """
-        Test creating a deep directory hierarchy (no depth limit as per user requirement).
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         parent_id = None

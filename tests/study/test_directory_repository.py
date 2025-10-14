@@ -10,16 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""
-Unit tests for DirectoryRepository.
-
-Tests the repository layer for directory management including:
-- CRUD operations
-- Permission checks
-- Cycle detection
-- Duplicate name validation
-"""
-
 import uuid
 
 import pytest
@@ -32,13 +22,11 @@ from antarest.study.repository import AccessPermissions, DirectoryRepository
 
 @pytest.fixture
 def directory_repo(db_session: Session) -> DirectoryRepository:
-    """Create a directory repository for testing."""
     return DirectoryRepository(session=db_session)
 
 
 @pytest.fixture
 def test_user(db_session: Session) -> Identity:
-    """Create a test user."""
     user = Identity(id=1, name="test_user")
     db_session.add(user)
     db_session.commit()
@@ -47,7 +35,6 @@ def test_user(db_session: Session) -> Identity:
 
 @pytest.fixture
 def test_group(db_session: Session) -> Group:
-    """Create a test group."""
     group = Group(id="test-group", name="Test Group")
     db_session.add(group)
     db_session.commit()
@@ -55,8 +42,6 @@ def test_group(db_session: Session) -> Group:
 
 
 class TestDirectoryRepository:
-    """Unit tests for DirectoryRepository."""
-
     def test_save_and_get_directory(
         self, directory_repo: DirectoryRepository, test_user: Identity, db_session: Session
     ) -> None:
@@ -86,9 +71,6 @@ class TestDirectoryRepository:
     def test_get_all_directories(
         self, directory_repo: DirectoryRepository, test_user: Identity, db_session: Session
     ) -> None:
-        """
-        Test retrieving all directories.
-        """
         # Create multiple directories
         for i in range(3):
             directory = Directory(
@@ -107,9 +89,6 @@ class TestDirectoryRepository:
     def test_delete_directory(
         self, directory_repo: DirectoryRepository, test_user: Identity, db_session: Session
     ) -> None:
-        """
-        Test deleting a directory.
-        """
         # Create directory
         directory = Directory(
             id=str(uuid.uuid4()),
@@ -131,9 +110,6 @@ class TestDirectoryRepository:
     def test_has_permission_owner(
         self, directory_repo: DirectoryRepository, test_user: Identity, db_session: Session
     ) -> None:
-        """
-        Test that owner has permission to access directory.
-        """
         # Create directory owned by test_user
         directory = Directory(
             id=str(uuid.uuid4()),
@@ -154,9 +130,6 @@ class TestDirectoryRepository:
         test_group: Group,
         db_session: Session,
     ) -> None:
-        """
-        Test that group member has permission to access directory.
-        """
         # Create another user as owner
         owner = Identity(id=2, name="owner_user")
         db_session.add(owner)
@@ -182,9 +155,6 @@ class TestDirectoryRepository:
         test_user: Identity,
         db_session: Session,
     ) -> None:
-        """
-        Test that user without ownership or group membership has no permission.
-        """
         # Create another user as owner
         owner = Identity(id=2, name="owner_user")
         db_session.add(owner)
@@ -209,9 +179,6 @@ class TestDirectoryRepository:
         test_user: Identity,
         db_session: Session,
     ) -> None:
-        """
-        Test that admin has permission to access any directory.
-        """
         # Create another user as owner
         owner = Identity(id=2, name="owner_user")
         db_session.add(owner)
@@ -231,9 +198,6 @@ class TestDirectoryRepository:
         assert directory_repo.has_permission(directory, access_permissions)
 
     def test_check_cycle_self(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
-        """
-        Test that a directory cannot be its own parent (cycle detection).
-        """
         directory_id = str(uuid.uuid4())
         assert directory_repo.check_cycle(directory_id, directory_id)
 
@@ -241,11 +205,7 @@ class TestDirectoryRepository:
         self,
         directory_repo: DirectoryRepository,
         test_user: Identity,
-        db_session: Session,
     ) -> None:
-        """
-        Test cycle detection in simple hierarchy: A -> B, trying B -> A.
-        """
         # Create A
         dir_a = Directory(
             id=str(uuid.uuid4()),
@@ -271,11 +231,7 @@ class TestDirectoryRepository:
         self,
         directory_repo: DirectoryRepository,
         test_user: Identity,
-        db_session: Session,
     ) -> None:
-        """
-        Test cycle detection in deep hierarchy: A -> B -> C, trying C -> A.
-        """
         # Create A -> B -> C
         dir_a = Directory(
             id=str(uuid.uuid4()),
@@ -308,11 +264,7 @@ class TestDirectoryRepository:
         self,
         directory_repo: DirectoryRepository,
         test_user: Identity,
-        db_session: Session,
     ) -> None:
-        """
-        Test that valid moves don't trigger cycle detection.
-        """
         # Create A and B (siblings)
         dir_a = Directory(
             id=str(uuid.uuid4()),
@@ -346,11 +298,7 @@ class TestDirectoryRepository:
         self,
         directory_repo: DirectoryRepository,
         test_user: Identity,
-        db_session: Session,
     ) -> None:
-        """
-        Test duplicate name detection in same parent.
-        """
         # Create parent
         parent = Directory(
             id=str(uuid.uuid4()),
@@ -376,11 +324,7 @@ class TestDirectoryRepository:
         self,
         directory_repo: DirectoryRepository,
         test_user: Identity,
-        db_session: Session,
     ) -> None:
-        """
-        Test that same name is allowed in different parents.
-        """
         # Create two parents
         parent1 = Directory(
             id=str(uuid.uuid4()),
@@ -414,11 +358,7 @@ class TestDirectoryRepository:
         self,
         directory_repo: DirectoryRepository,
         test_user: Identity,
-        db_session: Session,
     ) -> None:
-        """
-        Test duplicate name detection with exclusion (for updates).
-        """
         # Create directory
         directory = Directory(
             id=str(uuid.uuid4()),
@@ -485,6 +425,3 @@ class TestDirectoryRepository:
         # Count studies (should be 0 initially)
         count = directory_repo.count_studies(directory.id)
         assert count == 0
-
-        # Note: To test with actual studies, we would need to create Study objects
-        # which requires more complex setup. This is covered in integration tests.

@@ -29,6 +29,7 @@ from pydantic import (
     computed_field,
     field_validator,
 )
+from pydantic.alias_generators import to_camel
 from sqlalchemy import (
     Boolean,
     DateTime,
@@ -356,7 +357,6 @@ class Study(Base):
                 folder presented to the user, not the way we organize data internally.
                 This field is kept for backward compatibility but will be progressively replaced by directory_id.
         directory_id: The ID of the directory containing this study. None for studies not in a directory.
-                     When a directory is deleted, studies are orphaned (directory_id is set to NULL).
         parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
         public_mode: Defines the actions any user logged in is allowed to take on the study.
         owner_id: The ID of the owner of the study.
@@ -807,30 +807,21 @@ class ReferenceStudy(AntaresBaseModel):
     template_name: str
 
 
-# ==========================================
-# Directory DTOs
-# ==========================================
-
-
 class DirectoryMetadata(AntaresBaseModel):
-    """Represents a directory with full details."""
-
     id: str
     name: str
     parent_id: Optional[str] = None
     owner: OwnerInfo
     groups: List[GroupDTO]
 
-    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
 
 class DirectoryCreation(AntaresBaseModel):
-    """Data for creating a new directory."""
-
     name: str = Field(..., min_length=1, max_length=255)
     parent_id: Optional[str] = None
 
-    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
     @field_validator("name")
     @classmethod
@@ -845,13 +836,11 @@ class DirectoryCreation(AntaresBaseModel):
 
 
 class DirectoryUpdate(AntaresBaseModel):
-    """Data for updating a directory."""
-
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     parent_id: Optional[str] = None
     groups: Optional[List[str]] = None  # List of group IDs to share with (replaces existing groups)
 
-    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
     @field_validator("name")
     @classmethod
