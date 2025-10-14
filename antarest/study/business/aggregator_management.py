@@ -75,6 +75,9 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
+QueryFileType = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
+
+
 def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
     # original columns
     org_cols = df_cols.copy()
@@ -117,7 +120,7 @@ class AggregatorManager:
     def __init__(
         self,
         output_path: Path,
-        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
+        query_file: QueryFileType,
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
