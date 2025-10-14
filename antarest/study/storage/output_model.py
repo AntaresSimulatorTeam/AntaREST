@@ -55,7 +55,7 @@ class OutputVariablesMetadata(AntaresBaseModel, extra="forbid", populate_by_name
 
 class OutputVariables(Base):
     __tablename__ = "output_variables"
-    __table_args__ = PrimaryKeyConstraint("study_id", "output_id")
+    __table_args__ = (PrimaryKeyConstraint("study_id", "output_id"),)
 
     study_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id"), primary_key=True, nullable=False)
     output_id: Mapped[str] = mapped_column(String, nullable=False)
