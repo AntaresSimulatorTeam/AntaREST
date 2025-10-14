@@ -96,7 +96,7 @@ class DirectoryService:
         data: DirectoryUpdate,
         access_permissions: AccessPermissions,
     ) -> DirectoryMetadata:
-        """Update a directory (name or parent)."""
+        """Update a directory (name, parent, or groups)."""
         directory = self.directory_repository.get(directory_id)
         if directory is None:
             raise DirectoryNotFoundError(directory_id)
@@ -123,6 +123,11 @@ class DirectoryService:
 
             directory.parent_id = data.parent_id if data.parent_id != "" else None
 
+        if data.groups is not None:
+            # Update groups: replace existing groups with the new list
+            session = self.directory_repository.session
+            directory.groups = [session.get(Group, gid) for gid in data.groups if session.get(Group, gid)]
+
         updated_directory = self.directory_repository.save(directory)
         return self._to_dto(updated_directory)
 
@@ -148,7 +153,9 @@ class DirectoryService:
             raise DirectoryNotEmptyError("Cannot delete directory: it or one of its subdirectories contains studies.")
 
         # Collect all directories to delete (depth-first)
-        directories_to_delete = self._collect_directories_to_delete(directory_id, access_permissions)
+        # Use admin permissions to ensure we collect ALL subdirectories
+        # This is necessary because we already verified the user has permission to delete the root directory
+        directories_to_delete = self._collect_directories_to_delete(directory_id, AccessPermissions(is_admin=True))
 
         # Delete all directories in a single transaction
         self.directory_repository.delete_batch(directories_to_delete)

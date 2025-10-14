@@ -79,10 +79,25 @@ def create_directory_routes(
         summary="Update directory",
         response_model=DirectoryMetadata,
     )
-    def update_directory(directory_id: str, data: DirectoryUpdate) -> DirectoryMetadata:
-        """Update directory name or parent."""
+    def update_directory(
+        directory_id: str,
+        data: DirectoryUpdate,
+        groups: str = Query("", description="Comma-separated list of group IDs to share with (replaces existing)"),
+    ) -> DirectoryMetadata:
+        """
+        Update directory name, parent, or groups.
+
+        - **name**: New name for the directory (optional)
+        - **parentId**: New parent directory ID (optional, empty string for root)
+        - **groups**: Comma-separated list of group IDs (optional, overrides body groups if provided)
+        """
         logger.info(f"Updating directory {directory_id}")
         access_permissions = AccessPermissions.for_current_user()
+
+        # Query parameter takes precedence over body parameter
+        if groups:
+            data.groups = [gid.strip() for gid in groups.split(",") if gid.strip()]
+
         return directory_service.update_directory(directory_id, data, access_permissions)
 
     @bp.delete(

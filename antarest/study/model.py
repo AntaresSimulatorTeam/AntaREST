@@ -849,6 +849,7 @@ class DirectoryUpdate(AntaresBaseModel):
 
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     parent_id: Optional[str] = None
+    groups: Optional[List[str]] = None  # List of group IDs to share with (replaces existing groups)
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 

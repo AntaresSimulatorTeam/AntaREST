@@ -295,6 +295,42 @@ class TestDirectoryService:
         assert exc_info.value.status_code == 400
         assert "cycle" in str(exc_info.value.detail)
 
+    def test_update_directory_groups(
+        self,
+        directory_service: DirectoryService,
+        mock_directory_repo: Mock,
+        test_user: Identity,
+        test_group: Group,
+    ) -> None:
+        """
+        Test updating directory groups.
+        """
+        # Setup
+        directory_id = str(uuid.uuid4())
+        new_group = Group(id="new-group", name="New Group")
+        existing_directory = Directory(
+            id=directory_id,
+            name="Directory",
+            parent_id=None,
+            owner_id=test_user.id,
+        )
+        existing_directory.groups = [test_group]  # Initially has test_group
+
+        data = DirectoryUpdate(groups=[new_group.id])  # Update to new_group
+        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
+
+        mock_directory_repo.get.return_value = existing_directory
+        mock_directory_repo.has_permission.return_value = True
+        mock_directory_repo.session.get.return_value = new_group
+        mock_directory_repo.save.return_value = existing_directory
+
+        # Execute
+        directory_service.update_directory(directory_id, data, access_permissions)
+
+        # Verify groups were updated
+        mock_directory_repo.session.get.assert_called_with(Group, new_group.id)
+        mock_directory_repo.save.assert_called_once()
+
     def test_delete_empty_directory(
         self,
         directory_service: DirectoryService,
