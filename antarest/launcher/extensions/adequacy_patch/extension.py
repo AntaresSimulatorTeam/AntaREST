@@ -134,13 +134,3 @@ class AdequacyPatchExtension(ILauncherExtension):
             logger.info("Using linearized mode")
             post_processing_file = Path(__file__).parent / "resources" / "post-processing.R"
         shutil.copy(post_processing_file, study_export_path / "post-processing.R")
-
-    @override
-    def before_import_hook(
-        self,
-        job_id: str,
-        study_id: str,
-        study_output_path: Path,
-        ext_opts: Any,
-    ) -> None:
-        pass
