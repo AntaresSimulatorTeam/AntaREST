@@ -104,8 +104,8 @@ class OutputVariablesManager:
                             key = areas_mapping[file_type.value]
                             if "details" in file_type.value:
                                 values = []
-                                for key, value in cols.items():
-                                    values.append({"name": key, "variables": value})
+                                for k, value in cols.items():
+                                    values.append({"name": k, "variables": value})
                                 areas_dict[key] = values
                             else:
                                 areas_dict[key] = areas_dict.get(key, set()) | set(cols)

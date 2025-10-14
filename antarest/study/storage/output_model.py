@@ -32,9 +32,9 @@ class AreaClusterVariables(AntaresBaseModel, extra="forbid", populate_by_name=Tr
 class AreaVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     name: str
     variables: list[str]
-    thermal_clusters: list[AreaClusterVariables]
-    renewable_clusters: list[AreaClusterVariables]
-    short_term_storages: list[AreaClusterVariables]
+    thermal_clusters: list[AreaClusterVariables] = []
+    renewable_clusters: list[AreaClusterVariables] = []
+    short_term_storages: list[AreaClusterVariables] = []
 
 
 class LinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
