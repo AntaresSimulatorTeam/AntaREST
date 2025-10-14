@@ -15,6 +15,8 @@ from pathlib import Path
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.storage.output_model import OutputVariables
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 
 ASSETS_DIR = assets_dir / "variables_metadata"
@@ -25,7 +27,17 @@ def test_get_output_variables_metadata(
 ):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
+    # Checks the endpoint works correctly
     output_id = "20201014-1425eco-goodbye"
     res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-metadata")
     expected_content = from_json((ASSETS_DIR / "res1.json").read_bytes())
     assert expected_content == res.json()
+
+    # Ensures we saved the data inside the DB and that we're still able to read it
+    with db():
+        db_content: OutputVariables | None = db.session.get(OutputVariables, (internal_study_id, output_id))
+        assert db_content is not None
+        assert db_content.study_id == internal_study_id
+        assert db_content.output_id == output_id
+        assert db_content.variables_metadata_version == 1
+        assert db_content.to_model().model_dump(by_alias=True) == expected_content
