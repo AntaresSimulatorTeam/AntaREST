@@ -80,12 +80,7 @@ class OutputVariablesManager:
         _, body = AggregatorManager.parse_output_file(file_path, freq, 0)
 
         if "details" in file_type.value:
-            cols = set()
-            for col in body.columns:
-                for sub_col in col:
-                    if sub_col:
-                        cols.add(sub_col.upper())
-            return cols
+            return {sub_col.upper() for col in body.columns for sub_col in col if sub_col}
 
         new_cols = []
         for col in body.columns:
