@@ -155,7 +155,8 @@ class AggregatorManager:
         )
         date_serializer = FactoryDateSerializer.create(self.frequency.value, "")
         date, body = date_serializer.extract_date(csv_file)
-        df = rename_unnamed(body).astype(float)
+        rename_unnamed(body)
+        df = body.astype(float)
 
         df.index = date
 
@@ -398,18 +399,18 @@ class AggregatorManager:
         csv_file = pd.read_csv(file_path, sep="\t", skiprows=4, header=[0, 1, 2], nrows=0)
         date_serializer = FactoryDateSerializer.create(freq, "")
         _, body = date_serializer.extract_date(csv_file)
-        df = rename_unnamed(body)
+        rename_unnamed(body)
 
         if file_type.split("-")[0] == "details":
             cols = set()
-            for col in df.columns:
+            for col in body.columns:
                 for sub_col in col:
                     if sub_col:
                         cols.add(sub_col.upper())
             return cols
 
         new_cols = []
-        for col in df.columns:
+        for col in body.columns:
             if mc_root == MCRoot.MC_IND:
                 name_to_consider = col[0] if file_type == MCIndAreasQueryFile.VALUES.value else " ".join(col)
             else:
