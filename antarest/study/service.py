@@ -528,7 +528,7 @@ class StudyService:
         self.matrix_manager = MatrixManager(command_context)
         self.binding_constraint_manager = BindingConstraintManager(command_context)
         self.correlation_manager = CorrelationManager(command_context)
-        self.output_variables_manager = OutputVariablesManager(command_context)
+        self.output_variables_manager = OutputVariablesManager()
         self.table_mode_manager = TableModeManager(
             self.area_manager,
             self.links_manager,
