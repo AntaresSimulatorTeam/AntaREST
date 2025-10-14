@@ -147,22 +147,19 @@ class AggregatorManager:
         )
 
     @staticmethod
-    def parse_output_file(
-        file_path: Path, frequency: str, n_rows: int | None = None
-    ) -> tuple[pd.Index[str], pd.DataFrame]:
+    def parse_output_file(file_path: Path, frequency: str, n_rows: int | None = None) -> pd.DataFrame:
         csv_file = pd.read_csv(
             file_path, sep="\t", skiprows=4, header=[0, 1, 2], na_values="N/A", float_precision="legacy", nrows=n_rows
         )
         date_serializer = FactoryDateSerializer.create(frequency, "")
         date, body = date_serializer.extract_date(csv_file)
         rename_unnamed(body)
-        return date, body
+        return body
 
     def _parse_output_file(self, file_path: Path, normalize_column_name: bool = True) -> pd.DataFrame:
-        date, body = self.parse_output_file(file_path, self.frequency.value)
+        body = self.parse_output_file(file_path, self.frequency.value)
 
         df = body.astype(float)
-        df.index = date
 
         if not normalize_column_name:
             return df
@@ -298,7 +295,6 @@ class AggregatorManager:
             # reorganize the data frame
             columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
             df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
-            df.index = pd.Index(list(range(1, len(df) + 1)))
 
             return df
 

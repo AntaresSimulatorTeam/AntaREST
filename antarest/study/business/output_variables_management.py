@@ -77,7 +77,7 @@ class OutputVariablesManager:
 
     @staticmethod
     def _read_header_only(file_path: Path, mc_root: MCRoot, freq: str, file_type: QueryFileType) -> set[str]:
-        _, body = AggregatorManager.parse_output_file(file_path, freq, 0)
+        body = AggregatorManager.parse_output_file(file_path, freq, 0)
 
         if "details" in file_type.value:
             return {sub_col.upper() for col in body.columns for sub_col in col if sub_col}
