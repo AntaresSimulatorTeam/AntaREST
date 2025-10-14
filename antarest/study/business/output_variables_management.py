@@ -9,10 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import time
 from pathlib import Path
 from typing import Any
 
+from pydantic.alias_generators import to_camel
+
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.aggregator_management import (
     AggregatorManager,
     MCAllAreasQueryFile,
@@ -22,6 +24,35 @@ from antarest.study.business.aggregator_management import (
     MCRoot,
     QueryFileType,
 )
+
+
+class AreaClusterVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+    name: str
+    variables: list[str]
+
+
+class AreaVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+    name: str
+    variables: list[str]
+    thermal_clusters: list[AreaClusterVariables]
+    renewable_clusters: list[AreaClusterVariables]
+    short_term_storages: list[AreaClusterVariables]
+
+
+class LinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+    area_1_name: str
+    area_2_name: str
+    variables: list[str]
+
+
+class AreaAndLinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+    areas: list[AreaVariables]
+    links: list[LinkVariables]
+
+
+class OutputVariablesMetadata(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+    mc_ind: AreaAndLinkVariables
+    mc_all: AreaAndLinkVariables
 
 
 class OutputVariablesManager:
@@ -66,22 +97,17 @@ class OutputVariablesManager:
 
         return set(new_cols)
 
-    def get_variables_metadata(self, output_path: Path) -> dict[str, Any]:
-        start = time.time()
-
+    def get_variables_metadata(self, output_path: Path) -> OutputVariablesMetadata:
+        # Initialization
         mc_ind_path = output_path / "economy" / MCRoot.MC_IND.value
         mc_all_path = output_path / "economy" / MCRoot.MC_ALL.value
-        # Final dict
-        variables: dict[str, Any] = {"mc-ind": {"areas": [], "links": []}, "mc-all": {"areas": [], "links": []}}
 
-        ##########################
-        # AREAS
-        #########################
+        variables: dict[str, Any] = {"mc_ind": {"areas": [], "links": []}, "mc_all": {"areas": [], "links": []}}
 
         areas_mapping = {
-            "details": "thermalClusters",
-            "details-res": "renewableClusters",
-            "details-STstorage": "shortTermStorages",
+            "details": "thermal_clusters",
+            "details-res": "renewable_clusters",
+            "details-STstorage": "short_term_storages",
             "values": "variables",
             "id": "variables",
         }
@@ -117,7 +143,7 @@ class OutputVariablesManager:
                 if links_folder.exists():
                     for link_name in links_folder.iterdir():
                         area1, area2 = link_name.name.split("-")
-                        links_dict: dict[str, Any] = {"area1Name": area1, "area2Name": area2}
+                        links_dict: dict[str, Any] = {"area_1_name": area1, "area_2_name": area2}
                         parent_path = areas_folder / link_name
                         file_type_klass = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
                         all_files = [d.name for d in parent_path.iterdir()]
@@ -129,7 +155,4 @@ class OutputVariablesManager:
 
                         variables[mc_root.value]["links"].append(links_dict)
 
-        end = time.time()
-        print(f"Headers duration {end - start} seconds")
-
-        return variables
+        return OutputVariablesMetadata.model_validate(variables)
