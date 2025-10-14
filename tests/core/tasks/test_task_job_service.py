@@ -18,7 +18,6 @@ from antarest.core.tasks.model import TaskJob
 
 
 def test_database_date_utc(db_session: Session) -> None:
-    # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
     now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     later = now + datetime.timedelta(seconds=1)
 

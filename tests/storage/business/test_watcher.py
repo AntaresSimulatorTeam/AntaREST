@@ -247,7 +247,6 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session):
     assert repository.delete.call_count == 0
 
     # We simulate three days went by, now a delete should be triggered
-    # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
     in_3_days = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=3)
     with mock.patch("antarest.study.service.datetime") as mock_datetime:
         # Mock datetime.now() to return naive datetime when called with timezone argument

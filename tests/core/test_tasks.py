@@ -108,7 +108,6 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
 
     res = service.status_task("a")
     assert res is not None
-    # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
     expected = {
         "completion_date_utc": ANY,
         "creation_date_utc": creation_date.replace(tzinfo=None).isoformat(" "),
@@ -199,7 +198,6 @@ def test_repository() -> None:
 
     new_task = TaskJob(name="foo", owner_id=user1_id, type=TaskType.COPY)
 
-    # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
     now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     new_task = task_job_repo.save(new_task)
     assert task_job_repo.get(new_task.id) == new_task
@@ -350,7 +348,6 @@ def test_cancel_orphan_tasks(
         session.commit()
     cancel_orphan_tasks(engine=db_engine, session_args=SESSION_ARGS)
     with make_session() as session:
-        # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         if status in [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]:
             update_tasks_count = (

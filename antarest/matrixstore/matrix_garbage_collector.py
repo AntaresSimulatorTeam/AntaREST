@@ -53,7 +53,6 @@ class MatrixGarbageCollector(IService):
             # Compare for each matrix, its lifetime duration to the `retention_time` value.
             # If it's more, remove the matrix. Otherwise, pass.
             matrices_to_remove = set()
-            # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
             for matrix in unused_matrices:
                 matrix_lifetime = (current_time - saved_matrices[matrix]).total_seconds()

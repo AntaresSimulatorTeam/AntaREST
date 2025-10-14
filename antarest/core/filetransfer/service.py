@@ -174,7 +174,6 @@ class FileTransferManager:
         return [d.to_dto() for d in downloads]
 
     def _clean_up_expired_downloads(self, file_downloads: List[FileDownload]) -> None:
-        # Database stores naive datetime (UTC without timezone info), so strip timezone for comparison
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         to_remove = []
         for file_download in file_downloads:

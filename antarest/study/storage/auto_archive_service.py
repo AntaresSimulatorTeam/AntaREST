@@ -46,7 +46,6 @@ class AutoArchiveService(IService):
         Archive old studies
         Clear old variant snapshots
         """
-        # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
         old_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
             days=self.config.storage.auto_archive_threshold_days
         )
