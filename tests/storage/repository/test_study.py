@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -33,8 +33,8 @@ def test_lifecycle(db_session: Session) -> None:
         name="a",
         version="820",
         author="John Smith",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -43,8 +43,8 @@ def test_lifecycle(db_session: Session) -> None:
         name="b",
         version="830",
         author="Morpheus",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -53,19 +53,19 @@ def test_lifecycle(db_session: Session) -> None:
         name="c",
         version="830",
         author="Trinity",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
-        missing=datetime.utcnow(),
+        missing=datetime.now(timezone.utc),
     )
     d = create_variant_study(
         name="d",
         version="830",
         author="Mr. Anderson",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -100,8 +100,8 @@ def test_study__additional_data(db_session: Session) -> None:
         name="a",
         version="820",
         author="John Smith",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -140,8 +140,8 @@ def test_study_inheritance(db_session: Session) -> None:
         name="a",
         version="820",
         author="John Smith",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],

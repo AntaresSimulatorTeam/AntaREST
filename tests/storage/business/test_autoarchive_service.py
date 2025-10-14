@@ -34,7 +34,7 @@ def test_auto_archival(tmp_path: Path):
         Config(storage=StorageConfig(workspaces={"test": WorkspaceConfig(path=workspace_path)})),
     )
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
 

@@ -198,8 +198,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="A",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
         additional_data=StudyAdditionalData(),
@@ -210,8 +210,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="B",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         path="",
         workspace="other",
         additional_data=StudyAdditionalData(),
@@ -222,8 +222,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="C",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         path="",
         workspace="other2",
         additional_data=StudyAdditionalData(),
@@ -304,7 +304,7 @@ def test_study_listing(db_session: Session) -> None:
 
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # Studies in DB
     ma = create_raw_study(id="a", path="a", workspace="workspace1")
@@ -320,7 +320,8 @@ def test_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path="d",
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        # Database stores naive datetime (UTC without timezone info), so use naive datetime
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
         workspace="workspace1",
     )
     me = create_raw_study(
@@ -329,7 +330,8 @@ def test_sync_studies_from_disk() -> None:
         folder="e",
         name="e",
         created_at=now,
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        # Database stores naive datetime (UTC without timezone info), so use naive datetime
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
     )
     mg = create_raw_study(
@@ -449,7 +451,7 @@ def test_sync_unsuppported_study_from_disk(caplog) -> None:
 # noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_partial_sync_studies_from_disk() -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     ma = create_raw_study(id="a", path="a")
     mb = create_raw_study(id="b", path="b")
     mc = create_raw_study(
@@ -463,13 +465,15 @@ def test_partial_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path=f"directory{os.sep}d",
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        # Database stores naive datetime (UTC without timezone info), so use naive datetime
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = create_raw_study(
         id="e",
         path=f"directory{os.sep}e",
         created_at=now,
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        # Database stores naive datetime (UTC without timezone info), so use naive datetime
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
     fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])
     fe = StudyFolder(path=Path("directory/e"), workspace="workspace1", groups=[])
@@ -789,7 +793,7 @@ def test_download_output() -> None:
         name="name",
         ready=False,
         path="path",
-        expiration_date=datetime.utcnow(),
+        expiration_date=datetime.now(timezone.utc),
     )
     service.file_transfer_manager.request_download.return_value = export_file_download  # type: ignore
     task_id = "task-id"
@@ -1231,7 +1235,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
     study_mock.to_enhanced_json_summary.return_value = {
@@ -1265,7 +1269,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc),
     )
     study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
@@ -1327,7 +1331,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc),
     )
 
     v1 = create_variant_study(id="variant_1", path=create_study_fs_mock(variant=True))
@@ -1614,7 +1618,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Archive output {study_id}/{output_zipped}",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc)),
                 type=TaskType.ARCHIVE,
                 ref_id=study_id,
             )
@@ -1624,7 +1628,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1634,7 +1638,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Archive output {study_id}/{output_unzipped}",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc)),
                 type=TaskType.ARCHIVE,
                 ref_id=study_id,
             )
@@ -1644,7 +1648,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1817,7 +1821,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),  # type: ignore
+                creation_date_utc=str(datetime.now(timezone.utc)),  # type: ignore
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )

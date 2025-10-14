@@ -193,8 +193,8 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study1"),
         version="720",
-        created_at=datetime.datetime.now(),
-        updated_at=datetime.datetime.now(),
+        created_at=datetime.datetime.now(datetime.timezone.utc),
+        updated_at=datetime.datetime.now(datetime.timezone.utc),
         additional_data=StudyAdditionalData(author="john.doe"),
     )
     md = study_service.create(metadata)

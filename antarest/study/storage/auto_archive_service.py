@@ -46,7 +46,10 @@ class AutoArchiveService(IService):
         Archive old studies
         Clear old variant snapshots
         """
-        old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
+        # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
+        old_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
+            days=self.config.storage.auto_archive_threshold_days
+        )
         with db():
             # in this part full `Read` rights over studies are granted to this function
             studies: Sequence[Study] = self.study_service.repository.get_all(

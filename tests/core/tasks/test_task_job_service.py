@@ -18,7 +18,8 @@ from antarest.core.tasks.model import TaskJob
 
 
 def test_database_date_utc(db_session: Session) -> None:
-    now = datetime.datetime.utcnow()
+    # Database stores naive datetime (UTC without timezone info), so use naive datetime for comparison
+    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     later = now + datetime.timedelta(seconds=1)
 
     with db_session:
@@ -33,7 +34,7 @@ def test_database_date_utc(db_session: Session) -> None:
 
     with db_session:
         task_job = db_session.query(TaskJob).filter(TaskJob.name == "foo").one()
-        task_job.completion_date = datetime.datetime.utcnow()
+        task_job.completion_date = datetime.datetime.now(datetime.timezone.utc)
         db_session.commit()
 
     with db_session:
