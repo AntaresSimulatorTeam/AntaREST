@@ -28,6 +28,7 @@ from antarest.study.business.aggregator_management import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
+from antarest.study.business.output_variables_management import OutputVariablesMetadata
 from antarest.study.model import ExportFormat, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -489,5 +490,15 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         return aggregate_links_raw_data__all(
             uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
         )
+
+    @bp.get(
+        "/studies/{uuid}/output/{output_id}/variables-metadata",
+        tags=[APITag.study_outputs],
+        summary="Retrieve metadata on the given output variables",
+    )
+    def get_output_variables_metadata(uuid: str, output_id: str) -> OutputVariablesMetadata:
+        uuid = sanitize_uuid(uuid)
+        output_id = sanitize_string(output_id)
+        return output_service.get_output_variables_metadata(uuid, output_id)
 
     return bp

@@ -92,7 +92,6 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.business.optimization_management import OptimizationManager
-from antarest.study.business.output_variables_management import OutputVariablesManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
 from antarest.study.business.study_interface import StudyInterface
@@ -528,7 +527,6 @@ class StudyService:
         self.matrix_manager = MatrixManager(command_context)
         self.binding_constraint_manager = BindingConstraintManager(command_context)
         self.correlation_manager = CorrelationManager(command_context)
-        self.output_variables_manager = OutputVariablesManager()
         self.table_mode_manager = TableModeManager(
             self.area_manager,
             self.links_manager,
