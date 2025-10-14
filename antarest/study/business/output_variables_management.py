@@ -13,19 +13,14 @@ import time
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
-
 from antarest.study.business.aggregator_management import (
+    AggregatorManager,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
-    FactoryDateSerializer,
-    rename_unnamed,
 )
 
 
@@ -51,10 +46,7 @@ class OutputVariablesManager:
 
     @staticmethod
     def _read_header_only(file_path: Path, mc_root: MCRoot, freq: str, file_type: QueryFileType) -> set[str]:
-        csv_file = pd.read_csv(file_path, sep="\t", skiprows=4, header=[0, 1, 2], nrows=0)
-        date_serializer = FactoryDateSerializer.create(freq, "")
-        _, body = date_serializer.extract_date(csv_file)
-        rename_unnamed(body)
+        _, body = AggregatorManager.parse_output_file(file_path, freq, 0)
 
         if "details" in file_type.value:
             cols = set()
