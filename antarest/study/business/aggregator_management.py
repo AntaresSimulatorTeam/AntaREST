@@ -426,16 +426,15 @@ class AggregatorManager:
         ##########################
         # MC-IND
         ##########################
-
+        areas_mapping = {
+            "details": "thermalClusters",
+            "details-res": "renewableClusters",
+            "details-STstorage": "shortTermStorages",
+            "values": "variables",
+        }
         if self.mc_ind_path.exists():
             first_mc_year = [d.name for d in self.mc_ind_path.iterdir()][0]
             # Areas
-            areas_mapping = {
-                "details": "thermalClusters",
-                "details-res": "renewableClusters",
-                "details-STstorage": "shortTermStorages",
-                "values": "variables",
-            }
             areas_folder = self.mc_ind_path / first_mc_year / "areas"
             if areas_folder.exists():
                 for area in areas_folder.iterdir():
