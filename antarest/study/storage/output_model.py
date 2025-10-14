@@ -53,7 +53,7 @@ class OutputVariablesMetadata(AntaresBaseModel, extra="forbid", populate_by_name
     mc_all: AreaAndLinkVariables
 
 
-class FileDownload(Base):
+class OutputVariables(Base):
     __tablename__ = "output_variables"
     __table_args__ = PrimaryKeyConstraint("study_id", "output_id")
 

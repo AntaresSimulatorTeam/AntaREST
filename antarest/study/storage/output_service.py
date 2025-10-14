@@ -30,6 +30,7 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import get_user_id
 from antarest.study.business.aggregator_management import (
@@ -39,10 +40,11 @@ from antarest.study.business.aggregator_management import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.business.output_variables_management import OutputVariablesManager, OutputVariablesMetadata
+from antarest.study.business.output_variables_management import OutputVariablesManager
 from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_df_chunks
+from antarest.study.storage.output_model import OutputVariables, OutputVariablesMetadata
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -549,7 +551,34 @@ class OutputService:
         return download_id
 
     def get_output_variables_metadata(self, study_id: str, output_id: str) -> OutputVariablesMetadata:
+        """
+        Returns metadata concerning a given output variables.
+        First, try to fetch the given data inside DB.
+        If present, return the data.
+        If not, parse the output headers to build the object. Before returning it, save it inside DB for next calls.
+        """
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
+
+        with db():
+            output_variables: OutputVariables | None = db.session.get(OutputVariables, (study_id, output_id))
+            if output_variables:
+                return output_variables.to_model()
+
+        # Fetches the data inside the FS
         output_path = self._storage.get_output_path(study, output_id)
-        return self._output_variables_manager.get_variables_metadata(output_path)
+        model = self._output_variables_manager.get_variables_metadata(output_path)
+
+        # Save the model inside DB for next calls
+        with db():
+            db_model = OutputVariables(
+                study_id=study_id,
+                output_id=output_id,
+                variables_metadata_version=1,
+                variables_metadata=model.model_dump_json(),
+            )
+            db.session.add(db_model)
+            db.session.commit()
+
+        # Returns it
+        return model

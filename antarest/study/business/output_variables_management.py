@@ -12,9 +12,6 @@
 from pathlib import Path
 from typing import Any
 
-from pydantic.alias_generators import to_camel
-
-from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.aggregator_management import (
     AggregatorManager,
     MCAllAreasQueryFile,
@@ -24,35 +21,7 @@ from antarest.study.business.aggregator_management import (
     MCRoot,
     QueryFileType,
 )
-
-
-class AreaClusterVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
-    name: str
-    variables: list[str]
-
-
-class AreaVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
-    name: str
-    variables: list[str]
-    thermal_clusters: list[AreaClusterVariables]
-    renewable_clusters: list[AreaClusterVariables]
-    short_term_storages: list[AreaClusterVariables]
-
-
-class LinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
-    area_1_name: str
-    area_2_name: str
-    variables: list[str]
-
-
-class AreaAndLinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
-    areas: list[AreaVariables]
-    links: list[LinkVariables]
-
-
-class OutputVariablesMetadata(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
-    mc_ind: AreaAndLinkVariables
-    mc_all: AreaAndLinkVariables
+from antarest.study.storage.output_model import OutputVariablesMetadata
 
 
 class OutputVariablesManager:

@@ -28,8 +28,8 @@ from antarest.study.business.aggregator_management import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.business.output_variables_management import OutputVariablesMetadata
 from antarest.study.model import ExportFormat, StudyDownloadDTO, StudySimResultDTO
+from antarest.study.storage.output_model import OutputVariablesMetadata
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
