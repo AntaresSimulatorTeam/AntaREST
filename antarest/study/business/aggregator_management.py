@@ -152,7 +152,7 @@ class AggregatorManager:
             file_path, sep="\t", skiprows=4, header=[0, 1, 2], na_values="N/A", float_precision="legacy", nrows=n_rows
         )
         date_serializer = FactoryDateSerializer.create(frequency, "")
-        date, body = date_serializer.extract_date(csv_file)
+        _, body = date_serializer.extract_date(csv_file)
         rename_unnamed(body)
         return body
 
