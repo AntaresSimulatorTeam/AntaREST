@@ -45,11 +45,14 @@ class OutputVariablesManager:
         return file_dict
 
     @staticmethod
-    def _read_header_only(file_path: Path, mc_root: MCRoot, freq: str, file_type: QueryFileType) -> set[str]:
+    def _read_header_only(file_path: Path, mc_root: MCRoot, freq: str, file_type: QueryFileType) -> dict[str, set[str]]:
         body = AggregatorManager.parse_output_file(file_path, freq, 0)
 
         if "details" in file_type.value:
-            return {sub_col.upper() for col in body.columns for sub_col in col if sub_col}
+            cols_mapping: dict[str, set[str]] = {}
+            for col in body.columns:
+                cols_mapping.setdefault(col[0], set()).add(col[1])
+            return cols_mapping
 
         new_cols = []
         for col in body.columns:
@@ -59,7 +62,7 @@ class OutputVariablesManager:
                 name_to_consider = " ".join([col[0], col[2]])
             new_cols.append(name_to_consider.upper().strip())
 
-        return set(new_cols)
+        return {c: set("0") for c in new_cols}
 
     def get_variables_metadata(self, output_path: Path) -> OutputVariablesMetadata:
         # Initialization
@@ -84,6 +87,7 @@ class OutputVariablesManager:
         for mc_path in [first_mc_ind_path, mc_all_path]:
             if mc_path and mc_path.exists():
                 mc_root = MCRoot.MC_IND if mc_path == first_mc_ind_path else MCRoot.MC_ALL
+                mc_root_key = "mc_all" if mc_root == MCRoot.MC_ALL else "mc_ind"
 
                 # Areas
                 areas_folder = mc_path / "areas"
@@ -98,9 +102,15 @@ class OutputVariablesManager:
                             file_path = parent_path / f"{file_type}-{freq}.txt"
                             cols = self._read_header_only(file_path, mc_root, freq, file_type)
                             key = areas_mapping[file_type.value]
-                            areas_dict[key] = areas_dict.get(key, set()) | cols
+                            if "details" in file_type.value:
+                                values = []
+                                for key, value in cols.items():
+                                    values.append({"name": key, "variables": value})
+                                areas_dict[key] = values
+                            else:
+                                areas_dict[key] = areas_dict.get(key, set()) | set(cols)
 
-                        variables[mc_root.value]["areas"].append(areas_dict)
+                        variables[mc_root_key]["areas"].append(areas_dict)
 
                 # Links
                 links_folder = mc_path / "links"
@@ -115,8 +125,8 @@ class OutputVariablesManager:
                         for file_type, freq in filtered_files.items():
                             file_path = parent_path / f"{file_type}-{freq}.txt"
                             cols = self._read_header_only(file_path, mc_root, freq, file_type)
-                            links_dict["variables"] = links_dict.get("variables", set()) | cols
+                            links_dict["variables"] = links_dict.get("variables", set()) | set(cols)
 
-                        variables[mc_root.value]["links"].append(links_dict)
+                        variables[mc_root_key]["links"].append(links_dict)
 
         return OutputVariablesMetadata.model_validate(variables)
