@@ -26,12 +26,12 @@ from antarest.core.serde import AntaresBaseModel
 
 class AreaClusterVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     name: str
-    variables: list[str]
+    variables: list[str] = []
 
 
 class AreaVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     name: str
-    variables: list[str]
+    variables: list[str] = []
     thermal_clusters: list[AreaClusterVariables] = []
     renewable_clusters: list[AreaClusterVariables] = []
     short_term_storages: list[AreaClusterVariables] = []
@@ -40,7 +40,7 @@ class AreaVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, ali
 class LinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     area_1_name: str
     area_2_name: str
-    variables: list[str]
+    variables: list[str] = []
 
 
 class AreaAndLinkVariables(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
