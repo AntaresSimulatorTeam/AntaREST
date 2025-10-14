@@ -74,7 +74,7 @@ class OutputVariablesManager:
 
         return set(new_cols)
 
-    def _get_variables(self, output_path: Path) -> dict[str, Any]:
+    def get_variables_metadata(self, output_path: Path) -> dict[str, Any]:
         start = time.time()
 
         mc_ind_path = output_path / "economy" / MCRoot.MC_IND.value
@@ -115,7 +115,7 @@ class OutputVariablesManager:
                         for file_type, freq in filtered_files.items():
                             file_path = parent_path / f"{file_type}-{freq}.txt"
                             cols = self._read_header_only(file_path, mc_root, freq, file_type)
-                            key = areas_mapping[file_type]
+                            key = areas_mapping[file_type.value]
                             areas_dict[key] = areas_dict.get(key, set()) | cols
 
                         variables[mc_root.value]["areas"].append(areas_dict)
