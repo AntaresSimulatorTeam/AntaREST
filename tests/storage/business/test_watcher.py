@@ -249,7 +249,6 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session):
     # We simulate three days went by, now a delete should be triggered
     in_3_days = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=3)
     with mock.patch("antarest.study.service.datetime") as mock_datetime:
-        # Mock datetime.now() to return naive datetime when called with timezone argument
         mock_datetime.now.return_value = mock.Mock(replace=mock.Mock(return_value=in_3_days))
         watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
         assert repository.delete.call_count == 1

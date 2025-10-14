@@ -100,7 +100,6 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     tasks = service.list_tasks(TaskListFilter())
     assert len(tasks) == 1
     assert tasks[0].status == TaskStatus.FAILED
-    # Database stores naive datetime (UTC without timezone info), so compare without timezone
     assert tasks[0].creation_date_utc == str(creation_date.replace(tzinfo=None))
 
     # Test Case: get task status

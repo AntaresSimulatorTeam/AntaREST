@@ -104,7 +104,6 @@ class TestVariantStudySnapshot:
 
         # check Study fields
         assert obj.id == variant_study_id
-        # Database stores naive datetime (UTC without timezone info), so compare without timezone
         assert obj.created_at == now.replace(tzinfo=None)
         assert obj.last_executed_command is None
 
@@ -124,7 +123,6 @@ class TestVariantStudySnapshot:
             db_session.query(VariantStudySnapshot).filter(VariantStudySnapshot.id == variant_study_id).one()
         )
         assert obj.id == variant_study_id
-        # Database stores naive datetime (UTC without timezone info), so compare without timezone
         assert obj.created_at == now.replace(tzinfo=None)
         assert obj.last_executed_command == command_id
 
@@ -172,7 +170,6 @@ class TestCommandBlock:
         # check CommandBlock.to_dto()
         dto = obj.to_dto()
         # note: it is easier to compare the dict representation of the DTO
-        # Database stores naive datetime (UTC without timezone info), so compare without timezone
         assert dto.model_dump() == {
             "id": command_id,
             "action": command,

@@ -256,7 +256,6 @@ class TestVariantStudyService:
             def now(cls, tz=None) -> datetime.datetime:
                 """Method used to get the custom timestamp.
                 Returns naive datetime regardless of tz parameter to match database behavior."""
-                # Return naive datetime (without timezone) like the database does
                 return datetime.datetime(2023, 12, 31)
 
             @classmethod

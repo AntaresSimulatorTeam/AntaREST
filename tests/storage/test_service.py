@@ -320,7 +320,6 @@ def test_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path="d",
-        # Database stores naive datetime (UTC without timezone info), so use naive datetime
         missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
         workspace="workspace1",
     )
@@ -330,7 +329,6 @@ def test_sync_studies_from_disk() -> None:
         folder="e",
         name="e",
         created_at=now,
-        # Database stores naive datetime (UTC without timezone info), so use naive datetime
         missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
     )
@@ -465,14 +463,12 @@ def test_partial_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path=f"directory{os.sep}d",
-        # Database stores naive datetime (UTC without timezone info), so use naive datetime
         missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = create_raw_study(
         id="e",
         path=f"directory{os.sep}e",
         created_at=now,
-        # Database stores naive datetime (UTC without timezone info), so use naive datetime
         missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
     fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])

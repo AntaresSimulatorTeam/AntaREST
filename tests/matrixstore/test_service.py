@@ -84,8 +84,6 @@ class TestMatrixService:
         assert obj is not None, f"Missing Matrix object {matrix_id}"
         assert obj.width == len(data[0])
         assert obj.height == len(data)
-        # Note: obj.created_at is stored as naive datetime in DB (UTC time, but without timezone info)
-        # So we need to compare with UTC time to match
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
@@ -339,8 +337,6 @@ class TestMatrixService:
         assert obj is not None, f"Missing Matrix object {info.id}"
         assert obj.width == matrix.shape[1]
         assert obj.height == matrix.shape[0]
-        # Note: obj.created_at is stored as naive datetime in DB (UTC time, but without timezone info)
-        # So we need to compare with UTC time to match
         now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
@@ -408,8 +404,6 @@ class TestMatrixService:
             assert obj is not None, f"Missing Matrix object {info.id}"
             assert obj.width == (matrix.shape[1] if matrix.size else 0)
             assert obj.height == matrix.shape[0]
-            # Note: obj.created_at is stored as naive datetime in DB (UTC time, but without timezone info)
-            # So we need to compare with UTC time to match
             now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
