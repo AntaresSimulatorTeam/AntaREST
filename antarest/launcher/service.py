@@ -53,9 +53,9 @@ from antarest.launcher.model import (
     LauncherResourceRangeDTO,
     LogType,
     XpansionParametersDTO,
-    apply_launcher_config_to_params,
     apply_update_launcher_config,
     is_launcher_config_compatible,
+    update_launcher_params_with_config,
 )
 from antarest.launcher.repository import JobResultRepository, LauncherConfigRepository
 from antarest.login.service import LoginService
@@ -258,9 +258,7 @@ class LauncherService:
             launcher_config = self.get_launcher_config(launcher_configuration_id)
             if not is_launcher_config_compatible(launcher_config, StudyVersion.parse(study_version)):
                 raise IncompatibleLauncherConfig()
-            launcher_params = apply_launcher_config_to_params(
-                launcher_parameters, launcher_config, StudyVersion.parse(study_version)
-            )
+            update_launcher_params_with_config(launcher_parameters, launcher_config)
 
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
@@ -280,12 +278,12 @@ class LauncherService:
             study_id=study_uuid,
             job_status=JobStatus.PENDING,
             launcher=launcher,
-            launcher_params=launcher_params.model_dump_json() if launcher_params else None,
+            launcher_params=launcher_parameters.model_dump_json() if launcher_parameters else None,
             owner_id=(owner_id or None),
         )
         self.job_result_repository.save(job_status)
 
-        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_params)
+        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters)
 
         self.event_bus.push(
             Event(

@@ -12,13 +12,14 @@
 
 import enum
 import json
+import re
 import typing
 from datetime import datetime
 from typing import Any, Dict, List, MutableMapping, Optional, Tuple
 from uuid import uuid4
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -30,6 +31,11 @@ from antarest.core.serde.json import from_json
 from antarest.login.model import Identity, UserInfo
 
 SolverParams = List[Tuple[str, str]]
+
+ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN = re.compile(
+    r"^[a-zA-Z0-9_]+$|^\d+\.\d+$"
+)  # alphanumeric, underscore, or decimal number
+MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS = StudyVersion(9, 2)
 
 
 class XpansionParametersDTO(AntaresBaseModel):
@@ -342,6 +348,99 @@ class LauncherConfigDTO(AntaresBaseModel):
     use_optim_1_basis_next_week: bool = True
     use_optim_1_basis_optim_2: bool = True
 
+    @field_validator("name")
+    def name_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("name cannot be empty or whitespace")
+        return v
+
+    @field_validator(
+        "linear_solver_param",
+        "linear_solver_param_optim_1",
+        "linear_solver_param_optim_2",
+    )
+    def validate_solver_params(cls, sp: Optional[SolverParams]) -> Optional[SolverParams]:
+        if not sp:
+            return sp
+        for k, v in sp:
+            if not ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN.match(k):
+                raise ValueError(
+                    f"Invalid key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
+                )
+            if not ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN.match(v):
+                raise ValueError(
+                    f"Invalid value '{v}' for key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
+                )
+        return sp
+
+    @model_validator(mode="after")
+    def validate_versions_and_optim_params(self) -> "LauncherConfigDTO":
+        # min <= max
+        if self.min_antares_version and self.max_antares_version:
+            if self.min_antares_version > self.max_antares_version:
+                raise ValueError("min_antares_version cannot be greater than max_antares_version")
+
+        # linear_solver_param_optim_* only valid for >= 9.2
+        for field_name in ("linear_solver_param_optim_1", "linear_solver_param_optim_2"):
+            param = getattr(self, field_name)
+            if param and (
+                not self.min_antares_version or self.min_antares_version < MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS
+            ):
+                raise ValueError(
+                    f"{field_name} is not supported before Antares version 9.2 (got {self.min_antares_version})"
+                )
+
+        return self
+
+
+def make_other_options_from_launcher_config(config: LauncherConfigDTO) -> str:
+    """
+    Generate an 'other_options' string compatible with _parse_launcher_options()
+    from a LauncherConfigDTO.
+
+    Example output:
+        xpress nobasis1 param-optim1="THREADS 4 PRESOLVE 1" param-optim2="MIPRELSTOP 0.01"
+    """
+    options: List[str] = []
+
+    solver = config.linear_solver.lower()
+    options.append(f"--solver={solver}")
+
+    if not config.use_optim_1_basis_next_week:
+        options.append("--nobasis1")
+    if not config.use_optim_1_basis_optim_2:
+        options.append("--nobasis2")
+
+    # Build per-optim strings
+    def build_param_str(param_list: List[Tuple[str, str]]) -> str:
+        return " ".join(f"{k} {v}" for k, v in param_list)
+
+    # param-optim1
+    param1 = build_param_str(config.linear_solver_param_optim_1 or [])
+    param_common = build_param_str(config.linear_solver_param or [])
+    combined1 = f"{param_common} {param1}".strip()
+    if combined1:
+        options.append(f'--param-optim1="{combined1}"')
+
+    # param-optim2
+    param2 = build_param_str(config.linear_solver_param_optim_2 or [])
+    combined2 = f"{param_common} {param2}".strip()
+    if combined2:
+        options.append(f'--param-optim2="{combined2}"')
+
+    return " ".join(options)
+
+
+def update_launcher_params_with_config(
+    launcher_params: LauncherParametersDTO,
+    launcher_config: LauncherConfigDTO,
+) -> None:
+    if launcher_params.other_options is not None:
+        raise ValueError("Cannot apply launcher configuration: 'other_options' already set in launcher parameters")
+
+    new_other_options = make_other_options_from_launcher_config(launcher_config)
+    launcher_params.other_options = new_other_options
+
 
 class LauncherConfigModel(Base):
     __tablename__ = "launcher_configuration"
@@ -468,42 +567,61 @@ def apply_update_launcher_config(
     )
 
 
-def apply_launcher_config_to_params(
-    launcher_params: LauncherParametersDTO,
-    launcher_config: Optional[LauncherConfigDTO],
-    study_version: StudyVersion,
-) -> LauncherParametersDTO:
-    if not launcher_config:
-        return launcher_params
+# def apply_launcher_config_to_params(
+#     launcher_params: LauncherParametersDTO,
+#     launcher_config: Optional[LauncherConfigDTO],
+#     study_version: StudyVersion,
+# ) -> LauncherParametersDTO:
 
-    # Determine which optim to use based on study version and launcher parameters
-    optim = 2 if launcher_params.xpansion_r_version else 1
+#     if not launcher_config:
+#         return launcher_params
 
-    # Apply linear solver parameters from the configuration if not already set in the parameters
-    if optim == 1 and launcher_config.linear_solver_param_optim_1:
-        if not launcher_params.other_options:
-            launcher_params.other_options = " ".join(
-                f"--{param[0]} {param[1]}" for param in launcher_config.linear_solver_param_optim_1
-            )
-    elif optim == 2 and launcher_config.linear_solver_param_optim_2:
-        if not launcher_params.other_options:
-            launcher_params.other_options = " ".join(
-                f"--{param[0]} {param[1]}" for param in launcher_config.linear_solver_param_optim_2
-            )
+#     params = launcher_params.model_copy(deep=True)
 
-    # Always apply general linear solver parameters if not already set in the parameters
-    if launcher_config.linear_solver_param:
-        if not launcher_params.other_options:
-            launcher_params.other_options = " ".join(
-                f"--{param[0]} {param[1]}" for param in launcher_config.linear_solver_param
-            )
-        else:
-            # Append general parameters to existing options
-            additional_options = " ".join(f"--{param[0]} {param[1]}" for param in launcher_config.linear_solver_param)
-            if additional_options not in launcher_params.other_options:
-                launcher_params.other_options += " " + additional_options
+#     # Helper to append CLI options
+#     def append_option(opt: str, value: typing.Any = None, is_flag: bool = False):
+#         if is_flag:
+#             if value:
+#                 opts.append(f"--{opt}")
+#         elif value is not None:
+#             if isinstance(value, bool):
+#                 opts.append(f"--{opt}={'true' if value else 'false'}")
+#             else:
+#                 opts.append(f"--{opt}={value}")
 
-    return launcher_params
+#     opts = []
+
+#     # Antares >= 9.2
+#     if study_version >= StudyVersion(9, 2):
+#         append_option("linear-solver", launcher_config.linear_solver)
+#         if launcher_config.linear_solver_param_optim_1:
+#             for param in launcher_config.linear_solver_param_optim_1:
+#                 append_option("linear-solver-param-optim-1", param[1])
+#         if launcher_config.linear_solver_param_optim_2:
+#             for param in launcher_config.linear_solver_param_optim_2:
+#                 append_option("linear-solver-param-optim-2", param[1])
+#         if launcher_config.linear_solver_param:
+#             for param in launcher_config.linear_solver_param:
+#                 append_option("linear-solver-param", param[1])
+#         append_option("use-optim-1-basis-next-week", launcher_config.use_optim_1_basis_next_week)
+#         append_option("use-optim-1-basis-optim-2", launcher_config.use_optim_1_basis_optim_2)
+#     # Antares >= 8.8, <= 9.1
+#     elif StudyVersion(8, 8) <= study_version <= StudyVersion(9, 1):
+#         # These fields may not exist in all configs, so check for them
+#         if getattr(launcher_config, "use_ortools", False):
+#             append_option("use-ortools", True, is_flag=True)
+#         if getattr(launcher_config, "ortools_solver", None):
+#             append_option("ortools-solver", launcher_config.ortools_solver)
+#         if getattr(launcher_config, "solver_parameters", None):
+#             append_option("solver-parameters", launcher_config.solver_parameters)
+
+#     # Merge with existing other_options
+#     existing = params.other_options or ""
+#     if existing and not existing.endswith(" "):
+#         existing += " "
+#     params.other_options = (existing + " ".join(opts)).strip()
+
+#     return params
 
 
 def is_launcher_config_compatible(
