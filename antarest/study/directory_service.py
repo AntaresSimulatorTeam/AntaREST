@@ -62,7 +62,6 @@ class DirectoryService:
         group_ids: Sequence[str],
         access_permissions: AccessPermissions,
     ) -> DirectoryMetadata:
-        """Create a new directory."""
         if data.parent_id:
             parent = self.directory_repository.get(data.parent_id)
             if parent is None:
@@ -93,7 +92,6 @@ class DirectoryService:
         data: DirectoryUpdate,
         access_permissions: AccessPermissions,
     ) -> DirectoryMetadata:
-        """Update a directory (name, parent, or groups)."""
         directory = self.directory_repository.get(directory_id)
         if directory is None:
             raise DirectoryNotFoundError(directory_id)

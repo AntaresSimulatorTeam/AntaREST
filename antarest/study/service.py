@@ -17,6 +17,7 @@ import http
 import logging
 import os
 import time
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
@@ -26,6 +27,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
+from sqlalchemy import select
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -115,7 +117,7 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyFolder,
     StudyMetadataDTO,
-    StudyMetadataPatchDTO,
+    StudyMetadataPatchDTO, Directory,
 )
 from antarest.study.repository import (
     StudyFilter,
@@ -879,7 +881,7 @@ class StudyService:
         # Get or create directory from path
         current_user = get_current_user()
         owner_id = current_user.id if current_user else 0
-        directory_id = self._get_directory_from_path(path, owner_id, group_ids) if path else None
+        directory_id = self._get_directory_from_path(path, owner_id, group_ids)
 
         raw = RawStudy(
             id=sid,
@@ -1169,7 +1171,7 @@ class StudyService:
             # Get or create directory from path
             current_user = get_current_user()
             owner_id = current_user.id if current_user else 0
-            directory_id = self._get_directory_from_path(path, owner_id, group_ids) if path else None
+            directory_id = self._get_directory_from_path(path, owner_id, group_ids)
             if directory_id:
                 study.directory_id = directory_id
 
@@ -1234,14 +1236,6 @@ class StudyService:
         """
         if not folder_path:
             return None
-
-        import uuid
-        from pathlib import PurePosixPath
-
-        from sqlalchemy import select
-
-        from antarest.login.model import Group
-        from antarest.study.model import Directory
 
         # Parse path
         path = PurePosixPath(folder_path)
@@ -1450,7 +1444,7 @@ class StudyService:
         # Get or create directory from path
         current_user = get_current_user()
         owner_id = current_user.id if current_user else 0
-        directory_id = self._get_directory_from_path(path, owner_id, group_ids) if path else None
+        directory_id = self._get_directory_from_path(path, owner_id, group_ids)
 
         study = RawStudy(
             id=sid,

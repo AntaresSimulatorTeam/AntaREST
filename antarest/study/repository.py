@@ -465,8 +465,6 @@ class StudyMetadataRepository:
 
 
 class DirectoryRepository:
-    """Repository for directory operations."""
-
     def __init__(self, session: Optional[Session] = None):
         self._session = session
 
@@ -477,7 +475,6 @@ class DirectoryRepository:
         return self._session
 
     def save(self, directory: Directory) -> Directory:
-        """Save or update a directory."""
         session = self.session
         directory.groups = [session.merge(g) for g in directory.groups]
         if directory.owner:
@@ -488,7 +485,6 @@ class DirectoryRepository:
         return directory
 
     def get(self, directory_id: str) -> Optional[Directory]:
-        """Get a directory by ID."""
         return (
             self.session.execute(
                 select(Directory)
@@ -502,7 +498,6 @@ class DirectoryRepository:
         )
 
     def get_all(self, access_permissions: AccessPermissions = AccessPermissions()) -> Sequence[Directory]:
-        """Get all directories the user has access to."""
         stmt = (
             select(Directory)
             .options(joinedload(Directory.owner))
@@ -524,7 +519,6 @@ class DirectoryRepository:
         return list(result.unique().scalars().all())
 
     def delete(self, directory_id: str) -> None:
-        """Delete a directory."""
         session = self.session
         stmt = delete(Directory).where(Directory.id == directory_id)
         session.execute(stmt)
@@ -558,7 +552,6 @@ class DirectoryRepository:
     def get_children(
         self, directory_id: str, access_permissions: AccessPermissions = AccessPermissions()
     ) -> Sequence[Directory]:
-        """Get direct child directories of a parent."""
         stmt = (
             select(Directory)
             .options(joinedload(Directory.owner))
@@ -581,13 +574,11 @@ class DirectoryRepository:
         return list(result.unique().scalars().all())
 
     def has_children_directories(self, directory_id: str) -> bool:
-        """Check if a directory has child directories."""
         stmt = select(exists(select(Directory).where(Directory.parent_id == directory_id)))
         result = self.session.scalar(stmt)
         return bool(result) if result is not None else False
 
     def count_studies(self, directory_id: str) -> int:
-        """Count studies in a directory."""
         stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
         result = self.session.scalar(stmt)
         return int(result) if result is not None else 0
@@ -595,7 +586,6 @@ class DirectoryRepository:
     def has_permission(
         self, directory: Directory, access_permissions: AccessPermissions, write_access: bool = False
     ) -> bool:
-        """Check if user has permission to access a directory."""
         if access_permissions.is_admin:
             return True
 
@@ -632,7 +622,6 @@ class DirectoryRepository:
         return False
 
     def has_duplicate_name(self, name: str, parent_id: Optional[str], exclude_id: Optional[str] = None) -> bool:
-        """Check if a directory with same name exists under same parent."""
         stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
 
         if exclude_id:

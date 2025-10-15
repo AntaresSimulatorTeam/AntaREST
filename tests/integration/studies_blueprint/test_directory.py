@@ -19,11 +19,11 @@ class TestDirectoryManagement:
         # Create root directory
         res = client.post(
             "/v1/directories",
-            json={"name": "Project Alpha"},
+            json={"name": "Antarest"},
         )
         assert res.status_code == 201, res.json()
         root_dir = res.json()
-        assert root_dir["name"] == "Project Alpha"
+        assert root_dir["name"] == "Antarest"
         assert root_dir["parentId"] is None
         root_dir_id = root_dir["id"]
 

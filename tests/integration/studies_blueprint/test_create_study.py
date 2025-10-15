@@ -84,7 +84,6 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        """Test creating a study in a directory path."""
         # First create the directory structure
         res = client.post(
             "/v1/directories",
@@ -114,19 +113,12 @@ class TestCreateStudy:
         assert res.status_code == 200
         study = res.json()
         assert study["name"] == "test-study"
-        # Note: directory_id is not exposed in the study metadata API response
-        # We can verify by listing studies in the directory
-        res = client.get(
-            f"/v1/directories/{res.json()['id']}/studies",
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-        )
 
     def test_create_study_with_auto_directory_creation(
         self,
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        """Test that creating a study creates missing directories automatically."""
         res = client.post(
             "/v1/studies?name=test-study&path=workspace/experiments/test",
             headers={"Authorization": f"Bearer {admin_access_token}"},
@@ -163,7 +155,6 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        """Test creating a study without path creates it at root level."""
         res = client.post(
             "/v1/studies?name=root-study",
             headers={"Authorization": f"Bearer {admin_access_token}"},
