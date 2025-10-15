@@ -1,6 +1,6 @@
 import pytest
 
-from antarest.launcher.model import LauncherConfigDTO, make_other_options_from_launcher_config
+from antarest.launcher.model import BadLauncherConfigInput, LauncherConfigDTO, make_other_options_from_launcher_config
 from antarest.study.model import STUDY_VERSION_9_1, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
@@ -76,12 +76,12 @@ def test_valid_config_minimal():
 
 
 def test_name_cannot_be_empty():
-    with pytest.raises(ValueError, match="name cannot be empty"):
+    with pytest.raises(BadLauncherConfigInput, match="name cannot be empty"):
         LauncherConfigDTO(name="   ", linear_solver="xpress")
 
 
 def test_min_version_must_not_exceed_max():
-    with pytest.raises(ValueError, match="min_antares_version cannot be greater"):
+    with pytest.raises(BadLauncherConfigInput, match="min_antares_version cannot be greater"):
         LauncherConfigDTO(
             name="valid",
             linear_solver="xpress",
@@ -91,7 +91,7 @@ def test_min_version_must_not_exceed_max():
 
 
 def test_invalid_key_in_solver_params():
-    with pytest.raises(ValueError, match="Invalid key"):
+    with pytest.raises(BadLauncherConfigInput, match="Invalid key"):
         LauncherConfigDTO(
             name="valid",
             linear_solver="xpress",
@@ -100,7 +100,7 @@ def test_invalid_key_in_solver_params():
 
 
 def test_invalid_value_in_solver_params():
-    with pytest.raises(ValueError, match="Invalid value"):
+    with pytest.raises(BadLauncherConfigInput, match="Invalid value"):
         LauncherConfigDTO(
             name="valid",
             linear_solver="xpress",
@@ -109,7 +109,7 @@ def test_invalid_value_in_solver_params():
 
 
 def test_optim_params_before_9_2_not_allowed():
-    with pytest.raises(ValueError, match="not supported before Antares version 9.2"):
+    with pytest.raises(BadLauncherConfigInput, match="not supported before Antares version 9.2"):
         LauncherConfigDTO(
             name="valid",
             linear_solver="xpress",

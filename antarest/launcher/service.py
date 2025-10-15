@@ -75,8 +75,11 @@ class JobNotFound(HTTPException):
 
 
 class IncompatibleLauncherConfig(HTTPException):
-    def __init__(self) -> None:
-        super(IncompatibleLauncherConfig, self).__init__(HTTPStatus.BAD_REQUEST)
+    def __init__(self, message: str = "Invalid launcher configuration"):
+        super().__init__(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=message,
+        )
 
 
 class LauncherServiceNotAvailableException(HTTPException):
@@ -257,7 +260,9 @@ class LauncherService:
         if launcher_configuration_id is not None:
             launcher_config = self.get_launcher_config(launcher_configuration_id)
             if not is_launcher_config_compatible(launcher_config, StudyVersion.parse(study_version)):
-                raise IncompatibleLauncherConfig()
+                raise IncompatibleLauncherConfig("Launcher configuration is not compatible with study version")
+            if launcher_parameters.other_options:
+                raise IncompatibleLauncherConfig("Cannot use other_options when a launcher configuration is specified")
             update_launcher_params_with_config(launcher_parameters, launcher_config)
 
         job_uuid = self._generate_new_id()

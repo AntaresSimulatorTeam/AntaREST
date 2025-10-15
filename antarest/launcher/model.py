@@ -15,10 +15,12 @@ import json
 import re
 import typing
 from datetime import datetime
+from http import HTTPStatus
 from typing import Any, Dict, List, MutableMapping, Optional, Tuple
 from uuid import uuid4
 
 from antares.study.version import StudyVersion
+from fastapi import HTTPException
 from pydantic import ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
@@ -36,6 +38,14 @@ ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN = re.compile(
     r"^[a-zA-Z0-9_]+$|^\d+\.\d+$"
 )  # alphanumeric, underscore, or decimal number
 MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS = StudyVersion(9, 2)
+
+
+class BadLauncherConfigInput(HTTPException):
+    def __init__(self, message: str = "Invalid launcher configuration"):
+        super().__init__(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=message,
+        )
 
 
 class XpansionParametersDTO(AntaresBaseModel):
@@ -351,7 +361,7 @@ class LauncherConfigDTO(AntaresBaseModel):
     @field_validator("name")
     def name_not_empty(cls, v: str) -> str:
         if not v.strip():
-            raise ValueError("name cannot be empty or whitespace")
+            raise BadLauncherConfigInput("name cannot be empty or whitespace")
         return v
 
     @field_validator(
@@ -364,11 +374,11 @@ class LauncherConfigDTO(AntaresBaseModel):
             return sp
         for k, v in sp:
             if not ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN.match(k):
-                raise ValueError(
+                raise BadLauncherConfigInput(
                     f"Invalid key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
                 )
             if not ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN.match(v):
-                raise ValueError(
+                raise BadLauncherConfigInput(
                     f"Invalid value '{v}' for key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
                 )
         return sp
@@ -378,7 +388,7 @@ class LauncherConfigDTO(AntaresBaseModel):
         # min <= max
         if self.min_antares_version and self.max_antares_version:
             if self.min_antares_version > self.max_antares_version:
-                raise ValueError("min_antares_version cannot be greater than max_antares_version")
+                raise BadLauncherConfigInput("min_antares_version cannot be greater than max_antares_version")
 
         # linear_solver_param_optim_* only valid for >= 9.2
         for field_name in ("linear_solver_param_optim_1", "linear_solver_param_optim_2"):
@@ -386,7 +396,7 @@ class LauncherConfigDTO(AntaresBaseModel):
             if param and (
                 not self.min_antares_version or self.min_antares_version < MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS
             ):
-                raise ValueError(
+                raise BadLauncherConfigInput(
                     f"{field_name} is not supported before Antares version 9.2 (got {self.min_antares_version})"
                 )
 
@@ -435,9 +445,6 @@ def update_launcher_params_with_config(
     launcher_params: LauncherParametersDTO,
     launcher_config: LauncherConfigDTO,
 ) -> None:
-    if launcher_params.other_options is not None:
-        raise ValueError("Cannot apply launcher configuration: 'other_options' already set in launcher parameters")
-
     new_other_options = make_other_options_from_launcher_config(launcher_config)
     launcher_params.other_options = new_other_options
 
@@ -565,63 +572,6 @@ def apply_update_launcher_config(
             {**launcher_config.to_dto().model_dump(), **launcher_config_update.model_dump(exclude_unset=True)}
         )
     )
-
-
-# def apply_launcher_config_to_params(
-#     launcher_params: LauncherParametersDTO,
-#     launcher_config: Optional[LauncherConfigDTO],
-#     study_version: StudyVersion,
-# ) -> LauncherParametersDTO:
-
-#     if not launcher_config:
-#         return launcher_params
-
-#     params = launcher_params.model_copy(deep=True)
-
-#     # Helper to append CLI options
-#     def append_option(opt: str, value: typing.Any = None, is_flag: bool = False):
-#         if is_flag:
-#             if value:
-#                 opts.append(f"--{opt}")
-#         elif value is not None:
-#             if isinstance(value, bool):
-#                 opts.append(f"--{opt}={'true' if value else 'false'}")
-#             else:
-#                 opts.append(f"--{opt}={value}")
-
-#     opts = []
-
-#     # Antares >= 9.2
-#     if study_version >= StudyVersion(9, 2):
-#         append_option("linear-solver", launcher_config.linear_solver)
-#         if launcher_config.linear_solver_param_optim_1:
-#             for param in launcher_config.linear_solver_param_optim_1:
-#                 append_option("linear-solver-param-optim-1", param[1])
-#         if launcher_config.linear_solver_param_optim_2:
-#             for param in launcher_config.linear_solver_param_optim_2:
-#                 append_option("linear-solver-param-optim-2", param[1])
-#         if launcher_config.linear_solver_param:
-#             for param in launcher_config.linear_solver_param:
-#                 append_option("linear-solver-param", param[1])
-#         append_option("use-optim-1-basis-next-week", launcher_config.use_optim_1_basis_next_week)
-#         append_option("use-optim-1-basis-optim-2", launcher_config.use_optim_1_basis_optim_2)
-#     # Antares >= 8.8, <= 9.1
-#     elif StudyVersion(8, 8) <= study_version <= StudyVersion(9, 1):
-#         # These fields may not exist in all configs, so check for them
-#         if getattr(launcher_config, "use_ortools", False):
-#             append_option("use-ortools", True, is_flag=True)
-#         if getattr(launcher_config, "ortools_solver", None):
-#             append_option("ortools-solver", launcher_config.ortools_solver)
-#         if getattr(launcher_config, "solver_parameters", None):
-#             append_option("solver-parameters", launcher_config.solver_parameters)
-
-#     # Merge with existing other_options
-#     existing = params.other_options or ""
-#     if existing and not existing.endswith(" "):
-#         existing += " "
-#     params.other_options = (existing + " ".join(opts)).strip()
-
-#     return params
 
 
 def is_launcher_config_compatible(
