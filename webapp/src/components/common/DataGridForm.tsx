@@ -39,7 +39,6 @@ import {
 } from "@mui/material";
 import * as R from "ramda";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DeepPartial } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
 import useUndo, { type Actions } from "use-undo";
@@ -194,7 +193,7 @@ function DataGridForm<TData extends Data>({
       }
 
       return acc;
-    }, {} as DeepPartial<TData>);
+    }, {} as Partial<TData>);
   };
 
   ////////////////////////////////////////////////////////////////
