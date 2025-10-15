@@ -1,0 +1,38 @@
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+
+def compute_blob_hash(content: bytes) -> str:
+    pass
+
+
+class BlobContentRepository:
+    def __init__(self, bucket_dir: Path) -> None:
+        self.bucket_dir = bucket_dir
+        self.bucket_dir.mkdir(parents=True, exist_ok=True)
+
+    def get(self, blob_hash: str) -> bytes:
+        pass
+
+    def exists(self, blob_hash: str) -> bool:
+        pass
+
+    def save(self, content: bytes) -> str:
+        pass
+
+    def delete(self, blob_hash: str) -> None:
+        pass

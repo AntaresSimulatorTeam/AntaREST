@@ -196,6 +196,15 @@ def create_matrix_gc(config: Config, matrix_service: MatrixService) -> MatrixGar
     )
 
 
+def create_blob_gc(config: Config, matrix_service: MatrixService) -> MatrixGarbageCollector:
+    return MatrixGarbageCollector(
+        matrix_service=matrix_service,
+        sleeping_time=config.storage.matrix_gc_sleeping_time,
+        dry_run=config.storage.matrix_gc_dry_run,
+        retention_time=config.storage.matrix_gc_retention_time,
+    )
+
+
 def create_watcher(
     config: Config,
     app_ctxt: Optional[AppBuildContext],

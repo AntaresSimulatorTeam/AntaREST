@@ -104,3 +104,9 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         Retrieves the list of matrix IDs.
         """
         raise NotImplementedError()
+
+    def get_inner_blobs(self) -> List[str]:
+        """
+        Retrieves the list of blob IDs.
+        """
+        return []

@@ -56,3 +56,6 @@ class CreateUserResource(ICommand):
     @override
     def get_inner_matrices(self) -> List[str]:
         return []
+
+    def get_inner_blobs(self) -> List[str]:
+        return [self.data.blob_id]

@@ -345,6 +345,30 @@ and to reduce the disk space allocated to these matrices, you can choose other f
 It doesn't impact users as it's for internal usage only, matrices will be displayed the same way no matter the format.
 
 
+## **blobstore**
+
+- **Type:** Path
+- **Default value:** `./blobstore`
+- **Description:** Antares Web uses this folder to store user resource of variants instead of storing them in DB.
+
+## **blob_gc_sleeping_time**
+
+- **Type:** Integer
+- **Default value:** 3600 (corresponds to 1 hour)
+- **Description:** Time in seconds to sleep between two garbage collections (which means blob suppression).
+
+## **blob_gc_dry_run**
+
+- **Type:** Boolean
+- **Default value:** false
+- **Description:** If `true`, blobs will never be removed. Else, the ones that are unused will.
+
+## **blob_gc_retention_time**
+
+- **Type:** Integer
+- **Default value:** 3600
+- **Description:** Only unused blobs that have been created for longer than this time (in seconds) will be deleted.
+
 ```yaml
 # example for storage settings
 storage:
