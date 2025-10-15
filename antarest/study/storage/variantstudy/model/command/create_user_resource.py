@@ -82,4 +82,6 @@ class CreateUserResource(ICommand):
 
     @override
     def get_inner_blobs(self) -> List[str]:
-        return [self.data.blob_id]
+        if self.data.blob_id:
+            return [self.data.blob_id]
+        return []
