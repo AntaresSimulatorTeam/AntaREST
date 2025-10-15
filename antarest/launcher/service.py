@@ -160,23 +160,6 @@ class LauncherService:
                         launcher_params.__getattribute__(ext),
                     )
 
-    def _before_import_hooks(
-        self,
-        job_id: str,
-        study_id: str,
-        study_output_path: Path,
-        launcher_opts: LauncherParametersDTO,
-    ) -> None:
-        for ext in self.extensions:
-            if launcher_opts is not None and getattr(launcher_opts, ext, None) is not None:
-                logger.info(f"Applying extension {ext} before_import_hook on job {job_id}")
-                self.extensions[ext].before_import_hook(
-                    job_id,
-                    study_id,
-                    study_output_path,
-                    getattr(launcher_opts, ext),
-                )
-
     def update(
         self,
         job_uuid: str,
@@ -518,12 +501,6 @@ class LauncherService:
                 ),
             )
 
-            self._before_import_hooks(
-                job_id,
-                job_result.study_id,
-                output_true_path,
-                job_launch_params,
-            )
             self._save_solver_stats(job_result, output_true_path)
             if additional_logs and not output_is_zipped:
                 for log_name, log_paths in additional_logs.items():
