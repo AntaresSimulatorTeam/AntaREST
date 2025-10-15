@@ -170,6 +170,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         task_service=task_service,
         user_service=login_service,
         event_bus=event_bus,
+        blob_service=blob_service,
     )
     storage_dispatcher = OutputStorageDispatcher(
         study_service.storage_service.raw_study_service, study_service.storage_service.variant_study_service
