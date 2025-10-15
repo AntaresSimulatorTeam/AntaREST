@@ -817,6 +817,27 @@ class DirectoryMetadata(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
 
+def _validate_directory_name(name: str) -> str:
+    """
+    Validate directory name format.
+
+    Args:
+        name: The directory name to validate.
+
+    Returns:
+        The validated and stripped directory name.
+
+    Raises:
+        ValueError: If the name is empty or contains path separators.
+    """
+    name = name.strip()
+    if not name:
+        raise ValueError("Directory name cannot be empty")
+    if "/" in name or "\\" in name:
+        raise ValueError("Directory name cannot contain path separators (/ or \\)")
+    return name
+
+
 class DirectoryCreation(AntaresBaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     parent_id: Optional[str] = None
@@ -827,12 +848,7 @@ class DirectoryCreation(AntaresBaseModel):
     @classmethod
     def validate_name(cls, v: str) -> str:
         """Validate directory name."""
-        name = v.strip()
-        if not name:
-            raise ValueError("Directory name cannot be empty")
-        if "/" in name or "\\" in name:
-            raise ValueError("Directory name cannot contain path separators (/ or \\)")
-        return name
+        return _validate_directory_name(v)
 
 
 class DirectoryUpdate(AntaresBaseModel):
@@ -846,11 +862,4 @@ class DirectoryUpdate(AntaresBaseModel):
     @classmethod
     def validate_name(cls, v: Optional[str]) -> Optional[str]:
         """Validate directory name."""
-        if v is None:
-            return v
-        name = v.strip()
-        if not name:
-            raise ValueError("Directory name cannot be empty")
-        if "/" in name or "\\" in name:
-            raise ValueError("Directory name cannot contain path separators (/ or \\)")
-        return name
+        return _validate_directory_name(v) if v is not None else v

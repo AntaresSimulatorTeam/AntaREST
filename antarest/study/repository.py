@@ -481,7 +481,6 @@ class DirectoryRepository:
             directory.owner = session.merge(directory.owner)
         session.add(directory)
         session.commit()
-        session.refresh(directory)
         return directory
 
     def get(self, directory_id: str) -> Optional[Directory]:
