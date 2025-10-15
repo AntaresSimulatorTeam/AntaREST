@@ -527,12 +527,10 @@ class LauncherConfigModel(Base):
     @classmethod
     def from_dto(cls, dto: LauncherConfigDTO) -> "LauncherConfigModel":
         data = dto.model_dump(exclude_none=True)
-        # Convert StudyVersion fields to string if present
         if dto.min_antares_version is not None:
             data["min_antares_version"] = f"{dto.min_antares_version:2d}"
         if dto.max_antares_version is not None:
             data["max_antares_version"] = f"{dto.max_antares_version:2d}"
-        # Convert solver params fields to JSON strings if present
         for key in [
             "linear_solver_param_optim_1",
             "linear_solver_param_optim_2",
@@ -540,7 +538,6 @@ class LauncherConfigModel(Base):
         ]:
             if key in data and data[key] is not None:
                 data[key] = json.dumps(data[key])
-        # Convert StudyVersion fields to string if present
         return cls(**data)
 
     @override

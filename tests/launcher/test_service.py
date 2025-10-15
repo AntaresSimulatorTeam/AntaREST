@@ -99,12 +99,15 @@ class TestLauncherService:
         repository = Mock()
         repository.save.return_value = pending
 
+        config_repository = Mock()
+
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
             output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
             login_service=Mock(),
             job_result_repository=repository,
+            launcher_config_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),
@@ -155,6 +158,8 @@ class TestLauncherService:
         repository = Mock()
         repository.get.return_value = fake_execution_result
 
+        config_repository = Mock()
+
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
 
@@ -164,6 +169,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
+            launcher_config_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -193,6 +199,8 @@ class TestLauncherService:
         repository = Mock()
         repository.get.return_value = fake_execution_result
 
+        config_repository = Mock()
+
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
 
@@ -202,6 +210,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
+            launcher_config_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -265,6 +274,8 @@ class TestLauncherService:
         repository.find_by_study.return_value = fake_execution_result
         repository.get_all.return_value = all_faked_execution_results
 
+        config_repository = Mock()
+
         study_service = Mock(spec=StudyService)
         study_service.repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
         db_session.add_all(fake_execution_result)
@@ -277,6 +288,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
+            launcher_config_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -526,6 +538,7 @@ class TestLauncherService:
             output_service=Mock(),
             login_service=Mock(),
             job_result_repository=Mock(),
+            launcher_config_repository=Mock(),
             factory_launcher=mock_factory,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -548,6 +561,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
+            launcher_config_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -581,6 +595,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
+            launcher_config_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -619,6 +634,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
+            launcher_config_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -678,6 +694,7 @@ class TestLauncherService:
             output_service=output_service,
             login_service=Mock(),
             job_result_repository=Mock(),
+            launcher_config_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -796,6 +813,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
+            launcher_config_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -952,6 +970,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=job_repository,
+            launcher_config_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=factory_launcher_mock,
             file_transfer_manager=Mock(),
@@ -1000,6 +1019,7 @@ class TestLauncherService:
             output_service=output_service,
             login_service=login_service,
             job_result_repository=job_repository,
+            launcher_config_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),

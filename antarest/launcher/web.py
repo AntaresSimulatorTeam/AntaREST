@@ -62,6 +62,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
                 study_id,
                 selected_launcher,
                 launcher_parameters,
+                launcher_configuration_id,
                 version,
             )
         )
