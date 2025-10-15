@@ -1459,7 +1459,10 @@ class StudyService:
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
             user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
-            args = {"path": user_path, "resource_type": ResourceType.FILE, "content": data or b""}
+            content = data or b""
+            assert isinstance(content, bytes)
+            blob_id = context.blob_service.create(content)
+            args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
             command_data = UserResourceDataCreation.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
             commands.append(cmd_1)

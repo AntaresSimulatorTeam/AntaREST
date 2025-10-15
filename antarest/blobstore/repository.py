@@ -36,7 +36,9 @@ class BlobContentRepository:
 
     def save(self, content: bytes) -> str:
         blob_hash = compute_blob_hash(content)
-        (self.bucket_dir / blob_hash).write_bytes(content)
+        file_path = self.bucket_dir / blob_hash
+        if not file_path.exists():
+            file_path.write_bytes(content)
         return blob_hash
 
     def delete(self, blob_hash: str) -> None:
