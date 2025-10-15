@@ -76,7 +76,8 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
             The output of the command execution.
         """
         if isinstance(study_data, FileStudy):
-            study_data = FileStudyTreeDao(study_data, self.command_context.generator_matrix_constants)
+            context = self.command_context
+            study_data = FileStudyTreeDao(study_data, context.generator_matrix_constants, context.blob_service)
         try:
             return self._apply_dao(study_data, listener)
         except Exception as e:

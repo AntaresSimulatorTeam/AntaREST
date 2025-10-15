@@ -411,8 +411,10 @@ class RawStudyInterface(StudyInterface):
         file_study = self.get_files()
 
         for command in commands:
+            context = command.command_context
             result = command.apply(
-                FileStudyTreeDao(file_study, command.command_context.generator_matrix_constants), listener
+                FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service),
+                listener,
             )
             if result.should_invalidate_cache:
                 should_invalidate_cache = True
