@@ -88,45 +88,46 @@ class OutputVariablesManager:
             "id": "variables",
         }
 
-        first_mc_ind_path = None
+        existing_paths = []
         if mc_ind_path.exists():
-            first_mc_year = mc_ind_path.iterdir().__next__().name
-            first_mc_ind_path = mc_ind_path / first_mc_year
+            first_mc_year = next(mc_ind_path.iterdir()).name
+            existing_paths.append(mc_ind_path / first_mc_year)
+        if mc_all_path.exists():
+            existing_paths.append(mc_all_path)
 
-        for mc_path in [first_mc_ind_path, mc_all_path]:
-            if mc_path and mc_path.exists():
-                mc_root = MCRoot.MC_IND if mc_path == first_mc_ind_path else MCRoot.MC_ALL
-                mc_root_key = "mc_all" if mc_root == MCRoot.MC_ALL else "mc_ind"
+        for mc_path in existing_paths:
+            mc_root = MCRoot.MC_ALL if mc_path == mc_all_path else MCRoot.MC_IND
+            mc_root_key = "mc_all" if mc_root == MCRoot.MC_ALL else "mc_ind"
 
-                # Areas
-                areas_folder = mc_path / "areas"
-                file_type_class = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
-                if areas_folder.exists():
-                    for area in sorted(areas_folder.iterdir()):
-                        areas_dict: dict[str, Any] = {"name": area.name}
-                        parent_path = areas_folder / area
+            # Areas
+            areas_folder = mc_path / "areas"
+            file_type_class = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
+            if areas_folder.exists():
+                for area in sorted(areas_folder.iterdir()):
+                    areas_dict: dict[str, Any] = {"name": area.name}
+                    parent_path = areas_folder / area
 
-                        for cols, file_type in self._get_filtered_files(mc_root, parent_path, file_type_class):
-                            key = areas_mapping[file_type.value]
-                            if "details" in file_type.value:
-                                areas_dict[key] = [{"name": k, "variables": v} for k, v in cols.items()]
-                            else:
-                                areas_dict[key] = areas_dict.get(key, set()) | set(cols)
+                    for cols, file_type in self._get_filtered_files(mc_root, parent_path, file_type_class):
+                        key = areas_mapping[file_type.value]
+                        if "details" in file_type.value:
+                            areas_dict[key] = [{"name": k, "variables": v} for k, v in cols.items()]
+                        else:
+                            areas_dict[key] = areas_dict.get(key, set()) | set(cols)
 
-                        variables[mc_root_key]["areas"].append(areas_dict)
+                    variables[mc_root_key]["areas"].append(areas_dict)
 
-                # Links
-                links_folder = mc_path / "links"
-                file_type_klass = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
-                if links_folder.exists():
-                    for link_name in sorted(links_folder.iterdir()):
-                        area1, area2 = link_name.name.split("-")
-                        links_dict: dict[str, Any] = {"area_1_name": area1, "area_2_name": area2}
-                        parent_path = links_folder / link_name
+            # Links
+            links_folder = mc_path / "links"
+            file_type_klass = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
+            if links_folder.exists():
+                for link_name in sorted(links_folder.iterdir()):
+                    area1, area2 = link_name.name.split("-")
+                    links_dict: dict[str, Any] = {"area_1_name": area1, "area_2_name": area2}
+                    parent_path = links_folder / link_name
 
-                        for cols, _ in self._get_filtered_files(mc_root, parent_path, file_type_klass):
-                            links_dict["variables"] = links_dict.get("variables", set()) | set(cols)
+                    for cols, _ in self._get_filtered_files(mc_root, parent_path, file_type_klass):
+                        links_dict["variables"] = links_dict.get("variables", set()) | set(cols)
 
-                        variables[mc_root_key]["links"].append(links_dict)
+                    variables[mc_root_key]["links"].append(links_dict)
 
         return OutputVariablesMetadata.model_validate(variables)
