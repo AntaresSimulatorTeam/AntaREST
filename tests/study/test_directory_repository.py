@@ -354,23 +354,6 @@ class TestDirectoryRepository:
         # Check for duplicate in parent2 (should be false)
         assert not directory_repo.has_duplicate_name("SameName", parent2.id)
 
-    def test_has_duplicate_name_with_exclude(
-        self,
-        directory_repo: DirectoryRepository,
-        test_user: Identity,
-    ) -> None:
-        # Create directory
-        directory = Directory(
-            id=str(uuid.uuid4()),
-            name="ExistingName",
-            parent_id=None,
-            owner_id=test_user.id,
-        )
-        directory_repo.save(directory)
-
-        # Check duplicate excluding itself (should be false - allows rename to same name)
-        assert not directory_repo.has_duplicate_name("ExistingName", None, exclude_id=directory.id)
-
     def test_has_children_directories(
         self,
         directory_repo: DirectoryRepository,

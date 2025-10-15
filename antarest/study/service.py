@@ -109,6 +109,7 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
+    Directory,
     MatrixIndex,
     RawStudy,
     Study,
@@ -117,7 +118,7 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyFolder,
     StudyMetadataDTO,
-    StudyMetadataPatchDTO, Directory,
+    StudyMetadataPatchDTO,
 )
 from antarest.study.repository import (
     StudyFilter,

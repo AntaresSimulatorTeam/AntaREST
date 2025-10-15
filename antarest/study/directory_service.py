@@ -67,7 +67,7 @@ class DirectoryService:
             if parent is None:
                 raise DirectoryNotFoundError(data.parent_id)
 
-            if not self.directory_repository.has_permission(parent, access_permissions, write_access=True):
+            if not self.directory_repository.has_permission(parent, access_permissions):
                 raise DirectoryPermissionError("You don't have permission to create directories in this parent")
 
         if self.directory_repository.has_duplicate_name(data.name, data.parent_id):
@@ -96,11 +96,11 @@ class DirectoryService:
         if directory is None:
             raise DirectoryNotFoundError(directory_id)
 
-        if not self.directory_repository.has_permission(directory, access_permissions, write_access=True):
+        if not self.directory_repository.has_permission(directory, access_permissions):
             raise UserHasNotPermissionError()
 
-        if data.name is not None:
-            if self.directory_repository.has_duplicate_name(data.name, directory.parent_id, exclude_id=directory_id):
+        if data.name is not None and data.name != directory.name:
+            if self.directory_repository.has_duplicate_name(data.name, directory.parent_id):
                 raise DirectoryAlreadyExistsError(data.name)
             directory.name = data.name
 
@@ -113,7 +113,7 @@ class DirectoryService:
                 if new_parent is None:
                     raise DirectoryNotFoundError(data.parent_id)
 
-                if not self.directory_repository.has_permission(new_parent, access_permissions, write_access=True):
+                if not self.directory_repository.has_permission(new_parent, access_permissions):
                     raise DirectoryPermissionError("You don't have permission to move directories to this parent")
 
             directory.parent_id = data.parent_id if data.parent_id != "" else None
@@ -140,7 +140,7 @@ class DirectoryService:
         if directory is None:
             raise DirectoryNotFoundError(directory_id)
 
-        if not self.directory_repository.has_permission(directory, access_permissions, write_access=True):
+        if not self.directory_repository.has_permission(directory, access_permissions):
             raise UserHasNotPermissionError()
 
         # Check if directory or any subdirectory contains studies

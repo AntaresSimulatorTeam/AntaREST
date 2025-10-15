@@ -583,9 +583,7 @@ class DirectoryRepository:
         result = self.session.scalar(stmt)
         return int(result) if result is not None else 0
 
-    def has_permission(
-        self, directory: Directory, access_permissions: AccessPermissions, write_access: bool = False
-    ) -> bool:
+    def has_permission(self, directory: Directory, access_permissions: AccessPermissions) -> bool:
         if access_permissions.is_admin:
             return True
 
@@ -621,17 +619,7 @@ class DirectoryRepository:
 
         return False
 
-    def has_duplicate_name(self, name: str, parent_id: Optional[str], exclude_id: Optional[str] = None) -> bool:
+    def has_duplicate_name(self, name: str, parent_id: Optional[str]) -> bool:
         stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
-
-        if exclude_id:
-            stmt = select(
-                exists(
-                    select(Directory).where(
-                        Directory.name == name, Directory.parent_id == parent_id, Directory.id != exclude_id
-                    )
-                )
-            )
-
         result = self.session.scalar(stmt)
         return bool(result) if result is not None else False
