@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import hashlib
 import logging
 from pathlib import Path
 
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def compute_blob_hash(content: bytes) -> str:
-    pass
+    return hashlib.sha256(content).hexdigest()
 
 
 class BlobContentRepository:

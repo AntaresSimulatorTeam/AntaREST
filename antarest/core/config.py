@@ -170,7 +170,6 @@ class StorageConfig:
     blobstore: Path = Path("./blobstore")
     blob_gc_sleeping_time: int = 3600
     blob_gc_dry_run: bool = False
-    blob_gc_retention_time: int = 3600
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
@@ -209,7 +208,6 @@ class StorageConfig:
             blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
             blob_gc_sleeping_time=data.get("blob_gc_sleeping_time", defaults.blob_gc_sleeping_time),
             blob_gc_dry_run=data.get("blob_gc_dry_run", defaults.blob_gc_dry_run),
-            blob_gc_retention_time=data.get("blob_gc_retention_time", defaults.blob_gc_retention_time),
         )
 
     @classmethod

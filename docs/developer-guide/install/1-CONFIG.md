@@ -363,11 +363,6 @@ It doesn't impact users as it's for internal usage only, matrices will be displa
 - **Default value:** false
 - **Description:** If `true`, blobs will never be removed. Else, the ones that are unused will.
 
-## **blob_gc_retention_time**
-
-- **Type:** Integer
-- **Default value:** 3600
-- **Description:** Only unused blobs that have been created for longer than this time (in seconds) will be deleted.
 
 ```yaml
 # example for storage settings

@@ -11,7 +11,9 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from typing import Iterable, List, override
+from typing import Iterable, List
+
+from typing_extensions import override
 
 from antarest.blobstore.blob_usage_provider import IBlobUsageProvider
 from antarest.blobstore.model import BlobReference

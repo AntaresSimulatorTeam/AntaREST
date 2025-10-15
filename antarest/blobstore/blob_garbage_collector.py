@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import logging
 import time
-from datetime import datetime
 from typing import Set
 
 from typing_extensions import override
@@ -25,11 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 class BlobGarbageCollector(IService):
-    def __init__(self, blob_service: BlobService, sleeping_time: float, dry_run: bool, retention_time: int):
+    def __init__(self, blob_service: BlobService, sleeping_time: float, dry_run: bool):
         self.blob_service = blob_service
         self.sleeping_time = sleeping_time
         self.dry_run = dry_run
-        self.retention_time = retention_time
 
     def _delete_unused_saved_blobs(self, unused_blobs: Set[str]) -> None:
         """Delete all files with the name in unused_blobs"""
@@ -44,24 +42,14 @@ class BlobGarbageCollector(IService):
         """Delete all blobs that are not used anymore"""
         stopwatch = StopWatch()
         logger.info("Beginning of the cleaning process")
-        used_matrices = {matrix.matrix_id for matrix in self.blob_service.get_used_matrices()}
-        all_existing_matrices = self.matrix_service.get_matrices()
-        saved_matrices = {matrix.id: matrix.created_at for matrix in all_existing_matrices}
-        unused_matrices = set(saved_matrices) - used_matrices
+        used_blobs = {blob.blob_id for blob in self.blob_service.get_used_blobs()}
+        saved_blobs = self.blob_service.get_blobs()
+        unused_blobs = set(saved_blobs) - used_blobs
 
-        if unused_matrices:
-            # Compare for each matrix, its lifetime duration to the `retention_time` value.
-            # If it's more, remove the matrix. Otherwise, pass.
-            matrices_to_remove = set()
-            current_time = datetime.utcnow()  # We use this value to fit with the one inside the database.
-            for matrix in unused_matrices:
-                matrix_lifetime = (current_time - saved_matrices[matrix]).total_seconds()
-                if matrix_lifetime >= self.retention_time:
-                    matrices_to_remove.add(matrix)
+        if unused_blobs:
+            self._delete_unused_saved_blobs(unused_blobs=unused_blobs)
 
-            self._delete_unused_saved_matrices(unused_matrices=matrices_to_remove)
-
-        stopwatch.log_elapsed(lambda x: logger.info(f"Finished cleaning matrices in {x}s"))
+        stopwatch.log_elapsed(lambda x: logger.info(f"Finished cleaning blobs in {x}s"))
 
     @override
     def _loop(self) -> None:
