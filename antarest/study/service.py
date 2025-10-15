@@ -2320,7 +2320,6 @@ class StudyService:
         args = {
             "path": _get_path_inside_user_folder(path, ResourceCreationNotAllowed),
             "resource_type": ResourceType.FOLDER,
-            "content": None,
         }
         command_data = UserResourceDataCreation.model_validate(args)
         self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)

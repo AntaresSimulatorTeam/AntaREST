@@ -25,6 +25,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.blobstore.repository import BlobContentRepository
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
@@ -165,6 +166,19 @@ def simple_matrix_service_fixture(bucket_dir: Path) -> SimpleMatrixService:
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
+@pytest.fixture(name="blob_dir", scope="session")
+def blob_dir_fixture(tmp_path_factory: t.Any) -> Path:
+    """Same as bucket_dir_fixture for the blob store"""
+    return t.cast(Path, tmp_path_factory.mktemp("blob_store"))
+
+
+@pytest.fixture(name="simple_blob_service", scope="session")
+def simple_blob_service_fixture(blob_dir: Path) -> BlobService:
+    """Same as simple_matrix_service_fixture for blob service"""
+    blob_content_repository = BlobContentRepository(bucket_dir=blob_dir)
+    return BlobService(blob_content_repository=blob_content_repository)
+
+
 @pytest.fixture(name="generator_matrix_constants", scope="session")
 def generator_matrix_constants_fixture(
     simple_matrix_service: SimpleMatrixService,
@@ -302,6 +316,7 @@ def event_bus_fixture() -> IEventBus:
 def command_factory_fixture(
     generator_matrix_constants: GeneratorMatrixConstants,
     simple_matrix_service: SimpleMatrixService,
+    simple_blob_service: BlobService,
 ) -> CommandFactory:
     """
     Fixture that creates a CommandFactory instance with a session-level scope.
@@ -309,6 +324,7 @@ def command_factory_fixture(
     Args:
         generator_matrix_constants: An instance of the GeneratorMatrixConstants class.
         simple_matrix_service: An instance of the SimpleMatrixService class.
+        simple_blob_service: An instance of the BlobService class.
 
     Returns:
         An instance of the CommandFactory class with the provided dependencies.
@@ -316,6 +332,7 @@ def command_factory_fixture(
     return CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=simple_matrix_service,
+        blob_service=simple_blob_service,
     )
 
 
