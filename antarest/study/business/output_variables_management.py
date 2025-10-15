@@ -109,10 +109,7 @@ class OutputVariablesManager:
                         for cols, file_type in self._get_filtered_files(mc_root, parent_path, file_type_class):
                             key = areas_mapping[file_type.value]
                             if "details" in file_type.value:
-                                values = []
-                                for k, value in cols.items():
-                                    values.append({"name": k, "variables": value})
-                                areas_dict[key] = values
+                                areas_dict[key] = [{"name": k, "variables": v} for k, v in cols.items()]
                             else:
                                 areas_dict[key] = areas_dict.get(key, set()) | set(cols)
 
