@@ -94,8 +94,7 @@ def build_study_service(
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service=matrix_service)
         generator_matrix_constants.init_constant_matrices()
     command_factory = CommandFactory(
-        generator_matrix_constants=generator_matrix_constants,
-        matrix_service=matrix_service,
+        generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service
     )
     variant_study_service = VariantStudyService(
         task_service=task_service,

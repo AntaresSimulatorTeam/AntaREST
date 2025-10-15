@@ -17,6 +17,7 @@ import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
+from antarest.blobstore.in_memory import InMemorySimpleBlobService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import MatrixService
@@ -60,6 +61,11 @@ def ini_cleaner() -> Callable[[str], str]:
 @pytest.fixture(name="matrix_service")
 def matrix_service_fixture() -> InMemorySimpleMatrixService:
     return InMemorySimpleMatrixService()
+
+
+@pytest.fixture(name="blob_service")
+def blob_service_fixture() -> InMemorySimpleBlobService:
+    return InMemorySimpleBlobService()
 
 
 def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService, tmp_path: Path) -> FileStudy:

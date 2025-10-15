@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from antarest.blobstore.service import ISimpleBlobService
 from antarest.core.serde import AntaresBaseModel
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -18,6 +18,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 class CommandContext(AntaresBaseModel):
     generator_matrix_constants: GeneratorMatrixConstants
     matrix_service: ISimpleMatrixService
+    blob_service: ISimpleBlobService
 
     class Config:
         arbitrary_types_allowed = True

@@ -18,6 +18,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -1044,10 +1045,12 @@ def command_factory() -> CommandFactory:
         return matrix.removeprefix("matrix://")
 
     matrix_service = Mock(spec=MatrixService, get_matrix_id=get_matrix_id)
+    blob_service = Mock(spec=BlobService)
 
     return CommandFactory(
         generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
         matrix_service=matrix_service,
+        blob_service=blob_service,
     )
 
 
@@ -1105,6 +1108,7 @@ def test_unknown_command():
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
             matrix_service=Mock(spec=MatrixService),
+            blob_service=Mock(spec=BlobService),
         )
         command_factory.to_command(
             command_dto=CommandDTO(action="unknown_command", args={}, study_version=STUDY_VERSION_8_8)
