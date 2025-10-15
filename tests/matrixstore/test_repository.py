@@ -45,7 +45,11 @@ class TestMatrixRepository:
         with db_session:
             repo = MatrixRepository(db_session)
             m = Matrix(
-                id="hello", width=0, height=0, created_at=datetime.datetime.now(datetime.timezone.utc), version=0
+                id="hello",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
             )
             repo.save(m)
             assert m.id
@@ -87,11 +91,19 @@ class TestMatrixRepository:
             dataset_repo = MatrixDataSetRepository(session=db_session)
 
             m1 = Matrix(
-                id="hello", width=0, height=0, created_at=datetime.datetime.now(datetime.timezone.utc), version=0
+                id="hello",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
             )
             repo.save(m1)
             m2 = Matrix(
-                id="world", width=0, height=0, created_at=datetime.datetime.now(datetime.timezone.utc), version=0
+                id="world",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
             )
             repo.save(m2)
 
@@ -100,8 +112,8 @@ class TestMatrixRepository:
                 public=True,
                 owner_id=user.id,
                 groups=[group],
-                created_at=datetime.datetime.now(datetime.timezone.utc),
-                updated_at=datetime.datetime.now(datetime.timezone.utc),
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             )
 
             matrix_relation = MatrixDataSetRelation(name="m1")
@@ -138,11 +150,19 @@ class TestMatrixRepository:
 
             repo = MatrixRepository(session=db_session)
             m1 = Matrix(
-                id="hello", width=0, height=0, created_at=datetime.datetime.now(datetime.timezone.utc), version=0
+                id="hello",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
             )
             repo.save(m1)
             m2 = Matrix(
-                id="world", width=0, height=0, created_at=datetime.datetime.now(datetime.timezone.utc), version=0
+                id="world",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
             )
             repo.save(m2)
 
@@ -152,8 +172,8 @@ class TestMatrixRepository:
                 name="some name",
                 public=True,
                 owner_id=user1.id,
-                created_at=datetime.datetime.now(datetime.timezone.utc),
-                updated_at=datetime.datetime.now(datetime.timezone.utc),
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             )
             matrix_relation = MatrixDataSetRelation(name="m1")
             matrix_relation.matrix_id = "hello"
@@ -167,8 +187,8 @@ class TestMatrixRepository:
                 name="some name 2",
                 public=False,
                 owner_id=user2.id,
-                created_at=datetime.datetime.now(datetime.timezone.utc),
-                updated_at=datetime.datetime.now(datetime.timezone.utc),
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             )
             matrix_relation = MatrixDataSetRelation(name="m1")
             matrix_relation.matrix_id = "hello"

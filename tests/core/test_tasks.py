@@ -84,7 +84,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     task_job_repo = TaskJobRepository()
 
     # Prepare a TaskJob in the database
-    creation_date = datetime.datetime.now(datetime.timezone.utc)
+    creation_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     running_task = TaskJob(id="a", name="b", status=TaskStatus.RUNNING.value, creation_date=creation_date)
     task_job_repo.save(running_task)
 
@@ -232,7 +232,7 @@ def test_repository() -> None:
     result = task_job_repo.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
     assert len(result) == 1
 
-    new_task.completion_date = datetime.datetime.now(datetime.timezone.utc)
+    new_task.completion_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     task_job_repo.save(new_task)
     result = task_job_repo.list(
         TaskListFilter(
@@ -332,7 +332,7 @@ def test_cancel_orphan_tasks(
     max_diff_seconds: int = 1
     test_id: str = "2ea94758-9ea5-4015-a45f-b245a6ffc147"
 
-    completion_date: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
+    completion_date: datetime.datetime = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     task_job = TaskJob(
         id=test_id,
         name="test",
@@ -466,7 +466,7 @@ def test_ts_generation_task(
         author="John Smith",
         created_at=datetime.datetime(2023, 7, 15, 16, 45),
         updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-        last_access=datetime.datetime.now(datetime.timezone.utc),
+        last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
         public_mode=PublicMode.FULL,
         owner=regular_user,
         path=str(raw_study_path),

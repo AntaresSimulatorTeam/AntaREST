@@ -78,7 +78,7 @@ class FileTransferManager:
             ready=False,
             path=str(tmpfile),
             owner=owner.impersonator if owner is not None else None,
-            expiration_date=datetime.datetime.now(datetime.timezone.utc)
+            expiration_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             + datetime.timedelta(
                 minutes=expiration_time_in_minutes or self.download_default_expiration_timeout_minutes
             ),

@@ -523,7 +523,7 @@ class RawStudyService(AbstractStorageService):
             LazyNode.ZIP_FILELIST_CACHE = {
                 key: LazyNode.ZIP_FILELIST_CACHE[key]
                 for key in LazyNode.ZIP_FILELIST_CACHE
-                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.now(timezone.utc)
+                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.now(timezone.utc).replace(tzinfo=None)
             }
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)

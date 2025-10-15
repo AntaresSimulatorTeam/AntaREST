@@ -98,7 +98,7 @@ class SynchTaskService(ITaskService):
             name="mock",
             owner=None,
             status=TaskStatus.COMPLETED,
-            creation_date_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(" "),
+            creation_date_utc=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(" "),
             completion_date_utc=None,
             result=self._task_result,
             logs=None,

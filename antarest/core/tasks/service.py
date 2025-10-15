@@ -438,7 +438,9 @@ class TaskJobService(ITaskService):
 
                 with db():
                     # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                    completion_date = datetime.datetime.now(datetime.timezone.utc) if status.is_final() else None
+                    completion_date = (
+                        datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) if status.is_final() else None
+                    )
                     stmt = (
                         update(TaskJob)
                         .where(TaskJob.id == task_id)
@@ -485,7 +487,7 @@ class TaskJobService(ITaskService):
                             status=TaskStatus.FAILED.value,
                             result_msg=str(exc),
                             result_status=False,
-                            completion_date=datetime.datetime.now(datetime.timezone.utc),
+                            completion_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
                         )
                     )
                     db.session.execute(stmt)

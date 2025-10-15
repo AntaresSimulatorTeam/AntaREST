@@ -763,8 +763,8 @@ class TestSnapshotGenerator:
             workspace="default",
             path=str(study_dir),
             version="860",
-            created_at=datetime.datetime.now(datetime.timezone.utc),
-            updated_at=datetime.datetime.now(datetime.timezone.utc),
+            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             additional_data=StudyAdditionalData(author="john.doe"),
             owner_id=jwt_user.id,
         )

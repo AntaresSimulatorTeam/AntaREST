@@ -98,8 +98,8 @@ def test_raw_studies_matrix_usage_provider(
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path / "studies"),
         version="720",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     with db():

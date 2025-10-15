@@ -82,11 +82,15 @@ def generate_snapshot_fixture(
 
     with caplog.at_level(level=logging.WARNING):
         # Generate three different timestamp
-        older_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+        older_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
             hours=25
         )  # older than the default value which is 24
-        old_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=8)  # older than 6 hours
-        recent_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=2)  # older than 0 hours
+        old_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
+            hours=8
+        )  # older than 6 hours
+        recent_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
+            hours=2
+        )  # older than 0 hours
 
         with monkeypatch.context() as m:
             # Patch the datetime import instance of the variant_study_service package to hack

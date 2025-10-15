@@ -84,8 +84,8 @@ def test_update_antares_info_version(tmp_path: Path, version: str, expected_vers
     metadata = create_study(
         name="my-study",
         version=version,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     update_antares_info(metadata, tree, update_author=False)
     updated = read_ini(antares_study_path)

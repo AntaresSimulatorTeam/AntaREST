@@ -64,7 +64,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
                 with ZipFile(file=self.config.archive_path) as zip_file:
                     LazyNode.ZIP_FILELIST_CACHE[str_zipped_path] = SimpleCache(
                         value=zip_file.namelist(),
-                        expiration_date=datetime.now(timezone.utc) + timedelta(hours=2),
+                        expiration_date=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=2),
                     )
             return str_inside_zip_path in LazyNode.ZIP_FILELIST_CACHE[str_zipped_path].value
         else:
