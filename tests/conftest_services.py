@@ -51,7 +51,9 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 __all__ = (
     "command_context_fixture",
     "bucket_dir_fixture",
+    "blob_dir_fixture",
     "simple_matrix_service_fixture",
+    "simple_blob_service_fixture",
     "generator_matrix_constants_fixture",
     "uri_resolver_service_fixture",
     "core_cache_fixture",
