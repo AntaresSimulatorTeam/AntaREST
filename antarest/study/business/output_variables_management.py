@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from antarest.study.business.aggregator_management import (
     AggregatorManager,
@@ -64,6 +64,15 @@ class OutputVariablesManager:
 
         return {c: set("0") for c in new_cols}
 
+    def _get_filtered_files(
+        self, mc_root: MCRoot, parent_path: Path, file_type_class: type[QueryFileType]
+    ) -> Iterator[tuple[dict[str, set[str]], QueryFileType]]:
+        all_files = [d.name for d in parent_path.iterdir()]
+        filtered_files = self._filter_files_with_same_prefix(all_files, file_type_class)
+        for file_type, freq in filtered_files.items():
+            file_path = parent_path / f"{file_type}-{freq}.txt"
+            yield self._read_header_only(file_path, mc_root, freq, file_type), file_type
+
     def get_variables_metadata(self, output_path: Path) -> OutputVariablesMetadata:
         # Initialization
         mc_ind_path = output_path / "economy" / MCRoot.MC_IND.value
@@ -81,7 +90,7 @@ class OutputVariablesManager:
 
         first_mc_ind_path = None
         if mc_ind_path.exists():
-            first_mc_year = [d.name for d in mc_ind_path.iterdir()][0]
+            first_mc_year = mc_ind_path.iterdir().__next__().name
             first_mc_ind_path = mc_ind_path / first_mc_year
 
         for mc_path in [first_mc_ind_path, mc_all_path]:
@@ -91,16 +100,13 @@ class OutputVariablesManager:
 
                 # Areas
                 areas_folder = mc_path / "areas"
+                file_type_class = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
                 if areas_folder.exists():
                     for area in sorted(areas_folder.iterdir()):
                         areas_dict: dict[str, Any] = {"name": area.name}
                         parent_path = areas_folder / area
-                        file_type_class = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
-                        all_files = [d.name for d in parent_path.iterdir()]
-                        filtered_files = self._filter_files_with_same_prefix(all_files, file_type_class)
-                        for file_type, freq in filtered_files.items():
-                            file_path = parent_path / f"{file_type}-{freq}.txt"
-                            cols = self._read_header_only(file_path, mc_root, freq, file_type)
+
+                        for cols, file_type in self._get_filtered_files(mc_root, parent_path, file_type_class):
                             key = areas_mapping[file_type.value]
                             if "details" in file_type.value:
                                 values = []
@@ -114,17 +120,14 @@ class OutputVariablesManager:
 
                 # Links
                 links_folder = mc_path / "links"
+                file_type_klass = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
                 if links_folder.exists():
                     for link_name in sorted(links_folder.iterdir()):
                         area1, area2 = link_name.name.split("-")
                         links_dict: dict[str, Any] = {"area_1_name": area1, "area_2_name": area2}
-                        parent_path = areas_folder / link_name
-                        file_type_klass = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
-                        all_files = [d.name for d in parent_path.iterdir()]
-                        filtered_files = self._filter_files_with_same_prefix(all_files, file_type_klass)
-                        for file_type, freq in filtered_files.items():
-                            file_path = parent_path / f"{file_type}-{freq}.txt"
-                            cols = self._read_header_only(file_path, mc_root, freq, file_type)
+                        parent_path = links_folder / link_name
+
+                        for cols, _ in self._get_filtered_files(mc_root, parent_path, file_type_klass):
                             links_dict["variables"] = links_dict.get("variables", set()) | set(cols)
 
                         variables[mc_root_key]["links"].append(links_dict)
