@@ -14,6 +14,8 @@ import hashlib
 import logging
 from pathlib import Path
 
+from antarest.blobstore.exceptions import BlobNotFound
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,16 +29,18 @@ class BlobContentRepository:
         self.bucket_dir.mkdir(parents=True, exist_ok=True)
 
     def get(self, blob_hash: str) -> bytes:
-        pass
-
-    def exists(self, blob_hash: str) -> bool:
-        pass
+        file_path = self.bucket_dir / blob_hash
+        if not file_path.exists():
+            raise BlobNotFound(blob_hash)
+        return (self.bucket_dir / blob_hash).read_bytes()
 
     def save(self, content: bytes) -> str:
-        pass
+        blob_hash = compute_blob_hash(content)
+        (self.bucket_dir / blob_hash).write_bytes(content)
+        return blob_hash
 
     def delete(self, blob_hash: str) -> None:
-        pass
+        (self.bucket_dir / blob_hash).unlink(missing_ok=True)
 
     def get_all(self) -> list[str]:
-        pass
+        return [file.name for file in self.bucket_dir.iterdir()]

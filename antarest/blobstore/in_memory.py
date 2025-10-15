@@ -38,10 +38,6 @@ class InMemorySimpleBlobService(ISimpleBlobService):
         return self._content[blob_id]
 
     @override
-    def exists(self, blob_id: str) -> bool:
-        return blob_id in self._content
-
-    @override
     def delete(self, blob_id: str) -> None:
         del self._content[blob_id]
 

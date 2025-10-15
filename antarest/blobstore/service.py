@@ -30,10 +30,6 @@ class ISimpleBlobService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def exists(self, blob_id: str) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
     def delete(self, blob_id: str) -> None:
         raise NotImplementedError()
 
@@ -57,10 +53,6 @@ class BlobService(ISimpleBlobService):
     @override
     def get(self, blob_id: str) -> bytes:
         return self.blob_content_repository.get(blob_id)
-
-    @override
-    def exists(self, blob_id: str) -> bool:
-        return self.blob_content_repository.exists(blob_id)
 
     @override
     def delete(self, blob_id: str) -> None:
