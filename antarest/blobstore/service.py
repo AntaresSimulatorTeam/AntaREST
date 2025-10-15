@@ -74,3 +74,7 @@ class BlobService(ISimpleBlobService):
         """Return all blobs used in variant studies"""
         for provider in self.usage_providers:
             yield from provider.get_blob_usage()
+
+    def get_saved_blobs(self) -> list[str]:
+        """Return all saved blobs in the content repository"""
+        return self.blob_content_repository.get_all()

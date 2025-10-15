@@ -37,3 +37,6 @@ class BlobContentRepository:
 
     def delete(self, blob_hash: str) -> None:
         pass
+
+    def get_all(self) -> list[str]:
+        pass

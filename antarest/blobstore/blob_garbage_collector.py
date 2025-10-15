@@ -43,7 +43,7 @@ class BlobGarbageCollector(IService):
         stopwatch = StopWatch()
         logger.info("Beginning of the cleaning process")
         used_blobs = {blob.blob_id for blob in self.blob_service.get_used_blobs()}
-        saved_blobs = self.blob_service.get_blobs()
+        saved_blobs = self.blob_service.get_saved_blobs()
         unused_blobs = set(saved_blobs) - used_blobs
 
         if unused_blobs:
