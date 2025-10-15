@@ -9,8 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List, Optional
+from typing import Any, Final, List, Optional
 
+from pydantic import model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.study.business.model.user_model import UserResourceDataCreation
@@ -21,6 +23,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -40,6 +43,25 @@ class CreateUserResource(ICommand):
 
     data: UserResourceDataCreation
 
+    # version 2: change the structure of the `UserResourceDataCreation` class
+    _SERIALIZATION_VERSION: Final[int] = 2
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_model(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                legacy_content = values["data"].get("content")
+                if legacy_content:
+                    # Saves the content inside the blob store and use the generated id inside the command
+                    command_context: CommandContext = values["command_context"]
+                    blob_id = command_context.blob_service.create(legacy_content)
+                    del values["data"]["content"]
+                    values["data"]["blob_id"] = blob_id
+
+        return values
+
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.save_user_resource(self.data)
@@ -48,6 +70,7 @@ class CreateUserResource(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
+            version=self._SERIALIZATION_VERSION,
             action=self.command_name.value,
             args={"data": self.data.model_dump(mode="json", exclude_none=True)},
             study_version=self.study_version,
