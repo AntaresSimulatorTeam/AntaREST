@@ -390,26 +390,32 @@ class LauncherConfigDTO(AntaresBaseModel):
             if self.min_antares_version > self.max_antares_version:
                 raise BadLauncherConfigInput("min_antares_version cannot be greater than max_antares_version")
 
+        requires_version_9_2 = (
+            self.min_antares_version is not None and self.min_antares_version >= MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS
+        )
+
         # linear_solver_param_optim_* only valid for >= 9.2
-        for field_name in ("linear_solver_param_optim_1", "linear_solver_param_optim_2"):
-            param = getattr(self, field_name)
-            if param and (
-                not self.min_antares_version or self.min_antares_version < MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS
-            ):
-                raise BadLauncherConfigInput(
-                    f"{field_name} is not supported before Antares version 9.2 (got {self.min_antares_version})"
-                )
+        if self.linear_solver_param_optim_1 and not requires_version_9_2:
+            raise BadLauncherConfigInput(
+                "linear_solver_param_optim_1 is not supported before Antares version 9.2 "
+                f"(got {self.min_antares_version})"
+            )
+
+        if self.linear_solver_param_optim_2 and not requires_version_9_2:
+            raise BadLauncherConfigInput(
+                "linear_solver_param_optim_2 is not supported before Antares version 9.2 "
+                f"(got {self.min_antares_version})"
+            )
 
         return self
 
 
 def make_other_options_from_launcher_config(config: LauncherConfigDTO) -> str:
     """
-    Generate an 'other_options' string compatible with _parse_launcher_options()
-    from a LauncherConfigDTO.
+    Generate an 'other_options' string from a LauncherConfigDTO. This will be passed to the antares launcher script
 
     Example output:
-        xpress nobasis1 param-optim1="THREADS 4 PRESOLVE 1" param-optim2="MIPRELSTOP 0.01"
+        --solver=xpress --nobasis1 --param-optim1="THREADS 4 PRESOLVE 1" --param-optim2="MIPRELSTOP 0.01"
     """
     options: List[str] = []
 
