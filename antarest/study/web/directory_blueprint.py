@@ -31,7 +31,6 @@ def create_directory_routes(
     directory_service: DirectoryService,
     config: Config,
 ) -> APIRouter:
-    """Create the directory routes for FastAPI."""
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
@@ -39,10 +38,8 @@ def create_directory_routes(
         "/directories",
         tags=[APITag.study_management],
         summary="List directories",
-        response_model=List[DirectoryMetadata],
     )
     def list_directories() -> List[DirectoryMetadata]:
-        """Get directories the current user has access to."""
         logger.info("Listing directories for current user")
         access_permissions = AccessPermissions.for_current_user()
         return directory_service.list_directories(access_permissions)
@@ -52,13 +49,11 @@ def create_directory_routes(
         status_code=HTTPStatus.CREATED,
         tags=[APITag.study_management],
         summary="Create a new directory",
-        response_model=DirectoryMetadata,
     )
     def create_directory(
         data: DirectoryCreation,
         groups: str = Query("", description="Comma-separated list of group IDs to share with"),
     ) -> DirectoryMetadata:
-        """Create a new directory."""
         logger.info(f"Creating directory '{data.name}'")
 
         user = require_current_user()
@@ -75,7 +70,6 @@ def create_directory_routes(
         "/directories/{directory_id}",
         tags=[APITag.study_management],
         summary="Update directory",
-        response_model=DirectoryMetadata,
     )
     def update_directory(
         directory_id: str,

@@ -598,15 +598,12 @@ class DirectoryRepository:
 
         return False
 
-    def check_cycle(self, directory_id: str, new_parent_id: Optional[str]) -> bool:
+    def check_cycle(self, directory_id: str, new_parent_id: str) -> bool:
         """Check if moving a directory would create a cycle."""
-        if new_parent_id is None:
-            return False
-
         if directory_id == new_parent_id:
             return True
 
-        current_id = new_parent_id
+        current_id: str | None = new_parent_id
         visited = {directory_id}
 
         while current_id is not None:
