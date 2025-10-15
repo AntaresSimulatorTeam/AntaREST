@@ -27,7 +27,7 @@ import type {
 
 export interface SubmitHandlerPlus<TFieldValues extends FieldValues = FieldValues> {
   values: TFieldValues;
-  dirtyValues: DeepPartial<TFieldValues>;
+  dirtyValues: Partial<TFieldValues>;
 }
 
 export type AutoSubmitHandler<TFieldValue = any> = (value: TFieldValue) => any | Promise<any>;

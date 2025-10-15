@@ -34,7 +34,6 @@ from antarest.study.business.model.scenario_builder_model import (
     StorageConstraintsScenarios,
     validate_ruleset_against_version,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 RuleValue = int | float | RandType | None
 RulesetFileData = dict[str, RuleValue]
@@ -42,7 +41,7 @@ RulesetsFileData = dict[str, RulesetFileData]
 
 _HYDRO_LEVEL_PERCENT = 100
 
-_SCENARIO_TYPE_SYMBOLS = {
+SCENARIO_TYPE_SYMBOLS = {
     ScenarioType.LOAD: "l",
     ScenarioType.HYDRO: "h",
     ScenarioType.WIND: "w",
@@ -58,7 +57,7 @@ _SCENARIO_TYPE_SYMBOLS = {
     ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS: "sta",
 }
 
-_SCENARIO_TYPE_FOR_SYMBOL = {v: k for k, v in _SCENARIO_TYPE_SYMBOLS.items()}
+_SCENARIO_TYPE_FOR_SYMBOL = {v: k for k, v in SCENARIO_TYPE_SYMBOLS.items()}
 
 
 def _should_write(value: RuleValue) -> bool:
@@ -69,7 +68,7 @@ def _should_write(value: RuleValue) -> bool:
 
 
 def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios) -> None:
-    symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
+    symbol = SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, year, value in iter_nested(data):
         if _should_write(value):
             section[f"{symbol},{area},{year}"] = value
@@ -78,7 +77,7 @@ def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType
 def _serialize_hydro_levels(
     section: dict[str, RuleValue], scenario_type: ScenarioType, data: HydroLevelsScenarios
 ) -> None:
-    symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
+    symbol = SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, year, value in iter_nested(data):
         if _should_write(value):
             val = value
@@ -88,7 +87,7 @@ def _serialize_hydro_levels(
 
 
 def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType, data: LinkScenarios) -> None:
-    symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
+    symbol = SCENARIO_TYPE_SYMBOLS[scenario_type]
     for link, year, value in iter_nested(data):
         if _should_write(value):
             area1, area2 = link.split(" / ")
@@ -96,14 +95,14 @@ def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType,
 
 
 def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios) -> None:
-    symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
+    symbol = SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, cluster, year, value in iter_nested_2(data):
         if _should_write(value):
             section[f"{symbol},{area},{year},{cluster}"] = value
 
 
 def _serialize_sts_constraints(section: dict[str, RuleValue], data: StorageConstraintsScenarios) -> None:
-    symbol = _SCENARIO_TYPE_SYMBOLS[ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS]
+    symbol = SCENARIO_TYPE_SYMBOLS[ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS]
     for area, storage, constraint, year, value in iter_nested_3(data):
         if _should_write(value):
             section[f"{symbol},{area},{year},{storage},{constraint}"] = value
@@ -259,19 +258,3 @@ def parse_rulesets_update(rulesets_data: RulesetsFileData) -> RulesetsUpdate:
     for ruleset_name, data in rulesets_data.items():
         rulesets[ruleset_name] = parse_ruleset_update(data)
     return rulesets
-
-
-def extract_ruleset_data(
-    file_study: FileStudy,
-    ruleset_name: str,
-    scenario_type: ScenarioType,
-) -> RulesetFileData:
-    """
-    Extracts from file study only the relevant data for the provided ruleset name and scenario type.
-    """
-    try:
-        suffix = _SCENARIO_TYPE_SYMBOLS[scenario_type]
-        url = ["settings", "scenariobuilder", ruleset_name, suffix]
-        return cast(RulesetFileData, file_study.tree.get(url))
-    except KeyError:
-        return {}
