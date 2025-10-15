@@ -18,8 +18,15 @@ import type { StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
 import type { TableExportFormatValue } from "@/services/api/studies/raw/types";
+import type { Options } from "./SplitButton";
 
-type ExportFormat = TableExportFormatValue | "raw";
+type ExportFormat =
+  | "csv"
+  | "csv (semicolon)"
+  | "csv (header)"
+  | "csv (semicolon header)"
+  | "xlsx"
+  | "raw";
 
 export interface DownloadMatrixButtonProps {
   studyId: StudyMetadata["id"];
@@ -28,20 +35,40 @@ export interface DownloadMatrixButtonProps {
   label?: string;
 }
 
+const OPTIONS: Readonly<Options<ExportFormat>> = [
+  { label: (t) => t("matrix.export.format.csv"), value: "csv" },
+  { label: (t) => t("matrix.export.format.csvWithHeader"), value: "csv (header)" },
+  {
+    label: (t) => t("matrix.export.format.csvSemicolon"),
+    value: "csv (semicolon)",
+  },
+  {
+    label: (t) => t("matrix.export.format.csvSemicolonWithHeader"),
+    value: "csv (semicolon header)",
+  },
+  { label: (t) => t("matrix.export.format.xlsx"), value: "xlsx" },
+  { label: (t) => t("matrix.export.format.raw"), value: "raw" },
+];
+
+const formatToOptions: Record<
+  Exclude<ExportFormat, "raw">,
+  { format: TableExportFormatValue; header: boolean; index: boolean; extension: string }
+> = {
+  csv: { format: "csv", header: false, index: false, extension: "csv" },
+  "csv (header)": { format: "csv", header: true, index: false, extension: "csv" },
+  "csv (semicolon)": { format: "csv (semicolon)", header: false, index: false, extension: "csv" },
+  "csv (semicolon header)": {
+    format: "csv (semicolon)",
+    header: true,
+    index: false,
+    extension: "csv",
+  },
+  xlsx: { format: "xlsx", header: true, index: true, extension: "xlsx" },
+} as const;
+
 function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   const { t } = useTranslation();
   const { studyId, path, disabled, label = t("global.export") } = props;
-
-  const options: Array<{ label: string; value: ExportFormat }> = [
-    { label: "CSV", value: "csv" },
-    {
-      label: `CSV (${t("global.semicolon").toLowerCase()})`,
-      value: "csv (semicolon)",
-    },
-    { label: "TSV", value: "tsv" },
-    { label: "XLSX", value: "xlsx" },
-    { label: `${t("global.rawFile")}`, value: "raw" },
-  ];
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -57,17 +84,13 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
       return downloadFile(file, file.name);
     }
 
-    const isXlsx = format === "xlsx";
+    const { extension, ...options } = formatToOptions[format];
 
     const matrixFile = await getMatrixFile({
+      ...options,
       studyId,
       path,
-      format,
-      header: isXlsx,
-      index: isXlsx,
     });
-
-    const extension = format === "csv (semicolon)" ? "csv" : format;
 
     return downloadFile(matrixFile, `matrix_${studyId}_${path.replace("/", "_")}.${extension}`);
   };
@@ -77,7 +100,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DownloadButton formatOptions={options} onClick={handleDownload} disabled={!path || disabled}>
+    <DownloadButton options={OPTIONS} onClick={handleDownload} disabled={!path || disabled}>
       {label}
     </DownloadButton>
   );
