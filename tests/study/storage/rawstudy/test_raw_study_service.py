@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from antarest.blobstore.service import ISimpleBlobService
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
@@ -72,6 +73,7 @@ class TestRawStudyService:
         tmp_path: Path,
         raw_study_service: RawStudyService,
         simple_matrix_service: SimpleMatrixService,
+        simple_blob_service: ISimpleBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         study_service: StudyService,
         # pytest parameters
@@ -115,6 +117,7 @@ class TestRawStudyService:
         command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=simple_matrix_service,
+            blob_service=simple_blob_service,
         )
 
         create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)

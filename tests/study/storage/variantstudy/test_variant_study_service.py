@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 from antares.study.version import StudyVersion
 
+from antarest.blobstore.service import ISimpleBlobService
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
@@ -124,6 +125,7 @@ class TestVariantStudyService:
         variant_study_service: VariantStudyService,
         raw_study_service: RawStudyService,
         simple_matrix_service: SimpleMatrixService,
+        simple_blob_service: ISimpleBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         study_service: StudyService,
         # pytest parameters
@@ -174,6 +176,7 @@ class TestVariantStudyService:
         command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=simple_matrix_service,
+            blob_service=simple_blob_service,
         )
 
         create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=study_version)

@@ -25,6 +25,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
@@ -112,7 +113,7 @@ class SynchTaskService(ITaskService):
 
 
 @pytest.fixture(name="command_context")
-def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
+def command_context_fixture(matrix_service: MatrixService, blob_service: BlobService) -> CommandContext:
     """
     Fixture for creating a CommandContext object.
 
@@ -126,8 +127,7 @@ def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
     generator_matrix_constants.init_constant_matrices()
     command_context = CommandContext(
-        generator_matrix_constants=generator_matrix_constants,
-        matrix_service=matrix_service,
+        generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
     return command_context
 
