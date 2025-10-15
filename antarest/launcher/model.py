@@ -447,7 +447,7 @@ def make_other_options_from_launcher_config(config: LauncherConfigDTO) -> str:
     return " ".join(options)
 
 
-def update_launcher_params_with_config(
+def overwrite_params_other_options_with_config(
     launcher_params: LauncherParametersDTO,
     launcher_config: LauncherConfigDTO,
 ) -> None:

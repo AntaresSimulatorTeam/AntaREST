@@ -56,7 +56,7 @@ from antarest.launcher.model import (
     XpansionParametersDTO,
     apply_update_launcher_config,
     is_launcher_config_compatible,
-    update_launcher_params_with_config,
+    overwrite_params_other_options_with_config,
 )
 from antarest.launcher.repository import JobResultRepository, LauncherConfigRepository
 from antarest.login.service import LoginService
@@ -279,7 +279,7 @@ class LauncherService:
                 raise IncompatibleLauncherConfig("Launcher configuration is not compatible with study version")
             if launcher_parameters.other_options:
                 raise IncompatibleLauncherConfig("Cannot use other_options when a launcher configuration is specified")
-            update_launcher_params_with_config(launcher_parameters, launcher_config)
+            overwrite_params_other_options_with_config(launcher_parameters, launcher_config)
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
