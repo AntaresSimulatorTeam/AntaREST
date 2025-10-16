@@ -156,7 +156,7 @@ def test_command_matrix_usage_provider(
 
         matrices_references = list(command_matrix_usage_provider.get_matrix_usage())
 
-        assert matrices_references == [MatrixReference(matrix_id=matrices_id, use_description=use_description)] * 4
+        assert matrices_references == [MatrixReference(matrix_id=matrices_id, use_description=use_description)] * 2
 
 
 def test_constants_matrix_usage_provider(constants_matrix_usage_provider: ConstantsMatrixUsageProvider):
