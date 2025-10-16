@@ -37,7 +37,7 @@ import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDia
 import Form from "../../../../../../common/Form";
 import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import TabsView from "../../../../../../common/TabsView";
-import UsePromiseCond, { mergeResponses } from "../../../../../../common/utils/UsePromiseCond";
+import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import DuplicateDialog from "../DuplicateDialog";
 import BindingConstForm from "./BindingConstForm";
 import ConstraintFields from "./ConstraintFields";
@@ -58,8 +58,9 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
   const studyVersion = Number(study.version);
   const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] = useState(false);
   const [duplicateConstraintDialogOpen, setDuplicateConstraintDialogOpen] = useState(false);
+  const [currentOperator, setCurrentOperator] = useState<BindingConstraint["operator"]>();
 
-  const constraint = usePromise(
+  const constraintRes = usePromise(
     () => getBindingConstraint(study.id, constraintId),
     [study.id, constraintId],
   );
@@ -78,6 +79,10 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
+  const getDefaultValues = () => {
+    return getBindingConstraint(study.id, constraintId);
+  };
+
   const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraint>) => {
     const { id, name, ...updatedConstraint } = values;
 
@@ -87,6 +92,13 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
     } else {
       return updateBindingConstraint(study.id, constraintId, updatedConstraint);
     }
+  };
+
+  const handleSubmitSuccessful = (
+    _data: SubmitHandlerPlus<BindingConstraint>,
+    submitResult: BindingConstraint,
+  ) => {
+    setCurrentOperator(submitResult.operator);
   };
 
   const handleDuplicateConstraint = async (newName: string) => {
@@ -132,81 +144,83 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
 
   return (
     <>
-      <UsePromiseCond
-        response={mergeResponses(constraint, linksAndClusters)}
-        ifFulfilled={([defaultValues, linksAndClusters]) => (
-          <TabsView
-            divider
-            items={[
-              {
-                label: t("global.parameters"),
-                content: (
-                  <Form
-                    config={{ defaultValues }}
-                    onSubmit={handleSubmit}
-                    enableUndoRedo
-                    extraActions={
-                      <>
-                        <Button
-                          variant="outlined"
-                          startIcon={<ContentCopyIcon />}
-                          onClick={() => setDuplicateConstraintDialogOpen(true)}
-                        >
-                          {t("global.duplicate")}
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          startIcon={<Delete />}
-                          color="error"
-                          onClick={() => setDeleteConstraintDialogOpen(true)}
-                        >
-                          {t("global.delete")}
-                        </Button>
-                      </>
-                    }
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        height: 1,
-                      }}
+      <TabsView
+        divider
+        items={[
+          {
+            label: t("global.parameters"),
+            content: (
+              <Form
+                key={constraintId}
+                config={{ defaultValues: getDefaultValues }}
+                onSubmit={handleSubmit}
+                onSubmitSuccessful={handleSubmitSuccessful}
+                enableUndoRedo
+                extraActions={
+                  <>
+                    <Button
+                      variant="outlined"
+                      startIcon={<ContentCopyIcon />}
+                      onClick={() => setDuplicateConstraintDialogOpen(true)}
                     >
-                      {/* Constraint properties fields */}
-                      <ConstraintFields study={study} constraintId={constraintId} />
-                      {/* Constraint terms fields */}
-                      <Box sx={{ display: "flex", flexGrow: 1 }}>
-                        <BindingConstForm
-                          study={study}
-                          constraintId={constraintId}
-                          options={linksAndClusters}
-                        />
-                      </Box>
-                    </Box>
-                  </Form>
-                ),
-              },
-              {
-                label: t("global.timeSeries"),
-                content: (
+                      {t("global.duplicate")}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<Delete />}
+                      color="error"
+                      onClick={() => setDeleteConstraintDialogOpen(true)}
+                    >
+                      {t("global.delete")}
+                    </Button>
+                  </>
+                }
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: 1,
+                  }}
+                >
+                  {/* Constraint properties fields */}
+                  <ConstraintFields study={study} constraintId={constraintId} />
+                  {/* Constraint terms fields */}
+                  <Box sx={{ display: "flex", flexGrow: 1 }}>
+                    <BindingConstForm
+                      study={study}
+                      constraintId={constraintId}
+                      options={linksAndClusters.data || { links: [], clusters: [] }}
+                    />
+                  </Box>
+                </Box>
+              </Form>
+            ),
+          },
+          {
+            label: t("global.timeSeries"),
+            content: (
+              <UsePromiseCond
+                response={constraintRes}
+                ifFulfilled={(constraint) => (
                   <ConstraintMatrix
                     study={study}
                     constraintId={constraintId}
-                    operator={defaultValues.operator}
+                    operator={currentOperator ?? constraint.operator}
                   />
-                ),
-              },
-            ]}
-          />
-        )}
-        ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+                )}
+                ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+              />
+            ),
+          },
+        ]}
       />
 
-      {duplicateConstraintDialogOpen && constraint.data && (
+      {duplicateConstraintDialogOpen && (
         <DuplicateDialog
           open={duplicateConstraintDialogOpen}
           onClose={() => setDuplicateConstraintDialogOpen(false)}
-          constraintName={constraint.data.name}
+          constraintName={constraintId}
           existingConstraints={existingConstraints}
           onDuplicate={handleDuplicateConstraint}
         />
