@@ -17,10 +17,6 @@ import pytest
 from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
 from antarest.blobstore.model import BlobReference
 from antarest.blobstore.service import BlobService
-from antarest.matrixstore.service import MatrixService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
 
 @pytest.fixture
@@ -28,21 +24,7 @@ def blob_garbage_collector(tmp_path: Path):
     """
     Fixture for creating a BlobGarbageCollector object.
     """
-    default_workspace = tmp_path / "default_workspace"
-    default_workspace.mkdir()
-
-    command_factory = CommandFactory(
-        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        matrix_service=Mock(spec=MatrixService),
-        blob_service=Mock(spec=BlobService),
-    )
-    study_service = Mock()
-    study_service.storage_service.variant_study_service.command_factory = command_factory
-    study_service.storage_service.variant_study_service.repository = VariantStudyRepository(cache_service=Mock())
-
-    blob_garbage_collector = BlobGarbageCollector(blob_service=Mock(), dry_run=False, sleeping_time=3600)
-
-    return blob_garbage_collector
+    return BlobGarbageCollector(blob_service=Mock(), dry_run=False, sleeping_time=3600)
 
 
 @pytest.mark.unit_test
