@@ -123,6 +123,7 @@
   "global.outputs": "Sorties",
   "global.reverse": "Inverser",
   "global.offset": "Décalage",
+  "global.parameters": "Paramètres",
   "date": {
     "monday": "Lundi",
     "tuesday": "Mardi",

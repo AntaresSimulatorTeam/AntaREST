@@ -16,46 +16,24 @@ import { useTranslation } from "react-i18next";
 import type { StudyMetadata } from "../../../../../../../types/types";
 import type { BindingConstraint } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
-import { Box, Button } from "@mui/material";
-import BasicDialog, { type BasicDialogProps } from "../../../../../../common/dialogs/BasicDialog";
+import { Box } from "@mui/material";
 import Matrix from "../../../../../../common/Matrix";
-import { useFormContextPlus } from "@/components/common/Form";
 
 interface Props {
   study: StudyMetadata;
   constraintId: string;
-  open: boolean;
-  onClose: () => void;
+  operator: BindingConstraint["operator"];
 }
 
-function ConstraintMatrix({ study, constraintId, open, onClose }: Props) {
-  const { getValues } = useFormContextPlus<BindingConstraint>();
-  const operator = getValues("operator");
-
+function ConstraintMatrix({ study, constraintId, operator }: Props) {
   const { t } = useTranslation();
-  const dialogProps: BasicDialogProps = {
-    open,
-    onClose,
-    actions: (
-      <Button onClick={onClose} color="primary" variant="outlined">
-        {t("global.close")}
-      </Button>
-    ),
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <BasicDialog
-      contentProps={{
-        sx: { p: 1, height: "95vh" },
-      }}
-      fullWidth
-      maxWidth="xl"
-      {...dialogProps}
-    >
+    <Box sx={{ height: 1, width: 1 }}>
       {Number(study.version) >= 870 ? (
         <>
           {operator === "less" && (
@@ -100,7 +78,7 @@ function ConstraintMatrix({ study, constraintId, open, onClose }: Props) {
           customColumns={["<", ">", "="]}
         />
       )}
-    </BasicDialog>
+    </Box>
   );
 }
 
