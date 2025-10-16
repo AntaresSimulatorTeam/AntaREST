@@ -17,6 +17,7 @@ import http
 import logging
 import os
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
