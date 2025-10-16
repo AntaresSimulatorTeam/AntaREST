@@ -68,19 +68,20 @@ def add_metrics(application: FastAPI, config: Config) -> None:
     if not prometheus_config:
         return
 
+    process_registry = prometheus_client.REGISTRY
     if prometheus_config.multiprocess:
         if _PROMETHEUS_MULTIPROCESS_ENV_VAR not in os.environ:
             raise ConfigurationError(
                 f"Environment variable {_PROMETHEUS_MULTIPROCESS_ENV_VAR} must be defined for use of prometheus in a multiprocess environment"
             )
-        registry = CollectorRegistry(auto_describe=True)
-        multiprocess.MultiProcessCollector(registry)  # type: ignore
+        global_registry = CollectorRegistry(auto_describe=True)
+        multiprocess.MultiProcessCollector(process_registry)  # type: ignore
         worker_id = str(os.getpid())
     else:
-        registry = prometheus_client.REGISTRY
+        global_registry = prometheus_client.REGISTRY
         worker_id = "0"
 
-    metrics_app = make_asgi_app(registry=registry)
+    metrics_app = make_asgi_app(registry=global_registry)
     application.mount("/metrics", metrics_app)
 
-    _add_metrics_middleware(application, registry, worker_id)
+    _add_metrics_middleware(application, process_registry, worker_id)
