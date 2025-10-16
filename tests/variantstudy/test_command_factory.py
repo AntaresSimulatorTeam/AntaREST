@@ -1045,8 +1045,11 @@ def command_factory() -> CommandFactory:
     def get_matrix_id(matrix: str) -> str:
         return matrix.removeprefix("matrix://")
 
+    def create_blob(content: bytes) -> str:
+        return "created_blob_id"
+
     matrix_service = Mock(spec=MatrixService, get_matrix_id=get_matrix_id)
-    blob_service = Mock(spec=BlobService)
+    blob_service = Mock(spec=BlobService, create=create_blob)
 
     return CommandFactory(
         generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
@@ -1581,3 +1584,21 @@ def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory):
     # The metadata should be dropped and not stored in the converted command
     assert dto.args == {"area_name": "test_area"}
     assert "metadata" not in dto.args
+
+
+def test_parse_legacy_create_user_resource_command(command_factory: CommandFactory):
+    """Test that version 1 format (with content field) can still be loaded."""
+    dto = CommandDTO(
+        action=CommandName.CREATE_USER_RESOURCE.value,
+        args={"data": {"path": "folder_1", "resource_type": "file", "content": b"Hello World !"}},
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_user_resource"
+    assert dto.version == 2
+    # Ensures the content was transformed into a blob_id when saving it inside the blob store.
+    assert dto.args == {"data": {"blob_id": "created_blob_id", "path": "folder_1", "resource_type": "file"}}
