@@ -51,14 +51,14 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
                 )
             return []
 
-        variant_study_commands = [cmd for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)]
-        for block in command_blocks:
-            study_id = block.study_id
-            for command in variant_study_commands:
-                for matrix in command.get_inner_matrices():
-                    command_id = str(matrix)
-                    mat_reference = MatrixReference(
-                        matrix_id=command_id,
-                        use_description=f"Used by command {command_id} from variant study {study_id}",
-                    )
-                    yield mat_reference
+        variant_study_commands = [
+            (cmd, c.study_id) for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)
+        ]
+        for command, study_id in variant_study_commands:
+            for matrix in command.get_inner_matrices():
+                command_id = str(matrix)
+                mat_reference = MatrixReference(
+                    matrix_id=command_id,
+                    use_description=f"Used by command {command_id} from variant study {study_id}",
+                )
+                yield mat_reference
