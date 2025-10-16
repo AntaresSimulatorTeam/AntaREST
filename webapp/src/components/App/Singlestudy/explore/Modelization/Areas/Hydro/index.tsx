@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import usePromise from "@/hooks/usePromise";
 import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
@@ -24,12 +25,10 @@ function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
   const studyVersion = Number(study.version);
-  const [hydroPmax, setHydroPmax] = useState<string>("");
 
-  useEffect(() => {
-    getAdvancedParamsFormFields(study.id).then((data) => {
-      setHydroPmax(data.hydroPmax || "");
-    });
+  const { data: hydroPmax = "" } = usePromise(async () => {
+    const values = await getAdvancedParamsFormFields(study.id);
+    return values.hydroPmax;
   }, [study.id]);
 
   const tabList = useMemo(() => {

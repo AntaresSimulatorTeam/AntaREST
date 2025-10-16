@@ -125,7 +125,9 @@ export interface AdvancedParamsFormFields {
   seedUnsuppliedEnergyCosts: number;
   sheddingPolicy: string;
   unitCommitmentMode: string;
-  hydroPmax: string;
+
+  // Since v9.2
+  hydroPmax?: `${HydroPMax}`;
 
   // Since v9.3
   accurateShavePeaksIncludeShortTermStorage?: boolean;
