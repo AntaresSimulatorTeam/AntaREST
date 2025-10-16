@@ -15,6 +15,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.blobstore.exceptions import BlobNotFound
+from antarest.blobstore.model import BlobReference
 from antarest.blobstore.repository import compute_blob_hash
 from antarest.blobstore.service import BlobService
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
@@ -126,4 +127,10 @@ def test_get_used_blobs(command_factory: CommandFactory) -> None:
     # Ensures 2 blobs are returned
     used_blobs = list(blob_service.get_used_blobs())
     assert len(used_blobs) == 2
-    print(used_blobs)
+    expected_generated_blob_id = "07f2bdef34ed16e3a1ba0dbb7e47b8fd981ce0ccb3e1bfe564d82c423cba7e47"
+    assert used_blobs[0] == BlobReference(
+        blob_id="blob_1", use_description=f"Used by command {cmd_id_1} from variant study {study_id}"
+    )
+    assert used_blobs[1] == BlobReference(
+        blob_id=expected_generated_blob_id, use_description=f"Used by command {cmd_id_2} from variant study {study_id}"
+    )
