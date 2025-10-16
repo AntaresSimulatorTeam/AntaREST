@@ -194,7 +194,11 @@ class TestFetchRawData:
             assert len(commands) == 2
             assert commands[1]["action"] == "create_user_resource"
             assert commands[1]["args"] == {
-                "data": {"path": "somewhere/something.txt", "resource_type": "file", "content": "Goodbye Cruel World!"}
+                "data": {
+                    "path": "somewhere/something.txt",
+                    "resource_type": "file",
+                    "blob_id": "fb167339d154528437d39c6d79e734b0ac44e095070e8355f53f5b80c71783bb",
+                }
             }
 
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
