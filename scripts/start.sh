@@ -41,7 +41,7 @@ do
 done
 
 if [[ -v PROMETHEUS_MULTIPROC_DIR ]]; then
-  rm ${PROMETHEUS_MULTIPROC_DIR}/*.db
+  rm -f ${PROMETHEUS_MULTIPROC_DIR}/*.db
   mkdir -p ${PROMETHEUS_MULTIPROC_DIR}
   echo "Concatenating metrics into ${PROMETHEUS_MULTIPROC_DIR}"
 fi
