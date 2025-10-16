@@ -13,7 +13,7 @@ import functools
 import logging
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
@@ -176,8 +176,7 @@ class LauncherService:
                 job_result.output_id = output_id
                 final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
                 if final_status:
-                    # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                    job_result.completion_date = datetime.utcnow()
+                    job_result.completion_date = datetime.now(timezone.utc).replace(tzinfo=None)
                 self.job_result_repository.save(job_result)
                 self.event_bus.push(
                     Event(

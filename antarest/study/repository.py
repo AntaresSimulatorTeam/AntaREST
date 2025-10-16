@@ -183,7 +183,7 @@ class StudyMetadataRepository:
         update_modification_date: bool = False,
     ) -> Study:
         if update_modification_date:
-            metadata.updated_at = datetime.datetime.utcnow()
+            metadata.updated_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
         session = self.session
         metadata.groups = [session.merge(g) for g in metadata.groups]

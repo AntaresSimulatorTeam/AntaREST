@@ -16,7 +16,7 @@ import logging
 import tempfile
 import zipfile
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
 
@@ -265,8 +265,7 @@ class MatrixService(ISimpleMatrixService):
             return matrix_id
         else:
             with db():
-                # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                created_at = datetime.utcnow()
+                created_at = datetime.now(timezone.utc).replace(tzinfo=None)
                 matrix = Matrix(
                     id=matrix_id, width=data.shape[1], height=data.shape[0], created_at=created_at, version=2
                 )
@@ -351,13 +350,14 @@ class MatrixService(ISimpleMatrixService):
         user = require_current_user()
 
         groups = [self.user_service.get_group(group_id) for group_id in dataset_info.groups]
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         dataset = MatrixDataSet(
             name=dataset_info.name,
             public=dataset_info.public,
             owner_id=user.impersonator,
             groups=groups,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
         )
         for matrix in matrices:
             matrix_relation = MatrixDataSetRelation(name=matrix.name)
@@ -377,7 +377,7 @@ class MatrixService(ISimpleMatrixService):
             name=dataset_info.name,
             public=dataset_info.public,
             groups=groups,
-            updated_at=datetime.utcnow(),
+            updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         return self.repo_dataset.save(updated_dataset)
 

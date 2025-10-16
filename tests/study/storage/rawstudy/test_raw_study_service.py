@@ -99,7 +99,7 @@ class TestRawStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.utcnow(),
+            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             public_mode=PublicMode.FULL,
             owner=user,
             groups=[group],
