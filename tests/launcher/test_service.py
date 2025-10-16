@@ -14,7 +14,7 @@ import json
 import math
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Union
 from unittest.mock import Mock, call
@@ -214,7 +214,7 @@ class TestLauncherService:
     @pytest.mark.unit_test
     def test_service_get_jobs_from_database(self, db_session) -> None:
         launcher_mock = Mock()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         identity_instance = Identity(id=1)
         fake_execution_result = [
             JobResult(

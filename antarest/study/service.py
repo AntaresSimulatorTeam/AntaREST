@@ -17,7 +17,7 @@ import http
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
 from uuid import uuid4
@@ -751,7 +751,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         logger.info("Study metadata requested for study %s by user %s", uuid, get_user_id())
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
-        study.last_access = datetime.utcnow()
+        study.last_access = datetime.now(timezone.utc).replace(tzinfo=None)
         self.repository.save(study)
         return self.storage_service.get_storage(study).get_study_information(study)
 
@@ -873,13 +873,14 @@ class StudyService:
 
         author = self.get_user_name()
 
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         raw = RawStudy(
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(study_path),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author, editor=author),
         )
@@ -920,7 +921,7 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
-        study.last_access = datetime.utcnow()
+        study.last_access = datetime.now(timezone.utc).replace(tzinfo=None)
         self.repository.save(study)
         study_storage_service = self.storage_service.get_storage(study)
         return study_storage_service.get_synthesis(study)
@@ -967,7 +968,7 @@ class StudyService:
         Returns:
 
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
         if directory:
@@ -1367,7 +1368,7 @@ class StudyService:
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
-        study.updated_at = datetime.utcnow()
+        study.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
         self._save_study(study, group_ids)
         self.normalize_study(study)

@@ -15,7 +15,7 @@ import logging
 import re
 import shutil
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import reduce
 from pathlib import Path, PurePosixPath
 from typing import Callable, Dict, List, Optional, Sequence, cast
@@ -223,7 +223,7 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_impersonator(),
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -260,7 +260,7 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_id(),
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -640,14 +640,15 @@ class VariantStudyService(AbstractStorageService):
                 editor=user_name,
             )
 
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         variant_study = VariantStudy(
             id=new_id,
             name=name,
             parent_id=uuid,
             path=study_path,
             public_mode=study.public_mode,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
             version=study.version,
             folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
@@ -1078,8 +1079,9 @@ class SnapshotCleanerTask:
             )
             for variant in variant_list:
                 assert isinstance(variant, VariantStudy)
-                if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_time:
-                    if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
+                now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+                if variant.updated_at and variant.updated_at < now_utc - self._retention_time:
+                    if variant.last_access and variant.last_access < now_utc - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
