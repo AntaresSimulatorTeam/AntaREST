@@ -805,6 +805,7 @@ COMMANDS = [
             action=CommandName.CREATE_USER_RESOURCE.value,
             args=[{"data": {"path": "folder_1", "resource_type": "folder"}}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_user_resource_list",
