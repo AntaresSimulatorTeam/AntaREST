@@ -71,6 +71,7 @@ from antarest.study.storage.utils import (
     update_antares_info,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
+from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -115,6 +116,7 @@ class VariantStudyService(AbstractStorageService):
         self.command_factory = command_factory
         self.generator = VariantCommandGenerator(self.study_factory)
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
+        CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = self._get_current_user_name()

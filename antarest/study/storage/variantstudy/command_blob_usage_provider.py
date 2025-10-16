@@ -33,6 +33,7 @@ class CommandBlobUsageProvider(IBlobUsageProvider):
     ):
         self.variant_study_repo = variant_study_repo
         self.command_factory = command_factory
+        self.command_factory.command_context.blob_service.register_usage_provider(self)
 
     @override
     def get_blob_usage(self) -> Iterable[BlobReference]:

@@ -65,7 +65,7 @@ def test_lifecycle(simple_blob_service: BlobService):
     assert sorted(simple_blob_service.get_saved_blobs()) == sorted([blob_2, blob_3, blob_4])
 
 
-# todo:
-"""
-test get_used
-"""
+def test_get_used_blobs(simple_blob_service: BlobService):
+    print(list(simple_blob_service.get_used_blobs()))
+    # simple_blob_service.register_usage_provider()
+    # todo
