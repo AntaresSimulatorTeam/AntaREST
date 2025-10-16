@@ -621,11 +621,7 @@ class MetricsConfig:
 
     @classmethod
     def from_dict(cls, data: JSON) -> "MetricsConfig":
-        return cls(
-            prometheus=PrometheusConfig.from_dict(data["prometheus"])
-            if "prometheus" in data
-            else None
-        )
+        return cls(prometheus=PrometheusConfig.from_dict(data["prometheus"]) if "prometheus" in data else None)
 
 
 @dataclass(frozen=True)
