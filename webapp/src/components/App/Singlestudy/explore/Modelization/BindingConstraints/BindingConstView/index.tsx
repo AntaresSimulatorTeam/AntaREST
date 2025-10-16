@@ -69,12 +69,10 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
     selector: (state) => getLinksAndClusters(state, study.id),
   });
 
-  const constraintsList = usePromise(() => getBindingConstraintList(study.id), [study.id]);
-
-  const existingConstraints = useMemo(
-    () => constraintsList.data?.map(({ name }) => name) ?? [],
-    [constraintsList.data],
-  );
+  const { data: existingConstraints = [] } = usePromise(async () => {
+    const constraints = await getBindingConstraintList(study.id);
+    return constraints.map(({ name }) => name);
+  }, [study.id]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers

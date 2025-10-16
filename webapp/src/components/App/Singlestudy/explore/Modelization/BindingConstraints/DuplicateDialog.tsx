@@ -49,10 +49,6 @@ function DuplicateDialog({
     return onDuplicate(values.name);
   };
 
-  const handleSubmitSuccessful = () => {
-    onClose();
-  };
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -65,7 +61,7 @@ function DuplicateDialog({
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
-      onSubmitSuccessful={handleSubmitSuccessful}
+      onSubmitSuccessful={onClose}
       config={{ defaultValues }}
       allowSubmitOnPristine
     >
@@ -76,11 +72,10 @@ function DuplicateDialog({
           control={control}
           fullWidth
           rules={{
-            validate: (v) =>
-              validateString(v, {
-                existingValues: existingConstraints,
-                specialChars: "@&_-()",
-              }),
+            validate: validateString({
+              existingValues: existingConstraints,
+              specialChars: "@&_-()",
+            }),
           }}
           margin="dense"
         />
