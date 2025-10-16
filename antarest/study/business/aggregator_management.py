@@ -147,17 +147,17 @@ class AggregatorManager:
         )
 
     @staticmethod
-    def parse_output_file(file_path: Path, frequency: str, n_rows: int | None = None) -> pd.DataFrame:
+    def parse_output_file(file_path: Path, frequency: MatrixFrequency, n_rows: int | None = None) -> pd.DataFrame:
         csv_file = pd.read_csv(
             file_path, sep="\t", skiprows=4, header=[0, 1, 2], na_values="N/A", float_precision="legacy", nrows=n_rows
         )
-        date_serializer = FactoryDateSerializer.create(frequency, "")
+        date_serializer = FactoryDateSerializer.create(frequency.value, "")
         _, body = date_serializer.extract_date(csv_file)
         rename_unnamed(body)
         return body
 
     def _parse_output_file(self, file_path: Path, normalize_column_name: bool = True) -> pd.DataFrame:
-        body = self.parse_output_file(file_path, self.frequency.value)
+        body = self.parse_output_file(file_path, self.frequency)
 
         df = body.astype(float)
 

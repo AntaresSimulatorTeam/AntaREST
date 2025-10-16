@@ -571,12 +571,7 @@ class OutputService:
 
         # Save the model inside DB for next calls
         with db():
-            db_model = OutputVariables(
-                study_id=study_id,
-                output_id=output_id,
-                variables_metadata_version=1,
-                variables_metadata=model.model_dump_json(),
-            )
+            db_model = OutputVariables.from_model(study_id, output_id, model)
             db.session.add(db_model)
             db.session.commit()
 

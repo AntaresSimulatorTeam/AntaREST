@@ -72,3 +72,12 @@ class OutputVariables(Base):
 
     def to_model(self) -> OutputVariablesMetadata:
         return OutputVariablesMetadata.model_validate_json(self.variables_metadata)
+
+    @staticmethod
+    def from_model(study_id: str, output_id: str, metadata: OutputVariablesMetadata) -> "OutputVariables":
+        return OutputVariables(
+            study_id=study_id,
+            output_id=output_id,
+            variables_metadata_version=1,
+            variables_metadata=metadata.model_dump_json(),
+        )
