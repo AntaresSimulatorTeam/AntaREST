@@ -354,7 +354,7 @@ It doesn't impact users as it's for internal usage only, matrices will be displa
 ## **blob_gc_sleeping_time**
 
 - **Type:** Integer
-- **Default value:** 3600 (corresponds to 1 hour)
+- **Default value:** 86400 (corresponds to 1 day)
 - **Description:** Time in seconds to sleep between two garbage collections (which means blob suppression).
 
 ## **blob_gc_dry_run**

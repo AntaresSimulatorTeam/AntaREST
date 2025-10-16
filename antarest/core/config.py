@@ -168,7 +168,7 @@ class StorageConfig:
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
     blobstore: Path = Path("./blobstore")
-    blob_gc_sleeping_time: int = 3600
+    blob_gc_sleeping_time: int = 86400
     blob_gc_dry_run: bool = False
 
     @classmethod
