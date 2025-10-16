@@ -156,7 +156,7 @@ class TestVariantStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.utcnow(),
+            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             public_mode=PublicMode.FULL,
             owner=user,
             groups=[group],
@@ -256,8 +256,9 @@ class TestVariantStudyService:
             fake_time: datetime.datetime
 
             @classmethod
-            def now(cls) -> datetime.datetime:
-                """Method used to get the custom timestamp"""
+            def now(cls, tz=None) -> datetime.datetime:
+                """Method used to get the custom timestamp.
+                Returns naive datetime regardless of tz parameter to match database behavior."""
                 return datetime.datetime(2023, 12, 31)
 
             @classmethod
@@ -298,7 +299,7 @@ class TestVariantStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.utcnow(),
+            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             public_mode=PublicMode.FULL,
             owner=admin_user,
             groups=[group],
@@ -355,11 +356,17 @@ class TestVariantStudyService:
             assert list(variant.iterdir())
 
         # Simulate access for two old snapshots
-        variant_list[0].last_access = datetime.datetime.utcnow() - datetime.timedelta(days=60)
-        variant_list[1].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=6)
+        variant_list[0].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=None
+        ) - datetime.timedelta(days=60)
+        variant_list[1].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=None
+        ) - datetime.timedelta(hours=6)
 
         # Simulate access for a recent one
-        variant_list[2].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        variant_list[2].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=None
+        ) - datetime.timedelta(hours=1)
         db.session.commit()
 
         # Clear old snapshots

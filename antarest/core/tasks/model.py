@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
@@ -252,7 +252,7 @@ def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, Any]) -> None
         TaskJob.status: TaskStatus.FAILED.value,
         TaskJob.result_status: False,
         TaskJob.result_msg: "Task was interrupted due to server restart",
-        TaskJob.completion_date: datetime.utcnow(),
+        TaskJob.completion_date: datetime.now(timezone.utc).replace(tzinfo=None),
     }
     orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
     make_session = sessionmaker(bind=engine, **session_args)
