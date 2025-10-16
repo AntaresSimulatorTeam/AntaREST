@@ -50,12 +50,13 @@ class CommandBlobUsageProvider(IBlobUsageProvider):
                 )
             return []
 
-        variant_study_commands = [cmd for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)]
-        for block in command_blocks:
-            for command in variant_study_commands:
-                for blob in command.get_inner_blobs():
-                    blob_reference = BlobReference(
-                        blob_id=blob,
-                        use_description=f"Used by command {command.command_id} from variant study {block.study_id}",
-                    )
-                    yield blob_reference
+        variant_study_commands = [
+            (cmd, c.study_id) for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)
+        ]
+        for command, study_id in variant_study_commands:
+            for blob in command.get_inner_blobs():
+                blob_reference = BlobReference(
+                    blob_id=blob,
+                    use_description=f"Used by command {command.command_id} from variant study {study_id}",
+                )
+                yield blob_reference

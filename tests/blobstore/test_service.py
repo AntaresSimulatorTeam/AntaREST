@@ -9,13 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import uuid
+from unittest.mock import Mock
 
 import pytest
 
 from antarest.blobstore.exceptions import BlobNotFound
 from antarest.blobstore.repository import compute_blob_hash
 from antarest.blobstore.service import BlobService
+from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
+from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
 
 def test_hashing_method():
@@ -65,7 +70,60 @@ def test_lifecycle(simple_blob_service: BlobService):
     assert sorted(simple_blob_service.get_saved_blobs()) == sorted([blob_2, blob_3, blob_4])
 
 
-def test_get_used_blobs(simple_blob_service: BlobService):
-    print(list(simple_blob_service.get_used_blobs()))
-    # simple_blob_service.register_usage_provider()
-    # todo
+def test_get_used_blobs(command_factory: CommandFactory) -> None:
+    # Create a Mock with 4 commands.
+    # Only 2 blobs should be returned as the other commands didn't create any blob inside the blob store.
+    mock_repo = Mock(spec=VariantStudyRepository)
+    study_id = str(uuid.uuid4())
+    cmd_id_1 = str(uuid.uuid4())
+    cmd_id_2 = str(uuid.uuid4())
+    mock_repo.get_all_command_blocks.return_value = [
+        CommandBlock(
+            id=cmd_id_1,
+            study_id=study_id,
+            index=0,
+            version=2,
+            study_version="9.3",
+            command="create_user_resource",
+            args='{"data": {"resource_type": "file", "path": "file.txt", "blob_id": "blob_1"}}',
+        ),
+        CommandBlock(
+            id=cmd_id_2,
+            study_id=study_id,
+            index=1,
+            version=1,
+            study_version="9.3",
+            command="create_user_resource",
+            args='{"data": {"resource_type": "file", "path": "file2.txt", "content": "Hello World !"}}',
+        ),
+        CommandBlock(
+            id=str(uuid.uuid4()),
+            study_id=study_id,
+            index=2,
+            version=2,
+            study_version="9.3",
+            command="create_user_resource",
+            args='{"data": {"resource_type": "folder", "path": "new_folder"}}',
+        ),
+        CommandBlock(
+            id=str(uuid.uuid4()),
+            study_id=study_id,
+            index=3,
+            version=1,
+            study_version="9.3",
+            command="remove_area",
+            args='{"id": "fr"}',
+        ),
+    ]
+
+    blob_service: BlobService = command_factory.command_context.blob_service
+    # Ensures without a provider, there are no used blobs
+    assert len(list(blob_service.get_used_blobs())) == 0
+
+    # Adds the provider. Instantiating it adds it to the service
+    CommandBlobUsageProvider(variant_study_repo=mock_repo, command_factory=command_factory)
+
+    # Ensures 2 blobs are returned
+    used_blobs = list(blob_service.get_used_blobs())
+    assert len(used_blobs) == 2
+    print(used_blobs)
