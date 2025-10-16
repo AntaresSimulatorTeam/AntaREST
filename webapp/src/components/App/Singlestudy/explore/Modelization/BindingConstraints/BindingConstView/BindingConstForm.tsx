@@ -75,12 +75,13 @@ function BindingConstForm({ study, options, constraintId }: Props) {
     <>
       <Fieldset
         legend={t("study.modelization.bindingConst.constraintTerm")}
-        sx={{ width: 1, py: 2 }}
+        sx={{ width: 1, py: 1, mt: 1 }}
       >
         <Box sx={{ display: "flex", width: 1, flexDirection: "column" }}>
           <Box
             sx={{
               mb: 2,
+              p: 0,
             }}
           >
             <Button

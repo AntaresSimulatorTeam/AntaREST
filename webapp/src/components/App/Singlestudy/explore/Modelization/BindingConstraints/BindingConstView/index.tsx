@@ -15,7 +15,7 @@
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Delete from "@mui/icons-material/Delete";
 import { Box, Button, Skeleton } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { toError } from "@/utils/fnUtils";
@@ -173,9 +173,7 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
                       }}
                     >
                       {/* Constraint properties fields */}
-                      <Box sx={{ display: "flex", width: 1 }}>
-                        <ConstraintFields study={study} constraintId={constraintId} />
-                      </Box>
+                      <ConstraintFields study={study} constraintId={constraintId} />
                       {/* Constraint terms fields */}
                       <Box sx={{ display: "flex", flexGrow: 1 }}>
                         <BindingConstForm

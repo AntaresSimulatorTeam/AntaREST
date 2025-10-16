@@ -28,6 +28,7 @@ export default function OffsetInput(props: React.PropsWithChildren<Props>) {
         flexDirection: "column",
         alignItems: "center",
         position: "relative",
+        mr: 1,
       }}
     >
       <HighlightOffIcon
