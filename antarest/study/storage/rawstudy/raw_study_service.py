@@ -13,7 +13,7 @@
 import logging
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence
@@ -138,8 +138,8 @@ class RawStudyService(AbstractStorageService):
             if fallback_on_default is not None:
                 metadata.name = metadata.name or "unnamed"
                 metadata.version = metadata.version or "0.0"
-                metadata.created_at = metadata.created_at or datetime.utcnow()
-                metadata.updated_at = metadata.updated_at or datetime.utcnow()
+                metadata.created_at = metadata.created_at or datetime.now(timezone.utc).replace(tzinfo=None)
+                metadata.updated_at = metadata.updated_at or datetime.now(timezone.utc).replace(tzinfo=None)
                 if metadata.additional_data is None:
                     metadata.additional_data = StudyAdditionalData()
                 metadata.additional_data.author = metadata.additional_data.author or "Unknown"
@@ -302,13 +302,14 @@ class RawStudyService(AbstractStorageService):
                 editor=self._get_current_user_name(),
             )
         dest_id = str(uuid4())
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         dest_study = RawStudy(
             id=dest_id,
             name=dest_study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(self.config.get_workspace_path() / dest_id),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
             version=src_study.version,
             additional_data=additional_data,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
@@ -522,7 +523,7 @@ class RawStudyService(AbstractStorageService):
             LazyNode.ZIP_FILELIST_CACHE = {
                 key: LazyNode.ZIP_FILELIST_CACHE[key]
                 for key in LazyNode.ZIP_FILELIST_CACHE
-                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.utcnow()
+                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.now(timezone.utc).replace(tzinfo=None)
             }
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)

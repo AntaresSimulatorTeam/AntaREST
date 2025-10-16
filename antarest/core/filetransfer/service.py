@@ -78,7 +78,7 @@ class FileTransferManager:
             ready=False,
             path=str(tmpfile),
             owner=owner.impersonator if owner is not None else None,
-            expiration_date=datetime.datetime.utcnow()
+            expiration_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             + datetime.timedelta(
                 minutes=expiration_time_in_minutes or self.download_default_expiration_timeout_minutes
             ),
@@ -174,7 +174,7 @@ class FileTransferManager:
         return [d.to_dto() for d in downloads]
 
     def _clean_up_expired_downloads(self, file_downloads: List[FileDownload]) -> None:
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         to_remove = []
         for file_download in file_downloads:
             if file_download.expiration_date is not None and file_download.expiration_date <= now:
