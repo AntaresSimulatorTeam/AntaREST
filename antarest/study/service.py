@@ -2506,10 +2506,8 @@ class StudyService:
                 "thermals": thermal_clusters.get(area_id, {}).values(),
                 "renewables": renewable_clusters.get(area_id, {}).values(),
                 "st_storages": [],
+                "ui": self.area_manager.get_area_ui(study_interface, area_id),
             }
-
-            # Ui
-            area["ui"] = self.area_manager.get_area_ui(study_interface, area_id)
 
             # Hydro
             hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
