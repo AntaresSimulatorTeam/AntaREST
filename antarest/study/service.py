@@ -253,7 +253,7 @@ class XpansionConstraint(AntaresBaseModel):
 class StudyXpansionDTO(AntaresBaseModel):
     settings: XpansionSettings
     candidates: list[XpansionCandidate]
-    constraint: bytes
+    constraint: XpansionConstraint | None
 
 
 class StudyShortTermStorageDTO(STStorage):
@@ -2584,11 +2584,11 @@ class StudyService:
                     study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
                 )
                 assert isinstance(xpansion_constraint, bytes)
+                constraint_as_dict = from_json(xpansion_constraint)
+                constraint = next(iter(constraint_as_dict.values()))
+                # todo: transform it in the xpansion model
             else:
-                xpansion_constraint = b""
-
-            constraint_as_dict = from_json(xpansion_constraint)
-            constraint = next(iter(constraint_as_dict.values()))
+                constraint = None
 
             xpansion = {
                 "settings": xpansion_settings,
