@@ -32,7 +32,7 @@ from tests.helpers import create_study
 class TestDatabaseAreaDao(DatabaseAreaDao):
     """
     Concrete implementation of DatabaseAreaDao for testing.
-    Implements the abstract methods required by the mixin.
+    Implements the abstract methods
     """
 
     def __init__(self, study_id: str, session: Session):
