@@ -2488,7 +2488,6 @@ class StudyService:
         ##########################
 
         area_properties = self.area_manager.get_all_area_properties(study_interface)
-        area_ui = self.area_manager.get_all_areas_ui_info(study_interface)
         thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
         st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
         st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
@@ -2504,11 +2503,14 @@ class StudyService:
             area: dict[str, Any] = {
                 "id": area_id,
                 "properties": properties,
-                "ui": area_ui[area_id],
                 "thermals": thermal_clusters.get(area_id, {}).values(),
                 "renewables": renewable_clusters.get(area_id, {}).values(),
                 "st_storages": [],
             }
+
+            # Ui
+            area["ui"] = self.area_manager.get_area_ui(study_interface, area_id)
+
             # Hydro
             hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
             area["hydro"] = StudyHydroDTO(
