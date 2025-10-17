@@ -18,7 +18,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
-from antarest.launcher.repository import JobResultRepository, LauncherConfigRepository
+from antarest.launcher.repository import JobResultRepository, LaunchConfigRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
 from antarest.login.service import LoginService
@@ -40,7 +40,7 @@ def build_launcher(
 ) -> Optional[LauncherService]:
     if not service_launcher:
         job_repository = JobResultRepository()
-        launcher_config_repository = LauncherConfigRepository()
+        launcher_config_repository = LaunchConfigRepository()
         # keep old job results
         #        study_service.add_on_deletion_callback(repository.delete_by_study_id)
         service_launcher = LauncherService(

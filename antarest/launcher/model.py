@@ -15,13 +15,11 @@ import json
 import re
 import typing
 from datetime import datetime
-from http import HTTPStatus
 from typing import Any, Dict, List, MutableMapping, Optional, Tuple
 from uuid import uuid4
 
-from antares.study.version import StudyVersion
-from fastapi import HTTPException
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from antares.study.version import SolverVersion, StudyVersion
+from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -40,12 +38,9 @@ ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN = re.compile(
 MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS = StudyVersion(9, 2)
 
 
-class BadLauncherConfigInput(HTTPException):
+class BadLaunchConfigInput(ValueError):
     def __init__(self, message: str = "Invalid launcher configuration"):
-        super().__init__(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=message,
-        )
+        super().__init__(message)
 
 
 class XpansionParametersDTO(AntaresBaseModel):
@@ -346,12 +341,12 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
     )
 
 
-class LauncherConfigDTO(AntaresBaseModel):
+class LaunchConfigDTO(AntaresBaseModel):
     id: Optional[str] = None
     name: str
     linear_solver: str
-    min_antares_version: Optional[StudyVersion] = None
-    max_antares_version: Optional[StudyVersion] = None
+    min_antares_version: Optional[SolverVersion] = None
+    max_antares_version: Optional[SolverVersion] = None
     linear_solver_param_optim_1: Optional[SolverParams] = None
     linear_solver_param_optim_2: Optional[SolverParams] = None
     linear_solver_param: Optional[SolverParams] = None
@@ -361,7 +356,7 @@ class LauncherConfigDTO(AntaresBaseModel):
     @field_validator("name")
     def name_not_empty(cls, v: str) -> str:
         if not v.strip():
-            raise BadLauncherConfigInput("name cannot be empty or whitespace")
+            raise ValueError("name cannot be empty or whitespace")
         return v
 
     @field_validator(
@@ -374,21 +369,21 @@ class LauncherConfigDTO(AntaresBaseModel):
             return sp
         for k, v in sp:
             if not ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN.match(k):
-                raise BadLauncherConfigInput(
+                raise ValueError(
                     f"Invalid key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
                 )
             if not ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN.match(v):
-                raise BadLauncherConfigInput(
+                raise ValueError(
                     f"Invalid value '{v}' for key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
                 )
         return sp
 
     @model_validator(mode="after")
-    def validate_versions_and_optim_params(self) -> "LauncherConfigDTO":
+    def validate_versions_and_optim_params(self) -> "LaunchConfigDTO":
         # min <= max
         if self.min_antares_version and self.max_antares_version:
             if self.min_antares_version > self.max_antares_version:
-                raise BadLauncherConfigInput("min_antares_version cannot be greater than max_antares_version")
+                raise ValueError("min_antares_version cannot be greater than max_antares_version")
 
         requires_version_9_2 = (
             self.min_antares_version is not None and self.min_antares_version >= MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS
@@ -396,67 +391,67 @@ class LauncherConfigDTO(AntaresBaseModel):
 
         # linear_solver_param_optim_* only valid for >= 9.2
         if self.linear_solver_param_optim_1 and not requires_version_9_2:
-            raise BadLauncherConfigInput(
+            raise ValueError(
                 "linear_solver_param_optim_1 is not supported before Antares version 9.2 "
                 f"(got {self.min_antares_version})"
             )
 
         if self.linear_solver_param_optim_2 and not requires_version_9_2:
-            raise BadLauncherConfigInput(
+            raise ValueError(
                 "linear_solver_param_optim_2 is not supported before Antares version 9.2 "
                 f"(got {self.min_antares_version})"
             )
 
         return self
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def other_options(self) -> str:
+        """
+        Generate an 'other_options' string. This will be passed to the antares launcher script
 
-def make_other_options_from_launcher_config(config: LauncherConfigDTO) -> str:
-    """
-    Generate an 'other_options' string from a LauncherConfigDTO. This will be passed to the antares launcher script
+        Example output:
+            solver=xpress nobasis1 param-optim1="THREADS 4 PRESOLVE 1" param-optim2="MIPRELSTOP 0.01"
+        """
+        options: List[str] = []
 
-    Example output:
-        --solver=xpress --nobasis1 --param-optim1="THREADS 4 PRESOLVE 1" --param-optim2="MIPRELSTOP 0.01"
-    """
-    options: List[str] = []
+        solver = self.linear_solver.lower()
+        options.append(f"solver={solver}")
 
-    solver = config.linear_solver.lower()
-    options.append(f"--solver={solver}")
+        if not self.use_optim_1_basis_next_week:
+            options.append("nobasis1")
+        if not self.use_optim_1_basis_optim_2:
+            options.append("nobasis2")
 
-    if not config.use_optim_1_basis_next_week:
-        options.append("--nobasis1")
-    if not config.use_optim_1_basis_optim_2:
-        options.append("--nobasis2")
+        # Build per-optim strings
+        def build_param_str(param_list: List[Tuple[str, str]]) -> str:
+            return " ".join(f"{k} {v}" for k, v in param_list)
 
-    # Build per-optim strings
-    def build_param_str(param_list: List[Tuple[str, str]]) -> str:
-        return " ".join(f"{k} {v}" for k, v in param_list)
+        # param-optim1
+        param1 = build_param_str(self.linear_solver_param_optim_1 or [])
+        param_common = build_param_str(self.linear_solver_param or [])
+        combined1 = f"{param_common} {param1}".strip()
+        if combined1:
+            options.append(f'param-optim1="{combined1}"')
 
-    # param-optim1
-    param1 = build_param_str(config.linear_solver_param_optim_1 or [])
-    param_common = build_param_str(config.linear_solver_param or [])
-    combined1 = f"{param_common} {param1}".strip()
-    if combined1:
-        options.append(f'--param-optim1="{combined1}"')
+        # param-optim2
+        param2 = build_param_str(self.linear_solver_param_optim_2 or [])
+        combined2 = f"{param_common} {param2}".strip()
+        if combined2:
+            options.append(f'param-optim2="{combined2}"')
 
-    # param-optim2
-    param2 = build_param_str(config.linear_solver_param_optim_2 or [])
-    combined2 = f"{param_common} {param2}".strip()
-    if combined2:
-        options.append(f'--param-optim2="{combined2}"')
-
-    return " ".join(options)
+        return " ".join(options)
 
 
 def overwrite_params_other_options_with_config(
     launcher_params: LauncherParametersDTO,
-    launcher_config: LauncherConfigDTO,
+    launcher_config: LaunchConfigDTO,
 ) -> None:
-    new_other_options = make_other_options_from_launcher_config(launcher_config)
-    launcher_params.other_options = new_other_options
+    launcher_params.other_options = launcher_config.other_options
 
 
-class LauncherConfigModel(Base):
-    __tablename__ = "launcher_configuration"
+class LaunchConfigModel(Base):
+    __tablename__ = "launch_configuration"
 
     id = mapped_column(String(36), primary_key=True)
     name = mapped_column(String)
@@ -469,18 +464,18 @@ class LauncherConfigModel(Base):
     use_optim_1_basis_next_week = mapped_column(Boolean)
     use_optim_1_basis_optim_2 = mapped_column(Boolean)
 
-    def to_dto(self) -> LauncherConfigDTO:
+    def to_dto(self) -> LaunchConfigDTO:
         min_version = None
         if self.min_antares_version is not None:
             try:
-                min_version = StudyVersion.parse(self.min_antares_version)
+                min_version = SolverVersion.parse(self.min_antares_version)
             except Exception as e:
                 raise ValueError(f"Failed to parse min_antares_version '{self.min_antares_version}': {e}") from e
 
         max_version = None
         if self.max_antares_version is not None:
             try:
-                max_version = StudyVersion.parse(self.max_antares_version)
+                max_version = SolverVersion.parse(self.max_antares_version)
             except Exception as e:
                 raise ValueError(f"Failed to parse max_antares_version '{self.max_antares_version}': {e}") from e
 
@@ -517,7 +512,7 @@ class LauncherConfigModel(Base):
             except Exception as e:
                 raise ValueError(f"Failed to parse linear_solver_param: {e}") from e
 
-        return LauncherConfigDTO(
+        return LaunchConfigDTO(
             id=self.id,
             name=self.name,
             linear_solver=self.linear_solver,
@@ -531,8 +526,8 @@ class LauncherConfigModel(Base):
         )
 
     @classmethod
-    def from_dto(cls, dto: LauncherConfigDTO) -> "LauncherConfigModel":
-        data = dto.model_dump(exclude_none=True)
+    def from_dto(cls, dto: LaunchConfigDTO) -> "LaunchConfigModel":
+        data = dto.model_dump(exclude_none=True, exclude={"other_options"})
         if dto.min_antares_version is not None:
             data["min_antares_version"] = f"{dto.min_antares_version:2d}"
         if dto.max_antares_version is not None:
@@ -553,7 +548,7 @@ class LauncherConfigModel(Base):
     @override
     def __repr__(self) -> str:
         return (
-            f"<LauncherConfigModel(id={self.id!r},"
+            f"<LaunchConfigModel(id={self.id!r},"
             f" name={self.name!r},"
             f" linear_solver={self.linear_solver!r},"
             f" min_antares_version={self.min_antares_version!r},"
@@ -567,18 +562,18 @@ class LauncherConfigModel(Base):
 
 
 def apply_update_launcher_config(
-    launcher_config: LauncherConfigModel,
-    launcher_config_update: LauncherConfigDTO,
-) -> LauncherConfigModel:
-    return LauncherConfigModel.from_dto(
-        LauncherConfigDTO.model_validate(
+    launcher_config: LaunchConfigModel,
+    launcher_config_update: LaunchConfigDTO,
+) -> LaunchConfigModel:
+    return LaunchConfigModel.from_dto(
+        LaunchConfigDTO.model_validate(
             {**launcher_config.to_dto().model_dump(), **launcher_config_update.model_dump(exclude_unset=True)}
         )
     )
 
 
 def is_launcher_config_compatible(
-    launcher_config: LauncherConfigDTO,
+    launcher_config: LaunchConfigDTO,
     study_version: StudyVersion,
 ) -> bool:
     """

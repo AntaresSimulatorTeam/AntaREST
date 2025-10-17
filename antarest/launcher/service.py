@@ -40,13 +40,13 @@ from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
-    BadLauncherConfigInput,
+    BadLaunchConfigInput,
     JobLog,
     JobLogType,
     JobResult,
     JobStatus,
-    LauncherConfigDTO,
-    LauncherConfigModel,
+    LaunchConfigDTO,
+    LaunchConfigModel,
     LauncherInfoDTO,
     LauncherListDTO,
     LauncherLoadDTO,
@@ -58,7 +58,7 @@ from antarest.launcher.model import (
     is_launcher_config_compatible,
     overwrite_params_other_options_with_config,
 )
-from antarest.launcher.repository import JobResultRepository, LauncherConfigRepository
+from antarest.launcher.repository import JobResultRepository, LaunchConfigRepository
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -75,15 +75,15 @@ class JobNotFound(HTTPException):
         super(JobNotFound, self).__init__(HTTPStatus.NOT_FOUND)
 
 
-class IncompatibleLauncherConfig(HTTPException):
-    def __init__(self, message: str = "Invalid launcher configuration"):
+class IncompatibleLaunchConfig(HTTPException):
+    def __init__(self, message: str = "Invalid launch configuration"):
         super().__init__(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=message,
         )
 
 
-class LauncherConfigNotFound(HTTPException):
+class LaunchConfigNotFound(HTTPException):
     def __init__(self, message: str = "Launcher configuration not found"):
         super().__init__(
             status_code=HTTPStatus.NOT_FOUND,
@@ -110,7 +110,7 @@ class LauncherService:
         output_service: OutputService,
         login_service: LoginService,
         job_result_repository: JobResultRepository,
-        launcher_config_repository: LauncherConfigRepository,
+        launcher_config_repository: LaunchConfigRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -276,9 +276,9 @@ class LauncherService:
             if not is_launcher_config_compatible(
                 launcher_config, StudyVersion.parse(study_version or study_info.version)
             ):
-                raise IncompatibleLauncherConfig("Launcher configuration is not compatible with study version")
+                raise IncompatibleLaunchConfig("Launcher configuration is not compatible with study version")
             if launcher_parameters.other_options:
-                raise IncompatibleLauncherConfig("Cannot use other_options when a launcher configuration is specified")
+                raise IncompatibleLaunchConfig("Cannot use other_options when a launcher configuration is specified")
             overwrite_params_other_options_with_config(launcher_parameters, launcher_config)
 
         self._assert_launcher_is_initialized(launcher)
@@ -715,29 +715,29 @@ class LauncherService:
         }
         return launch_progress_json.get("progress", 0)
 
-    def create_launcher_config(self, launcher_config_creation: LauncherConfigDTO) -> LauncherConfigDTO:
+    def create_launcher_config(self, launcher_config_creation: LaunchConfigDTO) -> LaunchConfigDTO:
         """
         Create a new launcher configuration using LauncherParametersDTO.
         """
         with db():
             launcher_config_creation.id = transform_name_to_id(launcher_config_creation.name)
             if self.launcher_config_repository.exists(launcher_config_creation.id):
-                raise BadLauncherConfigInput(f"A configuration with id '{launcher_config_creation.id}' already exists.")
-            launcher_config = LauncherConfigModel.from_dto(launcher_config_creation)  # validate dto
+                raise BadLaunchConfigInput(f"A configuration with id '{launcher_config_creation.id}' already exists.")
+            launcher_config = LaunchConfigModel.from_dto(launcher_config_creation)  # validate dto
             config = self.launcher_config_repository.save(launcher_config)
             return config.to_dto()
 
-    def get_launcher_config(self, configuration_id: str) -> LauncherConfigDTO:
+    def get_launcher_config(self, configuration_id: str) -> LaunchConfigDTO:
         """
         Retrieve a launcher configuration by its ID.
         """
         with db():
             config = self.launcher_config_repository.get(configuration_id)
             if not config:
-                raise LauncherConfigNotFound(f"Launcher configuration with id '{configuration_id}' not found.")
+                raise LaunchConfigNotFound(f"Launcher configuration with id '{configuration_id}' not found.")
             return config.to_dto()
 
-    def get_launcher_configs(self) -> List[LauncherConfigDTO]:
+    def get_launcher_configs(self) -> List[LaunchConfigDTO]:
         """
         Retrieve all launcher configurations.
         """
@@ -745,16 +745,14 @@ class LauncherService:
             configs = self.launcher_config_repository.get_all()
             return [config.to_dto() for config in configs]
 
-    def update_launcher_config(
-        self, configuration_id: str, launcher_config_update: LauncherConfigDTO
-    ) -> LauncherConfigDTO:
+    def update_launcher_config(self, configuration_id: str, launcher_config_update: LaunchConfigDTO) -> LaunchConfigDTO:
         """
         Update an existing launcher configuration using LauncherParametersDTO.
         """
         with db():
             launcher_config = self.launcher_config_repository.get(configuration_id)
             if not launcher_config:
-                raise LauncherConfigNotFound(configuration_id)
+                raise LaunchConfigNotFound(configuration_id)
             # Update only the fields that are provided in the update DTO
             updated_launcher_config = apply_update_launcher_config(launcher_config, launcher_config_update)
             config = self.launcher_config_repository.save(updated_launcher_config)

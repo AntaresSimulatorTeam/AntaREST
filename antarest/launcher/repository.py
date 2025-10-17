@@ -16,7 +16,7 @@ from typing import List, Optional
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult, LauncherConfigModel
+from antarest.launcher.model import JobResult, LaunchConfigModel
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -91,20 +91,20 @@ class JobResultRepository:
         db.session.commit()
 
 
-class LauncherConfigRepository:
+class LaunchConfigRepository:
     def __init__(self) -> None:
         pass
 
     def exists(self, id: str) -> bool:
-        logger.debug(f"Checking existence of LauncherConfigModel {id}")
-        stmt = select(LauncherConfigModel).where(LauncherConfigModel.id == id)
+        logger.debug(f"Checking existence of LaunchConfigModel {id}")
+        stmt = select(LaunchConfigModel).where(LaunchConfigModel.id == id)
         existing_config = db.session.scalar(stmt)
         return existing_config is not None
 
-    def save(self, config: LauncherConfigModel) -> LauncherConfigModel:
-        logger.debug(f"Saving LauncherConfigModel {config.id}")
+    def save(self, config: LaunchConfigModel) -> LaunchConfigModel:
+        logger.debug(f"Saving LaunchConfigModel {config.id}")
 
-        stmt = select(LauncherConfigModel).where(LauncherConfigModel.id == config.id)
+        stmt = select(LaunchConfigModel).where(LaunchConfigModel.id == config.id)
         existing_config = db.session.scalar(stmt)
 
         if existing_config:
@@ -116,18 +116,18 @@ class LauncherConfigRepository:
         db.session.commit()
         return merged_config
 
-    def get(self, id: str) -> Optional[LauncherConfigModel]:
-        logger.debug(f"Retrieving LauncherConfigModel {id}")
-        return db.session.get(LauncherConfigModel, id)
+    def get(self, id: str) -> Optional[LaunchConfigModel]:
+        logger.debug(f"Retrieving LaunchConfigModel {id}")
+        return db.session.get(LaunchConfigModel, id)
 
-    def get_all(self) -> List[LauncherConfigModel]:
-        logger.debug("Retrieving all LauncherConfigModels")
-        stmt = select(LauncherConfigModel)
+    def get_all(self) -> List[LaunchConfigModel]:
+        logger.debug("Retrieving all LaunchConfigModels")
+        stmt = select(LaunchConfigModel)
         return list(db.session.scalars(stmt).all())
 
     def delete(self, id: str) -> None:
-        logger.debug(f"Deleting LauncherConfigModel {id}")
-        config = db.session.get(LauncherConfigModel, id)
+        logger.debug(f"Deleting LaunchConfigModel {id}")
+        config = db.session.get(LaunchConfigModel, id)
         if config:
             db.session.delete(config)
             db.session.commit()
