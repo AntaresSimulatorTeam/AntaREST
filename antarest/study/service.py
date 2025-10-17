@@ -14,6 +14,7 @@ import base64
 import collections
 import contextlib
 import http
+import io
 import logging
 import os
 import time
@@ -55,7 +56,7 @@ from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.json import from_json
+from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
@@ -2584,16 +2585,23 @@ class StudyService:
                     study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
                 )
                 assert isinstance(xpansion_constraint, bytes)
-                constraint_as_dict = from_json(xpansion_constraint)
+                constraint_as_dict = IniReader().read(io.StringIO(xpansion_constraint.decode("utf-8")))
                 constraint = next(iter(constraint_as_dict.values()))
-                # todo: transform it in the xpansion model
+                constraint_model_args = {
+                    "name": constraint.pop("name"),
+                    "sign": constraint.pop("sign"),
+                    "right_hand_side": constraint.pop("rhs"),
+                    "candidates_coefficients": {},
+                }
+                for candidate, coefficient in constraint.items():
+                    constraint_model_args["candidates_coefficients"][candidate] = coefficient
             else:
-                constraint = None
+                constraint_model_args = None
 
             xpansion = {
                 "settings": xpansion_settings,
                 "candidates": self.xpansion_manager.get_candidates(study_interface),
-                "constraint": constraint,
+                "constraint": constraint_model_args,
             }
 
         except ChildNotFoundError:
