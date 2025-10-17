@@ -254,7 +254,7 @@ class XpansionConstraint(AntaresBaseModel):
 class StudyXpansionDTO(AntaresBaseModel):
     settings: XpansionSettings
     candidates: list[XpansionCandidate]
-    constraint: XpansionConstraint | None
+    constraints: list[XpansionConstraint]
 
 
 class StudyShortTermStorageDTO(STStorage):
@@ -2586,22 +2586,24 @@ class StudyService:
                 )
                 assert isinstance(xpansion_constraint, bytes)
                 constraint_as_dict = IniReader().read(io.StringIO(xpansion_constraint.decode("utf-8")))
-                constraint = next(iter(constraint_as_dict.values()))
-                constraint_model_args = {
-                    "name": constraint.pop("name"),
-                    "sign": constraint.pop("sign"),
-                    "right_hand_side": constraint.pop("rhs"),
-                    "candidates_coefficients": {},
-                }
-                for candidate, coefficient in constraint.items():
-                    constraint_model_args["candidates_coefficients"][candidate] = coefficient
+                constraints = []
+                for constraint in constraint_as_dict.values():
+                    constraint_model_args = {
+                        "name": constraint.pop("name"),
+                        "sign": constraint.pop("sign"),
+                        "right_hand_side": constraint.pop("rhs"),
+                        "candidates_coefficients": {},
+                    }
+                    for candidate, coefficient in constraint.items():
+                        constraint_model_args["candidates_coefficients"][candidate] = coefficient
+                    constraints.append(constraint_model_args)
             else:
-                constraint_model_args = None
+                constraints = []
 
             xpansion = {
                 "settings": xpansion_settings,
                 "candidates": self.xpansion_manager.get_candidates(study_interface),
-                "constraint": constraint_model_args,
+                "constraints": constraints,
             }
 
         except ChildNotFoundError:
