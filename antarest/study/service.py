@@ -89,7 +89,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
-from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationMatrix
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.link_model import Link, LinkUpdate
@@ -245,6 +245,10 @@ class StudyShortTermStorageDTO(STStorage):
     constraints: list[STStorageAdditionalConstraint]
 
 
+class StudyHydroDTO(HydroProperties):
+    allocation: HydroAllocation
+
+
 class StudyOutputDTO(AntaresBaseModel):
     name: str
     archived: bool
@@ -257,7 +261,7 @@ class StudyAreasDTO(AntaresBaseModel):
     thermals: list[ThermalCluster]
     renewables: list[RenewableCluster]
     st_storages: list[StudyShortTermStorageDTO]
-    hydro: HydroProperties
+    hydro: StudyHydroDTO
 
 
 class StudyDataDTO(AntaresBaseModel):
@@ -2488,7 +2492,8 @@ class StudyService:
         thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
         st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
         st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
-        hydro = self.hydro_manager.get_all_hydro_properties(study_interface)
+        hydro_properties = self.hydro_manager.get_all_hydro_properties(study_interface)
+
         try:
             renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
         except ChildNotFoundError:  # Can happen, according to the enr-modeling
@@ -2502,9 +2507,16 @@ class StudyService:
                 "ui": area_ui[area_id],
                 "thermals": thermal_clusters.get(area_id, {}).values(),
                 "renewables": renewable_clusters.get(area_id, {}).values(),
-                "hydro": hydro[area_id],
                 "st_storages": [],
             }
+            # Hydro
+            hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
+            area["hydro"] = StudyHydroDTO(
+                allocation=hydro_allocation,
+                management_options=hydro_properties[area_id].management_options,
+                inflow_structure=hydro_properties[area_id].inflow_structure,
+            )
+
             # Short-term storages
             storage_dict = st_storages.get(area_id, {})
             for storage_id, storage in storage_dict.items():
