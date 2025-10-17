@@ -26,23 +26,13 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.renewable_management import RenewableManager
-from antarest.study.business.areas.st_storage_management import (
-    STStorageManager,
-    STStorageMatrix,
-    STStorageTimeSeries,
-)
+from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import ConstraintFilters
-from antarest.study.business.correlation_management import (
-    AreaCoefficientItem,
-    CorrelationFormFields,
-    CorrelationMatrix,
-)
-from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, AreaUIUpdate
+from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaType, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -72,6 +62,16 @@ from antarest.study.business.model.district_model import (
     DistrictCreation,
     DistrictDTO,
     DistrictUpdate,
+)
+from antarest.study.business.model.hydro_allocation_model import (
+    HydroAllocation,
+    HydroAllocationArea,
+    HydroAllocationMatrix,
+)
+from antarest.study.business.model.hydro_correlation_model import (
+    HydroCorrelation,
+    HydroCorrelationArea,
+    HydroCorrelationMatrix,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -152,7 +152,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
-    class AreaResponse(Area):
+    class AreaResponse(AreaInfo):
         """API view for areas with deprecated ``type`` field kept for compatibility."""
 
         type: Literal[AreaType.AREA] = Field(
@@ -169,12 +169,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         type: Optional[AreaType] = Query(default=None, deprecated=True),
         ui: bool = Query(default=False),
-    ) -> List[AreaResponse] | Dict[str, Any]:
+    ) -> List[AreaResponse] | Dict[str, AreaUIData]:
         logger.info(f"Fetching area list (type={type}, ui={ui}) for study {uuid}")
         if ui:
             return study_service.get_all_areas_ui_info(uuid)
 
-        areas = study_service.get_all_areas(uuid)
+        areas = study_service.get_all_areas_info(uuid)
         return [AreaResponse.model_validate(area.model_dump()) for area in areas]
 
     @bp.get("/studies/{uuid}/links", tags=[APITag.study_data], summary="Get all links")
@@ -210,19 +210,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/ui",
         tags=[APITag.study_data],
         summary="Update area information",
-        response_model=None,
     )
-    def update_area_ui(uuid: str, area_id: str, area_ui: AreaUIUpdate, layer: str = "0") -> Any:
+    def update_area_ui(uuid: str, area_id: str, area_ui: AreaUIUpdate, layer: str = "0") -> None:
         logger.info(f"Updating area ui {area_id} for study {uuid}")
-        return study_service.update_area_ui(uuid, area_id, area_ui, layer)
+        study_service.update_area_ui(uuid, area_id, area_ui, layer)
 
     @bp.delete(
         "/studies/{uuid}/areas/{area_id}",
         tags=[APITag.study_data],
         summary="Delete an area",
-        response_model=str,
     )
-    def delete_area(uuid: str, area_id: str) -> Any:
+    def delete_area(uuid: str, area_id: str) -> str:
         logger.info(f"Removing area {area_id} in study {uuid}")
         uuid = sanitize_uuid(uuid)
         area_id = transform_name_to_id(area_id)
@@ -1089,32 +1087,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/hydro/allocation/matrix",
         tags=[APITag.study_data],
         summary="Get the hydraulic allocation matrix for all areas",
-        response_model=AllocationMatrix,
     )
-    def get_allocation_matrix(uuid: str) -> AllocationMatrix:
-        """
-        Get the hydraulic allocation matrix for all areas.
-
-        Args:
-        - `uuid`: The study UUID.
-
-        Returns the data frame matrix, where:
-        - the rows are the areas,
-        - the columns are the hydraulic structures,
-        - the values are the allocation factors.
-        """
+    def get_allocation_matrix(uuid: str) -> HydroAllocationMatrix:
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.allocation_manager.get_allocation_matrix(study_interface, all_areas)
+        return study_service.allocation_manager.get_allocation_matrix(study_interface)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
         tags=[APITag.study_data],
         summary="Get the form fields used for the allocation form",
-        response_model=AllocationFormFields,
     )
-    def get_allocation_form_fields(uuid: str, area_id: str) -> AllocationFormFields:
+    def get_allocation_form_fields(uuid: str, area_id: str) -> HydroAllocation:
         """
         Get the form fields used for the allocation form.
 
@@ -1125,30 +1109,28 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.allocation_manager.get_allocation_form_fields(all_areas, study_interface, area_id)
+        return study_service.allocation_manager.get_allocation_for_area(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
         tags=[APITag.study_data],
         summary="Update the form fields used for the allocation form",
         status_code=HTTPStatus.OK,
-        response_model=AllocationFormFields,
     )
     def set_allocation_form_fields(
         uuid: str,
         area_id: str,
-        data: AllocationFormFields = Body(
+        data: HydroAllocation = Body(
             ...,
-            example=AllocationFormFields(
+            example=HydroAllocation(
                 allocation=[
-                    AllocationField.model_validate({"areaId": "EAST", "coefficient": 1}),
-                    AllocationField.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
+                    HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
+                    HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
                 ]
             ),
         ),
-    ) -> AllocationFormFields:
+    ) -> HydroAllocation:
         """
         Update the hydraulic allocation of a given area.
 
@@ -1159,45 +1141,20 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the updated allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.allocation_manager.set_allocation_form_fields(all_areas, study_interface, area_id, data)
+        return study_service.allocation_manager.set_allocation_for_area(study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/areas/hydro/correlation/matrix",
         tags=[APITag.study_data],
-        summary="Get the hydraulic/load/solar/wind correlation matrix of a study",
-        response_model=CorrelationMatrix,
+        summary="Get the hydraulic correlation matrix of a study",
     )
-    def get_correlation_matrix(
-        uuid: str,
-        columns: Optional[str] = Query(
-            default=None,
-            openapi_examples={
-                "all areas": {
-                    "description": "get the correlation matrix for all areas (by default)",
-                    "value": "",
-                },
-                "single area": {
-                    "description": "get the correlation column for a single area",
-                    "value": "north",
-                },
-                "selected areas": {
-                    "description": "get the correlation columns for a selected list of areas",
-                    "value": "north,east",
-                },
-            },
-        ),
-    ) -> CorrelationMatrix:
+    def get_correlation_matrix(uuid: str) -> HydroCorrelationMatrix:
         """
-        Get the hydraulic/load/solar/wind correlation matrix of a study.
+        Get the hydraulic correlation matrix of a study.
 
         Args:
         - `uuid`: The UUID of the study.
-        - `columns`: a filter on the area identifiers:
-          - Use no parameter to select all areas.
-          - Use an area identifier to select a single area.
-          - Use a comma-separated list of areas to select those areas.
 
         Returns the hydraulic/load/solar/wind correlation matrix with the following attributes:
         - `index`: a list of all study areas.
@@ -1205,60 +1162,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.get_correlation_matrix(
-            all_areas,
-            study_interface,
-            columns.split(",") if columns else [],
-        )
-
-    @bp.put(
-        path="/studies/{uuid}/areas/hydro/correlation/matrix",
-        tags=[APITag.study_data],
-        summary="Set the hydraulic/load/solar/wind correlation matrix of a study",
-        status_code=HTTPStatus.OK,
-        response_model=CorrelationMatrix,
-    )
-    def set_correlation_matrix(
-        uuid: str,
-        matrix: CorrelationMatrix = Body(
-            ...,
-            example={
-                "columns": ["north", "east", "south", "west"],
-                "data": [
-                    [0.0, 0.0, 0.25, 0.0],
-                    [0.0, 0.0, 0.75, 0.12],
-                    [0.25, 0.75, 0.0, 0.75],
-                    [0.0, 0.12, 0.75, 0.0],
-                ],
-                "index": ["north", "east", "south", "west"],
-            },
-        ),
-    ) -> CorrelationMatrix:
-        """
-        Set the hydraulic/load/solar/wind correlation matrix of a study.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `index`: a list of all study areas.
-        - `columns`: a list of selected production areas.
-        - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
-
-        Returns the hydraulic/load/solar/wind correlation matrix updated
-        """
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.set_correlation_matrix(all_areas, study_interface, matrix)
+        return study_service.correlation_manager.get_correlation_matrix(study_interface)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
         tags=[APITag.study_data],
         summary="Get the form fields used for the correlation form",
-        response_model=CorrelationFormFields,
     )
-    def get_correlation_form_fields(uuid: str, area_id: str) -> CorrelationFormFields:
+    def get_correlation(uuid: str, area_id: str) -> HydroCorrelation:
         """
         Get the form fields used for the correlation form.
 
@@ -1269,32 +1181,30 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.get_correlation_form_fields(all_areas, study_interface, area_id)
+        return study_service.correlation_manager.get_correlation_for_area(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
         tags=[APITag.study_data],
         summary="Set the form fields used for the correlation form",
         status_code=HTTPStatus.OK,
-        response_model=CorrelationFormFields,
     )
-    def set_correlation_form_fields(
+    def set_correlation(
         uuid: str,
         area_id: str,
-        data: CorrelationFormFields = Body(
+        data: HydroCorrelation = Body(
             ...,
-            example=CorrelationFormFields(
+            example=HydroCorrelation(
                 correlation=[
-                    AreaCoefficientItem.model_validate({"areaId": "east", "coefficient": 80}),
-                    AreaCoefficientItem.model_validate({"areaId": "north", "coefficient": 20}),
+                    HydroCorrelationArea.model_validate({"areaId": "east", "coefficient": 80}),
+                    HydroCorrelationArea.model_validate({"areaId": "north", "coefficient": 20}),
                 ]
             ),
         ),
-    ) -> CorrelationFormFields:
+    ) -> HydroCorrelation:
         """
-        Update the hydraulic/load/solar/wind correlation of a given area.
+        Update the hydraulic correlation of a given area.
 
         Args:
         - `uuid`: The UUID of the study.
@@ -1303,9 +1213,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
-        return study_service.correlation_manager.set_correlation_form_fields(all_areas, study_interface, area_id, data)
+        return study_service.correlation_manager.set_correlation_for_area(study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/config/advancedparameters/form",
@@ -1358,7 +1267,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Getting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.properties_manager.get_area_properties(study_interface, area_id)
+        return study_service.area_manager.get_area_properties(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
@@ -1369,7 +1278,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.update_all_area_properties(
+        study_service.area_manager.update_all_area_properties(
             study_interface,
             {area_id: form_fields},
         )
@@ -1891,65 +1800,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         study_interface = study_service.get_study_interface(study)
         return manager.duplicate_cluster(study_interface, area_id, source_cluster_id, new_cluster_name)
-
-    @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
-        tags=[APITag.study_data],
-        summary="Get a short-term storage time series (deprecated)",
-        response_model=STStorageMatrix,
-        deprecated=True,
-    )
-    def get_st_storage_matrix(
-        uuid: str, area_id: str, storage_id: str, ts_name: STStorageTimeSeries
-    ) -> STStorageMatrix:
-        """
-        Retrieve the matrix of the specified time series for the given short-term storage.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `storage_id`: the ID of the short-term storage.
-        - `ts_name`: the name of the time series to retrieve.
-
-        Returns: The time series matrix with the following attributes:
-        - `index`: a list of 0-indexed time series lines (8760 lines).
-        - `columns`: a list of 0-indexed time series columns (1 column).
-        - `data`: a 2D-array matrix representing the time series.
-
-        Permissions:
-        - User must have READ permission on the study.
-        """
-        logger.info(f"Retrieving time series for study {uuid} and short-term storage {storage_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.st_storage_manager.get_matrix(study_interface, area_id, storage_id, ts_name)
-
-    @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
-        tags=[APITag.study_data],
-        summary="Update a short-term storage time series (deprecated)",
-        deprecated=True,
-    )
-    def update_st_storage_matrix(
-        uuid: str, area_id: str, storage_id: str, ts_name: STStorageTimeSeries, ts: STStorageMatrix
-    ) -> None:
-        """
-        Update the matrix of the specified time series for the given short-term storage.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `storage_id`: the ID of the short-term storage.
-        - `ts_name`: the name of the time series to retrieve.
-        - `ts`: the time series matrix to update.
-
-        Permissions:
-        - User must have WRITE permission on the study.
-        """
-        logger.info(f"Update time series for study {uuid} and short-term storage {storage_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        study_interface = study_service.get_study_interface(study)
-        study_service.st_storage_manager.update_matrix(study_interface, area_id, storage_id, ts_name, ts)
 
     @bp.get(
         "/studies/{study_id}/data",

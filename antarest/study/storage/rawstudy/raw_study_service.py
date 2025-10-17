@@ -13,7 +13,7 @@
 import logging
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence
@@ -138,8 +138,8 @@ class RawStudyService(AbstractStorageService):
             if fallback_on_default is not None:
                 metadata.name = metadata.name or "unnamed"
                 metadata.version = metadata.version or "0.0"
-                metadata.created_at = metadata.created_at or datetime.utcnow()
-                metadata.updated_at = metadata.updated_at or datetime.utcnow()
+                metadata.created_at = metadata.created_at or datetime.now(timezone.utc).replace(tzinfo=None)
+                metadata.updated_at = metadata.updated_at or datetime.now(timezone.utc).replace(tzinfo=None)
                 if metadata.additional_data is None:
                     metadata.additional_data = StudyAdditionalData()
                 metadata.additional_data.author = metadata.additional_data.author or "Unknown"
@@ -234,7 +234,6 @@ class RawStudyService(AbstractStorageService):
                 - version: The version of the study template to be used.
                 - path: The full path of the study directory in the "default" workspace.
                 - author: The author's name (if provided) or "Unknown" if missing.
-                - ...
 
         Returns:
             An updated `RawStudy` instance with the path to the newly created study.
@@ -259,7 +258,6 @@ class RawStudyService(AbstractStorageService):
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
-        editor: str,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -271,7 +269,6 @@ class RawStudyService(AbstractStorageService):
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
-            editor: The name of the editor that created the destination study.
 
         Returns:
             The newly created study.
@@ -289,7 +286,7 @@ class RawStudyService(AbstractStorageService):
 
         study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
 
-        update_antares_info(dest_study, study.tree, update_author=False, editor=editor)
+        update_antares_info(dest_study, study.tree, update_author=False)
 
         return dest_study
 
@@ -302,15 +299,17 @@ class RawStudyService(AbstractStorageService):
             additional_data = StudyAdditionalData(
                 horizon=src_study.additional_data.horizon,
                 author=src_study.additional_data.author,
+                editor=self._get_current_user_name(),
             )
         dest_id = str(uuid4())
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         dest_study = RawStudy(
             id=dest_id,
             name=dest_study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(self.config.get_workspace_path() / dest_id),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
             version=src_study.version,
             additional_data=additional_data,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
@@ -524,7 +523,7 @@ class RawStudyService(AbstractStorageService):
             LazyNode.ZIP_FILELIST_CACHE = {
                 key: LazyNode.ZIP_FILELIST_CACHE[key]
                 for key in LazyNode.ZIP_FILELIST_CACHE
-                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.utcnow()
+                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.now(timezone.utc).replace(tzinfo=None)
             }
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)

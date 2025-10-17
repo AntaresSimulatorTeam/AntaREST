@@ -28,7 +28,7 @@ from antarest.core.model import PublicMode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from tests.helpers import create_raw_study
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 def build_config(
@@ -193,8 +193,8 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study1"),
         version="720",
-        created_at=datetime.datetime.now(),
-        updated_at=datetime.datetime.now(),
+        created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
         additional_data=StudyAdditionalData(author="john.doe"),
     )
     md = study_service.create(metadata)
@@ -362,6 +362,8 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
+@with_db_context
+@with_admin_user
 def test_copy_study(tmp_path: Path) -> None:
     source_name = "study1"
     path_study = tmp_path / source_name
@@ -404,7 +406,7 @@ def test_copy_study(tmp_path: Path) -> None:
         version="700",
         groups=groups,
     )
-    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath(), [], None, "")
+    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath(), [], None)
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     assert md.public_mode == PublicMode.NONE

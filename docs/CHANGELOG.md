@@ -1,6 +1,64 @@
 Antares Web Changelog
 =====================
 
+v2.25.0 (2025-10-14)
+--------------------
+
+### Features
+
+* **ui-matrix**: add separate enable flags for `Matrix` filters and resize [`2697`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2697)
+* **sts**: add new field `allow-overflow` for v9.3+ studies [`2708`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2708)
+* **ui**: use custom dialog instead of window.confirm for unsaved/ongoing submit warning [`2696`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2696)
+* **ui-launcher**: update the dialog [`2711`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2711)
+* **ui-scenario**: filter scenario builder tabs by version [`2698`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2698)
+* **ui-studies**: add scope filter and a button to show/hide variants [`2714`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2714)
+* **ui-studies**: add folder navigation to individual study views [`2710`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2710)
+* **ui-matrix**: enable temporal filters where missing [`2715`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2715)
+* **ui-matrix**: enable filters on `Inflows` matrix [`2717`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2717)
+* **ui**: add threshold-based color for cluster computing indicators [`2722`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2722)
+* **ui-debug**: include filename in delete confirmation dialogs [`2724`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2724)
+* **ui-matrix**: recalculate stats based on filtered data when filters active [`2723`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2723)
+* **xpansion**: support reading and editing adequacy criterion inside back-end [`2726`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2726)
+* **launcher**: add new endpoint for launchers [`2727`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2727) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **xpansion**: support `adequacy_criterion` option inside slurm launcher [`2734`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2734)
+* **area**: rename some models [`2695`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2695) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **ui**: add filename to delete confirmation dialogs [`2728`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2728)
+* **ui-studies**: move favorites studies from Studies sidenav to main app sidebar [`2730`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2730)
+* **ui-studies**: make search field manual [`2739`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2739)
+* **study_editor**: added study author and editor in study metadata [`2749`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2749)
+* **ui-studies**: add study editor field display [`2755`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2755)
+* **editor**: updating editor name when modifying file studies [`2700`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2700)
+* **ui-launcher**: add `adequacyCriterions` field [`2757`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2757)
+
+### Bug fixes
+
+* **bc**: fix a bug when creating new bc [`2699`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2699)
+* **ui-matrix**: enable temporal filters for matrices with fixed column names [`2709`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2709)
+* **ui-studies**: minor changes on launch dialog [`2716`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2716)
+* **ui-tasks**: bug admin tasks invisible [`2721`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2721)
+* **study**: bug deleting raw study with variants [`2720`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2720)
+* **upgrade**: allow version to be given as 9.2 instead of 920 [`2725`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2725)
+* **desktop**: re-enable watcher config [`2731`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2731)
+* **xpansion**: rollback default value for max_iteration [`2733`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2733)
+* **commands**: use impersonator instead of id for `user_id` attribute [`2735`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2735)
+* **launcher**: change cmd line for local launcher with v9.3 [`2732`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2732)
+* **output**: remove zipped output after unarchiving for all studies [`2736`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2736)
+* **ui-study**: variant not visible after creation [`2729`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2729)
+* **launcher**: remove duplicate launcher id argument and fix API call [`2738`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2738)
+* **output**: allow aggregation with columns mismatch [`2718`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2718) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **launcher**: fix arguments handling in local launcher [`2741`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2741)
+* **worker**: fix archive worker startup [`2748`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2748)
+* **adequacy-criterion**: fix simulation calls [`2764`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2764)
+
+### Refactorings
+
+* **user**: introduce dao for user commands [`2692`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2692)
+* **ui-common**:  improve `SplitView` prop naming and fix decimal precision in localStorage [`2693`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2693)
+* **scenario_builder**: introduce dao [`2719`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2719)
+* **ui-studies**: update launch dialog [`2746`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2746)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.24.0...v2.25.0
+
 v2.24.0 (2025-09-08)
 --------------------
 

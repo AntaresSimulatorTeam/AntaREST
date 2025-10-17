@@ -763,8 +763,8 @@ class TestSnapshotGenerator:
             workspace="default",
             path=str(study_dir),
             version="860",
-            created_at=datetime.datetime.utcnow(),
-            updated_at=datetime.datetime.utcnow(),
+            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             additional_data=StudyAdditionalData(author="john.doe"),
             owner_id=jwt_user.id,
         )
@@ -1125,7 +1125,9 @@ class TestSnapshotGenerator:
         )
 
         err_msg = (
-            f"Failed to generate variant study {variant_study.id}: Area 'North' already exists and could not be created"
+            f"Failed to generate variant study {variant_study.id}: "
+            f"Unexpected exception occurred when trying to apply command CommandName.CREATE_AREA: "
+            f"Area 'North' already exists and could not be created"
         )
         with pytest.raises(VariantGenerationError, match=re.escape(err_msg)):
             generator.generate_snapshot(

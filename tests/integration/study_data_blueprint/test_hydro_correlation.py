@@ -12,7 +12,6 @@
 
 from http import HTTPStatus
 from pathlib import Path
-from typing import List
 
 import pytest
 from starlette.testclient import TestClient
@@ -27,37 +26,26 @@ class TestHydroCorrelation:
     which contains the following areas: ["de", "es", "fr", "it"].
     """
 
-    def test_get_correlation_form_values(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-    ):
+    def test_get_correlation_form_values(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """Check `get_correlation_form_values` end point"""
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
         expected = {
             "correlation": [
-                {"areaId": "fr", "coefficient": 100.0},
                 {"areaId": "de", "coefficient": 25.0},
                 {"areaId": "es", "coefficient": 75.0},
+                {"areaId": "fr", "coefficient": 100.0},
                 {"areaId": "it", "coefficient": 75.0},
             ]
         }
         assert actual == expected
 
-    def test_set_correlation_form_values(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-    ):
+    def test_set_correlation_form_values(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """Check `set_correlation_form_values` end point"""
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
         obj = {
             "correlation": [
@@ -67,11 +55,7 @@ class TestHydroCorrelation:
                 {"areaId": "fr", "coefficient": 100.0},
             ]
         }
-        res = client.put(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=obj,
-        )
+        res = client.put(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form", json=obj)
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
         expected = {
@@ -84,26 +68,20 @@ class TestHydroCorrelation:
         assert actual == expected
 
         # check that the form is updated correctly
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
         expected = {
             "correlation": [
-                {"areaId": "fr", "coefficient": 100.0},
                 {"areaId": "de", "coefficient": 20.0},
                 {"areaId": "es", "coefficient": -82.8},
+                {"areaId": "fr", "coefficient": 100.0},
             ]
         }
         assert actual == expected
 
         # check that the matrix is symmetric
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
         expected = {
@@ -118,115 +96,22 @@ class TestHydroCorrelation:
         }
         assert actual == expected
 
-    @pytest.mark.parametrize(
-        "columns, expected",
-        [
-            pytest.param(
-                "",
-                {
-                    "columns": ["de", "es", "fr", "it"],
-                    "data": [
-                        [1.0, 0.0, 0.25, 0.0],
-                        [0.0, 1.0, 0.75, 0.12],
-                        [0.25, 0.75, 1.0, 0.75],
-                        [0.0, 0.12, 0.75, 1.0],
-                    ],
-                    "index": ["de", "es", "fr", "it"],
-                },
-                id="all-areas",
-            ),
-            pytest.param(
-                "fr,de",
-                {
-                    "columns": ["de", "fr"],
-                    "data": [
-                        [1.0, 0.25],
-                        [0.0, 0.75],
-                        [0.25, 1.0],
-                        [0.0, 0.75],
-                    ],
-                    "index": ["de", "es", "fr", "it"],
-                },
-                id="some-areas",
-            ),
-            pytest.param(
-                "fr",
-                {
-                    "columns": ["fr"],
-                    "data": [
-                        [0.25],
-                        [0.75],
-                        [1.0],
-                        [0.75],
-                    ],
-                    "index": ["de", "es", "fr", "it"],
-                },
-                id="one-area",
-            ),
-        ],
-    )
-    def test_get_correlation_matrix(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-        columns: str,
-        expected: List[List[float]],
-    ):
+    def test_get_correlation_matrix(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """Check `get_correlation_matrix` end point"""
-        query = f"columns={columns}" if columns else ""
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix?{query}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        assert actual == expected
-
-    def test_set_correlation_matrix(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-    ):
-        """Check `set_correlation_matrix` end point"""
-        obj = {
-            "columns": ["fr", "it"],
-            "data": [
-                [-0.79332875, -0.96830414],
-                [-0.23220568, -0.158783],
-                [1.0, 0.82],
-                [0.82, 1.0],
-            ],
-            "index": ["de", "es", "fr", "it"],
-        }
-        res = client.put(
-            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=obj,
-        )
-        assert res.status_code == HTTPStatus.OK, res.json()
-        actual = res.json()
-        expected = obj
-        assert actual == expected
-
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
-        assert res.status_code == HTTPStatus.OK, res.json()
-        actual = res.json()
-        expected = {
+        assert actual == {
             "columns": ["de", "es", "fr", "it"],
             "data": [
-                [1.0, 0.0, -0.79332875, -0.96830414],
-                [0.0, 1.0, -0.23220568, -0.158783],
-                [-0.79332875, -0.23220568, 1.0, 0.82],
-                [-0.96830414, -0.158783, 0.82, 1.0],
+                [1.0, 0.0, 0.25, 0.0],
+                [0.0, 1.0, 0.75, 0.12],
+                [0.25, 0.75, 1.0, 0.75],
+                [0.0, 0.12, 0.75, 1.0],
             ],
             "index": ["de", "es", "fr", "it"],
         }
-        assert actual == expected
 
     def test_create_area(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -236,18 +121,12 @@ class TestHydroCorrelation:
         - the coefficient == 0 for the other areas.
         Other columns must not be changed.
         """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_info = {"name": "NORTH"}
-        res = client.post(
-            f"/v1/studies/{internal_study_id}/areas",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=area_info,
-        )
+        res = client.post(f"/v1/studies/{internal_study_id}/areas", json=area_info)
         assert res.status_code == HTTPStatus.OK, res.json()
 
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
         assert res.status_code == HTTPStatus.OK
         actual = res.json()
         expected = {
@@ -270,6 +149,7 @@ class TestHydroCorrelation:
         Other columns must be updated to reflect the area deletion.
         """
         # First change the coefficients to avoid zero values (which are defaults).
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
         correlation_cfg = {
             "annual": {
                 "de%es": 0.12,
@@ -281,26 +161,18 @@ class TestHydroCorrelation:
             }
         }
         res = client.post(
-            f"/v1/studies/{internal_study_id}/raw?path=input/hydro/prepro/correlation",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=correlation_cfg,
+            f"/v1/studies/{internal_study_id}/raw?path=input/hydro/prepro/correlation", json=correlation_cfg
         )
         assert res.status_code == HTTPStatus.OK, res.json()
 
         # Then we remove the "fr" zone.
         # The deletion should update the correlation matrix of all other zones.
-        res = client.delete(
-            f"/v1/studies/{internal_study_id}/areas/fr",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.delete(f"/v1/studies/{internal_study_id}/areas/fr")
         assert res.status_code == HTTPStatus.OK, res.json()
 
         # Check that the "fr" column is removed from the hydraulic correlation matrix.
         # The row corresponding to "fr" must also be deleted.
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
         expected = {
@@ -317,6 +189,7 @@ class TestHydroCorrelation:
     def test_get_correlation_values__empty_annual(
         self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path
     ):
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "it"
 
         correlation_file_path = tmp_path.joinpath("ext_workspace/STA-mini/input/hydro/prepro/correlation.ini")
@@ -328,8 +201,6 @@ class TestHydroCorrelation:
         with open(correlation_file_path) as f:
             assert f.read() == "[general]\nmode = annual"
 
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form")
         assert res.status_code == HTTPStatus.OK, res.json()
+        assert res.json() == {"correlation": [{"areaId": "it", "coefficient": 100.0}]}

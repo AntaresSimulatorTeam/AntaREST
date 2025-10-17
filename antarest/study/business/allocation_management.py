@@ -10,109 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Union
 
-import numpy as np
-from annotated_types import Len
-from pydantic import ConfigDict, ValidationInfo, field_validator, model_validator
-from typing_extensions import Annotated, override
-
-from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
-from antarest.core.serde.np_array import NpArray
-from antarest.study.business.model.area_model import Area
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationMatrix
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import FormFieldsBaseModel
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-class AllocationField(FormFieldsBaseModel):
-    """Model for consumption coefficients of a given area."""
-
-    area_id: str
-    coefficient: float
-
-
-class AllocationFormFields(FormFieldsBaseModel):
-    """Model for a list of consumption coefficients for each area."""
-
-    allocation: List[AllocationField]
-
-    @model_validator(mode="after")
-    def check_allocation(self) -> "AllocationFormFields":
-        allocation = self.allocation
-
-        if not allocation:
-            raise ValueError("allocation must not be empty")
-
-        if len(allocation) != len({a.area_id for a in allocation}):
-            raise ValueError("allocation must not contain duplicate area IDs")
-
-        for a in allocation:
-            if np.isnan(a.coefficient):
-                raise ValueError("allocation must not contain NaN coefficients")
-
-        if all(a.coefficient == 0 for a in allocation):
-            raise ValueError("at least one allocation coefficient must be non-zero")
-
-        if sum(a.coefficient for a in allocation) <= 0:
-            raise ValueError("sum of coefficients must be positive")
-
-        return self
-
-
-class AllocationMatrix(FormFieldsBaseModel):
-    """
-    Hydraulic allocation matrix.
-    index: List of all study areas
-    columns: List of selected production areas
-    data: 2D-array matrix of consumption coefficients
-    """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    index: Annotated[List[str], Len(min_length=1)]
-    columns: Annotated[List[str], Len(min_length=1)]
-    data: NpArray
-
-    # noinspection PyMethodParameters
-    @field_validator("data", mode="before")
-    def validate_hydro_allocation_matrix(
-        cls, data: NpArray, values: Union[Dict[str, List[str]], ValidationInfo]
-    ) -> NpArray:
-        """
-        Validate the hydraulic allocation matrix.
-        Args:
-            data: the allocation matrix to validate.
-            values: the allocation matrix fields.
-        Raises:
-            ValueError:
-                If the coefficients columns are empty or has no non-null values.
-        Returns:
-            The allocation fields.
-        """
-
-        array = np.array(data)
-        new_values = values if isinstance(values, dict) else values.data
-        rows = len(new_values.get("index", []))
-        cols = len(new_values.get("columns", []))
-
-        if array.size == 0:
-            raise ValueError("allocation matrix must not be empty")
-        if array.shape != (rows, cols):
-            raise ValueError("allocation matrix must have square shape")
-        if np.any(np.isnan(array)):
-            raise ValueError("allocation matrix must not contain NaN coefficients")
-        if np.all(array == 0):
-            raise ValueError("allocation matrix must not contain only null values")
-
-        return data
-
-    @override
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, AllocationMatrix):
-            return NotImplemented
-        return self.index == other.index and self.columns == other.columns and np.array_equal(self.data, other.data)
 
 
 class AllocationManager:
@@ -123,138 +25,16 @@ class AllocationManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_allocation_data(self, study: StudyInterface, area_id: str) -> Dict[str, float]:
-        """
-        Get hydraulic allocation data.
+    def get_allocation_for_area(self, study: StudyInterface, area_id: str) -> HydroAllocation:
+        return study.get_study_dao().get_hydro_allocation(area_id)
 
-        Args:
-            study: study to get the allocation data from.
-            area_id: area to get the allocation data from.
-
-        Returns:
-            The allocation data.
-
-        Raises:
-            AllocationDataNotFound: if the allocation data is not found.
-        """
-        # sourcery skip: reintroduce-else, swap-if-else-branches, use-named-expression
-
-        file_study = study.get_files()
-        allocation_data = file_study.tree.get(f"input/hydro/allocation/{area_id}".split("/"), depth=2)
-
-        if not allocation_data:
-            raise AllocationDataNotFound(area_id)
-
-        # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
-        return allocation_data.get("[allocation]", allocation_data.get("allocation", {}))  # type: ignore
-
-    def get_allocation_form_fields(
-        self, all_areas: List[Area], study: StudyInterface, area_id: str
-    ) -> AllocationFormFields:
-        """
-        Get hydraulic allocation coefficients.
-
-        Args:
-            all_areas: list of all areas in the study.
-            study: study to get the allocation coefficients from.
-            area_id: area to get the allocation coefficients from.
-
-        Returns:
-            The allocation coefficients.
-
-        Raises:
-            AllocationDataNotFound: if the allocation data is not found.
-        """
-
-        areas_ids = {area.id for area in all_areas}
-        allocations: Dict[str, float] = self.get_allocation_data(study, area_id)
-
-        filtered_allocations = {area: value for area, value in allocations.items() if area in areas_ids}
-        final_allocations = [
-            AllocationField.model_construct(area_id=area, coefficient=value)
-            for area, value in filtered_allocations.items()
-        ]
-        return AllocationFormFields.model_validate({"allocation": final_allocations})
-
-    def set_allocation_form_fields(
-        self,
-        all_areas: List[Area],
-        study: StudyInterface,
-        area_id: str,
-        data: AllocationFormFields,
-    ) -> AllocationFormFields:
-        """
-        Set hydraulic allocation coefficients.
-
-        Args:
-            all_areas: list of all areas in the study.
-            study: study to set the allocation coefficients to.
-            area_id: area to set the allocation coefficients to.
-            data: allocation coefficients to set.
-
-        Raises:
-            AreaNotFound: if the area is not found.
-        """
-
-        allocation_ids = {field.area_id for field in data.allocation}
-        areas_ids = {area.id for area in all_areas}
-
-        if invalid_ids := allocation_ids - areas_ids:
-            # sort for deterministic error message and testing
-            raise AreaNotFound(*sorted(invalid_ids))
-
-        filtered_allocations = [f for f in data.allocation if f.area_id in areas_ids]
-
-        command = UpdateConfig(
-            target=f"input/hydro/allocation/{area_id}/[allocation]",
-            data={f.area_id: f.coefficient for f in filtered_allocations},
-            command_context=self._command_context,
-            study_version=study.version,
+    def set_allocation_for_area(self, study: StudyInterface, area_id: str, data: HydroAllocation) -> HydroAllocation:
+        command = ReplaceHydroAllocation(
+            command_context=self._command_context, study_version=study.version, area_id=area_id, allocation=data
         )
-
         study.add_commands([command])
+        return data
 
-        updated_allocations = self.get_allocation_data(study, area_id)
-
-        return AllocationFormFields.model_construct(
-            allocation=[
-                AllocationField.model_construct(area_id=area, coefficient=value)
-                for area, value in updated_allocations.items()
-            ]
-        )
-
-    def get_allocation_matrix(self, study: StudyInterface, all_areas: List[Area]) -> AllocationMatrix:
-        """
-        Get the hydraulic allocation matrix for all areas in the study.
-
-        Args:
-            study: study to get the allocation matrix from.
-            all_areas: list of all areas in the study.
-
-        Returns:
-            The allocation matrix.
-
-        Raises:
-            AllocationDataNotFound: if the allocation data is not found.
-        """
-
-        file_study = study.get_files()
-        allocation_cfg = file_study.tree.get(["input", "hydro", "allocation"], depth=3)
-
-        if not allocation_cfg:
-            areas_ids = {area.id for area in all_areas}
-            raise AllocationDataNotFound(*areas_ids)
-
-        rows = [area.id for area in all_areas]
-        columns = [area.id for area in all_areas if area.id in allocation_cfg]
-        array = np.zeros((len(rows), len(columns)), dtype=np.float64)
-
-        for prod_area, allocation_dict in allocation_cfg.items():
-            # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
-            allocations = allocation_dict.get("[allocation]", allocation_dict.get("allocation", {}))
-            for cons_area, coefficient in allocations.items():
-                row_idx = rows.index(cons_area)
-                col_idx = columns.index(prod_area)
-                array[row_idx][col_idx] = coefficient
-
-        return AllocationMatrix.model_construct(index=rows, columns=columns, data=array)
+    def get_allocation_matrix(self, study: StudyInterface) -> HydroAllocationMatrix:
+        allocation_matrix_as_dict = study.get_study_dao().get_hydro_allocation_matrix()
+        return HydroAllocationMatrix.from_hydro_allocations(allocation_matrix_as_dict)

@@ -288,7 +288,7 @@ class SimpleSyncTaskService(ITaskService):
             name="mock",
             owner=None,
             status=TaskStatus.COMPLETED,
-            creation_date_utc=datetime.datetime.now().isoformat(" "),
+            creation_date_utc=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(" "),
             completion_date_utc=None,
             result=None,
             logs=None,

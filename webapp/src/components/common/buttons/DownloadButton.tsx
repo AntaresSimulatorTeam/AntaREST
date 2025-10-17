@@ -13,7 +13,7 @@
  */
 
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import SplitButton, { type SplitButtonProps } from "./SplitButton";
+import SplitButton, { type Options } from "./SplitButton";
 import { useState } from "react";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { useTranslation } from "react-i18next";
@@ -26,18 +26,18 @@ export type DownloadButtonProps<OptionValue extends string> = {
   disabled?: boolean;
 } & (
   | {
-      formatOptions: SplitButtonProps<OptionValue>["options"];
-      onClick?: (format: OptionValue) => PromiseAny | unknown;
+      options: Options<OptionValue>;
+      onClick?: (value: OptionValue) => PromiseAny | unknown;
     }
   | {
-      formatOptions?: undefined;
-      onClick?: (format?: undefined) => PromiseAny | unknown;
+      options?: undefined;
+      onClick?: (value?: undefined) => PromiseAny | unknown;
     }
 );
 
 function DownloadButton<OptionValue extends string>(props: DownloadButtonProps<OptionValue>) {
   const { t } = useTranslation();
-  const { disabled, formatOptions, onClick, children: label = t("global.export") } = props;
+  const { disabled, options, onClick, children: label = t("global.export") } = props;
   const [isDownloading, setIsDownloading] = useState(false);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
@@ -57,15 +57,15 @@ function DownloadButton<OptionValue extends string>(props: DownloadButtonProps<O
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async (format?: OptionValue) => {
+  const handleDownload = async (value?: OptionValue) => {
     setIsDownloading(true);
 
     try {
-      if (formatOptions) {
-        if (!format) {
-          throw new Error("No format selected");
+      if (options) {
+        if (!value) {
+          throw new Error("No value selected");
         }
-        await onClick?.(format);
+        await onClick?.(value);
       } else {
         await onClick?.();
       }
@@ -80,11 +80,11 @@ function DownloadButton<OptionValue extends string>(props: DownloadButtonProps<O
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return formatOptions ? (
+  return options ? (
     <SplitButton
       {...btnProps}
-      options={formatOptions}
-      onClick={(format) => handleDownload(format)}
+      options={options}
+      onClick={handleDownload}
       ButtonProps={loadingBtnProps}
     >
       {label}

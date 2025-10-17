@@ -37,29 +37,11 @@ function Fieldset(props: FieldsetProps) {
           m: 0,
           p: 0,
           pb: 3,
-          "> .MuiBox-root": {
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 2,
-            // Ignore RadioGroupFE and its children
-            ".MuiFormControl-root:not(:has(> .MuiRadioGroup-root)):not(.MuiRadioGroup-root *), .FieldSkeleton":
-              {
-                width: fullFieldWidth ? 1 : fieldWidth,
-                m: 0,
-                // SwitchFE
-                ".MuiFormControlLabel-root": {
-                  pl: 1.5,
-                },
-              },
-            ".MuiAutocomplete-root": {
-              width: fullFieldWidth ? 1 : fieldWidth,
-            },
-          },
-          // Increase padding from the last child
+          // Increase padding from the last Fieldset child inside a Form
           ".Form__Content > &:last-child": {
             pb: 2,
           },
-          // Remove padding from the last child of the dialog content
+          // Remove padding from the last Fieldset child inside a Form that is inside a dialog content
           ".MuiDialogContent-root .Form__Content > &:last-child": {
             pb: 0,
           },
@@ -73,7 +55,31 @@ function Fieldset(props: FieldsetProps) {
           <Divider sx={{ mt: 1 }} />
         </>
       )}
-      <Box {...contentProps} sx={mergeSxProp({ pt: legend ? 3 : 1 }, contentProps?.sx)}>
+      <Box
+        {...contentProps}
+        sx={mergeSxProp(
+          {
+            pt: legend ? 3 : 1,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            // Ignore RadioGroupFE and its children, and FieldSkeleton
+            ".MuiFormControl-root:not(:has(> .MuiRadioGroup-root)):not(.MuiRadioGroup-root *), .FieldSkeleton":
+              {
+                width: fullFieldWidth ? 1 : fieldWidth,
+                m: 0,
+                // SwitchFE
+                ".MuiFormControlLabel-root": {
+                  pl: 1.5,
+                },
+              },
+            ".MuiAutocomplete-root": {
+              width: fullFieldWidth ? 1 : fieldWidth,
+            },
+          },
+          contentProps?.sx,
+        )}
+      >
         {children}
       </Box>
     </Box>
