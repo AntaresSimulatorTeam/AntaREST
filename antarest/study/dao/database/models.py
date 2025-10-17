@@ -21,11 +21,8 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Table, UniqueConstra
 
 from antarest.dbmodel import Base
 
-# Use the same metadata as the ORM Base to ensure foreign key references work correctly
-# This allows the area table to reference the study table defined in ORM
 metadata = Base.metadata
 
-# Area table: stores basic area information for database-backed studies
 area = Table(
     "area",
     metadata,
@@ -35,7 +32,6 @@ area = Table(
     UniqueConstraint("study_id", "area_id", name="uq_area_study_id_area_id"),
 )
 
-# AreaUI table: stores UI positioning and styling for areas across different layers
 # Relation: One area can have multiple UI configurations (one per layer)
 area_ui = Table(
     "area_ui",
