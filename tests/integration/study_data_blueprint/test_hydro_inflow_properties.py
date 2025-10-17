@@ -100,7 +100,7 @@ class TestHydroInflowProperties:
         res = client.get(f"/v1/studies/{variant_id}/commands")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        assert len(actual) == 2
+        assert len(actual) == 1
         expected = {
             "id": ANY,
             "action": "update_inflow_structure",
@@ -109,7 +109,7 @@ class TestHydroInflowProperties:
             "updated_at": ANY,
             "user_name": ANY,
         }
-        assert actual[1] == expected
+        assert actual[0] == expected
 
     def test_update_inflow_structure__invalid_values(
         self,
