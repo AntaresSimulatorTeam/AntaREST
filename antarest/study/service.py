@@ -55,6 +55,7 @@ from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.json import from_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
@@ -76,6 +77,7 @@ from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
@@ -233,6 +235,19 @@ class StudySettingsDTO(AntaresBaseModel):
     optimization: OptimizationPreferences
     thematic_trimming: ThematicTrimming
     playlist: Playlist
+
+
+class XpansionConstraintSign(EnumIgnoreCase):
+    LESS_OR_EQUAL = "less_or_equal"
+    GREATER_OR_EQUAL = "greater_or_equal"
+    EQUAL = "equal"
+
+
+class XpansionConstraint(AntaresBaseModel):
+    name: str
+    sign: XpansionConstraintSign
+    right_hand_side: float
+    candidates_coefficients: dict[str, float] = {}
 
 
 class StudyXpansionDTO(AntaresBaseModel):
@@ -2565,15 +2580,20 @@ class StudyService:
         try:
             xpansion_settings = self.get_xpansion_settings(uuid)
             if xpansion_settings.additional_constraints:
-                xpansion_constraints = self.xpansion_manager.get_resource_content(
+                xpansion_constraint = self.xpansion_manager.get_resource_content(
                     study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
                 )
+                assert isinstance(xpansion_constraint, bytes)
             else:
-                xpansion_constraints = b""
+                xpansion_constraint = b""
+
+            constraint_as_dict = from_json(xpansion_constraint)
+            constraint = next(iter(constraint_as_dict.values()))
+
             xpansion = {
                 "settings": xpansion_settings,
                 "candidates": self.xpansion_manager.get_candidates(study_interface),
-                "constraint": xpansion_constraints,
+                "constraint": constraint,
             }
 
         except ChildNotFoundError:
