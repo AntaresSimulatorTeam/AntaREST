@@ -121,7 +121,7 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
         This method returns an empty string for now.
 
         Returns:
-            Empty string (comments not supported in database mode yet).
+            Empty string.
         """
         return ""
 
@@ -131,10 +131,9 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
         Save study comments.
 
         Note: Comments are not yet stored in database for database-mode studies.
-        This method is a no-op for now.
 
         Args:
-            comments: The comments to save (ignored).
+            comments: The comments to save.
         """
         pass
 
