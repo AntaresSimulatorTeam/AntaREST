@@ -264,7 +264,7 @@ class Study(Base):
                   The actual implementation of study archival may depend on the type of study. Currently,
                   only managed raw studies may be archived.
         storage_mode: The storage mode for study data. Either FILESYSTEM (traditional file-based storage)
-                      or DATABASE (database-based storage for areas and related entities). Defaults to FILESYSTEM.
+                      or DATABASE. Defaults to FILESYSTEM.
     """
 
     __tablename__ = "study"
