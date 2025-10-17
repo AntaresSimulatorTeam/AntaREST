@@ -32,11 +32,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 
 class DatabaseAreaDao(AreaDao):
     """
-    Database implementation of AreaDao using SQLAlchemy Core.
-
-    This is an abstract mixin that must be combined with a class that implements
-    get_study_id() and get_session() (like DatabaseStudyDao).
-    It follows the same pattern as FileStudyAreaDao.
+    Database implementation of AreaDao
     """
 
     @abstractmethod
