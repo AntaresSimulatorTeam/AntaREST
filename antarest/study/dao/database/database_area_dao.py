@@ -205,7 +205,7 @@ class DatabaseAreaDao(AreaDao):
             session.flush()
 
             # Get the inserted area ID
-            new_area_id = result.inserted_primary_key[0]
+            new_area_id = result.lastrowid
 
             # Create default UI for layer "0"
             stmt_ui = insert(area_ui).values(
