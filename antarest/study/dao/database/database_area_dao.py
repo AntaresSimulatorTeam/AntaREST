@@ -204,7 +204,7 @@ class DatabaseAreaDao(AreaDao):
             stmt_area = insert(area).values(study_id=study_id, area_id=area_id)
             # Cast to CursorResult to access inserted_primary_key attribute
             # (locally mypy infers CursorResult, but CI with type stubs requires explicit cast)
-            result = cast(CursorResult[Any], session.execute(stmt_area))  # type: ignore
+            result = cast(CursorResult[Any], session.execute(stmt_area))  # type: ignore[redundant-cast, unused-ignore]
             session.flush()
 
             new_area_id = result.inserted_primary_key[0]
