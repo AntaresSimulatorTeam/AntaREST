@@ -385,18 +385,18 @@ class LaunchConfigDTO(AntaresBaseModel):
             if self.min_antares_version > self.max_antares_version:
                 raise ValueError("min_antares_version cannot be greater than max_antares_version")
 
-        requires_version_9_2 = (
+        is_min_version_9_2 = (
             self.min_antares_version is not None and self.min_antares_version >= MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS
         )
 
         # linear_solver_param_optim_* only valid for >= 9.2
-        if self.linear_solver_param_optim_1 and not requires_version_9_2:
+        if self.linear_solver_param_optim_1 and not is_min_version_9_2:
             raise ValueError(
                 "linear_solver_param_optim_1 is not supported before Antares version 9.2 "
                 f"(got {self.min_antares_version})"
             )
 
-        if self.linear_solver_param_optim_2 and not requires_version_9_2:
+        if self.linear_solver_param_optim_2 and not is_min_version_9_2:
             raise ValueError(
                 "linear_solver_param_optim_2 is not supported before Antares version 9.2 "
                 f"(got {self.min_antares_version})"
@@ -482,33 +482,21 @@ class LaunchConfigModel(Base):
         param_optim_1 = None
         if self.linear_solver_param_optim_1 is not None:
             try:
-                param_optim_1 = (
-                    json.loads(self.linear_solver_param_optim_1)
-                    if isinstance(self.linear_solver_param_optim_1, str)
-                    else self.linear_solver_param_optim_1
-                )
+                param_optim_1 = json.loads(self.linear_solver_param_optim_1)
             except Exception as e:
                 raise ValueError(f"Failed to parse linear_solver_param_optim_1: {e}") from e
 
         param_optim_2 = None
         if self.linear_solver_param_optim_2 is not None:
             try:
-                param_optim_2 = (
-                    json.loads(self.linear_solver_param_optim_2)
-                    if isinstance(self.linear_solver_param_optim_2, str)
-                    else self.linear_solver_param_optim_2
-                )
+                param_optim_2 = json.loads(self.linear_solver_param_optim_2)
             except Exception as e:
                 raise ValueError(f"Failed to parse linear_solver_param_optim_2: {e}") from e
 
         param = None
         if self.linear_solver_param is not None:
             try:
-                param = (
-                    json.loads(self.linear_solver_param)
-                    if isinstance(self.linear_solver_param, str)
-                    else self.linear_solver_param
-                )
+                param = json.loads(self.linear_solver_param)
             except Exception as e:
                 raise ValueError(f"Failed to parse linear_solver_param: {e}") from e
 
@@ -572,23 +560,23 @@ def apply_update_launcher_config(
     )
 
 
-def is_launcher_config_compatible(
+def is_version_covered_by_config(
     launcher_config: LaunchConfigDTO,
-    study_version: StudyVersion,
+    solver_version: SolverVersion,
 ) -> bool:
     """
-    Check if the given launcher configuration is compatible with the specified Antares study version.
+    Check if the given launch configuration is compatible with the specified Antares study version.
 
-    :param launcher_config: The launcher configuration to check.
+    :param launcher_config: The launch configuration to check.
     :param study_version: The Antares study version to check against.
     :return: True if the configuration is compatible, False otherwise.
     """
     if launcher_config.min_antares_version:
-        if study_version < launcher_config.min_antares_version:
+        if solver_version < launcher_config.min_antares_version:
             return False
 
     if launcher_config.max_antares_version:
-        if study_version > launcher_config.max_antares_version:
+        if solver_version > launcher_config.max_antares_version:
             return False
 
     return True

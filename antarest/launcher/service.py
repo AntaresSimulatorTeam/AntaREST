@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, cast
 from uuid import UUID, uuid4
 
-from antares.study.version import SolverVersion, StudyVersion
+from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
 from antarest.core.config import Config, InvalidConfigurationError
@@ -55,8 +55,7 @@ from antarest.launcher.model import (
     LogType,
     XpansionParametersDTO,
     apply_update_launcher_config,
-    is_launcher_config_compatible,
-    overwrite_params_other_options_with_config,
+    is_version_covered_by_config,
 )
 from antarest.launcher.repository import JobResultRepository, LaunchConfigRepository
 from antarest.login.service import LoginService
@@ -64,7 +63,6 @@ from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
 logger = logging.getLogger(__name__)
@@ -264,22 +262,20 @@ class LauncherService:
         launcher: str,
         launcher_parameters: LauncherParametersDTO,
         launcher_configuration_id: Optional[str] = None,
-        study_version: Optional[str] = None,
+        version: Optional[str] = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid)
-        solver_version = SolverVersion.parse(study_version or study_info.version)
+        solver_version = SolverVersion.parse(version or study_info.version)
 
         if launcher_configuration_id is not None:
             launcher_config = self.get_launcher_config(launcher_configuration_id)
-            if not is_launcher_config_compatible(
-                launcher_config, StudyVersion.parse(study_version or study_info.version)
-            ):
+            if not is_version_covered_by_config(launcher_config, solver_version):
                 raise IncompatibleLaunchConfig("Launcher configuration is not compatible with study version")
             if launcher_parameters.other_options:
                 raise IncompatibleLaunchConfig("Cannot use other_options when a launcher configuration is specified")
-            overwrite_params_other_options_with_config(launcher_parameters, launcher_config)
+            launcher_parameters.other_options = launcher_config.other_options
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
@@ -715,15 +711,15 @@ class LauncherService:
         }
         return launch_progress_json.get("progress", 0)
 
-    def create_launcher_config(self, launcher_config_creation: LaunchConfigDTO) -> LaunchConfigDTO:
+    def create_launcher_config(self, launch_config_creation: LaunchConfigDTO) -> LaunchConfigDTO:
         """
         Create a new launcher configuration using LauncherParametersDTO.
         """
         with db():
-            launcher_config_creation.id = transform_name_to_id(launcher_config_creation.name)
-            if self.launcher_config_repository.exists(launcher_config_creation.id):
-                raise BadLaunchConfigInput(f"A configuration with id '{launcher_config_creation.id}' already exists.")
-            launcher_config = LaunchConfigModel.from_dto(launcher_config_creation)  # validate dto
+            if launch_config_creation.id and self.launcher_config_repository.exists(launch_config_creation.id):
+                raise BadLaunchConfigInput(f"A configuration with id '{launch_config_creation.id}' already exists.")
+            launch_config_creation.id = str(uuid4())
+            launcher_config = LaunchConfigModel.from_dto(launch_config_creation)  # validate dto
             config = self.launcher_config_repository.save(launcher_config)
             return config.to_dto()
 
@@ -745,7 +741,7 @@ class LauncherService:
             configs = self.launcher_config_repository.get_all()
             return [config.to_dto() for config in configs]
 
-    def update_launcher_config(self, configuration_id: str, launcher_config_update: LaunchConfigDTO) -> LaunchConfigDTO:
+    def update_launcher_config(self, configuration_id: str, launch_config_update: LaunchConfigDTO) -> LaunchConfigDTO:
         """
         Update an existing launcher configuration using LauncherParametersDTO.
         """
@@ -754,7 +750,7 @@ class LauncherService:
             if not launcher_config:
                 raise LaunchConfigNotFound(configuration_id)
             # Update only the fields that are provided in the update DTO
-            updated_launcher_config = apply_update_launcher_config(launcher_config, launcher_config_update)
+            updated_launcher_config = apply_update_launcher_config(launcher_config, launch_config_update)
             config = self.launcher_config_repository.save(updated_launcher_config)
             if not config:
                 raise ValueError("Failed to update launcher configuration")

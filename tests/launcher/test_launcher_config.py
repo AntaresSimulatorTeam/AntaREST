@@ -1,7 +1,12 @@
 import pytest
+from pydantic_core import ValidationError
 
-from antarest.launcher.model import BadLaunchConfigInput, LaunchConfigDTO
-from antarest.study.model import STUDY_VERSION_9_1, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+from antarest.launcher.adapters.local_launcher.local_launcher import (
+    SOLVER_VERSION_8_8,
+    SOLVER_VERSION_9_2,
+    SOLVER_VERSION_9_3,
+)
+from antarest.launcher.model import LaunchConfigDTO
 
 
 def mkconfig(**kwargs):
@@ -16,7 +21,7 @@ def mkconfig(**kwargs):
             "linear_solver_param": None,
             "linear_solver_param_optim_1": None,
             "linear_solver_param_optim_2": None,
-            "min_antares_version": STUDY_VERSION_9_2,
+            "min_antares_version": SOLVER_VERSION_9_2,
             **kwargs,
         }
     )
@@ -24,7 +29,7 @@ def mkconfig(**kwargs):
 
 def test_basic_xpress_solver_only():
     config = mkconfig()
-    assert config.other_options == "--solver=xpress"
+    assert config.other_options == "solver=xpress"
 
 
 def test_xpress_nobasis_flags():
@@ -34,12 +39,12 @@ def test_xpress_nobasis_flags():
     )
     result = config.other_options
     # order should be deterministic
-    assert result == "--solver=xpress --nobasis1 --nobasis2"
+    assert result == "solver=xpress nobasis1 nobasis2"
 
 
 def test_xpress_single_nobasis1():
     config = mkconfig(use_optim_1_basis_next_week=False)
-    assert config.other_options == "--solver=xpress --nobasis1"
+    assert config.other_options == "solver=xpress nobasis1"
 
 
 def test_xpress_with_common_params():
@@ -47,8 +52,8 @@ def test_xpress_with_common_params():
         linear_solver_param=[("THREADS", 4), ("FEASTOL", 1)],
     )
     result = config.other_options
-    assert '--param-optim1="THREADS 4 FEASTOL 1"' in result
-    assert '--param-optim2="THREADS 4 FEASTOL 1"' in result
+    assert 'param-optim1="THREADS 4 FEASTOL 1"' in result
+    assert 'param-optim2="THREADS 4 FEASTOL 1"' in result
 
 
 def test_xpress_combined_common_and_specific_params():
@@ -58,14 +63,14 @@ def test_xpress_combined_common_and_specific_params():
         linear_solver_param_optim_2=[("MIPRELSTOP", 0.01)],
     )
     result = config.other_options
-    assert '--param-optim1="THREADS 4 PRESOLVE 1"' in result, "common + optim1 combined"
-    assert '--param-optim2="THREADS 4 MIPRELSTOP 0.01"' in result, "common + optim2 combined"
+    assert 'param-optim1="THREADS 4 PRESOLVE 1"' in result, "common + optim1 combined"
+    assert 'param-optim2="THREADS 4 MIPRELSTOP 0.01"' in result, "common + optim2 combined"
 
 
 def test_presolve_detected_in_optim2_only():
     config = mkconfig(linear_solver_param_optim_2=[("PRESOLVE", 100), ("THREADS", 2)])
     result = config.other_options
-    assert result == '--solver=xpress --param-optim2="PRESOLVE 100 THREADS 2"'
+    assert result == 'solver=xpress param-optim2="PRESOLVE 100 THREADS 2"'
 
 
 def test_valid_config_minimal():
@@ -76,22 +81,22 @@ def test_valid_config_minimal():
 
 
 def test_name_cannot_be_empty():
-    with pytest.raises(BadLaunchConfigInput, match="name cannot be empty"):
+    with pytest.raises(ValidationError, match="name cannot be empty"):
         LaunchConfigDTO(name="   ", linear_solver="xpress")
 
 
 def test_min_version_must_not_exceed_max():
-    with pytest.raises(BadLaunchConfigInput, match="min_antares_version cannot be greater"):
+    with pytest.raises(ValidationError, match="min_antares_version cannot be greater"):
         LaunchConfigDTO(
             name="valid",
             linear_solver="xpress",
-            min_antares_version=STUDY_VERSION_9_3,
-            max_antares_version=STUDY_VERSION_9_2,
+            min_antares_version=SOLVER_VERSION_9_3,
+            max_antares_version=SOLVER_VERSION_9_2,
         )
 
 
 def test_invalid_key_in_solver_params():
-    with pytest.raises(BadLaunchConfigInput, match="Invalid key"):
+    with pytest.raises(ValidationError, match="Invalid key"):
         LaunchConfigDTO(
             name="valid",
             linear_solver="xpress",
@@ -100,7 +105,7 @@ def test_invalid_key_in_solver_params():
 
 
 def test_invalid_value_in_solver_params():
-    with pytest.raises(BadLaunchConfigInput, match="Invalid value"):
+    with pytest.raises(ValidationError, match="Invalid value"):
         LaunchConfigDTO(
             name="valid",
             linear_solver="xpress",
@@ -109,10 +114,10 @@ def test_invalid_value_in_solver_params():
 
 
 def test_optim_params_before_9_2_not_allowed():
-    with pytest.raises(BadLaunchConfigInput, match="not supported before Antares version 9.2"):
+    with pytest.raises(ValidationError, match="not supported before Antares version 9.2"):
         LaunchConfigDTO(
             name="valid",
             linear_solver="xpress",
-            min_antares_version=STUDY_VERSION_9_1,
+            min_antares_version=SOLVER_VERSION_8_8,
             linear_solver_param_optim_1=[("PRESOLVE", "1")],
         )
