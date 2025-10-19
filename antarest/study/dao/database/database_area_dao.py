@@ -17,9 +17,10 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 """
 
 from abc import abstractmethod
-from typing import Dict, List
+from typing import Any, Dict, List, cast
 
 from sqlalchemy import delete, insert, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -201,7 +202,9 @@ class DatabaseAreaDao(AreaDao):
 
             # Insert new area
             stmt_area = insert(area).values(study_id=study_id, area_id=area_id)
-            result = session.execute(stmt_area)
+            # Cast to CursorResult to access inserted_primary_key attribute
+            # The cast appears redundant locally but is needed for CI where type stubs are stricter
+            result = cast(CursorResult[Any], session.execute(stmt_area))  # type: ignore[redundant-cast]
             session.flush()
 
             new_area_id = result.inserted_primary_key[0]
