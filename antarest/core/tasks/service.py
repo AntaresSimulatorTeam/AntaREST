@@ -19,6 +19,7 @@ from http import HTTPStatus
 from typing import Awaitable, Callable, Dict, List, Optional, TypeAlias
 
 from fastapi import HTTPException
+from prometheus_client import CollectorRegistry, Gauge, Histogram
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -159,12 +160,27 @@ class TaskLogAndProgressRecorder(ITaskNotifier):
         )
 
 
+class TaskServiceListener(ABC):
+    @abstractmethod
+    def on_task_submit(self, task_id: str) -> None:
+        pass
+
+    @abstractmethod
+    def on_task_start(self, task_id: str) -> None:
+        pass
+
+    @abstractmethod
+    def on_task_end(self, task_id: str) -> None:
+        pass
+
+
 class TaskJobService(ITaskService):
     def __init__(
         self,
         config: Config,
         repository: TaskJobRepository,
         event_bus: IEventBus,
+        listeners: list[TaskServiceListener] | None = None,
     ):
         self.config = config
         self.repo = repository
@@ -173,6 +189,7 @@ class TaskJobService(ITaskService):
         self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
         self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
         self.remote_workers = config.tasks.remote_workers
+        self._listeners = listeners or []
 
     def _create_worker_task(
         self,
@@ -293,6 +310,10 @@ class TaskJobService(ITaskService):
                 permissions=PermissionInfo(owner=user.impersonator),
             )
         )
+
+        for listener in self._listeners:
+            listener.on_task_submit(task.id)
+
         future = self.threadpool.submit(self._run_task, action, task.id, user, custom_event_messages)
         self.tasks[task.id] = future
 
@@ -395,6 +416,9 @@ class TaskJobService(ITaskService):
         # We need to catch all exceptions so that the calling thread is guaranteed
         # to not die
         try:
+            for listener in self._listeners:
+                listener.on_task_start(task_id)
+
             # attention: this function is executed in a thread, not in the main process
             with task_context(task_id=task_id, user=jwt_user):
                 with db():
@@ -509,6 +533,9 @@ class TaskJobService(ITaskService):
                     f"An exception occurred while handling execution error of task {task_id}: {inner_exc}",
                     exc_info=inner_exc,
                 )
+        finally:
+            for listener in self._listeners:
+                listener.on_task_end(task_id)
 
     def get_task_progress(self, task_id: str) -> Optional[int]:
         task = self.repo.get_or_raise(task_id)
@@ -517,3 +544,32 @@ class TaskJobService(ITaskService):
             return task.progress
         else:
             raise UserHasNotPermissionError()
+
+    def _register_metrics(self, registry: CollectorRegistry) -> None:
+        self._duration_histo = Histogram(
+            "tasks_duration_seconds",
+            "Tasks duration in seconds",
+            ["worker_id"],
+            registry=registry,
+        )
+        self._wait_time_histo = Histogram(
+            "tasks_duration_seconds",
+            "Tasks duration in seconds",
+            ["worker_id"],
+            registry=registry,
+        )
+        self._running_gauge = Gauge(
+            "tasks_running",
+            "Count of running tasks",
+            ["worker_id"],
+            registry=registry,
+        )
+        self._pending_gauge = Gauge(
+            "tasks_pending",
+            "Count of pending tasks",
+            ["worker_id"],
+            registry=registry,
+        )
+
+        self._submit_times: dict[str, float] = {}
+        self._start_times: dict[str, float] = {}

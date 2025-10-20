@@ -1,3 +1,15 @@
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
 import os
 import time
@@ -8,22 +20,152 @@ from fastapi import FastAPI
 from prometheus_client import (
     CollectorRegistry,
     Counter,
+    Gauge,
     Histogram,
     make_asgi_app,
     multiprocess,
 )
+from sqlalchemy import Pool, PoolProxiedConnection
+from sqlalchemy.event import listens_for
+from sqlalchemy.orm import Session, SessionTransaction
+from sqlalchemy.pool import ConnectionPoolEntry
 from starlette.requests import Request
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import ConfigurationError
+from antarest.core.tasks.service import TaskServiceListener
 
 logger = logging.getLogger(__name__)
 
 
 _PROMETHEUS_MULTIPROCESS_ENV_VAR = "PROMETHEUS_MULTIPROC_DIR"
 
+WORKER_ID = str(os.getpid())
 
-def _add_metrics_middleware(application: FastAPI, registry: CollectorRegistry, worker_id: str) -> None:
+
+def _add_db_metrics() -> None:
+    """
+    Registers metrics related to database activity.
+    """
+    _add_db_connection_metrics()
+    _add_db_session_metrics()
+
+
+def _add_db_connection_metrics() -> None:
+    """
+    Register connection-level (low level) DB metrics
+    """
+
+    dbconn_durations_histo = Histogram(
+        "dbconn_duration_seconds",
+        "DB connection duration",
+        ["worker_id"],
+        registry=prometheus_client.REGISTRY,
+    )
+
+    dbconn_gauge = Gauge(
+        "dbconn_in_use",
+        "DB connection count",
+        ["worker_id"],
+        registry=prometheus_client.REGISTRY,
+    )
+
+    checkout_counter = Counter(
+        "dbconn_checkout_count",
+        "DB connection checkouts",
+        ["worker_id"],
+        registry=prometheus_client.REGISTRY,
+    )
+
+    checkin_counter = Counter(
+        "dbconn_checkin_count",
+        "DB connection checkins",
+        ["worker_id"],
+        registry=prometheus_client.REGISTRY,
+    )
+
+    dbconn_gauge.labels(WORKER_ID).set(0)
+
+    @listens_for(Pool, "checkin")
+    def on_checkin(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
+        checkin_counter.labels(WORKER_ID).inc()
+        try:
+            start_time = connection_record.info["start_time"]
+        except KeyError:
+            return
+        dbconn_gauge.labels(WORKER_ID).dec()
+
+        dbconn_durations_histo.labels(WORKER_ID).observe(time.time() - start_time)
+
+    @listens_for(Pool, "checkout")
+    def on_checkout(
+        dbapi_con: Any, connection_record: ConnectionPoolEntry, connection_proxy: PoolProxiedConnection
+    ) -> None:
+        checkout_counter.labels(WORKER_ID).inc()
+        dbconn_gauge.labels(WORKER_ID).inc()
+
+        connection_record.info["start_time"] = time.time()
+
+
+def _add_db_session_metrics() -> None:
+    """
+    Register ORM-level DB metrics
+    """
+
+    transaction_create_counter = Counter(
+        "transaction_create_count",
+        "Transaction creations",
+        ["worker_id"],
+        registry=prometheus_client.REGISTRY,
+    )
+    transaction_end_counter = Counter(
+        "transaction_end_count",
+        "Transaction ends",
+        ["worker_id"],
+        registry=prometheus_client.REGISTRY,
+    )
+
+    transaction_duration_histo = Histogram(
+        "transaction_duration_seconds",
+        "Transaction ends",
+        ["worker_id"],
+        registry=prometheus_client.REGISTRY,
+    )
+
+    events_counter = Counter(
+        "dbsession_events",
+        "Begins counter",
+        ["worker_id", "event_type"],
+        registry=prometheus_client.REGISTRY,
+    )
+
+    @listens_for(Session, "after_begin")
+    def after_begin(session: Session, connection: Any, transaction: Any) -> None:
+        events_counter.labels(WORKER_ID, "begin").inc()
+
+    @listens_for(Session, "after_begin")
+    def after_commit(session: Session, connection: Any, transaction: Any) -> None:
+        events_counter.labels(WORKER_ID, "commit").inc()
+
+    @listens_for(Session, "after_begin")
+    def after_rollbacks(session: Session, connection: Any, transaction: Any) -> None:
+        events_counter.labels(WORKER_ID, "rollback").inc()
+
+    @listens_for(Session, "after_transaction_create")
+    def after_transaction_create(session: Session, transaction: SessionTransaction) -> None:
+        transaction_create_counter.labels(WORKER_ID).inc()
+        session.info["start_time"] = time.time()
+
+    @listens_for(Session, "after_transaction_end")
+    def after_transaction_end(session: Session, transaction: SessionTransaction) -> None:
+        transaction_end_counter.labels(WORKER_ID).inc()
+        if "start_time" in session.info:
+            transaction_duration_histo.labels(WORKER_ID).observe(time.time() - session.info["start_time"])
+            del session.info["start_time"]
+
+
+def _add_metrics_middleware(application: FastAPI) -> None:
     """
     Registers an HTTP middleware to report metrics about requests count and duration
     """
@@ -32,13 +174,13 @@ def _add_metrics_middleware(application: FastAPI, registry: CollectorRegistry, w
         "request_count",
         "App Request Count",
         ["worker_id", "method", "endpoint", "http_status"],
-        registry=registry,
+        registry=prometheus_client.REGISTRY,
     )
     request_duration_histo = Histogram(
         "request_duration_seconds",
         "Request duration",
         ["worker_id", "method", "endpoint", "http_status"],
-        registry=registry,
+        registry=prometheus_client.REGISTRY,
     )
 
     @application.middleware("http")
@@ -52,8 +194,8 @@ def _add_metrics_middleware(application: FastAPI, registry: CollectorRegistry, w
         else:
             request_path = request.url.path
 
-        request_counter.labels(worker_id, request.method, request_path, response.status_code).inc()
-        request_duration_histo.labels(worker_id, request.method, request_path, response.status_code).observe(
+        request_counter.labels(WORKER_ID, request.method, request_path, response.status_code).inc()
+        request_duration_histo.labels(WORKER_ID, request.method, request_path, response.status_code).observe(
             process_time
         )
         return response
@@ -68,7 +210,8 @@ def add_metrics(application: FastAPI, config: Config) -> None:
     if not prometheus_config:
         return
 
-    process_registry = prometheus_client.REGISTRY
+    prometheus_client.disable_created_metrics()  # type: ignore
+
     if prometheus_config.multiprocess:
         if _PROMETHEUS_MULTIPROCESS_ENV_VAR not in os.environ:
             raise ConfigurationError(
@@ -76,12 +219,65 @@ def add_metrics(application: FastAPI, config: Config) -> None:
             )
         global_registry = CollectorRegistry(auto_describe=True)
         multiprocess.MultiProcessCollector(global_registry)  # type: ignore
-        worker_id = str(os.getpid())
     else:
         global_registry = prometheus_client.REGISTRY
-        worker_id = "0"
 
     metrics_app = make_asgi_app(registry=global_registry)
     application.mount("/metrics", metrics_app)
 
-    _add_metrics_middleware(application, process_registry, worker_id)
+    _add_metrics_middleware(application)
+    _add_db_metrics()
+
+
+class TasksMetricsRecorder(TaskServiceListener):
+    """
+    Exports metrics for tasks: wait time before execution, duration, ...
+    """
+
+    def __init__(self, registry: CollectorRegistry) -> None:
+        self._duration_histo = Histogram(
+            "tasks_duration_seconds",
+            "Tasks duration in seconds",
+            ["worker_id"],
+            registry=registry,
+        )
+        self._wait_time_histo = Histogram(
+            "tasks_wait_seconds",
+            "Tasks duration in seconds",
+            ["worker_id"],
+            registry=registry,
+        )
+        self._running_gauge = Gauge(
+            "tasks_running",
+            "Count of running tasks",
+            ["worker_id"],
+            registry=registry,
+        )
+        self._pending_gauge = Gauge(
+            "tasks_pending",
+            "Count of pending tasks",
+            ["worker_id"],
+            registry=registry,
+        )
+
+        self._submit_times: dict[str, float] = {}
+        self._start_times: dict[str, float] = {}
+
+    @override
+    def on_task_submit(self, task_id: str) -> None:
+        self._pending_gauge.labels(WORKER_ID).inc()
+        self._submit_times[task_id] = time.time()
+
+    @override
+    def on_task_start(self, task_id: str) -> None:
+        self._pending_gauge.labels(WORKER_ID).dec()
+        self._running_gauge.labels(WORKER_ID).inc()
+        self._wait_time_histo.labels(WORKER_ID).observe(time.time() - self._submit_times[task_id])
+        del self._submit_times[task_id]
+        self._start_times[task_id] = time.time()
+
+    @override
+    def on_task_end(self, task_id: str) -> None:
+        self._running_gauge.labels(WORKER_ID).dec()
+        self._duration_histo.labels(WORKER_ID).observe(time.time() - self._start_times[task_id])
+        del self._start_times[task_id]
