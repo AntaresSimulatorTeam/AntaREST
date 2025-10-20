@@ -345,7 +345,7 @@ class TestDownloadMatrices:
             if export_format == "tsv":
                 dataframe = pd.read_csv(content, index_col=0, sep="\t")
             else:
-                dataframe = pd.read_excel(content, index_col=0)  # type: ignore
+                dataframe = pd.read_excel(content, index_col=0)
             assert dataframe.shape == (8760, 3)
             assert dataframe.columns.tolist() == ["TS-1", "TS-2", "TS-3"]
             assert str(dataframe.index[0]) == "2018-01-01 00:00:00"

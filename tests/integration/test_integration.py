@@ -1494,7 +1494,7 @@ def test_copy_with_jobs(client: TestClient, admin_access_token: str, tmp_path: P
 
     client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"study_name": "copied", "use_task": False, "output_ids": ["output1"]},  # type: ignore
+        params={"study_name": "copied", "use_task": False, "output_ids": ["output1"]},
     )
     jobs_src_study = client.get(f"/v1/launcher/jobs?study={variant.json()}")
     assert jobs_src_study.status_code == 200

@@ -1416,8 +1416,8 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
-    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
+    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})
+    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})
 
     variant_study = create_variant_study(
         id="variant-study",
@@ -1428,7 +1428,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         groups=[],
     )
     variant_study.generation_task = None
-    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})  # type: ignore[attr-defined]
+    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})
 
     def get_study_by_id(study_id: str) -> Study:
         if study_id == raw_study.id:
@@ -1817,7 +1817,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),  # type: ignore
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )

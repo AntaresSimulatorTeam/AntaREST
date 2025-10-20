@@ -512,7 +512,7 @@ class TestRawDataAggregationMCInd:
             elif export_format == TableExportFormat.TSV.value:
                 df = pd.read_csv(content, sep="\t")
             else:
-                df = pd.read_excel(content)  # type: ignore
+                df = pd.read_excel(content)
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -721,7 +721,7 @@ class TestRawDataAggregationMCAll:
             elif export_format == TableExportFormat.TSV.value:
                 df = pd.read_csv(content, sep="\t")
             elif export_format == TableExportFormat.XLSX.value:
-                df = pd.read_excel(content)  # type: ignore
+                df = pd.read_excel(content)
             else:
                 df = pd.read_parquet(content)
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")

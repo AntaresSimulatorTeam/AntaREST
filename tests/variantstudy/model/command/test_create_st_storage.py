@@ -66,8 +66,8 @@ class TestCreateSTStorage:
             command_context=command_context,
             area_id="area_fr",
             parameters=STStorageCreation(**PARAMETERS),
-            pmax_injection=pmax_injection.tolist(),  # type: ignore
-            inflows=inflows.tolist(),  # type: ignore
+            pmax_injection=pmax_injection.tolist(),
+            inflows=inflows.tolist(),
             study_version=STUDY_VERSION_8_6,
         )
 
@@ -129,7 +129,7 @@ class TestCreateSTStorage:
                 command_context=command_context,
                 area_id="area_fr",
                 parameters=STStorageCreation(**PARAMETERS),
-                pmax_injection=array.tolist(),  # type: ignore
+                pmax_injection=array.tolist(),
                 study_version=STUDY_VERSION_8_8,
             )
         assert ctx.value.error_count() == 1
@@ -146,7 +146,7 @@ class TestCreateSTStorage:
                 command_context=command_context,
                 area_id="area_fr",
                 parameters=STStorageCreation(**PARAMETERS),
-                pmax_injection=array.tolist(),  # type: ignore
+                pmax_injection=array.tolist(),
                 study_version=STUDY_VERSION_8_8,
             )
         assert ctx.value.error_count() == 1
@@ -163,7 +163,7 @@ class TestCreateSTStorage:
                 command_context=command_context,
                 area_id="area_fr",
                 parameters=STStorageCreation(**PARAMETERS),
-                pmax_injection=array.tolist(),  # type: ignore
+                pmax_injection=array.tolist(),
                 study_version=STUDY_VERSION_8_8,
             )
         assert ctx.value.error_count() == 1
@@ -334,8 +334,8 @@ class TestCreateSTStorage:
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
             parameters=STStorageCreation(**PARAMETERS),
-            pmax_injection=pmax_injection.tolist(),  # type: ignore
-            inflows=inflows.tolist(),  # type: ignore
+            pmax_injection=pmax_injection.tolist(),
+            inflows=inflows.tolist(),
             study_version=recent_study.config.version,
         )
         command_output = cmd.apply(recent_study)
