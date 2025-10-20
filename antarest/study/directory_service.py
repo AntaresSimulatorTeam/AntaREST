@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import uuid
-from typing import TYPE_CHECKING, List, Sequence
+from typing import List, Sequence
 
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.model import Group, GroupDTO
@@ -30,7 +30,6 @@ from antarest.study.model import (
     OwnerInfo,
 )
 from antarest.study.repository import AccessPermissions, DirectoryRepository, StudyMetadataRepository
-
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)

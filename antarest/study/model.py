@@ -253,22 +253,6 @@ class Directory(Base):
     def __repr__(self) -> str:
         return f'Directory(id="{self.id}", name="{self.name}", parent_id="{self.parent_id}")'
 
-    def get_path(self) -> str:
-        """
-        Recursively builds the full path of this directory from root.
-
-        Returns:
-            The full path in POSIX format (e.g., "folder1/subfolder2").
-        """
-        if self.parent_id is None:
-            return self.name
-        # Note: In production, this should use a cache to avoid recursive queries
-        # The parent relationship will need to be loaded for this to work
-        if self.parent is not None:
-            parent_path = self.parent.get_path()
-            return f"{parent_path}/{self.name}"
-        return self.name
-
 
 class Tag(Base):
     """
