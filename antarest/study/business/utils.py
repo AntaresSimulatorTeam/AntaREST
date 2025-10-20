@@ -13,20 +13,20 @@
 from typing import Any, Callable, Optional, TypedDict
 
 from antares.study.version import StudyVersion
+from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.all_optional_meta import camel_case_model
 
 # noinspection SpellCheckingInspection
 GENERAL_DATA_PATH = "settings/generaldata"
 
 
-@camel_case_model
 class FormFieldsBaseModel(
     AntaresBaseModel,
     extra="forbid",
     validate_assignment=True,
     populate_by_name=True,
+    alias_generator=to_camel,
 ):
     """
     Pydantic Model for webapp form
