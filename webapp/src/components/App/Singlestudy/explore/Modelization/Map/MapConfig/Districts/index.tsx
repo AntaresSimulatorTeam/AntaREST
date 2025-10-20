@@ -43,7 +43,6 @@ function Districts() {
       Object.keys(districtsById).map((id) => ({
         id,
         title: districtsById[id].name,
-        width: 150,
       })),
     [districtsById],
   );
