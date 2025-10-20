@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from pathlib import Path
 from typing import Any
 from unittest.mock import Mock, patch
 
@@ -63,7 +63,7 @@ redis:
 """
 
 
-def test_run_archive_worker__logging_setup(tmp_path: Any) -> None:
+def test_run_archive_worker__logging_setup(tmp_path: Path) -> None:
     """
     The purpose of this unit test is to check that the logging is set up correctly.
     """

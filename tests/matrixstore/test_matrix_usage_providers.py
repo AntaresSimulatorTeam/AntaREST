@@ -90,7 +90,7 @@ def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service
 
 
 def test_raw_studies_matrix_usage_provider(
-    raw_studies_matrix_usage_provider: RawStudyMatrixUsageProvider, raw_study_service: RawStudyService, tmp_path: Any
+    raw_studies_matrix_usage_provider: RawStudyMatrixUsageProvider, raw_study_service: RawStudyService, tmp_path: Path
 ) -> None:
     matrix_name1 = "matrix_name1"
     matrix_name2 = "matrix_name2"
@@ -127,7 +127,7 @@ def test_raw_studies_matrix_usage_provider(
 def test_command_matrix_usage_provider(
     command_matrix_usage_provider: CommandMatrixUsageProvider,
     variant_study_repository: VariantStudyRepository,
-    tmp_path: Any,
+    tmp_path: Path,
 ) -> None:
     with db():
         study_id = "study_id"

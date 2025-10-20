@@ -139,7 +139,7 @@ def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
 
 
 @pytest.fixture(name="bucket_dir", scope="session")
-def bucket_dir_fixture(tmp_path_factory: t.Any) -> Path:
+def bucket_dir_fixture(tmp_path_factory: Path) -> Path:
     """
     Fixture that creates a session-level temporary directory named "matrix_store" for storing matrices.
 

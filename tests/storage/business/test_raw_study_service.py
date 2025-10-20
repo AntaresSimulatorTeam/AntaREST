@@ -16,7 +16,6 @@ import platform
 import re
 import time
 from pathlib import Path, PurePosixPath
-from typing import Any
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -46,7 +45,7 @@ def build_config(
 
 
 @pytest.mark.unit_test
-def test_get(tmp_path: str, project_path: Any) -> None:
+def test_get(tmp_path: str, project_path: Path) -> None:
     """
     path_to_studies
     |_study1 (d)
@@ -125,7 +124,7 @@ def test_get_cache(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_exist(tmp_path: str, project_path: Any) -> None:
+def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study.antares").touch()
@@ -149,7 +148,7 @@ def test_assert_study_exist(tmp_path: str, project_path: Any) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_not_exist(tmp_path: str, project_path: Any) -> None:
+def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -209,7 +208,7 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study_versions(tmp_path: str, project_path: Any) -> None:
+def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
 
     study = Mock()
