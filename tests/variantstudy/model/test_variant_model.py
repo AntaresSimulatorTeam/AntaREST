@@ -282,11 +282,13 @@ class TestVariantStudyService:
             the author of the currently retrieved command is not already known during
             the process
         """
+        from typing import Any
+
         nb_queries = 0  # Store number of orm queries to database
 
         # Watch orm events and update `nb_queries`
         @event.listens_for(db.session, "do_orm_execute")
-        def check_orm_operations(orm_execute_state):
+        def check_orm_operations(orm_execute_state: Any) -> None:
             if orm_execute_state.is_select:
                 nonlocal nb_queries
                 nb_queries += 1

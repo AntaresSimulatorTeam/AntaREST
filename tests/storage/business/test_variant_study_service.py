@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -32,12 +33,12 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 from tests.helpers import create_variant_study
 
 
-def build_config(study_path: Path) -> None:
+def build_config(study_path: Path) -> Config:
     return Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)}))
 
 
 @pytest.mark.unit_test
-def test_get(tmp_path: str, project_path) -> None:
+def test_get(tmp_path: str, project_path: Any) -> None:
     """
     path_to_studies
     |_study1 (d)
@@ -78,7 +79,7 @@ def test_get(tmp_path: str, project_path) -> None:
     study_service.exists = Mock()
     study_service.exists.return_value = False
 
-    def task_status(*args):
+    def task_status() -> None:
         for t in [
             TaskDTO(
                 id="1",
@@ -162,7 +163,7 @@ def test_get_cache(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_exist(tmp_path: str, project_path) -> None:
+def test_assert_study_exist(tmp_path: str, project_path: Any) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study.antares").touch()
@@ -194,7 +195,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
+def test_assert_study_not_exist(tmp_path: str, project_path: Any) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -261,7 +262,7 @@ def test_delete_study(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_get_variant_children(tmp_path: Path, admin_user) -> None:
+def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
     with db():
         user_me = User(id=2, name="me")
         user_not_me = User(id=3, name="not me")

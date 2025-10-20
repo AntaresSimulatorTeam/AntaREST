@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from typing import Any
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, call
 
@@ -23,7 +23,7 @@ from antarest.eventbus.web import ConnectionManager, WebsocketMessage, Websocket
 
 class AsyncMock(MagicMock):
     @override
-    async def __call__(self, *args, **kwargs):
+    async def __call__(self, *args: Any, **kwargs: Any) -> None:
         return super(AsyncMock, self).__call__(*args, **kwargs)
 
 

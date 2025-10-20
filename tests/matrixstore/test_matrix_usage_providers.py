@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pandas as pd
@@ -87,7 +88,7 @@ def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service
 
 
 def test_raw_studies_matrix_usage_provider(
-    raw_studies_matrix_usage_provider: RawStudyMatrixUsageProvider, raw_study_service: RawStudyService, tmp_path
+    raw_studies_matrix_usage_provider: RawStudyMatrixUsageProvider, raw_study_service: RawStudyService, tmp_path: Any
 ) -> None:
     matrix_name1 = "matrix_name1"
     matrix_name2 = "matrix_name2"
@@ -124,7 +125,7 @@ def test_raw_studies_matrix_usage_provider(
 def test_command_matrix_usage_provider(
     command_matrix_usage_provider: CommandMatrixUsageProvider,
     variant_study_repository: VariantStudyRepository,
-    tmp_path,
+    tmp_path: Any,
 ) -> None:
     with db():
         study_id = "study_id"
@@ -181,7 +182,7 @@ def test_constants_matrix_usage_provider(constants_matrix_usage_provider: Consta
     assert constants_id == matrix_ref_ids
 
 
-def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user) -> None:
+def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user: Any) -> None:
     with db():
         group_repo = GroupRepository()
         group = group_repo.save(Group(name="groupA", id="groupA"))

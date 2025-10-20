@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from typing import Any, Callable
+
 import pytest
 
 from antarest.core.exceptions import InvalidFieldForVersionError
@@ -220,7 +222,11 @@ def test_update_ruleset_3_levels_scenarios() -> None:
         (ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS, lambda r: r.storage_constraints),
     ],
 )
-def test_get_set_by_type(ruleset_cls, scenario_type: ScenarioType, getter) -> None:
+def test_get_set_by_type(
+    ruleset_cls: type[Ruleset | RulesetUpdate],
+    scenario_type: ScenarioType,
+    getter: Callable[[Any], Any],
+) -> None:
     ruleset = ruleset_cls()
     ruleset.set(scenario_type, {"be": {"1": 2, "2": 1}})
     assert getter(ruleset) == {"be": {"1": 2, "2": 1}}
@@ -236,7 +242,11 @@ def test_get_set_by_type(ruleset_cls, scenario_type: ScenarioType, getter) -> No
         (ScenarioType.SHORT_TERM_STORAGE_INFLOWS, lambda r: r.storage_inflows),
     ],
 )
-def test_get_set_by_type_2_levels(ruleset_cls, scenario_type: ScenarioType, getter) -> None:
+def test_get_set_by_type_2_levels(
+    ruleset_cls: type[Ruleset | RulesetUpdate],
+    scenario_type: ScenarioType,
+    getter: Callable[[Any], Any],
+) -> None:
     ruleset = ruleset_cls()
     ruleset.set(scenario_type, {"be": {"cluster": {"1": 2, "2": 1}}})
     assert getter(ruleset) == {"be": {"cluster": {"1": 2, "2": 1}}}
@@ -244,7 +254,7 @@ def test_get_set_by_type_2_levels(ruleset_cls, scenario_type: ScenarioType, gett
 
 
 @pytest.mark.parametrize("ruleset_cls", [Ruleset, RulesetUpdate])
-def test_get_set_by_type_storage_constraints(ruleset_cls) -> None:
+def test_get_set_by_type_storage_constraints(ruleset_cls: type[Ruleset | RulesetUpdate]) -> None:
     mapping = {"be": {"storage": {"c1": {"1": 2, "2": 1}}}}
     ruleset = ruleset_cls()
     ruleset.set(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS, mapping)

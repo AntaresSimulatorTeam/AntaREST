@@ -167,11 +167,13 @@ class TestCopyAndRenameFile:
         self.link = self.file.parent / f"{self.file.name}.link"
         self.link.write_text("Link: Mock File Content")
 
+        from typing import Any
+
         main_mapper = Mock(spec=MatrixUriMapper)
         main_mapper.get_link_path.return_value = self.link
         main_mapper.has_link.return_value = True
 
-        def mock_remove_link(node):
+        def mock_remove_link(node: Any) -> None:
             if self.link.exists():
                 self.link.unlink()
 

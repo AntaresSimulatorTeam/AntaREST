@@ -441,8 +441,10 @@ nh3 = 456
 """
 
 
+from typing import Any
+
 @pytest.mark.parametrize("version", [850, 860, 870])
-def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
+def test_parse_thermal_860(study_path: Path, version: int, caplog: Any) -> None:
     study_path.joinpath("study.antares").write_text(f"[antares] \n version = {version}")
     ini_path = study_path.joinpath("input/thermal/clusters/fr/list.ini")
     ini_path.parent.mkdir(parents=True)

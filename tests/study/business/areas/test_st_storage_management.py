@@ -18,6 +18,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -145,8 +146,10 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
     assert output.status
 
 
+from typing import Any
+
 @pytest.fixture
-def study_interface(matrix_service: ISimpleMatrixService, empty_study_930, command_context) -> StudyInterface:
+def study_interface(matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: Any) -> StudyInterface:
     study_interface = FileStudyInterface(empty_study_930)
     _set_up_study(study_interface, command_context)
     return study_interface

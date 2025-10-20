@@ -494,7 +494,7 @@ class TestStudiesListing:
         page_studies = res.json()
         assert len(page_studies) == max(0, min(len(study_map) - 2, 2))
         # test pagination concatenation
-        paginated_studies = {}
+        paginated_studies: dict[str, Any] = {}
         page_number = 0
         number_of_pages = 0
         while len(paginated_studies) < len(study_map):

@@ -25,7 +25,8 @@ jobs:
       - name: Check Typing (mypy)
         #continue-on-error: true
         run: |
-          mypy --install-types --non-interactive
+          mypy --install-types --non-interactive antarest/
+          mypy --install-types --non-interactive tests/
 
   python-test:
     runs-on: ${{ matrix.os }}

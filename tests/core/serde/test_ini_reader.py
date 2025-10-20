@@ -13,6 +13,7 @@
 import io
 import textwrap
 from pathlib import Path
+from typing import Any
 
 from antarest.core.serde.ini_common import OptionMatcher, any_section_option_matcher
 from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader, SimpleKeyValueReader, ValueParsers
@@ -273,7 +274,7 @@ class TestIniReader:
         }
         assert actual == expected
 
-    def test_read__filtered_section(self, tmp_path) -> None:
+    def test_read__filtered_section(self, tmp_path: Path) -> None:
         path = Path(tmp_path) / "test.ini"
         path.write_text(
             textwrap.dedent(
@@ -307,7 +308,7 @@ class TestIniReader:
         }
         assert actual == expected
 
-    def test_read__filtered_option(self, tmp_path) -> None:
+    def test_read__filtered_option(self, tmp_path: Path) -> None:
         path = Path(tmp_path) / "test.ini"
         path.write_text(
             textwrap.dedent(
@@ -353,7 +354,7 @@ class TestIniReader:
         expected = {"part1": {"bar": "hello"}, "part2": {"bar": "salut"}}
         assert actual == expected
 
-    def test_read__with_custom_parser(self, tmp_path):
+    def test_read__with_custom_parser(self, tmp_path: Path) -> None:
         path = Path(tmp_path) / "test.ini"
         path.write_text(
             textwrap.dedent(

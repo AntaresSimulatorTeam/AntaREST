@@ -91,7 +91,7 @@ class TestupdateStudyMetadata:
         study_tags = ["Tag1", "Tag2"]
         client.put(f"/v1/studies/{internal_study_id}", json={"tags": study_tags})
 
-        updated_study_tags = []
+        updated_study_tags: list[str] = []
         res = client.put(f"/v1/studies/{internal_study_id}", json={"tags": updated_study_tags})
         assert res.status_code == 200, res.json()
         actual = res.json()

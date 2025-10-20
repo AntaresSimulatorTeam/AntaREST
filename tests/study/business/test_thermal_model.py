@@ -417,13 +417,16 @@ def invalid_fields() -> list[dict[str, Any]]:
 
 @pytest.mark.parametrize("fields", invalid_fields())
 @pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
-def test_invalid_field_values(thermal_cluster_cls, fields: dict[str, Any]) -> None:
+def test_invalid_field_values(
+    thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate],
+    fields: dict[str, Any],
+) -> None:
     with pytest.raises(ValidationError):
         thermal_cluster_cls(name="cluster-data", **fields)
 
 
 @pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
-def test_invalid_min_up_down_time_should_be_truncated(thermal_cluster_cls):
+def test_invalid_min_up_down_time_should_be_truncated(thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate]) -> None:
     data = thermal_cluster_cls(name="cluster-data", min_up_time=-1, min_down_time=-1)
     assert data.min_up_time == 1
     assert data.min_down_time == 1

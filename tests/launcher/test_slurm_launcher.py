@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from typing import Any
+
 import os
 import random
 import textwrap
@@ -306,7 +308,7 @@ def test_run_study(
         if launcher_called:
             slurm_launcher.data_repo_tinydb.save_study(StudyDTO(job_id))
 
-    slurm_launcher._call_launcher = call_launcher_mock
+    slurm_launcher._call_launcher = call_launcher_mock  # type: ignore[method-assign]
 
     # When the launcher is called
     study_uuid = str(uuid.uuid4())
@@ -438,7 +440,7 @@ def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> No
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
 @pytest.mark.unit_test
 def test_kill_job(
-    run_with_mock,
+    run_with_mock: Any,
     tmp_path: Path,
     launcher_config: SlurmConfig,
 ) -> None:
@@ -499,7 +501,7 @@ def test_kill_job(
 
 
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
-def test_launcher_workspace_init(run_with_mock, tmp_path: Path, launcher_config: SlurmConfig) -> None:
+def test_launcher_workspace_init(run_with_mock: Any, tmp_path: Path, launcher_config: SlurmConfig) -> None:
     callbacks = Mock()
     (tmp_path / LOG_DIR_NAME).mkdir()
 

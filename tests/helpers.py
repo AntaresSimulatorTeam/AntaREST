@@ -12,6 +12,8 @@
 
 import math
 import time
+from pathlib import Path
+from typing import Any
 import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -140,7 +142,7 @@ def create_study(
     name: Optional[str] = None,
     path: Optional[str] = None,
     version: str = "880",
-    **kwargs,
+    **kwargs: Any,
 ) -> Study:
     """
     Factory to create a new Study object for testing purposes.
@@ -169,7 +171,7 @@ def create_raw_study(
     name: Optional[str] = None,
     path: Optional[str] = None,
     version: str = "880",
-    **kwargs,
+    **kwargs: Any,
 ) -> RawStudy:
     """
     Factory to create a new RawStudy object for testing purposes.
@@ -198,7 +200,7 @@ def create_variant_study(
     name: Optional[str] = None,
     path: Optional[str] = None,
     version: str = "880",
-    **kwargs,
+    **kwargs: Any,
 ) -> VariantStudy:
     """
     Factory to create a new VariantStudy object for testing purposes.

@@ -16,7 +16,7 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, AnyStr
 
 import pandas
 import pytest
@@ -139,7 +139,7 @@ def test_fails_because_of_versions_asked(tmp_path: Path) -> None:
         StudyUpgrader(study_dir, "820.rc").upgrade()
 
 
-def test_fallback_if_study_input_broken(tmp_path):
+def test_fallback_if_study_input_broken(tmp_path: Path) -> None:
     # Prepare a study to upgrade
     path_study = ASSETS_DIR / "broken_study_720.zip"
     study_dir = tmp_path / "broken_study_720"
@@ -314,7 +314,7 @@ def assert_folder_is_created(path: Path) -> None:
     assert (path / "series").is_dir()
 
 
-def are_same_dir(dir1, dir2, ignore: Optional[List[str]] = None) -> bool:
+def are_same_dir(dir1: AnyStr, dir2: AnyStr, ignore: Optional[List[str]] = None) -> bool:
     dirs_cmp = filecmp.dircmp(dir1, dir2, ignore=ignore)
     if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False

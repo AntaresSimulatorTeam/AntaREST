@@ -212,7 +212,7 @@ class TestLauncherService:
         assert launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
 
     @pytest.mark.unit_test
-    def test_service_get_jobs_from_database(self, db_session) -> None:
+    def test_service_get_jobs_from_database(self, db_session: DBSessionMiddleware) -> None:
         launcher_mock = Mock()
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         identity_instance = Identity(id=1)

@@ -16,6 +16,7 @@ import typing as t
 from pathlib import Path
 
 import pytest
+from sqlalchemy.dialects.postgresql.array import Any
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -47,7 +48,7 @@ def test_get(tmp_path: Path) -> None:
     study_dir.mkdir()
     ini_path = build_dataset(study_dir)
 
-    expected_json = {
+    expected_json: dict[str, Any] = {
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
         "part2": {"key_bool": True, "key_bool2": False},
     }
@@ -96,7 +97,7 @@ def test_get_depth(tmp_path: Path) -> None:
     study_dir.mkdir()
     ini_path = build_dataset(study_dir)
 
-    expected_json = {
+    expected_json: dict[str, Any] = {
         "part1": {},
         "part2": {},
     }

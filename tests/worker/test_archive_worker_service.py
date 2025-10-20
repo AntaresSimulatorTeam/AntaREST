@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -20,7 +21,7 @@ from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.archive_worker_service import run_archive_worker
 
 
-def test_run_archive_worker__version(capsys):
+def test_run_archive_worker__version(capsys: Any) -> None:
     with pytest.raises(SystemExit) as ctx:
         run_archive_worker(["--version"])
     assert int(ctx.value.args[0]) == 0
@@ -28,7 +29,7 @@ def test_run_archive_worker__version(capsys):
     assert __version__ in out
 
 
-def test_run_archive_worker__help(capsys):
+def test_run_archive_worker__help(capsys: Any) -> None:
     with pytest.raises(SystemExit) as ctx:
         run_archive_worker(["--help"])
     assert int(ctx.value.args[0]) == 0
@@ -62,7 +63,7 @@ redis:
 """
 
 
-def test_run_archive_worker__logging_setup(tmp_path):
+def test_run_archive_worker__logging_setup(tmp_path: Any) -> None:
     """
     The purpose of this unit test is to check that the logging is set up correctly.
     """

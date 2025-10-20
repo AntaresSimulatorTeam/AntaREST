@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -37,7 +38,7 @@ def storage_config_default() -> None:
     }
 
 
-def test_storage_config_from_dict(storage_config_default):
+def test_storage_config_from_dict(storage_config_default: dict[str, Any]) -> None:
     data = {
         **storage_config_default,
         "workspaces": {
@@ -123,7 +124,12 @@ def test_storage_config_from_dict(storage_config_default):
         ),
     ],
 )
-def test_storage_config_from_dict_validation_errors(storage_config_default, workspaces, desktop_mode, should_raise):
+def test_storage_config_from_dict_validation_errors(
+    storage_config_default: dict[str, Any],
+    workspaces: dict[str, Any],
+    desktop_mode: bool,
+    should_raise: bool,
+) -> None:
     data = {
         **storage_config_default,
         "workspaces": workspaces,
@@ -141,7 +147,7 @@ def test_storage_config_from_dict_validation_errors(storage_config_default, work
         Config.from_dict(config_data)
 
 
-def test_storage_config_from_dict_desktop_mode_true(storage_config_default):
+def test_storage_config_from_dict_desktop_mode_true(storage_config_default: dict[str, Any]) -> None:
     data = {
         **storage_config_default,
         "workspaces": {

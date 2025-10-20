@@ -25,6 +25,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 import numpy as np
 import pandas as pd
 import pytest
+from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from starlette.responses import Response
@@ -404,7 +405,7 @@ def test_sync_studies_from_disk() -> None:
 
 
 @pytest.mark.unit_test
-def test_sync_unsuppported_study_from_disk(caplog) -> None:
+def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
     folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
 
@@ -1444,12 +1445,14 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     raw_study_service.delete = Mock()
     raw_study_service.find_archive_path.return_value = str(tmp_path / "archive.zip")
 
+    from typing import Any, Callable
+
     variant_study_service = Mock(spec=VariantStudyService)
     variant_study_service.delete = Mock()
     variant_study_service.has_children.side_effect = lambda study: study.id == raw_study.id
     variant_study_service.get_children.return_value = [variant_study]
 
-    def walk_children(parent_id: str, fun, bottom_first: bool, include_parent: bool = True) -> None:
+    def walk_children(parent_id: str, fun: Callable[[Any], None], bottom_first: bool, include_parent: bool = True) -> None:
         assert parent_id == raw_study.id
         assert bottom_first is True
         assert include_parent is False
@@ -2163,7 +2166,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_is_output_archived(tmp_path) -> None:
+def test_is_output_archived(tmp_path: Path) -> None:
     assert not is_output_archived(path_output=Path("fake_path"))
     assert is_output_archived(path_output=Path("fake_path.zip"))
 

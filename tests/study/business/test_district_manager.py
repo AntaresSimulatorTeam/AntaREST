@@ -19,6 +19,8 @@ from antarest.study.business.district_manager import (
     DistrictManager,
     DistrictUpdate,
 )
+from typing import Any
+
 from antarest.study.business.model.district_model import District, DistrictDTO
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig
@@ -29,7 +31,7 @@ from antarest.study.storage.variantstudy.model.command.update_district import Up
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def _check_add_commands(patched_func, expected_cls):
+def _check_add_commands(patched_func: Any, expected_cls: Any) -> None:
     assert patched_func.call_count == 1
     commands = patched_func.mock_calls[0].args[0]
     command = commands[0]

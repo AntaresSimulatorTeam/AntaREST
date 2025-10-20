@@ -41,7 +41,7 @@ from tests.helpers import create_study
 from tests.storage.conftest import SimpleSyncTaskService
 
 
-def build_config(root: Path, desktop_mode=False) -> Config:
+def build_config(root: Path, desktop_mode: bool =False) -> Config:
     return Config(
         desktop_mode=desktop_mode,
         storage=StorageConfig(

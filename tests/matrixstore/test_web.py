@@ -30,7 +30,7 @@ from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
 
-def create_app(service: Mock, auth_disabled=False) -> FastAPI:
+def create_app(service: Mock, auth_disabled: bool =False) -> FastAPI:
     build_ctxt = create_app_ctxt(FastAPI(title=__name__))
 
     @AuthJWT.load_config
@@ -203,7 +203,9 @@ def test_get_matrices_references() -> None:
     assert res.json() == data__
 
 
-def creating_json_res_dict(res) -> dict[str, MatrixReferencesDTO]:
+from typing import Any
+
+def creating_json_res_dict(res: Any) -> dict[str, MatrixReferencesDTO]:
     res_dict_test = {}
     for matrix_id in res.json():
         description = res.json()[matrix_id]["refs"]

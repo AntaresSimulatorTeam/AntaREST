@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from typing import Any
+
 import os
 import textwrap
 import uuid
@@ -108,7 +110,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
 
 
 @pytest.fixture
-def xpress_env() -> None:
+def xpress_env() -> Any:
     """
     Defines XPRESSDIR env var and ensure removal after unit test
     """
@@ -118,7 +120,7 @@ def xpress_env() -> None:
 
 
 @pytest.mark.unit_test
-def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env) -> None:
+def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env: Any) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     solver_version_8_8 = SolverVersion.parse("8.8")
     solver_version_9_2 = SolverVersion.parse("9.2")
@@ -207,7 +209,7 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env) -> N
     ],
 )
 def test_unsupported_launcher_other_options_should_raise(
-    launcher_config: LocalConfig, xpress_env, solver_version: SolverVersion, arguments: str
+    launcher_config: LocalConfig, xpress_env: Any, solver_version: SolverVersion, arguments: str
 ) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     launcher_parameters = LauncherParametersDTO(nb_cpu=4)

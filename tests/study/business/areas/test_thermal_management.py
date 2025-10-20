@@ -93,7 +93,7 @@ def manager(matrix_service: ISimpleMatrixService) -> ThermalManager:
 
 
 @pytest.fixture
-def study_interface(matrix_service: ISimpleMatrixService, study_path) -> StudyInterface:
+def study_interface(matrix_service: ISimpleMatrixService, study_path: Path) -> StudyInterface:
     file_study = create_file_study(matrix_service, study_id="my-study", path=study_path)
     return FileStudyInterface(file_study)
 

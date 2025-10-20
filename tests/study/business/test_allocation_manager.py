@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from typing import Any
 
 import numpy as np
 import pytest
@@ -105,7 +106,7 @@ def test_error_cases() -> None:
         HydroAllocationMatrix.from_hydro_allocations({})
 
 
-def test_get_allocation_matrix(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_get_allocation_matrix(manager: Any, empty_study_920: FileStudy, command_context: CommandContext) -> None:
     _set_up(command_context, empty_study_920)
 
     study = FileStudyInterface(empty_study_920)
@@ -126,7 +127,7 @@ def test_get_allocation_matrix(manager, empty_study_920: FileStudy, command_cont
     )
 
 
-def test_get_allocation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_get_allocation_for_area(manager: Any, empty_study_920: FileStudy, command_context: CommandContext) -> None:
     _set_up(command_context, empty_study_920)
 
     expected_allocations = {
@@ -153,7 +154,7 @@ def test_get_allocation_for_area(manager, empty_study_920: FileStudy, command_co
         assert allocation == expected_allocations[area_id]
 
 
-def test_set_allocation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_set_allocation_for_area(manager: Any, empty_study_920: FileStudy, command_context: CommandContext) -> None:
     _set_up(command_context, empty_study_920)
 
     study = FileStudyInterface(empty_study_920)

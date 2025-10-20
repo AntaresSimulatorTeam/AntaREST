@@ -15,7 +15,7 @@ import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 from unittest.mock import Mock
 
 import numpy as np
@@ -106,7 +106,7 @@ def assert_with_errors(
         (f"/v1/studies/{UUID}/raw?path=settings/simulations", {}),
     ],
 )
-def test_sta_mini_settings(storage_service, url: str, expected_output: str) -> None:
+def test_sta_mini_settings(storage_service: StudyService, url: str, expected_output: str) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -153,7 +153,7 @@ def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: s
         (f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/iconindex", 0),
     ],
 )
-def test_sta_mini_desktop(storage_service, url: str, expected_output: str) -> None:
+def test_sta_mini_desktop(storage_service: StudyService, url: str, expected_output: str) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -320,7 +320,7 @@ def expected_min_gen_response() -> bytes:
         ),
     ],
 )
-def test_sta_mini_input(storage_service, url: str, expected_output: dict, formatted: bool) -> None:
+def test_sta_mini_input(storage_service: StudyService, url: str, expected_output: Any, formatted: bool) -> None:
     assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output, formatted=formatted)
 
 
@@ -449,7 +449,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict, format
         ),
     ],
 )
-def test_sta_mini_output(storage_service, url: str, expected_output: dict) -> None:
+def test_sta_mini_output(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -489,7 +489,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict) -> No
         ),
     ],
 )
-def test_sta_mini_expansion(storage_service, url: str, expected_output: dict) -> None:
+def test_sta_mini_expansion(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -640,7 +640,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
         ),
     ],
 )
-def test_sta_mini_filter(storage_service, url: str, expected_output: dict) -> None:
+def test_sta_mini_filter(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -649,7 +649,7 @@ def test_sta_mini_filter(storage_service, url: str, expected_output: dict) -> No
 
 
 @with_admin_user
-def test_sta_mini_output_variables_nominal_case(output_service):
+def test_sta_mini_output_variables_nominal_case(output_service: Any) -> None:
     variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
     assert variables["area"] == [
         "OV. COST",
@@ -703,13 +703,13 @@ def test_sta_mini_output_variables_nominal_case(output_service):
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_mc_ind(output_service):
+def test_sta_mini_output_variables_no_mc_ind(output_service: Any) -> None:
     with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
         output_service.output_variables_information(UUID, "20201014-1427eco")
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_links(output_service):
+def test_sta_mini_output_variables_no_links(output_service: Any) -> None:
     study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
@@ -719,7 +719,7 @@ def test_sta_mini_output_variables_no_links(output_service):
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_areas(output_service):
+def test_sta_mini_output_variables_no_areas(output_service: Any) -> None:
     study_path = Path(output_service._study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
