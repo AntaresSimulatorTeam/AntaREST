@@ -400,7 +400,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/matrixindex",
         tags=[APITag.study_management],
         summary="Return study input matrix start date index",
-        response_model=MatrixIndex,
     )
     def get_study_matrix_index(uuid: str, path: str = "") -> MatrixIndex:
         study_id = sanitize_uuid(uuid)
@@ -411,7 +410,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/output/{output_id}/time-index",
         tags=[APITag.study_management],
         summary="Get time index for output matrices by frequency",
-        response_model=MatrixIndex,
     )
     def get_output_time_index(
         uuid: str,
