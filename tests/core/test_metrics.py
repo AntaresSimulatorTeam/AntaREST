@@ -26,6 +26,9 @@ def _get_metric(registry: CollectorRegistry, name: str):
 
 
 def _get_value(registry: CollectorRegistry, name: str, labels: dict[str, str] | None = None):
+    """
+    Returns the value of the first (unique) sample of the metric matching the given name and labels.
+    """
     metric = _get_metric(registry, name)
     if not labels:
         return metric.samples[0].value
