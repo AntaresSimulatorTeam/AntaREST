@@ -1124,7 +1124,6 @@ class StudyService:
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
-        path: str = "",
     ) -> str:
         """
         Create a new study by copying a reference study.
@@ -1147,7 +1146,6 @@ class StudyService:
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
-            path: Optional directory path where the copied study will be placed (e.g., 'project/subfolder').
 
         Returns:
             The newly created study.
@@ -1169,13 +1167,6 @@ class StudyService:
                 output_ids,
                 with_outputs,
             )
-
-            # Get or create directory from path
-            current_user = get_current_user()
-            owner_id = current_user.id if current_user else 0
-            directory_id = self._get_directory_from_path(path, owner_id, group_ids)
-            if directory_id:
-                study.directory_id = directory_id
 
             self._save_study(study, group_ids)
             self.normalize_study(study)

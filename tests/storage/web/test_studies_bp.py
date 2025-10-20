@@ -216,7 +216,6 @@ def test_copy_study(tmp_path: Path) -> None:
         with_outputs=None,
         output_ids=[],
         use_task=True,
-        path="",
     )
     assert result.status_code == HTTPStatus.CREATED
 

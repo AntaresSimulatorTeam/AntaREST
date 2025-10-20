@@ -325,7 +325,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         groups: str = "",
         use_task: bool = True,
         destination_folder: str = "",
-        path: str = Query("", description="Directory path for the copied study (e.g., 'project/subfolder')"),
     ) -> str:
         """
         This endpoint enables you to duplicate a study and place it in a specified location.
@@ -340,7 +339,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             It is recommended and set as the default value: True.
         - `destination_folder`: The destination path where the study will be copied.
         - `output_ids`: A list of output names that you want to include in the destination study.
-        - `path`: Directory path where the copied study will be placed.
 
         Returns:
         - The unique identifier of the task copying the study.
@@ -353,7 +351,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = validate_study_name(escape(study_name))
-        path_sanitized = validate_folder_path(path) if path else ""
 
         task_id = study_service.copy_study(
             src_uuid=uuid_sanitized,
@@ -363,7 +360,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             use_task=use_task,
             destination_folder=PurePosixPath(destination_folder),
             output_ids=output_ids,
-            path=path_sanitized,
         )
 
         return task_id
