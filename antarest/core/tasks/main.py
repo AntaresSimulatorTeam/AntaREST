@@ -19,7 +19,7 @@ from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.metrics import TasksMetricsRecorder
 from antarest.core.tasks.repository import TaskJobRepository
-from antarest.core.tasks.service import ITaskService, TaskJobService, TaskServiceListener
+from antarest.core.tasks.service import ITaskService, TaskJobService
 from antarest.core.tasks.web import create_tasks_api
 
 
@@ -30,7 +30,7 @@ def build_taskjob_manager(
 ) -> ITaskService:
     repository = TaskJobRepository()
 
-    listeners: list[TaskServiceListener] = []
+    listeners = []
     if config.metrics.prometheus:
         listeners.append(TasksMetricsRecorder(prometheus_client.REGISTRY))
 

@@ -16,7 +16,7 @@ import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
 from http import HTTPStatus
-from typing import Awaitable, Callable, Dict, List, Optional, TypeAlias
+from typing import Awaitable, Callable, Dict, List, Optional, Sequence, TypeAlias
 
 from fastapi import HTTPException
 from prometheus_client import CollectorRegistry, Gauge, Histogram
@@ -180,7 +180,7 @@ class TaskJobService(ITaskService):
         config: Config,
         repository: TaskJobRepository,
         event_bus: IEventBus,
-        listeners: list[TaskServiceListener] | None = None,
+        listeners: Sequence[TaskServiceListener] | None = None,
     ):
         self.config = config
         self.repo = repository
@@ -189,7 +189,7 @@ class TaskJobService(ITaskService):
         self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
         self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
         self.remote_workers = config.tasks.remote_workers
-        self._listeners = listeners or []
+        self._listeners = list(listeners) if listeners else []
 
     def _create_worker_task(
         self,
