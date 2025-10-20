@@ -602,6 +602,10 @@ class ServerConfig:
 class PrometheusConfig:
     """
     Sub config object dedicated to prometheus metrics
+
+    Attributes:
+        multiprocess: if True, metrics of workers will be aggregated before exposition.
+                      Environment variable `PROMETHEUS_MULTIPROC_DIR` must be set.
     """
 
     multiprocess: bool = False
@@ -615,9 +619,12 @@ class PrometheusConfig:
 class MetricsConfig:
     """
     Sub config object dedicated to metrics
+
+    Attributes:
+        prometheus: if not None, metrics will be exposed in prometheus format
     """
 
-    prometheus: Optional[PrometheusConfig] = None
+    prometheus: PrometheusConfig | None = None
 
     @classmethod
     def from_dict(cls, data: JSON) -> "MetricsConfig":

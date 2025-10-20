@@ -19,7 +19,6 @@ from http import HTTPStatus
 from typing import Awaitable, Callable, Dict, List, Optional, Sequence, TypeAlias
 
 from fastapi import HTTPException
-from prometheus_client import CollectorRegistry, Gauge, Histogram
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -544,34 +543,3 @@ class TaskJobService(ITaskService):
             return task.progress
         else:
             raise UserHasNotPermissionError()
-
-    def _register_metrics(self, registry: CollectorRegistry) -> None:
-        self._duration_histo = Histogram(
-            "tasks_duration_seconds",
-            "Tasks duration in seconds",
-            ["worker_id"],
-            registry=registry,
-        )
-        self._wait_time_histo = Histogram(
-            "tasks_duration_seconds",
-            "Tasks duration in seconds",
-            ["worker_id"],
-            registry=registry,
-        )
-        self._running_gauge = Gauge(
-            "tasks_running",
-            "Count of running tasks",
-            ["worker_id"],
-            multiprocess_mode="liveall",
-            registry=registry,
-        )
-        self._pending_gauge = Gauge(
-            "tasks_pending",
-            "Count of pending tasks",
-            ["worker_id"],
-            multiprocess_mode="liveall",
-            registry=registry,
-        )
-
-        self._submit_times: dict[str, float] = {}
-        self._start_times: dict[str, float] = {}
