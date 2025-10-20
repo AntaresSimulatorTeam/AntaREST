@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { validateString } from "@/utils/validation/string";
 import ContentCopy from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
-import { validateString } from "@/utils/validation/string";
-import FormDialog from "../../../../../common/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import type { BindingConstraint } from "./BindingConstView/utils";
+import FormDialog from "../../../../../../../common/dialogs/FormDialog";
+import StringFE from "../../../../../../../common/fieldEditors/StringFE";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { BindingConstraint } from "../utils";
 
 interface Props {
   open: boolean;
@@ -28,7 +28,7 @@ interface Props {
   onDuplicate: (newName: string) => Promise<void>;
 }
 
-function DuplicateDialog({
+function DuplicateConstraintDialog({
   open,
   onClose,
   constraintName,
@@ -84,4 +84,4 @@ function DuplicateDialog({
   );
 }
 
-export default DuplicateDialog;
+export default DuplicateConstraintDialog;

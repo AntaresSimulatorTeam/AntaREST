@@ -17,13 +17,13 @@ import { Box, Button } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import type { AllClustersAndLinks, StudyMetadata } from "../../../../../../../types/types";
-import Fieldset from "../../../../../../common/Fieldset";
-import { useFormContextPlus } from "../../../../../../common/Form";
-import TextSeparator from "../../../../../../common/TextSeparator";
-import AddConstraintTermDialog from "./AddConstraintTermDialog";
-import ConstraintTermItem from "./ConstraintTerm";
-import { type BindingConstraint, type ConstraintTerm, generateTermId } from "./utils";
+import type { AllClustersAndLinks, StudyMetadata } from "../../../../../../../../../types/types";
+import Fieldset from "../../../../../../../../common/Fieldset";
+import { useFormContextPlus } from "../../../../../../../../common/Form";
+import TextSeparator from "../../../../../../../../common/TextSeparator";
+import { type BindingConstraint, type ConstraintTerm, generateTermId } from "../../utils";
+import ConstraintTermItem from "./ConstraintTermFE";
+import AddConstraintTermDialog from "./ConstraintTermFE/AddConstraintTermDialog";
 
 interface Props {
   study: StudyMetadata;
@@ -31,8 +31,7 @@ interface Props {
   options: AllClustersAndLinks;
 }
 
-// TODO rename ConstraintTermsFields
-function BindingConstForm({ study, options, constraintId }: Props) {
+function ConstraintTermsFields({ study, options, constraintId }: Props) {
   const [t] = useTranslation();
   const [openConstraintTermDialog, setOpenConstraintTermDialog] = useState(false);
 
@@ -73,10 +72,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
   return (
     <>
-      <Fieldset
-        legend={t("study.modelization.bindingConst.constraintTerm")}
-        sx={{ width: 1, py: 1, mt: 1 }}
-      >
+      <Fieldset legend={t("study.modelization.bindingConst.constraintTerm")}>
         <Box sx={{ display: "flex", width: 1, flexDirection: "column" }}>
           <Box
             sx={{
@@ -107,7 +103,6 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           ))}
         </Box>
       </Fieldset>
-
       {openConstraintTermDialog && (
         <AddConstraintTermDialog
           open={openConstraintTermDialog}
@@ -124,4 +119,4 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   );
 }
 
-export default BindingConstForm;
+export default ConstraintTermsFields;

@@ -12,46 +12,66 @@
  * This file is part of the Antares project.
  */
 
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import usePromise from "@/hooks/usePromise";
+import { getBindingConstraint } from "@/services/api/studydata";
+import { Box, Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import type { BindingConstraint } from "./utils";
-import SplitView from "../../../../../../common/SplitView";
-import { Box } from "@mui/material";
 import Matrix from "../../../../../../common/Matrix";
+import SplitView from "../../../../../../common/SplitView";
 
 interface Props {
   study: StudyMetadata;
   constraintId: string;
-  operator: BindingConstraint["operator"];
 }
 
-function ConstraintMatrix({ study, constraintId, operator }: Props) {
+const URL_BASE = "input/bindingconstraints/" as const;
+
+function ConstraintMatrix({ study, constraintId }: Props) {
   const { t } = useTranslation();
+  const studyVersion = Number(study.version);
+
+  const constraintRes = usePromise(
+    () => getBindingConstraint(study.id, constraintId),
+    [study.id, constraintId],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  if (studyVersion < 870) {
+    return (
+      <Matrix
+        title={t("global.matrix")}
+        url={`${URL_BASE}${constraintId}`}
+        customColumns={["<", ">", "="]}
+      />
+    );
+  }
+
   return (
-    <Box sx={{ height: 1, width: 1 }}>
-      {Number(study.version) >= 870 ? (
-        <>
+    <UsePromiseCond
+      response={constraintRes}
+      ifFulfilled={({ operator }) => (
+        <Box sx={{ height: 1, width: 1 }}>
           {operator === "less" && (
             <Matrix
               title={t("study.modelization.bindingConst.timeSeries.less")}
-              url={`input/bindingconstraints/${constraintId}_lt`}
+              url={`${URL_BASE}${constraintId}_lt`}
             />
           )}
           {operator === "equal" && (
             <Matrix
               title={t("study.modelization.bindingConst.timeSeries.equal")}
-              url={`input/bindingconstraints/${constraintId}_eq`}
+              url={`${URL_BASE}${constraintId}_eq`}
             />
           )}
           {operator === "greater" && (
             <Matrix
               title={t("study.modelization.bindingConst.timeSeries.greater")}
-              url={`input/bindingconstraints/${constraintId}_gt`}
+              url={`${URL_BASE}${constraintId}_gt`}
             />
           )}
           {operator === "both" && (
@@ -59,26 +79,21 @@ function ConstraintMatrix({ study, constraintId, operator }: Props) {
               <Box sx={{ px: 2 }}>
                 <Matrix
                   title={t("study.modelization.bindingConst.timeSeries.less")}
-                  url={`input/bindingconstraints/${constraintId}_lt`}
+                  url={`${URL_BASE}${constraintId}_lt`}
                 />
               </Box>
               <Box sx={{ px: 2 }}>
                 <Matrix
                   title={t("study.modelization.bindingConst.timeSeries.greater")}
-                  url={`input/bindingconstraints/${constraintId}_gt`}
+                  url={`${URL_BASE}${constraintId}_gt`}
                 />
               </Box>
             </SplitView>
           )}
-        </>
-      ) : (
-        <Matrix
-          title={t("global.matrix")}
-          url={`input/bindingconstraints/${constraintId}`}
-          customColumns={["<", ">", "="]}
-        />
+        </Box>
       )}
-    </Box>
+      ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+    />
   );
 }
 

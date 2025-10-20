@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import ViewWrapper from "@/components/common/page/ViewWrapper";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
 import usePromise from "../../../../../../hooks/usePromise";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getBindingConst, getCurrentBindingConstId } from "../../../../../../redux/selectors";
+import { getCurrentBindingConstId } from "../../../../../../redux/selectors";
 import { getBindingConstraintList } from "../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../types/types";
 import EmptyView from "../../../../../common/page/EmptyView";
@@ -36,12 +36,7 @@ function BindingConstraints() {
 
   const currentConstraintId = useAppSelector(getCurrentBindingConstId);
 
-  const bindingConstraints = useAppSelector((state) => getBindingConst(state, study.id));
-
-  const constraintsRes = usePromise(
-    () => getBindingConstraintList(study.id),
-    [study.id, bindingConstraints],
-  );
+  const constraintsRes = usePromise(() => getBindingConstraintList(study.id), [study.id]);
 
   useEffect(() => {
     const { data } = constraintsRes;

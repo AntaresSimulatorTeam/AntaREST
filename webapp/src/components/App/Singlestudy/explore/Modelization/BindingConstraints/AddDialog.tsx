@@ -12,25 +12,28 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
-import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateString } from "@/utils/validation/string";
+import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../types/types";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import {
   BindingConstraintOperator,
   TimeStep,
 } from "../../../CommandsDrawer/EditionView/commandTypes";
-import { type BindingConstraint, OPERATORS, TIME_STEPS } from "./BindingConstView/utils";
+import {
+  type BindingConstraint,
+  OPERATOR_OPTIONS,
+  TIME_STEPS_OPTIONS,
+} from "./BindingConstView/utils";
 
 interface Props {
   open: boolean;
@@ -54,24 +57,6 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
     operator: BindingConstraintOperator.LESS,
     comments: "",
   };
-
-  const operatorOptions = useMemo(
-    () =>
-      OPERATORS.map((operator) => ({
-        label: t(`study.modelization.bindingConst.operator.${operator}`),
-        value: operator,
-      })),
-    [t],
-  );
-
-  const timeStepOptions = useMemo(
-    () =>
-      TIME_STEPS.map((timeStep) => ({
-        label: t(`global.time.${timeStep}`),
-        value: timeStep,
-      })),
-    [t],
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -173,14 +158,14 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
             name="timeStep"
             label={t("study.modelization.bindingConst.type")}
             variant="outlined"
-            options={timeStepOptions}
+            options={TIME_STEPS_OPTIONS}
             control={control}
           />
           <SelectFE
             name="operator"
             label={t("study.modelization.bindingConst.operator")}
             variant="outlined"
-            options={operatorOptions}
+            options={OPERATOR_OPTIONS}
             control={control}
           />
         </Box>

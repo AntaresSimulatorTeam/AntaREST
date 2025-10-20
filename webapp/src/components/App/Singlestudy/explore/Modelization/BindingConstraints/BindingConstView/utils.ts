@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { Options } from "@/components/common/fieldEditors/SelectFE";
+
 ////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////
@@ -19,9 +21,24 @@
 export const ACTIVE_WINDOWS_DOC_PATH =
   "https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/";
 
-export const OPERATORS = ["less", "equal", "greater", "both"] as const;
-export const TIME_STEPS = ["hourly", "daily", "weekly"] as const;
-export const OUTPUT_FILTERS = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
+const OPERATORS = ["less", "equal", "greater", "both"] as const;
+const TIME_STEPS = ["hourly", "daily", "weekly"] as const;
+const OUTPUT_FILTERS = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
+
+export const OPERATOR_OPTIONS: Options<string> = OPERATORS.map((operator) => ({
+  label: (t) => t(`study.modelization.bindingConst.operator.${operator}`),
+  value: operator,
+}));
+
+export const TIME_STEPS_OPTIONS: Options<string> = TIME_STEPS.map((timeStep) => ({
+  label: (t) => t(`global.time.${timeStep}`),
+  value: timeStep,
+}));
+
+export const OUTPUT_FILTERS_OPTIONS: Options<string> = OUTPUT_FILTERS.map((filter) => ({
+  label: (t) => t(`global.time.${filter}`),
+  value: filter,
+}));
 
 ////////////////////////////////////////////////////////////////
 // Types

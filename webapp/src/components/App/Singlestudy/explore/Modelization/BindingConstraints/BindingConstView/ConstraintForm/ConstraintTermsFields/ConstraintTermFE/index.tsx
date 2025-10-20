@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo, useState } from "react";
-import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
+import { Box, Button, TextField, Typography } from "@mui/material";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { isLinkTerm, type ConstraintTerm } from "../utils";
-import type { AllClustersAndLinks } from "../../../../../../../../types/types";
+import type { AllClustersAndLinks } from "../../../../../../../../../../types/types";
+import ConstraintElement from "../../../constraintviews/ConstraintElement";
+import OffsetInput from "../../../constraintviews/OffsetInput";
+import { isLinkTerm, type ConstraintTerm } from "../../../utils";
 import OptionsList from "./OptionsList";
-import ConstraintElement from "../constraintviews/ConstraintElement";
-import OffsetInput from "../constraintviews/OffsetInput";
 
 interface Props {
   options: AllClustersAndLinks;
@@ -63,7 +63,7 @@ interface Props {
  *
  * @returns Constraint Term component of type link or cluster
  */
-function ConstraintTermItem({ options, term, constraintTerms, saveValue, deleteTerm }: Props) {
+function ConstraintTermFE({ options, term, constraintTerms, saveValue, deleteTerm }: Props) {
   const [t] = useTranslation();
   const [weight, setWeight] = useState(term.weight);
   const [offset, setOffset] = useState(term.offset);
@@ -226,4 +226,4 @@ function ConstraintTermItem({ options, term, constraintTerms, saveValue, deleteT
   );
 }
 
-export default ConstraintTermItem;
+export default ConstraintTermFE;
