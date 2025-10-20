@@ -15,6 +15,7 @@ from typing import List, Optional
 from unittest.mock import Mock
 
 import pandas as pd
+from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_8
@@ -32,9 +33,11 @@ class MockMatrixNode(MatrixNode):
             freq=MatrixFrequency.ANNUAL,
         )
 
+    @override
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
         return MOCK_MATRIX
 
+    @override
     def write_dataframe(self, df: pd.DataFrame) -> None:
         df.to_csv(self.config.path, sep="\t", header=False, index=False)
 

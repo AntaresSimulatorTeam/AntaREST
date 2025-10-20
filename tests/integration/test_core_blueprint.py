@@ -14,6 +14,7 @@ import re
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
+from typing_extensions import override
 
 
 class RegEx:
@@ -23,12 +24,15 @@ class RegEx:
         self.regex = regex
         self.match = re.compile(self.regex).fullmatch
 
+    @override
     def __eq__(self, other):
         return isinstance(other, str) and self.match(other)
 
+    @override
     def __ne__(self, other):
         return not isinstance(other, str) or not self.match(other)
 
+    @override
     def __repr__(self):
         return f"<RegEx({self.regex!r})>"
 

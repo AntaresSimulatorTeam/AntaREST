@@ -15,6 +15,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 import pytest
+from typing_extensions import override
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -70,6 +71,7 @@ def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service
             def __init__(self, data_matrix_service: MatrixService) -> None:
                 data_matrix_service.register_usage_provider(self)
 
+            @override
             def get_matrix_usage(self) -> list[MatrixReference]:
                 datasets = repo_dataset.get_all_datasets()
 

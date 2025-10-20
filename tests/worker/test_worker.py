@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock
 
+from typing_extensions import override
+
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
@@ -29,6 +31,7 @@ class DummyWorker(AbstractWorker):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 
+    @override
     def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         # simulate a "long" task ;-)
         time.sleep(0.01)

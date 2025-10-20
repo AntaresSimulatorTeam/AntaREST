@@ -23,6 +23,7 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import sessionmaker
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
@@ -170,6 +171,7 @@ class DummyWorker(AbstractWorker):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 
+    @override
     def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         # simulate a "long" task ;-)
         time.sleep(0.01)

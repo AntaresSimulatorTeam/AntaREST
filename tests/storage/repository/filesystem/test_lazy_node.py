@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
 
+from typing_extensions import override
+
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperManaged
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -27,6 +29,7 @@ class MockLazyNode(LazyNode[str, str, str]):
             matrix_mapper=matrix_mapper,
         )
 
+    @override
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -36,6 +39,7 @@ class MockLazyNode(LazyNode[str, str, str]):
     ) -> str:
         return "Mock Matrix Content"
 
+    @override
     def dump(self, data: str, url: Optional[List[str]] = None) -> None:
         self.config.path.write_text(data)
 

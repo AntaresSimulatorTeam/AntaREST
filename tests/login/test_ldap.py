@@ -16,6 +16,7 @@ import typing as t
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from sqlalchemy import create_engine
+from typing_extensions import override
 
 from antarest.core.config import Config, ExternalAuthConfig, SecurityConfig
 from antarest.core.roles import RoleType
@@ -31,6 +32,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler):
     This HTTP request handler simulates an LDAP server.
     """
 
+    @override
     def log_request(self, code="-", size="-"):
         """Override the log_request method to suppress access logs"""
 

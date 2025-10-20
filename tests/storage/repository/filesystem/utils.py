@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import List, Optional
 from zipfile import ZipFile
 
+from typing_extensions import override
+
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -28,12 +30,14 @@ class CheckSubNode(INode[int, int, int]):
         super().__init__(config)
         self.value = value
 
+    @override
     def get_node_and_remainder(
         self,
         url: Optional[List[str]] = None,
     ) -> tuple[INode[int, int, int], list[str]]:
         return self, []
 
+    @override
     def get(
         self,
         url: Optional[List[str]] = None,
@@ -43,9 +47,11 @@ class CheckSubNode(INode[int, int, int]):
     ) -> int:
         return self.value
 
+    @override
     def save(self, data: int, url: Optional[List[str]] = None) -> None:
         self.value = data
 
+    @override
     def delete(self, url: Optional[List[str]] = None) -> None:
         pass
 
@@ -63,6 +69,7 @@ class TestMiddleNode(FolderNode):
         super().__init__(matrix_mapper, config)
         self.children = children
 
+    @override
     def build(self) -> TREE:
         return self.children
 
