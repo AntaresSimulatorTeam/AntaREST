@@ -190,10 +190,9 @@ class TestFetchRawData:
             # Checks created commands
             res = client.get(f"/v1/studies/{internal_study_id}/commands")
             commands = res.json()
-            # First command is created automatically to respect owners, we ignore it.
-            assert len(commands) == 2
-            assert commands[1]["action"] == "create_user_resource"
-            assert commands[1]["args"] == {
+            assert len(commands) == 1
+            assert commands[0]["action"] == "create_user_resource"
+            assert commands[0]["args"] == {
                 "data": {"path": "somewhere/something.txt", "resource_type": "file", "content": "Goodbye Cruel World!"}
             }
 
