@@ -143,8 +143,8 @@ def test_variant_manager(
         assert children["children"][0]["children"][1]["node"]["name"] == "bar"
 
         # George creates a base study
-        # He creates a variant from this study : assert that no command is created
-        # The admin creates a variant from the same base study : assert that its author is admin (created via a command)
+        # He creates a variant from this study : assert that no command is created and the editor is still George.
+        # The admin does the same : assert that no command is created and the editor is now the admin.
 
         client.post(
             "/v1/users",
@@ -159,6 +159,8 @@ def test_variant_manager(
         )
 
         base_study_id = base_study_res.json()
+
+        # George part
         res = client.post(
             f"/v1/studies/{base_study_id}/variants?name=foo_2",
             headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
@@ -166,14 +168,21 @@ def test_variant_manager(
         variant_id = res.json()
         res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
         assert len(res.json()) == 0
+        res = client.get(f"/v1/studies/{variant_id}/raw?path=study", headers=admin_headers)
+        antares_content = res.json()["antares"]
+        assert antares_content["author"] == "George"
+        assert antares_content["editor"] == "George"
+
+        # Admin part
         res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
         variant_id = res.json()
         res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert len(res.json()) == 1
-        command = res.json()[0]
-        assert command["action"] == "update_config"
-        assert command["args"]["target"] == "study"
-        assert command["args"]["data"]["antares"]["author"] == "admin"
+        assert len(res.json()) == 0
+
+        res = client.get(f"/v1/studies/{variant_id}/raw?path=study", headers=admin_headers)
+        antares_content = res.json()["antares"]
+        assert antares_content["author"] == "George"
+        assert antares_content["editor"] == "admin"
 
         res = client.get(f"/v1/studies/{variant_id}/parents", headers=admin_headers)
         assert len(res.json()) == 1
@@ -227,7 +236,7 @@ def test_variant_manager(
         assert res.status_code == 200
 
         res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert len(res.json()) == 4
+        assert len(res.json()) == 3
         assert res.status_code == 200
 
         res = client.put(
