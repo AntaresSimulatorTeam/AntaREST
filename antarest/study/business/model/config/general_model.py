@@ -18,7 +18,6 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.model import STUDY_VERSION_7_1
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
@@ -55,8 +54,6 @@ class BuildingMode(EnumIgnoreCase):
 
 
 DayNumberType: TypeAlias = Annotated[int, Field(ge=1, le=366)]
-GENERAL = "general"
-GENERAL_PATH = f"{GENERAL_DATA_PATH}/{GENERAL}"
 
 
 class GeneralConfig(AntaresBaseModel):
