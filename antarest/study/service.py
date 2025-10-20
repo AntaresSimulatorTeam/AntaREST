@@ -941,6 +941,23 @@ class StudyService:
                 level = StudyDownloadLevelDTO(data_node.freq)
         return get_start_date(file_study, output_id, level)
 
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+        """
+        Get the time index (start date and step count) for output matrices with a given frequency.
+
+        Args:
+            study_id: ID of the study
+            output_id: ID of the output
+            frequency: temporal frequency (hourly, daily, weekly, monthly, annually)
+
+        Returns:
+            MatrixIndex with start_date, steps, first_week_size and level
+        """
+        study = self.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        file_study = self.get_file_study(study)
+        return get_start_date(file_study, output_id, frequency)
+
     def remove_duplicates(self) -> None:
         duplicates = self.repository.list_duplicates()
         ids: List[str] = []
