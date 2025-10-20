@@ -74,25 +74,28 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
     )
     dbconn_gauge.labels(WORKER_ID).set(0)
 
-    checkout_counter = Counter(
-        "dbconn_checkout_count",
-        "DB connection checkouts",
+    dbconn_idle_gauge = Gauge(
+        "dbconn_idle",
+        "Idle DB connection count",
         ["worker_id"],
+        multiprocess_mode="liveall",
         registry=registry,
     )
-
-    checkin_counter = Counter(
-        "dbconn_checkin_count",
-        "DB connection checkins",
-        ["worker_id"],
-        registry=registry,
-    )
+    dbconn_idle_gauge.labels(WORKER_ID).set(0)
 
     dbconn_gauge.labels(WORKER_ID).set(0)
 
+    @listens_for(target, "connect")
+    def on_connect(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
+        dbconn_idle_gauge.labels(WORKER_ID).inc()
+
+    @listens_for(target, "close")
+    def on_close(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
+        dbconn_idle_gauge.labels(WORKER_ID).dec()
+
     @listens_for(target, "checkin")
     def on_checkin(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
-        checkin_counter.labels(WORKER_ID).inc()
+        dbconn_idle_gauge.labels(WORKER_ID).inc()
         try:
             start_time = connection_record.info["start_time"]
         except KeyError:
@@ -105,7 +108,7 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
     def on_checkout(
         dbapi_con: Any, connection_record: ConnectionPoolEntry, connection_proxy: PoolProxiedConnection
     ) -> None:
-        checkout_counter.labels(WORKER_ID).inc()
+        dbconn_idle_gauge.labels(WORKER_ID).dec()
         dbconn_gauge.labels(WORKER_ID).inc()
 
         connection_record.info["start_time"] = time.time()
@@ -114,7 +117,6 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
 def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessionmaker[Session] | None = None) -> None:
     """
     Register ORM-level DB metrics:
-     -
     """
     target = session_factory or Session
 

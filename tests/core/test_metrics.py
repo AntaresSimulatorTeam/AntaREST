@@ -65,36 +65,28 @@ def _get_histo_count(registry: CollectorRegistry, name: str) -> float | None:
 
 
 def test_task_metrics_recorder():
-    metrics_registry = CollectorRegistry()
-    recorder = TasksMetricsRecorder(metrics_registry)
-    metrics = {m.name: m for m in metrics_registry.collect()}
-    assert metrics.keys() == {"tasks_duration_seconds", "tasks_wait_seconds", "tasks_running", "tasks_pending"}
+    registry = CollectorRegistry()
+    recorder = TasksMetricsRecorder(registry)
+    metrics_names = {m.name for m in registry.collect()}
+    assert metrics_names == {"tasks_duration_seconds", "tasks_wait_seconds", "tasks_running", "tasks_pending"}
 
     recorder.on_task_submit("task1")
-    metrics = {m.name: m for m in metrics_registry.collect()}
-    assert metrics["tasks_running"].samples == []
-    assert len(metrics["tasks_pending"].samples) == 1
-    assert metrics["tasks_pending"].samples[0].value == 1
-    assert metrics["tasks_duration_seconds"].samples == []
-    assert metrics["tasks_wait_seconds"].samples == []
+    assert _get_value(registry, "tasks_running") is None
+    assert _get_value(registry, "tasks_pending") == 1
+    assert _get_histo_count(registry, "tasks_wait_seconds") is None
+    assert _get_histo_count(registry, "tasks_duration_seconds") is None
 
     recorder.on_task_start("task1")
-    metrics = {m.name: m for m in metrics_registry.collect()}
-    assert len(metrics["tasks_running"].samples) == 1
-    assert metrics["tasks_running"].samples[0].value == 1
-    assert len(metrics["tasks_pending"].samples) == 1
-    assert metrics["tasks_pending"].samples[0].value == 0
-    assert metrics["tasks_duration_seconds"].samples == []
-    assert len(metrics["tasks_wait_seconds"].samples) > 0
+    assert _get_value(registry, "tasks_running") == 1
+    assert _get_value(registry, "tasks_pending") == 0
+    assert _get_histo_count(registry, "tasks_wait_seconds") == 1
+    assert _get_histo_count(registry, "tasks_duration_seconds") is None
 
     recorder.on_task_end("task1")
-    metrics = {m.name: m for m in metrics_registry.collect()}
-    assert len(metrics["tasks_running"].samples) == 1
-    assert metrics["tasks_running"].samples[0].value == 0
-    assert len(metrics["tasks_pending"].samples) == 1
-    assert metrics["tasks_pending"].samples[0].value == 0
-    assert len(metrics["tasks_duration_seconds"].samples) > 0
-    assert len(metrics["tasks_wait_seconds"].samples) > 0
+    assert _get_value(registry, "tasks_running") == 0
+    assert _get_value(registry, "tasks_pending") == 0
+    assert _get_histo_count(registry, "tasks_wait_seconds") == 1
+    assert _get_histo_count(registry, "tasks_duration_seconds") == 1
 
 
 def test_db_connection_metrics():
@@ -107,21 +99,23 @@ def test_db_connection_metrics():
     assert metrics_names == {
         "dbconn_duration_seconds",
         "dbconn_in_use",
-        "dbconn_checkout_count",
-        "dbconn_checkin_count",
+        "dbconn_idle",
     }
 
     assert _get_value(registry, "dbconn_in_use") == 0
+    assert _get_value(registry, "dbconn_idle") == 0
 
     with engine.connect() as conn:
+        assert _get_value(registry, "dbconn_in_use") == 1
+        assert _get_value(registry, "dbconn_idle") == 0
         conn.execute(text("CREATE TABLE test (id INTEGER PRIMARY KEY)"))
         conn.commit()
 
         assert _get_value(registry, "dbconn_in_use") == 1
+        assert _get_value(registry, "dbconn_idle") == 0
 
     assert _get_value(registry, "dbconn_in_use") == 0
-    assert _get_value(registry, "dbconn_checkout_count") == 1
-    assert _get_value(registry, "dbconn_checkin_count") == 1
+    assert _get_value(registry, "dbconn_idle") == 1
     assert _get_histo_count(registry, "dbconn_duration_seconds") == 1
 
 
