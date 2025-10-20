@@ -414,7 +414,7 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        params: dict,
+        params: dict[str, Any],
         expected_result_filename: str,
     ) -> None:
         """
@@ -621,7 +621,7 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        params: dict,
+        params: dict[str, Any],
         expected_result_filename: str,
     ) -> None:
         """

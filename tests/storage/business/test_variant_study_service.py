@@ -38,7 +38,7 @@ def build_config(study_path: Path) -> Config:
 
 
 @pytest.mark.unit_test
-def test_get(tmp_path: str, project_path: Any) -> None:
+def test_get(tmp_path: str, project_path: Path) -> None:
     """
     path_to_studies
     |_study1 (d)
@@ -163,7 +163,7 @@ def test_get_cache(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_exist(tmp_path: str, project_path: Any) -> None:
+def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study.antares").touch()
@@ -195,7 +195,7 @@ def test_assert_study_exist(tmp_path: str, project_path: Any) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_not_exist(tmp_path: str, project_path: Any) -> None:
+def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()

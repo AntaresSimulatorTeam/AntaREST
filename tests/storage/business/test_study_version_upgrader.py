@@ -16,7 +16,7 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import AnyStr, List, Optional
+from typing import AnyStr, List, Optional, Any
 
 import pandas
 import pytest
@@ -212,7 +212,7 @@ def get_old_settings_values(tmp_path: Path) -> List[str]:
     return [filtering_value, custom_ts_value, transmission_capa_value]
 
 
-def get_old_area_values(tmp_path: Path) -> dict:
+def get_old_area_values(tmp_path: Path) -> dict[str, Any]:
     dico = {}
     for folder in (tmp_path / "input" / "links").iterdir():
         all_txt = folder.glob("*.txt")
@@ -223,7 +223,7 @@ def get_old_area_values(tmp_path: Path) -> dict:
     return dico
 
 
-def get_old_binding_constraint_values(tmp_path: Path) -> dict:
+def get_old_binding_constraint_values(tmp_path: Path) -> dict[str, Any]:
     dico = {}
     bd_list = glob.glob(str(tmp_path / "input" / "bindingconstraints" / "*.txt"))
     for txt_file in bd_list:
@@ -233,7 +233,7 @@ def get_old_binding_constraint_values(tmp_path: Path) -> dict:
     return dico
 
 
-def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding_constraint_values: dict) -> None:
+def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict[str, Any], old_binding_constraint_values: dict[str, Any]) -> None:
     input_path = tmp_path / "input"
 
     # tests 8.1 upgrade

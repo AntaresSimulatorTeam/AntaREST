@@ -145,7 +145,7 @@ def file_study_tree_config() -> Any:
     return file_study_tree_config
 
 
-def test_apply(update_binding_constraints_command: UpdateBindingConstraints, study_data: Any) -> None:
+def test_apply(update_binding_constraints_command: UpdateBindingConstraints, study_data: FileStudy) -> None:
     output = update_binding_constraints_command.apply(study_data)
     assert output.status is True
     study_data.tree.save.assert_called_with(
@@ -186,7 +186,7 @@ def test_to_dto(update_binding_constraints_command: UpdateBindingConstraints) ->
     assert dto.study_version == STUDY_VERSION_8_7
 
 
-def test_update_time_step_via_table_mode(empty_study_880: Any, command_context: CommandContext) -> None:
+def test_update_time_step_via_table_mode(empty_study_880: FileStudy, command_context: CommandContext) -> None:
     study_version = empty_study_880.config.version
     # Create a bc with an hourly time_step and a less operator
     args = {

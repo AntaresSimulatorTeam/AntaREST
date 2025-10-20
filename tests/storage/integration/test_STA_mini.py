@@ -33,6 +33,7 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, Norma
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.study_download_utils import BadOutputFormat
@@ -74,7 +75,7 @@ def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
     return TestClient(build_ctxt.build())
 
 
-def assert_url_content(client: TestClient, url: str, expected_output: dict | str) -> None:
+def assert_url_content(client: TestClient, url: str, expected_output: dict[str, Any] | str) -> None:
     res = client.get(url)
     assert_study(res.json(), expected_output)
 
@@ -82,7 +83,7 @@ def assert_url_content(client: TestClient, url: str, expected_output: dict | str
 def assert_with_errors(
     storage_service: StudyService,
     url: str,
-    expected_output: Union[str, dict],
+    expected_output: Union[str, dict[str, Any]],
     formatted: bool = True,
 ) -> None:
     url = url[len("/v1/studies/") :]
@@ -709,7 +710,7 @@ def test_sta_mini_output_variables_no_mc_ind(output_service: Any) -> None:
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_links(output_service: Any) -> None:
+def test_sta_mini_output_variables_no_links(output_service: OutputService) -> None:
     study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
@@ -719,7 +720,7 @@ def test_sta_mini_output_variables_no_links(output_service: Any) -> None:
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_areas(output_service: Any) -> None:
+def test_sta_mini_output_variables_no_areas(output_service: OutputService) -> None:
     study_path = Path(output_service._study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
