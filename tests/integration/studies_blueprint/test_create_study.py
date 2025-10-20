@@ -40,13 +40,13 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ):
-        res = client.post(
-            f"/v1/studies?name=study&version={study_version}", headers={"Authorization": f"Bearer {admin_access_token}"}
-        )
+        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+        res = client.post(f"/v1/studies?name=study&version={study_version}")
         assert res.status_code == 201
         study_id = res.json()
 
-        res = client.get(f"/v1/studies/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
+        res = client.get(f"/v1/studies/{study_id}")
         assert res.status_code == 200
         study_metadata = res.json()
         assert study_metadata["name"] == "study"
@@ -57,22 +57,24 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        res = client.post("/v1/studies?name=study1", headers={"Authorization": f"Bearer {admin_access_token}"})
+        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+        res = client.post("/v1/studies?name=study1")
         assert res.status_code == 201
 
-        id = client.post("/v1/studies?name=study2  ", headers={"Authorization": f"Bearer {admin_access_token}"}).json()
-        res = client.get("/v1/studies?name=study2", headers={"Authorization": f"Bearer {admin_access_token}"})
+        id = client.post("/v1/studies?name=study2  ").json()
+        res = client.get("/v1/studies?name=study2")
         assert res.status_code == 200
         assert res.json()[id]["name"] == "study2"
 
-        res = client.post("/v1/studies?name=study3=", headers={"Authorization": f"Bearer {admin_access_token}"})
+        res = client.post("/v1/studies?name=study3=")
         assert res.status_code == 400
         assert res.json() == {
             "description": "study name study3= contains illegal characters (=, /)",
             "exception": "HTTPException",
         }
 
-        res = client.post("/v1/studies?name=stu / dy4", headers={"Authorization": f"Bearer {admin_access_token}"})
+        res = client.post("/v1/studies?name=stu / dy4")
         assert res.status_code == 400
         assert res.json() == {
             "description": "study name stu / dy4 contains illegal characters (=, /)",
@@ -84,32 +86,23 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
+        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
         # First create the directory structure
-        res = client.post(
-            "/v1/directories",
-            json={"name": "project"},
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-        )
+        res = client.post("/v1/directories", json={"name": "project"})
         assert res.status_code == 201
         project_dir_id = res.json()["id"]
 
-        res = client.post(
-            "/v1/directories",
-            json={"name": "subfolder", "parentId": project_dir_id},
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-        )
+        res = client.post("/v1/directories", json={"name": "subfolder", "parentId": project_dir_id})
         assert res.status_code == 201
 
         # Create study in the directory path
-        res = client.post(
-            "/v1/studies?name=test-study&path=project/subfolder",
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-        )
+        res = client.post("/v1/studies?name=test-study&path=project/subfolder")
         assert res.status_code == 201
         study_id = res.json()
 
         # Verify the study has the correct directory_id
-        res = client.get(f"/v1/studies/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
+        res = client.get(f"/v1/studies/{study_id}")
         assert res.status_code == 200
         study = res.json()
         assert study["name"] == "test-study"
@@ -119,20 +112,19 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        res = client.post(
-            "/v1/studies?name=test-study&path=workspace/experiments/test",
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-        )
+        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+        res = client.post("/v1/studies?name=test-study&path=workspace/experiments/test")
         assert res.status_code == 201
         study_id = res.json()
 
         # Verify the study was created
-        res = client.get(f"/v1/studies/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
+        res = client.get(f"/v1/studies/{study_id}")
         assert res.status_code == 200
         assert res.json()["name"] == "test-study"
 
         # Verify directories were created
-        res = client.get("/v1/directories", headers={"Authorization": f"Bearer {admin_access_token}"})
+        res = client.get("/v1/directories")
         assert res.status_code == 200
         directories = res.json()
         dir_names = [d["name"] for d in directories]
@@ -155,14 +147,13 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        res = client.post(
-            "/v1/studies?name=root-study",
-            headers={"Authorization": f"Bearer {admin_access_token}"},
-        )
+        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+        res = client.post("/v1/studies?name=root-study")
         assert res.status_code == 201
         study_id = res.json()
 
         # Verify the study was created
-        res = client.get(f"/v1/studies/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
+        res = client.get(f"/v1/studies/{study_id}")
         assert res.status_code == 200
         assert res.json()["name"] == "root-study"

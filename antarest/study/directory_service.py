@@ -31,8 +31,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, DirectoryRepository, StudyMetadataRepository
 
-if TYPE_CHECKING:
-    from antarest.study.service import StudyService
+from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)
 
