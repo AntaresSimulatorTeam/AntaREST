@@ -45,7 +45,7 @@ def launcher_config(tmp_path: Path) -> LocalConfig:
 
 
 @pytest.mark.unit_test
-def test_compute(tmp_path: Path, launcher_config: LocalConfig):
+def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     # prepare a dummy executable to simulate Antares Solver
@@ -108,7 +108,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig):
 
 
 @pytest.fixture
-def xpress_env():
+def xpress_env() -> None:
     """
     Defines XPRESSDIR env var and ensure removal after unit test
     """
@@ -118,7 +118,7 @@ def xpress_env():
 
 
 @pytest.mark.unit_test
-def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
+def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     solver_version_8_8 = SolverVersion.parse("8.8")
     solver_version_9_2 = SolverVersion.parse("9.2")
@@ -208,7 +208,7 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
 )
 def test_unsupported_launcher_other_options_should_raise(
     launcher_config: LocalConfig, xpress_env, solver_version: SolverVersion, arguments: str
-):
+) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     launcher_parameters = LauncherParametersDTO(nb_cpu=4)
     with pytest.raises(ValueError, match="not supported"):
@@ -217,7 +217,7 @@ def test_unsupported_launcher_other_options_should_raise(
 
 
 @pytest.mark.unit_test
-def test_parse_xpress_dir(tmp_path: Path):
+def test_parse_xpress_dir(tmp_path: Path) -> None:
     data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
     launcher_config = LocalConfig.from_dict(data)
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
@@ -227,7 +227,7 @@ def test_parse_xpress_dir(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_select_best_binary():
+def test_select_best_binary() -> None:
     binaries = {
         "700": Path("700"),
         "800": Path("800"),

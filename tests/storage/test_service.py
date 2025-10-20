@@ -414,7 +414,7 @@ def test_sync_unsuppported_study_from_disk(caplog) -> None:
     raw_service = Mock(spec=RawStudyService)
     service = build_study_service(raw_service, repository, config)
 
-    def fake_compatibility_check(study: Study):
+    def fake_compatibility_check(study: Study) -> None:
         if not hasattr(fake_compatibility_check, "call_count"):
             fake_compatibility_check.call_count = 0
 
@@ -1346,7 +1346,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         raise ValueError(f"Unexpected study id: {study_id}")
 
     class ChildrenProvider:
-        def __init__(self):
+        def __init__(self) -> None:
             self.c0 = 0
             self.c1 = 0
 
@@ -1368,7 +1368,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
             raise ValueError(f"Unexpected study id: {parent_id}")
 
     class HasChildrenProvider:
-        def __init__(self):
+        def __init__(self) -> None:
             self.c1 = 0
             self.c2 = 0
 

@@ -43,7 +43,7 @@ class MockLazyNode(LazyNode[str, str, str]):
         pass  # not used
 
 
-def test_get_no_expanded_txt(tmp_path: Path):
+def test_get_no_expanded_txt(tmp_path: Path) -> None:
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
     file.touch()
@@ -57,7 +57,7 @@ def test_get_no_expanded_txt(tmp_path: Path):
     assert "Mock Matrix Content" == node.get(expanded=False)
 
 
-def test_get_expanded_txt(tmp_path: Path):
+def test_get_expanded_txt(tmp_path: Path) -> None:
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
     file.touch()
@@ -71,7 +71,7 @@ def test_get_expanded_txt(tmp_path: Path):
     assert "file://lazy.txt" == node.get(expanded=True)
 
 
-def test_save_uri(tmp_path: Path):
+def test_save_uri(tmp_path: Path) -> None:
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
     file.touch()
@@ -91,7 +91,7 @@ def test_save_uri(tmp_path: Path):
     matrix_service.exists.assert_called_once_with("id")
 
 
-def test_save_txt(tmp_path: Path):
+def test_save_txt(tmp_path: Path) -> None:
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
 

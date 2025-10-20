@@ -26,7 +26,7 @@ class TestHydroCorrelation:
     which contains the following areas: ["de", "es", "fr", "it"].
     """
 
-    def test_get_correlation_form_values(self, client: TestClient, user_access_token: str, internal_study_id: str):
+    def test_get_correlation_form_values(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """Check `get_correlation_form_values` end point"""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
@@ -43,7 +43,7 @@ class TestHydroCorrelation:
         }
         assert actual == expected
 
-    def test_set_correlation_form_values(self, client: TestClient, user_access_token: str, internal_study_id: str):
+    def test_set_correlation_form_values(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """Check `set_correlation_form_values` end point"""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
@@ -96,7 +96,7 @@ class TestHydroCorrelation:
         }
         assert actual == expected
 
-    def test_get_correlation_matrix(self, client: TestClient, user_access_token: str, internal_study_id: str):
+    def test_get_correlation_matrix(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """Check `get_correlation_matrix` end point"""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
@@ -113,7 +113,7 @@ class TestHydroCorrelation:
             "index": ["de", "es", "fr", "it"],
         }
 
-    def test_create_area(self, client: TestClient, user_access_token: str, internal_study_id: str):
+    def test_create_area(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """
         Given a study, when an area is created, the hydraulic correlation
         column for this area must be updated with the following values:
@@ -142,7 +142,7 @@ class TestHydroCorrelation:
         }
         assert actual == expected
 
-    def test_delete_area(self, client: TestClient, user_access_token: str, internal_study_id: str):
+    def test_delete_area(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """
         Given a study, when an area is deleted, the hydraulic correlation
         column for this area must be removed.
@@ -188,7 +188,7 @@ class TestHydroCorrelation:
 
     def test_get_correlation_values__empty_annual(
         self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "it"
 

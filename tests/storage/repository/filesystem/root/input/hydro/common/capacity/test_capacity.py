@@ -57,7 +57,7 @@ class TestInputHydroCommonCapacity:
         self,
         version: str,
         expected: dict,
-    ):
+    ) -> None:
         resolver = Mock(spec=MatrixUriMapper)
         context = resolver
         study_id = str(uuid.uuid4())

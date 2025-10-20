@@ -105,7 +105,7 @@ class PreparerProxy(Proxy):
         area_id = res.json()["id"]
         return area_id
 
-    def update_general_data(self, internal_study_id: str, **data: t.Any):
+    def update_general_data(self, internal_study_id: str, **data: t.Any) -> None:
         res = self.client.put(
             f"/v1/studies/{internal_study_id}/config/general/form",
             json=data,

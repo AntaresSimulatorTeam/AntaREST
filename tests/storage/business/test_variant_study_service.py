@@ -32,7 +32,7 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 from tests.helpers import create_variant_study
 
 
-def build_config(study_path: Path):
+def build_config(study_path: Path) -> None:
     return Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)}))
 
 

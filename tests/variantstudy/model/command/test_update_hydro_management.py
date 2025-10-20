@@ -22,11 +22,11 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateHydroManagement:
-    def _set_up(self, study: FileStudy, command_context: CommandContext):
+    def _set_up(self, study: FileStudy, command_context: CommandContext) -> None:
         CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
         CreateArea(area_name="be", command_context=command_context, study_version=study.config.version).apply(study)
 
-    def test_lifecycle(self, empty_study_880: FileStudy, empty_study_920: FileStudy, command_context: CommandContext):
+    def test_lifecycle(self, empty_study_880: FileStudy, empty_study_920: FileStudy, command_context: CommandContext) -> None:
         for study in [empty_study_880, empty_study_920]:
             study_version = study.config.version
             self._set_up(study, command_context)

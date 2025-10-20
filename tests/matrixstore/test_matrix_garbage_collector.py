@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.repository import VariantStudyRepositor
 
 
 @pytest.fixture
-def matrix_garbage_collector(tmp_path: Path):
+def matrix_garbage_collector(tmp_path: Path) -> None:
     """
     Fixture for creating a MatrixGarbageCollector object.
     """
@@ -55,7 +55,7 @@ def matrix_garbage_collector(tmp_path: Path):
 @pytest.mark.unit_test
 def test_delete_unused_saved_matrices(
     matrix_garbage_collector: MatrixGarbageCollector,
-):
+) -> None:
     unused_matrices = {"matrix1", "matrix2"}
     matrix_garbage_collector.matrix_service.delete = Mock()
     matrix_garbage_collector._delete_unused_saved_matrices(unused_matrices)
@@ -70,7 +70,7 @@ def test_delete_unused_saved_matrices(
 
 
 @pytest.mark.unit_test
-def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
+def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector) -> None:
     matrix_garbage_collector.matrix_service.get_matrices.return_value = [
         MatrixMetadataDTO(id="matrix2", width=0, height=0, version=0, created_at=datetime(2020, 1, 1, 0, 0, 0))
     ]
@@ -85,7 +85,7 @@ def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
 
 
 @pytest.mark.parametrize("retention_time, expected_remove", [(-1, True), (3600, False)])
-def test_clean_matrices_actual_service(matrix_service: MatrixService, retention_time: int, expected_remove: bool):
+def test_clean_matrices_actual_service(matrix_service: MatrixService, retention_time: int, expected_remove: bool) -> None:
     gc = MatrixGarbageCollector(
         matrix_service=matrix_service, sleeping_time=3600, dry_run=False, retention_time=retention_time
     )

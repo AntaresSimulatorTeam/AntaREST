@@ -36,12 +36,12 @@ def create_app() -> FastAPI:
     return app
 
 
-def test_file_request():
+def test_file_request() -> None:
     app = create_app()
     ftm = FileTransferManager(Mock(), Mock(), Config())
 
     @app.get("/dummy")
-    def dummy_endpoint(tmppath: Path = Depends(ftm.request_tmp_file)):
+    def dummy_endpoint(tmppath: Path = Depends(ftm.request_tmp_file)) -> None:
         tmppath.touch()
         assert tmppath.exists()
         return tmppath
@@ -54,7 +54,7 @@ def test_file_request():
 
 
 @with_admin_user
-def test_lifecycle(tmp_path: Path):
+def test_lifecycle(tmp_path: Path) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection

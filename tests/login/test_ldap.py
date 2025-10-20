@@ -35,7 +35,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler):
         """Override the log_request method to suppress access logs"""
 
     # noinspection PyPep8Naming
-    def do_POST(self):
+    def do_POST(self) -> None:
         content_length = int(self.headers["Content-Length"])
         data = self.rfile.read(content_length)
 
@@ -81,7 +81,7 @@ class TestLdapService:
     Test the LDAP service
     """
 
-    def test_login(self):
+    def test_login(self) -> None:
         # Create an in-memory database for this test.
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)

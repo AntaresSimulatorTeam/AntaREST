@@ -46,7 +46,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 # noinspection SpellCheckingInspection
 def test_manage_binding_constraint(
     empty_study_720: FileStudy, empty_study_870: FileStudy, command_context: CommandContext
-):
+) -> None:
     for empty_study in [empty_study_720, empty_study_870]:
         study_path = empty_study.config.study_path
         study_version = empty_study.config.version
@@ -250,7 +250,7 @@ def test_manage_binding_constraint(
             assert rulesets == {"Default Ruleset": {}}
 
 
-def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandContext):
+def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandContext) -> None:
     """
     Test that the scenario builder is updated when a binding constraint group is renamed or removed
     """
@@ -343,7 +343,7 @@ def test__update_matrices_names(
     command_context: CommandContext,
     existing_operator: BindingConstraintOperator,
     new_operator: BindingConstraintOperator,
-):
+) -> None:
     empty_study = empty_study_870
     study_path = empty_study.config.study_path
     study_version = empty_study.config.version
@@ -420,7 +420,7 @@ def test__update_matrices_names(
         assert not link_path.exists(), f"Superfluous matrix link: {matrix_link!r}"
 
 
-def test_update_bc_with_an_integer_name(empty_study_870: FileStudy, command_context: CommandContext):
+def test_update_bc_with_an_integer_name(empty_study_870: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_870
     study_version = study.config.version
 

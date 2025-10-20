@@ -27,7 +27,7 @@ class AsyncMock(MagicMock):
 
 class ConnectionManagerTest(IsolatedAsyncioTestCase):
     # noinspection PyMethodMayBeStatic
-    async def test_subscriptions(self):
+    async def test_subscriptions(self) -> None:
         ws_manager = ConnectionManager()
 
         user = JWTUser(id=1, type="user", impersonator=1, groups=[])

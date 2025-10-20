@@ -42,14 +42,14 @@ class TestThermalClusterGroup:
     Tests for the `ThermalClusterGroup` enumeration.
     """
 
-    def test_nominal_case(self):
+    def test_nominal_case(self) -> None:
         """
         When a group is read from a INI file, the group should be the same as the one in the file.
         """
         group = ThermalClusterGroup("gas")  # different case: original is "Gas"
         assert group == ThermalClusterGroup.GAS
 
-    def test_unknown(self):
+    def test_unknown(self) -> None:
         """
         When an unknown group is read from a INI file, the group should be `OTHER1`.
         Note that this is the current behavior in Antares Solver.
@@ -57,7 +57,7 @@ class TestThermalClusterGroup:
         group = ThermalClusterGroup("unknown")
         assert group == ThermalClusterGroup.OTHER1
 
-    def test_invalid_type(self):
+    def test_invalid_type(self) -> None:
         """
         When an invalid type is used to create a group, a `ValueError` should be raised.
         """
@@ -99,7 +99,7 @@ def study_interface(matrix_service: ISimpleMatrixService, study_path) -> StudyIn
 
 
 class TestThermalManager:
-    def test_get_cluster__study_legacy(self, manager: ThermalManager, study_interface: StudyInterface):
+    def test_get_cluster__study_legacy(self, manager: ThermalManager, study_interface: StudyInterface) -> None:
         """
         Given a legacy study with a thermal cluster,
         When we get the cluster,
@@ -160,7 +160,7 @@ class TestThermalManager:
         self,
         manager: ThermalManager,
         study_interface: StudyInterface,
-    ):
+    ) -> None:
         """
         Given a legacy study with thermal clusters,
         When we get the clusters,
@@ -297,7 +297,7 @@ class TestThermalManager:
         self,
         manager: ThermalManager,
         study_interface: StudyInterface,
-    ):
+    ) -> None:
         """
         Given a legacy study,
         When we create a new thermal cluster,
@@ -367,7 +367,7 @@ class TestThermalManager:
         self,
         manager: ThermalManager,
         study_interface: StudyInterface,
-    ):
+    ) -> None:
         # When some properties of the cluster are updated
         cluster_data = ThermalClusterUpdate(nominal_capacity=2000)
         manager.update_cluster(
@@ -424,7 +424,7 @@ class TestThermalManager:
         self,
         manager: ThermalManager,
         study_interface: StudyInterface,
-    ):
+    ) -> None:
         # When the clusters are deleted
         manager.delete_clusters(study_interface, area_id="north", cluster_ids=["2 avail and must 1", "on and must 2"])
 

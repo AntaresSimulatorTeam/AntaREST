@@ -43,7 +43,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 @pytest.fixture
-def bc_props_by_id():
+def bc_props_by_id() -> None:
     return {
         "bc_1": BindingConstraintUpdate(
             **{
@@ -97,7 +97,7 @@ def study_data(file_study_tree_config):
 
 
 @pytest.fixture
-def file_study_tree_config():
+def file_study_tree_config() -> None:
     file_study_tree_config = Mock(spec=FileStudyTreeConfig)
     file_study_tree_config.bindings = [
         BindingConstraint(
@@ -216,7 +216,7 @@ def test_update_time_step_via_table_mode(empty_study_880, command_context):
     assert data["0"]["operator"] == "less"
 
 
-def test_generate_replacement_matrices():
+def test_generate_replacement_matrices() -> None:
     bc_id = "bc_1"
 
     # 8,6,0 HOURLY GREATER

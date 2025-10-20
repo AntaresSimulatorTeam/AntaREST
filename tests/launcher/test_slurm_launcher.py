@@ -302,7 +302,7 @@ def test_run_study(
     )
 
     # noinspection PyUnusedLocal
-    def call_launcher_mock(arguments: Namespace, parameters: MainParameters):
+    def call_launcher_mock(arguments: Namespace, parameters: MainParameters) -> None:
         if launcher_called:
             slurm_launcher.data_repo_tinydb.save_study(StudyDTO(job_id))
 

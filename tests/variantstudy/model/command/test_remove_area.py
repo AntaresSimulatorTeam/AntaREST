@@ -47,7 +47,7 @@ from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveArea:
-    def _set_up(self, empty_study: FileStudy, command_context: CommandContext):
+    def _set_up(self, empty_study: FileStudy, command_context: CommandContext) -> None:
         empty_study.tree.save(
             {
                 "input": {
@@ -81,13 +81,13 @@ class TestRemoveArea:
         assert output.status, output.message
         return empty_study, area_id
 
-    def test_remove_with_aggregated(self, empty_study_810: FileStudy, command_context: CommandContext):
+    def test_remove_with_aggregated(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         (empty_study, area_id) = self._set_up(empty_study_810, command_context)
         remove_area_command = RemoveArea(id=area_id, command_context=command_context, study_version=STUDY_VERSION_8_8)
         output = remove_area_command.apply(study_data=empty_study)
         assert output.status, output.message
 
-    def test_apply(self, empty_study_810: FileStudy, empty_study_840: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study_810: FileStudy, empty_study_840: FileStudy, command_context: CommandContext) -> None:
         for empty_study in [empty_study_810, empty_study_840]:
             # noinspection SpellCheckingInspection
             (empty_study, area_id) = self._set_up(empty_study, command_context)

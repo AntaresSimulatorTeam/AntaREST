@@ -18,7 +18,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def test_aggregate_commands(command_context: CommandContext):
+def test_aggregate_commands(command_context: CommandContext) -> None:
     study_version = STUDY_VERSION_8_8
     command_list = [
         CreateArea(area_name="a", command_context=command_context, study_version=study_version),

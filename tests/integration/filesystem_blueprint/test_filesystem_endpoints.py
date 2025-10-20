@@ -388,7 +388,7 @@ class TestFilesystemEndpoints:
         self,
         client: TestClient,
         user_access_token: str,
-    ):
+    ) -> None:
         """
         This test demonstrates how to compute the size of all studies.
 

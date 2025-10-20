@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateThematicTrimming:
-    def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
         general_data_content = study.tree.get(["settings", "generaldata"])
         assert "variables selection" not in general_data_content
@@ -81,7 +81,7 @@ class TestUpdateThematicTrimming:
         trimming = manager.get_thematic_trimming(study_interface)
         assert trimming.model_dump(exclude_none=True) == args
 
-    def test_error_cases(self, command_context: CommandContext):
+    def test_error_cases(self, command_context: CommandContext) -> None:
         # Give fields that do not match the version
         parameters = ThematicTrimmingUpdate(res_generation_by_plant=True)
         with pytest.raises(

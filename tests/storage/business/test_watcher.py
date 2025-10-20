@@ -169,7 +169,7 @@ def study_tree(tmp_path: Path) -> Path:
 
 
 @pytest.mark.unit_test
-def test_scan(study_tree: Path):
+def test_scan(study_tree: Path) -> None:
     clean_files()
 
     service = Mock()
@@ -190,8 +190,8 @@ def test_scan(study_tree: Path):
 
 
 @pytest.mark.unit_test
-def test_scan_recursive_false(study_tree: Path, db_session: Session):
-    def count_studies():
+def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
+    def count_studies() -> None:
         return db_session.query(Study).count()
 
     clean_files()
@@ -255,7 +255,7 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session):
 
 
 @pytest.mark.unit_test
-def test_partial_scan(tmp_path: Path, caplog: t.Any):
+def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
@@ -325,7 +325,7 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any):
 
 
 @pytest.mark.unit_test
-def test_scan_disabled_exception(study_tree: Path):
+def test_scan_disabled_exception(study_tree: Path) -> None:
     clean_files()
 
     # Build a configuration with desktop_mode enabled
@@ -347,7 +347,7 @@ def process(x: int) -> bool:
 
 
 @pytest.mark.unit_test
-def test_get_lock():
+def test_get_lock() -> None:
     clean_files()
 
     pool = Pool()

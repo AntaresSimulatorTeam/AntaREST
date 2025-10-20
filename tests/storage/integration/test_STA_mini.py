@@ -106,7 +106,7 @@ def assert_with_errors(
         (f"/v1/studies/{UUID}/raw?path=settings/simulations", {}),
     ],
 )
-def test_sta_mini_settings(storage_service, url: str, expected_output: str):
+def test_sta_mini_settings(storage_service, url: str, expected_output: str) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -129,7 +129,7 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: str):
+def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: str) -> None:
     assert_url_content(
         client=client,
         url=url,
@@ -153,7 +153,7 @@ def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: s
         (f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/iconindex", 0),
     ],
 )
-def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
+def test_sta_mini_desktop(storage_service, url: str, expected_output: str) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -176,7 +176,7 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: str):
+def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: str) -> None:
     assert_url_content(
         client=client,
         url=url,
@@ -320,7 +320,7 @@ def expected_min_gen_response() -> bytes:
         ),
     ],
 )
-def test_sta_mini_input(storage_service, url: str, expected_output: dict, formatted: bool):
+def test_sta_mini_input(storage_service, url: str, expected_output: dict, formatted: bool) -> None:
     assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output, formatted=formatted)
 
 
@@ -449,7 +449,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict, format
         ),
     ],
 )
-def test_sta_mini_output(storage_service, url: str, expected_output: dict):
+def test_sta_mini_output(storage_service, url: str, expected_output: dict) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -489,7 +489,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
         ),
     ],
 )
-def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
+def test_sta_mini_expansion(storage_service, url: str, expected_output: dict) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -640,7 +640,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
         ),
     ],
 )
-def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
+def test_sta_mini_filter(storage_service, url: str, expected_output: dict) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,

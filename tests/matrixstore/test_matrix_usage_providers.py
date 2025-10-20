@@ -43,26 +43,26 @@ from tests.helpers import create_raw_study, with_db_context
 
 @pytest.fixture
 @with_db_context
-def raw_studies_matrix_usage_provider(raw_study_service: RawStudyService, matrix_service: ISimpleMatrixService):
+def raw_studies_matrix_usage_provider(raw_study_service: RawStudyService, matrix_service: ISimpleMatrixService) -> None:
     return RawStudyMatrixUsageProvider(StudyMetadataRepository(raw_study_service.cache), matrix_service)
 
 
 @pytest.fixture
-def command_matrix_usage_provider(variant_study_repository: VariantStudyRepository, command_factory: CommandFactory):
+def command_matrix_usage_provider(variant_study_repository: VariantStudyRepository, command_factory: CommandFactory) -> None:
     command_matrix_usage_provider = CommandMatrixUsageProvider(variant_study_repository, command_factory)
 
     return command_matrix_usage_provider
 
 
 @pytest.fixture
-def constants_matrix_usage_provider(matrix_service: MatrixService):
+def constants_matrix_usage_provider(matrix_service: MatrixService) -> None:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     return ConstantsMatrixUsageProvider(matrix_constants, matrix_service)
 
 
 @pytest.fixture
 @with_db_context
-def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service: MatrixService):
+def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service: MatrixService) -> None:
     def _create_dataset_usage_provider() -> "IMatrixUsageProvider":
         repo_dataset = dataset_repo
 
@@ -86,7 +86,7 @@ def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service
 
 def test_raw_studies_matrix_usage_provider(
     raw_studies_matrix_usage_provider: RawStudyMatrixUsageProvider, raw_study_service: RawStudyService, tmp_path
-):
+) -> None:
     matrix_name1 = "matrix_name1"
     matrix_name2 = "matrix_name2"
     matrix_name3 = "matrix_name3"
@@ -123,7 +123,7 @@ def test_command_matrix_usage_provider(
     command_matrix_usage_provider: CommandMatrixUsageProvider,
     variant_study_repository: VariantStudyRepository,
     tmp_path,
-):
+) -> None:
     with db():
         study_id = "study_id"
 
@@ -159,7 +159,7 @@ def test_command_matrix_usage_provider(
         assert matrices_references == [MatrixReference(matrix_id=matrices_id, use_description=use_description)] * 4
 
 
-def test_constants_matrix_usage_provider(constants_matrix_usage_provider: ConstantsMatrixUsageProvider):
+def test_constants_matrix_usage_provider(constants_matrix_usage_provider: ConstantsMatrixUsageProvider) -> None:
     constant1 = {"c1": "constant_name1"}
     constant2 = {"c2": "constant_name2"}
     constant3 = {"c3": "constant_name3"}
@@ -179,7 +179,7 @@ def test_constants_matrix_usage_provider(constants_matrix_usage_provider: Consta
     assert constants_id == matrix_ref_ids
 
 
-def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user):
+def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user) -> None:
     with db():
         group_repo = GroupRepository()
         group = group_repo.save(Group(name="groupA", id="groupA"))

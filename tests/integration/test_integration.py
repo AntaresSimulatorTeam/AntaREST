@@ -1593,7 +1593,7 @@ def test_copy_with_specific_output(client: TestClient, admin_access_token: str, 
     copy_with_output(client, tmp_path, variant.json())
 
 
-def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
+def copy_with_output(client: TestClient, tmp_path: Path, study_id: str) -> None:
     output_base_dir = tmp_path / "internal_workspace" / study_id / "output"
     output_base_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1892,7 +1892,7 @@ def test_links_deletion_with_binding_constraints(
     assert res.status_code == 200, res.json()
 
 
-def test_update_with_editor(client: TestClient, admin_access_token: str):
+def test_update_with_editor(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # 1. Create a group and two users
@@ -2031,7 +2031,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     # END DELETING AREA
 
 
-def test_update_variant_with_editor(client: TestClient, admin_access_token: str):
+def test_update_variant_with_editor(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # 1. Create a group and two users

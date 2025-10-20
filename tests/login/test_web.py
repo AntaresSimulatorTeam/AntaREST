@@ -48,7 +48,7 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
     app = FastAPI(title=__name__)
 
     @AuthJWT.load_config
-    def get_config():
+    def get_config() -> None:
         return JwtSettings(
             authjwt_secret_key="super-secret",
             authjwt_token_location=("headers", "cookies"),

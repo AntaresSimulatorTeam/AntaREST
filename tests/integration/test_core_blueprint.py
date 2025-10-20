@@ -34,7 +34,7 @@ class RegEx:
 
 
 class TestVersionInfo:
-    def test_version_info(self, app: FastAPI):
+    def test_version_info(self, app: FastAPI) -> None:
         client = TestClient(app, raise_server_exceptions=False)
         res = client.get("/version")
         res.raise_for_status()

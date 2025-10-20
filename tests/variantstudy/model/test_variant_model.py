@@ -203,7 +203,7 @@ class TestVariantStudyService:
         jwt_user: JWTUser,
         variant_study_service: VariantStudyService,
         root_study_id: str,
-    ):
+    ) -> None:
         """
         Test two different users that are authors on two different commands of the same variant
         Set up:
@@ -268,7 +268,7 @@ class TestVariantStudyService:
         jwt_user: JWTUser,
         variant_study_service: VariantStudyService,
         root_study_id: str,
-    ):
+    ) -> None:
         """
         Test the case of multiple commands was created by the same user.
         Set up:
@@ -322,7 +322,7 @@ class TestVariantStudyService:
         jwt_user: JWTUser,
         variant_study_service: VariantStudyService,
         root_study_id: str,
-    ):
+    ) -> None:
         """
         Test two different users, one that is the author and the other that is an editor on one study of the service
         Set up:

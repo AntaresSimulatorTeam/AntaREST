@@ -23,7 +23,7 @@ def test_lower_case_parser() -> None:
 
 
 class TestValueParsers:
-    def test_find_value_parsers(self):
+    def test_find_value_parsers(self) -> None:
         def default(input: str) -> str:
             return "default"
 

@@ -416,7 +416,7 @@ class TestRawDataAggregationMCInd:
         internal_study_id: str,
         params: dict,
         expected_result_filename: str,
-    ):
+    ) -> None:
         """
         Test the aggregation of areas data
         """
@@ -450,7 +450,7 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Test the aggregation of links data
         """
@@ -487,7 +487,7 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Tests that all formats work and produce the same result
         """
@@ -528,7 +528,7 @@ class TestRawDataAggregationMCInd:
 
     def test_aggregation_errors(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Requesting a fake mc_year should crash
@@ -623,7 +623,7 @@ class TestRawDataAggregationMCAll:
         internal_study_id: str,
         params: dict,
         expected_result_filename: str,
-    ):
+    ) -> None:
         """
         Test the aggregation of areas data
         """
@@ -659,7 +659,7 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Test the aggregation of links data
         """
@@ -696,7 +696,7 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Tests that all formats work and produce the same result
         """
@@ -790,7 +790,7 @@ class TestRawDataAggregationMCAll:
 
     def test_aggregation_errors(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Requesting matrices that do not exist (daily outputs were not generated) should crash
@@ -879,7 +879,7 @@ class TestRawDataAggregationMCAll:
 class TestRawDataAggregationColumnsFormatting:
     def test_columns_formatting(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
-    ):
+    ) -> None:
         """
         Check returned columns names are post-processed
         """

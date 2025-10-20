@@ -583,7 +583,7 @@ nominalcapacity = 14.0
 
 
 @with_db_context
-def test_task_user(core_config: Config, event_bus: IEventBus):
+def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
     """
     Check if the user who submit a task is actually the owner of this task.
     """

@@ -35,7 +35,7 @@ def build_config(
     study_path: Path,
     workspace_name: str = DEFAULT_WORKSPACE_NAME,
     allow_deletion: bool = False,
-):
+) -> None:
     return Config(
         storage=StorageConfig(
             workspaces={workspace_name: WorkspaceConfig(path=study_path)},
@@ -224,7 +224,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
         study_factory=study_factory,
     )
 
-    def create_study(version: str):
+    def create_study(version: str) -> None:
         metadata = create_raw_study(
             id=f"study{version}",
             workspace=DEFAULT_WORKSPACE_NAME,

@@ -31,7 +31,7 @@ from antarest.study.business.model.thermal_cluster_model import (
 from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7
 
 
-def test_thermal_cluster_creation_default_values():
+def test_thermal_cluster_creation_default_values() -> None:
     cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_7_2)
     assert cluster.model_dump() == {
         "id": "Cluster",
@@ -176,13 +176,13 @@ def test_thermal_cluster_creation_default_values():
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"variable_o_m_cost": 10}),
     ],
 )
-def test_thermal_cluster_creation_invalid_fields(versions: List[StudyVersion], fields: dict[str, Any]):
+def test_thermal_cluster_creation_invalid_fields(versions: List[StudyVersion], fields: dict[str, Any]) -> None:
     for version in versions:
         with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):
             create_thermal_cluster(ThermalClusterCreation(name="Cluster @", **fields), version=version)
 
 
-def test_thermal_cluster_creation_all_values():
+def test_thermal_cluster_creation_all_values() -> None:
     cluster = create_thermal_cluster(
         ThermalClusterCreation(
             name="Cluster @",
@@ -292,7 +292,7 @@ def test_thermal_cluster_creation_all_values():
 )
 def test_thermal_cluster_version_validation(
     invalid_versions: List[StudyVersion], valid_versions: List[StudyVersion], fields: dict[str, Any]
-):
+) -> None:
     """
     Check that the presence of the fields raise an error for "invalid_versions", but not for "valid_versions"
     """
@@ -304,7 +304,7 @@ def test_thermal_cluster_version_validation(
         validate_thermal_cluster_against_version(version, cluster)
 
 
-def test_thermal_cluster_update():
+def test_thermal_cluster_update() -> None:
     cluster = create_thermal_cluster(
         ThermalClusterCreation(
             name="Cluster @",
@@ -417,7 +417,7 @@ def invalid_fields() -> list[dict[str, Any]]:
 
 @pytest.mark.parametrize("fields", invalid_fields())
 @pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
-def test_invalid_field_values(thermal_cluster_cls, fields: dict[str, Any]):
+def test_invalid_field_values(thermal_cluster_cls, fields: dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
         thermal_cluster_cls(name="cluster-data", **fields)
 

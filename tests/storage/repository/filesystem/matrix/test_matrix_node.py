@@ -43,7 +43,7 @@ class MockMatrixNode(MatrixNode):
 
 
 class TestMatrixNode:
-    def test_normalize(self, tmp_path: Path):
+    def test_normalize(self, tmp_path: Path) -> None:
         file = tmp_path / "matrix.json"
         file.touch()
 
@@ -68,7 +68,7 @@ class TestMatrixNode:
         assert len(args) == 1
         assert MOCK_MATRIX.equals(args[0])
 
-    def test_denormalize(self, tmp_path: Path):
+    def test_denormalize(self, tmp_path: Path) -> None:
         file = tmp_path / "matrix.json"
 
         link = file.parent / f"{file.name}.link"

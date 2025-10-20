@@ -125,7 +125,7 @@ class TestMatrixService:
             with pytest.raises(MatrixNotFound, match=f"Matrix {missing_hash} doesn't exist"):
                 matrix_service.get(missing_hash)
 
-    def test_get_matrices(self, matrix_service: MatrixService):
+    def test_get_matrices(self, matrix_service: MatrixService) -> None:
         parent = resource_path.parent
         matrices = [
             parent / "test-01-all.result.tsv",
@@ -580,7 +580,7 @@ def test_dataset_lifecycle() -> None:
     dataset_repo.delete.assert_called_once()
 
 
-def test_hashing_method():
+def test_hashing_method() -> None:
     """
     Non-Regression Test for the hashing method
     It's really important as the whole matrix-store behavior relies on this function
@@ -594,7 +594,7 @@ def test_hashing_method():
     assert compute_hash(AGGREGATION_DF) == "fa164563176cb9130c34c5799138f88dd9eb18e8a6054a2f117c58fcf2a8b519"
 
 
-def test_check_compliance_method():
+def test_check_compliance_method() -> None:
     # Success
     df = pd.DataFrame(data=TEST_MATRIX)
     check_dataframe_compliance(df)

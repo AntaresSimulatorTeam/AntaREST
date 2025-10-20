@@ -46,7 +46,7 @@ class TestFindNextVersion:
         "from_version, expected",
         [("700", "710"), ("870", "880")],
     )
-    def test_find_next_version_nominal(self, from_version: str, expected: str):
+    def test_find_next_version_nominal(self, from_version: str, expected: str) -> None:
         actual = find_next_version(from_version)
         assert actual == expected
 
@@ -58,7 +58,7 @@ class TestFindNextVersion:
             ("900", "Version '900' isn't among supported versions"),
         ],
     )
-    def test_find_next_version_fails(self, from_version: str, message: str):
+    def test_find_next_version_fails(self, from_version: str, message: str) -> None:
         with pytest.raises(UnsupportedStudyVersion, match=message):
             find_next_version(from_version)
 
@@ -68,7 +68,7 @@ class TestCheckVersionCoherence:
         "from_version, target_version",
         [("700", "710"), ("870", "880"), ("820", "840")],
     )
-    def test_check_version_coherence_nominal(self, from_version: str, target_version: str):
+    def test_check_version_coherence_nominal(self, from_version: str, target_version: str) -> None:
         check_versions_coherence(from_version, target_version)
 
     @pytest.mark.parametrize(
@@ -78,7 +78,7 @@ class TestCheckVersionCoherence:
             ("820", "32", "Version '32' isn't among supported versions"),
         ],
     )
-    def test_invalid_versions_fails(self, from_version: str, target_version: str, message: str):
+    def test_invalid_versions_fails(self, from_version: str, target_version: str, message: str) -> None:
         with pytest.raises(UnsupportedStudyVersion, match=message):
             check_versions_coherence(from_version, target_version)
 
@@ -89,12 +89,12 @@ class TestCheckVersionCoherence:
             ("870", "840", "Cannot downgrade your study version : from 870 to 840"),
         ],
     )
-    def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str):
+    def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str) -> None:
         with pytest.raises(InvalidUpgrade, match=message):
             check_versions_coherence(from_version, target_version)
 
 
-def test_end_to_end_upgrades(tmp_path: Path):
+def test_end_to_end_upgrades(tmp_path: Path) -> None:
     # Prepare a study to upgrade
     path_study = ASSETS_DIR / "little_study_700.zip"
     study_dir = tmp_path / "little_study_700"
@@ -116,7 +116,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     assert not are_same_dir(study_dir, before_upgrade_dir)
 
 
-def test_fails_because_of_versions_asked(tmp_path: Path):
+def test_fails_because_of_versions_asked(tmp_path: Path) -> None:
     # Prepare a study to upgrade
     path_study = ASSETS_DIR / "little_study_720.zip"
     study_dir = tmp_path / "little_study_720"

@@ -37,7 +37,7 @@ class DummyWorker(AbstractWorker):
         return TaskResult(success=True, message="")
 
 
-def test_simple_task(tmp_path: Path):
+def test_simple_task(tmp_path: Path) -> None:
     task_queue = "do_stuff"
     event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
     command_event = Event(
@@ -54,7 +54,7 @@ def test_simple_task(tmp_path: Path):
     # Add some listeners to debug the event bus notifications
     msg = []
 
-    async def notify(event: Event):
+    async def notify(event: Event) -> None:
         msg.append(event.type.value)
 
     event_bus.add_listener(notify, [EventType.WORKER_TASK_STARTED])

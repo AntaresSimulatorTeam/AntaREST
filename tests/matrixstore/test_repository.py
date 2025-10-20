@@ -217,7 +217,7 @@ class TestMatrixRepository:
 
 
 @contextmanager
-def matrix_repository(temp_path: Path, matrix_format: InternalMatrixFormat):
+def matrix_repository(temp_path: Path, matrix_format: InternalMatrixFormat) -> None:
     try:
         yield MatrixContentRepository(bucket_dir=temp_path.joinpath("matrix-store"), format=matrix_format)
     finally:
@@ -260,7 +260,7 @@ class TestMatrixContentRepository:
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
             assert retrieved_matrix.empty
 
-    def test_concurrent_save(self, tmp_path: str):
+    def test_concurrent_save(self, tmp_path: str) -> None:
         """
         When 2 threads (or processes), want to create the same matrix, only one of them
         should actually create it.

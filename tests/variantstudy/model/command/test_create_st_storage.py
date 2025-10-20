@@ -59,7 +59,7 @@ OTHER_PARAMETERS = {
 
 class TestCreateSTStorage:
     # noinspection SpellCheckingInspection
-    def test_init(self, command_context: CommandContext):
+    def test_init(self, command_context: CommandContext) -> None:
         pmax_injection = GEN.random((8760, 1))
         inflows = GEN.uniform(0, 1000, size=(8760, 1))
         cmd = CreateSTStorage(
@@ -93,7 +93,7 @@ class TestCreateSTStorage:
         assert cmd.cost_variation_withdrawal is None
 
     @pytest.mark.parametrize("group", ["Battery", "battery"])
-    def test_init__lower_and_upper_case_groups_are_valid(self, command_context: CommandContext, group: str):
+    def test_init__lower_and_upper_case_groups_are_valid(self, command_context: CommandContext, group: str) -> None:
         params = copy.deepcopy(PARAMETERS)
         params["group"] = group
         cmd = CreateSTStorage(
@@ -104,7 +104,7 @@ class TestCreateSTStorage:
         )
         assert cmd.parameters.group == STStorageGroup.BATTERY.value
 
-    def test_init__invalid_storage_name(self, empty_study_860: FileStudy, command_context: CommandContext):
+    def test_init__invalid_storage_name(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             parameters = {**PARAMETERS, "name": "?%$$"}  # bad name
@@ -121,7 +121,7 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Value error, Invalid name '?%$$'."
         assert raised_error["input"] == "?%$$"
 
-    def test_init__invalid_matrix_values(self, command_context: CommandContext):
+    def test_init__invalid_matrix_values(self, command_context: CommandContext) -> None:
         array = GEN.random((8760, 1))
         array[10] = 25  # BAD
         with pytest.raises(ValidationError) as ctx:
@@ -139,7 +139,7 @@ class TestCreateSTStorage:
         assert "pmax_injection" in raised_error["input"]
 
     # noinspection SpellCheckingInspection
-    def test_init__invalid_matrix_shape(self, command_context: CommandContext):
+    def test_init__invalid_matrix_shape(self, command_context: CommandContext) -> None:
         array = GEN.random((24, 1))  # BAD SHAPE
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
@@ -155,7 +155,7 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Value error, Invalid matrix shape (24, 1), expected (8760, 1)"
         assert "pmax_injection" in raised_error["input"]
 
-    def test_init__invalid_nan_value(self, command_context: CommandContext):
+    def test_init__invalid_nan_value(self, command_context: CommandContext) -> None:
         array = GEN.random((8760, 1))  # OK
         array[20] = np.nan  # BAD
         with pytest.raises(ValidationError) as ctx:
@@ -172,7 +172,7 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Value error, Matrix values cannot contain NaN"
         assert "pmax_injection" in raised_error["input"]
 
-    def test_init__invalid_matrix_format(self, command_context: CommandContext):
+    def test_init__invalid_matrix_format(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
                 command_context=command_context,
@@ -187,7 +187,7 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Value error, Invalid matrix shape (3, 1), expected (8760, 1)"
         assert "pmax_injection" in raised_error["input"]
 
-    def test_init__invalid_matrix_for_version(self, command_context: CommandContext):
+    def test_init__invalid_matrix_for_version(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
                 command_context=command_context,
@@ -204,7 +204,7 @@ class TestCreateSTStorage:
         )
         assert "cost_injection" in raised_error["input"]
 
-    def test_init__invalid_parameters_for_version(self, command_context: CommandContext):
+    def test_init__invalid_parameters_for_version(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
                 command_context=command_context,
@@ -219,7 +219,7 @@ class TestCreateSTStorage:
             == "Value error, 422: Field efficiency_withdrawal is not a valid field for study version 8.8"
         )
 
-    def test_apply__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
+    def test_apply__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_720
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
@@ -238,7 +238,7 @@ class TestCreateSTStorage:
             == "Value error, 422: Short-term storages only exist since v8.6 and your study is in 7.2"
         )
 
-    def test_apply__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext):
+    def test_apply__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -257,7 +257,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply__duplicate_storage(self, empty_study_860: FileStudy, command_context: CommandContext):
+    def test_apply__duplicate_storage(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         recent_study = empty_study_860
         # First, prepare a new Area
         create_area = CreateArea(
@@ -293,7 +293,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_create__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext):
+    def test_apply_create__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         recent_study = empty_study_860
         # First, prepare a new Area
         create_area = CreateArea(
@@ -319,7 +319,7 @@ class TestCreateSTStorage:
         )
 
     # noinspection SpellCheckingInspection
-    def test_apply__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext):
+    def test_apply__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         recent_study = empty_study_860
         # First, prepare a new Area
         create_area = CreateArea(
@@ -377,7 +377,7 @@ class TestCreateSTStorage:
         assert recent_study.config.get_sts_constraint_ids("area fr", "storage1") == []
 
     # noinspection SpellCheckingInspection
-    def test_to_dto(self, command_context: CommandContext):
+    def test_to_dto(self, command_context: CommandContext) -> None:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
@@ -397,7 +397,7 @@ class TestCreateSTStorage:
             study_version=STUDY_VERSION_8_8,
         )
 
-    def test_get_inner_matrices(self, command_context: CommandContext):
+    def test_get_inner_matrices(self, command_context: CommandContext) -> None:
         for study_version in (STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2):
             cmd = CreateSTStorage(
                 command_context=command_context,
@@ -408,7 +408,7 @@ class TestCreateSTStorage:
             # Ensures we don't fill default matrices inside the command parameters
             assert cmd.get_inner_matrices() == []
 
-    def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
+    def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
         study = empty_study_920
         study_version = study.config.version
         cmd = CreateArea(area_name="Area be", command_context=command_context, study_version=study_version)

@@ -757,7 +757,7 @@ def _assert_mapping_equals(left: Mapping[str, Iterable[str]], right: Mapping[str
         assert k in left
 
 
-def test_config_to_study_index_8_8():
+def test_config_to_study_index_8_8() -> None:
     config = FileStudyTreeConfig(
         study_path=Path(),
         path=Path(),
@@ -798,7 +798,7 @@ def test_config_to_study_index_8_8():
     assert list(index.sts_constraint_ids) == []
 
 
-def test_config_to_study_index_9_2_additional_constraints():
+def test_config_to_study_index_9_2_additional_constraints() -> None:
     config = FileStudyTreeConfig(
         study_path=Path(),
         path=Path(),
