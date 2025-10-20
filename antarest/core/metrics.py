@@ -44,15 +44,15 @@ _PROMETHEUS_MULTIPROCESS_ENV_VAR = "PROMETHEUS_MULTIPROC_DIR"
 WORKER_ID = str(os.getpid())
 
 
-def _add_db_metrics() -> None:
+def _add_db_metrics(registry: CollectorRegistry = prometheus_client.REGISTRY) -> None:
     """
     Registers metrics related to database activity.
     """
-    _add_db_connection_metrics()
-    _add_db_session_metrics()
+    _add_db_connection_metrics(registry)
+    _add_db_session_metrics(registry)
 
 
-def _add_db_connection_metrics() -> None:
+def _add_db_connection_metrics(registry: CollectorRegistry) -> None:
     """
     Register connection-level (low level) DB metrics
     """
@@ -61,28 +61,29 @@ def _add_db_connection_metrics() -> None:
         "dbconn_duration_seconds",
         "DB connection duration",
         ["worker_id"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
 
     dbconn_gauge = Gauge(
         "dbconn_in_use",
         "DB connection count",
         ["worker_id"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
+    dbconn_gauge.labels(WORKER_ID).set(0)
 
     checkout_counter = Counter(
         "dbconn_checkout_count",
         "DB connection checkouts",
         ["worker_id"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
 
     checkin_counter = Counter(
         "dbconn_checkin_count",
         "DB connection checkins",
         ["worker_id"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
 
     dbconn_gauge.labels(WORKER_ID).set(0)
@@ -108,7 +109,7 @@ def _add_db_connection_metrics() -> None:
         connection_record.info["start_time"] = time.time()
 
 
-def _add_db_session_metrics() -> None:
+def _add_db_session_metrics(registry: CollectorRegistry) -> None:
     """
     Register ORM-level DB metrics
     """
@@ -117,39 +118,39 @@ def _add_db_session_metrics() -> None:
         "transaction_create_count",
         "Transaction creations",
         ["worker_id"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
     transaction_end_counter = Counter(
         "transaction_end_count",
         "Transaction ends",
         ["worker_id"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
 
     transaction_duration_histo = Histogram(
         "transaction_duration_seconds",
         "Transaction ends",
         ["worker_id"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
 
     events_counter = Counter(
         "dbsession_events",
         "Begins counter",
         ["worker_id", "event_type"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
 
     @listens_for(Session, "after_begin")
     def after_begin(session: Session, connection: Any, transaction: Any) -> None:
         events_counter.labels(WORKER_ID, "begin").inc()
 
-    @listens_for(Session, "after_begin")
-    def after_commit(session: Session, connection: Any, transaction: Any) -> None:
+    @listens_for(Session, "after_commit")
+    def after_commit(session: Session) -> None:
         events_counter.labels(WORKER_ID, "commit").inc()
 
-    @listens_for(Session, "after_begin")
-    def after_rollbacks(session: Session, connection: Any, transaction: Any) -> None:
+    @listens_for(Session, "after_rollback")
+    def after_rollback(session: Session) -> None:
         events_counter.labels(WORKER_ID, "rollback").inc()
 
     @listens_for(Session, "after_transaction_create")
