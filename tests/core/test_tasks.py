@@ -540,6 +540,7 @@ nominalcapacity = 14.0
         storage_service=study_service.storage_service,
         event_bus=study_service.event_bus,
         study_interface_supplier=study_service.get_study_interface,
+        generate_outage_files_thermal=False,
     )
 
     task_id = study_service.task_service.add_task(
@@ -556,6 +557,10 @@ nominalcapacity = 14.0
     tasks = study_service.task_service.list_tasks(TaskListFilter())
     assert len(tasks) == 1
     task = tasks[0]
+    print("Task status:", task.status)
+    print("Task result:", getattr(task, "result", None))
+    if hasattr(task, "result") and task.result:
+        print("Task error message:", getattr(task.result, "message", None))
     assert task.ref_id == raw_study.id
     assert task.id == task_id
     assert task.name == "test_generation"

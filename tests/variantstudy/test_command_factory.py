@@ -796,7 +796,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
-            args=[{}],
+            args=[{"generate_outage_files_thermal": False}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
