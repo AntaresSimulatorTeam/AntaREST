@@ -61,7 +61,8 @@ elif [ "$use_uvicorn" = true ]; then
              --workers=1 \
              --log-level info \
              --timeout 1200 \
-              antarest.wsgi:app &
+             --config $BASE_DIR/conf/gunicorn-single.py \
+            antarest.wsgi:app &
     pids+=($!) # Store background process IDs
   done
   for pid in ${pids[*]};
