@@ -1415,7 +1415,6 @@ class StudyService:
         self,
         stream: BinaryIO,
         group_ids: List[str],
-        path: str = "",
     ) -> str:
         """
         Import a compressed study.
@@ -1423,7 +1422,6 @@ class StudyService:
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
-            path: Optional directory path where the imported study will be placed (e.g., 'project/subfolder').
 
         Returns:
             New study UUID.
@@ -1432,21 +1430,14 @@ class StudyService:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         sid = str(uuid4())
-        study_path = str(self.config.get_workspace_path() / sid)
-
-        # Get or create directory from path
-        current_user = get_current_user()
-        owner_id = current_user.id if current_user else 0
-        directory_id = self._get_directory_from_path(path, owner_id, group_ids)
-
+        path = str(self.config.get_workspace_path() / sid)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=study_path,
+            path=path,
             additional_data=StudyAdditionalData(editor=self.get_user_name()),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
-            directory_id=directory_id,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
