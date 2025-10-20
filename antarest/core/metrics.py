@@ -25,9 +25,9 @@ from prometheus_client import (
     make_asgi_app,
     multiprocess,
 )
-from sqlalchemy import Pool, PoolProxiedConnection
+from sqlalchemy import Engine, Pool, PoolProxiedConnection
 from sqlalchemy.event import listens_for
-from sqlalchemy.orm import Session, SessionTransaction
+from sqlalchemy.orm import Session, SessionTransaction, sessionmaker
 from sqlalchemy.pool import ConnectionPoolEntry
 from starlette.requests import Request
 from typing_extensions import override
@@ -52,10 +52,11 @@ def _add_db_metrics(registry: CollectorRegistry = prometheus_client.REGISTRY) ->
     _add_db_session_metrics(registry)
 
 
-def _add_db_connection_metrics(registry: CollectorRegistry) -> None:
+def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | None = None) -> None:
     """
     Register connection-level (low level) DB metrics
     """
+    target = engine or Pool
 
     dbconn_durations_histo = Histogram(
         "dbconn_duration_seconds",
@@ -88,7 +89,7 @@ def _add_db_connection_metrics(registry: CollectorRegistry) -> None:
 
     dbconn_gauge.labels(WORKER_ID).set(0)
 
-    @listens_for(Pool, "checkin")
+    @listens_for(target, "checkin")
     def on_checkin(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
         checkin_counter.labels(WORKER_ID).inc()
         try:
@@ -99,7 +100,7 @@ def _add_db_connection_metrics(registry: CollectorRegistry) -> None:
 
         dbconn_durations_histo.labels(WORKER_ID).observe(time.time() - start_time)
 
-    @listens_for(Pool, "checkout")
+    @listens_for(target, "checkout")
     def on_checkout(
         dbapi_con: Any, connection_record: ConnectionPoolEntry, connection_proxy: PoolProxiedConnection
     ) -> None:
@@ -109,23 +110,20 @@ def _add_db_connection_metrics(registry: CollectorRegistry) -> None:
         connection_record.info["start_time"] = time.time()
 
 
-def _add_db_session_metrics(registry: CollectorRegistry) -> None:
+def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessionmaker[Session] | None = None) -> None:
     """
-    Register ORM-level DB metrics
+    Register ORM-level DB metrics:
+     -
     """
+    target = session_factory or Session
 
-    transaction_create_counter = Counter(
-        "transaction_create_count",
-        "Transaction creations",
+    transactions_current_gauge = Gauge(
+        "transaction_current",
+        "Transaction in progress",
         ["worker_id"],
         registry=registry,
     )
-    transaction_end_counter = Counter(
-        "transaction_end_count",
-        "Transaction ends",
-        ["worker_id"],
-        registry=registry,
-    )
+    transactions_current_gauge.labels(WORKER_ID).set(0)
 
     transaction_duration_histo = Histogram(
         "transaction_duration_seconds",
@@ -141,26 +139,26 @@ def _add_db_session_metrics(registry: CollectorRegistry) -> None:
         registry=registry,
     )
 
-    @listens_for(Session, "after_begin")
+    @listens_for(target, "after_begin")
     def after_begin(session: Session, connection: Any, transaction: Any) -> None:
         events_counter.labels(WORKER_ID, "begin").inc()
 
-    @listens_for(Session, "after_commit")
+    @listens_for(target, "after_commit")
     def after_commit(session: Session) -> None:
         events_counter.labels(WORKER_ID, "commit").inc()
 
-    @listens_for(Session, "after_rollback")
+    @listens_for(target, "after_rollback")
     def after_rollback(session: Session) -> None:
         events_counter.labels(WORKER_ID, "rollback").inc()
 
-    @listens_for(Session, "after_transaction_create")
+    @listens_for(target, "after_transaction_create")
     def after_transaction_create(session: Session, transaction: SessionTransaction) -> None:
-        transaction_create_counter.labels(WORKER_ID).inc()
+        transactions_current_gauge.labels(WORKER_ID).inc()
         session.info["start_time"] = time.time()
 
-    @listens_for(Session, "after_transaction_end")
+    @listens_for(target, "after_transaction_end")
     def after_transaction_end(session: Session, transaction: SessionTransaction) -> None:
-        transaction_end_counter.labels(WORKER_ID).inc()
+        transactions_current_gauge.labels(WORKER_ID).dec()
         if "start_time" in session.info:
             transaction_duration_histo.labels(WORKER_ID).observe(time.time() - session.info["start_time"])
             del session.info["start_time"]
