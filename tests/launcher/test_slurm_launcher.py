@@ -10,14 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any
-
 import os
 import random
 import textwrap
 import uuid
 from argparse import Namespace
 from pathlib import Path
+from typing import Any
 from unittest.mock import ANY, Mock, patch
 
 import pytest

@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 
+from typing import Any
+
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError, STStorageNotFound
@@ -146,10 +148,10 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
     assert output.status
 
 
-from typing import Any
-
 @pytest.fixture
-def study_interface(matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: Any) -> StudyInterface:
+def study_interface(
+    matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: Any
+) -> StudyInterface:
     study_interface = FileStudyInterface(empty_study_930)
     _set_up_study(study_interface, command_context)
     return study_interface

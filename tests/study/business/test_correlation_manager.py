@@ -116,7 +116,9 @@ def test_error_cases() -> None:
         )
 
 
-def test_get_correlation_matrix(manager: CorrelationManager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_get_correlation_matrix(
+    manager: CorrelationManager, empty_study_920: FileStudy, command_context: CommandContext
+) -> None:
     _set_up(command_context, empty_study_920)
 
     study = FileStudyInterface(empty_study_920)
@@ -137,7 +139,9 @@ def test_get_correlation_matrix(manager: CorrelationManager, empty_study_920: Fi
     )
 
 
-def test_get_correlation_for_area(manager: CorrelationManager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_get_correlation_for_area(
+    manager: CorrelationManager, empty_study_920: FileStudy, command_context: CommandContext
+) -> None:
     _set_up(command_context, empty_study_920)
 
     expected_correlations = {
@@ -181,7 +185,9 @@ def test_get_correlation_for_area(manager: CorrelationManager, empty_study_920: 
         assert correlation == expected_correlations[area_id]
 
 
-def test_set_correlation_for_area(manager: CorrelationManager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_set_correlation_for_area(
+    manager: CorrelationManager, empty_study_920: FileStudy, command_context: CommandContext
+) -> None:
     _set_up(command_context, empty_study_920)
 
     study = FileStudyInterface(empty_study_920)

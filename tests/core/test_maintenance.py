@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from typing import Any
-
 from unittest.mock import Mock
 
 import pytest

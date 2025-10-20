@@ -26,7 +26,9 @@ class TestHydroCorrelation:
     which contains the following areas: ["de", "es", "fr", "it"].
     """
 
-    def test_get_correlation_form_values(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_get_correlation_form_values(
+        self, client: TestClient, user_access_token: str, internal_study_id: str
+    ) -> None:
         """Check `get_correlation_form_values` end point"""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
@@ -43,7 +45,9 @@ class TestHydroCorrelation:
         }
         assert actual == expected
 
-    def test_set_correlation_form_values(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_set_correlation_form_values(
+        self, client: TestClient, user_access_token: str, internal_study_id: str
+    ) -> None:
         """Check `set_correlation_form_values` end point"""
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"

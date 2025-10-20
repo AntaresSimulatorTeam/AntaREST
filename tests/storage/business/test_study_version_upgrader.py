@@ -16,7 +16,7 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import List, Optional, AnyStr
+from typing import AnyStr, List, Optional
 
 import pandas
 import pytest

@@ -71,7 +71,9 @@ class TestFetchRawData:
     """
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_get_study_data(self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str) -> None:
+    def test_get_study_data(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str
+    ) -> None:
         """
         Test the `get_study_data` endpoint for fetching raw data from a study.
 

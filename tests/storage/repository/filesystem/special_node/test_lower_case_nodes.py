@@ -60,7 +60,13 @@ def create_study_config(study_dir: Path, ini_file: Path, version: StudyVersion, 
     "ini_node_cluster_class",
     [InputSTStorageAreaList, ClusteredRenewableClusterConfig, InputThermalClustersAreaList],
 )
-def test_group_is_parsed_to_lower_case(study_dir: Path, ini_file: Path, ini_node_cluster_class: type[InputSTStorageAreaList | ClusteredRenewableClusterConfig | InputThermalClustersAreaList]) -> None:
+def test_group_is_parsed_to_lower_case(
+    study_dir: Path,
+    ini_file: Path,
+    ini_node_cluster_class: type[
+        InputSTStorageAreaList | ClusteredRenewableClusterConfig | InputThermalClustersAreaList
+    ],
+) -> None:
     ini_file.write_text(
         textwrap.dedent(
             """
@@ -82,7 +88,13 @@ def test_group_is_parsed_to_lower_case(study_dir: Path, ini_file: Path, ini_node
     "ini_node_cluster_class",
     [InputSTStorageAreaList, ClusteredRenewableClusterConfig, InputThermalClustersAreaList],
 )
-def test_cluster_ini_list(study_dir: Path, ini_file: Path, ini_node_cluster_class: Type[InputSTStorageAreaList | ClusteredRenewableClusterConfig | InputThermalClustersAreaList]) -> None:
+def test_cluster_ini_list(
+    study_dir: Path,
+    ini_file: Path,
+    ini_node_cluster_class: Type[
+        InputSTStorageAreaList | ClusteredRenewableClusterConfig | InputThermalClustersAreaList
+    ],
+) -> None:
     data = {"Cluster 1": {"group": "Gas"}}
     node = ini_node_cluster_class(
         config=create_study_config(study_dir, ini_file, STUDY_VERSION_8_8, "area_test"),

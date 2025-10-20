@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pandas as pd
@@ -30,7 +31,7 @@ from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
 
-def create_app(service: Mock, auth_disabled: bool =False) -> FastAPI:
+def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     build_ctxt = create_app_ctxt(FastAPI(title=__name__))
 
     @AuthJWT.load_config
@@ -202,8 +203,6 @@ def test_get_matrices_references() -> None:
     }
     assert res.json() == data__
 
-
-from typing import Any
 
 def creating_json_res_dict(res: Any) -> dict[str, MatrixReferencesDTO]:
     res_dict_test = {}

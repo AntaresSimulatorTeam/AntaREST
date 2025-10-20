@@ -23,7 +23,9 @@ RUN_ON_WINDOWS = os.name == "nt"
 
 class TestStudyUpgrade:
     @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
-    def test_upgrade_study__next_version(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_upgrade_study__next_version(
+        self, client: TestClient, user_access_token: str, internal_study_id: str
+    ) -> None:
         res = client.put(
             f"/v1/studies/{internal_study_id}/upgrade",
             headers={"Authorization": f"Bearer {user_access_token}"},

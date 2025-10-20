@@ -217,7 +217,9 @@ class TestMatrixRepository:
 
 
 @contextmanager
-def matrix_repository(temp_path: Path, matrix_format: InternalMatrixFormat) -> t.Generator[MatrixContentRepository, None, None]:
+def matrix_repository(
+    temp_path: Path, matrix_format: InternalMatrixFormat
+) -> t.Generator[MatrixContentRepository, None, None]:
     try:
         yield MatrixContentRepository(bucket_dir=temp_path.joinpath("matrix-store"), format=matrix_format)
     finally:

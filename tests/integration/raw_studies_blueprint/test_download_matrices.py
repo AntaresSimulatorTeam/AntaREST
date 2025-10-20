@@ -10,11 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any
-
 import datetime
 import io
-import typing as t
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -83,7 +81,7 @@ class PreparerProxy(Proxy):
         variant_id = res.json()
         return variant_id
 
-    def generate_snapshot(self, variant_id: str, denormalize: bool =False, from_scratch: bool=True) -> None:
+    def generate_snapshot(self, variant_id: str, denormalize: bool = False, from_scratch: bool = True) -> None:
         # Generate a snapshot for the variant
         res = self.client.put(
             f"/v1/studies/{variant_id}/generate",

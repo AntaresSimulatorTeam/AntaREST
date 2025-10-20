@@ -144,7 +144,9 @@ class TestRemoveXpansionResource:
             "already-installed-indirect-link-profile",
         ],
     )
-    def test_error_case_for_capa(self, empty_study_870: FileStudy, command_context: CommandContext, profile: str) -> None:
+    def test_error_case_for_capa(
+        self, empty_study_870: FileStudy, command_context: CommandContext, profile: str
+    ) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
         file_name = "capa1"

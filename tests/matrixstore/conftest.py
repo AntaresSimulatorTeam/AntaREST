@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pathlib import Path
-from typing import Any
-
 import unittest.mock
+from pathlib import Path
 
 import pytest
 
@@ -39,7 +37,9 @@ def content_repo_fixture(tmp_path: Path) -> MatrixContentRepository:
 
 
 @pytest.fixture(name="matrix_service")
-def matrix_service_fixture(matrix_repo: MatrixRepository, dataset_repo: MatrixDataSetRepository, content_repo: MatrixContentRepository) -> MatrixService:
+def matrix_service_fixture(
+    matrix_repo: MatrixRepository, dataset_repo: MatrixDataSetRepository, content_repo: MatrixContentRepository
+) -> MatrixService:
     return MatrixService(
         repo=matrix_repo,
         repo_dataset=dataset_repo,

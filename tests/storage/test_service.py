@@ -1452,7 +1452,9 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     variant_study_service.has_children.side_effect = lambda study: study.id == raw_study.id
     variant_study_service.get_children.return_value = [variant_study]
 
-    def walk_children(parent_id: str, fun: Callable[[Any], None], bottom_first: bool, include_parent: bool = True) -> None:
+    def walk_children(
+        parent_id: str, fun: Callable[[Any], None], bottom_first: bool, include_parent: bool = True
+    ) -> None:
         assert parent_id == raw_study.id
         assert bottom_first is True
         assert include_parent is False

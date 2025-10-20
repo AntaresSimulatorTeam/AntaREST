@@ -14,7 +14,7 @@ import logging
 import textwrap
 import typing as t
 from pathlib import Path
-from typing import Iterable, Mapping
+from typing import Any, Iterable, Mapping
 from zipfile import ZipFile
 
 import pytest
@@ -440,8 +440,6 @@ co2 = 156
 nh3 = 456
 """
 
-
-from typing import Any
 
 @pytest.mark.parametrize("version", [850, 860, 870])
 def test_parse_thermal_860(study_path: Path, version: int, caplog: Any) -> None:

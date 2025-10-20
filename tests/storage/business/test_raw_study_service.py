@@ -16,6 +16,7 @@ import platform
 import re
 import time
 from pathlib import Path, PurePosixPath
+from typing import Any
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -43,8 +44,6 @@ def build_config(
         )
     )
 
-
-from typing import Any
 
 @pytest.mark.unit_test
 def test_get(tmp_path: str, project_path: Any) -> None:

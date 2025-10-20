@@ -87,7 +87,9 @@ class TestRemoveArea:
         output = remove_area_command.apply(study_data=empty_study)
         assert output.status, output.message
 
-    def test_apply(self, empty_study_810: FileStudy, empty_study_840: FileStudy, command_context: CommandContext) -> None:
+    def test_apply(
+        self, empty_study_810: FileStudy, empty_study_840: FileStudy, command_context: CommandContext
+    ) -> None:
         for empty_study in [empty_study_810, empty_study_840]:
             # noinspection SpellCheckingInspection
             (empty_study, area_id) = self._set_up(empty_study, command_context)

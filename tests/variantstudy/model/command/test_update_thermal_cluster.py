@@ -114,7 +114,9 @@ class TestUpdateThermalCluster:
         assert thermal == expected
         assert serialize_thermal_cluster(STUDY_VERSION_8_1, empty_study.config.areas[area_id].thermals[0]) == expected
 
-    def test_update_thermal_cluster_does_not_exist(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
+    def test_update_thermal_cluster_does_not_exist(
+        self, empty_study_810: FileStudy, command_context: CommandContext
+    ) -> None:
         # Set up
         study = empty_study_810
         self._set_up(study, command_context, "fr", "test")

@@ -228,7 +228,9 @@ def test_output_downloads_export(tmp_path: Path) -> None:
         ),
     ],
 )
-def test_create_matrix_index_output(config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex) -> None:
+def test_create_matrix_index_output(
+    config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex
+) -> None:
     config_mock = Mock()
     config_mock.archived = False
     output_id = "some output"

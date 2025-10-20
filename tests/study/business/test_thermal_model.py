@@ -426,7 +426,9 @@ def test_invalid_field_values(
 
 
 @pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
-def test_invalid_min_up_down_time_should_be_truncated(thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate]) -> None:
+def test_invalid_min_up_down_time_should_be_truncated(
+    thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate],
+) -> None:
     data = thermal_cluster_cls(name="cluster-data", min_up_time=-1, min_down_time=-1)
     assert data.min_up_time == 1
     assert data.min_down_time == 1

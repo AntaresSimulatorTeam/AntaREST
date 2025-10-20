@@ -44,7 +44,7 @@ from antarest.login.model import (
 from antarest.main import JwtSettings
 
 
-def create_app(service: Mock, auth_disabled: bool =False) -> FastAPI:
+def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     app = FastAPI(title=__name__)
 
     @AuthJWT.load_config

@@ -85,7 +85,9 @@ def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector) -> Non
 
 
 @pytest.mark.parametrize("retention_time, expected_remove", [(-1, True), (3600, False)])
-def test_clean_matrices_actual_service(matrix_service: MatrixService, retention_time: int, expected_remove: bool) -> None:
+def test_clean_matrices_actual_service(
+    matrix_service: MatrixService, retention_time: int, expected_remove: bool
+) -> None:
     gc = MatrixGarbageCollector(
         matrix_service=matrix_service, sleeping_time=3600, dry_run=False, retention_time=retention_time
     )

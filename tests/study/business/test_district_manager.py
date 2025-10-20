@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -19,8 +20,6 @@ from antarest.study.business.district_manager import (
     DistrictManager,
     DistrictUpdate,
 )
-from typing import Any
-
 from antarest.study.business.model.district_model import District, DistrictDTO
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig
@@ -120,7 +119,9 @@ class TestDistrictManager:
         ]
         assert actual == expected
 
-    def test_create_district__district_already_exist(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_create_district__district_already_exist(
+        self, manager: DistrictManager, study_with_sets: FileStudy
+    ) -> None:
         district_creation = DistrictCreation(name="d1", output=True, comments="", areas=[])
         with pytest.raises(DistrictAlreadyExist):
             manager.create_district(study_with_sets, district_creation)

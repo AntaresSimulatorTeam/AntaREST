@@ -50,7 +50,9 @@ def raw_studies_matrix_usage_provider(raw_study_service: RawStudyService, matrix
 
 
 @pytest.fixture
-def command_matrix_usage_provider(variant_study_repository: VariantStudyRepository, command_factory: CommandFactory) -> None:
+def command_matrix_usage_provider(
+    variant_study_repository: VariantStudyRepository, command_factory: CommandFactory
+) -> None:
     command_matrix_usage_provider = CommandMatrixUsageProvider(variant_study_repository, command_factory)
 
     return command_matrix_usage_provider
