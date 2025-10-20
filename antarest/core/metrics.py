@@ -69,6 +69,7 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
         "dbconn_in_use",
         "DB connection count",
         ["worker_id"],
+        multiprocess_mode="liveall",
         registry=registry,
     )
     dbconn_gauge.labels(WORKER_ID).set(0)
@@ -121,6 +122,7 @@ def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessio
         "transaction_current",
         "Transaction in progress",
         ["worker_id"],
+        multiprocess_mode="liveall",
         registry=registry,
     )
     transactions_current_gauge.labels(WORKER_ID).set(0)
@@ -250,12 +252,14 @@ class TasksMetricsRecorder(TaskServiceListener):
             "tasks_running",
             "Count of running tasks",
             ["worker_id"],
+            multiprocess_mode="liveall",
             registry=registry,
         )
         self._pending_gauge = Gauge(
             "tasks_pending",
             "Count of pending tasks",
             ["worker_id"],
+            multiprocess_mode="liveall",
             registry=registry,
         )
 

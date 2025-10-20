@@ -562,12 +562,14 @@ class TaskJobService(ITaskService):
             "tasks_running",
             "Count of running tasks",
             ["worker_id"],
+            multiprocess_mode="liveall",
             registry=registry,
         )
         self._pending_gauge = Gauge(
             "tasks_pending",
             "Count of pending tasks",
             ["worker_id"],
+            multiprocess_mode="liveall",
             registry=registry,
         )
 
