@@ -23,6 +23,7 @@ from antarest.service_creator import (
     SESSION_ARGS,
     Module,
     create_archive_worker,
+    create_blob_gc,
     create_core_services,
     create_matrix_gc,
     create_watcher,
@@ -31,7 +32,7 @@ from antarest.service_creator import (
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 
 
-def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IService]:
+def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
     res = get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     engine = init_db_engine(
@@ -44,23 +45,25 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
 
     core_services = create_core_services(None, config)
 
-    services: Dict[Module, IService] = {}
+    services: list[IService] = []
 
     if Module.WATCHER in services_list:
         watcher = create_watcher(config=config, app_ctxt=None, study_service=core_services.study_service)
-        services[Module.WATCHER] = watcher
+        services.append(watcher)
 
-    if Module.MATRIX_GC in services_list:
+    if Module.BACKGROUND_SERVICES in services_list:
         matrix_gc = create_matrix_gc(config, core_services.matrix_service)
-        services[Module.MATRIX_GC] = matrix_gc
+        services.append(matrix_gc)
+
+        blob_gc = create_blob_gc(config, core_services.blob_service)
+        services.append(blob_gc)
+
+        auto_archive_service = AutoArchiveService(core_services.study_service, core_services.output_service, config)
+        services.append(auto_archive_service)
 
     if Module.ARCHIVE_WORKER in services_list:
         worker = create_archive_worker(config, "test", event_bus=core_services.event_bus)
-        services[Module.ARCHIVE_WORKER] = worker
-
-    if Module.AUTO_ARCHIVER in services_list:
-        auto_archive_service = AutoArchiveService(core_services.study_service, core_services.output_service, config)
-        services[Module.AUTO_ARCHIVER] = auto_archive_service
+        services.append(worker)
 
     return services
 
@@ -78,7 +81,7 @@ def start_all_services(config_file: Path, services_list: List[Module]) -> None:
     """
     services = _init(config_file, services_list)
     for service in services:
-        services[service].start(threaded=True)
+        service.start(threaded=True)
     # Once started, the worker must wait indefinitely (demon service).
     # This loop may be interrupted using Crl+C
     while True:
