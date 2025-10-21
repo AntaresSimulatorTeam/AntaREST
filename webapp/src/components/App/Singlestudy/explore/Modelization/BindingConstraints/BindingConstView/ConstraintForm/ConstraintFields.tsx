@@ -95,6 +95,7 @@ function ConstraintFields({ study }: Props) {
       />
       {studyVersion >= 830 && (
         <>
+          <Fieldset.Break />
           <SelectFE
             name="filterYearByYear"
             label={t("study.outputFilters.filterByYear")}
