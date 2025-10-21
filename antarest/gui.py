@@ -45,6 +45,12 @@ def parse_arguments() -> argparse.Namespace:
         help="Display the server version and exit",
         version=__version__,
     )
+    parser.add_argument(
+        "--systray-app",
+        dest="use_systray_app",
+        help="Embedd the back-end inside the systray app",
+        default=True,
+    )
     return parser.parse_args()
 
 
@@ -66,7 +72,7 @@ def main() -> None:
     # when only getting version
     from antarest.desktop.systray_app import run_systray_app
 
-    run_systray_app(arguments.config_file)
+    run_systray_app(arguments.config_file, arguments.use_systray_app)
 
 
 if __name__ == "__main__":
