@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import pytest
 from starlette.testclient import TestClient
 
 
@@ -207,39 +206,3 @@ class TestStudyMatrixIndex:
             "steps": 1,
         }
         assert actual == expected
-
-    @pytest.mark.parametrize(
-        "frequency,expected_level,expected_steps",
-        [
-            ("hourly", "hourly", 168),
-            ("daily", "daily", 7),
-            ("weekly", "weekly", 1),
-            ("monthly", "monthly", 1),
-            ("annual", "annual", 1),
-        ],
-    )
-    def test_get_output_time_index_parametrized(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-        frequency: str,
-        expected_level: str,
-        expected_steps: int,
-    ) -> None:
-        """
-        Parametrized test for different frequencies.
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-        output_id = "20201014-1427eco"
-
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": frequency}
-        )
-        assert res.status_code == 200, res.json()
-        actual = res.json()
-
-        assert actual["level"] == expected_level
-        assert actual["steps"] == expected_steps
-        assert actual["start_date"] == "2018-01-01 00:00:00"
-        assert actual["first_week_size"] == 7

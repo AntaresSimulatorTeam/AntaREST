@@ -432,6 +432,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         - MatrixIndex containing start_date, steps, first_week_size, and level.
         """
         study_id = sanitize_uuid(uuid)
+        output_id = sanitize_string(output_id)
         logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
         return study_service.get_output_time_index(study_id, output_id, frequency)
 
