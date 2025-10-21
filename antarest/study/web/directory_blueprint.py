@@ -14,7 +14,7 @@ import logging
 from http import HTTPStatus
 from typing import List
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
@@ -22,7 +22,6 @@ from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import DirectoryCreation, DirectoryMetadata, DirectoryUpdate
-from antarest.study.repository import AccessPermissions
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +40,7 @@ def create_directory_routes(
     )
     def list_directories() -> List[DirectoryMetadata]:
         logger.info("Listing directories for current user")
-        access_permissions = AccessPermissions.for_current_user()
-        return directory_service.list_directories(access_permissions)
+        return directory_service.list_directories()
 
     @bp.post(
         "/directories",
@@ -50,47 +48,31 @@ def create_directory_routes(
         tags=[APITag.study_management],
         summary="Create a new directory",
     )
-    def create_directory(
-        data: DirectoryCreation,
-        groups: str = Query("", description="Comma-separated list of group IDs to share with"),
-    ) -> DirectoryMetadata:
+    def create_directory(data: DirectoryCreation) -> DirectoryMetadata:
         logger.info(f"Creating directory '{data.name}'")
 
         user = require_current_user()
-        access_permissions = AccessPermissions.for_current_user()
 
-        if groups:
-            group_ids = [gid.strip() for gid in groups.split(",") if gid.strip()]
-        else:
-            group_ids = [group.id for group in user.groups]
+        group_ids = data.groups if data.groups is not None else [group.id for group in user.groups]
 
-        return directory_service.create_directory(data, user.id, group_ids, access_permissions)
+        return directory_service.create_directory(data, user.id, group_ids)
 
     @bp.put(
         "/directories/{directory_id}",
         tags=[APITag.study_management],
         summary="Update directory",
     )
-    def update_directory(
-        directory_id: str,
-        data: DirectoryUpdate,
-        groups: str = Query("", description="Comma-separated list of group IDs to share with (replaces existing)"),
-    ) -> DirectoryMetadata:
+    def update_directory(directory_id: str, data: DirectoryUpdate) -> DirectoryMetadata:
         """
         Update directory name, parent, or groups.
 
         - **name**: New name for the directory (optional)
         - **parentId**: New parent directory ID (optional, empty string for root)
-        - **groups**: Comma-separated list of group IDs (optional, overrides body groups if provided)
+        - **groups**: List of group IDs to share with (optional, replaces existing groups)
         """
         logger.info(f"Updating directory {directory_id}")
-        access_permissions = AccessPermissions.for_current_user()
 
-        # Query parameter takes precedence over body parameter
-        if groups:
-            data.groups = [gid.strip() for gid in groups.split(",") if gid.strip()]
-
-        return directory_service.update_directory(directory_id, data, access_permissions)
+        return directory_service.update_directory(directory_id, data)
 
     @bp.delete(
         "/directories/{directory_id}",
@@ -104,7 +86,6 @@ def create_directory_routes(
         Empty subdirectories are deleted recursively along with the parent directory.
         """
         logger.info(f"Deleting directory {directory_id}")
-        access_permissions = AccessPermissions.for_current_user()
-        directory_service.delete_directory(directory_id, access_permissions=access_permissions)
+        directory_service.delete_directory(directory_id)
 
     return bp

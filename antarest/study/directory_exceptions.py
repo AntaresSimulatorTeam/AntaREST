@@ -19,7 +19,6 @@ class DirectoryNotFoundError(HTTPException):
     """Raised when a directory is not found."""
 
     def __init__(self, directory_id: str):
-        self.directory_id = directory_id
         super().__init__(HTTPStatus.NOT_FOUND, f"Directory '{directory_id}' not found")
 
 
@@ -27,14 +26,13 @@ class DirectoryAlreadyExistsError(HTTPException):
     """Raised when trying to create a directory with a duplicate name."""
 
     def __init__(self, name: str):
-        self.name = name
         super().__init__(HTTPStatus.CONFLICT, f"A directory named '{name}' already exists in this location")
 
 
 class DirectoryPermissionError(HTTPException):
     """Raised when user doesn't have permission to perform an operation on a directory."""
 
-    def __init__(self, message: str = "You don't have permission to perform this operation"):
+    def __init__(self, message: str):
         super().__init__(HTTPStatus.FORBIDDEN, message)
 
 

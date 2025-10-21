@@ -20,7 +20,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.model import Group, Identity
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import Directory, DirectoryCreation, DirectoryUpdate
-from antarest.study.repository import AccessPermissions, DirectoryRepository, StudyMetadataRepository
+from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 
 
 @pytest.fixture
@@ -69,7 +69,6 @@ class TestDirectoryService:
     ) -> None:
         # Setup
         data = DirectoryCreation(name="New Directory", parent_id=None)
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.has_duplicate_name.return_value = False
         mock_directory_repo.save.return_value = Directory(
@@ -81,7 +80,7 @@ class TestDirectoryService:
         mock_directory_repo.session.get.return_value = test_group
 
         # Execute
-        result = directory_service.create_directory(data, test_user.id, [test_group.id], access_permissions)
+        result = directory_service.create_directory(data, test_user.id, [test_group.id])
 
         # Verify
         assert result.name == "New Directory"
@@ -97,13 +96,12 @@ class TestDirectoryService:
         # Setup
         fake_parent_id = str(uuid.uuid4())
         data = DirectoryCreation(name="Child Directory", parent_id=fake_parent_id)
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = None
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.create_directory(data, test_user.id, [], access_permissions)
+            directory_service.create_directory(data, test_user.id, [])
 
         assert exc_info.value.status_code == 404
         assert fake_parent_id in str(exc_info.value.detail)
@@ -122,14 +120,13 @@ class TestDirectoryService:
             owner_id=2,  # Different owner
         )
         data = DirectoryCreation(name="Child", parent_id=parent.id)
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = parent
         mock_directory_repo.has_permission.return_value = False
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.create_directory(data, test_user.id, [], access_permissions)
+            directory_service.create_directory(data, test_user.id, [])
 
         assert exc_info.value.status_code == 403
 
@@ -141,13 +138,12 @@ class TestDirectoryService:
     ) -> None:
         # Setup
         data = DirectoryCreation(name="Duplicate", parent_id=None)
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.has_duplicate_name.return_value = True
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.create_directory(data, test_user.id, [], access_permissions)
+            directory_service.create_directory(data, test_user.id, [])
 
         assert exc_info.value.status_code == 409
         assert "already exists" in str(exc_info.value.detail)
@@ -163,11 +159,9 @@ class TestDirectoryService:
         existing_directory = Directory(
             id=directory_id,
             name="Old Name",
-            parent_id=None,
             owner_id=test_user.id,
         )
         data = DirectoryUpdate(name="New Name")
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = existing_directory
         mock_directory_repo.has_permission.return_value = True
@@ -175,7 +169,7 @@ class TestDirectoryService:
         mock_directory_repo.save.return_value = existing_directory
 
         # Execute
-        directory_service.update_directory(directory_id, data, access_permissions)
+        directory_service.update_directory(directory_id, data)
 
         # Verify
         assert existing_directory.name == "New Name"
@@ -190,13 +184,12 @@ class TestDirectoryService:
         # Setup
         directory_id = str(uuid.uuid4())
         data = DirectoryUpdate(name="New Name")
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = None
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.update_directory(directory_id, data, access_permissions)
+            directory_service.update_directory(directory_id, data)
 
         assert exc_info.value.status_code == 404
 
@@ -215,14 +208,13 @@ class TestDirectoryService:
             owner_id=2,  # Different owner
         )
         data = DirectoryUpdate(name="New Name")
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = existing_directory
         mock_directory_repo.has_permission.return_value = False
 
         # Execute & Verify
         with pytest.raises(UserHasNotPermissionError):
-            directory_service.update_directory(directory_id, data, access_permissions)
+            directory_service.update_directory(directory_id, data)
 
     def test_update_directory_cycle_detection(
         self,
@@ -240,7 +232,6 @@ class TestDirectoryService:
             owner_id=test_user.id,
         )
         data = DirectoryUpdate(parent_id=new_parent_id)
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = existing_directory
         mock_directory_repo.has_permission.return_value = True
@@ -248,7 +239,7 @@ class TestDirectoryService:
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.update_directory(directory_id, data, access_permissions)
+            directory_service.update_directory(directory_id, data)
 
         assert exc_info.value.status_code == 400
         assert "cycle" in str(exc_info.value.detail)
@@ -272,7 +263,6 @@ class TestDirectoryService:
         existing_directory.groups = [test_group]  # Initially has test_group
 
         data = DirectoryUpdate(groups=[new_group.id])  # Update to new_group
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
 
         mock_directory_repo.get.return_value = existing_directory
         mock_directory_repo.has_permission.return_value = True
@@ -280,7 +270,7 @@ class TestDirectoryService:
         mock_directory_repo.save.return_value = existing_directory
 
         # Execute
-        directory_service.update_directory(directory_id, data, access_permissions)
+        directory_service.update_directory(directory_id, data)
 
         # Verify groups were updated
         mock_directory_repo.session.get.assert_called_with(Group, new_group.id)
@@ -300,15 +290,13 @@ class TestDirectoryService:
             parent_id=None,
             owner_id=test_user.id,
         )
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
-
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 0
         mock_directory_repo.get_children.return_value = []
 
         # Execute
-        directory_service.delete_directory(directory_id, access_permissions=access_permissions)
+        directory_service.delete_directory(directory_id)
 
         # Verify
         mock_directory_repo.delete_batch.assert_called_once_with([directory_id])
@@ -334,8 +322,6 @@ class TestDirectoryService:
             parent_id=directory_id,
             owner_id=test_user.id,
         )
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
-
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 0
@@ -344,7 +330,7 @@ class TestDirectoryService:
         mock_directory_repo.get_children.side_effect = [[child], [], [child], []]
 
         # Execute
-        directory_service.delete_directory(directory_id, access_permissions=access_permissions)
+        directory_service.delete_directory(directory_id)
 
         # Verify - delete_batch should be called with both directories
         mock_directory_repo.delete_batch.assert_called_once_with([child_id, directory_id])
@@ -363,8 +349,6 @@ class TestDirectoryService:
             parent_id=None,
             owner_id=test_user.id,
         )
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
-
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 5
@@ -372,7 +356,7 @@ class TestDirectoryService:
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.delete_directory(directory_id, access_permissions=access_permissions)
+            directory_service.delete_directory(directory_id)
 
         assert exc_info.value.status_code == 409
         assert "studies" in str(exc_info.value.detail).lower()
@@ -398,8 +382,6 @@ class TestDirectoryService:
             parent_id=directory_id,
             owner_id=test_user.id,
         )
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
-
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
 
@@ -416,7 +398,7 @@ class TestDirectoryService:
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.delete_directory(directory_id, access_permissions=access_permissions)
+            directory_service.delete_directory(directory_id)
 
         assert exc_info.value.status_code == 409
         assert "studies" in str(exc_info.value.detail).lower()
@@ -435,14 +417,12 @@ class TestDirectoryService:
             parent_id=None,
             owner_id=2,  # Different owner
         )
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
-
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = False
 
         # Execute & Verify
         with pytest.raises(UserHasNotPermissionError):
-            directory_service.delete_directory(directory_id, access_permissions=access_permissions)
+            directory_service.delete_directory(directory_id)
 
     def test_list_directories(
         self,
@@ -464,12 +444,10 @@ class TestDirectoryService:
             d.owner = test_user
             d.groups = []
 
-        access_permissions = AccessPermissions(user_id=test_user.id, user_groups=[])
         mock_directory_repo.get_all.return_value = directories
 
         # Execute
-        result = directory_service.list_directories(access_permissions)
+        result = directory_service.list_directories()
 
         # Verify
         assert len(result) == 3
-        mock_directory_repo.get_all.assert_called_once_with(access_permissions)

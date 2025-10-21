@@ -825,6 +825,7 @@ def _validate_directory_name(name: str) -> str:
 class DirectoryCreation(AntaresBaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     parent_id: Optional[str] = None
+    groups: Optional[List[str]] = None  # List of group IDs to share with
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -836,7 +837,7 @@ class DirectoryCreation(AntaresBaseModel):
 
 
 class DirectoryUpdate(AntaresBaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
     parent_id: Optional[str] = None
     groups: Optional[List[str]] = None  # List of group IDs to share with (replaces existing groups)
 

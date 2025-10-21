@@ -860,7 +860,7 @@ class StudyService:
         return self.storage_service.get_storage(study).get_study_path(study)
 
     def create_study(
-        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], path: str = ""
+        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], directory: str = ""
     ) -> str:
         """
         Creates a study with the specified study name, version, group IDs, and user parameters.
@@ -869,7 +869,7 @@ class StudyService:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
-            path: Optional directory path where the study will be created (e.g., 'project/subfolder').
+            directory: Optional directory path where the study will be created (e.g., 'project/subfolder').
 
         Returns:
             str: The ID of the newly created study.
@@ -882,7 +882,7 @@ class StudyService:
         # Get or create directory from path
         current_user = get_current_user()
         owner_id = current_user.id if current_user else 0
-        directory_id = self._get_directory_from_path(path, owner_id, group_ids)
+        directory_id = self._get_directory_from_path(directory, owner_id, group_ids)
 
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         raw = RawStudy(
@@ -1232,14 +1232,13 @@ class StudyService:
 
         # Parse path
         path = PurePosixPath(folder_path)
-        path_parts = list(path.parts)
 
-        if not path_parts:
+        if not path.parts:
             return None
 
         # Navigate/create directory hierarchy
         parent_id = None
-        for dir_name in path_parts:
+        for dir_name in path.parts:
             # Check if directory exists
             stmt = select(Directory).where(Directory.name == dir_name, Directory.parent_id == parent_id)
             existing_dir = self.repository.session.scalar(stmt)
@@ -1284,7 +1283,7 @@ class StudyService:
             study.directory_id = None
 
         study.folder = new_folder
-        self.repository.save(study, update_modification_date=False)
+        self.repository.save(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_EDITED,

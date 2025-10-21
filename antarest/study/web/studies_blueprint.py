@@ -378,16 +378,18 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         name: str,
         version: StudyVersionStr | None = None,
         groups: str = "",
-        path: str = Query("", description="Directory path where the study will be created (e.g., 'project/subfolder')"),
+        directory: str = Query(
+            "", description="Directory path where the study will be created (e.g., 'project/subfolder')"
+        ),
     ) -> Any:
         logger.info(f"Creating new study '{name}'")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
-        path_sanitized = validate_folder_path(path) if path else ""
+        directory_path_sanitized = validate_folder_path(directory) if directory else ""
 
-        uuid = study_service.create_study(name_sanitized, version, group_ids, path=path_sanitized)
+        uuid = study_service.create_study(name_sanitized, version, group_ids, directory=directory_path_sanitized)
 
         return uuid
 

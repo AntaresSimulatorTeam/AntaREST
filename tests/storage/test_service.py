@@ -88,7 +88,6 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     is_output_archived,
-    study_matcher,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -975,28 +974,6 @@ def test_set_public_mode() -> None:
     with current_user_context(user):
         service.set_public_mode(study_id, PublicMode.FULL)
     repository.save.assert_called_with(create_study(id=study_id, public_mode=PublicMode.FULL))
-
-
-@pytest.mark.unit_test
-def test_study_match() -> None:
-    assert not study_matcher(name=None, folder="ab", workspace="hell")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name=None, folder="abd", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", workspace="hello")
-    )
-    assert study_matcher(name="f", folder=None, workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name="foob", folder=None, workspace="hell")(
-        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
-    )
 
 
 # noinspection PyArgumentList

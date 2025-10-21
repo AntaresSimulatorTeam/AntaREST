@@ -42,14 +42,15 @@ class DirectoryService:
         self,
         directory_repository: DirectoryRepository,
         study_repository: StudyMetadataRepository,
-        study_service: "StudyService",
+        study_service: StudyService,
     ):
         self.directory_repository = directory_repository
         self.study_repository = study_repository
         self.study_service = study_service
 
-    def list_directories(self, access_permissions: AccessPermissions) -> List[DirectoryMetadata]:
+    def list_directories(self) -> List[DirectoryMetadata]:
         """List all directories the user has access to."""
+        access_permissions = AccessPermissions.for_current_user()
         directories = self.directory_repository.get_all(access_permissions)
         return [self._to_dto(directory) for directory in directories]
 
@@ -58,8 +59,8 @@ class DirectoryService:
         data: DirectoryCreation,
         owner_id: int,
         group_ids: Sequence[str],
-        access_permissions: AccessPermissions,
     ) -> DirectoryMetadata:
+        access_permissions = AccessPermissions.for_current_user()
         if data.parent_id:
             parent = self.directory_repository.get(data.parent_id)
             if parent is None:
@@ -88,8 +89,8 @@ class DirectoryService:
         self,
         directory_id: str,
         data: DirectoryUpdate,
-        access_permissions: AccessPermissions,
     ) -> DirectoryMetadata:
+        access_permissions = AccessPermissions.for_current_user()
         directory = self.directory_repository.get(directory_id)
         if directory is None:
             raise DirectoryNotFoundError(directory_id)
@@ -97,16 +98,14 @@ class DirectoryService:
         if not self.directory_repository.has_permission(directory, access_permissions):
             raise UserHasNotPermissionError()
 
-        if data.name is not None and data.name != directory.name:
-            if self.directory_repository.has_duplicate_name(data.name, directory.parent_id):
-                raise DirectoryAlreadyExistsError(data.name)
-            directory.name = data.name
+        # Update parent first, then validate name in the target parent
+        new_parent_id = directory.parent_id  # Keep current parent by default
 
         if data.parent_id is not None:
-            if self.directory_repository.check_cycle(directory_id, data.parent_id):
-                raise DirectoryCycleError()
+            if data.parent_id:  # Non-empty string
+                if self.directory_repository.check_cycle(directory_id, data.parent_id):
+                    raise DirectoryCycleError()
 
-            if data.parent_id != "":
                 new_parent = self.directory_repository.get(data.parent_id)
                 if new_parent is None:
                     raise DirectoryNotFoundError(data.parent_id)
@@ -114,7 +113,20 @@ class DirectoryService:
                 if not self.directory_repository.has_permission(new_parent, access_permissions):
                     raise DirectoryPermissionError("You don't have permission to move directories to this parent")
 
-            directory.parent_id = data.parent_id if data.parent_id != "" else None
+                new_parent_id = data.parent_id
+            else:
+                # Empty string means move to root
+                new_parent_id = None
+
+        # Validate name uniqueness in the target parent (current or new)
+        if data.name is not None and data.name != directory.name:
+            if self.directory_repository.has_duplicate_name(data.name, new_parent_id):
+                raise DirectoryAlreadyExistsError(data.name)
+            directory.name = data.name
+
+        # Apply parent change if any
+        if data.parent_id is not None:
+            directory.parent_id = new_parent_id
 
         if data.groups is not None:
             # Update groups: replace existing groups with the new list
@@ -127,13 +139,13 @@ class DirectoryService:
     def delete_directory(
         self,
         directory_id: str,
-        access_permissions: AccessPermissions = AccessPermissions(),
     ) -> None:
         """
         Delete a directory only if it and all its subdirectories contain no studies.
         Empty subdirectories are deleted recursively along with the parent.
         All deletions are performed in a single transaction for consistency.
         """
+        access_permissions = AccessPermissions.for_current_user()
         directory = self.directory_repository.get(directory_id)
         if directory is None:
             raise DirectoryNotFoundError(directory_id)
