@@ -97,7 +97,7 @@ class TestCreateStudy:
         assert res.status_code == 201
 
         # Create study in the directory path
-        res = client.post("/v1/studies?name=test-study&path=project/subfolder")
+        res = client.post("/v1/studies?name=test-study&directory=project/subfolder")
         assert res.status_code == 201
         study_id = res.json()
 
@@ -114,7 +114,7 @@ class TestCreateStudy:
     ) -> None:
         client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-        res = client.post("/v1/studies?name=test-study&path=workspace/experiments/test")
+        res = client.post("/v1/studies?name=test-study&directory=workspace/experiments/test")
         assert res.status_code == 201
         study_id = res.json()
 

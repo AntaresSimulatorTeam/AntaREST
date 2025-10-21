@@ -299,9 +299,9 @@ class TestDirectoryService:
         directory_service.delete_directory(directory_id)
 
         # Verify
-        mock_directory_repo.delete_batch.assert_called_once_with([directory_id])
+        mock_directory_repo.delete.assert_called_once_with(directory_id)
 
-    def test_delete_directory_with_empty_subdirectories(
+    def test_delete_directory_with_subdirectories_fails(
         self,
         directory_service: DirectoryService,
         mock_directory_repo: Mock,
@@ -318,22 +318,21 @@ class TestDirectoryService:
         )
         child = Directory(
             id=child_id,
-            name="Empty Child",
+            name="Child Directory",
             parent_id=directory_id,
             owner_id=test_user.id,
         )
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 0
-        # get_children is called twice: once for checking studies recursively,
-        # and once for collecting directories to delete
-        mock_directory_repo.get_children.side_effect = [[child], [], [child], []]
+        mock_directory_repo.get_children.return_value = [child]
 
-        # Execute
-        directory_service.delete_directory(directory_id)
+        # Execute & Verify
+        with pytest.raises(HTTPException) as exc_info:
+            directory_service.delete_directory(directory_id)
 
-        # Verify - delete_batch should be called with both directories
-        mock_directory_repo.delete_batch.assert_called_once_with([child_id, directory_id])
+        assert exc_info.value.status_code == 409
+        assert "subdirectories" in str(exc_info.value.detail).lower()
 
     def test_delete_directory_with_studies_fails(
         self,
@@ -353,48 +352,6 @@ class TestDirectoryService:
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 5
         mock_directory_repo.get_children.return_value = []
-
-        # Execute & Verify
-        with pytest.raises(HTTPException) as exc_info:
-            directory_service.delete_directory(directory_id)
-
-        assert exc_info.value.status_code == 409
-        assert "studies" in str(exc_info.value.detail).lower()
-
-    def test_delete_directory_with_studies_in_subdirectory_fails(
-        self,
-        directory_service: DirectoryService,
-        mock_directory_repo: Mock,
-        test_user: Identity,
-    ) -> None:
-        # Setup
-        directory_id = str(uuid.uuid4())
-        child_id = str(uuid.uuid4())
-        directory = Directory(
-            id=directory_id,
-            name="Parent Directory",
-            parent_id=None,
-            owner_id=test_user.id,
-        )
-        child = Directory(
-            id=child_id,
-            name="Child with Studies",
-            parent_id=directory_id,
-            owner_id=test_user.id,
-        )
-        mock_directory_repo.get.return_value = directory
-        mock_directory_repo.has_permission.return_value = True
-
-        # Parent has no studies, but child has studies
-        def count_studies_side_effect(dir_id: str) -> int:
-            if dir_id == directory_id:
-                return 0
-            elif dir_id == child_id:
-                return 3
-            return 0
-
-        mock_directory_repo.count_studies.side_effect = count_studies_side_effect
-        mock_directory_repo.get_children.side_effect = [[child], []]
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:

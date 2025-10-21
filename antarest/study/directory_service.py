@@ -14,7 +14,7 @@ import uuid
 from typing import List, Sequence
 
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.login.model import Group, GroupDTO
+from antarest.login.model import Group
 from antarest.study.directory_exceptions import (
     DirectoryAlreadyExistsError,
     DirectoryCycleError,
@@ -27,7 +27,6 @@ from antarest.study.model import (
     DirectoryCreation,
     DirectoryMetadata,
     DirectoryUpdate,
-    OwnerInfo,
 )
 from antarest.study.repository import AccessPermissions, DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -52,7 +51,7 @@ class DirectoryService:
         """List all directories the user has access to."""
         access_permissions = AccessPermissions.for_current_user()
         directories = self.directory_repository.get_all(access_permissions)
-        return [self._to_dto(directory) for directory in directories]
+        return [directory.to_metadata() for directory in directories]
 
     def create_directory(
         self,
@@ -83,7 +82,7 @@ class DirectoryService:
         directory.groups = [session.get(Group, gid) for gid in group_ids if session.get(Group, gid)]
 
         saved_directory = self.directory_repository.save(directory)
-        return self._to_dto(saved_directory)
+        return saved_directory.to_metadata()
 
     def update_directory(
         self,
@@ -134,16 +133,14 @@ class DirectoryService:
             directory.groups = [session.get(Group, gid) for gid in data.groups if session.get(Group, gid)]
 
         updated_directory = self.directory_repository.save(directory)
-        return self._to_dto(updated_directory)
+        return updated_directory.to_metadata()
 
     def delete_directory(
         self,
         directory_id: str,
     ) -> None:
         """
-        Delete a directory only if it and all its subdirectories contain no studies.
-        Empty subdirectories are deleted recursively along with the parent.
-        All deletions are performed in a single transaction for consistency.
+        Delete a directory only if it is completely empty (no studies and no subdirectories).
         """
         access_permissions = AccessPermissions.for_current_user()
         directory = self.directory_repository.get(directory_id)
@@ -153,57 +150,18 @@ class DirectoryService:
         if not self.directory_repository.has_permission(directory, access_permissions):
             raise UserHasNotPermissionError()
 
-        # Check if directory or any subdirectory contains studies
-        if self._has_studies_recursive(directory_id):
-            raise DirectoryNotEmptyError("Cannot delete directory: it or one of its subdirectories contains studies.")
+        # Check if directory contains studies
+        if self._has_studies(directory_id):
+            raise DirectoryNotEmptyError("Cannot delete directory: it contains studies.")
 
-        # Collect all directories to delete (depth-first)
-        # Use admin permissions to ensure we collect ALL subdirectories
-        # This is necessary because we already verified the user has permission to delete the root directory
-        directories_to_delete = self._collect_directories_to_delete(directory_id, AccessPermissions(is_admin=True))
-
-        # Delete all directories in a single transaction
-        self.directory_repository.delete_batch(directories_to_delete)
-
-    def _has_studies_recursive(self, directory_id: str) -> bool:
-        """Check if directory or any of its subdirectories contains studies."""
-        # Check current directory
-        if self.directory_repository.count_studies(directory_id) > 0:
-            return True
-
-        # Check all subdirectories recursively
-        children = self.directory_repository.get_children(directory_id, AccessPermissions(is_admin=True))
-        for child in children:
-            if self._has_studies_recursive(child.id):
-                return True
-
-        return False
-
-    def _collect_directories_to_delete(self, directory_id: str, access_permissions: AccessPermissions) -> List[str]:
-        """
-        Collect all directory IDs to delete in depth-first order.
-        Returns a list with children before parents for proper deletion order.
-        """
-        directories_to_delete = []
-
-        # Recursively collect all children first
+        # Check if directory contains subdirectories
         children = self.directory_repository.get_children(directory_id, access_permissions)
-        for child in children:
-            directories_to_delete.extend(self._collect_directories_to_delete(child.id, access_permissions))
+        if children:
+            raise DirectoryNotEmptyError("Cannot delete directory: it contains subdirectories.")
 
-        # Add the current directory after all its children
-        directories_to_delete.append(directory_id)
+        # Delete the directory
+        self.directory_repository.delete(directory_id)
 
-        return directories_to_delete
-
-    def _to_dto(self, directory: Directory) -> DirectoryMetadata:
-        """Convert Directory entity to DTO."""
-        owner_info = OwnerInfo(id=directory.owner_id, name=directory.owner.name if directory.owner else "Unknown")
-
-        return DirectoryMetadata(
-            id=directory.id,
-            name=directory.name,
-            parent_id=directory.parent_id,
-            owner=owner_info,
-            groups=[GroupDTO(id=g.id, name=g.name) for g in directory.groups],
-        )
+    def _has_studies(self, directory_id: str) -> bool:
+        """Check if directory contains studies."""
+        return self.directory_repository.count_studies(directory_id) > 0

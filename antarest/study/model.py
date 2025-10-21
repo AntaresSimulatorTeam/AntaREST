@@ -253,6 +253,18 @@ class Directory(Base):
     def __repr__(self) -> str:
         return f'Directory(id="{self.id}", name="{self.name}", parent_id="{self.parent_id}")'
 
+    def to_metadata(self) -> "DirectoryMetadata":
+        """Convert this Directory entity to DirectoryMetadata DTO."""
+        owner_info = OwnerInfo(id=self.owner_id, name=self.owner.name if self.owner else "Unknown")
+
+        return DirectoryMetadata(
+            id=self.id,
+            name=self.name,
+            parent_id=self.parent_id,
+            owner=owner_info,
+            groups=[GroupDTO(id=g.id, name=g.name) for g in self.groups],
+        )
+
 
 class Tag(Base):
     """
