@@ -40,7 +40,7 @@ from antarest.study.business.output.aggregator_management import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.business.output.variables_management import get_variables_metadata
+from antarest.study.business.output.variables_management import extract_variables_metadata
 from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_df_chunks
@@ -566,7 +566,7 @@ class OutputService:
 
         # Fetches the data inside the FS
         output_path = self._storage.get_output_path(study, output_id)
-        model = get_variables_metadata(output_path)
+        model = extract_variables_metadata(output_path)
 
         # Save the model inside DB for next calls
         with db():

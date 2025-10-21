@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -23,6 +24,12 @@ from antarest.study.business.output.aggregator_management import (
 from antarest.study.business.output.utils import parse_output_file
 from antarest.study.storage.output_model import OutputVariablesMetadata
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+
+
+@dataclass(frozen=True)
+class ColumnHeader:
+    name: str
+    sub_columns_names: list[str]
 
 
 def _filter_files_with_same_prefix(
@@ -105,7 +112,7 @@ def _get_all_headers_and_file_type(
         yield _read_headers_only(file_path, mc_root, freq, file_type), file_type
 
 
-def get_variables_metadata(output_path: Path) -> OutputVariablesMetadata:
+def extract_variables_metadata(output_path: Path) -> OutputVariablesMetadata:
     """
     For a given output path, iterates over all necessary files to gather the possible variables it contains.
     It classifies them under categories inside a Pydantic model.
@@ -127,7 +134,7 @@ def get_variables_metadata(output_path: Path) -> OutputVariablesMetadata:
 
     existing_paths = []
     if mc_ind_path.exists():
-        first_mc_year = next(mc_ind_path.iterdir()).name
+        first_mc_year = sorted(mc_ind_path.iterdir())[0].name
         existing_paths.append(mc_ind_path / first_mc_year)
     if mc_all_path.exists():
         existing_paths.append(mc_all_path)
