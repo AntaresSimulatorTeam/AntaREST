@@ -23,6 +23,7 @@ from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
     LaunchConfigDTO,
+    LaunchConfigUpdate,
     LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
@@ -221,8 +222,17 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Update an existing launcher configuration",
         response_model=LaunchConfigDTO,
     )
-    def update_launcher_config(configuration_id: str, launcher_config_update: LaunchConfigDTO) -> Any:
+    def update_launcher_config(configuration_id: str, launcher_config_update: LaunchConfigUpdate) -> Any:
         logger.info(f"Updating launcher configuration for ID {configuration_id}")
         return service.update_launcher_config(configuration_id, launcher_config_update)
+
+    @bp.delete(
+        "/configurations/{configuration_id}",
+        tags=[APITag.launcher],
+        summary="Delete a launch configuration",
+    )
+    def delete_launcher_config(configuration_id: str) -> None:
+        logger.info(f"Deleting launch configuration for ID {configuration_id}")
+        service.delete_launch_config(configuration_id)
 
     return bp

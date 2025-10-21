@@ -47,6 +47,7 @@ from antarest.launcher.model import (
     JobStatus,
     LaunchConfigDTO,
     LaunchConfigModel,
+    LaunchConfigUpdate,
     LauncherInfoDTO,
     LauncherListDTO,
     LauncherLoadDTO,
@@ -741,7 +742,9 @@ class LauncherService:
             configs = self.launcher_config_repository.get_all()
             return [config.to_dto() for config in configs]
 
-    def update_launcher_config(self, configuration_id: str, launch_config_update: LaunchConfigDTO) -> LaunchConfigDTO:
+    def update_launcher_config(
+        self, configuration_id: str, launch_config_update: LaunchConfigUpdate
+    ) -> LaunchConfigDTO:
         """
         Update an existing launcher configuration using LauncherParametersDTO.
         """
@@ -755,3 +758,15 @@ class LauncherService:
             if not config:
                 raise ValueError("Failed to update launcher configuration")
             return config.to_dto()
+
+    def delete_launch_config(self, configuration_id: str) -> None:
+        """
+        Delete a launcher configuration by its ID. Only site administrators can delete configs.
+        """
+        with db():
+            launcher_config = self.launcher_config_repository.get(configuration_id)
+            if not launcher_config:
+                raise LaunchConfigNotFound(configuration_id)
+
+            logger.info(f"Deleting launcher configuration {configuration_id}")
+            self.launcher_config_repository.delete(configuration_id)

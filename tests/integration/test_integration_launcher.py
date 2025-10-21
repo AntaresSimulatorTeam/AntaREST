@@ -149,3 +149,86 @@ def test_launcher(client: TestClient, user_access_token: str) -> None:
     config_names7 = [c["name"] for c in data7]
     for expected_name_7 in ["test-xpress-config", "minimal-config", "retrieve-test"]:
         assert expected_name_7 in config_names7
+
+    # Test updating a launcher configuration
+    update_payload8 = {
+        "min_antares_version": {"major": 9, "minor": 3, "patch": 0},
+    }
+
+    # Get the ID of minimal-config
+    config1_id = data1["id"]
+
+    res8 = client.put(
+        f"/v1/launcher/configurations/{config1_id}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+        json=update_payload8,
+    )
+
+    assert res8.status_code == 200
+
+    # Verify the update by retrieving the config again
+    res8_verify = client.get(
+        f"/v1/launcher/configurations/{config1_id}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+    )
+
+    assert res8_verify.status_code == 200
+    data8_verify = res8_verify.json()
+    assert data8_verify["min_antares_version"] == {"major": 9, "minor": 3, "patch": 0}
+    assert data8_verify["linear_solver"] == "xpress"  # unchanged although not in update payload
+
+    # Test that we can't update to version < 9.2 if optim params are defined
+    update_payload9 = {
+        "min_antares_version": {"major": 8, "minor": 0, "patch": 0},  # < 9.2
+    }
+
+    res9 = client.put(
+        f"/v1/launcher/configurations/{config1_id}",  # config1 has optim_1 params defined
+        headers={"Authorization": f"Bearer {user_access_token}"},
+        json=update_payload9,
+    )
+
+    assert res9.status_code == 422
+
+    # Test updating optim params to None/empty when version < 9.2
+    update_payload10 = {
+        "min_antares_version": {"major": 8, "minor": 0, "patch": 0},  # < 9.2
+        "linear_solver_param_optim_1": [],  # Override to empty
+        "linear_solver_param_optim_2": [],  # Override to empty
+    }
+
+    res10 = client.put(
+        f"/v1/launcher/configurations/{config1_id}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+        json=update_payload10,
+    )
+
+    assert res10.status_code == 200
+
+    # Verify the update
+    res10_verify = client.get(
+        f"/v1/launcher/configurations/{config1_id}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+    )
+
+    assert res10_verify.status_code == 200
+    data10_verify = res10_verify.json()
+    assert data10_verify["min_antares_version"] == {"major": 8, "minor": 0, "patch": 0}
+    assert data10_verify["linear_solver_param_optim_1"] == []
+    assert data10_verify["linear_solver_param_optim_2"] == []
+
+    # Test deleting a launcher configuration
+    res_delete = client.delete(
+        f"/v1/launcher/configurations/{config1_id}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+    )
+
+    assert res_delete.status_code == 200
+
+    # Verify it's deleted by trying to retrieve it
+    res_deleted_verify = client.get(
+        f"/v1/launcher/configurations/{config1_id}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+    )
+
+    assert res_deleted_verify.status_code == 404

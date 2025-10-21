@@ -443,6 +443,17 @@ class LaunchConfigDTO(AntaresBaseModel):
         return " ".join(options)
 
 
+class LaunchConfigUpdate(AntaresBaseModel):
+    linear_solver: Optional[str] = None
+    min_antares_version: Optional[SolverVersion] = None
+    max_antares_version: Optional[SolverVersion] = None
+    linear_solver_param_optim_1: Optional[SolverParams] = None
+    linear_solver_param_optim_2: Optional[SolverParams] = None
+    linear_solver_param: Optional[SolverParams] = None
+    use_optim_1_basis_next_week: Optional[bool] = None
+    use_optim_1_basis_optim_2: Optional[bool] = None
+
+
 def overwrite_params_other_options_with_config(
     launcher_params: LauncherParametersDTO,
     launcher_config: LaunchConfigDTO,
@@ -551,11 +562,11 @@ class LaunchConfigModel(Base):
 
 def apply_update_launcher_config(
     launcher_config: LaunchConfigModel,
-    launcher_config_update: LaunchConfigDTO,
+    launcher_config_update: LaunchConfigUpdate,
 ) -> LaunchConfigModel:
     return LaunchConfigModel.from_dto(
         LaunchConfigDTO.model_validate(
-            {**launcher_config.to_dto().model_dump(), **launcher_config_update.model_dump(exclude_unset=True)}
+            {**launcher_config.to_dto().model_dump(), **launcher_config_update.model_dump(exclude_none=True)}
         )
     )
 
