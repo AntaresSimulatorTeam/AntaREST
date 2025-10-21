@@ -20,9 +20,9 @@ from antarest.blobstore.model import BlobReference
 from antarest.blobstore.repository import BlobContentRepository
 
 
-class ISimpleBlobService(ABC):
+class IBlobService(ABC):
     @abstractmethod
-    def create(self, data: bytes) -> str:
+    def save(self, data: bytes) -> str:
         raise NotImplementedError()
 
     @abstractmethod
@@ -38,7 +38,7 @@ class ISimpleBlobService(ABC):
         raise NotImplementedError()
 
 
-class BlobService(ISimpleBlobService):
+class BlobService(IBlobService):
     def __init__(
         self,
         blob_content_repository: BlobContentRepository,
@@ -47,7 +47,7 @@ class BlobService(ISimpleBlobService):
         self.usage_providers: List[IBlobUsageProvider] = []
 
     @override
-    def create(self, data: bytes) -> str:
+    def save(self, data: bytes) -> str:
         return self.blob_content_repository.save(data)
 
     @override

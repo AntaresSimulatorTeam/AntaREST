@@ -13,7 +13,7 @@
 
 import pytest
 
-from antarest.blobstore.service import ISimpleBlobService
+from antarest.blobstore.service import IBlobService
 from antarest.core.exceptions import ChildNotFoundError, STStorageNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
@@ -81,7 +81,7 @@ EXPECTED_STORAGES = {
 
 
 @pytest.fixture
-def command_context(matrix_service: ISimpleMatrixService, blob_service: ISimpleBlobService) -> CommandContext:
+def command_context(matrix_service: ISimpleMatrixService, blob_service: IBlobService) -> CommandContext:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     matrix_constants.init_constant_matrices()
     return CommandContext(

@@ -60,7 +60,7 @@ def test_clean_blobs(blob_garbage_collector: BlobGarbageCollector):
 def test_clean_matrices_with_actual_service(simple_blob_service: BlobService):
     gc = BlobGarbageCollector(blob_service=simple_blob_service, sleeping_time=3600, dry_run=False)
 
-    blob_id = simple_blob_service.create(b"Hello World !")
+    blob_id = simple_blob_service.save(b"Hello World !")
     assert simple_blob_service.get_saved_blobs() == [blob_id]
 
     gc.clean_blobs()

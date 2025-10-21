@@ -21,9 +21,9 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 def _set_up(command_context: CommandContext) -> list[str]:
     # Creates several files in the blob store
-    blob_1 = command_context.blob_service.create(b"Hello World !")
-    blob_2 = command_context.blob_service.create(b"Thunder Nuggets")
-    blob_3 = command_context.blob_service.create(b"1.0,2.3\t4.5,6.7\t")
+    blob_1 = command_context.blob_service.save(b"Hello World !")
+    blob_2 = command_context.blob_service.save(b"Thunder Nuggets")
+    blob_3 = command_context.blob_service.save(b"1.0,2.3\t4.5,6.7\t")
     return [blob_1, blob_2, blob_3]
 
 

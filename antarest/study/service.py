@@ -1464,7 +1464,7 @@ class StudyService:
             user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
             content = data or b""
             assert isinstance(content, bytes)
-            blob_id = context.blob_service.create(content)
+            blob_id = context.blob_service.save(content)
             args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
             command_data = UserResourceDataCreation.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)

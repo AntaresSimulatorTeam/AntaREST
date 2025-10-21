@@ -32,7 +32,7 @@ class BlobContentRepository:
         file_path = self.bucket_dir / blob_hash
         if not file_path.exists():
             raise BlobNotFound(blob_hash)
-        return (self.bucket_dir / blob_hash).read_bytes()
+        return file_path.read_bytes()
 
     def save(self, content: bytes) -> str:
         blob_hash = compute_blob_hash(content)

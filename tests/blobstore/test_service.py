@@ -41,8 +41,8 @@ def test_lifecycle(simple_blob_service: BlobService):
     # Create 2 blobs
     content_1 = b"Hello World !"
     content_2 = b"1.0,2.3\t4.5,6.7\t"
-    blob_1 = simple_blob_service.create(content_1)
-    blob_2 = simple_blob_service.create(content_2)
+    blob_1 = simple_blob_service.save(content_1)
+    blob_2 = simple_blob_service.save(content_2)
 
     # Ensures 2 files were created
     assert len(list(bucket_dir.iterdir())) == 2
@@ -65,8 +65,8 @@ def test_lifecycle(simple_blob_service: BlobService):
     simple_blob_service.delete("fake_id")
 
     # Save 2 other blobs to test `get_saved_blobs` method
-    blob_3 = simple_blob_service.create(b"Content 3")
-    blob_4 = simple_blob_service.create(b"Content 4")
+    blob_3 = simple_blob_service.save(b"Content 3")
+    blob_4 = simple_blob_service.save(b"Content 4")
 
     assert sorted(simple_blob_service.get_saved_blobs()) == sorted([blob_2, blob_3, blob_4])
 

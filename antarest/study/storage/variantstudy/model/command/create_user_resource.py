@@ -58,7 +58,7 @@ class CreateUserResource(ICommand):
                     command_context: CommandContext = values["command_context"]
                     if isinstance(legacy_content, str):
                         legacy_content = legacy_content.encode("utf-8")
-                    blob_id = command_context.blob_service.create(legacy_content)
+                    blob_id = command_context.blob_service.save(legacy_content)
                     del values["data"]["content"]
                     values["data"]["blob_id"] = blob_id
 

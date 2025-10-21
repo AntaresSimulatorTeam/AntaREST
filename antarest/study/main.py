@@ -12,7 +12,7 @@
 
 from typing import Optional
 
-from antarest.blobstore.service import ISimpleBlobService
+from antarest.blobstore.service import IBlobService
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
@@ -46,7 +46,7 @@ def build_study_service(
     config: Config,
     user_service: LoginService,
     matrix_service: ISimpleMatrixService,
-    blob_service: ISimpleBlobService,
+    blob_service: IBlobService,
     cache: ICache,
     file_transfer_manager: FileTransferManager,
     task_service: ITaskService,

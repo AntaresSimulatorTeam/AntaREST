@@ -15,10 +15,10 @@ from typing_extensions import override
 
 from antarest.blobstore.blob_usage_provider import IBlobUsageProvider
 from antarest.blobstore.repository import compute_blob_hash
-from antarest.blobstore.service import ISimpleBlobService
+from antarest.blobstore.service import IBlobService
 
 
-class InMemorySimpleBlobService(ISimpleBlobService):
+class InMemoryBlobService(IBlobService):
     """
     In memory implementation of blob service, for unit testing purposes.
     """
@@ -28,7 +28,7 @@ class InMemorySimpleBlobService(ISimpleBlobService):
         self.usage_providers: list[IBlobUsageProvider] = []
 
     @override
-    def create(self, data: bytes) -> str:
+    def save(self, data: bytes) -> str:
         blob_hash = compute_blob_hash(data)
         self._content[blob_hash] = data
         return blob_hash
