@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from antarest.study.business.output.aggregator_management import (
-    AggregatorManager,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -21,6 +20,7 @@ from antarest.study.business.output.aggregator_management import (
     MCRoot,
     QueryFileType,
 )
+from antarest.study.business.output.utils import parse_output_file
 from antarest.study.storage.output_model import OutputVariablesMetadata
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
@@ -73,7 +73,7 @@ def _read_headers_only(
     Returns:
         - A mapping containing the dataframe headers
     """
-    body = AggregatorManager.parse_output_file(file_path, freq, 0)
+    body = parse_output_file(file_path, freq, 0)
 
     if "details" in file_type.value:
         cols_mapping: dict[str, set[str]] = {}
