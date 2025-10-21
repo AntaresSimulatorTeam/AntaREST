@@ -59,14 +59,14 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
     target = engine or Pool
 
     dbconn_durations_histo = Histogram(
-        "dbconn_duration_seconds",
+        "db_connections_duration_seconds",
         "DB connection duration",
         ["worker_id"],
         registry=registry,
     )
 
     dbconn_gauge = Gauge(
-        "dbconn_in_use",
+        "db_connections_used",
         "DB connection count",
         ["worker_id"],
         multiprocess_mode="liveall",
@@ -75,7 +75,7 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
     dbconn_gauge.labels(WORKER_ID).set(0)
 
     dbconn_idle_gauge = Gauge(
-        "dbconn_idle",
+        "db_connections_idle",
         "Idle DB connection count",
         ["worker_id"],
         multiprocess_mode="liveall",
@@ -85,16 +85,36 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
 
     dbconn_gauge.labels(WORKER_ID).set(0)
 
+    dbconn_event_counter = Counter(
+        "db_connections_events",
+        "DB connection events",
+        ["worker_id", "event_type"],
+        registry=registry,
+    )
+
     @listens_for(target, "connect")
     def on_connect(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
         dbconn_idle_gauge.labels(WORKER_ID).inc()
+        dbconn_event_counter.labels(WORKER_ID, "connect").inc()
 
     @listens_for(target, "close")
     def on_close(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
         dbconn_idle_gauge.labels(WORKER_ID).dec()
+        dbconn_event_counter.labels(WORKER_ID, "close").inc()
+
+    @listens_for(target, "detach")
+    def on_detach(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
+        dbconn_gauge.labels(WORKER_ID).dec()
+        dbconn_event_counter.labels(WORKER_ID, "detach").inc()
+
+    @listens_for(target, "invalidate")
+    def on_invalidate(dbapi_con: Any, connection_record: ConnectionPoolEntry, exception: Any) -> None:
+        dbconn_event_counter.labels(WORKER_ID, "invalidate").inc()
+        # close will be called, no need to decrement idle gauge
 
     @listens_for(target, "checkin")
     def on_checkin(dbapi_con: Any, connection_record: ConnectionPoolEntry) -> None:
+        dbconn_event_counter.labels(WORKER_ID, "checkin").inc()
         dbconn_idle_gauge.labels(WORKER_ID).inc()
         try:
             start_time = connection_record.info["start_time"]
@@ -108,6 +128,7 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
     def on_checkout(
         dbapi_con: Any, connection_record: ConnectionPoolEntry, connection_proxy: PoolProxiedConnection
     ) -> None:
+        dbconn_event_counter.labels(WORKER_ID, "checkout").inc()
         dbconn_idle_gauge.labels(WORKER_ID).dec()
         dbconn_gauge.labels(WORKER_ID).inc()
 
@@ -121,7 +142,7 @@ def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessio
     target = session_factory or Session
 
     transactions_current_gauge = Gauge(
-        "transaction_current",
+        "db_transactions_current",
         "Transaction in progress",
         ["worker_id"],
         multiprocess_mode="liveall",
@@ -130,14 +151,14 @@ def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessio
     transactions_current_gauge.labels(WORKER_ID).set(0)
 
     transaction_duration_histo = Histogram(
-        "transaction_duration_seconds",
+        "db_transactions_duration_seconds",
         "Transaction ends",
         ["worker_id"],
         registry=registry,
     )
 
     events_counter = Counter(
-        "dbsession_events",
+        "db_session_events",
         "Begins counter",
         ["worker_id", "event_type"],
         registry=registry,
@@ -174,14 +195,14 @@ def _add_metrics_middleware(application: FastAPI) -> None:
     """
 
     request_counter = Counter(
-        "request_count",
-        "App Request Count",
+        "http_requests",
+        "HTTP requests count",
         ["worker_id", "method", "endpoint", "http_status"],
         registry=prometheus_client.REGISTRY,
     )
     request_duration_histo = Histogram(
-        "request_duration_seconds",
-        "Request duration",
+        "http_requests_duration_seconds",
+        "HTTP requests duration",
         ["worker_id", "method", "endpoint", "http_status"],
         registry=prometheus_client.REGISTRY,
     )
