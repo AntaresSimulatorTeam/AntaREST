@@ -1049,7 +1049,7 @@ def command_factory() -> CommandFactory:
         return "created_blob_id"
 
     matrix_service = Mock(spec=MatrixService, get_matrix_id=get_matrix_id)
-    blob_service = Mock(spec=BlobService, create=create_blob)
+    blob_service = Mock(spec=BlobService, save=create_blob)
 
     return CommandFactory(
         generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
