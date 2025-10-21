@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -30,7 +30,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 @dataclass(frozen=True)
 class ColumnHeader:
     name: str
-    sub_columns_names: list[str]
+    sub_columns_names: list[str] = field(default_factory=list)
 
 
 def _filter_files_with_same_prefix(
@@ -68,7 +68,7 @@ def _filter_files_with_same_prefix(
 
 def _read_headers_only(
     file_path: Path, mc_root: MCRoot, freq: MatrixFrequency, file_type: QueryFileType
-) -> dict[str, set[str]]:
+) -> list[ColumnHeader]:
     """
     Returns the headers of a given output file.
 
@@ -87,14 +87,15 @@ def _read_headers_only(
         cols_mapping: dict[str, set[str]] = {}
         for col in body.columns:
             cols_mapping.setdefault(col[0], set()).add(col[1])
-        return cols_mapping
+        return [ColumnHeader(name=col, sub_columns_names=list(vars)) for col, vars in cols_mapping.items()]
 
-    return dict.fromkeys(normalize_column_names(body, mc_root), set())
+    normalized_cols = normalize_column_names(body, mc_root)
+    return [ColumnHeader(name=col) for col in normalized_cols]
 
 
 def _get_all_headers_and_file_type(
     mc_root: MCRoot, parent_path: Path, file_type_class: type[QueryFileType]
-) -> Iterator[tuple[dict[str, set[str]], QueryFileType]]:
+) -> Iterator[tuple[list[ColumnHeader], QueryFileType]]:
     """
     Returns the headers of all output files located in the parent_path.
     For each header, also returns it corresponding file type.
@@ -144,12 +145,12 @@ def extract_variables_metadata(output_path: Path) -> OutputVariablesMetadata:
                 areas_dict: dict[str, Any] = {"name": area.name}
                 parent_path = areas_folder / area
 
-                for cols, file_type in _get_all_headers_and_file_type(mc_root, parent_path, file_type_class):
+                for col_headers, file_type in _get_all_headers_and_file_type(mc_root, parent_path, file_type_class):
                     key = areas_mapping[file_type.value]
                     if "details" in file_type.value:
-                        areas_dict[key] = [{"name": k, "variables": v} for k, v in cols.items()]
+                        areas_dict[key] = [{"name": c.name, "variables": c.sub_columns_names} for c in col_headers]
                     else:
-                        areas_dict[key] = areas_dict.get(key, set()) | set(cols)
+                        areas_dict[key] = areas_dict.get(key, set()) | {col.name for col in col_headers}
 
                 variables[mc_root_key]["areas"].append(areas_dict)
 
@@ -162,8 +163,8 @@ def extract_variables_metadata(output_path: Path) -> OutputVariablesMetadata:
                 links_dict: dict[str, Any] = {"area_1_name": area1, "area_2_name": area2}
                 parent_path = links_folder / link_name
 
-                for cols, _ in _get_all_headers_and_file_type(mc_root, parent_path, file_type_klass):
-                    links_dict["variables"] = links_dict.get("variables", set()) | set(cols)
+                for col_headers, _ in _get_all_headers_and_file_type(mc_root, parent_path, file_type_klass):
+                    links_dict["variables"] = links_dict.get("variables", set()) | {col.name for col in col_headers}
 
                 variables[mc_root_key]["links"].append(links_dict)
 
