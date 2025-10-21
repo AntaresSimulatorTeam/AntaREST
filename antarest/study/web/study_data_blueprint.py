@@ -95,7 +95,7 @@ from antarest.study.business.model.sts_model import (
     STStorageCreation,
     STStorageUpdate,
 )
-from antarest.study.business.model.study_model import StudyDataDTO
+from antarest.study.business.model.study_data_model import StudyDataDTO
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, ThematicTrimmingUpdate
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,

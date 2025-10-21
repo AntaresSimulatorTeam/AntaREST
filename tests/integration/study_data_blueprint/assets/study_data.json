@@ -1,4 +1,9 @@
 {
+        "metadata":  {
+            "name": "STA-mini",
+            "version": "8.8",
+            "folder": "STA-mini"
+        },
         "areas": [
             {
                 "hydro": {
@@ -1626,7 +1631,6 @@
                 "usePhaseShifter": false
             }
         ],
-        "name": "STA-mini",
         "outputs": [
             {"archived": false, "name": "hello"},
             {"archived": false, "name": "goodbye"},
@@ -1635,7 +1639,6 @@
             {"archived": true, "name": "2"},
             {"archived": false, "name": "extra-outputs"}
         ],
-        "path": "STA-mini",
         "settings": {
             "adequacy_patch": {
                 "checkCsrCostFunction": false,
@@ -1804,7 +1807,6 @@
             },
             "time_series": {"thermal": {"number": 1}}
         },
-        "version": "8.8",
         "xpansion": {
             "candidates": [],
             "constraints": [],
