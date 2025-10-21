@@ -21,7 +21,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.study.business.xpansion_management import XpansionCandidate
+from antarest.study.business.model.xpansion_model import XpansionCandidate
 from tests.integration.utils import wait_task_completion
 
 

@@ -23,7 +23,7 @@ from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.main import JwtSettings
+from antarest.login.auth import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
 from antarest.matrixstore.web import MatrixDTO
@@ -34,8 +34,8 @@ from tests.login.test_web import create_auth_token
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     build_ctxt = create_app_ctxt(FastAPI(title=__name__))
 
-    @AuthJWT.load_config
-    def get_config() -> None:
+    @AuthJWT.load_config # type: ignore[misc]
+    def get_config() -> JwtSettings:
         return JwtSettings(
             authjwt_secret_key="super-secret",
             authjwt_token_location=("headers", "cookies"),

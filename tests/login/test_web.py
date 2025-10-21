@@ -13,6 +13,7 @@
 import base64
 import json
 from datetime import timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Dict, Union
 from unittest.mock import Mock
@@ -24,7 +25,9 @@ from starlette.testclient import TestClient
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.roles import RoleType
 from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.login.auth import JwtSettings
 from antarest.login.main import build_login
 from antarest.login.model import (
     Bot,
@@ -36,19 +39,17 @@ from antarest.login.model import (
     Password,
     Role,
     RoleDetailDTO,
-    RoleType,
     User,
     UserCreateDTO,
     UserInfo,
 )
-from antarest.main import JwtSettings
 
 
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     app = FastAPI(title=__name__)
 
-    @AuthJWT.load_config
-    def get_config() -> None:
+    @AuthJWT.load_config  # type: ignore[misc]
+    def get_config() -> JwtSettings:
         return JwtSettings(
             authjwt_secret_key="super-secret",
             authjwt_token_location=("headers", "cookies"),
@@ -66,9 +67,9 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     return app_ctxt.build()
 
 
-class TokenType:
-    REFRESH: str = "REFRESH"
-    ACCESS: str = "ACCESS"
+class TokenType(str, Enum):
+    REFRESH = "REFRESH"
+    ACCESS = "ACCESS"
 
 
 def create_auth_token(

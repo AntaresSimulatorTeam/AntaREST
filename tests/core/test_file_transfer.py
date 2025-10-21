@@ -41,7 +41,7 @@ def test_file_request() -> None:
     ftm = FileTransferManager(Mock(), Mock(), Config())
 
     @app.get("/dummy")
-    def dummy_endpoint(tmppath: Path = Depends(ftm.request_tmp_file)) -> None:
+    def dummy_endpoint(tmppath: Path = Depends(ftm.request_tmp_file)) -> Path:
         tmppath.touch()
         assert tmppath.exists()
         return tmppath

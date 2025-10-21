@@ -12,7 +12,13 @@
 
 from checksumdir import dirhash
 
-from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+    ClusterTerm,
+    ConstraintTerm,
+    LinkTerm,
+)
 from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictCreation
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
@@ -21,10 +27,6 @@ from antarest.study.business.model.renewable_cluster_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_ruleset_update
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -47,7 +49,7 @@ from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveArea:
-    def _set_up(self, empty_study: FileStudy, command_context: CommandContext) -> None:
+    def _set_up(self, empty_study: FileStudy, command_context: CommandContext) -> tuple[FileStudy, str]:
         empty_study.tree.save(
             {
                 "input": {

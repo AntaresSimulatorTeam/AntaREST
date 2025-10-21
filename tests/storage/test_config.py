@@ -18,7 +18,7 @@ from antarest.core.config import Config, InternalMatrixFormat, StorageConfig
 
 
 @pytest.fixture
-def storage_config_default() -> None:
+def storage_config_default() -> dict[str, Any]:
     return {
         "matrixstore": "./custom_matrixstore",
         "archive_dir": "./custom_archives",

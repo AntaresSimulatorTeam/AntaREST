@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.repository import VariantStudyRepositor
 
 
 @pytest.fixture
-def matrix_garbage_collector(tmp_path: Path) -> None:
+def matrix_garbage_collector(tmp_path: Path) -> MatrixGarbageCollector:
     """
     Fixture for creating a MatrixGarbageCollector object.
     """

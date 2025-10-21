@@ -436,7 +436,7 @@ def study_service_fixture(
     event_bus: IEventBus,
     task_service: ITaskService,
     core_config: Config,
-) -> None:
+) -> StudyService:
     return StudyService(
         raw_study_service,
         variant_study_service,

@@ -13,7 +13,8 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from antarest.login.model import Bot, Group, Password, Role, RoleType, User, UserLdap
+from antarest.core.roles import RoleType
+from antarest.login.model import Bot, Group, Password, Role, User, UserLdap
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 
 

@@ -37,9 +37,9 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraint,
     STStorageGroup,
 )
+from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
     _parse_links_filtering,

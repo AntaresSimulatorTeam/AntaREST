@@ -91,13 +91,13 @@ def test_ruleset__initialization_from_study() -> None:
 def test_update_ruleset_simple_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
     update = RulesetUpdate()
-    update.set(scenario_type, {"be": {"1": 2, "2": 1}})
+    update.set(scenario_type, {"be": {"1": 2, "2": 1}})  # type: ignore[arg-type]
     update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
 
     update = RulesetUpdate()
-    update.set(scenario_type, {"be": {"2": 3}})
+    update.set(scenario_type, {"be": {"2": 3}})  # type: ignore[arg-type]
     update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 3}}
 
@@ -228,7 +228,7 @@ def test_get_set_by_type(
     getter: Callable[[Any], Any],
 ) -> None:
     ruleset = ruleset_cls()
-    ruleset.set(scenario_type, {"be": {"1": 2, "2": 1}})
+    ruleset.set(scenario_type, {"be": {"1": 2, "2": 1}})  # type: ignore[arg-type]
     assert getter(ruleset) == {"be": {"1": 2, "2": 1}}
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
 

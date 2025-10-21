@@ -191,7 +191,7 @@ def test_scan(study_tree: Path) -> None:
 
 @pytest.mark.unit_test
 def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
-    def count_studies() -> None:
+    def count_studies() -> int:
         return db_session.query(Study).count()
 
     clean_files()

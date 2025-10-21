@@ -31,6 +31,7 @@ from antarest.core.exceptions import UrlNotMatchJsonDataError
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
@@ -42,7 +43,6 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixIndex,
     OwnerInfo,
-    PublicMode,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudyDownloadType,

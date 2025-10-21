@@ -15,8 +15,8 @@ import pytest
 
 from antarest.core.exceptions import ChildNotFoundError, STStorageNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
-from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
+from antarest.study.business.areas.st_storage_management import STStorageManager
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup, STStorageUpdate
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants

@@ -45,28 +45,28 @@ from tests.helpers import create_raw_study, with_db_context
 
 @pytest.fixture
 @with_db_context
-def raw_studies_matrix_usage_provider(raw_study_service: RawStudyService, matrix_service: ISimpleMatrixService) -> None:
+def raw_studies_matrix_usage_provider(raw_study_service: RawStudyService, matrix_service: ISimpleMatrixService) -> RawStudyMatrixUsageProvider:
     return RawStudyMatrixUsageProvider(StudyMetadataRepository(raw_study_service.cache), matrix_service)
 
 
 @pytest.fixture
 def command_matrix_usage_provider(
     variant_study_repository: VariantStudyRepository, command_factory: CommandFactory
-) -> None:
+) -> CommandMatrixUsageProvider:
     command_matrix_usage_provider = CommandMatrixUsageProvider(variant_study_repository, command_factory)
 
     return command_matrix_usage_provider
 
 
 @pytest.fixture
-def constants_matrix_usage_provider(matrix_service: MatrixService) -> None:
+def constants_matrix_usage_provider(matrix_service: MatrixService) -> ConstantsMatrixUsageProvider:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     return ConstantsMatrixUsageProvider(matrix_constants, matrix_service)
 
 
 @pytest.fixture
 @with_db_context
-def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service: MatrixService) -> None:
+def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service: MatrixService) -> IMatrixUsageProvider:
     def _create_dataset_usage_provider() -> "IMatrixUsageProvider":
         repo_dataset = dataset_repo
 

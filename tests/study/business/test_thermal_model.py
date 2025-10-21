@@ -422,17 +422,26 @@ def test_invalid_field_values(
     fields: dict[str, Any],
 ) -> None:
     with pytest.raises(ValidationError):
-        thermal_cluster_cls(name="cluster-data", **fields)
+        kwargs = fields.copy()
+        if thermal_cluster_cls != ThermalClusterUpdate:
+            kwargs["name"] = "cluster-data"
+        thermal_cluster_cls(**kwargs)
 
 
 @pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
 def test_invalid_min_up_down_time_should_be_truncated(
     thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate],
 ) -> None:
-    data = thermal_cluster_cls(name="cluster-data", min_up_time=-1, min_down_time=-1)
+    kwargs: dict[str, Any] = {"min_up_time": -1, "min_down_time": -1}
+    if thermal_cluster_cls != ThermalClusterUpdate:
+        kwargs["name"] = "cluster-data"
+    data = thermal_cluster_cls(**kwargs)
     assert data.min_up_time == 1
     assert data.min_down_time == 1
 
-    data = thermal_cluster_cls(name="cluster-data", min_up_time=169, min_down_time=169)
+    kwargs = {"min_up_time": 169, "min_down_time": 169}
+    if thermal_cluster_cls != ThermalClusterUpdate:
+        kwargs["name"] = "cluster-data"
+    data = thermal_cluster_cls(**kwargs)
     assert data.min_up_time == 168
     assert data.min_down_time == 168

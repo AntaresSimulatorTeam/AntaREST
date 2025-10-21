@@ -243,5 +243,5 @@ def test_build_annual() -> None:
     )
 
     serializer = AnnualMatrixSerializer(area="de")
-    res = serializer.build_date(None)
+    res = serializer.build_date(pd.Index([], dtype=str))
     assert exp.values.tolist() == res.values.tolist()

@@ -20,7 +20,7 @@ import pytest
 from httpx._exceptions import HTTPError
 from starlette.testclient import TestClient
 
-from antarest.study.business.binding_constraint_management import ClusterTerm, ConstraintTerm, LinkTerm
+from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
 from tests.integration.prepare_proxy import PreparerProxy
 
 MATRIX_SIZES = {"hourly": 8784, "daily": 366, "weekly": 366}

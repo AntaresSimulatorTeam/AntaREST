@@ -15,12 +15,8 @@ from unittest.mock import patch
 import pytest
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
-from antarest.study.business.district_manager import (
-    DistrictCreation,
-    DistrictManager,
-    DistrictUpdate,
-)
-from antarest.study.business.model.district_model import District, DistrictDTO
+from antarest.study.business.district_manager import DistrictManager
+from antarest.study.business.model.district_model import District, DistrictCreation, DistrictDTO, DistrictUpdate
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -43,8 +39,8 @@ def manager(command_context: CommandContext) -> DistrictManager:
 
 
 @pytest.fixture
-def study_with_sets(empty_study_880: FileStudy) -> None:
-    def dummy_area(name: str) -> None:
+def study_with_sets(empty_study_880: FileStudy) -> FileStudyInterface:
+    def dummy_area(name: str) -> AreaConfig:
         return AreaConfig(
             name=name,
             links={},

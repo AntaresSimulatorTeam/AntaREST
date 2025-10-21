@@ -590,7 +590,7 @@ def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_
 @pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study = storage_service.get_study_path(UUID)
-    sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
+    sta_mini_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
@@ -603,7 +603,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: 
 @pytest.mark.integration_test
 def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study_output = storage_service.get_study_path(UUID) / "output" / "20201014-1422eco-hello"
-    sta_mini_output_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study_output)
+    sta_mini_output_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study_output)
 
     shutil.rmtree(path_study_output)
 

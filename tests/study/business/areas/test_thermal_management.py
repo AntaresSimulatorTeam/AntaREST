@@ -19,15 +19,13 @@ import antarest.study.storage.rawstudy.model.filesystem.config.files
 from antarest.core.exceptions import CommandApplicationError
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.areas.thermal_management import (
-    ThermalClusterCreation,
-    ThermalClusterUpdate,
-    ThermalManager,
-)
+from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
+    ThermalClusterCreation,
     ThermalClusterGroup,
+    ThermalClusterUpdate,
 )
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

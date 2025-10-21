@@ -21,12 +21,9 @@ from antarest.study.business.model.binding_constraint_model import (
     ClusterTerm,
     ConstraintTerm,
 )
+from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
 from antarest.study.dao.file.file_study_constraint_dao import generate_replacement_matrices
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
