@@ -80,25 +80,6 @@ function Fieldset(props: FieldsetProps) {
           contentProps?.sx,
         )}
       >
-          // Increase padding from the last child
-          ".Form__Content > &:last-child": {
-            pb: 2,
-          },
-          // Remove padding from the last child of the dialog content
-          ".MuiDialogContent-root .Form__Content > &:last-child": {
-            pb: 0,
-          },
-        },
-        sx,
-      )}
-    >
-      {legend && (
-        <>
-          {RA.isString(legend) ? <Box component="legend">{legend}</Box> : legend}
-          <Divider sx={{ mt: 1 }} />
-        </>
-      )}
-      <Box {...contentProps} sx={mergeSxProp({ pt: legend ? 2 : 1 }, contentProps?.sx)}>
         {children}
       </Box>
     </Box>
