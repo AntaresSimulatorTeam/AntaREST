@@ -91,7 +91,7 @@ def _read_headers_only(
     new_cols: dict[str, set[str]] = {}
     for col in body.columns:
         if mc_root == MCRoot.MC_IND:
-            name_to_consider = col[0] if file_type.value == "values" else " ".join(col)
+            name_to_consider = col[0]
         else:
             name_to_consider = " ".join([col[0], col[2]])
         new_cols[name_to_consider.upper().strip()] = set()
