@@ -49,18 +49,18 @@ function FilterTags() {
           gap: 0.5,
         }}
       >
-        {filters.managed && (
+        {filters.management !== "all" && (
           <Chip
-            label={t("studies.managedStudiesFilter")}
+            label={filters.management === "managed" ? t("studies.managed") : t("studies.unmanaged")}
             color="secondary"
-            onDelete={() => setFilterValue("managed", false)}
+            onDelete={() => setFilterValue("management", "all")}
           />
         )}
-        {filters.archived && (
+        {filters.archive !== "all" && (
           <Chip
-            label={t("studies.archivedStudiesFilter")}
+            label={filters.archive === "archived" ? t("studies.archived") : t("studies.unarchived")}
             color="secondary"
-            onDelete={() => setFilterValue("archived", false)}
+            onDelete={() => setFilterValue("archive", "all")}
           />
         )}
         {filters.type !== "all" && (
