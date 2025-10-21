@@ -123,6 +123,7 @@
   "global.outputs": "Outputs",
   "global.reverse": "Reverse",
   "global.offset": "Offset",
+  "global.parameters": "Parameters",
   "date": {
     "monday": "Monday",
     "tuesday": "Tuesday",
@@ -696,6 +697,7 @@
   "study.modelization.bindingConst.offset": "Offset",
   "study.modelization.bindingConst.question.deleteConstraintTerm": "Are you sure you want to delete this constraint term?",
   "study.modelization.bindingConst.question.deleteBindingConstraint": "Are you sure you want to delete the binding constraint: {{constraintName}}?",
+  "study.modelization.bindingConst.duplicate": "Duplicate binding constraint",
   "study.tableMode.empty": "No table available",
   "study.tableMode": "Table Mode",
   "study.tableMode.dialog.add.title": "Add table",
