@@ -33,14 +33,14 @@ from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import get_user_id
-from antarest.study.business.aggregator_management import (
+from antarest.study.business.output.aggregator_management import (
     AggregatorManager,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.business.output_variables_management import OutputVariablesManager
+from antarest.study.business.output.variables_management import OutputVariablesManager
 from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_df_chunks

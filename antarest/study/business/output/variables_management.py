@@ -12,7 +12,7 @@
 from pathlib import Path
 from typing import Any, Iterator
 
-from antarest.study.business.aggregator_management import (
+from antarest.study.business.output.aggregator_management import (
     AggregatorManager,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
