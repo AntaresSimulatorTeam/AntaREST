@@ -173,8 +173,8 @@ def notification_popup(message: str, threaded: bool = True) -> None:
         )
 
 
-def run_systray_app(config_file: Path, use_systray_app: bool) -> None:
-    if not use_systray_app:
+def run_systray_app(config_file: Path, no_systray_app: bool) -> None:
+    if no_systray_app:
         # To use inside any CI where there are not all linux UI components.
         start_server(config_file)
         wait_for_server_start()
