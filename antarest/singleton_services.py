@@ -51,13 +51,15 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
         watcher = create_watcher(config=config, app_ctxt=None, study_service=core_services.study_service)
         services.append(watcher)
 
-    if Module.BACKGROUND_SERVICES in services_list:
+    if Module.MATRIX_GC in services_list:
         matrix_gc = create_matrix_gc(config, core_services.matrix_service)
         services.append(matrix_gc)
 
+    if Module.BLOB_GC in services_list:
         blob_gc = create_blob_gc(config, core_services.blob_service)
         services.append(blob_gc)
 
+    if Module.AUTO_ARCHIVER in services_list:
         auto_archive_service = AutoArchiveService(core_services.study_service, core_services.output_service, config)
         services.append(auto_archive_service)
 

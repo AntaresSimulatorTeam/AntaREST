@@ -75,8 +75,10 @@ This mapping can be used to instantiate a new session, for example:
 class Module(StrEnum):
     APP = "app"
     WATCHER = "watcher"
+    MATRIX_GC = "matrix_gc"
     ARCHIVE_WORKER = "archive_worker"
-    BACKGROUND_SERVICES = "background_services"
+    AUTO_ARCHIVER = "auto_archiver"
+    BLOB_GC = "blob_gc"
 
 
 def init_db_engine(
@@ -293,12 +295,15 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     explorer_service = create_explorer(config=config, app_ctxt=app_ctxt)
 
     matrix_garbage_collector = None
-    blob_garbage_collector = None
-    auto_archiver = None
-
-    if config.server.services and Module.BACKGROUND_SERVICES.value in config.server.services or create_all:
+    if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
         matrix_garbage_collector = create_matrix_gc(config, core_services.matrix_service)
+
+    blob_garbage_collector = None
+    if config.server.services and Module.BLOB_GC.value in config.server.services or create_all:
         blob_garbage_collector = create_blob_gc(config, core_services.blob_service)
+
+    auto_archiver = None
+    if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
         auto_archiver = AutoArchiveService(core_services.study_service, core_services.output_service, config)
 
     return Services(
