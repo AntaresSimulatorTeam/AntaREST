@@ -89,7 +89,7 @@ def _read_headers_only(
             cols_mapping.setdefault(col[0], set()).add(col[1])
         return cols_mapping
 
-    return dict.from_keys(normalize_column_names(body, mc_root), set())
+    return dict.fromkeys(normalize_column_names(body, mc_root), set())
 
 
 def _get_all_headers_and_file_type(
