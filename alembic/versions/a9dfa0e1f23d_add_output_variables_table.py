@@ -21,7 +21,7 @@ def upgrade():
    sa.Column('study_id', sa.String(length=36), nullable=False),
             sa.Column('output_id', sa.String(), nullable=False),
             sa.Column('variables_metadata_version', sa.Integer(), nullable=False),
-            sa.Column('variables_metadata', sa.String(), nullable=False),
+            sa.Column('variables_metadata', sa.LargeBinary(), nullable=False),
             sa.ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
             sa.PrimaryKeyConstraint("study_id", "output_id"),
     )

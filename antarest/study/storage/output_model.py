@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import gzip
 from typing import Annotated, TypeAlias
 
 from pydantic import BeforeValidator
@@ -16,6 +17,7 @@ from pydantic.alias_generators import to_camel
 from sqlalchemy import (
     ForeignKey,
     Integer,
+    LargeBinary,
     PrimaryKeyConstraint,
     String,
 )
@@ -68,16 +70,17 @@ class OutputVariables(Base):
     study_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id"), nullable=False)
     output_id: Mapped[str] = mapped_column(String, nullable=False)
     variables_metadata_version: Mapped[int] = mapped_column(Integer, nullable=False)
-    variables_metadata: Mapped[str] = mapped_column(String, nullable=False)
+    variables_metadata: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
 
     def to_model(self) -> OutputVariablesMetadata:
-        return OutputVariablesMetadata.model_validate_json(self.variables_metadata)
+        return OutputVariablesMetadata.model_validate_json(gzip.decompress(self.variables_metadata))
 
     @staticmethod
     def from_model(study_id: str, output_id: str, metadata: OutputVariablesMetadata) -> "OutputVariables":
+        compressed_content = gzip.compress(metadata.model_dump_json().encode("utf-8"))
         return OutputVariables(
             study_id=study_id,
             output_id=output_id,
             variables_metadata_version=1,
-            variables_metadata=metadata.model_dump_json(),
+            variables_metadata=compressed_content,
         )
