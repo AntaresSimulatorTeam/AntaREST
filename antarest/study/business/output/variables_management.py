@@ -13,15 +13,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
-from antarest.study.business.output.aggregator_management import (
+from antarest.study.business.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
+    normalize_column_names,
+    parse_output_file,
 )
-from antarest.study.business.output.utils import parse_output_file
 from antarest.study.storage.output_model import OutputVariablesMetadata
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
@@ -88,15 +89,7 @@ def _read_headers_only(
             cols_mapping.setdefault(col[0], set()).add(col[1])
         return cols_mapping
 
-    new_cols: dict[str, set[str]] = {}
-    for col in body.columns:
-        if mc_root == MCRoot.MC_IND:
-            name_to_consider = col[0]
-        else:
-            name_to_consider = " ".join([col[0], col[2]])
-        new_cols[name_to_consider.upper().strip()] = set()
-
-    return new_cols
+    return dict.from_keys(normalize_column_names(body, mc_root), set())
 
 
 def _get_all_headers_and_file_type(

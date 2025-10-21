@@ -22,7 +22,7 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.output.aggregator_management import (
+from antarest.study.business.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,

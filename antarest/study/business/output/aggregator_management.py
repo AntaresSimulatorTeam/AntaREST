@@ -11,14 +11,21 @@
 # This file is part of the Antares project.
 
 import logging
-from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
 
 import pandas as pd
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.study.business.output.utils import parse_output_file
+from antarest.study.business.output.utils import (
+    MCAllAreasQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    MCRoot,
+    QueryFileType,
+    normalize_column_names,
+    parse_output_file,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 # noinspection SpellCheckingInspection
@@ -41,38 +48,6 @@ ACTUAL_COLUMN_COMPONENT = 1
 DUMMY_COMPONENT = 2
 
 logger = logging.getLogger(__name__)
-
-
-class MCRoot(Enum):
-    MC_IND = "mc-ind"
-    MC_ALL = "mc-all"
-
-
-class MCIndAreasQueryFile(StrEnum):
-    VALUES = "values"
-    DETAILS = "details"
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-
-
-class MCAllAreasQueryFile(StrEnum):
-    VALUES = "values"
-    DETAILS = "details"
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-    ID = "id"
-
-
-class MCIndLinksQueryFile(StrEnum):
-    VALUES = "values"
-
-
-class MCAllLinksQueryFile(StrEnum):
-    VALUES = "values"
-    ID = "id"
-
-
-QueryFileType = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
 
 def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
@@ -152,13 +127,7 @@ class AggregatorManager:
             return df
 
         # normalize columns names
-        new_cols = []
-        for col in body.columns:
-            if self.mc_root == MCRoot.MC_IND:
-                name_to_consider = col[0]
-            else:
-                name_to_consider = " ".join([col[0], col[2]])
-            new_cols.append(name_to_consider.upper().strip())
+        new_cols = normalize_column_names(body, self.mc_root)
 
         df.columns = pd.Index(new_cols)
         return df
