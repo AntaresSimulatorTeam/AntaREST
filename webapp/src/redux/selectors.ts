@@ -309,10 +309,6 @@ export const getCurrentClusters = (
   return clusters || [];
 };
 
-export const getBindingConst = createSelector(getStudySynthesis, (studyData) =>
-  studyData ? studyData.bindings || [] : [],
-);
-
 export const getLinksAndClusters = createSelector(getStudySynthesis, (synthesis) => {
   const linksAndClusters: AllClustersAndLinks = {
     links: [],
