@@ -95,6 +95,7 @@ from antarest.study.business.model.sts_model import (
     STStorageCreation,
     STStorageUpdate,
 )
+from antarest.study.business.model.study_model import StudyDataDTO
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, ThematicTrimmingUpdate
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
@@ -102,7 +103,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdate,
 )
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.service import StudyDataDTO, StudyService
+from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.web.views.scenario_builder_views import RulesetsView, rulesets_model_to_view, rulesets_view_to_model
 

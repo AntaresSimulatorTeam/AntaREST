@@ -55,7 +55,6 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
@@ -78,31 +77,16 @@ from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUI, AreaUIData, AreaUIUpdate
-from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.business.model.binding_constraint_model import BindingConstraint, LinkTerm
-from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
-from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
-from antarest.study.business.model.config.general_model import GeneralConfig
-from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
-from antarest.study.business.model.config.playlist_model import Playlist
-from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
-from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationMatrix
+from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
+from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
-from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.link_model import Link, LinkUpdate
-from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import (
-    STStorage,
-    STStorageAdditionalConstraint,
-)
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.study_model import StudyDataDTO
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
@@ -136,7 +120,6 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
-    StudyVersionStr,
 )
 from antarest.study.repository import (
     StudyFilter,
@@ -226,75 +209,6 @@ def assert_raw(study: Study) -> RawStudy:
     if not isinstance(study, RawStudy):
         raise TypeError("Study must be a RawStudy")
     return study
-
-
-class StudySettingsDTO(AntaresBaseModel):
-    time_series: TimeSeriesConfiguration
-    general: GeneralConfig
-    advanced_parameters: AdvancedParameters
-    adequacy_patch: AdequacyPatchParameters
-    optimization: OptimizationPreferences
-    thematic_trimming: ThematicTrimming
-    playlist: Playlist
-
-
-class XpansionConstraintSign(EnumIgnoreCase):
-    LESS_OR_EQUAL = "less_or_equal"
-    GREATER_OR_EQUAL = "greater_or_equal"
-    EQUAL = "equal"
-
-
-class XpansionConstraint(AntaresBaseModel):
-    name: str
-    sign: XpansionConstraintSign
-    right_hand_side: float
-    candidates_coefficients: dict[str, float] = {}
-
-
-class StudyXpansionDTO(AntaresBaseModel):
-    settings: XpansionSettings
-    candidates: list[XpansionCandidate]
-    constraints: list[XpansionConstraint]
-
-
-class StudyShortTermStorageDTO(STStorage):
-    constraints: list[STStorageAdditionalConstraint]
-
-
-class StudyHydroDTO(HydroProperties):
-    allocation: HydroAllocation
-
-
-class StudyOutputDTO(AntaresBaseModel):
-    name: str
-    archived: bool
-
-
-class StudyAreasDTO(AntaresBaseModel):
-    id: str
-    properties: AreaProperties
-    ui: AreaUI
-    thermals: list[ThermalCluster]
-    renewables: list[RenewableCluster]
-    st_storages: list[StudyShortTermStorageDTO]
-    hydro: StudyHydroDTO
-
-
-class StudyDataDTO(AntaresBaseModel):
-    """
-    DTO representing data of the whole study.
-    """
-
-    name: str
-    version: StudyVersionStr
-    path: str | None
-
-    areas: list[StudyAreasDTO]
-    links: list[Link]
-    binding_constraints: list[BindingConstraint]
-    settings: StudySettingsDTO
-    xpansion: StudyXpansionDTO | None
-    outputs: list[StudyOutputDTO]
 
 
 class TaskProgressRecorder(ICommandListener):
@@ -2497,13 +2411,16 @@ class StudyService:
         # Study metadata
         ##########################
 
-        obj: dict[str, Any] = {"version": study_interface.version, "name": study.name, "path": study.folder}
+        obj: dict[str, Any] = {
+            "metadata": {"version": study_interface.version, "name": study.name, "folder": study.folder}
+        }
 
         ##########################
         # Areas
         ##########################
 
         area_properties = self.area_manager.get_all_area_properties(study_interface)
+        area_names = {a.id: a.name for a in self.area_manager.get_all_areas_info(study_interface)}
         thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
         st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
         st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
@@ -2518,6 +2435,7 @@ class StudyService:
         for area_id, properties in area_properties.items():
             area: dict[str, Any] = {
                 "id": area_id,
+                "name": area_names[area_id],
                 "properties": properties,
                 "thermals": thermal_clusters.get(area_id, {}).values(),
                 "renewables": renewable_clusters.get(area_id, {}).values(),
@@ -2527,11 +2445,11 @@ class StudyService:
 
             # Hydro
             hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
-            area["hydro"] = StudyHydroDTO(
-                allocation=hydro_allocation,
-                management_options=hydro_properties[area_id].management_options,
-                inflow_structure=hydro_properties[area_id].inflow_structure,
-            )
+            area["hydro"] = {
+                "allocation": hydro_allocation,
+                "management_options": hydro_properties[area_id].management_options,
+                "inflow_structure": hydro_properties[area_id].inflow_structure,
+            }
 
             # Short-term storages
             storage_dict = st_storages.get(area_id, {})
@@ -2557,7 +2475,7 @@ class StudyService:
         # We don't have access to the output service, so we have to do it like this
         outputs = []
         for output in study_interface.get_files().config.outputs.values():
-            outputs.append(StudyOutputDTO(name=output.name, archived=output.archived))
+            outputs.append({"name": output.name, "archived": output.archived})
         obj["outputs"] = outputs
 
         ##########################
