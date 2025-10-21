@@ -40,7 +40,7 @@ from antarest.study.business.output.aggregator_management import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.business.output.variables_management import OutputVariablesManager
+from antarest.study.business.output.variables_management import get_variables_metadata
 from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_df_chunks
@@ -72,7 +72,6 @@ class OutputService:
         self._task_service = task_service
         self._file_transfer_manager = file_transfer_manager
         self._event_bus = event_bus
-        self._output_variables_manager = OutputVariablesManager()
 
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
         study = self._study_service.get_study(study_id)
@@ -567,7 +566,7 @@ class OutputService:
 
         # Fetches the data inside the FS
         output_path = self._storage.get_output_path(study, output_id)
-        model = self._output_variables_manager.get_variables_metadata(output_path)
+        model = get_variables_metadata(output_path)
 
         # Save the model inside DB for next calls
         with db():
