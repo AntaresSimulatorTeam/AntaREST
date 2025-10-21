@@ -314,6 +314,8 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // Prevent parent forms from also submitting if this form is nested
+    event.stopPropagation();
     requestSubmit();
   };
 
