@@ -31,7 +31,6 @@ from antarest.login.utils import require_current_user
 from antarest.study.model import (
     CommentsDto,
     MatrixIndex,
-    StudyDownloadLevelDTO,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudyVersionStr,
@@ -405,36 +404,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         study_id = sanitize_uuid(uuid)
         logger.info(f"Return the start date for input matrix '{study_id}'")
         return study_service.get_input_matrix_startdate(study_id, path)
-
-    @bp.get(
-        "/studies/{uuid}/output/{output_id}/time-index",
-        tags=[APITag.study_management],
-        summary="Get time index for output matrices by frequency",
-    )
-    def get_output_time_index(
-        uuid: str,
-        output_id: str,
-        frequency: StudyDownloadLevelDTO = Query(
-            StudyDownloadLevelDTO.HOURLY,
-            description="Temporal frequency (hourly, daily, weekly, monthly, annual)",
-        ),
-    ) -> MatrixIndex:
-        """
-        Get the time indexing information (start date, step count, etc.) for output matrices
-        at a specific temporal frequency.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `output_id`: The ID of the output simulation.
-        - `frequency`: The temporal granularity (hourly, daily, weekly, monthly, or annual).
-
-        Returns:
-        - MatrixIndex containing start_date, steps, first_week_size, and level.
-        """
-        study_id = sanitize_uuid(uuid)
-        output_id = sanitize_string(output_id)
-        logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
-        return study_service.get_output_time_index(study_id, output_id, frequency)
 
     @bp.get(
         "/studies/{uuid}/export",
