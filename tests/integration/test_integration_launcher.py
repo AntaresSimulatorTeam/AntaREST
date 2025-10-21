@@ -13,7 +13,7 @@
 from starlette.testclient import TestClient
 
 
-def test_launcher(client: TestClient, user_access_token: str) -> None:
+def test_launcher(client: TestClient, user_access_token: str, admin_access_token: str) -> None:
     # Test creating a new launcher configuration
     payload1 = {
         "name": "test-xpress-config",
@@ -160,7 +160,7 @@ def test_launcher(client: TestClient, user_access_token: str) -> None:
 
     res8 = client.put(
         f"/v1/launcher/configurations/{config1_id}",
-        headers={"Authorization": f"Bearer {user_access_token}"},
+        headers={"Authorization": f"Bearer {admin_access_token}"},
         json=update_payload8,
     )
 
@@ -169,7 +169,7 @@ def test_launcher(client: TestClient, user_access_token: str) -> None:
     # Verify the update by retrieving the config again
     res8_verify = client.get(
         f"/v1/launcher/configurations/{config1_id}",
-        headers={"Authorization": f"Bearer {user_access_token}"},
+        headers={"Authorization": f"Bearer {admin_access_token}"},
     )
 
     assert res8_verify.status_code == 200
@@ -184,7 +184,7 @@ def test_launcher(client: TestClient, user_access_token: str) -> None:
 
     res9 = client.put(
         f"/v1/launcher/configurations/{config1_id}",  # config1 has optim_1 params defined
-        headers={"Authorization": f"Bearer {user_access_token}"},
+        headers={"Authorization": f"Bearer {admin_access_token}"},
         json=update_payload9,
     )
 
@@ -199,7 +199,7 @@ def test_launcher(client: TestClient, user_access_token: str) -> None:
 
     res10 = client.put(
         f"/v1/launcher/configurations/{config1_id}",
-        headers={"Authorization": f"Bearer {user_access_token}"},
+        headers={"Authorization": f"Bearer {admin_access_token}"},
         json=update_payload10,
     )
 
@@ -220,7 +220,7 @@ def test_launcher(client: TestClient, user_access_token: str) -> None:
     # Test deleting a launcher configuration
     res_delete = client.delete(
         f"/v1/launcher/configurations/{config1_id}",
-        headers={"Authorization": f"Bearer {user_access_token}"},
+        headers={"Authorization": f"Bearer {admin_access_token}"},
     )
 
     assert res_delete.status_code == 200
@@ -228,7 +228,28 @@ def test_launcher(client: TestClient, user_access_token: str) -> None:
     # Verify it's deleted by trying to retrieve it
     res_deleted_verify = client.get(
         f"/v1/launcher/configurations/{config1_id}",
-        headers={"Authorization": f"Bearer {user_access_token}"},
+        headers={"Authorization": f"Bearer {admin_access_token}"},
     )
 
     assert res_deleted_verify.status_code == 404
+
+    # Test that regular users cannot delete configurations (need admin)
+    res_delete_user = client.delete(
+        f"/v1/launcher/configurations/{config_id3}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+    )
+
+    assert res_delete_user.status_code == 403
+
+    # Test that regular users cannot update configurations (need admin)
+    update_payload_user = {
+        "min_antares_version": {"major": 8, "minor": 0, "patch": 0},
+    }
+
+    res_update_user = client.put(
+        f"/v1/launcher/configurations/{config_id3}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+        json=update_payload_user,
+    )
+
+    assert res_update_user.status_code == 403

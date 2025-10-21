@@ -748,6 +748,10 @@ class LauncherService:
         """
         Update an existing launcher configuration using LauncherParametersDTO.
         """
+        user = get_current_user()
+        if not user or not user.is_site_admin():
+            raise UserHasNotPermissionError()
+
         with db():
             launcher_config = self.launcher_config_repository.get(configuration_id)
             if not launcher_config:
@@ -763,6 +767,10 @@ class LauncherService:
         """
         Delete a launcher configuration by its ID. Only site administrators can delete configs.
         """
+        user = get_current_user()
+        if not user or not user.is_site_admin():
+            raise UserHasNotPermissionError()
+
         with db():
             launcher_config = self.launcher_config_repository.get(configuration_id)
             if not launcher_config:
