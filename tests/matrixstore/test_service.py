@@ -353,7 +353,9 @@ class TestMatrixService:
             [[7, 8, 9, 10, 11], [17, 18, 19, 20, 21], [27, 28, 29, 30, 31]],
             [[]],
         ]
-        matrix_list: t.List[np.ndarray[t.Any, np.dtype[np.float64]]] = [np.array(data, dtype=np.float64) for data in data_list]
+        matrix_list: t.List[np.ndarray[t.Any, np.dtype[np.float64]]] = [
+            np.array(data, dtype=np.float64) for data in data_list
+        ]
         if content_type == "application/json":
             # JSON format of the array using the dataframe format
             index_list = [list(range(matrix.shape[0])) for matrix in matrix_list]

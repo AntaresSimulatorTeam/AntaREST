@@ -16,7 +16,7 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import AnyStr, List, Optional, Any
+from typing import Any, AnyStr, List, Optional
 
 import pandas
 import pytest
@@ -233,7 +233,9 @@ def get_old_binding_constraint_values(tmp_path: Path) -> dict[str, Any]:
     return dico
 
 
-def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict[str, Any], old_binding_constraint_values: dict[str, Any]) -> None:
+def assert_inputs_are_updated(
+    tmp_path: Path, old_area_values: dict[str, Any], old_binding_constraint_values: dict[str, Any]
+) -> None:
     input_path = tmp_path / "input"
 
     # tests 8.1 upgrade

@@ -34,7 +34,7 @@ from tests.login.test_web import create_auth_token
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     build_ctxt = create_app_ctxt(FastAPI(title=__name__))
 
-    @AuthJWT.load_config # type: ignore[misc]
+    @AuthJWT.load_config  # type: ignore[misc]
     def get_config() -> JwtSettings:
         return JwtSettings(
             authjwt_secret_key="super-secret",

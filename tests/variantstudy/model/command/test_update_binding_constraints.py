@@ -17,11 +17,12 @@ import pytest
 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
     BindingConstraintUpdate,
     ClusterTerm,
     ConstraintTerm,
 )
-from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
 from antarest.study.dao.file.file_study_constraint_dao import generate_replacement_matrices
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
