@@ -28,6 +28,7 @@
                     }
                 },
                 "id": "de",
+                "name": "DE",
                 "properties": {
                     "adequacyPatchMode": "outside",
                     "dispatchHydroPower": true,
@@ -420,6 +421,7 @@
                     }
                 },
                 "id": "es",
+                "name": "ES",
                 "properties": {
                     "adequacyPatchMode": "outside",
                     "dispatchHydroPower": true,
@@ -812,6 +814,7 @@
                     }
                 },
                 "id": "fr",
+                "name": "FR",
                 "properties": {
                     "adequacyPatchMode": "outside",
                     "dispatchHydroPower": true,
@@ -1204,6 +1207,7 @@
                     }
                 },
                 "id": "it",
+                "name": "IT",
                 "properties": {
                     "adequacyPatchMode": "outside",
                     "dispatchHydroPower": true,
