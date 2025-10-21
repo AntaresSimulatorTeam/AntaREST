@@ -79,7 +79,7 @@ def _read_headers_only(
         - file_type: query file type class.
 
     Returns:
-        - A mapping containing the dataframe headers
+        - A list of ColumnHeader objects
     """
     body = parse_output_file(file_path, freq, 0)
 
