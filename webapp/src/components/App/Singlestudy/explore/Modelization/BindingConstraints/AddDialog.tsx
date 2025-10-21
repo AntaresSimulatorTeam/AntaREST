@@ -15,8 +15,6 @@
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateString } from "@/utils/validation/string";
 import { Box } from "@mui/material";
-import { useSnackbar } from "notistack";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
@@ -31,7 +29,11 @@ import {
   BindingConstraintOperator,
   TimeStep,
 } from "../../../CommandsDrawer/EditionView/commandTypes";
-import { OPERATORS, TIME_STEPS, type BindingConstraint } from "./BindingConstView/utils";
+import {
+  type BindingConstraint,
+  OPERATOR_OPTIONS,
+  TIME_STEPS_OPTIONS,
+} from "./BindingConstView/utils";
 
 interface Props {
   open: boolean;
@@ -43,7 +45,6 @@ interface Props {
 // TODO rename AddConstraintDialog
 function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
   const studyVersion = Number(study.version);
@@ -56,24 +57,6 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
     operator: BindingConstraintOperator.LESS,
     comments: "",
   };
-
-  const operatorOptions = useMemo(
-    () =>
-      OPERATORS.map((operator) => ({
-        label: t(`study.modelization.bindingConst.operator.${operator}`),
-        value: operator,
-      })),
-    [t],
-  );
-
-  const timeStepOptions = useMemo(
-    () =>
-      TIME_STEPS.map((timeStep) => ({
-        label: t(`global.time.${timeStep}`),
-        value: timeStep,
-      })),
-    [t],
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -107,9 +90,6 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
      */
     reloadConstraintsList();
     dispatch(setCurrentBindingConst(createdConstraint.id));
-    enqueueSnackbar(t("study.success.addBindingConst"), {
-      variant: "success",
-    });
     onClose();
   };
 
@@ -178,14 +158,14 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
             name="timeStep"
             label={t("study.modelization.bindingConst.type")}
             variant="outlined"
-            options={timeStepOptions}
+            options={TIME_STEPS_OPTIONS}
             control={control}
           />
           <SelectFE
             name="operator"
             label={t("study.modelization.bindingConst.operator")}
             variant="outlined"
-            options={operatorOptions}
+            options={OPERATOR_OPTIONS}
             control={control}
           />
         </Box>
