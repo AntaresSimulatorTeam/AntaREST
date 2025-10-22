@@ -28,11 +28,11 @@ import {
 import { displayVersionName } from "@/services/utils";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import { Box, Button, Drawer, Toolbar, Typography } from "@mui/material";
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
-import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 
 const STUDY_TYPE_OPTIONS: Options<StudyFilters["type"]> = [
   { label: (t) => t("global.all"), value: "all" },
@@ -40,12 +40,24 @@ const STUDY_TYPE_OPTIONS: Options<StudyFilters["type"]> = [
   { label: (t) => t("studies.variants"), value: "variants" },
 ];
 
+const MANAGEMENT_OPTIONS: Options<StudyFilters["management"]> = [
+  { label: (t) => t("global.all"), value: "all" },
+  { label: (t) => t("studies.managed"), value: "managed" },
+  { label: (t) => t("studies.unmanaged"), value: "unmanaged" },
+];
+
+const ARCHIVE_OPTIONS: Options<StudyFilters["archive"]> = [
+  { label: (t) => t("global.all"), value: "all" },
+  { label: (t) => t("studies.archived"), value: "archived" },
+  { label: (t) => t("studies.unarchived"), value: "unarchived" },
+];
+
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-function FilterDrawer(props: Props) {
+function FiltersDrawer(props: Props) {
   const { open, onClose } = props;
   const [t] = useTranslation();
   const filters = useAppSelector(getStudyFilters);
@@ -55,7 +67,7 @@ function FilterDrawer(props: Props) {
   const groupsById = useAppSelector(getGroupsById);
   const groupIds = useAppSelector(getGroupIds);
   const dispatch = useAppDispatch();
-  const formId = "studies-filter-drawer";
+  const formId = useId();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -70,8 +82,8 @@ function FilterDrawer(props: Props) {
   const handleReset = () => {
     dispatch(
       updateStudyFilters({
-        managed: false,
-        archived: false,
+        management: "all",
+        archive: "all",
         type: "references",
         versions: [],
         users: [],
@@ -101,7 +113,7 @@ function FilterDrawer(props: Props) {
       </Toolbar>
       <Form
         config={{ defaultValues: filters }}
-        id="studies-filter-drawer"
+        id={formId}
         onSubmit={handleSubmit}
         sx={{ p: 2 }}
         hideSubmitButton
@@ -109,21 +121,23 @@ function FilterDrawer(props: Props) {
         {({ control }) => (
           <>
             <Fieldset fullFieldWidth>
-              <CheckBoxFE
-                name="managed"
-                control={control}
-                label={t("studies.managedStudiesFilter")}
-              />
-              <CheckBoxFE
-                name="archived"
-                control={control}
-                label={t("studies.archivedStudiesFilter")}
-              />
               <SelectFE
                 label={t("study.type")}
                 name="type"
                 control={control}
                 options={STUDY_TYPE_OPTIONS}
+              />
+              <SelectFE
+                label={t("studies.filters.management")}
+                name="management"
+                control={control}
+                options={MANAGEMENT_OPTIONS}
+              />
+              <SelectFE
+                label={t("studies.filters.archive")}
+                name="archive"
+                control={control}
+                options={ARCHIVE_OPTIONS}
               />
               <CheckboxesTagsFE
                 name="versions"
@@ -170,4 +184,4 @@ function FilterDrawer(props: Props) {
   );
 }
 
-export default FilterDrawer;
+export default FiltersDrawer;

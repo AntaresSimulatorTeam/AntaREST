@@ -32,12 +32,12 @@ import { setDefaultAreaLinkSelection } from "./studySyntheses";
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
 export interface StudyFilters {
-  inputValue: string;
+  search: string;
   folder: string;
   strictFolder: boolean;
-  managed: boolean;
-  archived: boolean;
   type: "all" | "references" | "variants";
+  management: "all" | "managed" | "unmanaged";
+  archive: "all" | "archived" | "unarchived";
   versions: string[];
   users: Array<UserDTO["id"]>;
   groups: Array<GroupDTO["id"]>;
@@ -83,12 +83,12 @@ const initialState = studiesAdapter.getInitialState({
   versionList: [] as string[],
   favorites: [],
   filters: {
-    inputValue: "",
+    search: "",
     folder: "",
     strictFolder: false,
-    managed: false,
-    archived: false,
     type: "references",
+    management: "all",
+    archive: "all",
     versions: [],
     users: [],
     groups: [],

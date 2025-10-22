@@ -49,11 +49,9 @@ const folderPredicate = R.curry((folder: string, strict: boolean, study: StudyMe
   return strict ? studyPath === folder : `${studyPath}/`.startsWith(`${folder}/`);
 });
 
-const inputValuePredicate = R.curry(
-  (inputValue: StudyFilters["inputValue"], study: StudyMetadata) => {
-    return inputValue ? isSearchMatching(inputValue, [study.name, study.id]) : true;
-  },
-);
+const searchPredicate = R.curry((search: StudyFilters["search"], study: StudyMetadata) => {
+  return search ? isSearchMatching(search, [study.name, study.id]) : true;
+});
 
 const tagsPredicate = R.curry((tags: StudyFilters["tags"], study: StudyMetadata) => {
   if (tags.length === 0) {
@@ -82,12 +80,26 @@ const groupsPredicate = R.curry((groups: StudyFilters["groups"], study: StudyMet
   return groups.length === 0 || R.intersection(study.groups.map(R.prop("id")), groups).length > 0;
 });
 
-const managedPredicate = R.curry((managed: StudyFilters["managed"], study: StudyMetadata) => {
-  return managed ? study.managed : true;
-});
+const managementPredicate = R.curry(
+  (management: StudyFilters["management"], study: StudyMetadata) => {
+    if (management === "managed") {
+      return study.managed === true;
+    }
+    if (management === "unmanaged") {
+      return study.managed === false;
+    }
+    return true;
+  },
+);
 
-const archivedPredicate = R.curry((archived: StudyFilters["archived"], study: StudyMetadata) => {
-  return archived ? study.archived : true;
+const archivePredicate = R.curry((archive: StudyFilters["archive"], study: StudyMetadata) => {
+  if (archive === "archived") {
+    return study.archived === true;
+  }
+  if (archive === "unarchived") {
+    return study.archived === false;
+  }
+  return true;
 });
 
 const typePredicate = R.curry((scope: StudyFilters["type"], study: StudyMetadata) => {
@@ -107,13 +119,13 @@ const typePredicate = R.curry((scope: StudyFilters["type"], study: StudyMetadata
 export function filterStudies(filters: StudyFilters, studies: StudyMetadata[]): StudyMetadata[] {
   const predicates = [
     folderPredicate(filters.folder, filters.strictFolder),
-    inputValuePredicate(filters.inputValue),
+    searchPredicate(filters.search),
     tagsPredicate(filters.tags),
     versionsPredicate(filters.versions),
     usersPredicate(filters.users),
     groupsPredicate(filters.groups),
-    managedPredicate(filters.managed),
-    archivedPredicate(filters.archived),
+    managementPredicate(filters.management),
+    archivePredicate(filters.archive),
     typePredicate(filters.type),
   ] as RA.Pred[];
   return R.filter(R.allPass(predicates), studies);
