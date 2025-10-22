@@ -49,7 +49,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from tests.integration.utils import wait_task_completion
 
 # noinspection SpellCheckingInspection
-EXISTING_CLUSTERS = []
+EXISTING_CLUSTERS: list[str] = []
 
 
 @pytest.mark.unit_test

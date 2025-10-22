@@ -20,7 +20,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestUpdateXpansionSettings:
     @staticmethod
-    def set_up(empty_study: FileStudy):
+    def set_up(empty_study: FileStudy) -> None:
         empty_study.tree.save(
             {
                 "user": {
@@ -51,7 +51,7 @@ class TestUpdateXpansionSettings:
         (xpansion_path / "capa" / "capa1.txt").touch()
         (xpansion_path / "weights" / "weights1.txt").touch()
 
-    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
 
@@ -85,7 +85,7 @@ class TestUpdateXpansionSettings:
         assert "optimality_gap=12.0" in settings_path.read_text()
         assert "yearly-weights" not in settings_path.read_text()
 
-    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
 

@@ -82,7 +82,7 @@ FILES_SINCE_V92 = [f for f in FILES_SINCE_V86 if f not in ["logs", "output", "us
 @pytest.mark.parametrize(
     "version", ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880", "920"]
 )
-def test_empty_study_zip(tmp_path: pathlib.Path, version: StudyVersion):
+def test_empty_study_zip(tmp_path: pathlib.Path, version: StudyVersion) -> None:
     study_path = tmp_path / "test"
     app = CreateApp(study_dir=study_path, caption="Test", version=version, author="Unknown")
     app()

@@ -23,7 +23,7 @@ def test_lower_case_parser() -> None:
 
 
 class TestValueParsers:
-    def test_find_value_parsers(self):
+    def test_find_value_parsers(self) -> None:
         def default(input: str) -> str:
             return "default"
 
@@ -273,7 +273,7 @@ class TestIniReader:
         }
         assert actual == expected
 
-    def test_read__filtered_section(self, tmp_path) -> None:
+    def test_read__filtered_section(self, tmp_path: Path) -> None:
         path = Path(tmp_path) / "test.ini"
         path.write_text(
             textwrap.dedent(
@@ -307,7 +307,7 @@ class TestIniReader:
         }
         assert actual == expected
 
-    def test_read__filtered_option(self, tmp_path) -> None:
+    def test_read__filtered_option(self, tmp_path: Path) -> None:
         path = Path(tmp_path) / "test.ini"
         path.write_text(
             textwrap.dedent(
@@ -353,7 +353,7 @@ class TestIniReader:
         expected = {"part1": {"bar": "hello"}, "part2": {"bar": "salut"}}
         assert actual == expected
 
-    def test_read__with_custom_parser(self, tmp_path):
+    def test_read__with_custom_parser(self, tmp_path: Path) -> None:
         path = Path(tmp_path) / "test.ini"
         path.write_text(
             textwrap.dedent(

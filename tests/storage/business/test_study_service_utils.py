@@ -34,7 +34,7 @@ from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import DAY_NAMES, get_start_date
 
 
-def test_output_downloads_export(tmp_path: Path):
+def test_output_downloads_export(tmp_path: Path) -> None:
     matrix = MatrixAggregationResultDTO(
         index=MatrixIndex(start_date="2000-01-01 00:00:00"),
         data=[
@@ -228,7 +228,9 @@ def test_output_downloads_export(tmp_path: Path):
         ),
     ],
 )
-def test_create_matrix_index_output(config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex):
+def test_create_matrix_index_output(
+    config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex
+) -> None:
     config_mock = Mock()
     config_mock.archived = False
     output_id = "some output"
@@ -381,7 +383,7 @@ def test_create_matrix_index_output(config: Dict[str, Any], level: StudyDownload
         ),
     ],
 )
-def test_create_matrix_index_input(config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex):
+def test_create_matrix_index_input(config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex) -> None:
     file_study = Mock()
     file_study.tree.get.return_value = {"general": config}
     # Asserts the content are the same

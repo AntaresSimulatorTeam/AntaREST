@@ -18,6 +18,7 @@ from pathlib import Path
 
 from pytest_mock import MockerFixture
 from starlette.testclient import TestClient
+from typing_extensions import override
 
 from tests.integration.conftest import RESOURCES_DIR
 
@@ -25,16 +26,19 @@ from tests.integration.conftest import RESOURCES_DIR
 class AnyDiskUsagePercent:
     """A helper object that compares equal to any disk usage percentage."""
 
+    @override
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, str):
             return NotImplemented
         return bool(re.fullmatch(r"\d+(?:\.\d+)?% used", other))
 
+    @override
     def __ne__(self, other: object) -> bool:
         if not isinstance(other, str):
             return NotImplemented
         return not self.__eq__(other)
 
+    @override
     def __repr__(self) -> str:
         return "<AnyDiskUsagePercent>"
 
@@ -42,6 +46,7 @@ class AnyDiskUsagePercent:
 class AnyIsoDateTime:
     """A helper object that compares equal to any date time in ISO 8601 format."""
 
+    @override
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, str):
             return NotImplemented
@@ -50,11 +55,13 @@ class AnyIsoDateTime:
         except ValueError:
             return False
 
+    @override
     def __ne__(self, other: object) -> bool:
         if not isinstance(other, str):
             return NotImplemented
         return not self.__eq__(other)
 
+    @override
     def __repr__(self) -> str:
         return "<AnyDiskUsagePercent>"
 
@@ -66,16 +73,19 @@ class IntegerRange:
         self.start = start
         self.stop = stop
 
+    @override
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, int):
             return NotImplemented
         return self.start <= other <= self.stop
 
+    @override
     def __ne__(self, other: object) -> bool:
         if not isinstance(other, str):
             return NotImplemented
         return not self.__eq__(other)
 
+    @override
     def __repr__(self) -> str:
         start = getattr(self, "start", None)
         stop = getattr(self, "stop", None)
@@ -388,7 +398,7 @@ class TestFilesystemEndpoints:
         self,
         client: TestClient,
         user_access_token: str,
-    ):
+    ) -> None:
         """
         This test demonstrates how to compute the size of all studies.
 

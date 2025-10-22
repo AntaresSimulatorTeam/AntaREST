@@ -23,7 +23,7 @@ from antarest.study.business.output.utils import (
     normalize_column_names,
     parse_output_file,
 )
-from antarest.study.storage.output_model import OutputVariablesMetadata
+from antarest.study.storage.output_model import OutputVariablesList
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
@@ -106,7 +106,7 @@ def _get_all_headers_and_file_type(
         yield _read_headers_only(file_path, mc_root, freq, file_type), file_type
 
 
-def extract_variables_metadata(output_path: Path) -> OutputVariablesMetadata:
+def extract_variables_list(output_path: Path) -> OutputVariablesList:
     """
     For a given output path, iterates over all necessary files to gather the possible variables it contains.
     It classifies them under categories inside a Pydantic model.
@@ -168,4 +168,4 @@ def extract_variables_metadata(output_path: Path) -> OutputVariablesMetadata:
 
                 variables[mc_root_key]["links"].append(links_dict)
 
-    return OutputVariablesMetadata.model_validate(variables)
+    return OutputVariablesList.model_validate(variables)

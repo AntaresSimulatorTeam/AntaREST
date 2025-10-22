@@ -31,7 +31,7 @@ class TestHydroInflowProperties:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
 
@@ -116,7 +116,7 @@ class TestHydroInflowProperties:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
 
@@ -129,7 +129,7 @@ class TestHydroInflowProperties:
         res = client.put(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/inflow-structure", json=obj)
         assert res.status_code == HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
 
-    def test_get_all_hydro_properties_inside_study(self, client: TestClient, user_access_token: str):
+    def test_get_all_hydro_properties_inside_study(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         res = client.post("/v1/studies", params={"name": "test_study", "version": "8.8"})
         study_id = res.json()

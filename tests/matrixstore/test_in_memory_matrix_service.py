@@ -15,7 +15,7 @@ import pandas as pd
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 
 
-def test_matrix_service():
+def test_matrix_service() -> None:
     service = InMemorySimpleMatrixService()
     df = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
     matrix_id = service.create(df)

@@ -22,11 +22,11 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestUpdateInflowStructure:
     @staticmethod
-    def _set_up(study: FileStudy, command_context: CommandContext):
+    def _set_up(study: FileStudy, command_context: CommandContext) -> None:
         CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
         CreateArea(area_name="be", command_context=command_context, study_version=study.config.version).apply(study)
 
-    def test_lifecycle(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_lifecycle(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """
         test inflow structure cannot have an inter_monthly_correlation lesser than 0 and greater than 1
         check status and message

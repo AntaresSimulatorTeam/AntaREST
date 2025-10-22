@@ -31,7 +31,7 @@ GEN = np.random.default_rng(1000)
 
 
 class TestCreateCluster:
-    def test_init(self, command_context: CommandContext):
+    def test_init(self, command_context: CommandContext) -> None:
         prepro = GEN.random((365, 6)).tolist()
         modulation = GEN.random((8760, 4)).tolist()
         cl = CreateCluster(
@@ -60,7 +60,7 @@ class TestCreateCluster:
         assert cl.prepro == f"matrix://{prepro_id}"
         assert cl.modulation == f"matrix://{modulation_id}"
 
-    def test_validate_cluster_name(self, command_context: CommandContext):
+    def test_validate_cluster_name(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError, match="name"):
             CreateCluster(
                 area_id="fr",
@@ -69,7 +69,7 @@ class TestCreateCluster:
                 study_version=STUDY_VERSION_8_8,
             )
 
-    def test_validate_prepro(self, command_context: CommandContext):
+    def test_validate_prepro(self, command_context: CommandContext) -> None:
         cl = CreateCluster(
             area_id="fr",
             parameters=ThermalClusterCreation(name="C1"),
@@ -78,7 +78,7 @@ class TestCreateCluster:
         )
         assert cl.prepro == command_context.generator_matrix_constants.get_thermal_prepro_data()
 
-    def test_validate_modulation(self, command_context: CommandContext):
+    def test_validate_modulation(self, command_context: CommandContext) -> None:
         cl = CreateCluster(
             area_id="fr",
             parameters=ThermalClusterCreation(name="C1"),
@@ -87,7 +87,7 @@ class TestCreateCluster:
         )
         assert cl.modulation == command_context.generator_matrix_constants.get_thermal_prepro_modulation()
 
-    def test_apply(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         study_path = empty_study.config.study_path
         area_name = "DE"
@@ -168,7 +168,7 @@ class TestCreateCluster:
         assert output.status is False
         assert f"The area '{fake_area_id}' does not exist" in output.message
 
-    def test_to_dto(self, command_context: CommandContext):
+    def test_to_dto(self, command_context: CommandContext) -> None:
         prepro = GEN.random((365, 6)).tolist()
         modulation = GEN.random((8760, 4)).tolist()
         command = CreateCluster(
@@ -205,7 +205,7 @@ class TestCreateCluster:
             "version": 3,
         }
 
-    def test_invalid_field_for_version_should_raise_validation_error(self, command_context: CommandContext):
+    def test_invalid_field_for_version_should_raise_validation_error(self, command_context: CommandContext) -> None:
         creation_data = ThermalClusterCreation(name="cluster", nox=12.0)
         with pytest.raises(ValidationError):
             CreateCluster(

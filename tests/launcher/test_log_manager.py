@@ -19,12 +19,12 @@ from antarest.launcher.adapters.log_manager import LogTailManager
 logging.basicConfig(level=logging.DEBUG)
 
 
-def test_reading(tmp_path: Path):
+def test_reading(tmp_path: Path) -> None:
     log_manager = LogTailManager(tmp_path)
 
     logs = []
 
-    def handler(line: str):
+    def handler(line: str) -> None:
         logs.append(line)
 
     log1 = tmp_path / "foo"

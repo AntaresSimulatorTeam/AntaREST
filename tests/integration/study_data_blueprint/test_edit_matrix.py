@@ -28,7 +28,7 @@ class TestEditMatrix:
         self,
         client: TestClient,
         user_access_token: str,
-    ):
+    ) -> None:
         """
         This test creates a new study in the `internal_workspace` directory.
         It adds 2 areas and a link between.
@@ -254,7 +254,7 @@ class TestEditMatrix:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         # Given the following Area
         area_id = "fr"
 

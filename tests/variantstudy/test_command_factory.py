@@ -1077,7 +1077,7 @@ class TestCommandFactory:
         command_dto: CommandDTO,
         expected_args: Optional[Dict[str, Any]],
         command_factory: CommandFactory,
-    ):
+    ) -> None:
         commands = command_factory.to_command(command_dto=command_dto)
 
         expected_args = expected_args or command_dto.args
@@ -1100,7 +1100,7 @@ class TestCommandFactory:
 
 
 @pytest.mark.unit_test
-def test_unknown_command():
+def test_unknown_command() -> None:
     with pytest.raises(NotImplementedError):
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
@@ -1112,7 +1112,7 @@ def test_unknown_command():
 
 
 @pytest.mark.unit_test
-def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
+def test_parse_create_cluster_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
         version=1,
@@ -1135,7 +1135,7 @@ def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
 
 
 @pytest.mark.unit_test
-def test_parse_create_cluster_dto_v2(command_factory: CommandFactory):
+def test_parse_create_cluster_dto_v2(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
         version=2,
@@ -1156,7 +1156,7 @@ def test_parse_create_cluster_dto_v2(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
+def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         id="9f01931b-0f18-4477-9ef4-ac682c970d75",
         action=CommandName.CREATE_ST_STORAGE.value,
@@ -1190,7 +1190,7 @@ def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
     assert dto.args["parameters"]["name"] == "battery storage_2 candidate"
 
 
-def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
+def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
         version=1,
@@ -1210,7 +1210,7 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
+def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
         version=2,
@@ -1227,7 +1227,7 @@ def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_link_dto_v1(command_factory: CommandFactory):
+def test_parse_create_link_dto_v1(command_factory: CommandFactory) -> None:
     for parameters in [{"link-width": 0.56}, None]:  # legacy cases
         dto = CommandDTO(
             action=CommandName.CREATE_LINK.value,
@@ -1246,7 +1246,7 @@ def test_parse_create_link_dto_v1(command_factory: CommandFactory):
             assert dto.args["parameters"]["linkWidth"] == 0.56
 
 
-def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory):
+def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_BINDING_CONSTRAINT.value,
         args=[
@@ -1284,7 +1284,7 @@ def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory)
     }
 
 
-def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory):
+def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
         args={
@@ -1315,7 +1315,7 @@ def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory)
     }
 
 
-def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory):
+def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
         args={
@@ -1350,7 +1350,7 @@ def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory
     }
 
 
-def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory):
+def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
         args={"id": "id"},
@@ -1366,7 +1366,7 @@ def test_parse_legacy_command_remove_binding_constraint(command_factory: Command
     assert dto.args == {"ids": ["id"]}
 
 
-def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
+def test_parse_update_scenario_builder_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_SCENARIO_BUILDER.value,
         version=1,
@@ -1398,7 +1398,7 @@ def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
     }
 
 
-def test_parse_legacy_command_update_comments(command_factory: CommandFactory):
+def test_parse_legacy_command_update_comments(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_COMMENTS.value,
         args={"comments": "new comment"},
@@ -1413,7 +1413,7 @@ def test_parse_legacy_command_update_comments(command_factory: CommandFactory):
     assert dto.args == {"comments": "new comment"}
 
 
-def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
+def test_parse_legacy_command_update_playlist(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_PLAYLIST.value,
         args={
@@ -1434,7 +1434,7 @@ def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
     assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}
 
 
-def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory):
+def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory) -> None:
     """Test conversion from v1 format (area_ui) to v2 format (parameters)"""
     dto = CommandDTO(
         action=CommandName.UPDATE_AREA_UI.value,
@@ -1471,7 +1471,7 @@ def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory):
     assert "area_ui" not in dto.args
 
 
-def test_update_area_ui_invalid_layer(command_factory: CommandFactory):
+def test_update_area_ui_invalid_layer(command_factory: CommandFactory) -> None:
     """Test that invalid layer value raises validation error"""
     dto = CommandDTO(
         action=CommandName.UPDATE_AREA_UI.value,
@@ -1487,7 +1487,7 @@ def test_update_area_ui_invalid_layer(command_factory: CommandFactory):
         command_factory.to_command(dto)
 
 
-def test_parse_legacy_command_create_district(command_factory: CommandFactory):
+def test_parse_legacy_command_create_district(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_DISTRICT.value,
         args={
@@ -1543,7 +1543,7 @@ def test_parse_legacy_command_create_district(command_factory: CommandFactory):
     }
 
 
-def test_parse_legacy_command_update_district(command_factory: CommandFactory):
+def test_parse_legacy_command_update_district(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_DISTRICT.value,
         args={"id": "id", "filter_items": ["a"]},
@@ -1559,7 +1559,7 @@ def test_parse_legacy_command_update_district(command_factory: CommandFactory):
     assert dto.args == {"parameters": {"areas": ["a"]}, "id": "id"}
 
 
-def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory):
+def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory) -> None:
     """Test that version 1 format (with metadata field) can still be loaded and metadata is dropped."""
     dto = CommandDTO(
         action=CommandName.CREATE_AREA.value,

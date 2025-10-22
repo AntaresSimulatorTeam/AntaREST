@@ -25,7 +25,7 @@ def test_lower_case_serializer() -> None:
 
 
 @pytest.mark.unit_test
-def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
+def test_write(tmp_path: str, ini_cleaner: Callable[[str], str]) -> None:
     path = Path(tmp_path) / "test.ini"
 
     ini_content = """
@@ -68,7 +68,7 @@ def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
 
 
 @pytest.mark.unit_test
-def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable) -> None:
+def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable[[str], str]) -> None:
     path = Path(tmp_path) / "test.ini"
 
     def duplicate(value: str) -> str:
