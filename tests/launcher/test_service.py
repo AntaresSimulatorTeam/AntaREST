@@ -1040,8 +1040,10 @@ class TestLauncherService:
         # Ensures the output_service.import_output method was called with the right user
         launcher_service._import_output("job_id", tmp_path, {})
 
+    @with_admin_user
     @pytest.mark.unit_test
     def test_run_study_with_launch_config_and_overrides(self) -> None:
+        # set up mocks
         storage_service_mock = Mock()
         storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
             id="id",
@@ -1058,17 +1060,12 @@ class TestLauncherService:
             archived=False,
         )
         storage_service_mock.get_study_path.return_value = Path("path/to/study")
-
-        uuid = uuid4()
         launcher_mock = Mock()
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
-
         event_bus = Mock()
-
         repository = Mock()
         config_repository = Mock()
-        # Base stored params (will be overridden by user params below)
 
         def get_mock_launch_config(config_id: str):
             if config_id == "config-1":
@@ -1081,6 +1078,7 @@ class TestLauncherService:
 
         config_repository.get.side_effect = get_mock_launch_config
 
+        # create the service
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
@@ -1094,11 +1092,9 @@ class TestLauncherService:
             task_service=Mock(),
             cache=Mock(),
         )
-        launcher_service._generate_new_id = lambda: str(uuid)
 
-        # User passes a launch config id and custom overrides
+        # run the method under test
         params = LauncherParametersDTO()
-
         launcher_service.run_study("study_uuid", "local", params, "config-1")
 
         # Assert that repository.save was called with the correct JobResult
@@ -1109,7 +1105,6 @@ class TestLauncherService:
         actual_obj: JobResult = mock_call.args[0]
         saved_launcher_params = json.loads(actual_obj.launcher_params)
         saved_other_options = saved_launcher_params.get("other_options", "")
-
         assert saved_other_options == "solver=xpress", "The other_options should include the merged solver option"
 
         # Test that non-existent config raises LaunchConfigNotFound
@@ -1119,6 +1114,24 @@ class TestLauncherService:
         # Test that incompatible antares version raises IncompatibleLaunchConfig
         with pytest.raises(IncompatibleLaunchConfig):
             launcher_service.run_study("study_uuid", "local", params, "config-1", "8.0")
+
+        # Test that when solver version is not given, but study version is incompatible, it raises IncompatibleLaunchConfig
+        with pytest.raises(IncompatibleLaunchConfig):
+            storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
+                id="id",
+                name="name",
+                created="1",
+                updated="1",
+                type="rawstudy",
+                owner=OwnerInfo(id=0, name="author"),
+                groups=[],
+                public_mode=PublicMode.NONE,
+                version=STUDY_VERSION_8_8,
+                workspace="default",
+                managed=True,
+                archived=False,
+            )
+            launcher_service.run_study("study_uuid", "local", params, "config-1")
 
         # Test that when other_options is set, it raises IncompatibleLaunchConfig
         params_with_other_options = LauncherParametersDTO(other_options="--some-option")
