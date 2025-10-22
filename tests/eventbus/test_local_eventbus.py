@@ -15,7 +15,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 
 
-def test_lifecycle():
+def test_lifecycle() -> None:
     eventbus = LocalEventBus()
     event = Event(
         type=EventType.STUDY_EDITED,

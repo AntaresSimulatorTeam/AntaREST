@@ -46,7 +46,7 @@ def file_study_820(tmpdir: Path) -> FileStudy:
     return FileStudy(config, FileStudyTree(Mock(), config))
 
 
-def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext):
+def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext) -> None:
     # Checks default value
     assert file_study_820.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"]) == 1
 
@@ -68,7 +68,7 @@ def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext
     )
 
 
-def test_missing_value(file_study_820: FileStudy, command_context: CommandContext):
+def test_missing_value(file_study_820: FileStudy, command_context: CommandContext) -> None:
     ini_path = file_study_820.config.study_path / "settings" / "generaldata.ini"
     content = read_ini(ini_path)
     assert content["general"]["nbtimeseriesthermal"] == 1

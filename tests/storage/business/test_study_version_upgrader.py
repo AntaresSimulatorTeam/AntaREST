@@ -16,7 +16,7 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, AnyStr, List, Optional
 
 import pandas
 import pytest
@@ -46,7 +46,7 @@ class TestFindNextVersion:
         "from_version, expected",
         [("700", "710"), ("870", "880")],
     )
-    def test_find_next_version_nominal(self, from_version: str, expected: str):
+    def test_find_next_version_nominal(self, from_version: str, expected: str) -> None:
         actual = find_next_version(from_version)
         assert actual == expected
 
@@ -58,7 +58,7 @@ class TestFindNextVersion:
             ("900", "Version '900' isn't among supported versions"),
         ],
     )
-    def test_find_next_version_fails(self, from_version: str, message: str):
+    def test_find_next_version_fails(self, from_version: str, message: str) -> None:
         with pytest.raises(UnsupportedStudyVersion, match=message):
             find_next_version(from_version)
 
@@ -68,7 +68,7 @@ class TestCheckVersionCoherence:
         "from_version, target_version",
         [("700", "710"), ("870", "880"), ("820", "840")],
     )
-    def test_check_version_coherence_nominal(self, from_version: str, target_version: str):
+    def test_check_version_coherence_nominal(self, from_version: str, target_version: str) -> None:
         check_versions_coherence(from_version, target_version)
 
     @pytest.mark.parametrize(
@@ -78,7 +78,7 @@ class TestCheckVersionCoherence:
             ("820", "32", "Version '32' isn't among supported versions"),
         ],
     )
-    def test_invalid_versions_fails(self, from_version: str, target_version: str, message: str):
+    def test_invalid_versions_fails(self, from_version: str, target_version: str, message: str) -> None:
         with pytest.raises(UnsupportedStudyVersion, match=message):
             check_versions_coherence(from_version, target_version)
 
@@ -89,12 +89,12 @@ class TestCheckVersionCoherence:
             ("870", "840", "Cannot downgrade your study version : from 870 to 840"),
         ],
     )
-    def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str):
+    def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str) -> None:
         with pytest.raises(InvalidUpgrade, match=message):
             check_versions_coherence(from_version, target_version)
 
 
-def test_end_to_end_upgrades(tmp_path: Path):
+def test_end_to_end_upgrades(tmp_path: Path) -> None:
     # Prepare a study to upgrade
     path_study = ASSETS_DIR / "little_study_700.zip"
     study_dir = tmp_path / "little_study_700"
@@ -116,7 +116,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     assert not are_same_dir(study_dir, before_upgrade_dir)
 
 
-def test_fails_because_of_versions_asked(tmp_path: Path):
+def test_fails_because_of_versions_asked(tmp_path: Path) -> None:
     # Prepare a study to upgrade
     path_study = ASSETS_DIR / "little_study_720.zip"
     study_dir = tmp_path / "little_study_720"
@@ -139,7 +139,7 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
         StudyUpgrader(study_dir, "820.rc").upgrade()
 
 
-def test_fallback_if_study_input_broken(tmp_path):
+def test_fallback_if_study_input_broken(tmp_path: Path) -> None:
     # Prepare a study to upgrade
     path_study = ASSETS_DIR / "broken_study_720.zip"
     study_dir = tmp_path / "broken_study_720"
@@ -212,7 +212,7 @@ def get_old_settings_values(tmp_path: Path) -> List[str]:
     return [filtering_value, custom_ts_value, transmission_capa_value]
 
 
-def get_old_area_values(tmp_path: Path) -> dict:
+def get_old_area_values(tmp_path: Path) -> dict[str, Any]:
     dico = {}
     for folder in (tmp_path / "input" / "links").iterdir():
         all_txt = folder.glob("*.txt")
@@ -223,7 +223,7 @@ def get_old_area_values(tmp_path: Path) -> dict:
     return dico
 
 
-def get_old_binding_constraint_values(tmp_path: Path) -> dict:
+def get_old_binding_constraint_values(tmp_path: Path) -> dict[str, Any]:
     dico = {}
     bd_list = glob.glob(str(tmp_path / "input" / "bindingconstraints" / "*.txt"))
     for txt_file in bd_list:
@@ -233,7 +233,9 @@ def get_old_binding_constraint_values(tmp_path: Path) -> dict:
     return dico
 
 
-def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding_constraint_values: dict) -> None:
+def assert_inputs_are_updated(
+    tmp_path: Path, old_area_values: dict[str, Any], old_binding_constraint_values: dict[str, Any]
+) -> None:
     input_path = tmp_path / "input"
 
     # tests 8.1 upgrade
@@ -314,7 +316,7 @@ def assert_folder_is_created(path: Path) -> None:
     assert (path / "series").is_dir()
 
 
-def are_same_dir(dir1, dir2, ignore: Optional[List[str]] = None) -> bool:
+def are_same_dir(dir1: AnyStr, dir2: AnyStr, ignore: Optional[List[str]] = None) -> bool:
     dirs_cmp = filecmp.dircmp(dir1, dir2, ignore=ignore)
     if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False

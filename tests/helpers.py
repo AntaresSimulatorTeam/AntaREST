@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 import numpy as np
 from numpy import typing as npt
+from typing_extensions import override
 
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -115,6 +116,7 @@ class AnyUUID:
     def __init__(self, as_string: bool = False):
         self.as_string = as_string
 
+    @override
     def __eq__(self, other: object) -> bool:
         if isinstance(other, AnyUUID):
             return True
@@ -128,6 +130,7 @@ class AnyUUID:
             return False
         return isinstance(other, uuid.UUID)
 
+    @override
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
@@ -137,7 +140,7 @@ def create_study(
     name: Optional[str] = None,
     path: Optional[str] = None,
     version: str = "880",
-    **kwargs,
+    **kwargs: Any,
 ) -> Study:
     """
     Factory to create a new Study object for testing purposes.
@@ -166,7 +169,7 @@ def create_raw_study(
     name: Optional[str] = None,
     path: Optional[str] = None,
     version: str = "880",
-    **kwargs,
+    **kwargs: Any,
 ) -> RawStudy:
     """
     Factory to create a new RawStudy object for testing purposes.
@@ -195,7 +198,7 @@ def create_variant_study(
     name: Optional[str] = None,
     path: Optional[str] = None,
     version: str = "880",
-    **kwargs,
+    **kwargs: Any,
 ) -> VariantStudy:
     """
     Factory to create a new VariantStudy object for testing purposes.

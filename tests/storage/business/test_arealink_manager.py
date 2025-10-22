@@ -14,9 +14,9 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.area_management import AreaCreation, AreaManager
+from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
-from antarest.study.business.model.area_model import AreaUIUpdate
+from antarest.study.business.model.area_model import AreaCreation, AreaUIUpdate
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster

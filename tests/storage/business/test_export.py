@@ -26,7 +26,7 @@ from tests.helpers import create_raw_study
 
 
 @pytest.mark.unit_test
-def test_export_file(tmp_path: Path):
+def test_export_file(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -50,7 +50,7 @@ def test_export_file(tmp_path: Path):
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize("outputs", [True, False])
-def test_export_archived_study(tmp_path: Path, outputs: bool):
+def test_export_archived_study(tmp_path: Path, outputs: bool) -> None:
     root = tmp_path / "folder"
     root.mkdir()
     (root / "test").mkdir()
@@ -81,7 +81,7 @@ def test_export_archived_study(tmp_path: Path, outputs: bool):
 
 
 @pytest.mark.unit_test
-def test_export_flat(tmp_path: Path):
+def test_export_flat(tmp_path: Path) -> None:
     root = tmp_path / "folder-with-output"
     root.mkdir()
     (root / "test").mkdir()
@@ -129,7 +129,7 @@ def test_export_flat(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_export_output(tmp_path: Path):
+def test_export_output(tmp_path: Path) -> None:
     output_id = "output_id"
     root = tmp_path / "folder"
     root.mkdir()

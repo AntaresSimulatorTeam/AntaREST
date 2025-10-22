@@ -30,7 +30,7 @@ class TestHydroInflowProperties:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
 
@@ -115,7 +115,7 @@ class TestHydroInflowProperties:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
 

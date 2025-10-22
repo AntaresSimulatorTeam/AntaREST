@@ -19,7 +19,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestReplaceMatrix:
-    def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_810
         study_path = empty_study.config.study_path
         study_version = empty_study.config.version

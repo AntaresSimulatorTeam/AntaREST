@@ -17,7 +17,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.eventbus.business.redis_eventbus import RedisEventBus
 
 
-def test_lifecycle():
+def test_lifecycle() -> None:
     redis_client = Mock()
     pubsub_mock = Mock()
     redis_client.pubsub.return_value = pubsub_mock

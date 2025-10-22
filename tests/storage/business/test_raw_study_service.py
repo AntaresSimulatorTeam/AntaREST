@@ -25,7 +25,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
@@ -35,7 +35,7 @@ def build_config(
     study_path: Path,
     workspace_name: str = DEFAULT_WORKSPACE_NAME,
     allow_deletion: bool = False,
-):
+) -> Config:
     return Config(
         storage=StorageConfig(
             workspaces={workspace_name: WorkspaceConfig(path=study_path)},
@@ -45,7 +45,7 @@ def build_config(
 
 
 @pytest.mark.unit_test
-def test_get(tmp_path: str, project_path) -> None:
+def test_get(tmp_path: str, project_path: Path) -> None:
     """
     path_to_studies
     |_study1 (d)
@@ -124,7 +124,7 @@ def test_get_cache(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_exist(tmp_path: str, project_path) -> None:
+def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
     (tmp / "study.antares").touch()
@@ -148,7 +148,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
+def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
     # Create folders
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -208,7 +208,7 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study_versions(tmp_path: str, project_path) -> None:
+def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
 
     study = Mock()
@@ -224,7 +224,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
         study_factory=study_factory,
     )
 
-    def create_study(version: str):
+    def create_study(version: str) -> RawStudy:
         metadata = create_raw_study(
             id=f"study{version}",
             workspace=DEFAULT_WORKSPACE_NAME,

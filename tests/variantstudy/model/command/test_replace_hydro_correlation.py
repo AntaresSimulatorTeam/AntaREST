@@ -16,7 +16,7 @@ from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def _set_up(study: FileStudy, command_context: CommandContext):
+def _set_up(study: FileStudy, command_context: CommandContext) -> None:
     # Creates several areas with different correlations
     correlation_cfg = {
         "N?%N?": 1.0,  # Write the area name in the file to ensure we're able to read the data
@@ -34,7 +34,7 @@ def _set_up(study: FileStudy, command_context: CommandContext):
     study.tree.save(correlation_cfg, ["input", "hydro", "prepro", "correlation", "annual"])
 
 
-def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext):
+def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_930
     _set_up(study, command_context)
 
@@ -69,7 +69,7 @@ s%w = 0.6
     )
 
 
-def test_error_case(empty_study_930: FileStudy, command_context: CommandContext):
+def test_error_case(empty_study_930: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_930
     _set_up(study, command_context)
 

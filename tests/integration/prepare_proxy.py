@@ -75,7 +75,7 @@ class PreparerProxy:
         # Prepare a managed study to test specific matrices for version 8.2
         res = self.client.post(
             f"/v1/studies/{ref_study_id}/copy",
-            params={"dest": "copied-820", "use_task": False},  # type: ignore
+            params={"dest": "copied-820", "use_task": False},
             headers=self.headers,
         )
         res.raise_for_status()
@@ -109,9 +109,9 @@ class PreparerProxy:
         # noinspection SpellCheckingInspection
         res = self.client.put(
             f"/v1/studies/{study_id}/raw",
-            params={"path": matrix_path},  # type: ignore
+            params={"path": matrix_path},
             headers=self.headers,
-            files={"file": tsv},  # type: ignore
+            files={"file": tsv},
         )
         res.raise_for_status()
 
@@ -128,7 +128,7 @@ class PreparerProxy:
         """
         res = self.client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"depth": 1, "formatted": True, "path": matrix_path},  # type: ignore
+            params={"depth": 1, "formatted": True, "path": matrix_path},
             headers=self.headers,
         )
         res.raise_for_status()

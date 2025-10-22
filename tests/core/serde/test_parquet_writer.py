@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from typing import Iterator
 
 import numpy as np
 import pandas as pd
@@ -77,7 +78,7 @@ def test_same_columns(tmp_path: Path) -> None:
 
 def test_no_dataframes_given(tmp_path: Path) -> None:
     # This case can happen when no column matched the ones given by the user
-    dataframes = iter([])
+    dataframes: Iterator[pd.DataFrame] = iter([])
 
     all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
     assert all_df_names == []
