@@ -167,11 +167,13 @@ class TestCopyAndRenameFile:
         self.link = self.file.parent / f"{self.file.name}.link"
         self.link.write_text("Link: Mock File Content")
 
+        from typing import Any
+
         main_mapper = Mock(spec=MatrixUriMapper)
         main_mapper.get_link_path.return_value = self.link
         main_mapper.has_link.return_value = True
 
-        def mock_remove_link(node):
+        def mock_remove_link(node: Any) -> None:
             if self.link.exists():
                 self.link.unlink()
 
@@ -191,7 +193,7 @@ class TestCopyAndRenameFile:
         self.fake_node = InputSeriesMatrix(matrix_mapper=fake_mapper, config=config2)
         self.target = self.modified_file.stem
 
-    def _checks_behavior(self, rename: bool, target_is_link: bool):
+    def _checks_behavior(self, rename: bool, target_is_link: bool) -> None:
         # Asserts `_infer_path` fails if there's no file
         with pytest.raises(ChildNotFoundError):
             self.fake_node._infer_path()
@@ -226,7 +228,7 @@ class TestCopyAndRenameFile:
             assert not self.modified_link.exists()
             assert self.modified_file.read_text() == content.decode("utf-8")
 
-    def test_copy_and_rename_file(self, tmp_path: Path):
+    def test_copy_and_rename_file(self, tmp_path: Path) -> None:
         for rename, target_is_link in itertools.product([True, False], repeat=2):
             self._set_up(tmp_path)
             self._checks_behavior(rename, target_is_link)

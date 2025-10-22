@@ -16,6 +16,7 @@ import typing as t
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from sqlalchemy import create_engine
+from typing_extensions import override
 
 from antarest.core.config import Config, ExternalAuthConfig, SecurityConfig
 from antarest.core.roles import RoleType
@@ -31,11 +32,12 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler):
     This HTTP request handler simulates an LDAP server.
     """
 
-    def log_request(self, code="-", size="-"):
+    @override
+    def log_request(self, code: str = "-", size: str = "-") -> None:
         """Override the log_request method to suppress access logs"""
 
     # noinspection PyPep8Naming
-    def do_POST(self):
+    def do_POST(self) -> None:
         content_length = int(self.headers["Content-Length"])
         data = self.rfile.read(content_length)
 
@@ -81,7 +83,7 @@ class TestLdapService:
     Test the LDAP service
     """
 
-    def test_login(self):
+    def test_login(self) -> None:
         # Create an in-memory database for this test.
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)

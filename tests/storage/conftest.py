@@ -17,6 +17,7 @@ from typing import Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownload
@@ -256,6 +257,7 @@ def lite_path(tmp_path: Path) -> Path:
 
 
 class SimpleSyncTaskService(ITaskService):
+    @override
     def add_worker_task(
         self,
         task_type: TaskType,
@@ -266,6 +268,7 @@ class SimpleSyncTaskService(ITaskService):
     ) -> Optional[str]:
         raise NotImplementedError()
 
+    @override
     def add_task(
         self,
         action: Task,
@@ -278,6 +281,7 @@ class SimpleSyncTaskService(ITaskService):
         action(NoopNotifier())
         return str(uuid.uuid4())
 
+    @override
     def status_task(
         self,
         task_id: str,
@@ -294,9 +298,11 @@ class SimpleSyncTaskService(ITaskService):
             logs=None,
         )
 
+    @override
     def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
         return []
 
+    @override
     def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
         pass
 
@@ -305,15 +311,19 @@ class FileDownloadRepositoryMock(FileDownloadRepository):
     def __init__(self) -> None:
         self.downloads: Dict[str, FileDownload] = {}
 
+    @override
     def add(self, download: FileDownload) -> None:
         self.downloads[download.id] = download
 
+    @override
     def get(self, download_id: str) -> Optional[FileDownload]:
         return self.downloads.get(download_id, None)
 
+    @override
     def save(self, download: FileDownload) -> None:
         self.downloads[download.id] = download
 
+    @override
     def get_all(self, owner: Optional[int] = None) -> List[FileDownload]:
         return list(self.downloads.values())
 

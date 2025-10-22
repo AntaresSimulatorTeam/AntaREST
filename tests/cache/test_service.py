@@ -18,7 +18,7 @@ from antarest.core.cache.main import build_cache
 from antarest.core.config import Config
 
 
-def test_service_factory():
+def test_service_factory() -> None:
     config = Config()
     cache = build_cache(config)
     assert isinstance(cache, LocalCache)

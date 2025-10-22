@@ -22,6 +22,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 from antares.study.version import StudyVersion
+from typing_extensions import override
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.exceptions import VariantGenerationError
@@ -704,9 +705,11 @@ class RegisterNotification(ITaskNotifier):
     def __init__(self) -> None:
         self.notifications: t.MutableSequence[str] = []
 
+    @override
     def notify_message(self, notification: str) -> None:
         self.notifications.append(json.loads(notification))
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return
 
@@ -715,9 +718,11 @@ class FailingNotifier(ITaskNotifier):
     def __init__(self) -> None:
         pass
 
+    @override
     def notify_message(self, notification: str) -> None:
         logger.warning("Something went wrong")
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return
 

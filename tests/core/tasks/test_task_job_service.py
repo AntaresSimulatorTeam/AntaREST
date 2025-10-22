@@ -38,4 +38,5 @@ def test_database_date_utc(db_session: Session) -> None:
 
     with db_session:
         task_job = db_session.query(TaskJob).filter(TaskJob.name == "foo").one()
+        assert task_job.completion_date is not None
         assert now <= task_job.creation_date <= task_job.completion_date <= later

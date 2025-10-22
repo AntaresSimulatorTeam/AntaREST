@@ -32,7 +32,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestXpansionCandidate:
     @staticmethod
-    def set_up(empty_study: FileStudy, command_context: CommandContext):
+    def set_up(empty_study: FileStudy, command_context: CommandContext) -> None:
         # Creates a link for candidates
         cmd = CreateArea(command_context=command_context, area_name="at", study_version=STUDY_VERSION_8_7)
         cmd.apply(study_data=empty_study)
@@ -53,7 +53,7 @@ class TestXpansionCandidate:
         (xpansion_path / "capa" / "capa3.txt").touch()
         (xpansion_path / "capa" / "capa4.txt").touch()
 
-    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study, command_context)
 
@@ -147,7 +147,7 @@ max-units = 7
 """
         )
 
-    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study, command_context)
         empty_study.config.study_id = "study_id"

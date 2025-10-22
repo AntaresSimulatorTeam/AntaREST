@@ -19,7 +19,7 @@ from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import WorkerTaskCommand
 
 
-def test_archive_worker_action(tmp_path: Path):
+def test_archive_worker_action(tmp_path: Path) -> None:
     workspace_server_mount_point = tmp_path / "other_mount_point"
     archive_worker = ArchiveWorker(
         Mock(),

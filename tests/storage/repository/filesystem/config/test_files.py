@@ -24,7 +24,7 @@ PARSE_SIMULATION_NAME = "antarest.study.storage.rawstudy.model.filesystem.config
 
 
 class TestParseSimulationZip:
-    def test_parse_simulation_zip__nominal(self, tmp_path: Path):
+    def test_parse_simulation_zip__nominal(self, tmp_path: Path) -> None:
         # prepare a ZIP file with the following files
         archived_files = [
             "about-the-study/parameters.ini",
@@ -56,7 +56,7 @@ class TestParseSimulationZip:
         # check the result
         assert actual.archived is True
 
-    def test_parse_simulation_zip__missing_required_files(self, tmp_path: Path):
+    def test_parse_simulation_zip__missing_required_files(self, tmp_path: Path) -> None:
         # prepare a ZIP file with the following files
         archived_files = [
             # "about-the-study/parameters.ini",  # <- required
@@ -73,7 +73,7 @@ class TestParseSimulationZip:
             with pytest.raises(SimulationParsingError):
                 parse_simulation_zip(zip_path)
 
-    def test_parse_simulation_zip__bad_zip_file(self, tmp_path: Path):
+    def test_parse_simulation_zip__bad_zip_file(self, tmp_path: Path) -> None:
         # prepare a bad ZIP file
         zip_path = tmp_path.joinpath("dummy.zip")
         zip_path.write_bytes(b"PK")

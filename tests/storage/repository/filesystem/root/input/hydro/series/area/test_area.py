@@ -12,6 +12,7 @@
 
 import uuid
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -84,8 +85,8 @@ class TestInputHydroSeriesArea:
     def test_build_input_hydro_series_area(
         self,
         version: str,
-        expected: dict,
-    ):
+        expected: dict[str, Any],
+    ) -> None:
         resolver = Mock(spec=MatrixUriMapper)
         context = resolver
         study_id = str(uuid.uuid4())
