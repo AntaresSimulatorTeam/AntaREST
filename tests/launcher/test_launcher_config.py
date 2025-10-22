@@ -21,66 +21,66 @@ from antarest.launcher.adapters.local_launcher.local_launcher import (
 from antarest.launcher.model import LaunchConfigDTO
 
 
-def mkconfig(**kwargs):
-    """Shortcut to create a LaunchConfigDTO with defaults."""
-    return LaunchConfigDTO(
-        **{
-            "id": "id123",
-            "name": "test",
-            "linear_solver": "xpress",
-            "use_optim_1_basis_next_week": True,
-            "use_optim_1_basis_optim_2": True,
-            "linear_solver_param": None,
-            "linear_solver_param_optim_1": None,
-            "linear_solver_param_optim_2": None,
-            "min_antares_version": SOLVER_VERSION_9_2,
-            **kwargs,
-        }
-    )
+@pytest.fixture
+def base_config_params():
+    """Base configuration parameters for LaunchConfigDTO."""
+    return {
+        "id": "id123",
+        "name": "test",
+        "linear_solver": "xpress",
+        "use_optim_1_basis_next_week": True,
+        "use_optim_1_basis_optim_2": True,
+        "linear_solver_param": None,
+        "linear_solver_param_optim_1": None,
+        "linear_solver_param_optim_2": None,
+        "min_antares_version": SOLVER_VERSION_9_2,
+    }
 
 
-def test_basic_xpress_solver_only():
-    config = mkconfig()
+def test_basic_xpress_solver_only(base_config_params):
+    config = LaunchConfigDTO(**base_config_params)
     assert config.other_options == "solver=xpress"
 
 
-def test_xpress_nobasis_flags():
-    config = mkconfig(
-        use_optim_1_basis_next_week=False,
-        use_optim_1_basis_optim_2=False,
+def test_xpress_nobasis_flags(base_config_params):
+    config = LaunchConfigDTO(
+        **{**base_config_params, "use_optim_1_basis_next_week": False, "use_optim_1_basis_optim_2": False}
     )
     result = config.other_options
     # order should be deterministic
     assert result == "solver=xpress nobasis1 nobasis2"
 
 
-def test_xpress_single_nobasis1():
-    config = mkconfig(use_optim_1_basis_next_week=False)
+def test_xpress_single_nobasis1(base_config_params):
+    config = LaunchConfigDTO(**{**base_config_params, "use_optim_1_basis_next_week": False})
     assert config.other_options == "solver=xpress nobasis1"
 
 
-def test_xpress_with_common_params():
-    config = mkconfig(
-        linear_solver_param=[("THREADS", 4), ("FEASTOL", 1)],
-    )
+def test_xpress_with_common_params(base_config_params):
+    config = LaunchConfigDTO(**{**base_config_params, "linear_solver_param": [("THREADS", 4), ("FEASTOL", 1)]})
     result = config.other_options
     assert 'param-optim1="THREADS 4 FEASTOL 1"' in result
     assert 'param-optim2="THREADS 4 FEASTOL 1"' in result
 
 
-def test_xpress_combined_common_and_specific_params():
-    config = mkconfig(
-        linear_solver_param=[("THREADS", 4)],
-        linear_solver_param_optim_1=[("PRESOLVE", 1)],
-        linear_solver_param_optim_2=[("MIPRELSTOP", 0.01)],
+def test_xpress_combined_common_and_specific_params(base_config_params):
+    config = LaunchConfigDTO(
+        **{
+            **base_config_params,
+            "linear_solver_param": [("THREADS", 4)],
+            "linear_solver_param_optim_1": [("PRESOLVE", 1)],
+            "linear_solver_param_optim_2": [("MIPRELSTOP", 0.01)],
+        }
     )
     result = config.other_options
     assert 'param-optim1="THREADS 4 PRESOLVE 1"' in result, "common + optim1 combined"
     assert 'param-optim2="THREADS 4 MIPRELSTOP 0.01"' in result, "common + optim2 combined"
 
 
-def test_presolve_detected_in_optim2_only():
-    config = mkconfig(linear_solver_param_optim_2=[("PRESOLVE", 100), ("THREADS", 2)])
+def test_presolve_detected_in_optim2_only(base_config_params):
+    config = LaunchConfigDTO(
+        **{**base_config_params, "linear_solver_param_optim_2": [("PRESOLVE", 100), ("THREADS", 2)]}
+    )
     result = config.other_options
     assert result == 'solver=xpress param-optim2="PRESOLVE 100 THREADS 2"'
 

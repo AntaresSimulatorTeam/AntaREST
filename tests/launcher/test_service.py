@@ -41,19 +41,29 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
+from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
     JobResult,
     JobStatus,
+    LaunchConfigDTO,
+    LaunchConfigModel,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
 )
-from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
+from antarest.launcher.service import (
+    EXECUTION_INFO_FILE,
+    LAUNCHER_PARAM_NAME_SUFFIX,
+    IncompatibleLaunchConfig,
+    JobNotFound,
+    LaunchConfigNotFound,
+    LauncherService,
+)
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
-from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, Study, StudyMetadataDTO
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -1029,3 +1039,88 @@ class TestLauncherService:
 
         # Ensures the output_service.import_output method was called with the right user
         launcher_service._import_output("job_id", tmp_path, {})
+
+    @pytest.mark.unit_test
+    def test_run_study_with_launch_config_and_overrides(self) -> None:
+        storage_service_mock = Mock()
+        storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
+            id="id",
+            name="name",
+            created="1",
+            updated="1",
+            type="rawstudy",
+            owner=OwnerInfo(id=0, name="author"),
+            groups=[],
+            public_mode=PublicMode.NONE,
+            version=STUDY_VERSION_9_2,
+            workspace="default",
+            managed=True,
+            archived=False,
+        )
+        storage_service_mock.get_study_path.return_value = Path("path/to/study")
+
+        uuid = uuid4()
+        launcher_mock = Mock()
+        factory_launcher_mock = Mock()
+        factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
+
+        event_bus = Mock()
+
+        repository = Mock()
+        config_repository = Mock()
+        # Base stored params (will be overridden by user params below)
+
+        def get_mock_launch_config(config_id: str):
+            if config_id == "config-1":
+                return LaunchConfigModel.from_dto(
+                    LaunchConfigDTO(
+                        id="config-1", name="Config 1", linear_solver="xpress", min_antares_version=SOLVER_VERSION_9_2
+                    )
+                )
+            return None
+
+        config_repository.get.side_effect = get_mock_launch_config
+
+        launcher_service = LauncherService(
+            config=Config(),
+            study_service=storage_service_mock,
+            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
+            login_service=Mock(),
+            job_result_repository=repository,
+            launcher_config_repository=config_repository,
+            factory_launcher=factory_launcher_mock,
+            event_bus=event_bus,
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+        launcher_service._generate_new_id = lambda: str(uuid)
+
+        # User passes a launch config id and custom overrides
+        params = LauncherParametersDTO()
+
+        launcher_service.run_study("study_uuid", "local", params, "config-1")
+
+        # Assert that repository.save was called with the correct JobResult
+        repository.save.assert_called_once()
+
+        # Get the actual JobResult that was saved
+        mock_call = repository.save.mock_calls[0]
+        actual_obj: JobResult = mock_call.args[0]
+        saved_launcher_params = json.loads(actual_obj.launcher_params)
+        saved_other_options = saved_launcher_params.get("other_options", "")
+
+        assert saved_other_options == "solver=xpress", "The other_options should include the merged solver option"
+
+        # Test that non-existent config raises LaunchConfigNotFound
+        with pytest.raises(LaunchConfigNotFound):
+            launcher_service.run_study("study_uuid", "local", params, "config-2")
+
+        # Test that incompatible antares version raises IncompatibleLaunchConfig
+        with pytest.raises(IncompatibleLaunchConfig):
+            launcher_service.run_study("study_uuid", "local", params, "config-1", "8.0")
+
+        # Test that when other_options is set, it raises IncompatibleLaunchConfig
+        params_with_other_options = LauncherParametersDTO(other_options="--some-option")
+        with pytest.raises(IncompatibleLaunchConfig):
+            launcher_service.run_study("study_uuid", "local", params_with_other_options, "config-1", "8.0")
