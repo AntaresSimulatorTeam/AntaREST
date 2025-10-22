@@ -83,8 +83,6 @@ def _add_db_connection_metrics(registry: CollectorRegistry, engine: Engine | Non
     )
     dbconn_idle_gauge.labels(WORKER_ID).set(0)
 
-    dbconn_gauge.labels(WORKER_ID).set(0)
-
     dbconn_event_counter = Counter(
         "db_connections_events",
         "DB connection events",
@@ -267,7 +265,7 @@ class TasksMetricsRecorder(TaskServiceListener):
         )
         self._wait_time_histo = Histogram(
             "tasks_wait_seconds",
-            "Tasks duration in seconds",
+            "Tasks wait time in seconds",
             ["worker_id"],
             registry=registry,
         )

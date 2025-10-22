@@ -853,5 +853,3 @@ class ConfigurationError(RuntimeError):
     """
     Raised when some configuration is invalid.
     """
-
-    pass
