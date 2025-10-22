@@ -47,7 +47,7 @@ def resources_dir(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def app_with_home(base_back_app) -> FastAPI:
+def app_with_home(base_back_app: FastAPI) -> FastAPI:
     """
     A simple app which has only a home endpoint and one backend endpoint
     """
@@ -91,7 +91,7 @@ def test_redirect_middleware_does_not_redirect_backend_routes(redirect_app: Fast
     assert response.json() == "back"
 
 
-def test_frontend_paths(base_back_app, resources_dir: Path) -> None:
+def test_frontend_paths(base_back_app: FastAPI, resources_dir: Path) -> None:
     add_front_app(base_back_app, resources_dir, "/api")
     client = TestClient(base_back_app)
 

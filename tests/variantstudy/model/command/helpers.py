@@ -13,7 +13,7 @@
 from pathlib import Path
 
 
-def reset_line_separator(*paths: Path):
+def reset_line_separator(*paths: Path) -> None:
     """
     Reset the line separator of a text file to use the system default line separator (CR+LF on Windows).
 

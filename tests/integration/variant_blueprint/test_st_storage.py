@@ -35,7 +35,7 @@ class TestSTStorage:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         # =======================
         #  Study version upgrade
         # =======================

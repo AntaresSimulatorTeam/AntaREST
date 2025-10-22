@@ -33,7 +33,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateSTStorageAdditionalConstraint:
-    def test_nominal_case(self, command_context: CommandContext, empty_study_920: FileStudy):
+    def test_nominal_case(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
         ####### Set Up ########
         study = empty_study_920
         version = study.config.version
@@ -173,7 +173,7 @@ class TestUpdateSTStorageAdditionalConstraint:
             },
         }
 
-    def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy):
+    def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
         study = empty_study_920
         version = study.config.version
 

@@ -19,7 +19,7 @@ from antarest.study.storage.variantstudy.model.command.update_scenario_builder i
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_update_scenario_builder(empty_study_880: FileStudy, command_context: CommandContext):
+def test_update_scenario_builder(empty_study_880: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_880
     version = study.config.version
 

@@ -17,30 +17,30 @@ from pydantic import TypeAdapter, ValidationError
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId, ItemName
 
 
-def test_item_name_object_is_invalid():
+def test_item_name_object_is_invalid() -> None:
     with pytest.raises(ValidationError):
         TypeAdapter(ItemName).validate_python([])
 
 
-def test_item_name_only_special_characters_is_invalid():
+def test_item_name_only_special_characters_is_invalid() -> None:
     with pytest.raises(ValidationError):
         TypeAdapter(ItemName).validate_python("* .$")
 
 
-def test_item_name_numeric_is_valid():
+def test_item_name_numeric_is_valid() -> None:
     assert TypeAdapter(ItemName).validate_python(872) == "872"
 
 
-def test_item_str_is_valid():
+def test_item_str_is_valid() -> None:
     assert TypeAdapter(ItemName).validate_python("Gérard") == "Gérard"
 
 
-def test_area_id_invalid_characters():
+def test_area_id_invalid_characters() -> None:
     with pytest.raises(ValidationError):
         TypeAdapter(AreaId).validate_python("Gérard")
     with pytest.raises(ValidationError):
         TypeAdapter(AreaId).validate_python("Capitals")
 
 
-def test_valid_area_id():
+def test_valid_area_id() -> None:
     assert TypeAdapter(AreaId).validate_python("area-id") == "area-id"
