@@ -18,11 +18,12 @@ import { useOutletContext } from "react-router";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
+import type { GridColumn } from "@glideapps/glide-data-grid";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getStudyMapLayersById } from "../../../../../../../../redux/selectors";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import TableForm from "../../../../../../../common/TableForm";
+import DataGridForm from "../../../../../../../common/DataGridForm";
 import CreateLayerDialog from "./CreateLayerDialog";
 import { updateStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
@@ -37,16 +38,16 @@ function Layers() {
   const [createLayerDialogOpen, setCreateLayerDialogOpen] = useState(false);
   const [updateLayerDialogOpen, setUpdateLayerDialogOpen] = useState(false);
 
-  const columns = useMemo(() => {
-    return (
-      Object.keys(layersById)
-        // Remove "All"
-        .filter((id) => id !== "0")
-        .map((id) => id)
-    );
+  const columns = useMemo<Array<GridColumn & { id: string }>>(() => {
+    return Object.keys(layersById)
+      .filter((id) => id !== "0") // Remove default layer "All", as it's not editable
+      .map((id) => ({
+        id,
+        title: layersById[id].name,
+      }));
   }, [layersById]);
 
-  const defaultValues = useMemo(() => {
+  const defaultData = useMemo(() => {
     const layers = Object.values(layersById);
 
     return areas.reduce(
@@ -69,7 +70,7 @@ function Layers() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
+  const handleSubmit = (data: SubmitHandlerPlus<typeof defaultData>) => {
     const areasByLayer: Record<string, string[]> = {};
 
     Object.keys(data.dirtyValues).forEach((areaId) => {
@@ -132,15 +133,16 @@ function Layers() {
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
         {columns.length > 0 && (
-          <TableForm
-            key={JSON.stringify(defaultValues)}
-            defaultValues={defaultValues}
-            tableProps={{
-              columns,
-              colHeaders: (_, colName) => layersById[colName].name,
-              selectionMode: "single",
-            }}
+          <DataGridForm
+            key={JSON.stringify(defaultData)}
+            defaultData={defaultData}
+            columns={columns}
             onSubmit={handleSubmit}
+            rowMarkers={{
+              kind: "clickable-string",
+              getTitle: (index) => areas[index].name,
+              width: 150,
+            }}
           />
         )}
       </Box>
