@@ -11,16 +11,20 @@
 # This file is part of the Antares project.
 
 import logging
-from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
 
 import pandas as pd
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
-    FactoryDateSerializer,
-    rename_unnamed,
+from antarest.study.business.output.utils import (
+    MCAllAreasQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    MCRoot,
+    QueryFileType,
+    normalize_column_names,
+    parse_output_file,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
@@ -44,35 +48,6 @@ ACTUAL_COLUMN_COMPONENT = 1
 DUMMY_COMPONENT = 2
 
 logger = logging.getLogger(__name__)
-
-
-class MCRoot(Enum):
-    MC_IND = "mc-ind"
-    MC_ALL = "mc-all"
-
-
-class MCIndAreasQueryFile(StrEnum):
-    VALUES = "values"
-    DETAILS = "details"
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-
-
-class MCAllAreasQueryFile(StrEnum):
-    VALUES = "values"
-    DETAILS = "details"
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-    ID = "id"
-
-
-class MCIndLinksQueryFile(StrEnum):
-    VALUES = "values"
-
-
-class MCAllLinksQueryFile(StrEnum):
-    VALUES = "values"
-    ID = "id"
 
 
 def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
@@ -117,7 +92,7 @@ class AggregatorManager:
     def __init__(
         self,
         output_path: Path,
-        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
+        query_file: QueryFileType,
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
@@ -144,31 +119,15 @@ class AggregatorManager:
         )
 
     def _parse_output_file(self, file_path: Path, normalize_column_name: bool = True) -> pd.DataFrame:
-        csv_file = pd.read_csv(
-            file_path,
-            sep="\t",
-            skiprows=4,
-            header=[0, 1, 2],
-            na_values="N/A",
-            float_precision="legacy",
-        )
-        date_serializer = FactoryDateSerializer.create(self.frequency.value, "")
-        date, body = date_serializer.extract_date(csv_file)
-        df = rename_unnamed(body).astype(float)
+        body = parse_output_file(file_path, self.frequency)
 
-        df.index = date
+        df = body.astype(float)
 
         if not normalize_column_name:
             return df
 
         # normalize columns names
-        new_cols = []
-        for col in body.columns:
-            if self.mc_root == MCRoot.MC_IND:
-                name_to_consider = col[0] if self.query_file.value == MCIndAreasQueryFile.VALUES else " ".join(col)
-            else:
-                name_to_consider = " ".join([col[0], col[2]])
-            new_cols.append(name_to_consider.upper().strip())
+        new_cols = normalize_column_names(body, self.mc_root)
 
         df.columns = pd.Index(new_cols)
         return df
@@ -292,7 +251,6 @@ class AggregatorManager:
             # reorganize the data frame
             columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
             df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
-            df.index = pd.Index(list(range(1, len(df) + 1)))
 
             return df
 

@@ -94,7 +94,8 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
         date, body = self.date_serializer.extract_date(df)
 
-        matrix = rename_unnamed(body).astype(float)
+        rename_unnamed(body)
+        matrix = body.astype(float)
         matrix = matrix.where(pd.notna(matrix), None)
         matrix.index = date
         matrix.columns = body.columns
