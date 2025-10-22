@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import textwrap
 from pathlib import Path
+from typing import Type
 
 import pytest
 from antares.study.version import StudyVersion
@@ -59,7 +60,13 @@ def create_study_config(study_dir: Path, ini_file: Path, version: StudyVersion, 
     "ini_node_cluster_class",
     [InputSTStorageAreaList, ClusteredRenewableClusterConfig, InputThermalClustersAreaList],
 )
-def test_group_is_parsed_to_lower_case(study_dir: Path, ini_file: Path, ini_node_cluster_class):
+def test_group_is_parsed_to_lower_case(
+    study_dir: Path,
+    ini_file: Path,
+    ini_node_cluster_class: type[
+        InputSTStorageAreaList | ClusteredRenewableClusterConfig | InputThermalClustersAreaList
+    ],
+) -> None:
     ini_file.write_text(
         textwrap.dedent(
             """
@@ -81,7 +88,13 @@ def test_group_is_parsed_to_lower_case(study_dir: Path, ini_file: Path, ini_node
     "ini_node_cluster_class",
     [InputSTStorageAreaList, ClusteredRenewableClusterConfig, InputThermalClustersAreaList],
 )
-def test_cluster_ini_list(study_dir: Path, ini_file: Path, ini_node_cluster_class):
+def test_cluster_ini_list(
+    study_dir: Path,
+    ini_file: Path,
+    ini_node_cluster_class: Type[
+        InputSTStorageAreaList | ClusteredRenewableClusterConfig | InputThermalClustersAreaList
+    ],
+) -> None:
     data = {"Cluster 1": {"group": "Gas"}}
     node = ini_node_cluster_class(
         config=create_study_config(study_dir, ini_file, STUDY_VERSION_8_8, "area_test"),
@@ -104,7 +117,7 @@ def test_cluster_ini_list(study_dir: Path, ini_file: Path, ini_node_cluster_clas
 def test_binding_constraint_group_writing(
     study_dir: Path,
     ini_file: Path,
-):
+) -> None:
     node = BindingConstraintsIni(
         config=FileStudyTreeConfig(study_path=study_dir, path=ini_file, version=STUDY_VERSION_8_8, study_id="id"),
     )
@@ -120,7 +133,7 @@ def test_binding_constraint_group_writing(
 def test_binding_constraint_group_parsing(
     study_dir: Path,
     ini_file: Path,
-):
+) -> None:
     ini_file.write_text(
         textwrap.dedent(
             """
@@ -139,7 +152,7 @@ def test_binding_constraint_group_parsing(
 
 
 @pytest.mark.unit_test
-def test_st_storage_group_is_written_to_title_case_for_8_6(study_dir: Path, ini_file: Path):
+def test_st_storage_group_is_written_to_title_case_for_8_6(study_dir: Path, ini_file: Path) -> None:
     ini_file.write_text(
         textwrap.dedent(
             """

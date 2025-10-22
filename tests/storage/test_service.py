@@ -25,6 +25,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 import numpy as np
 import pandas as pd
 import pytest
+from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from starlette.responses import Response
@@ -403,7 +404,7 @@ def test_sync_studies_from_disk() -> None:
 
 
 @pytest.mark.unit_test
-def test_sync_unsuppported_study_from_disk(caplog) -> None:
+def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
     folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
 
@@ -413,7 +414,7 @@ def test_sync_unsuppported_study_from_disk(caplog) -> None:
     raw_service = Mock(spec=RawStudyService)
     service = build_study_service(raw_service, repository, config)
 
-    def fake_compatibility_check(study: Study):
+    def fake_compatibility_check(study: Study) -> None:
         if not hasattr(fake_compatibility_check, "call_count"):
             fake_compatibility_check.call_count = 0
 
@@ -1323,7 +1324,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         raise ValueError(f"Unexpected study id: {study_id}")
 
     class ChildrenProvider:
-        def __init__(self):
+        def __init__(self) -> None:
             self.c0 = 0
             self.c1 = 0
 
@@ -1345,7 +1346,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
             raise ValueError(f"Unexpected study id: {parent_id}")
 
     class HasChildrenProvider:
-        def __init__(self):
+        def __init__(self) -> None:
             self.c1 = 0
             self.c2 = 0
 
@@ -1393,8 +1394,8 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
-    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
+    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})
+    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})
 
     variant_study = create_variant_study(
         id="variant-study",
@@ -1405,7 +1406,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         groups=[],
     )
     variant_study.generation_task = None
-    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})  # type: ignore[attr-defined]
+    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})
 
     def get_study_by_id(study_id: str) -> Study:
         if study_id == raw_study.id:
@@ -1421,12 +1422,16 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     raw_study_service.delete = Mock()
     raw_study_service.find_archive_path.return_value = str(tmp_path / "archive.zip")
 
+    from typing import Any, Callable
+
     variant_study_service = Mock(spec=VariantStudyService)
     variant_study_service.delete = Mock()
     variant_study_service.has_children.side_effect = lambda study: study.id == raw_study.id
     variant_study_service.get_children.return_value = [variant_study]
 
-    def walk_children(parent_id: str, fun, bottom_first: bool, include_parent: bool = True) -> None:
+    def walk_children(
+        parent_id: str, fun: Callable[[Any], None], bottom_first: bool, include_parent: bool = True
+    ) -> None:
         assert parent_id == raw_study.id
         assert bottom_first is True
         assert include_parent is False
@@ -1794,7 +1799,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),  # type: ignore
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -2140,7 +2145,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_is_output_archived(tmp_path) -> None:
+def test_is_output_archived(tmp_path: Path) -> None:
     assert not is_output_archived(path_output=Path("fake_path"))
     assert is_output_archived(path_output=Path("fake_path.zip"))
 

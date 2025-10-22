@@ -15,6 +15,7 @@ import sys
 from typing import List, Union
 
 import pytest
+from typing_extensions import override
 
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from tests.launcher.assets import ASSETS_DIR
@@ -84,6 +85,7 @@ HistoryType = List[List[Union[str, float]]]
 class MyLaunchProgressDTO(LaunchProgressDTO):
     history: HistoryType = []
 
+    @override
     def _update_progress(self, line: str) -> bool:
         update = super()._update_progress(line)
         if update:

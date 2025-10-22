@@ -31,7 +31,7 @@ def build_bucket(tmp: Path) -> Path:
     return bucket
 
 
-def test_get_bucket(tmp_path: Path):
+def test_get_bucket(tmp_path: Path) -> None:
     registered_files = [
         RegisteredFile(
             key="registered_file",
@@ -58,7 +58,7 @@ def test_get_bucket(tmp_path: Path):
         assert isinstance(node.get_node([registered_file.key]), registered_file.node)
 
 
-def test_save_bucket(tmp_path: Path):
+def test_save_bucket(tmp_path: Path) -> None:
     file = build_bucket(tmp_path)
 
     node = BucketNode(

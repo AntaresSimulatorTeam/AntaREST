@@ -104,7 +104,7 @@ def test_job_result() -> None:
 
 @pytest.mark.unit_test
 @with_db_context
-def test_update_object():
+def test_update_object() -> None:
     identity = Identity(id=1, name="test")
     db.session.add(identity)
     db.session.commit()
@@ -135,7 +135,7 @@ def test_update_object():
 
 @pytest.mark.unit_test
 @with_db_context
-def test_logs():
+def test_logs() -> None:
     repo = JobResultRepository()
     uuid = str(uuid4())
     a = JobResult(

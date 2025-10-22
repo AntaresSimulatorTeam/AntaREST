@@ -245,6 +245,8 @@ class TestVariantStudyService:
         by a monkeypatch context
         """
 
+        from typing import Optional
+
         class FakeDatetime:
             """
             Class that handle fake timestamp creation/update of variant
@@ -253,7 +255,7 @@ class TestVariantStudyService:
             fake_time: datetime.datetime
 
             @classmethod
-            def now(cls, tz=None) -> datetime.datetime:
+            def now(cls, tz: Optional[datetime.timezone] = None) -> datetime.datetime:
                 """Method used to get the custom timestamp.
                 Returns naive datetime regardless of tz parameter to match database behavior."""
                 return datetime.datetime(2023, 12, 31)

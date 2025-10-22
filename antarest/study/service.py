@@ -881,7 +881,7 @@ class StudyService:
 
         # Get or create directory from path
         current_user = get_current_user()
-        owner_id = current_user.id if current_user else 0
+        owner_id = current_user.impersonator if current_user else 0
         directory_id = self._get_directory_from_path(directory, owner_id, group_ids)
 
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -917,8 +917,7 @@ class StudyService:
         """
         user = get_current_user()
         if user:
-            user_id = user.impersonator if user.type == "bots" else user.id
-            if curr_user := self.user_service.get_user(user_id):
+            if curr_user := self.user_service.get_user(user.impersonator):
                 return curr_user.to_dto().name
         return "Unknown"
 

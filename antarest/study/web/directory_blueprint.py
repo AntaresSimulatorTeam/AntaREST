@@ -53,11 +53,11 @@ def create_directory_routes(
         user = require_current_user()
         return directory_service.create_directory(
             data,
-            owner_id=user.id,
+            owner_id=user.impersonator,
             default_group_ids=[group.id for group in user.groups],
         )
 
-    @bp.put(
+    @bp.patch(
         "/directories/{directory_id}",
         tags=[APITag.study_management],
         summary="Update directory",

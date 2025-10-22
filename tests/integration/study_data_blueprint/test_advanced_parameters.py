@@ -32,7 +32,7 @@ class TestAdvancedParametersForm:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """Check `get_advanced_parameters_form_values` end point"""
         res = client.get(
             f"/v1/studies/{internal_study_id}/config/advancedparameters/form",
@@ -68,7 +68,7 @@ class TestAdvancedParametersForm:
     @pytest.mark.parametrize("study_version", [0, 880])
     def test_set_advanced_parameters_values(
         self, client: TestClient, user_access_token: str, internal_study_id: str, study_version: int
-    ):
+    ) -> None:
         """Check `set_advanced_parameters_values` end point"""
         obj = {"initialReservoirLevels": "hot start"}
         res = client.put(

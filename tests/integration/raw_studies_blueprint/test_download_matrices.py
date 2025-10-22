@@ -12,7 +12,7 @@
 
 import datetime
 import io
-import typing as t
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -32,7 +32,7 @@ class Proxy:
 
 
 class PreparerProxy(Proxy):
-    def copy_upgrade_study(self, ref_study_id, target_version=820):
+    def copy_upgrade_study(self, ref_study_id: str, target_version: int = 820) -> str:
         """
         Copy a study in the managed workspace and upgrade it to a specific version
         """
@@ -81,7 +81,7 @@ class PreparerProxy(Proxy):
         variant_id = res.json()
         return variant_id
 
-    def generate_snapshot(self, variant_id: str, denormalize=False, from_scratch=True) -> None:
+    def generate_snapshot(self, variant_id: str, denormalize: bool = False, from_scratch: bool = True) -> None:
         # Generate a snapshot for the variant
         res = self.client.put(
             f"/v1/studies/{variant_id}/generate",
@@ -95,7 +95,7 @@ class PreparerProxy(Proxy):
         task = wait_task_completion(self.client, self.user_access_token, task_id, base_timeout=20)
         assert task.status == TaskStatus.COMPLETED
 
-    def create_area(self, parent_id, *, name: str, country: str = "FR") -> str:
+    def create_area(self, parent_id: str, *, name: str, country: str = "FR") -> str:
         res = self.client.post(
             f"/v1/studies/{parent_id}/areas",
             headers=self.headers,
@@ -105,7 +105,7 @@ class PreparerProxy(Proxy):
         area_id = res.json()["id"]
         return area_id
 
-    def update_general_data(self, internal_study_id: str, **data: t.Any):
+    def update_general_data(self, internal_study_id: str, **data: Any) -> None:
         res = self.client.put(
             f"/v1/studies/{internal_study_id}/config/general/form",
             json=data,
@@ -345,7 +345,7 @@ class TestDownloadMatrices:
             if export_format == "tsv":
                 dataframe = pd.read_csv(content, index_col=0, sep="\t")
             else:
-                dataframe = pd.read_excel(content, index_col=0)  # type: ignore
+                dataframe = pd.read_excel(content, index_col=0)
             assert dataframe.shape == (8760, 3)
             assert dataframe.columns.tolist() == ["TS-1", "TS-2", "TS-3"]
             assert str(dataframe.index[0]) == "2018-01-01 00:00:00"

@@ -31,7 +31,7 @@ class TestOutputSimulationSet:
             pytest.param([]),
         ],
     )
-    def test_output_simulation_set(self, existing_files: t.List[str], tmp_path: Path):
+    def test_output_simulation_set(self, existing_files: t.List[str], tmp_path: Path) -> None:
         expected = {}
         for file in existing_files:
             tmp_path.joinpath(file).touch()

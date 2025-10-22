@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from pathlib import Path
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.matrixstore.repository import MatrixContentRepository
@@ -21,7 +21,7 @@ DEFAULT_INTERNAL_FORMAT = InternalMatrixFormat.TSV
 
 
 class TestGeneratorMatrixConstants:
-    def test_get_st_storage(self, tmp_path):
+    def test_get_st_storage(self, tmp_path: Path) -> None:
         matrix_content_repository = MatrixContentRepository(bucket_dir=tmp_path, format=DEFAULT_INTERNAL_FORMAT)
         generator = GeneratorMatrixConstants(
             matrix_service=SimpleMatrixService(
@@ -55,7 +55,7 @@ class TestGeneratorMatrixConstants:
         matrix_dto5 = generator.matrix_service.get(matrix_id5)
         assert matrix_dto5.to_numpy().all() == matrix_constants.st_storage.series.inflows.all()
 
-    def test_get_binding_constraint_before_v87(self, tmp_path):
+    def test_get_binding_constraint_before_v87(self, tmp_path: Path) -> None:
         matrix_content_repository = MatrixContentRepository(bucket_dir=tmp_path, format=DEFAULT_INTERNAL_FORMAT)
         generator = GeneratorMatrixConstants(
             matrix_service=SimpleMatrixService(

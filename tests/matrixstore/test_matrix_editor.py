@@ -119,7 +119,7 @@ class TestOperation:
             "value": 123.0,
         }
 
-    def test_total_ordering(self):
+    def test_total_ordering(self) -> None:
         op1 = Operation(operation="=", value=120)
         op2 = Operation(operation="=", value=150)
         op3 = Operation(operation="/", value=150)

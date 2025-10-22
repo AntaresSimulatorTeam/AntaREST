@@ -23,23 +23,23 @@ VALID_CHARS = "azAZ09_-(),&"
     "name, expected",
     [("France", "france"), ("@é'rFf", "rff"), ("t@é'rFf", "t rff")],
 )
-def test_transform_name_to_id__nominal_case(name, expected):
+def test_transform_name_to_id__nominal_case(name: str, expected: str) -> None:
     assert transform_name_to_id(name) == expected
 
 
 @pytest.mark.parametrize("name", VALID_CHARS)
-def test_transform_name_to_id__valid_chars(name):
+def test_transform_name_to_id__valid_chars(name: str) -> None:
     assert transform_name_to_id(name, lower=True) == name.lower()
     assert transform_name_to_id(name, lower=False) == name
 
 
 @pytest.mark.parametrize("name", sorted(set(string.punctuation) - set(VALID_CHARS)))
-def test_transform_name_to_id__punctuation(name):
+def test_transform_name_to_id__punctuation(name: str) -> None:
     assert not transform_name_to_id(name)
 
 
 @pytest.mark.parametrize("name", sorted(set(string.whitespace) - set(VALID_CHARS)))
-def test_transform_name_to_id__whitespace(name):
+def test_transform_name_to_id__whitespace(name: str) -> None:
     assert not transform_name_to_id(name)
 
 
@@ -53,7 +53,7 @@ def test_transform_name_to_id__whitespace(name):
         ("$$foo$$$bar$$", "foo bar"),
     ],
 )
-def test_transform_name_to_id__strip_invalid_duplicates(name, expected):
+def test_transform_name_to_id__strip_invalid_duplicates(name: str, expected: str) -> None:
     assert transform_name_to_id(name) == expected
 
 
@@ -67,5 +67,5 @@ def test_transform_name_to_id__strip_invalid_duplicates(name, expected):
         ("  foo   bar  ", "foo   bar"),
     ],
 )
-def test_transform_name_to_id__strip_whitespaces(name, expected):
+def test_transform_name_to_id__strip_whitespaces(name: str, expected: str) -> None:
     assert transform_name_to_id(name) == expected

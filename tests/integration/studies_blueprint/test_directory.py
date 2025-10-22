@@ -58,7 +58,7 @@ class TestDirectoryManagement:
         directory_id = res.json()["id"]
 
         # Update name
-        res = client.put(
+        res = client.patch(
             f"/v1/directories/{directory_id}",
             json={"name": "Updated Name"},
         )
@@ -96,7 +96,7 @@ class TestDirectoryManagement:
         assert res.json()["parentId"] == parent_a_id
 
         # Move child to Parent B
-        res = client.put(
+        res = client.patch(
             f"/v1/directories/{child_id}",
             json={"parentId": parent_b_id},
         )
@@ -177,19 +177,19 @@ class TestDirectoryManagement:
         dir_c_id = res.json()["id"]
 
         # Try to move A under C (would create cycle: C -> A -> B -> C)
-        res = client.put(f"/v1/directories/{dir_a_id}", json={"parentId": dir_c_id})
+        res = client.patch(f"/v1/directories/{dir_a_id}", json={"parentId": dir_c_id})
         assert res.status_code == 400
         error_msg = res.json().get("detail") or res.json().get("description", "")
         assert "cycle" in str(error_msg).lower()
 
         # Try to move A under B (would create cycle: B -> A -> B)
-        res = client.put(f"/v1/directories/{dir_a_id}", json={"parentId": dir_b_id})
+        res = client.patch(f"/v1/directories/{dir_a_id}", json={"parentId": dir_b_id})
         assert res.status_code == 400
         error_msg = res.json().get("detail") or res.json().get("description", "")
         assert "cycle" in str(error_msg).lower()
 
         # Try to move A under itself (should fail)
-        res = client.put(f"/v1/directories/{dir_a_id}", json={"parentId": dir_a_id})
+        res = client.patch(f"/v1/directories/{dir_a_id}", json={"parentId": dir_a_id})
         assert res.status_code == 400
         error_msg = res.json().get("detail") or res.json().get("description", "")
         assert "cycle" in str(error_msg).lower()

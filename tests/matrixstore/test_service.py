@@ -125,7 +125,7 @@ class TestMatrixService:
             with pytest.raises(MatrixNotFound, match=f"Matrix {missing_hash} doesn't exist"):
                 matrix_service.get(missing_hash)
 
-    def test_get_matrices(self, matrix_service: MatrixService):
+    def test_get_matrices(self, matrix_service: MatrixService) -> None:
         parent = resource_path.parent
         matrices = [
             parent / "test-01-all.result.tsv",
@@ -353,7 +353,9 @@ class TestMatrixService:
             [[7, 8, 9, 10, 11], [17, 18, 19, 20, 21], [27, 28, 29, 30, 31]],
             [[]],
         ]
-        matrix_list: t.List[np.ndarray] = [np.array(data, dtype=np.float64) for data in data_list]
+        matrix_list: t.List[np.ndarray[t.Any, np.dtype[np.float64]]] = [
+            np.array(data, dtype=np.float64) for data in data_list
+        ]
         if content_type == "application/json":
             # JSON format of the array using the dataframe format
             index_list = [list(range(matrix.shape[0])) for matrix in matrix_list]
@@ -580,7 +582,7 @@ def test_dataset_lifecycle() -> None:
     dataset_repo.delete.assert_called_once()
 
 
-def test_hashing_method():
+def test_hashing_method() -> None:
     """
     Non-Regression Test for the hashing method
     It's really important as the whole matrix-store behavior relies on this function
@@ -594,7 +596,7 @@ def test_hashing_method():
     assert compute_hash(AGGREGATION_DF) == "fa164563176cb9130c34c5799138f88dd9eb18e8a6054a2f117c58fcf2a8b519"
 
 
-def test_check_compliance_method():
+def test_check_compliance_method() -> None:
     # Success
     df = pd.DataFrame(data=TEST_MATRIX)
     check_dataframe_compliance(df)
@@ -622,7 +624,7 @@ def test_check_compliance_method():
         check_dataframe_compliance(df)
 
 
-def _create_upload_file(filename: str, file: t.IO = None, content_type: str = "") -> UploadFile:
+def _create_upload_file(filename: str, file: t.IO[bytes] = None, content_type: str = "") -> UploadFile:
     # `content_type` attribute was replace by a read-ony property in starlette-v0.24.
     headers = Headers(headers={"content-type": content_type})
     # noinspection PyTypeChecker,PyArgumentList

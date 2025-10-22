@@ -13,11 +13,11 @@
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter, LinkHeadWriter
 
 
-def test_area():
+def test_area() -> None:
     writer = AreaHeadWriter(area="de", data_type="va", freq="hourly")
     assert writer.build(var=3, start=2, end=4) == "DE\tarea\tva\thourly\n\tVARIABLES\tBEGIN\tEND\n\t3\t2\t4\n\n"
 
 
-def test_link():
+def test_link() -> None:
     writer = LinkHeadWriter(src="de", dest="fr", freq="hourly")
     assert writer.build(var=3, start=2, end=4) == "DE\tlink\tva\thourly\nFR\tVARIABLES\tBEGIN\tEND\n\t3\t2\t4\n\n"

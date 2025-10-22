@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestReplaceXpansionAdequacyCriterion:
     @staticmethod
-    def set_up(empty_study: FileStudy, command_context: CommandContext):
+    def set_up(empty_study: FileStudy, command_context: CommandContext) -> None:
         empty_study.tree.save(
             {
                 "user": {
@@ -48,7 +48,7 @@ class TestReplaceXpansionAdequacyCriterion:
         cmd1.apply(empty_study)
         cmd2.apply(empty_study)
 
-    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study, command_context)
 
@@ -123,7 +123,7 @@ stopping_threshold: 3.0
 """
         )
 
-    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study, command_context)
 

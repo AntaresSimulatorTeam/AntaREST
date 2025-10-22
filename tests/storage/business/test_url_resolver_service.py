@@ -23,11 +23,11 @@ from antarest.matrixstore.matrix_uri_mapper import (
 MOCK_MATRIX = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a", "b"])
 
 
-def test_build_matrix_uri():
+def test_build_matrix_uri() -> None:
     assert "matrix://my-id" == build_matrix_uri("my-id")
 
 
-def test_resolve_matrix():
+def test_resolve_matrix() -> None:
     matrix_service = Mock()
     matrix_service.get.return_value = pd.DataFrame(index=["1", "2"], columns=["a", "b"], data=[[1, 2], [3, 4]])
     factory = MatrixUriMapperFactory(matrix_service=matrix_service)
