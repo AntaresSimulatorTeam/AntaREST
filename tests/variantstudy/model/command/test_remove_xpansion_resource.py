@@ -20,7 +20,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestRemoveXpansionResource:
     @staticmethod
-    def set_up(empty_study: FileStudy):
+    def set_up(empty_study: FileStudy) -> None:
         empty_study.tree.save(
             {
                 "user": {
@@ -46,7 +46,7 @@ class TestRemoveXpansionResource:
         (xpansion_path / "constraints" / "constraints1.ini").touch()
         (xpansion_path / "constraints" / "constraints2.txt").touch()
 
-    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
 
@@ -89,7 +89,7 @@ class TestRemoveXpansionResource:
             resource_path = empty_study.config.study_path / "user" / "expansion" / "capa" / file_name
             assert not resource_path.exists()
 
-    def test_error_case_for_constraint(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_error_case_for_constraint(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
         file_name = "constraints1"
@@ -111,7 +111,7 @@ class TestRemoveXpansionResource:
             in output.message
         )
 
-    def test_error_case_for_weight(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_error_case_for_weight(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
         file_name = "weights1"
@@ -144,7 +144,9 @@ class TestRemoveXpansionResource:
             "already-installed-indirect-link-profile",
         ],
     )
-    def test_error_case_for_capa(self, empty_study_870: FileStudy, command_context: CommandContext, profile: str):
+    def test_error_case_for_capa(
+        self, empty_study_870: FileStudy, command_context: CommandContext, profile: str
+    ) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
         file_name = "capa1"

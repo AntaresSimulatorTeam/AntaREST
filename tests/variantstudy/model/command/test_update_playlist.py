@@ -18,7 +18,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdatePlaylist:
-    def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
 
         study.tree.save(5, ["settings", "generaldata", "general", "nbyears"])
@@ -44,7 +44,7 @@ class TestUpdatePlaylist:
             "playlist_year_weight": ["0,3.2", "2,4"],
         }
 
-    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
 
         # Try to give a negative value for the year

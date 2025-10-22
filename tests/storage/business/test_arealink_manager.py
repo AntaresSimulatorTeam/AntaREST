@@ -14,8 +14,9 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.area_management import AreaCreation, AreaManager, UpdateAreaUi
+from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
+from antarest.study.business.model.area_model import AreaCreation, AreaUIUpdate
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -40,7 +41,7 @@ def test_area_crud(
     area_manager.create_area(study, AreaCreation(name="test"))
     assert len(file_study.config.areas.keys()) == 1
 
-    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
+    area_manager.update_area_ui(study, "test", AreaUIUpdate(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
     assert file_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
         "x": 100,
         "y": 200,
@@ -178,7 +179,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "id": "a3",
         },
     ]
-    areas = area_manager.get_all_areas(study_interface)
+    areas = area_manager.get_all_areas_info(study_interface)
     assert [area.model_dump() for area in areas] == expected_areas
 
     # `AreaType.DISTRICT` is now ignored but kept for backward compatibility.
@@ -213,7 +214,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "id": "a3",
         },
     ]
-    all_areas = area_manager.get_all_areas(study_interface)
+    all_areas = area_manager.get_all_areas_info(study_interface)
     assert expected_all == [area.model_dump() for area in all_areas]
 
     file_tree_mock.get.side_effect = [

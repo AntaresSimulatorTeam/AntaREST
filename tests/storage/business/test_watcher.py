@@ -12,7 +12,7 @@
 import logging
 import os
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from multiprocessing import Pool
 from pathlib import Path
 from unittest import mock
@@ -41,7 +41,7 @@ from tests.helpers import create_study
 from tests.storage.conftest import SimpleSyncTaskService
 
 
-def build_config(root: Path, desktop_mode=False) -> Config:
+def build_config(root: Path, desktop_mode: bool = False) -> Config:
     return Config(
         desktop_mode=desktop_mode,
         storage=StorageConfig(
@@ -169,7 +169,7 @@ def study_tree(tmp_path: Path) -> Path:
 
 
 @pytest.mark.unit_test
-def test_scan(study_tree: Path):
+def test_scan(study_tree: Path) -> None:
     clean_files()
 
     service = Mock()
@@ -190,8 +190,8 @@ def test_scan(study_tree: Path):
 
 
 @pytest.mark.unit_test
-def test_scan_recursive_false(study_tree: Path, db_session: Session):
-    def count_studies():
+def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
+    def count_studies() -> int:
         return db_session.query(Study).count()
 
     clean_files()
@@ -247,15 +247,15 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session):
     assert repository.delete.call_count == 0
 
     # We simulate three days went by, now a delete should be triggered
-    in_3_days = datetime.utcnow() + timedelta(days=3)
+    in_3_days = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=3)
     with mock.patch("antarest.study.service.datetime") as mock_datetime:
-        mock_datetime.utcnow.return_value = in_3_days
+        mock_datetime.now.return_value = mock.Mock(replace=mock.Mock(return_value=in_3_days))
         watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
         assert repository.delete.call_count == 1
 
 
 @pytest.mark.unit_test
-def test_partial_scan(tmp_path: Path, caplog: t.Any):
+def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
@@ -325,7 +325,7 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any):
 
 
 @pytest.mark.unit_test
-def test_scan_disabled_exception(study_tree: Path):
+def test_scan_disabled_exception(study_tree: Path) -> None:
     clean_files()
 
     # Build a configuration with desktop_mode enabled
@@ -347,7 +347,7 @@ def process(x: int) -> bool:
 
 
 @pytest.mark.unit_test
-def test_get_lock():
+def test_get_lock() -> None:
     clean_files()
 
     pool = Pool()

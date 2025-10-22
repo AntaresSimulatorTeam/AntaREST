@@ -13,7 +13,7 @@ import functools
 import logging
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
@@ -184,23 +184,6 @@ class LauncherService:
                         launcher_params.__getattribute__(ext),
                     )
 
-    def _before_import_hooks(
-        self,
-        job_id: str,
-        study_id: str,
-        study_output_path: Path,
-        launcher_opts: LauncherParametersDTO,
-    ) -> None:
-        for ext in self.extensions:
-            if launcher_opts is not None and getattr(launcher_opts, ext, None) is not None:
-                logger.info(f"Applying extension {ext} before_import_hook on job {job_id}")
-                self.extensions[ext].before_import_hook(
-                    job_id,
-                    study_id,
-                    study_output_path,
-                    getattr(launcher_opts, ext),
-                )
-
     def update(
         self,
         job_uuid: str,
@@ -217,8 +200,7 @@ class LauncherService:
                 job_result.output_id = output_id
                 final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
                 if final_status:
-                    # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                    job_result.completion_date = datetime.utcnow()
+                    job_result.completion_date = datetime.now(timezone.utc).replace(tzinfo=None)
                 self.job_result_repository.save(job_result)
                 self.event_bus.push(
                     Event(
@@ -552,12 +534,6 @@ class LauncherService:
                 ),
             )
 
-            self._before_import_hooks(
-                job_id,
-                job_result.study_id,
-                output_true_path,
-                job_launch_params,
-            )
             self._save_solver_stats(job_result, output_true_path)
             if additional_logs and not output_is_zipped:
                 for log_name, log_paths in additional_logs.items():

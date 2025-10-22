@@ -25,7 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 
 
 @mock.patch("time.time", mock.MagicMock(return_value=12345))
-def test_lifecycle():
+def test_lifecycle() -> None:
     cache = LocalCache(CacheConfig())
     config = FileStudyTreeConfigDTO(
         study_path=Path("somepath"),

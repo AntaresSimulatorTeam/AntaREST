@@ -18,7 +18,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 @pytest.mark.unit_test
-def test_update_comments(empty_study_870: FileStudy, command_context: CommandContext):
+def test_update_comments(empty_study_870: FileStudy, command_context: CommandContext) -> None:
     study_path = empty_study_870.config.study_path
     study_version = empty_study_870.config.version
     comments = "comments"

@@ -21,7 +21,6 @@ import type {
   FileStudyTreeConfigDTO,
   LaunchJob,
   LaunchJobDTO,
-  LaunchOptions,
   MatrixAggregationResult,
   StudyLayer,
   StudyMetadata,
@@ -245,25 +244,13 @@ export const importStudy = async (
   return res.data;
 };
 
-export const launchStudy = async (
-  sid: string,
-  options: LaunchOptions = {},
-  version: string | undefined = undefined,
-  launcher: string | undefined = undefined,
-): Promise<string> => {
-  const res = await client.post(`/v1/launcher/run/${sid}`, options, {
-    params: { version, launcher },
-  });
-  return res.data;
-};
-
 interface RangeWithDefault {
   min: number;
   max: number;
   default: number;
 }
 
-interface Launcher {
+export interface Launcher {
   id: string;
   name: string;
   nbCores: RangeWithDefault;
@@ -294,7 +281,10 @@ interface LauncherMetrics {
 
 export const getLauncherMetrics = async (launcherId?: string): Promise<LauncherMetrics> => {
   const res = await client.get("/v1/launcher/load", {
-    params: { launcher_id: launcherId },
+    params: {
+      // If `launcherId` is `undefined`, the metrics for the default launcher will be returned
+      launcher_id: launcherId,
+    },
   });
   return res.data;
 };

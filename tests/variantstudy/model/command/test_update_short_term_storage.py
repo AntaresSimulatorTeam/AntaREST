@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateShortTermSorage:
-    def _set_up(self, study: FileStudy, command_context: CommandContext):
+    def _set_up(self, study: FileStudy, command_context: CommandContext) -> None:
         CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
         CreateArea(area_name="de", command_context=command_context, study_version=study.config.version).apply(study)
         CreateSTStorage(
@@ -50,7 +50,7 @@ class TestUpdateShortTermSorage:
 
     def test_nominal_case(
         self, empty_study_880: FileStudy, empty_study_920: FileStudy, command_context: CommandContext
-    ):
+    ) -> None:
         for study in [empty_study_880, empty_study_920]:
             self._set_up(study, command_context)
             study_version = study.config.version
@@ -159,7 +159,7 @@ class TestUpdateShortTermSorage:
                 expected_de_content["storage_3"]["group"] = "my design !!!"  # allowed and written in lower case
             assert de_content == expected_de_content
 
-    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
         self._set_up(study, command_context)
         study_version = study.config.version

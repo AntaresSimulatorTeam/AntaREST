@@ -15,22 +15,25 @@ import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
 import pytest
 from fastapi import FastAPI
+from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.study_download_utils import BadOutputFormat
@@ -50,23 +53,29 @@ ADMIN = JWTUser(
 )
 
 
-def create_test_client(service: StudyService) -> TestClient:
-    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
+@pytest.fixture
+def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
+    app = FastAPI(title=__name__)
+    app.add_middleware(
+        DBSessionMiddleware,
+        custom_engine=db_engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+    build_ctxt = create_app_ctxt(app)
     build_study_service(
         build_ctxt,
         cache=Mock(),
         user_service=Mock(),
         task_service=Mock(),
         file_transfer_manager=Mock(),
-        study_service=service,
+        study_service=storage_service,
         matrix_service=Mock(spec=MatrixService),
-        config=service.storage_service.raw_study_service.config,
+        config=storage_service.storage_service.raw_study_service.config,
     )
     return TestClient(build_ctxt.build())
 
 
-def assert_url_content(storage_service: StudyService, url: str, expected_output: dict) -> None:
-    client = create_test_client(storage_service)
+def assert_url_content(client: TestClient, url: str, expected_output: dict[str, Any] | str) -> None:
     res = client.get(url)
     assert_study(res.json(), expected_output)
 
@@ -74,7 +83,7 @@ def assert_url_content(storage_service: StudyService, url: str, expected_output:
 def assert_with_errors(
     storage_service: StudyService,
     url: str,
-    expected_output: Union[str, dict],
+    expected_output: Union[str, dict[str, Any]],
     formatted: bool = True,
 ) -> None:
     url = url[len("/v1/studies/") :]
@@ -98,7 +107,7 @@ def assert_with_errors(
         (f"/v1/studies/{UUID}/raw?path=settings/simulations", {}),
     ],
 )
-def test_sta_mini_settings(storage_service, url: str, expected_output: str):
+def test_sta_mini_settings(storage_service: StudyService, url: str, expected_output: str) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -121,9 +130,9 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_layers_layers(storage_service, url: str, expected_output: str):
+def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: str) -> None:
     assert_url_content(
-        storage_service=storage_service,
+        client=client,
         url=url,
         expected_output=expected_output,
     )
@@ -145,7 +154,7 @@ def test_sta_mini_layers_layers(storage_service, url: str, expected_output: str)
         (f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/iconindex", 0),
     ],
 )
-def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
+def test_sta_mini_desktop(storage_service: StudyService, url: str, expected_output: str) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -168,18 +177,19 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_study_antares(storage_service, url: str, expected_output: str):
+def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: str) -> None:
     assert_url_content(
-        storage_service=storage_service,
+        client=client,
         url=url,
         expected_output=expected_output,
     )
 
 
-buffer = io.BytesIO()
-df = pd.DataFrame(np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760))
-df.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
-expected_min_gen_response = buffer.getvalue()
+def expected_min_gen_response() -> bytes:
+    buffer = io.BytesIO()
+    df = pd.DataFrame(np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760))
+    df.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
+    return buffer.getvalue()
 
 
 @with_admin_user
@@ -276,7 +286,7 @@ expected_min_gen_response = buffer.getvalue()
         ),
         pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
-            expected_min_gen_response,
+            expected_min_gen_response(),
             False,
             id="empty_matrix_unformatted",
         ),
@@ -311,7 +321,7 @@ expected_min_gen_response = buffer.getvalue()
         ),
     ],
 )
-def test_sta_mini_input(storage_service, url: str, expected_output: dict, formatted: bool):
+def test_sta_mini_input(storage_service: StudyService, url: str, expected_output: Any, formatted: bool) -> None:
     assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output, formatted=formatted)
 
 
@@ -440,7 +450,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict, format
         ),
     ],
 )
-def test_sta_mini_output(storage_service, url: str, expected_output: dict):
+def test_sta_mini_output(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -480,7 +490,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
         ),
     ],
 )
-def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
+def test_sta_mini_expansion(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -490,13 +500,15 @@ def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
 
 @with_admin_user
 @pytest.mark.integration_test
-def test_sta_mini_copy(storage_service, tmp_path: Path, matrix_service: ISimpleMatrixService) -> None:
+def test_sta_mini_copy(
+    storage_service: StudyService, tmp_path: Path, matrix_service: ISimpleMatrixService, client: TestClient
+) -> None:
     source_study_name = UUID
     destination_study_name = "copy-STA-mini"
 
     storage_service.job_result_repository.find_by_study_and_output_ids.return_value = []
 
-    client = create_test_client(storage_service)
+    client = client
     result = client.post(f"/v1/studies/{source_study_name}/copy?study_name={destination_study_name}&use_task=false")
 
     assert result.status_code == HTTPStatus.CREATED.value
@@ -529,7 +541,7 @@ def test_sta_mini_copy(storage_service, tmp_path: Path, matrix_service: ISimpleM
 
 @with_admin_user
 @pytest.mark.integration_test
-def test_sta_mini_list_studies(storage_service) -> None:
+def test_sta_mini_list_studies(client: TestClient) -> None:
     expected_output = {
         UUID: {
             "id": UUID,
@@ -553,7 +565,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
     }
     url = "/v1/studies"
     assert_url_content(
-        storage_service=storage_service,
+        client=client,
         url=url,
         expected_output=expected_output,
     )
@@ -576,12 +588,10 @@ def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_
 
 @with_admin_user
 @pytest.mark.integration_test
-def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
+def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study = storage_service.get_study_path(UUID)
-    sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
+    sta_mini_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
-
-    client = create_test_client(storage_service)
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
     result = client.post("/v1/studies/_import", files={"study": study_data})
@@ -591,15 +601,13 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
 
 @with_admin_user
 @pytest.mark.integration_test
-def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
+def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study_output = storage_service.get_study_path(UUID) / "output" / "20201014-1422eco-hello"
-    sta_mini_output_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study_output)
+    sta_mini_output_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study_output)
 
     shutil.rmtree(path_study_output)
 
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
-
-    client = create_test_client(storage_service)
 
     study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
     result = client.post(
@@ -633,7 +641,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
         ),
     ],
 )
-def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
+def test_sta_mini_filter(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -642,7 +650,7 @@ def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
 
 
 @with_admin_user
-def test_sta_mini_output_variables_nominal_case(output_service):
+def test_sta_mini_output_variables_nominal_case(output_service: Any) -> None:
     variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
     assert variables["area"] == [
         "OV. COST",
@@ -696,13 +704,13 @@ def test_sta_mini_output_variables_nominal_case(output_service):
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_mc_ind(output_service):
+def test_sta_mini_output_variables_no_mc_ind(output_service: Any) -> None:
     with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
         output_service.output_variables_information(UUID, "20201014-1427eco")
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_links(output_service):
+def test_sta_mini_output_variables_no_links(output_service: OutputService) -> None:
     study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
@@ -712,7 +720,7 @@ def test_sta_mini_output_variables_no_links(output_service):
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_areas(output_service):
+def test_sta_mini_output_variables_no_areas(output_service: OutputService) -> None:
     study_path = Path(output_service._study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"

@@ -19,7 +19,6 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import MatrixService
-from antarest.study.business.model.area_model import UpdateAreaUi
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -34,7 +33,10 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 COMMANDS = [
     pytest.param(
         CommandDTO(
-            action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8
+            action=CommandName.CREATE_AREA.value,
+            args={"area_name": "area_name"},
+            study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_area",
@@ -44,6 +46,7 @@ COMMANDS = [
             action=CommandName.CREATE_AREA.value,
             args=[{"area_name": "area_name"}, {"area_name": "area2"}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_area2",
@@ -62,12 +65,11 @@ COMMANDS = [
             action=CommandName.UPDATE_AREA_UI.value,
             args={
                 "area_id": "id",
-                "area_ui": UpdateAreaUi(
-                    x=100, y=100, color_rgb=(100, 100, 100), layer_x={}, layer_y={}, layer_color={}
-                ),
                 "layer": "0",
+                "parameters": {"x": 100, "y": 100, "colorRgb": [100, 100, 100]},
             },
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_area_ui",
@@ -106,6 +108,15 @@ COMMANDS = [
         ),
         None,
         id="update_layer",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_LAYER_AREAS.value,
+            args={"layer_id": "layer_id", "area_ids": ["area1", "area2"]},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_layer_areas",
     ),
     pytest.param(
         CommandDTO(
@@ -992,6 +1003,38 @@ COMMANDS = [
         None,
         id="replace_xpansion_adequacy_criterion",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_ALLOCATION.value,
+            args=[
+                {
+                    "area_id": "fr",
+                    "allocation": {
+                        "allocation": [{"area_id": "fr", "coefficient": 100}, {"area_id": "be", "coefficient": 2.4}]
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_hydro_allocation",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_CORRELATION.value,
+            args=[
+                {
+                    "area_id": "fr",
+                    "correlation": {
+                        "correlation": [{"areaId": "be", "coefficient": 2.4}, {"areaId": "fr", "coefficient": 100}]
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_hydro_correlation",
+    ),
 ]
 
 
@@ -1034,7 +1077,7 @@ class TestCommandFactory:
         command_dto: CommandDTO,
         expected_args: Optional[Dict[str, Any]],
         command_factory: CommandFactory,
-    ):
+    ) -> None:
         commands = command_factory.to_command(command_dto=command_dto)
 
         expected_args = expected_args or command_dto.args
@@ -1057,7 +1100,7 @@ class TestCommandFactory:
 
 
 @pytest.mark.unit_test
-def test_unknown_command():
+def test_unknown_command() -> None:
     with pytest.raises(NotImplementedError):
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
@@ -1069,7 +1112,7 @@ def test_unknown_command():
 
 
 @pytest.mark.unit_test
-def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
+def test_parse_create_cluster_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
         version=1,
@@ -1092,7 +1135,7 @@ def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
 
 
 @pytest.mark.unit_test
-def test_parse_create_cluster_dto_v2(command_factory: CommandFactory):
+def test_parse_create_cluster_dto_v2(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
         version=2,
@@ -1113,7 +1156,7 @@ def test_parse_create_cluster_dto_v2(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
+def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         id="9f01931b-0f18-4477-9ef4-ac682c970d75",
         action=CommandName.CREATE_ST_STORAGE.value,
@@ -1147,7 +1190,7 @@ def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
     assert dto.args["parameters"]["name"] == "battery storage_2 candidate"
 
 
-def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
+def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
         version=1,
@@ -1167,7 +1210,7 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
+def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
         version=2,
@@ -1184,7 +1227,7 @@ def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_link_dto_v1(command_factory: CommandFactory):
+def test_parse_create_link_dto_v1(command_factory: CommandFactory) -> None:
     for parameters in [{"link-width": 0.56}, None]:  # legacy cases
         dto = CommandDTO(
             action=CommandName.CREATE_LINK.value,
@@ -1203,7 +1246,7 @@ def test_parse_create_link_dto_v1(command_factory: CommandFactory):
             assert dto.args["parameters"]["linkWidth"] == 0.56
 
 
-def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory):
+def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_BINDING_CONSTRAINT.value,
         args=[
@@ -1241,7 +1284,7 @@ def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory)
     }
 
 
-def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory):
+def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
         args={
@@ -1272,7 +1315,7 @@ def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory)
     }
 
 
-def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory):
+def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
         args={
@@ -1307,7 +1350,7 @@ def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory
     }
 
 
-def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory):
+def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
         args={"id": "id"},
@@ -1323,7 +1366,7 @@ def test_parse_legacy_command_remove_binding_constraint(command_factory: Command
     assert dto.args == {"ids": ["id"]}
 
 
-def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
+def test_parse_update_scenario_builder_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_SCENARIO_BUILDER.value,
         version=1,
@@ -1355,7 +1398,7 @@ def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
     }
 
 
-def test_parse_legacy_command_update_comments(command_factory: CommandFactory):
+def test_parse_legacy_command_update_comments(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_COMMENTS.value,
         args={"comments": "new comment"},
@@ -1370,7 +1413,7 @@ def test_parse_legacy_command_update_comments(command_factory: CommandFactory):
     assert dto.args == {"comments": "new comment"}
 
 
-def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
+def test_parse_legacy_command_update_playlist(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_PLAYLIST.value,
         args={
@@ -1391,7 +1434,60 @@ def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
     assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}
 
 
-def test_parse_legacy_command_create_district(command_factory: CommandFactory):
+def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory) -> None:
+    """Test conversion from v1 format (area_ui) to v2 format (parameters)"""
+    dto = CommandDTO(
+        action=CommandName.UPDATE_AREA_UI.value,
+        args={
+            "area_id": "area1",
+            "area_ui": {
+                "x": 100,
+                "y": 200,
+                "color_rgb": [255, 128, 64],
+                "layer_x": {"0": 100},  # Should be ignored
+                "layer_y": {"0": 200},  # Should be ignored
+                "layer_color": {"0": "255, 128, 64"},  # Should be ignored
+            },
+            "layer": "0",
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_area_ui"
+    assert dto.version == 2
+    assert dto.args == {
+        "area_id": "area1",
+        "layer": "0",
+        "parameters": {"x": 100, "y": 200, "colorRgb": [255, 128, 64]},
+    }
+    # Verify old layer_* fields are not in the converted parameters
+    assert "layer_x" not in dto.args
+    assert "layer_y" not in dto.args
+    assert "layer_color" not in dto.args
+    assert "area_ui" not in dto.args
+
+
+def test_update_area_ui_invalid_layer(command_factory: CommandFactory) -> None:
+    """Test that invalid layer value raises validation error"""
+    dto = CommandDTO(
+        action=CommandName.UPDATE_AREA_UI.value,
+        args={
+            "area_id": "area1",
+            "layer": "invalid",  # Invalid: not an integer
+            "parameters": {"x": 100, "y": 200, "colorRgb": [255, 128, 64]},
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=2,
+    )
+    with pytest.raises(ValueError, match="Layer must be a valid integer string"):
+        command_factory.to_command(dto)
+
+
+def test_parse_legacy_command_create_district(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_DISTRICT.value,
         args={
@@ -1447,7 +1543,7 @@ def test_parse_legacy_command_create_district(command_factory: CommandFactory):
     }
 
 
-def test_parse_legacy_command_update_district(command_factory: CommandFactory):
+def test_parse_legacy_command_update_district(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_DISTRICT.value,
         args={"id": "id", "filter_items": ["a"]},
@@ -1461,3 +1557,22 @@ def test_parse_legacy_command_update_district(command_factory: CommandFactory):
     assert dto.action == "update_district"
     assert dto.version == 2
     assert dto.args == {"parameters": {"areas": ["a"]}, "id": "id"}
+
+
+def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory) -> None:
+    """Test that version 1 format (with metadata field) can still be loaded and metadata is dropped."""
+    dto = CommandDTO(
+        action=CommandName.CREATE_AREA.value,
+        args={"area_name": "test_area", "metadata": {"country": "FR", "tag": "test"}},
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_area"
+    assert dto.version == 2
+    # The metadata should be dropped and not stored in the converted command
+    assert dto.args == {"area_name": "test_area"}
+    assert "metadata" not in dto.args

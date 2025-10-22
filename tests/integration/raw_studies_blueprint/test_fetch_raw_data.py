@@ -36,7 +36,7 @@ from tests.integration.utils import wait_for
 
 def _check_endpoint_response(
     study_type: str, res: Response, client: TestClient, study_id: str, expected_msg: str, exception: str
-):
+) -> None:
     # The command will only fail when applied so on raw studies only.
     # So we have to differentiate the test based on the study type.
     if study_type == "raw":
@@ -71,7 +71,9 @@ class TestFetchRawData:
     """
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_get_study_data(self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str):
+    def test_get_study_data(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str
+    ) -> None:
         """
         Test the `get_study_data` endpoint for fetching raw data from a study.
 
@@ -190,10 +192,9 @@ class TestFetchRawData:
             # Checks created commands
             res = client.get(f"/v1/studies/{internal_study_id}/commands")
             commands = res.json()
-            # First command is created automatically to respect owners, we ignore it.
-            assert len(commands) == 2
-            assert commands[1]["action"] == "create_user_resource"
-            assert commands[1]["args"] == {
+            assert len(commands) == 1
+            assert commands[0]["action"] == "create_user_resource"
+            assert commands[0]["args"] == {
                 "data": {"path": "somewhere/something.txt", "resource_type": "file", "content": "Goodbye Cruel World!"}
             }
 
@@ -573,7 +574,7 @@ class TestFetchOriginalFile:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Test the `get_study_file` endpoint for fetching for a file in its original format.
 

@@ -39,7 +39,6 @@ import {
   FormProvider,
   useForm,
   useFormContext as useFormContextOriginal,
-  type DeepPartial,
   type FieldPath,
   type FieldValues,
   type FormState,
@@ -57,7 +56,7 @@ import FormContext from "./FormContext";
 import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
-import { getDirtyValues, isMatch, ROOT_ERROR_KEY, stringToPath, toAutoSubmitConfig } from "./utils";
+import { isMatch, ROOT_ERROR_KEY, stringToPath, toAutoSubmitConfig } from "./utils";
 
 // TODO 1: Remove auto submit support when all forms that use it are migrated to manual submit.
 // TODO 2: Replace built-in validators by Zod (https://react-hook-form.com/docs/useform#resolver).
@@ -164,15 +163,8 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   const { getValues, setValue, setError, handleSubmit, formState, reset } = formApi;
 
-  // * /!\ `formState` is a proxy
-  const {
-    isSubmitting,
-    isSubmitSuccessful,
-    isDirty,
-    disabled: isDisabled,
-    dirtyFields,
-    errors,
-  } = formState;
+  // * /!\ `formState` is a Proxy
+  const { isSubmitting, isSubmitSuccessful, isDirty, disabled: isDisabled, errors } = formState;
 
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
@@ -257,7 +249,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
     const callback = handleSubmit(function onValid(data, event) {
       lastSubmittedData.current = data;
 
-      const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<typeof data>;
+      const dirtyValues: Partial<TFieldValues> = getValues(undefined, { dirtyFields: true });
 
       const toResolve = [];
 
@@ -322,6 +314,8 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // Prevent parent forms from also submitting if this form is nested
+    event.stopPropagation();
     requestSubmit();
   };
 

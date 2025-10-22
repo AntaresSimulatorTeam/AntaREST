@@ -14,11 +14,10 @@ from pathlib import Path
 
 import pytest
 
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, BindingConstraintFrequency
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_7_0
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     FileStudyTreeConfig,
@@ -69,7 +68,7 @@ def config() -> FileStudyTreeConfig:
     )
 
 
-def test_file_study_tree_config_dto(config: FileStudyTreeConfig):
+def test_file_study_tree_config_dto(config: FileStudyTreeConfig) -> None:
     config_dto = FileStudyTreeConfigDTO.from_build_config(config)
     assert sorted(list(config_dto.model_dump())) == sorted(list(config.__dict__))
     assert config_dto.to_build_config() == config
@@ -81,7 +80,7 @@ def test_file_study_tree_config_dto(config: FileStudyTreeConfig):
     assert parsed_config == config
 
 
-def test_file_study_tree_config_round_trip(config: FileStudyTreeConfig):
+def test_file_study_tree_config_round_trip(config: FileStudyTreeConfig) -> None:
     config_dict = FileStudyTreeConfigDTO.from_build_config(config).model_dump()
     parsed_config = validate_config(STUDY_VERSION_7_0, config_dict)
     assert parsed_config == config

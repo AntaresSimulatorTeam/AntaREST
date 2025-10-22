@@ -106,7 +106,7 @@ def test_import_study(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_fix_root(tmp_path: Path):
+def test_fix_root(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
     study_nested_root = study_path / "nested" / "real_root"

@@ -14,7 +14,7 @@ import json
 import math
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Union
 from unittest.mock import Mock, call
@@ -37,7 +37,7 @@ from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, File
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
-from antarest.core.model import PermissionInfo
+from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
@@ -53,7 +53,7 @@ from antarest.launcher.model import (
 from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
-from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
+from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -221,9 +221,9 @@ class TestLauncherService:
         assert launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
 
     @pytest.mark.unit_test
-    def test_service_get_jobs_from_database(self, db_session) -> None:
+    def test_service_get_jobs_from_database(self, db_session: DBSessionMiddleware) -> None:
         launcher_mock = Mock()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         identity_instance = Identity(id=1)
         fake_execution_result = [
             JobResult(

@@ -13,12 +13,13 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from antarest.login.model import Bot, Group, Password, Role, RoleType, User, UserLdap
+from antarest.core.roles import RoleType
+from antarest.login.model import Bot, Group, Password, Role, User, UserLdap
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 
 
 @pytest.mark.unit_test
-def test_users(db_session: Session):
+def test_users(db_session: Session) -> None:
     with db_session:
         repo = UserRepository(session=db_session)
         a = User(
@@ -40,7 +41,7 @@ def test_users(db_session: Session):
 
 
 @pytest.mark.unit_test
-def test_users_ldap(db_session: Session):
+def test_users_ldap(db_session: Session) -> None:
     repo = UserLdapRepository(session=db_session)
     with repo.session:
         a = UserLdap(name="a", external_id="b")
@@ -55,7 +56,7 @@ def test_users_ldap(db_session: Session):
 
 
 @pytest.mark.unit_test
-def test_bots(db_session: Session):
+def test_bots(db_session: Session) -> None:
     repo = BotRepository(session=db_session)
     with repo.session:
         a = Bot(name="a", owner=1)
@@ -77,7 +78,7 @@ def test_bots(db_session: Session):
 
 
 @pytest.mark.unit_test
-def test_groups(db_session: Session):
+def test_groups(db_session: Session) -> None:
     repo = GroupRepository(session=db_session)
     with repo.session:
         a = Group(name="a")
@@ -94,7 +95,7 @@ def test_groups(db_session: Session):
 
 
 @pytest.mark.unit_test
-def test_roles(db_session: Session):
+def test_roles(db_session: Session) -> None:
     repo = RoleRepository(session=db_session)
     with repo.session:
         a = Role(type=RoleType.ADMIN, identity=User(id=0), group=Group(id="group"))

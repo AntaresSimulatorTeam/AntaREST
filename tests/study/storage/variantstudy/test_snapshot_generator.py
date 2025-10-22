@@ -22,6 +22,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 from antares.study.version import StudyVersion
+from typing_extensions import override
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.exceptions import VariantGenerationError
@@ -704,9 +705,11 @@ class RegisterNotification(ITaskNotifier):
     def __init__(self) -> None:
         self.notifications: t.MutableSequence[str] = []
 
+    @override
     def notify_message(self, notification: str) -> None:
         self.notifications.append(json.loads(notification))
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return
 
@@ -715,9 +718,11 @@ class FailingNotifier(ITaskNotifier):
     def __init__(self) -> None:
         pass
 
+    @override
     def notify_message(self, notification: str) -> None:
         logger.warning("Something went wrong")
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return
 
@@ -763,8 +768,8 @@ class TestSnapshotGenerator:
             workspace="default",
             path=str(study_dir),
             version="860",
-            created_at=datetime.datetime.utcnow(),
-            updated_at=datetime.datetime.utcnow(),
+            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             additional_data=StudyAdditionalData(author="john.doe"),
             owner_id=jwt_user.id,
         )
@@ -1125,7 +1130,9 @@ class TestSnapshotGenerator:
         )
 
         err_msg = (
-            f"Failed to generate variant study {variant_study.id}: Area 'North' already exists and could not be created"
+            f"Failed to generate variant study {variant_study.id}: "
+            f"Unexpected exception occurred when trying to apply command CommandName.CREATE_AREA: "
+            f"Area 'North' already exists and could not be created"
         )
         with pytest.raises(VariantGenerationError, match=re.escape(err_msg)):
             generator.generate_snapshot(

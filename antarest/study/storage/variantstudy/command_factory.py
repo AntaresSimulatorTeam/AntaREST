@@ -61,6 +61,9 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
+from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
+from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
+from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
     ReplaceXpansionAdequacyCriterion,
@@ -109,6 +112,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_LAYER.value: CreateLayer,
     CommandName.REMOVE_LAYER.value: RemoveLayer,
     CommandName.UPDATE_LAYER.value: UpdateLayer,
+    CommandName.REPLACE_LAYER_AREAS.value: ReplaceLayerAreas,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,
@@ -161,6 +165,8 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_THEMATIC_TRIMMING.value: UpdateThematicTrimming,
     CommandName.UPDATE_ADEQUACY_PATCH_PARAMETERS.value: UpdateAdequacyPatchParameters,
     CommandName.UPDATE_TIMESERIES_CONFIG.value: UpdateTimeSeriesConfig,
+    CommandName.REPLACE_HYDRO_ALLOCATION.value: ReplaceHydroAllocation,
+    CommandName.REPLACE_HYDRO_CORRELATION.value: ReplaceHydroCorrelation,
 }
 
 

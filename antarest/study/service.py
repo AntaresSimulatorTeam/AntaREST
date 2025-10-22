@@ -17,7 +17,7 @@ import http
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
 from uuid import uuid4
@@ -62,14 +62,13 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user, get_user_id
+from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
-from antarest.study.business.areas.properties_management import AreaPropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
@@ -80,8 +79,10 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
+from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
@@ -371,10 +372,14 @@ class RawStudyInterface(StudyInterface):
         self,
         raw_service: RawStudyService,
         variant_service: VariantStudyService,
+        user_service: LoginService,
+        repository: StudyMetadataRepository,
         study: RawStudy,
     ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
+        self._user_service = user_service
+        self._repository = repository
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
@@ -404,8 +409,11 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         should_invalidate_cache = False
         file_study = self.get_files()
+
         for command in commands:
-            result = command.apply(FileStudyTreeDao(file_study), listener)
+            result = command.apply(
+                FileStudyTreeDao(file_study, command.command_context.generator_matrix_constants), listener
+            )
             if result.should_invalidate_cache:
                 should_invalidate_cache = True
             if not result.status:
@@ -419,6 +427,20 @@ class RawStudyInterface(StudyInterface):
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
+        self._update_editor(file_study)
+
+    def _update_editor(self, file_study: FileStudy) -> None:
+        user = self._user_service.get_identity(get_user_impersonator())
+        if user:
+            user_name = user.name or ""
+            study_antares = file_study.tree.get(["study", "antares"])
+            study_antares["editor"] = user.name
+            file_study.tree.save(study_antares, ["study", "antares"])
+            if not self._study.additional_data:
+                self._study.additional_data = StudyAdditionalData(author=user_name, editor=user_name)
+            else:
+                self._study.additional_data.editor = user_name
+            self._repository.save(self._study)
 
 
 class VariantStudyInterface(StudyInterface):
@@ -485,7 +507,6 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.area_manager = AreaManager(command_context)
-        self.area_properties_manager = AreaPropertiesManager(command_context)
         self.layer_manager = LayerManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
@@ -496,7 +517,6 @@ class StudyService:
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
-        self.properties_manager = AreaPropertiesManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
         self.thermal_manager = ThermalManager(command_context)
         self.st_storage_manager = STStorageManager(command_context)
@@ -508,7 +528,7 @@ class StudyService:
         self.binding_constraint_manager = BindingConstraintManager(command_context)
         self.correlation_manager = CorrelationManager(command_context)
         self.table_mode_manager = TableModeManager(
-            self.area_properties_manager,
+            self.area_manager,
             self.links_manager,
             self.thermal_manager,
             self.renewable_manager,
@@ -731,7 +751,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         logger.info("Study metadata requested for study %s by user %s", uuid, get_user_id())
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
-        study.last_access = datetime.utcnow()
+        study.last_access = datetime.now(timezone.utc).replace(tzinfo=None)
         self.repository.save(study)
         return self.storage_service.get_storage(study).get_study_information(study)
 
@@ -811,6 +831,8 @@ class StudyService:
             return RawStudyInterface(
                 self.storage_service.raw_study_service,
                 self.storage_service.variant_study_service,
+                self.user_service,
+                self.repository,
                 study,
             )
         else:
@@ -851,13 +873,14 @@ class StudyService:
 
         author = self.get_user_name()
 
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         raw = RawStudy(
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(study_path),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author, editor=author),
         )
@@ -898,7 +921,7 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
-        study.last_access = datetime.utcnow()
+        study.last_access = datetime.now(timezone.utc).replace(tzinfo=None)
         self.repository.save(study)
         study_storage_service = self.storage_service.get_storage(study)
         return study_storage_service.get_synthesis(study)
@@ -945,7 +968,7 @@ class StudyService:
         Returns:
 
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
         if directory:
@@ -1131,7 +1154,6 @@ class StudyService:
                 destination_folder,
                 output_ids,
                 with_outputs,
-                self.get_user_name(),
             )
 
             self._save_study(study, group_ids)
@@ -1346,7 +1368,7 @@ class StudyService:
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
-        study.updated_at = datetime.utcnow()
+        study.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
         self._save_study(study, group_ids)
         self.normalize_study(study)
@@ -1644,19 +1666,19 @@ class StudyService:
             get_user_id(),
         )
 
-    def get_all_areas(
+    def get_all_areas_info(
         self,
         uuid: str,
-    ) -> List[Area]:
+    ) -> List[AreaInfo]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
-        return self.area_manager.get_all_areas(study_interface)
+        return self.area_manager.get_all_areas_info(study_interface)
 
     def get_all_areas_ui_info(
         self,
         uuid: str,
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, AreaUIData]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -1674,7 +1696,7 @@ class StudyService:
         self,
         uuid: str,
         area_creation_dto: AreaCreation,
-    ) -> Area:
+    ) -> AreaInfo:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -1732,7 +1754,7 @@ class StudyService:
         self,
         uuid: str,
         area_id: str,
-        area_ui: UpdateAreaUi,
+        area_ui: AreaUIUpdate,
         layer: str,
     ) -> None:
         study = self.get_study(uuid)
@@ -2205,11 +2227,12 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas: List[Area] = self.get_all_areas(study_id)
             if matrix_path.parts[-1] == "allocation":
-                hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
+                hydro_matrix: HydroCorrelationMatrix | HydroAllocationMatrix = (
+                    self.allocation_manager.get_allocation_matrix(study_interface)
+                )
             else:
-                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study_interface, [])  # type: ignore
+                hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         # Gets the data and checks given path existence

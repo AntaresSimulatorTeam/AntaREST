@@ -23,7 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 
 
-def test_lifecycle():
+def test_lifecycle() -> None:
     redis_client = Mock()
     cache = RedisCache(redis_client)
     config = FileStudyTreeConfigDTO(

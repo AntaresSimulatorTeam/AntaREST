@@ -24,7 +24,7 @@ from antarest.study.storage.variantstudy.model.command.update_district import Up
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_manage_district(empty_study_810: FileStudy, command_context: CommandContext):
+def test_manage_district(empty_study_810: FileStudy, command_context: CommandContext) -> None:
     empty_study = empty_study_810
     study_dao = FileStudyTreeDao(empty_study)
     area1 = "Area1"

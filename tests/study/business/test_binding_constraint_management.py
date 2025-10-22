@@ -14,16 +14,14 @@ import typing as t
 
 import pytest
 
-from antarest.study.business.binding_constraint_management import (
-    ClusterTerm,
-    ConstraintFilters,
-    ConstraintTerm,
-    LinkTerm,
-)
+from antarest.study.business.binding_constraint_management import ConstraintFilters
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
     BindingConstraintOperator,
+    ClusterTerm,
+    ConstraintTerm,
+    LinkTerm,
 )
 
 

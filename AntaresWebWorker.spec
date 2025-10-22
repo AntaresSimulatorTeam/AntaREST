@@ -3,7 +3,7 @@
 block_cipher = None
 
 a = Analysis(
-    ["antarest/worker/archive_worker_service.py"],
+    ["antarest/worker/archive_worker_main.py"],
     pathex=[],
     binaries=[],
     datas=[("resources", "resources")],

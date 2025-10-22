@@ -25,6 +25,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 import numpy as np
 import pandas as pd
 import pytest
+from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from starlette.responses import Response
@@ -198,8 +199,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="A",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
         additional_data=StudyAdditionalData(),
@@ -210,8 +211,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="B",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace="other",
         additional_data=StudyAdditionalData(),
@@ -222,8 +223,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="C",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace="other2",
         additional_data=StudyAdditionalData(),
@@ -304,7 +305,7 @@ def test_study_listing(db_session: Session) -> None:
 
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     # Studies in DB
     ma = create_raw_study(id="a", path="a", workspace="workspace1")
@@ -320,7 +321,7 @@ def test_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path="d",
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
         workspace="workspace1",
     )
     me = create_raw_study(
@@ -329,7 +330,7 @@ def test_sync_studies_from_disk() -> None:
         folder="e",
         name="e",
         created_at=now,
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
     )
     mg = create_raw_study(
@@ -404,7 +405,7 @@ def test_sync_studies_from_disk() -> None:
 
 
 @pytest.mark.unit_test
-def test_sync_unsuppported_study_from_disk(caplog) -> None:
+def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
     folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
 
@@ -414,7 +415,7 @@ def test_sync_unsuppported_study_from_disk(caplog) -> None:
     raw_service = Mock(spec=RawStudyService)
     service = build_study_service(raw_service, repository, config)
 
-    def fake_compatibility_check(study: Study):
+    def fake_compatibility_check(study: Study) -> None:
         if not hasattr(fake_compatibility_check, "call_count"):
             fake_compatibility_check.call_count = 0
 
@@ -449,7 +450,7 @@ def test_sync_unsuppported_study_from_disk(caplog) -> None:
 # noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_partial_sync_studies_from_disk() -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     ma = create_raw_study(id="a", path="a")
     mb = create_raw_study(id="b", path="b")
     mc = create_raw_study(
@@ -463,13 +464,13 @@ def test_partial_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path=f"directory{os.sep}d",
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = create_raw_study(
         id="e",
         path=f"directory{os.sep}e",
         created_at=now,
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
     fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])
     fe = StudyFolder(path=Path("directory/e"), workspace="workspace1", groups=[])
@@ -789,7 +790,7 @@ def test_download_output() -> None:
         name="name",
         ready=False,
         path="path",
-        expiration_date=datetime.utcnow(),
+        expiration_date=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     service.file_transfer_manager.request_download.return_value = export_file_download  # type: ignore
     task_id = "task-id"
@@ -1231,7 +1232,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
     study_mock.to_enhanced_json_summary.return_value = {
@@ -1265,7 +1266,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
@@ -1327,7 +1328,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     v1 = create_variant_study(id="variant_1", path=create_study_fs_mock(variant=True))
@@ -1346,7 +1347,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         raise ValueError(f"Unexpected study id: {study_id}")
 
     class ChildrenProvider:
-        def __init__(self):
+        def __init__(self) -> None:
             self.c0 = 0
             self.c1 = 0
 
@@ -1368,7 +1369,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
             raise ValueError(f"Unexpected study id: {parent_id}")
 
     class HasChildrenProvider:
-        def __init__(self):
+        def __init__(self) -> None:
             self.c1 = 0
             self.c2 = 0
 
@@ -1416,8 +1417,8 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
-    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
+    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})
+    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})
 
     variant_study = create_variant_study(
         id="variant-study",
@@ -1428,7 +1429,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         groups=[],
     )
     variant_study.generation_task = None
-    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})  # type: ignore[attr-defined]
+    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})
 
     def get_study_by_id(study_id: str) -> Study:
         if study_id == raw_study.id:
@@ -1444,12 +1445,16 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     raw_study_service.delete = Mock()
     raw_study_service.find_archive_path.return_value = str(tmp_path / "archive.zip")
 
+    from typing import Any, Callable
+
     variant_study_service = Mock(spec=VariantStudyService)
     variant_study_service.delete = Mock()
     variant_study_service.has_children.side_effect = lambda study: study.id == raw_study.id
     variant_study_service.get_children.return_value = [variant_study]
 
-    def walk_children(parent_id: str, fun, bottom_first: bool, include_parent: bool = True) -> None:
+    def walk_children(
+        parent_id: str, fun: Callable[[Any], None], bottom_first: bool, include_parent: bool = True
+    ) -> None:
         assert parent_id == raw_study.id
         assert bottom_first is True
         assert include_parent is False
@@ -1473,34 +1478,6 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     assert kwargs.get("include_parent") is False
 
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
-
-
-@pytest.mark.unit_test
-def test_edit_study_with_command() -> None:
-    study_id = str(uuid.uuid4())
-
-    service = build_study_service(
-        raw_study_service=Mock(),
-        repository=Mock(),
-        config=Mock(),
-    )
-    command = Mock()
-    service._create_edit_study_command = Mock(return_value=command)
-    study_service = Mock(spec=RawStudyService)
-    service.storage_service.get_storage = Mock(return_value=study_service)
-    raw_study = Mock(spec=RawStudy)
-    raw_study.version = "880"
-    raw_study.id = study_id
-
-    service._edit_study_using_command(study=raw_study, url="", data=[])
-    command.apply.assert_called()
-
-    variant_study = Mock(spec=VariantStudy)
-    variant_study.version = "880"
-    study_service = Mock(spec=VariantStudyService)
-    service.storage_service.get_storage = Mock(return_value=study_service)
-    service._edit_study_using_command(study=variant_study, url="", data=[])
-    service.storage_service.variant_study_service.append_commands.assert_called_once()
 
 
 @pytest.mark.unit_test
@@ -1642,7 +1619,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Archive output {study_id}/{output_zipped}",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.ARCHIVE,
                 ref_id=study_id,
             )
@@ -1652,7 +1629,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1662,7 +1639,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Archive output {study_id}/{output_unzipped}",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.ARCHIVE,
                 ref_id=study_id,
             )
@@ -1672,7 +1649,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1845,7 +1822,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),  # type: ignore
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1954,8 +1931,8 @@ def test_upgrade_study__raw_study__nominal(
         name=study_name,
         workspace=workspace,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version=current_version,
         additional_data=StudyAdditionalData(),
         archived=False,
@@ -2043,8 +2020,8 @@ def test_upgrade_study__variant_study__nominal(
         id=study_id,
         name=study_name,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version="720",
         additional_data=StudyAdditionalData(),
         archived=False,
@@ -2133,8 +2110,8 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
         name=study_name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version=old_version,
         additional_data=StudyAdditionalData(),
         archived=False,
@@ -2191,7 +2168,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_is_output_archived(tmp_path) -> None:
+def test_is_output_archived(tmp_path: Path) -> None:
     assert not is_output_archived(path_output=Path("fake_path"))
     assert is_output_archived(path_output=Path("fake_path.zip"))
 
