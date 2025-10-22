@@ -28,13 +28,14 @@ export default function OffsetInput(props: React.PropsWithChildren<Props>) {
         flexDirection: "column",
         alignItems: "center",
         position: "relative",
+        mr: 1,
       }}
     >
       <HighlightOffIcon
         sx={{
           position: "absolute",
           top: "-15px",
-          right: "-25px",
+          right: "-15px",
           color: "error.main",
           cursor: "pointer",
           "&:hover": {
