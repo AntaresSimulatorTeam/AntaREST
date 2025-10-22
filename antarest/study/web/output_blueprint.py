@@ -22,13 +22,14 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.aggregator_management import (
+from antarest.study.business.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.storage.output_model import OutputVariablesList
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -519,5 +520,15 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         return aggregate_links_raw_data__all(
             uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
         )
+
+    @bp.get(
+        "/studies/{uuid}/output/{output_id}/variables-list",
+        tags=[APITag.study_outputs],
+        summary="Retrieves the list of variables for a given output",
+    )
+    def get_output_variables_list(uuid: str, output_id: str) -> OutputVariablesList:
+        uuid = sanitize_uuid(uuid)
+        output_id = sanitize_string(output_id)
+        return output_service.get_output_variables_list(uuid, output_id)
 
     return bp
