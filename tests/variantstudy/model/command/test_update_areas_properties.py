@@ -25,7 +25,7 @@ from antarest.study.storage.variantstudy.model.command.update_areas_properties i
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_update_areas_properties(empty_study_870: FileStudy, command_context: CommandContext):
+def test_update_areas_properties(empty_study_870: FileStudy, command_context: CommandContext) -> None:
     empty_study = empty_study_870
     area_id = "area_test"
     CreateArea(area_name=area_id, command_context=command_context, study_version=empty_study.config.version).apply(

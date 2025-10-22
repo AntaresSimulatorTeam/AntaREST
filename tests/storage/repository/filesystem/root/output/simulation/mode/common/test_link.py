@@ -31,7 +31,7 @@ class TestOutputSimulationLinkItem:
             pytest.param(["values-monthly.txt", "id-annual.txt"]),
         ],
     )
-    def test_build_output_simulation_link_item(self, existing_files: t.List[str], tmp_path: Path):
+    def test_build_output_simulation_link_item(self, existing_files: t.List[str], tmp_path: Path) -> None:
         expected = {}
         for file in existing_files:
             tmp_path.joinpath(file).touch()

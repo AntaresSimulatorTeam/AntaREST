@@ -21,7 +21,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateAdvancedParameters:
-    def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
         general_data_content = study.tree.get(["settings", "generaldata"])
 
@@ -39,7 +39,7 @@ class TestUpdateAdvancedParameters:
 
         assert general_data_content == study.tree.get(["settings", "generaldata"])
 
-    def test_error_cases(self, command_context: CommandContext):
+    def test_error_cases(self, command_context: CommandContext) -> None:
         # Give fields that do not match the version
         parameters = AdvancedParametersUpdate(**{"unit_commitment_mode": "milp"})
         with pytest.raises(ValidationError, match="Unit commitment mode `MILP` only exists in v8.8+"):

@@ -14,7 +14,7 @@ import logging
 import textwrap
 import typing as t
 from pathlib import Path
-from typing import Iterable, Mapping
+from typing import Any, Iterable, Mapping
 from zipfile import ZipFile
 
 import pytest
@@ -22,6 +22,7 @@ import pytest
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
+    BindingConstraintFrequency,
     ClusterTerm,
     ConstraintTerm,
     LinkTerm,
@@ -39,7 +40,6 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
     _parse_links_filtering,
@@ -442,7 +442,7 @@ nh3 = 456
 
 
 @pytest.mark.parametrize("version", [850, 860, 870])
-def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
+def test_parse_thermal_860(study_path: Path, version: int, caplog: Any) -> None:
     study_path.joinpath("study.antares").write_text(f"[antares] \n version = {version}")
     ini_path = study_path.joinpath("input/thermal/clusters/fr/list.ini")
     ini_path.parent.mkdir(parents=True)
@@ -757,7 +757,7 @@ def _assert_mapping_equals(left: Mapping[str, Iterable[str]], right: Mapping[str
         assert k in left
 
 
-def test_config_to_study_index_8_8():
+def test_config_to_study_index_8_8() -> None:
     config = FileStudyTreeConfig(
         study_path=Path(),
         path=Path(),
@@ -798,7 +798,7 @@ def test_config_to_study_index_8_8():
     assert list(index.sts_constraint_ids) == []
 
 
-def test_config_to_study_index_9_2_additional_constraints():
+def test_config_to_study_index_9_2_additional_constraints() -> None:
     config = FileStudyTreeConfig(
         study_path=Path(),
         path=Path(),

@@ -13,13 +13,15 @@
 import json
 import sys
 import time
+from pathlib import Path
+from typing import Any
 
 from starlette.testclient import TestClient
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
 
 
-def _compare_resource_file(actual, res_path):
+def _compare_resource_file(actual: dict[str, Any], res_path: Path) -> None:
     # note: private data are masked in the resource file
     masked = dict.fromkeys(["study_path", "path", "output_path", "study_id"], "DUMMY_VALUE")
     actual.update(masked)
@@ -86,7 +88,7 @@ class TestStudySynthesis:
         res = client.post(
             f"/v1/studies/{internal_study_id}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            params={"study_name": "default", "with_outputs": False, "use_task": False},  # type: ignore
+            params={"study_name": "default", "with_outputs": False, "use_task": False},
         )
         assert res.status_code == 201, res.json()
         base_study_id = res.json()

@@ -32,6 +32,7 @@ from antarest.core.exceptions import UrlNotMatchJsonDataError
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
@@ -43,7 +44,6 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixIndex,
     OwnerInfo,
-    PublicMode,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudyDownloadType,
@@ -140,7 +140,7 @@ def test_server_with_parameters() -> None:
 
 
 @pytest.mark.unit_test
-def test_create_study(tmp_path: str, project_path) -> None:
+def test_create_study(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
     path_study = path_studies / "study1"
     path_study.mkdir()
@@ -172,7 +172,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_import_study_zipped(tmp_path: Path, project_path) -> None:
+def test_import_study_zipped(tmp_path: Path, project_path: Path) -> None:
     study_name = "study1"
     path_study = tmp_path / study_name
     path_study.mkdir()

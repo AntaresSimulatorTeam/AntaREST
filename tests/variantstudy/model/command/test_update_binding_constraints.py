@@ -10,22 +10,21 @@
 #
 # This file is part of the Antares project.
 
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
     BindingConstraintUpdate,
     ClusterTerm,
     ConstraintTerm,
 )
 from antarest.study.dao.file.file_study_constraint_dao import generate_replacement_matrices
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -43,7 +42,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 @pytest.fixture
-def bc_props_by_id():
+def bc_props_by_id() -> dict[str, BindingConstraintUpdate]:
     return {
         "bc_1": BindingConstraintUpdate(
             **{
@@ -63,7 +62,9 @@ def bc_props_by_id():
 
 
 @pytest.fixture
-def update_binding_constraints_command(bc_props_by_id, command_context: CommandContext) -> UpdateBindingConstraints:
+def update_binding_constraints_command(
+    bc_props_by_id: dict[str, BindingConstraintUpdate], command_context: CommandContext
+) -> UpdateBindingConstraints:
     return UpdateBindingConstraints(
         study_version=STUDY_VERSION_8_7,
         bc_props_by_id=bc_props_by_id,
@@ -72,7 +73,7 @@ def update_binding_constraints_command(bc_props_by_id, command_context: CommandC
 
 
 @pytest.fixture
-def study_data(file_study_tree_config):
+def study_data(file_study_tree_config: FileStudyTreeConfig) -> Any:
     fs = Mock(spec=FileStudy)
     fs.tree.get.return_value = {
         "1": {
@@ -97,7 +98,7 @@ def study_data(file_study_tree_config):
 
 
 @pytest.fixture
-def file_study_tree_config():
+def file_study_tree_config() -> Any:
     file_study_tree_config = Mock(spec=FileStudyTreeConfig)
     file_study_tree_config.bindings = [
         BindingConstraint(
@@ -142,7 +143,7 @@ def file_study_tree_config():
     return file_study_tree_config
 
 
-def test_apply(update_binding_constraints_command, study_data):
+def test_apply(update_binding_constraints_command: UpdateBindingConstraints, study_data: FileStudy) -> None:
     output = update_binding_constraints_command.apply(study_data)
     assert output.status is True
     study_data.tree.save.assert_called_with(
@@ -176,14 +177,14 @@ def test_apply(update_binding_constraints_command, study_data):
     )
 
 
-def test_to_dto(update_binding_constraints_command):
+def test_to_dto(update_binding_constraints_command: UpdateBindingConstraints) -> None:
     dto = update_binding_constraints_command.to_dto()
     assert dto.action == "update_binding_constraints"
     assert dto.version == 2
     assert dto.study_version == STUDY_VERSION_8_7
 
 
-def test_update_time_step_via_table_mode(empty_study_880, command_context):
+def test_update_time_step_via_table_mode(empty_study_880: FileStudy, command_context: CommandContext) -> None:
     study_version = empty_study_880.config.version
     # Create a bc with an hourly time_step and a less operator
     args = {
@@ -216,7 +217,7 @@ def test_update_time_step_via_table_mode(empty_study_880, command_context):
     assert data["0"]["operator"] == "less"
 
 
-def test_generate_replacement_matrices():
+def test_generate_replacement_matrices() -> None:
     bc_id = "bc_1"
 
     # 8,6,0 HOURLY GREATER

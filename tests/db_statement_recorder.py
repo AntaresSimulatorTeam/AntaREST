@@ -20,6 +20,7 @@ import typing as t
 
 from sqlalchemy import event
 from sqlalchemy.engine import Connection, Engine
+from typing_extensions import override
 
 
 class DBStatementRecorder(contextlib.AbstractContextManager):  # type: ignore
@@ -45,10 +46,12 @@ class DBStatementRecorder(contextlib.AbstractContextManager):  # type: ignore
         self.db_engine: Engine = db_engine
         self.sql_statements: t.List[str] = []
 
+    @override
     def __enter__(self) -> "DBStatementRecorder":
         event.listen(self.db_engine, "before_cursor_execute", self.before_cursor_execute)
         return self
 
+    @override
     def __exit__(
         self,
         exc_type: t.Optional[t.Type[BaseException]],
@@ -70,6 +73,7 @@ class DBStatementRecorder(contextlib.AbstractContextManager):  # type: ignore
         # note: add a breakpoint here to debug the SQL statements.
         self.sql_statements.append(statement)
 
+    @override
     def __str__(self) -> str:
         """
         Return a string representation the SQL statements.

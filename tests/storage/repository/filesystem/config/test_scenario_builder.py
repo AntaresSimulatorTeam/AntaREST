@@ -31,7 +31,7 @@ def test_ruleset_parsing_load() -> None:
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_hydro():
+def test_ruleset_parsing_hydro() -> None:
     rules = {
         "h,be,1": 2,
         "h,be,2": 1,
@@ -52,7 +52,7 @@ def test_ruleset_parsing_hydro():
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_solar():
+def test_ruleset_parsing_solar() -> None:
     rules = {
         "s,be,1": 2,
         "s,be,2": 1,
@@ -62,7 +62,7 @@ def test_ruleset_parsing_solar():
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_wind():
+def test_ruleset_parsing_wind() -> None:
     rules = {
         "w,be,1": 2,
         "w,be,2": 1,
@@ -72,7 +72,7 @@ def test_ruleset_parsing_wind():
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_binding_constraints():
+def test_ruleset_parsing_binding_constraints() -> None:
     rules = {
         "bc,group1,1": 2,
         "bc,group1,2": 1,
@@ -84,7 +84,7 @@ def test_ruleset_parsing_binding_constraints():
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_thermal():
+def test_ruleset_parsing_thermal() -> None:
     rules = {
         "t,fr,1,gas": 2,
         "t,fr,2,gas": 1,
@@ -96,7 +96,7 @@ def test_ruleset_parsing_thermal():
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_storages():
+def test_ruleset_parsing_storages() -> None:
     rules = {
         "sts,fr,1,battery": 2,
         "sts,fr,2,battery": 1,
@@ -108,7 +108,7 @@ def test_ruleset_parsing_storages():
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_renewables():
+def test_ruleset_parsing_renewables() -> None:
     rules = {
         "r,fr,1,solar": 2,
         "r,fr,2,solar": 1,
@@ -120,7 +120,7 @@ def test_ruleset_parsing_renewables():
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_links():
+def test_ruleset_parsing_links() -> None:
     rules = {
         "ntc,be,fr,1": 2,
         "ntc,be,fr,2": 1,
@@ -130,7 +130,7 @@ def test_ruleset_parsing_links():
     assert serialize_ruleset(ruleset, STUDY_VERSION_9_3) == rules
 
 
-def test_ruleset_parsing_storage_constraints():
+def test_ruleset_parsing_storage_constraints() -> None:
     rules = {
         "sta,fr,1,battery1,constraint1": 2,
         "sta,fr,2,battery1,constraint1": 1,
@@ -149,7 +149,7 @@ def test_ruleset_update_parsing_load() -> None:
     assert ruleset == RulesetUpdate(load={"be": {"1": 2, "2": 1}})
 
 
-def test_ruleset_update_parsing_hydro():
+def test_ruleset_update_parsing_hydro() -> None:
     rules = {
         "h,be,1": 2,
         "h,be,2": 1,
@@ -169,7 +169,7 @@ def test_ruleset_update_parsing_hydro():
     )
 
 
-def test_ruleset_update_parsing_solar():
+def test_ruleset_update_parsing_solar() -> None:
     rules = {
         "s,be,1": 2,
         "s,be,2": 1,
@@ -178,7 +178,7 @@ def test_ruleset_update_parsing_solar():
     assert ruleset == RulesetUpdate(solar={"be": {"1": 2, "2": 1}})
 
 
-def test_ruleset_update_parsing_wind():
+def test_ruleset_update_parsing_wind() -> None:
     rules = {
         "w,be,1": 2,
         "w,be,2": 1,
@@ -187,7 +187,7 @@ def test_ruleset_update_parsing_wind():
     assert ruleset == RulesetUpdate(wind={"be": {"1": 2, "2": 1}})
 
 
-def test_ruleset_update_parsing_binding_constraints():
+def test_ruleset_update_parsing_binding_constraints() -> None:
     rules = {
         "bc,group1,1": 2,
         "bc,group1,2": 1,
@@ -198,7 +198,7 @@ def test_ruleset_update_parsing_binding_constraints():
     assert ruleset == RulesetUpdate(binding_constraints={"group1": {"1": 2, "2": 1}, "group2": {"1": 3, "2": 4}})
 
 
-def test_ruleset_update_parsing_thermal():
+def test_ruleset_update_parsing_thermal() -> None:
     rules = {
         "t,fr,1,gas": 2,
         "t,fr,2,gas": 1,
@@ -209,7 +209,7 @@ def test_ruleset_update_parsing_thermal():
     assert ruleset == RulesetUpdate(thermal={"fr": {"gas": {"1": 2, "2": 1}, "nuclear": {"1": 1, "2": 2}}})
 
 
-def test_ruleset_update_parsing_storages():
+def test_ruleset_update_parsing_storages() -> None:
     rules = {
         "sts,fr,1,battery": 2,
         "sts,fr,2,battery": 1,
@@ -220,7 +220,7 @@ def test_ruleset_update_parsing_storages():
     assert ruleset == RulesetUpdate(storage_inflows={"fr": {"battery": {"1": 2, "2": 1}, "cars": {"1": 1, "2": 2}}})
 
 
-def test_ruleset_update_parsing_renewables():
+def test_ruleset_update_parsing_renewables() -> None:
     rules = {
         "r,fr,1,solar": 2,
         "r,fr,2,solar": 1,
@@ -231,7 +231,7 @@ def test_ruleset_update_parsing_renewables():
     assert ruleset == RulesetUpdate(renewable={"fr": {"solar": {"1": 2, "2": 1}, "wind": {"1": 1, "2": 2}}})
 
 
-def test_ruleset_update_parsing_links():
+def test_ruleset_update_parsing_links() -> None:
     rules = {
         "ntc,be,fr,1": 2,
         "ntc,be,fr,2": 1,
@@ -240,7 +240,7 @@ def test_ruleset_update_parsing_links():
     assert ruleset == RulesetUpdate(ntc={"be / fr": {"1": 2, "2": 1}})
 
 
-def test_ruleset_update_parsing_storage_constraints():
+def test_ruleset_update_parsing_storage_constraints() -> None:
     rules = {
         "sta,fr,1,battery1,constraint1": 2,
         "sta,fr,2,battery1,constraint1": 1,
@@ -249,7 +249,7 @@ def test_ruleset_update_parsing_storage_constraints():
     assert ruleset == RulesetUpdate(storage_constraints={"fr": {"battery1": {"constraint1": {"1": 2, "2": 1}}}})
 
 
-def test_random_is_not_serialized():
+def test_random_is_not_serialized() -> None:
     ruleset = Ruleset(
         load={"fr": {"1": 2, "2": ""}},
         thermal={"fr": {"nuclear": {"1": 2, "2": ""}}},
@@ -265,7 +265,7 @@ def test_random_is_not_serialized():
     }
 
 
-def test_ruleset_serializing_version():
+def test_ruleset_serializing_version() -> None:
     rules = {
         "bc,group1,1": 2,
         "bc,group1,2": 1,

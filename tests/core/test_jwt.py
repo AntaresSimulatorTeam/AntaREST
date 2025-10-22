@@ -15,7 +15,7 @@ from antarest.core.roles import RoleType
 from antarest.login.model import Group, User
 
 
-def test_is_site_admin():
+def test_is_site_admin() -> None:
     jwt = JWTUser(
         id=0,
         impersonator=0,
@@ -30,7 +30,7 @@ def test_is_site_admin():
     ).is_site_admin()
 
 
-def test_is_group_admin():
+def test_is_group_admin() -> None:
     jwt = JWTUser(
         id=0,
         impersonator=0,
@@ -45,7 +45,7 @@ def test_is_group_admin():
     ).is_group_admin(Group(id="group"))
 
 
-def test_is_himself():
+def test_is_himself() -> None:
     jwt = JWTUser(
         id=1,
         impersonator=0,

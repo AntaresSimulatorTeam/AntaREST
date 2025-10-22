@@ -23,7 +23,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestCreateLink:
-    def test_validation(self, command_context: CommandContext):
+    def test_validation(self, command_context: CommandContext) -> None:
         area1 = "Area1"
 
         with pytest.raises(ValidationError):
@@ -36,7 +36,7 @@ class TestCreateLink:
                 study_version=STUDY_VERSION_8_8,
             )
 
-    def test_apply(self, command_context: CommandContext):
+    def test_apply(self, command_context: CommandContext) -> None:
         study_dao = InMemoryStudyDao(STUDY_VERSION_8_8, InMemorySimpleMatrixService())
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)

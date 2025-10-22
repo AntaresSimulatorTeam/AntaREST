@@ -24,6 +24,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from typing_extensions import override
 
 from antarest.blobstore.repository import BlobContentRepository
 from antarest.blobstore.service import BlobService
@@ -74,6 +75,7 @@ class SynchTaskService(ITaskService):
     def __init__(self) -> None:
         self._task_result: t.Optional[TaskResult] = None
 
+    @override
     def add_worker_task(
         self,
         task_type: TaskType,
@@ -84,6 +86,7 @@ class SynchTaskService(ITaskService):
     ) -> t.Optional[str]:
         raise NotImplementedError()
 
+    @override
     def add_task(
         self,
         action: Task,
@@ -96,6 +99,7 @@ class SynchTaskService(ITaskService):
         self._task_result = action(NoopNotifier())
         return str(uuid.uuid4())
 
+    @override
     def status_task(self, task_id: str, with_logs: bool = False) -> TaskDTO:
         return TaskDTO(
             id=task_id,
@@ -108,9 +112,11 @@ class SynchTaskService(ITaskService):
             logs=None,
         )
 
+    @override
     def list_tasks(self, task_filter: TaskListFilter) -> t.List[TaskDTO]:
         return []
 
+    @override
     def await_task(self, task_id: str, timeout_sec: t.Optional[int] = None) -> None:
         pass
 
@@ -136,7 +142,7 @@ def command_context_fixture(matrix_service: MatrixService, blob_service: BlobSer
 
 
 @pytest.fixture(name="bucket_dir", scope="session")
-def bucket_dir_fixture(tmp_path_factory: t.Any) -> Path:
+def bucket_dir_fixture(tmp_path_factory: Path) -> Path:
     """
     Fixture that creates a session-level temporary directory named "matrix_store" for storing matrices.
 
@@ -449,7 +455,7 @@ def study_service_fixture(
     event_bus: IEventBus,
     task_service: ITaskService,
     core_config: Config,
-):
+) -> StudyService:
     return StudyService(
         raw_study_service,
         variant_study_service,

@@ -30,13 +30,13 @@ from antarest.study.business.matrix_management import (
 
 
 class TestMatrixManagerError:
-    def test_init(self):
+    def test_init(self) -> None:
         error = MatrixManagerError(message="foo")
         assert "foo" in str(error)
 
 
 class TestMatrixEditError:
-    def test_init(self):
+    def test_init(self) -> None:
         error = MatrixEditError(
             instruction=MatrixEditInstruction(
                 coordinates=[(5, 6)],
@@ -49,7 +49,7 @@ class TestMatrixEditError:
 
 
 class TestMatrixUpdateError:
-    def test_init(self):
+    def test_init(self) -> None:
         error = MatrixUpdateError(operation=Operation(operation="=", value=798), reason="foo")
         assert "foo" in str(error)
         assert "=" in str(error)
@@ -57,7 +57,7 @@ class TestMatrixUpdateError:
 
 
 class TestMatrixIndexError:
-    def test_init(self):
+    def test_init(self) -> None:
         error = MatrixIndexError(
             operation=Operation(operation="=", value=798),
             coordinates=(5, 8),

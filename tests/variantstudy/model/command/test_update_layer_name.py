@@ -21,7 +21,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestUpdateLayerName:
     @pytest.mark.unit_test
-    def test_update_layer_name_success(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_update_layer_name_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
 
         create_command = CreateLayer(
@@ -49,7 +49,7 @@ class TestUpdateLayerName:
         assert layers == {"0": "All", "1": "Updated Layer Name"}
 
     @pytest.mark.unit_test
-    def test_update_multiple_layers_names(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_update_multiple_layers_names(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
 
         create_command1 = CreateLayer(
@@ -92,7 +92,7 @@ class TestUpdateLayerName:
         assert layers == {"0": "All", "1": "Modified Layer One", "2": "Modified Layer Two"}
 
     @pytest.mark.unit_test
-    def test_update_layer_not_found(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_update_layer_not_found(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
 
         update_command = UpdateLayer(
@@ -105,7 +105,7 @@ class TestUpdateLayerName:
         assert not output.status
 
     @pytest.mark.unit_test
-    def test_update_layer_zero_name(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_update_layer_zero_name(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
 
         update_command = UpdateLayer(

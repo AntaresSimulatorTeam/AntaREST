@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock
 
+from typing_extensions import override
+
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
@@ -29,6 +31,7 @@ class DummyWorker(AbstractWorker):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 
+    @override
     def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         # simulate a "long" task ;-)
         time.sleep(0.01)
@@ -37,7 +40,7 @@ class DummyWorker(AbstractWorker):
         return TaskResult(success=True, message="")
 
 
-def test_simple_task(tmp_path: Path):
+def test_simple_task(tmp_path: Path) -> None:
     task_queue = "do_stuff"
     event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
     command_event = Event(
@@ -54,7 +57,7 @@ def test_simple_task(tmp_path: Path):
     # Add some listeners to debug the event bus notifications
     msg = []
 
-    async def notify(event: Event):
+    async def notify(event: Event) -> None:
         msg.append(event.type.value)
 
     event_bus.add_listener(notify, [EventType.WORKER_TASK_STARTED])

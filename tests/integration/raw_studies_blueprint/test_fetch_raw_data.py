@@ -36,7 +36,7 @@ from tests.integration.utils import wait_for
 
 def _check_endpoint_response(
     study_type: str, res: Response, client: TestClient, study_id: str, expected_msg: str, exception: str
-):
+) -> None:
     # The command will only fail when applied so on raw studies only.
     # So we have to differentiate the test based on the study type.
     if study_type == "raw":
@@ -71,7 +71,9 @@ class TestFetchRawData:
     """
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_get_study_data(self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str):
+    def test_get_study_data(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str
+    ) -> None:
         """
         Test the `get_study_data` endpoint for fetching raw data from a study.
 
@@ -576,7 +578,7 @@ class TestFetchOriginalFile:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Test the `get_study_file` endpoint for fetching for a file in its original format.
 

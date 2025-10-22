@@ -39,7 +39,7 @@ class TestCreateStudy:
         study_version: str,
         client: TestClient,
         admin_access_token: str,
-    ):
+    ) -> None:
         res = client.post(
             f"/v1/studies?name=study&version={study_version}", headers={"Authorization": f"Bearer {admin_access_token}"}
         )
