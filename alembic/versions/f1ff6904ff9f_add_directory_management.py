@@ -47,32 +47,21 @@ def upgrade() -> None:
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("parent_id", sa.String(36), nullable=True),
-        sa.Column("owner_id", sa.Integer(), nullable=True),
+        sa.Column(
+            "public_mode",
+            sa.Enum("NONE", "READ", "EDIT", "FULL", name="publicmode"),
+            nullable=False,
+            server_default="NONE",
+        ),
         sa.ForeignKeyConstraint(
             ["parent_id"], ["directory.id"], name="fk_directory_parent_id", ondelete="CASCADE"
         ),
-        sa.ForeignKeyConstraint(["owner_id"], ["identities.id"]),
     )
 
     # Create indexes
     op.create_index("ix_directory_parent_id", "directory", ["parent_id"])
-    op.create_index("ix_directory_owner_id", "directory", ["owner_id"])
 
-    # Step 2: Create directory_group junction table
-    op.create_table(
-        "directory_group",
-        sa.Column("directory_id", sa.String(36), nullable=False),
-        sa.Column("group_id", sa.String(36), nullable=False),
-        sa.PrimaryKeyConstraint("directory_id", "group_id"),
-        sa.ForeignKeyConstraint(["directory_id"], ["directory.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["group_id"], ["groups.id"], ondelete="CASCADE"),
-    )
-
-    # Create indexes
-    op.create_index("ix_directory_group_directory_id", "directory_group", ["directory_id"])
-    op.create_index("ix_directory_group_group_id", "directory_group", ["group_id"])
-
-    # Step 3: Add directory_id column to study table
+    # Step 2: Add directory_id column to study table
     with op.batch_alter_table("study", schema=None) as batch_op:
         batch_op.add_column(sa.Column("directory_id", sa.String(36), nullable=True))
         batch_op.create_index("ix_study_directory_id", ["directory_id"])
@@ -84,7 +73,7 @@ def upgrade() -> None:
             ondelete="SET NULL",
         )
 
-    # Step 4: Data migration - Build directory tree from study.folder
+    # Step 3: Data migration - Build directory tree from study.folder
     bind = op.get_bind()
 
     # Define table structures for SQLAlchemy Core
@@ -110,19 +99,6 @@ def upgrade() -> None:
         column("id", type_string),
         column("name", type_string),
         column("parent_id", type_string),
-        column("owner_id", type_int),
-    )
-
-    group_metadata_table = table(
-        "group_metadata",
-        column("study_id", type_string),
-        column("group_id", type_string),
-    )
-
-    directory_group_table = table(
-        "directory_group",
-        column("directory_id", type_string),
-        column("group_id", type_string),
     )
 
     # Cache for created directories: path -> directory_id
@@ -130,7 +106,6 @@ def upgrade() -> None:
 
     # Batch data to insert
     directories_to_insert = []
-    directory_groups_to_insert = []
     studies_to_update = []
 
     # Get all studies with folder information
@@ -152,6 +127,14 @@ def upgrade() -> None:
     # First pass: build directory structure and collect groups
     for study_id, folder, owner_id in studies:
         path_parts = parse_folder_path(folder)
+
+        # Validate that the last part is indeed the study UUID
+        if len(path_parts) > 0 and path_parts[-1] != study_id:
+            print(
+                f"WARNING: Study {study_id} has folder '{folder}' that doesn't end with study ID. "
+                f"Expected last part to be '{study_id}' but got '{path_parts[-1]}'. Skipping."
+            )
+            continue
 
         # Skip the last part (which is the study UUID itself, not a directory)
         # Only create directories for the parent folders
@@ -175,21 +158,8 @@ def upgrade() -> None:
                     "id": dir_id,
                     "name": dir_name,
                     "parent_id": parent_id,
-                    "owner_id": owner_id,
+                    "public_mode": "FULL",
                 })
-
-                # Copy groups from study to directory (only for leaf directory)
-                if current_path == "/".join(directory_parts):
-                    stmt = select(group_metadata_table.c.group_id).where(
-                        group_metadata_table.c.study_id == study_id
-                    )
-                    groups = bind.execute(stmt).fetchall()
-
-                    for (group_id,) in groups:
-                        directory_groups_to_insert.append({
-                            "directory_id": dir_id,
-                            "group_id": group_id,
-                        })
 
                 directory_cache[current_path] = dir_id
 
@@ -206,10 +176,6 @@ def upgrade() -> None:
     # Bulk insert directories
     if directories_to_insert:
         bind.execute(directory_table.insert(), directories_to_insert)
-
-    # Bulk insert directory_group associations
-    if directory_groups_to_insert:
-        bind.execute(directory_group_table.insert(), directory_groups_to_insert)
 
     # Bulk update studies
     if studies_to_update:
@@ -232,8 +198,5 @@ def downgrade() -> None:
         batch_op.drop_index("ix_study_directory_id")
         batch_op.drop_column("directory_id")
 
-    # Step 2: Drop directory_group table
-    op.drop_table("directory_group")
-
-    # Step 3: Drop directory table
+    # Step 2: Drop directory table
     op.drop_table("directory")

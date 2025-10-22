@@ -161,38 +161,6 @@ class StudyTag(Base):
         return f"{cls_name}({study_id=}, {tag=})"
 
 
-class DirectoryGroup(Base):
-    """
-    A table to manage the many-to-many relationship between `Directory` and `Group`
-
-    Attributes:
-        directory_id: The ID of the directory associated with the group.
-        group_id: The ID of the group associated with the directory.
-    """
-
-    __tablename__ = "directory_group"
-    __table_args__ = (PrimaryKeyConstraint("directory_id", "group_id"),)
-
-    directory_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("directory.id", ondelete="CASCADE"), index=True, nullable=False
-    )
-    group_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False
-    )
-
-    @override
-    def __str__(self) -> str:  # pragma: no cover
-        cls_name = self.__class__.__name__
-        return f"[{cls_name}] directory_id={self.directory_id}, group={self.group_id}"
-
-    @override
-    def __repr__(self) -> str:  # pragma: no cover
-        cls_name = self.__class__.__name__
-        directory_id = self.directory_id
-        group_id = self.group_id
-        return f"{cls_name}({directory_id=}, {group_id=})"
-
-
 class Directory(Base):
     """
     Represents a logical directory for organizing studies in the managed workspace.
@@ -204,7 +172,7 @@ class Directory(Base):
         id: The unique identifier of the directory (UUID).
         name: The non-qualified name of the directory (e.g., "project1").
         parent_id: The ID of the parent directory, or None for root directories.
-        owner_id: The ID of the owner of the directory.
+        public_mode: Defines the actions any user logged in is allowed to take on the directory.
     """
 
     __tablename__ = "directory"
@@ -219,35 +187,21 @@ class Directory(Base):
     parent_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("directory.id", name="fk_directory_parent_id"), nullable=True, index=True
     )
-    owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
+    public_mode: Mapped[PublicMode] = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
 
     # Relationships
-    owner = relationship(Identity, uselist=False)
-    groups = relationship(Group, secondary=DirectoryGroup.__table__, cascade="")
     parent = relationship("Directory", remote_side=[id], uselist=False)
 
     @override
     def __str__(self) -> str:
         cls = self.__class__.__name__
-        return (
-            f"[{cls}]"
-            f" id={self.id},"
-            f" name={self.name},"
-            f" parent_id={self.parent_id},"
-            f" owner={self.owner},"
-            f" groups={[str(g) + ',' for g in self.groups]}"
-        )
+        return f"[{cls}] id={self.id}, name={self.name}, parent_id={self.parent_id}"
 
     @override
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Directory):
             return False
-        return bool(
-            other.id == self.id
-            and other.name == self.name
-            and other.parent_id == self.parent_id
-            and other.owner_id == self.owner_id
-        )
+        return bool(other.id == self.id and other.name == self.name and other.parent_id == self.parent_id)
 
     @override
     def __repr__(self) -> str:
@@ -255,14 +209,11 @@ class Directory(Base):
 
     def to_metadata(self) -> "DirectoryMetadata":
         """Convert this Directory entity to DirectoryMetadata DTO."""
-        owner_info = OwnerInfo(id=self.owner_id, name=self.owner.name if self.owner else "Unknown")
-
         return DirectoryMetadata(
             id=self.id,
             name=self.name,
             parent_id=self.parent_id,
-            owner=owner_info,
-            groups=[GroupDTO(id=g.id, name=g.name) for g in self.groups],
+            public_mode=self.public_mode,
         )
 
 
@@ -352,7 +303,7 @@ class Study(Base):
                 Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
                 folder presented to the user, not the way we organize data internally.
                 This field is kept for backward compatibility but will be progressively replaced by directory_id.
-        directory_id: The ID of the directory containing this study. None for studies not in a directory.
+        directory_id: The ID of the directory containing this study. Only for managed studies.
         parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
         public_mode: Defines the actions any user logged in is allowed to take on the study.
         owner_id: The ID of the owner of the study.
@@ -807,8 +758,7 @@ class DirectoryMetadata(AntaresBaseModel):
     id: str
     name: str
     parent_id: Optional[str] = None
-    owner: OwnerInfo
-    groups: List[GroupDTO]
+    public_mode: PublicMode = PublicMode.NONE
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -837,7 +787,7 @@ def _validate_directory_name(name: str) -> str:
 class DirectoryCreation(AntaresBaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     parent_id: Optional[str] = None
-    groups: Optional[List[str]] = None  # List of group IDs to share with
+    public_mode: PublicMode = PublicMode.NONE
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -849,9 +799,15 @@ class DirectoryCreation(AntaresBaseModel):
 
 
 class DirectoryUpdate(AntaresBaseModel):
+    """
+    - **name**: New name for the directory (optional)
+    - **parentId**: New parent directory ID (optional, empty string for root)
+    - **publicMode**: Public access mode (optional, replaces existing mode)
+    """
+
     name: Optional[str] = Field(default=None, min_length=1, max_length=255)
     parent_id: Optional[str] = None
-    groups: Optional[List[str]] = None  # List of group IDs to share with (replaces existing groups)
+    public_mode: Optional[PublicMode] = None
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 

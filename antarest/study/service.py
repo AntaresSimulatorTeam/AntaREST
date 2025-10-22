@@ -880,9 +880,7 @@ class StudyService:
         author = self.get_user_name()
 
         # Get or create directory from path
-        current_user = get_current_user()
-        owner_id = current_user.impersonator if current_user else 0
-        directory_id = self._get_directory_from_path(directory, owner_id, group_ids)
+        directory_id = self._get_directory_from_path(directory)
 
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         raw = RawStudy(
@@ -1213,7 +1211,7 @@ class StudyService:
 
         return task_or_study_id
 
-    def _get_directory_from_path(self, folder_path: str, owner_id: int, group_ids: List[str]) -> Optional[str]:
+    def _get_directory_from_path(self, folder_path: str) -> Optional[str]:
         """
         Get or create directory ID from a folder path.
         Creates missing directories automatically with the specified owner and groups.
@@ -1248,14 +1246,8 @@ class StudyService:
                     id=str(uuid.uuid4()),
                     name=dir_name,
                     parent_id=parent_id,
-                    owner_id=owner_id,
+                    public_mode=PublicMode.FULL,  # Auto-created directories are fully public by default
                 )
-                # Add groups
-                new_dir.groups = [
-                    self.repository.session.get(Group, gid)
-                    for gid in group_ids
-                    if self.repository.session.get(Group, gid)
-                ]
                 self.repository.session.add(new_dir)
                 self.repository.session.flush()
                 parent_id = new_dir.id
@@ -1272,10 +1264,8 @@ class StudyService:
 
         if folder_dest:
             new_folder = folder_dest.rstrip("/") + f"/{study.id}"
-            # Get or create directory from path, using study's owner and groups
-            group_ids = [g.id for g in study.groups]
-            owner_id = study.owner_id or 0
-            directory_id = self._get_directory_from_path(folder_dest, owner_id, group_ids)
+            # Get or create directory from path
+            directory_id = self._get_directory_from_path(folder_dest)
             study.directory_id = directory_id
         else:
             new_folder = None

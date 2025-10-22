@@ -372,7 +372,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         status_code=HTTPStatus.CREATED,
         tags=[APITag.study_management],
         summary="Create a new empty study",
-        response_model=str,
     )
     def create_study(
         name: str,
@@ -381,7 +380,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         directory: str = Query(
             "", description="Directory path where the study will be created (e.g., 'project/subfolder')"
         ),
-    ) -> Any:
+    ) -> str:
         logger.info(f"Creating new study '{name}'")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)

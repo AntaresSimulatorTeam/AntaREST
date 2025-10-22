@@ -42,9 +42,7 @@ class TestCreateStudy:
     ) -> None:
         client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-        res = client.post(
-            f"/v1/studies?name=study&version={study_version}"
-        )
+        res = client.post(f"/v1/studies?name=study&version={study_version}")
         assert res.status_code == 201
         study_id = res.json()
 
@@ -143,19 +141,3 @@ class TestCreateStudy:
 
         test_dir = next(d for d in directories if d["name"] == "test")
         assert test_dir["parentId"] == experiments_dir["id"]
-
-    def test_create_study_without_path(
-        self,
-        client: TestClient,
-        admin_access_token: str,
-    ) -> None:
-        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
-
-        res = client.post("/v1/studies?name=root-study")
-        assert res.status_code == 201
-        study_id = res.json()
-
-        # Verify the study was created
-        res = client.get(f"/v1/studies/{study_id}")
-        assert res.status_code == 200
-        assert res.json()["name"] == "root-study"

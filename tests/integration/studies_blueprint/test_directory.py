@@ -14,7 +14,7 @@ from starlette.testclient import TestClient
 
 class TestDirectoryManagement:
     def test_create_and_list_directories(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Create root directory
         res = client.post(
@@ -47,7 +47,7 @@ class TestDirectoryManagement:
         assert sub_dir["id"] in dir_ids
 
     def test_update_directory_name(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Create directory
         res = client.post(
@@ -75,7 +75,7 @@ class TestDirectoryManagement:
         assert updated_dir["name"] == "Updated Name"
 
     def test_move_directory_to_new_parent(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Create parent directories
         res = client.post("/v1/directories", json={"name": "Parent A"})
@@ -104,7 +104,7 @@ class TestDirectoryManagement:
         assert res.json()["parentId"] == parent_b_id
 
     def test_delete_empty_directory(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Create directory
         res = client.post("/v1/directories", json={"name": "To Delete"})
@@ -123,7 +123,7 @@ class TestDirectoryManagement:
         assert directory_id not in dir_ids
 
     def test_delete_directory_with_subdirectories_fails(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Create parent directory
         res = client.post("/v1/directories", json={"name": "Parent"})
@@ -161,7 +161,7 @@ class TestDirectoryManagement:
         assert res.status_code == 204
 
     def test_prevent_directory_cycle(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Create hierarchy: A -> B -> C
         res = client.post("/v1/directories", json={"name": "A"})
@@ -195,7 +195,7 @@ class TestDirectoryManagement:
         assert "cycle" in str(error_msg).lower()
 
     def test_duplicate_directory_name_in_same_parent(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Create directory
         res = client.post("/v1/directories", json={"name": "Duplicate"})
@@ -208,7 +208,7 @@ class TestDirectoryManagement:
         assert "already exists" in str(error_msg).lower()
 
     def test_same_name_allowed_in_different_parents(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Create two parent directories
         res = client.post("/v1/directories", json={"name": "Parent1"})
@@ -233,7 +233,7 @@ class TestDirectoryManagement:
         assert res.status_code == 201
 
     def test_invalid_directory_name(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         # Empty name
         res = client.post("/v1/directories", json={"name": ""})
@@ -247,7 +247,7 @@ class TestDirectoryManagement:
         assert res.status_code == 422
 
     def test_deep_directory_hierarchy(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
         parent_id = None
         depth = 15  # Create 15 levels to verify no limit
@@ -267,3 +267,98 @@ class TestDirectoryManagement:
         directories = res.json()
         level_dirs = [d for d in directories if d["name"].startswith("Level")]
         assert len(level_dirs) == depth
+
+    def test_update_directory_with_subdirectories_checks_recursive_permissions(
+        self, client: TestClient, user_access_token: str
+    ) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+
+        # Create parent directory
+        res = client.post("/v1/directories", json={"name": "Parent-Recursive"})
+        assert res.status_code == 201
+        parent_id = res.json()["id"]
+
+        # Create subdirectory
+        res = client.post(
+            "/v1/directories",
+            json={"name": "Child-Recursive", "parentId": parent_id},
+        )
+        assert res.status_code == 201
+        child_id = res.json()["id"]
+
+        # Create nested subdirectory (3 levels deep)
+        res = client.post(
+            "/v1/directories",
+            json={"name": "GrandChild-Recursive", "parentId": child_id},
+        )
+        assert res.status_code == 201
+
+        # User should be able to update parent (recursive permission check on all subdirectories)
+        res = client.patch(f"/v1/directories/{parent_id}", json={"name": "Parent-Updated-Recursive"})
+        assert res.status_code == 200
+        assert res.json()["name"] == "Parent-Updated-Recursive"
+
+        # Verify hierarchy is intact
+        res = client.get("/v1/directories")
+        assert res.status_code == 200
+        directories = res.json()
+        child = next((d for d in directories if d["id"] == child_id), None)
+        assert child is not None
+        assert child["parentId"] == parent_id
+
+    def test_update_directory_with_studies_checks_study_permissions(
+        self, client: TestClient, admin_access_token: str
+    ) -> None:
+        client.headers = {"Authorization": f"Bearer {admin_access_token}"}  # type: ignore[assignment]
+
+        # Create directory
+        res = client.post("/v1/directories", json={"name": "StudyDir-Permissions"})
+        assert res.status_code == 201
+        directory_id = res.json()["id"]
+
+        # Create a study in the directory
+        res = client.post("/v1/studies?name=test-study-permissions&directory=StudyDir-Permissions")
+        assert res.status_code == 201
+        study_id = res.json()
+
+        # Admin should be able to update the directory (has permissions on the study)
+        res = client.patch(f"/v1/directories/{directory_id}", json={"name": "StudyDir-Permissions-Updated"})
+        assert res.status_code == 200
+        assert res.json()["name"] == "StudyDir-Permissions-Updated"
+
+        # Verify study still exists in the directory
+        res = client.get(f"/v1/studies/{study_id}")
+        assert res.status_code == 200
+
+    def test_move_directory_with_subdirectories_checks_all_permissions(
+        self, client: TestClient, user_access_token: str
+    ) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+
+        # Create source hierarchy
+        res = client.post("/v1/directories", json={"name": "SourceParent-Move"})
+        assert res.status_code == 201
+        source_parent_id = res.json()["id"]
+
+        res = client.post(
+            "/v1/directories",
+            json={"name": "MovableDir-Check", "parentId": source_parent_id},
+        )
+        assert res.status_code == 201
+        movable_id = res.json()["id"]
+
+        res = client.post(
+            "/v1/directories",
+            json={"name": "SubOfMovable-Check", "parentId": movable_id},
+        )
+        assert res.status_code == 201
+
+        # Create target parent
+        res = client.post("/v1/directories", json={"name": "TargetParent-Move"})
+        assert res.status_code == 201
+        target_parent_id = res.json()["id"]
+
+        # Move directory to new parent (should check permissions on movable dir and its subdirectories)
+        res = client.patch(f"/v1/directories/{movable_id}", json={"parentId": target_parent_id})
+        assert res.status_code == 200
+        assert res.json()["parentId"] == target_parent_id

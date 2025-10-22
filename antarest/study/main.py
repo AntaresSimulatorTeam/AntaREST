@@ -19,7 +19,6 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
 from antarest.launcher.repository import JobResultRepository
-from antarest.login.repository import GroupRepository
 from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -135,12 +134,10 @@ def build_study_service(
 
     # Initialize directory service with study_service for cascade deletions
     directory_repository = DirectoryRepository()
-    group_repository = GroupRepository()
     directory_service = DirectoryService(
         directory_repository=directory_repository,
         study_repository=metadata_repository,
         study_service=study_service,
-        group_repository=group_repository,
     )
 
     if app_ctxt:

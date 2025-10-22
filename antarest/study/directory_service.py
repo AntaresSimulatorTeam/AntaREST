@@ -11,10 +11,10 @@
 # This file is part of the Antares project.
 import logging
 import uuid
-from typing import List, Sequence
+from typing import List
 
+from antarest.core.model import StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.login.repository import GroupRepository
 from antarest.study.directory_exceptions import (
     DirectoryAlreadyExistsError,
     DirectoryCycleError,
@@ -30,6 +30,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.utils import assert_permission
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +43,10 @@ class DirectoryService:
         directory_repository: DirectoryRepository,
         study_repository: StudyMetadataRepository,
         study_service: StudyService,
-        group_repository: GroupRepository,
     ):
         self.directory_repository = directory_repository
         self.study_repository = study_repository
         self.study_service = study_service
-        self.group_repository = group_repository
 
     def list_directories(self) -> List[DirectoryMetadata]:
         """List all directories the user has access to."""
@@ -58,8 +57,6 @@ class DirectoryService:
     def create_directory(
         self,
         data: DirectoryCreation,
-        owner_id: int,
-        default_group_ids: Sequence[str],
     ) -> DirectoryMetadata:
         access_permissions = AccessPermissions.for_current_user()
         if data.parent_id:
@@ -73,17 +70,12 @@ class DirectoryService:
         if self.directory_repository.has_duplicate_name(data.name, data.parent_id):
             raise DirectoryAlreadyExistsError(data.name)
 
-        # Use specified groups or fall back to user's default groups
-        group_ids = data.groups if data.groups is not None else default_group_ids
-
         directory = Directory(
             id=str(uuid.uuid4()),
             name=data.name,
             parent_id=data.parent_id,
-            owner_id=owner_id,
+            public_mode=data.public_mode,
         )
-
-        directory.groups = self.group_repository.get_by_ids(list(group_ids))
 
         saved_directory = self.directory_repository.save(directory)
         return saved_directory.to_metadata()
@@ -100,6 +92,9 @@ class DirectoryService:
 
         if not self.directory_repository.has_permission(directory, access_permissions):
             raise UserHasNotPermissionError()
+
+        # Check permissions on all subdirectories and studies in the tree
+        self._check_permissions_for_tree(directory_id, access_permissions)
 
         # Update parent first, then validate name in the target parent
         new_parent_id = directory.parent_id  # Keep current parent by default
@@ -131,9 +126,9 @@ class DirectoryService:
         if data.parent_id is not None:
             directory.parent_id = new_parent_id
 
-        if data.groups is not None:
-            # Update groups: replace existing groups with the new list
-            directory.groups = self.group_repository.get_by_ids(data.groups)
+        if data.public_mode is not None:
+            # Update public mode
+            directory.public_mode = data.public_mode
 
         updated_directory = self.directory_repository.save(directory)
         return updated_directory.to_metadata()
@@ -167,3 +162,34 @@ class DirectoryService:
     def _has_studies(self, directory_id: str) -> bool:
         """Check if directory contains studies."""
         return self.directory_repository.count_studies(directory_id) > 0
+
+    def _check_permissions_for_tree(self, directory_id: str, access_permissions: AccessPermissions) -> None:
+        """
+        Check that user has permissions on the directory, all subdirectories, and all studies in the tree.
+
+        Args:
+            directory_id: The root directory ID to check
+            access_permissions: The user's access permissions
+
+        Raises:
+            UserHasNotPermissionError: If user doesn't have permission on any directory or study
+        """
+        # Check current directory
+        directory = self.directory_repository.get(directory_id)
+        if directory and not self.directory_repository.has_permission(directory, access_permissions):
+            raise UserHasNotPermissionError()
+
+        # Check all subdirectories
+        descendants = self.directory_repository.get_all_descendant_directories(directory_id)
+        for subdirectory in descendants:
+            if not self.directory_repository.has_permission(subdirectory, access_permissions):
+                raise UserHasNotPermissionError()
+
+        # Check all studies in the tree
+        studies = self.directory_repository.get_all_studies_in_tree(directory_id)
+        for study in studies:
+            # Check that user has at least READ permission on each study
+            try:
+                assert_permission(study, StudyPermissionType.READ)
+            except Exception:
+                raise UserHasNotPermissionError()

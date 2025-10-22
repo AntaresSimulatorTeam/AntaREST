@@ -476,9 +476,6 @@ class DirectoryRepository:
 
     def save(self, directory: Directory) -> Directory:
         session = self.session
-        directory.groups = [session.merge(g) for g in directory.groups]
-        if directory.owner:
-            directory.owner = session.merge(directory.owner)
         session.add(directory)
         session.commit()
         return directory
@@ -486,33 +483,20 @@ class DirectoryRepository:
     def get(self, directory_id: str) -> Optional[Directory]:
         return (
             self.session.execute(
-                select(Directory)
-                .options(joinedload(Directory.owner))
-                .options(joinedload(Directory.groups))
-                .options(joinedload(Directory.parent))
-                .where(Directory.id == directory_id)
+                select(Directory).options(joinedload(Directory.parent)).where(Directory.id == directory_id)
             )
             .unique()
             .scalar_one_or_none()
         )
 
     def get_all(self, access_permissions: AccessPermissions = AccessPermissions()) -> Sequence[Directory]:
-        stmt = (
-            select(Directory)
-            .options(joinedload(Directory.owner))
-            .options(joinedload(Directory.groups))
-            .options(joinedload(Directory.parent))
-        )
+        stmt = select(Directory).options(joinedload(Directory.parent))
 
-        if not access_permissions.is_admin and access_permissions.user_id is not None:
-            stmt = stmt.where(
-                or_(
-                    Directory.owner_id == access_permissions.user_id,
-                    Directory.groups.any(Group.id.in_(access_permissions.user_groups)),
-                )
-            )
-        elif not access_permissions.is_admin and access_permissions.user_id is None:
-            stmt = stmt.where(sql.false())
+        if not access_permissions.is_admin:
+            # All logged-in users can see all directories (no owner, no groups)
+            # Anonymous users can only see directories with public_mode != NONE
+            if access_permissions.user_id is None:
+                stmt = stmt.where(Directory.public_mode != PublicMode.NONE)
 
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
@@ -537,13 +521,13 @@ class DirectoryRepository:
         if access_permissions.is_admin:
             return True
 
-        if access_permissions.user_id is None:
-            return False
-
-        if directory.owner_id == access_permissions.user_id:
+        # Check if directory has public access
+        if directory.public_mode != PublicMode.NONE:
             return True
-        directory_group_ids = {g.id for g in directory.groups}
-        if any(group_id in directory_group_ids for group_id in access_permissions.user_groups):
+
+        # All logged-in users have access to directories with public_mode=NONE
+        # (no owner or group restrictions)
+        if access_permissions.user_id is not None:
             return True
 
         return False
@@ -570,3 +554,39 @@ class DirectoryRepository:
         stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
         result = self.session.scalar(stmt)
         return bool(result) if result is not None else False
+
+    def get_children_directories(self, directory_id: str) -> Sequence[Directory]:
+        """Get all immediate children directories of a given directory."""
+        stmt = select(Directory).where(Directory.parent_id == directory_id)
+        result = self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    def get_all_descendant_directories(self, directory_id: str) -> Sequence[Directory]:
+        """Get all descendant directories recursively."""
+        descendants: List[Directory] = []
+        to_process = [directory_id]
+
+        while to_process:
+            current_id = to_process.pop(0)
+            children = self.get_children_directories(current_id)
+            descendants.extend(children)
+            to_process.extend([child.id for child in children])
+
+        return descendants
+
+    def get_all_studies_in_tree(self, directory_id: str) -> Sequence[Study]:
+        """Get all studies in a directory and all its descendants."""
+        # Get all directory IDs (current + descendants)
+        all_directory_ids = [directory_id]
+        descendants = self.get_all_descendant_directories(directory_id)
+        all_directory_ids.extend([d.id for d in descendants])
+
+        # Query all studies in these directories
+        stmt = (
+            select(Study)
+            .options(joinedload(Study.owner))
+            .options(joinedload(Study.groups))
+            .where(Study.directory_id.in_(all_directory_ids))
+        )
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())

@@ -19,7 +19,6 @@ from fastapi import APIRouter
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.login.utils import require_current_user
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import DirectoryCreation, DirectoryMetadata, DirectoryUpdate
 
@@ -50,12 +49,7 @@ def create_directory_routes(
     )
     def create_directory(data: DirectoryCreation) -> DirectoryMetadata:
         logger.info(f"Creating directory '{data.name}'")
-        user = require_current_user()
-        return directory_service.create_directory(
-            data,
-            owner_id=user.impersonator,
-            default_group_ids=[group.id for group in user.groups],
-        )
+        return directory_service.create_directory(data)
 
     @bp.patch(
         "/directories/{directory_id}",
@@ -64,11 +58,7 @@ def create_directory_routes(
     )
     def update_directory(directory_id: str, data: DirectoryUpdate) -> DirectoryMetadata:
         """
-        Update directory name, parent, or groups.
-
-        - **name**: New name for the directory (optional)
-        - **parentId**: New parent directory ID (optional, empty string for root)
-        - **groups**: List of group IDs to share with (optional, replaces existing groups)
+        Update directory name, parent, or public mode.
         """
         logger.info(f"Updating directory {directory_id}")
 
