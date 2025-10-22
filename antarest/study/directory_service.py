@@ -49,7 +49,6 @@ class DirectoryService:
         self.study_service = study_service
 
     def list_directories(self) -> List[DirectoryMetadata]:
-        """List all directories the user has access to."""
         access_permissions = AccessPermissions.for_current_user()
         directories = self.directory_repository.get_all(access_permissions)
         return [directory.to_metadata() for directory in directories]
@@ -160,7 +159,6 @@ class DirectoryService:
         self.directory_repository.delete(directory_id)
 
     def _has_studies(self, directory_id: str) -> bool:
-        """Check if directory contains studies."""
         return self.directory_repository.count_studies(directory_id) > 0
 
     def _check_permissions_for_tree(self, directory_id: str, access_permissions: AccessPermissions) -> None:

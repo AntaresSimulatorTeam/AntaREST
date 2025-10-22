@@ -493,8 +493,6 @@ class DirectoryRepository:
         stmt = select(Directory).options(joinedload(Directory.parent))
 
         if not access_permissions.is_admin:
-            # All logged-in users can see all directories (no owner, no groups)
-            # Anonymous users can only see directories with public_mode != NONE
             if access_permissions.user_id is None:
                 stmt = stmt.where(Directory.public_mode != PublicMode.NONE)
 
@@ -509,13 +507,11 @@ class DirectoryRepository:
 
     def has_children_directories(self, directory_id: str) -> bool:
         stmt = select(exists(select(Directory).where(Directory.parent_id == directory_id)))
-        result = self.session.scalar(stmt)
-        return bool(result) if result is not None else False
+        return bool(self.session.scalar(stmt))
 
     def count_studies(self, directory_id: str) -> int:
         stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
-        result = self.session.scalar(stmt)
-        return int(result) if result is not None else 0
+        return int(self.session.scalar(stmt))
 
     def has_permission(self, directory: Directory, access_permissions: AccessPermissions) -> bool:
         if access_permissions.is_admin:
@@ -525,15 +521,12 @@ class DirectoryRepository:
         if directory.public_mode != PublicMode.NONE:
             return True
 
-        # All logged-in users have access to directories with public_mode=NONE
-        # (no owner or group restrictions)
         if access_permissions.user_id is not None:
             return True
 
         return False
 
     def check_cycle(self, directory_id: str, new_parent_id: str) -> bool:
-        """Check if moving a directory would create a cycle."""
         if directory_id == new_parent_id:
             return True
 
@@ -552,17 +545,14 @@ class DirectoryRepository:
 
     def has_duplicate_name(self, name: str, parent_id: Optional[str]) -> bool:
         stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
-        result = self.session.scalar(stmt)
-        return bool(result) if result is not None else False
+        return bool(self.session.scalar(stmt))
 
     def get_children_directories(self, directory_id: str) -> Sequence[Directory]:
-        """Get all immediate children directories of a given directory."""
         stmt = select(Directory).where(Directory.parent_id == directory_id)
         result = self.session.execute(stmt)
         return list(result.scalars().all())
 
     def get_all_descendant_directories(self, directory_id: str) -> Sequence[Directory]:
-        """Get all descendant directories recursively."""
         descendants: List[Directory] = []
         to_process = [directory_id]
 
@@ -575,7 +565,6 @@ class DirectoryRepository:
         return descendants
 
     def get_all_studies_in_tree(self, directory_id: str) -> Sequence[Study]:
-        """Get all studies in a directory and all its descendants."""
         # Get all directory IDs (current + descendants)
         all_directory_ids = [directory_id]
         descendants = self.get_all_descendant_directories(directory_id)
