@@ -21,7 +21,7 @@ from uuid import uuid4
 from antares.study.version import SolverVersion, StudyVersion
 from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
-from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -467,11 +467,11 @@ class LaunchConfigModel(Base):
     id = mapped_column(String(36), primary_key=True)
     name = mapped_column(String)
     linear_solver = mapped_column(String)
-    min_antares_version = mapped_column(JSON, nullable=True)
-    max_antares_version = mapped_column(JSON, nullable=True)
-    linear_solver_param_optim_1 = mapped_column(JSON, nullable=True)
-    linear_solver_param_optim_2 = mapped_column(JSON, nullable=True)
-    linear_solver_param = mapped_column(JSON, nullable=True)
+    min_antares_version = mapped_column(String, nullable=True)
+    max_antares_version = mapped_column(String, nullable=True)
+    linear_solver_param_optim_1 = mapped_column(String, nullable=True)
+    linear_solver_param_optim_2 = mapped_column(String, nullable=True)
+    linear_solver_param = mapped_column(String, nullable=True)
     use_optim_1_basis_next_week = mapped_column(Boolean)
     use_optim_1_basis_optim_2 = mapped_column(Boolean)
 

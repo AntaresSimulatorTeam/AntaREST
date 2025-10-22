@@ -330,6 +330,10 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     assert create_launch_config_res.status_code == 200
     create_launch_config__data = create_launch_config_res.json()
 
+    import time
+
+    time.sleep(2)
+
     res_run_with_conf = client.post(
         f"/v1/launcher/run/{study_id}",
         headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
