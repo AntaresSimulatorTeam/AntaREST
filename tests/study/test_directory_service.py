@@ -18,6 +18,7 @@ from fastapi import HTTPException
 
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.model import Group, Identity
+from antarest.login.repository import GroupRepository
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import Directory, DirectoryCreation, DirectoryUpdate
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
@@ -41,11 +42,19 @@ def mock_study_service() -> Mock:
 
 
 @pytest.fixture
-def directory_service(mock_directory_repo: Mock, mock_study_repo: Mock, mock_study_service: Mock) -> DirectoryService:
+def mock_group_repo() -> Mock:
+    return Mock(spec=GroupRepository)
+
+
+@pytest.fixture
+def directory_service(
+    mock_directory_repo: Mock, mock_study_repo: Mock, mock_study_service: Mock, mock_group_repo: Mock
+) -> DirectoryService:
     return DirectoryService(
         directory_repository=mock_directory_repo,
         study_repository=mock_study_repo,
         study_service=mock_study_service,
+        group_repository=mock_group_repo,
     )
 
 
@@ -64,6 +73,7 @@ class TestDirectoryService:
         self,
         directory_service: DirectoryService,
         mock_directory_repo: Mock,
+        mock_group_repo: Mock,
         test_user: Identity,
         test_group: Group,
     ) -> None:
@@ -77,10 +87,10 @@ class TestDirectoryService:
             parent_id=None,
             owner_id=test_user.id,
         )
-        mock_directory_repo.session.get.return_value = test_group
+        mock_group_repo.get_by_ids.return_value = [test_group]
 
         # Execute
-        result = directory_service.create_directory(data, test_user.id, [test_group.id])
+        result = directory_service.create_directory(data, test_user.id, default_group_ids=[test_group.id])
 
         # Verify
         assert result.name == "New Directory"
@@ -101,7 +111,7 @@ class TestDirectoryService:
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.create_directory(data, test_user.id, [])
+            directory_service.create_directory(data, test_user.id, default_group_ids=[])
 
         assert exc_info.value.status_code == 404
         assert fake_parent_id in str(exc_info.value.detail)
@@ -126,7 +136,7 @@ class TestDirectoryService:
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.create_directory(data, test_user.id, [])
+            directory_service.create_directory(data, test_user.id, default_group_ids=[])
 
         assert exc_info.value.status_code == 403
 
@@ -143,10 +153,65 @@ class TestDirectoryService:
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
-            directory_service.create_directory(data, test_user.id, [])
+            directory_service.create_directory(data, test_user.id, default_group_ids=[])
 
         assert exc_info.value.status_code == 409
         assert "already exists" in str(exc_info.value.detail)
+
+    def test_create_directory_uses_default_groups_when_not_specified(
+        self,
+        directory_service: DirectoryService,
+        mock_directory_repo: Mock,
+        mock_group_repo: Mock,
+        test_user: Identity,
+        test_group: Group,
+    ) -> None:
+        # Setup - DirectoryCreation without groups specified
+        data = DirectoryCreation(name="New Directory", parent_id=None, groups=None)
+        default_group = Group(id="default-group", name="Default Group")
+
+        mock_directory_repo.has_duplicate_name.return_value = False
+        mock_directory_repo.save.return_value = Directory(
+            id=str(uuid.uuid4()),
+            name="New Directory",
+            parent_id=None,
+            owner_id=test_user.id,
+        )
+        mock_group_repo.get_by_ids.return_value = [default_group]
+
+        # Execute
+        directory_service.create_directory(data, test_user.id, default_group_ids=[default_group.id])
+
+        # Verify that default groups were used
+        mock_group_repo.get_by_ids.assert_called_once_with([default_group.id])
+
+    def test_create_directory_uses_specified_groups_over_defaults(
+        self,
+        directory_service: DirectoryService,
+        mock_directory_repo: Mock,
+        mock_group_repo: Mock,
+        test_user: Identity,
+        test_group: Group,
+    ) -> None:
+        # Setup - DirectoryCreation with explicit groups
+        specified_group = Group(id="specified-group", name="Specified Group")
+        data = DirectoryCreation(name="New Directory", parent_id=None, groups=[specified_group.id])
+        default_group = Group(id="default-group", name="Default Group")
+
+        mock_directory_repo.has_duplicate_name.return_value = False
+        mock_directory_repo.save.return_value = Directory(
+            id=str(uuid.uuid4()),
+            name="New Directory",
+            parent_id=None,
+            owner_id=test_user.id,
+        )
+        mock_group_repo.get_by_ids.return_value = [specified_group]
+
+        # Execute
+        directory_service.create_directory(data, test_user.id, default_group_ids=[default_group.id])
+
+        # Verify that specified groups were used, not defaults
+        mock_group_repo.get_by_ids.assert_called_once_with([specified_group.id])
 
     def test_update_directory_name(
         self,
@@ -248,6 +313,7 @@ class TestDirectoryService:
         self,
         directory_service: DirectoryService,
         mock_directory_repo: Mock,
+        mock_group_repo: Mock,
         test_user: Identity,
         test_group: Group,
     ) -> None:
@@ -266,14 +332,14 @@ class TestDirectoryService:
 
         mock_directory_repo.get.return_value = existing_directory
         mock_directory_repo.has_permission.return_value = True
-        mock_directory_repo.session.get.return_value = new_group
+        mock_group_repo.get_by_ids.return_value = [new_group]
         mock_directory_repo.save.return_value = existing_directory
 
         # Execute
         directory_service.update_directory(directory_id, data)
 
         # Verify groups were updated
-        mock_directory_repo.session.get.assert_called_with(Group, new_group.id)
+        mock_group_repo.get_by_ids.assert_called_once_with([new_group.id])
         mock_directory_repo.save.assert_called_once()
 
     def test_delete_empty_directory(
@@ -293,7 +359,7 @@ class TestDirectoryService:
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 0
-        mock_directory_repo.get_children.return_value = []
+        mock_directory_repo.has_children_directories.return_value = False
 
         # Execute
         directory_service.delete_directory(directory_id)
@@ -309,23 +375,16 @@ class TestDirectoryService:
     ) -> None:
         # Setup
         directory_id = str(uuid.uuid4())
-        child_id = str(uuid.uuid4())
         directory = Directory(
             id=directory_id,
             name="Parent Directory",
             parent_id=None,
             owner_id=test_user.id,
         )
-        child = Directory(
-            id=child_id,
-            name="Child Directory",
-            parent_id=directory_id,
-            owner_id=test_user.id,
-        )
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 0
-        mock_directory_repo.get_children.return_value = [child]
+        mock_directory_repo.has_children_directories.return_value = True
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
@@ -351,7 +410,7 @@ class TestDirectoryService:
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 5
-        mock_directory_repo.get_children.return_value = []
+        mock_directory_repo.has_children_directories.return_value = False
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:

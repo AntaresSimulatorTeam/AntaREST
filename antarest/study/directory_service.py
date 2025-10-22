@@ -14,7 +14,7 @@ import uuid
 from typing import List, Sequence
 
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.login.model import Group
+from antarest.login.repository import GroupRepository
 from antarest.study.directory_exceptions import (
     DirectoryAlreadyExistsError,
     DirectoryCycleError,
@@ -42,10 +42,12 @@ class DirectoryService:
         directory_repository: DirectoryRepository,
         study_repository: StudyMetadataRepository,
         study_service: StudyService,
+        group_repository: GroupRepository,
     ):
         self.directory_repository = directory_repository
         self.study_repository = study_repository
         self.study_service = study_service
+        self.group_repository = group_repository
 
     def list_directories(self) -> List[DirectoryMetadata]:
         """List all directories the user has access to."""
@@ -57,7 +59,7 @@ class DirectoryService:
         self,
         data: DirectoryCreation,
         owner_id: int,
-        group_ids: Sequence[str],
+        default_group_ids: Sequence[str],
     ) -> DirectoryMetadata:
         access_permissions = AccessPermissions.for_current_user()
         if data.parent_id:
@@ -71,6 +73,9 @@ class DirectoryService:
         if self.directory_repository.has_duplicate_name(data.name, data.parent_id):
             raise DirectoryAlreadyExistsError(data.name)
 
+        # Use specified groups or fall back to user's default groups
+        group_ids = data.groups if data.groups is not None else default_group_ids
+
         directory = Directory(
             id=str(uuid.uuid4()),
             name=data.name,
@@ -78,8 +83,7 @@ class DirectoryService:
             owner_id=owner_id,
         )
 
-        session = self.directory_repository.session
-        directory.groups = [session.get(Group, gid) for gid in group_ids if session.get(Group, gid)]
+        directory.groups = self.group_repository.get_by_ids(list(group_ids))
 
         saved_directory = self.directory_repository.save(directory)
         return saved_directory.to_metadata()
@@ -129,8 +133,7 @@ class DirectoryService:
 
         if data.groups is not None:
             # Update groups: replace existing groups with the new list
-            session = self.directory_repository.session
-            directory.groups = [session.get(Group, gid) for gid in data.groups if session.get(Group, gid)]
+            directory.groups = self.group_repository.get_by_ids(data.groups)
 
         updated_directory = self.directory_repository.save(directory)
         return updated_directory.to_metadata()
@@ -155,8 +158,7 @@ class DirectoryService:
             raise DirectoryNotEmptyError("Cannot delete directory: it contains studies.")
 
         # Check if directory contains subdirectories
-        children = self.directory_repository.get_children(directory_id, access_permissions)
-        if children:
+        if self.directory_repository.has_children_directories(directory_id):
             raise DirectoryNotEmptyError("Cannot delete directory: it contains subdirectories.")
 
         # Delete the directory

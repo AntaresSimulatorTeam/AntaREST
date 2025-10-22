@@ -523,30 +523,6 @@ class DirectoryRepository:
         session.execute(stmt)
         session.commit()
 
-    def get_children(
-        self, directory_id: str, access_permissions: AccessPermissions = AccessPermissions()
-    ) -> Sequence[Directory]:
-        stmt = (
-            select(Directory)
-            .options(joinedload(Directory.owner))
-            .options(joinedload(Directory.groups))
-            .options(joinedload(Directory.parent))
-            .where(Directory.parent_id == directory_id)
-        )
-
-        if not access_permissions.is_admin and access_permissions.user_id is not None:
-            stmt = stmt.where(
-                or_(
-                    Directory.owner_id == access_permissions.user_id,
-                    Directory.groups.any(Group.id.in_(access_permissions.user_groups)),
-                )
-            )
-        elif not access_permissions.is_admin and access_permissions.user_id is None:
-            stmt = stmt.where(sql.false())
-
-        result = self.session.execute(stmt)
-        return list(result.unique().scalars().all())
-
     def has_children_directories(self, directory_id: str) -> bool:
         stmt = select(exists(select(Directory).where(Directory.parent_id == directory_id)))
         result = self.session.scalar(stmt)

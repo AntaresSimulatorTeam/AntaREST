@@ -50,12 +50,12 @@ def create_directory_routes(
     )
     def create_directory(data: DirectoryCreation) -> DirectoryMetadata:
         logger.info(f"Creating directory '{data.name}'")
-
         user = require_current_user()
-
-        group_ids = data.groups if data.groups is not None else [group.id for group in user.groups]
-
-        return directory_service.create_directory(data, user.id, group_ids)
+        return directory_service.create_directory(
+            data,
+            owner_id=user.id,
+            default_group_ids=[group.id for group in user.groups],
+        )
 
     @bp.put(
         "/directories/{directory_id}",
