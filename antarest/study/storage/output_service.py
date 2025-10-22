@@ -39,7 +39,14 @@ from antarest.study.business.aggregator_management import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
+from antarest.study.model import (
+    ExportFormat,
+    MatrixIndex,
+    Study,
+    StudyDownloadDTO,
+    StudyDownloadLevelDTO,
+    StudySimResultDTO,
+)
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.output_storage import IOutputStorage
@@ -49,7 +56,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
-from antarest.study.storage.utils import assert_permission, is_output_archived, remove_from_cache
+from antarest.study.storage.utils import assert_permission, get_start_date, is_output_archived, remove_from_cache
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -215,6 +222,21 @@ class OutputService:
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
         return get_output_variables_information(self._study_service.get_file_study(study), output_uuid)
+
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+        """
+        Get the time index (start date and step count) for output matrices with a given frequency.
+        Args:
+            study_id: ID of the study
+            output_id: ID of the output
+            frequency: temporal frequency (hourly, daily, weekly, monthly, annually)
+        Returns:
+            MatrixIndex with start_date, steps, first_week_size and level
+        """
+        study = self._study_service.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        file_study = self._study_service.get_file_study(study)
+        return get_start_date(file_study, output_id, frequency)
 
     def export_output(self, study_uuid: str, output_uuid: str) -> FileDownloadTaskDTO:
         """
