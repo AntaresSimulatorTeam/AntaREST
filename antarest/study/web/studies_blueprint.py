@@ -407,9 +407,8 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/matrixindex",
         tags=[APITag.study_management],
         summary="Return study input matrix start date index",
-        response_model=MatrixIndex,
     )
-    def get_study_matrix_index(uuid: str, path: str = "") -> Any:
+    def get_study_matrix_index(uuid: str, path: str = "") -> MatrixIndex:
         study_id = sanitize_uuid(uuid)
         logger.info(f"Return the start date for input matrix '{study_id}'")
         return study_service.get_input_matrix_startdate(study_id, path)

@@ -12,23 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
-import { Box } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import SideNav from "./SideNav";
-import StudiesList from "./StudiesList";
-import { fetchStudies } from "@/redux/ducks/studies";
-import RootPage from "../../common/page/RootPage";
-import HeaderActions from "./HeaderActions";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
-import { getStudiesState, getStudyIdsFilteredAndSorted } from "@/redux/selectors";
-import useAsyncAppSelector from "../../../redux/hooks/useAsyncAppSelector";
-import FilterDrawer from "./FilterDrawer";
-import UseAsyncAppSelectorCond from "../../../redux/components/UseAsyncAppSelectorCond";
-import RefreshButton from "./RefreshButton";
 import SplitView from "@/components/common/SplitView";
 import ViewWrapper from "@/components/common/page/ViewWrapper";
+import { fetchStudies } from "@/redux/ducks/studies";
+import { getStudiesState, getStudyIdsFilteredAndSorted } from "@/redux/selectors";
+import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
+import { Box } from "@mui/material";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import UseAsyncAppSelectorCond from "../../../redux/components/UseAsyncAppSelectorCond";
+import useAsyncAppSelector from "../../../redux/hooks/useAsyncAppSelector";
+import SimpleLoader from "../../common/loaders/SimpleLoader";
+import RootPage from "../../common/page/RootPage";
+import FiltersDrawer from "./FiltersDrawer";
+import HeaderActions from "./HeaderActions";
+import RefreshButton from "./RefreshButton";
+import SideNav from "./SideNav";
+import StudiesList from "./StudiesList";
 
 function Studies() {
   const res = useAsyncAppSelector({
@@ -74,7 +74,7 @@ function Studies() {
           />
         </ViewWrapper>
       </SplitView>
-      <FilterDrawer open={openFilter} onClose={() => setOpenFilter(false)} />
+      <FiltersDrawer open={openFilter} onClose={() => setOpenFilter(false)} />
     </RootPage>
   );
 }

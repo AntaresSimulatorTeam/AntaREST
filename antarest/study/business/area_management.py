@@ -18,6 +18,7 @@ from antarest.core.model import JSON
 from antarest.study.business.model.area_model import (
     AreaCreation,
     AreaInfo,
+    AreaUI,
     AreaUIData,
     AreaUIUpdate,
 )
@@ -55,6 +56,10 @@ class AreaManager:
     def get_all_areas_info(self, study: StudyInterface) -> List[AreaInfo]:
         """Retrieve all physical areas of a raw study."""
         return study.get_study_dao().get_all_areas_info()
+
+    def get_area_ui(self, study: StudyInterface, area_id: str) -> AreaUI:
+        """Returns the UI of the layer 0 for a given area"""
+        return study.get_study_dao().get_area_ui(area_id)
 
     def get_all_areas_ui_info(self, study: StudyInterface) -> Dict[str, AreaUIData]:
         """

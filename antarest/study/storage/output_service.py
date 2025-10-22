@@ -30,18 +30,28 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import get_user_id
-from antarest.study.business.aggregator_management import (
-    AggregatorManager,
+from antarest.study.business.output.aggregator_management import AggregatorManager
+from antarest.study.business.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
+from antarest.study.business.output.variables_management import extract_variables_list
+from antarest.study.model import (
+    ExportFormat,
+    MatrixIndex,
+    Study,
+    StudyDownloadDTO,
+    StudyDownloadLevelDTO,
+    StudySimResultDTO,
+)
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_df_chunks
+from antarest.study.storage.output_model import OutputVariables, OutputVariablesList
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -49,7 +59,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
-from antarest.study.storage.utils import assert_permission, is_output_archived, remove_from_cache
+from antarest.study.storage.utils import assert_permission, get_start_date, is_output_archived, remove_from_cache
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -215,6 +225,21 @@ class OutputService:
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
         return get_output_variables_information(self._study_service.get_file_study(study), output_uuid)
+
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+        """
+        Get the time index (start date and step count) for output matrices with a given frequency.
+        Args:
+            study_id: ID of the study
+            output_id: ID of the output
+            frequency: temporal frequency (hourly, daily, weekly, monthly, annually)
+        Returns:
+            MatrixIndex with start_date, steps, first_week_size and level
+        """
+        study = self._study_service.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        file_study = self._study_service.get_file_study(study)
+        return get_start_date(file_study, output_id, frequency)
 
     def export_output(self, study_uuid: str, output_uuid: str) -> FileDownloadTaskDTO:
         """
@@ -545,3 +570,31 @@ class OutputService:
         )
 
         return download_id
+
+    def get_output_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+        """
+        Returns the list of variables concerning a given output.
+        First, try to fetch the given data inside DB.
+        If present, return the data.
+        If not, parse the output headers to build the object. Before returning it, save it inside DB for next calls.
+        """
+        study = self._study_service.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+
+        with db():
+            output_variables: OutputVariables | None = db.session.get(OutputVariables, (study_id, output_id))
+            if output_variables:
+                return output_variables.to_model()
+
+        # Fetches the data inside the FS
+        output_path = self._storage.get_output_path(study, output_id)
+        model = extract_variables_list(output_path)
+
+        # Save the model inside DB for next calls
+        with db():
+            db_model = OutputVariables.from_model(study_id, output_id, model)
+            db.session.add(db_model)
+            db.session.commit()
+
+        # Returns it
+        return model

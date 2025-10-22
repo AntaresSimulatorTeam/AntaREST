@@ -14,6 +14,7 @@ import base64
 import collections
 import contextlib
 import http
+import io
 import logging
 import os
 import time
@@ -56,6 +57,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
@@ -86,10 +88,12 @@ from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.link_model import Link, LinkUpdate
+from antarest.study.business.model.study_data_model import StudyDataDTO
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
+    XpansionResourceFileType,
     XpansionSettings,
     XpansionSettingsUpdate,
 )
@@ -2452,8 +2456,141 @@ class StudyService:
         url = [item for item in path.split("/") if item]
         node, relative_url = file_study.tree.get_node_and_remainder(url)
 
-        # Return a datframe when possible instead of less memory & computation - efficient python objects
+        # Return a dataframe when possible instead of less memory & computation - efficient python objects
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
 
         return node.get(url=relative_url, depth=depth, formatted=formatted)
+
+    def get_study_data(self, uuid: str) -> StudyDataDTO:
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        study_interface = self.get_study_interface(study)
+
+        ##########################
+        # Study metadata
+        ##########################
+
+        obj: dict[str, Any] = {
+            "metadata": {"version": study_interface.version, "name": study.name, "folder": study.folder}
+        }
+
+        ##########################
+        # Areas
+        ##########################
+
+        area_properties = self.area_manager.get_all_area_properties(study_interface)
+        area_names = {a.id: a.name for a in self.area_manager.get_all_areas_info(study_interface)}
+        thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
+        st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
+        st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
+        hydro_properties = self.hydro_manager.get_all_hydro_properties(study_interface)
+
+        try:
+            renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
+        except ChildNotFoundError:  # Can happen, according to the enr-modeling
+            renewable_clusters = {}
+
+        areas = []
+        for area_id, properties in area_properties.items():
+            area: dict[str, Any] = {
+                "id": area_id,
+                "name": area_names[area_id],
+                "properties": properties,
+                "thermals": thermal_clusters.get(area_id, {}).values(),
+                "renewables": renewable_clusters.get(area_id, {}).values(),
+                "st_storages": [],
+                "ui": self.area_manager.get_area_ui(study_interface, area_id),
+            }
+
+            # Hydro
+            hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
+            area["hydro"] = {
+                "allocation": hydro_allocation,
+                "management_options": hydro_properties[area_id].management_options,
+                "inflow_structure": hydro_properties[area_id].inflow_structure,
+            }
+
+            # Short-term storages
+            storage_dict = st_storages.get(area_id, {})
+            for storage_id, storage in storage_dict.items():
+                sts_constraints = st_storages_constraints.get(area_id, {}).get(storage_id, [])
+                area["st_storages"].append({**storage.model_dump(), "constraints": sts_constraints})
+
+            areas.append(area)
+
+        obj["areas"] = areas
+
+        ##########################
+        # Links and BCs
+        ##########################
+
+        obj["links"] = self.links_manager.get_all_links(study_interface)
+        obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
+
+        ##########################
+        # Outputs
+        ##########################
+
+        # We don't have access to the output service, so we have to do it like this
+        outputs = []
+        for output in study_interface.get_files().config.outputs.values():
+            outputs.append({"name": output.name, "archived": output.archived})
+        obj["outputs"] = outputs
+
+        ##########################
+        # Settings
+        ##########################
+
+        obj["settings"] = {
+            "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
+            "general": self.general_manager.get_general_config(study_interface),
+            "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
+            "playlist": self.playlist_manager.get_playlist(study_interface),
+            "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
+            "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
+            "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
+        }
+
+        ##########################
+        # Xpansion
+        ##########################
+
+        try:
+            xpansion_settings = self.get_xpansion_settings(uuid)
+            if xpansion_settings.additional_constraints:
+                xpansion_constraint = self.xpansion_manager.get_resource_content(
+                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                )
+                assert isinstance(xpansion_constraint, bytes)
+                constraint_as_dict = IniReader().read(io.StringIO(xpansion_constraint.decode("utf-8")))
+                constraints = []
+                for constraint in constraint_as_dict.values():
+                    constraint_model_args = {
+                        "name": constraint.pop("name"),
+                        "sign": constraint.pop("sign"),
+                        "right_hand_side": constraint.pop("rhs"),
+                        "candidates_coefficients": {},
+                    }
+                    for candidate, coefficient in constraint.items():
+                        constraint_model_args["candidates_coefficients"][candidate] = coefficient
+                    constraints.append(constraint_model_args)
+            else:
+                constraints = []
+
+            xpansion = {
+                "settings": xpansion_settings,
+                "candidates": self.xpansion_manager.get_candidates(study_interface),
+                "constraints": constraints,
+            }
+
+        except ChildNotFoundError:
+            xpansion = None
+
+        obj["xpansion"] = xpansion
+
+        ##########################
+        # Return the object
+        ##########################
+
+        return StudyDataDTO.model_validate(obj)
