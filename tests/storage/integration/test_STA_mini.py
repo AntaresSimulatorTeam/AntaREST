@@ -651,7 +651,7 @@ def test_sta_mini_filter(storage_service: StudyService, url: str, expected_outpu
 
 @with_admin_user
 def test_sta_mini_output_variables_nominal_case(output_service: Any) -> None:
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     assert variables["area"] == [
         "OV. COST",
         "OP. COST",
@@ -706,7 +706,7 @@ def test_sta_mini_output_variables_nominal_case(output_service: Any) -> None:
 @with_admin_user
 def test_sta_mini_output_variables_no_mc_ind(output_service: Any) -> None:
     with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
-        output_service.output_variables_information(UUID, "20201014-1427eco")
+        output_service.get_output_variables_information(UUID, "20201014-1427eco")
 
 
 @with_admin_user
@@ -714,7 +714,7 @@ def test_sta_mini_output_variables_no_links(output_service: OutputService) -> No
     study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     # When there's no links folder, asserts the endpoint doesn't fail and simply return an empty list
     assert variables["link"] == []
 
@@ -726,6 +726,6 @@ def test_sta_mini_output_variables_no_areas(output_service: OutputService) -> No
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)
     shutil.rmtree(areas_mc_all_folder)
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     # When there's no areas folder, asserts the endpoint doesn't fail and simply return an empty list
     assert variables["area"] == []

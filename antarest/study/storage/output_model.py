@@ -84,3 +84,12 @@ class OutputVariables(Base):
             variables_list_version=1,
             variables_list=compressed_content,
         )
+
+
+class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
+    area: list[str]
+    link: list[str]
+
+    @staticmethod
+    def from_variables_list(variables_list: OutputVariablesList) -> "OutputVariablesInformation":
+        pass

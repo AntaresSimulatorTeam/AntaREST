@@ -16,14 +16,12 @@ import os
 import re
 import tarfile
 from datetime import datetime, timedelta
-from http import HTTPStatus
 from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import numpy as np
-from fastapi import HTTPException
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.model import (
@@ -44,19 +42,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import FilterError, FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FilterError
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import get_start_date
 
 logger = logging.getLogger(__name__)
-
-
-class OutputArchivedError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 class ExportException(Exception):
@@ -400,103 +391,3 @@ class StudyDownloader:
                     row_date = index.level.inc_date(row_date)
 
         return str.encode(output.getvalue(), "utf-8")
-
-
-class BadOutputFormat(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
-
-
-def find_first_child(
-    folder_node: INode[Any, Any, Any], filter_name: str = ".*", depth: int = 0
-) -> INode[Any, Any, Any]:
-    children: Dict[str, INode[Any, Any, Any]] = cast(FolderNode, folder_node).build()
-    filtered_children = filter(
-        lambda el: re.search(".*" if depth > 0 else filter_name, el) is not None,
-        children.keys(),
-    )
-    if depth > 0:
-        for child in filtered_children:
-            try:
-                return find_first_child(children[child], filter_name, depth - 1)
-            except BadOutputFormat:
-                pass
-    else:
-        try:
-            while True:
-                first_child = filtered_children.__next__()
-                first_child_node = children[first_child]
-                if not isinstance(first_child_node, LazyNode) or first_child_node.file_exists():
-                    return first_child_node
-        except StopIteration:
-            raise BadOutputFormat("Couldn't find an output sample")
-
-    raise BadOutputFormat("Couldn't find an output sample")
-
-
-def get_output_variables(base_node: INode[Any, Any, Any], depth_search: int) -> List[List[str]]:
-    return cast(
-        List[List[str]],
-        cast(
-            OutputSeriesMatrix,
-            find_first_child(base_node, "values-", depth_search),
-        )
-        .parse_dataframe()
-        .columns.to_list(),
-    )
-
-
-def get_output_variables_information(study: FileStudy, output_name: str) -> Dict[str, List[str]]:
-    if not study.config.outputs[output_name].by_year:
-        raise BadOutputFormat("Not a year by year simulation")
-
-    mode = study.config.outputs[output_name].mode.value.lower()
-
-    mc_all_result = cast(FolderNode, study.tree.get_node(["output", output_name, mode, "mc-all"])).build()
-
-    first_year_result = cast(
-        FolderNode, find_first_child(cast(FolderNode, study.tree.get_node(["output", output_name, mode, "mc-ind"])))
-    ).build()
-
-    output_variables: Dict[str, List[List[str]]] = {
-        "area": [],
-        "link": [],
-    }
-
-    if "areas" in first_year_result:
-        try:
-            output_variables["area"] = get_output_variables(first_year_result["areas"], 1)
-        except BadOutputFormat:
-            logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas")
-
-    if len(output_variables["area"]) == 0 and "areas" in mc_all_result:
-        try:
-            output_variables["area"] = get_output_variables(mc_all_result["areas"], 1)
-        except BadOutputFormat:
-            logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for areas")
-
-    if "links" in first_year_result:
-        try:
-            output_variables["link"] = get_output_variables(first_year_result["links"], 2)
-        except BadOutputFormat:
-            logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links")
-
-    if len(output_variables["link"]) == 0 and "links" in mc_all_result:
-        try:
-            output_variables["link"] = get_output_variables(mc_all_result["links"], 2)
-        except BadOutputFormat:
-            logger.warning(f"Failed to retrieve output variables in {study.config.study_id} ({output_name}) for links")
-
-    # don't know how to preserve order if using list({col[0] for col in ...})
-    area_cols: List[str] = []
-    for col in output_variables["area"]:
-        if col[0] not in area_cols:
-            area_cols.append(col[0])
-    link_cols: List[str] = []
-    for col in output_variables["link"]:
-        if col[0] not in link_cols:
-            link_cols.append(col[0])
-    return {
-        "area": area_cols,
-        "link": link_cols,
-    }
