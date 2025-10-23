@@ -17,11 +17,13 @@ This module defines the database tables used when a study has storage_mode=DATAB
 These tables store study data (areas, UI positions, etc.) in the database instead of the filesystem.
 """
 
-from sqlalchemy import Column, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, String, Table, UniqueConstraint
 
-# Metadata instance for database tables
-# Note: This is separate from the ORM Base metadata used for Study/RawStudy/etc.
-metadata = MetaData()
+from antarest.dbmodel import Base
+
+# Use the same metadata as the ORM Base to ensure foreign key references work correctly
+# This allows the area table to reference the study table defined in ORM
+metadata = Base.metadata
 
 # Area table: stores basic area information for database-backed studies
 area = Table(
