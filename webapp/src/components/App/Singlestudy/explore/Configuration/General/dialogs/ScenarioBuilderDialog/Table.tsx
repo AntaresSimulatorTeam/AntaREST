@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-grid";
+import * as R from "ramda";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
@@ -25,9 +27,9 @@ import type {
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { toError } from "../../../../../../../../utils/fnUtils";
+import DataGridForm from "../../../../../../../common/DataGridForm";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import EmptyView from "../../../../../../../common/page/EmptyView";
-import DataGridForm from "../../../../../../../common/DataGridForm";
 
 interface Props {
   config: Level1Display;
@@ -119,7 +121,7 @@ function Table({ config, type, areaId }: Props) {
 
   return (
     <DataGridForm
-      key={JSON.stringify(config)}
+      key={JSON.stringify(defaultData)}
       defaultData={defaultData}
       columns={columns}
       getCellContent={getCellContent}
