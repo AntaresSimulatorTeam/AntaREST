@@ -92,4 +92,28 @@ class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
 
     @staticmethod
     def from_variables_list(variables_list: OutputVariablesList) -> "OutputVariablesInformation":
-        pass
+        args = {}
+
+        # Areas
+        all_area_variables = []
+        for area in variables_list.mc_ind.areas:
+            all_area_variables.extend(area.variables)
+
+            for thermal in area.thermal_clusters:
+                all_area_variables.extend(thermal.variables)
+
+            for renewable in area.renewable_clusters:
+                all_area_variables.extend(renewable.variables)
+
+            for short_term_storage in area.short_term_storages:
+                all_area_variables.extend(short_term_storage.variables)
+
+        args["area"] = set(all_area_variables)
+
+        # Links
+        all_link_variables = []
+        for link in variables_list.mc_all.links:
+            all_link_variables.extend(link.variables)
+        args["link"] = set(all_link_variables)
+
+        return OutputVariablesInformation.model_validate(args)
