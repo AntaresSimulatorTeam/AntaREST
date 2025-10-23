@@ -12,25 +12,25 @@
  * This file is part of the Antares project.
  */
 
-import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-grid";
-import * as R from "ramda";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-grid";
+import * as R from "ramda";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type {
-  ScenarioDisplay,
+  Level1Display,
   ScenarioType,
 } from "@/services/api/studies/config/scenarioBuilder/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { toError } from "../../../../../../../../utils/fnUtils";
-import DataGridForm from "../../../../../../../common/DataGridForm";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import EmptyView from "../../../../../../../common/page/EmptyView";
+import DataGridForm from "../../../../../../../common/DataGridForm";
 
 interface Props {
-  config: ScenarioDisplay;
+  config: Level1Display;
   type: ScenarioType;
   areaId?: string;
 }
@@ -47,9 +47,10 @@ function Table({ config, type, areaId }: Props) {
       return [];
     }
 
-    // Get the year indices from the first row
-    const firstRowData = config[rowNames[0]] as Record<string, number | "">;
-    const yearIndices = Object.keys(firstRowData);
+    // Get the MC year indices from the first row
+    const firstRowName = rowNames[0];
+    const firstRowData = config[firstRowName];
+    const yearIndices = R.keys(firstRowData);
 
     return yearIndices.map((yearIndex) => ({
       id: yearIndex,
@@ -60,7 +61,7 @@ function Table({ config, type, areaId }: Props) {
   const defaultData = useMemo(() => {
     return rowNames.reduce(
       (acc, rowName) => {
-        acc[rowName] = config[rowName] as Record<string, number | "">;
+        acc[rowName] = config[rowName];
         return acc;
       },
       {} as Record<string, Record<string, number | "">>,
@@ -118,7 +119,7 @@ function Table({ config, type, areaId }: Props) {
 
   return (
     <DataGridForm
-      key={JSON.stringify(defaultData)}
+      key={JSON.stringify(config)}
       defaultData={defaultData}
       columns={columns}
       getCellContent={getCellContent}
