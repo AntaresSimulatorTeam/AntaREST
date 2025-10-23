@@ -66,6 +66,10 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
   onRowAppended?: DataGridProps["onRowAppended"];
   trailingRowOptions?: DataGridProps["trailingRowOptions"];
   enableColumnResize?: boolean;
+  getCellContent?: (
+    location: Item,
+    data: TData[string][keyof TData[string]],
+  ) => ReturnType<DataEditorProps["getCellContent"]>;
   onSubmit: (
     data: SubmitHandlerPlus<TData>,
     event: React.FormEvent<HTMLFormElement>,
@@ -91,6 +95,7 @@ function DataGridForm<TData extends Data>({
   trailingRowOptions,
   enableColumnResize,
   rowMarkers: rowMarkersFromProps,
+  getCellContent: getCellContentFromProps,
   onSubmit,
   onSubmitSuccessful,
   onDataChange,
@@ -206,6 +211,11 @@ function DataGridForm<TData extends Data>({
       const dataRow = data[rowName];
       const cellData = dataRow[columnName];
 
+      // Use custom getCellContent if provided
+      if (getCellContentFromProps) {
+        return getCellContentFromProps(location, cellData as TData[string][keyof TData[string]]);
+      }
+
       if (typeof cellData === "string") {
         return {
           kind: GridCellKind.Text,
@@ -242,7 +252,7 @@ function DataGridForm<TData extends Data>({
         readonly: true,
       };
     },
-    [data, getRowAndColumnNames],
+    [data, getRowAndColumnNames, getCellContentFromProps],
   );
 
   ////////////////////////////////////////////////////////////////

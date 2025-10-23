@@ -15,13 +15,14 @@
 import { Box } from "@mui/material";
 import { useEffect, useState } from "react";
 import type {
+  Level1Display,
   ScenarioDisplay,
   ScenarioType,
 } from "@/services/api/studies/config/scenarioBuilder/types";
 import PropertiesView from "../../../../../../../common/PropertiesView";
 import SplitView from "../../../../../../../common/SplitView";
 import ListElement from "../../../../common/ListElement";
-import { hasAreaSelection, isLevel2Display, isLevel3Display } from "./types";
+import { hasAreaSelection, isLevel1Display, isLevel2Display, isLevel3Display } from "./types";
 import { requiresAreaSelection } from "./utils";
 
 interface ScenarioTableProps {
@@ -31,16 +32,16 @@ interface ScenarioTableProps {
 }
 
 function withAreas(
-  Component: React.ComponentType<
-    ScenarioTableProps & {
-      config: ScenarioDisplay;
-    }
-  >,
+  Component: React.ComponentType<{
+    type: ScenarioType;
+    config: Level1Display;
+    areaId?: string;
+  }>,
 ) {
   return function TableWithAreas({ type, config, ...props }: ScenarioTableProps) {
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
-    const [configByArea, setConfigByArea] = useState<ScenarioDisplay>({});
+    const [configByArea, setConfigByArea] = useState<Level1Display>({});
 
     useEffect(() => {
       if (config && hasAreaSelection(config)) {
@@ -68,7 +69,7 @@ function withAreas(
     ////////////////////////////////////////////////////////////////
 
     // Handle Level 1 scenarios (no area selection needed)
-    if (!requiresAreaSelection(type) && config) {
+    if (!requiresAreaSelection(type) && config && isLevel1Display(config)) {
       return <Component {...props} config={config} type={type} />;
     }
 
