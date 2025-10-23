@@ -25,6 +25,7 @@ from fastapi import FastAPI
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
+from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import UrlNotMatchJsonDataError
@@ -90,6 +91,7 @@ def create_test_client(
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
+        blob_service=Mock(spec=BlobService),
     )
     return TestClient(app_ctxt.build(), raise_server_exceptions=raise_server_exceptions)
 

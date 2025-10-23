@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 import antarest.study.storage.rawstudy.model.filesystem.config.files
+from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.core.exceptions import CommandApplicationError
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -84,10 +85,14 @@ def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path:
 
 
 @pytest.fixture
-def manager(matrix_service: ISimpleMatrixService) -> ThermalManager:
+def manager(matrix_service: ISimpleMatrixService, blob_service: InMemoryBlobService) -> ThermalManager:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     matrix_constants.init_constant_matrices()
-    return ThermalManager(CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service))
+    return ThermalManager(
+        CommandContext(
+            generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
+        )
+    )
 
 
 @pytest.fixture

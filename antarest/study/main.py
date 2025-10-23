@@ -12,6 +12,7 @@
 
 from typing import Optional
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
@@ -45,6 +46,7 @@ def build_study_service(
     config: Config,
     user_service: LoginService,
     matrix_service: ISimpleMatrixService,
+    blob_service: IBlobService,
     cache: ICache,
     file_transfer_manager: FileTransferManager,
     task_service: ITaskService,
@@ -64,6 +66,7 @@ def build_study_service(
         config: server config
         user_service: user service facade
         matrix_service: matrix store service
+        blob_service: blob store service
         cache: cache service
         file_transfer_manager: file transfer manager
         task_service: task job service
@@ -94,8 +97,7 @@ def build_study_service(
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service=matrix_service)
         generator_matrix_constants.init_constant_matrices()
     command_factory = CommandFactory(
-        generator_matrix_constants=generator_matrix_constants,
-        matrix_service=matrix_service,
+        generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
     variant_study_service = VariantStudyService(
         task_service=task_service,

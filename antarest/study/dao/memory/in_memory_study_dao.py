@@ -174,7 +174,7 @@ class InMemoryStudyDao(StudyDao):
         # Playlist config
         self._playlist_config = Playlist()
         # User resources
-        self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
+        self._user_resources: dict[PurePosixPath, Optional[str]] = {}
         # Area Properties
         self._area_properties: dict[str, AreaProperties] = {}
         # Area UI
@@ -807,7 +807,7 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        self._user_resources[resource_data.path] = resource_data.content
+        self._user_resources[resource_data.path] = resource_data.blob_id
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
