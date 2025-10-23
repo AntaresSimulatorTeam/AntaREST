@@ -14,7 +14,7 @@ import time
 import prometheus_client
 import pytest
 from prometheus_client import CollectorRegistry, Metric
-from sqlalchemy import create_engine, text
+from sqlalchemy import QueuePool, create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from antarest.core.metrics import (
@@ -148,6 +148,33 @@ def test_db_connection_metrics_detach():
     assert _get_value(registry, "db_connections_used") == 0
     assert _get_value(registry, "db_connections_idle") == 0
     assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) is None
+
+
+def test_db_connection_metrics_overflow():
+    engine = create_engine("sqlite:///:memory:", poolclass=QueuePool, max_overflow=1, pool_size=1)
+
+    registry = CollectorRegistry()
+    _add_db_connection_metrics(registry, engine)
+
+    with engine.connect():
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 1
+
+        # This connection will be an overflow connection
+        with engine.connect():
+            assert _get_value(registry, "db_connections_used") == 2
+            assert _get_value(registry, "db_connections_idle") == 0
+            # We get 1 more connect and 1 more checkout from the pool
+            assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 2
+            assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 2
+
+    assert _get_value(registry, "db_connections_used") == 0
+    # The overflow connection is checked in but closed instantly, we have only 1 idle connection
+    assert _get_value(registry, "db_connections_idle") == 1
+    assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) == 2
+    assert _get_value(registry, "db_connections_events", {"event_type": "close"}) == 1
 
 
 def test_db_connection_metrics_invalidate():
