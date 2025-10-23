@@ -120,3 +120,89 @@ class TestStudyMatrixIndex:
         actual = res.json()
         expected = {"first_week_size": 7, "start_date": "2018-01-01 00:00:00", "steps": 365, "level": "daily"}
         assert actual == expected
+
+    def test_get_output_time_index(
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+    ) -> None:
+        """
+        Test the new time-index endpoint for outputs with different frequencies.
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        output_id = "20201014-1427eco"
+
+        # Test with default frequency (hourly)
+        # =====================================
+        res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/time-index")
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        expected = {
+            "first_week_size": 7,
+            "level": "hourly",
+            "start_date": "2018-01-01 00:00:00",
+            "steps": 168,  # 7 days * 24 hours
+        }
+        assert actual == expected
+
+        # Test with daily frequency
+        # =========================
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": "daily"}
+        )
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        expected = {
+            "first_week_size": 7,
+            "level": "daily",
+            "start_date": "2018-01-01 00:00:00",
+            "steps": 7,
+        }
+        assert actual == expected
+
+        # Test with weekly frequency
+        # ==========================
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": "weekly"}
+        )
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        expected = {
+            "first_week_size": 7,
+            "level": "weekly",
+            "start_date": "2018-01-01 00:00:00",
+            "steps": 1,  # 7 days = 1 week
+        }
+        assert actual == expected
+
+        # Test with monthly frequency
+        # ===========================
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": "monthly"}
+        )
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        expected = {
+            "first_week_size": 7,
+            "level": "monthly",
+            "start_date": "2018-01-01 00:00:00",
+            "steps": 1,  # 7 days span only 1 month (January)
+        }
+        assert actual == expected
+
+        # Test with annual frequency
+        # ==========================
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": "annual"}
+        )
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        expected = {
+            "first_week_size": 7,
+            "level": "annual",
+            "start_date": "2018-01-01 00:00:00",
+            "steps": 1,
+        }
+        assert actual == expected

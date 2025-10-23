@@ -756,3 +756,22 @@ redis:
   host: localhost
   port: 9862
 ```
+
+# metrics
+
+This section may be used to enable and export application metrics.
+For now, only exposing metrics in prometheus format is supported.
+
+## prometheus
+
+Enable the exposition of metrics in prometheus format at  `/metrics/` endpoint.
+
+The **multiprocess** option is required to gather metrics from multiple workers.
+If enabled, you **must** also define the environment variable `PROMETHEUS_MULTIPROC_DIR`,
+so that prometheus client can collect metrics from all workers.
+
+```yaml
+metrics:
+  prometheus:
+    multiprocess: true  # Enable prometheus multiprocess mode, to gather metrics from multiple workers.
+```
