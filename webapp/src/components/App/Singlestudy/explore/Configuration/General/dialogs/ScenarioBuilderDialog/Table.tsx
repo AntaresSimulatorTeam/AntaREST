@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-grid";
+import * as R from "ramda";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-grid";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type {
   ScenarioDisplay,
@@ -24,9 +25,9 @@ import type {
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { toError } from "../../../../../../../../utils/fnUtils";
+import DataGridForm from "../../../../../../../common/DataGridForm";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import EmptyView from "../../../../../../../common/page/EmptyView";
-import DataGridForm from "../../../../../../../common/DataGridForm";
 
 interface Props {
   config: ScenarioDisplay;
@@ -39,7 +40,7 @@ function Table({ config, type, areaId }: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
-  const rowNames = useMemo(() => Object.keys(config), [config]);
+  const rowNames = useMemo(() => R.keys(config), [config]);
 
   const columns = useMemo<Array<GridColumn & { id: string }>>(() => {
     if (rowNames.length === 0) {
@@ -47,7 +48,7 @@ function Table({ config, type, areaId }: Props) {
     }
 
     // Get the year indices from the first row
-    const firstRowData = config[rowNames[0] as keyof typeof config] as Record<string, number | "">;
+    const firstRowData = config[rowNames[0]] as Record<string, number | "">;
     const yearIndices = Object.keys(firstRowData);
 
     return yearIndices.map((yearIndex) => ({
@@ -59,7 +60,7 @@ function Table({ config, type, areaId }: Props) {
   const defaultData = useMemo(() => {
     return rowNames.reduce(
       (acc, rowName) => {
-        acc[rowName] = config[rowName as keyof typeof config] as Record<string, number | "">;
+        acc[rowName] = config[rowName] as Record<string, number | "">;
         return acc;
       },
       {} as Record<string, Record<string, number | "">>,
@@ -117,7 +118,7 @@ function Table({ config, type, areaId }: Props) {
 
   return (
     <DataGridForm
-      key={JSON.stringify(config)}
+      key={JSON.stringify(defaultData)}
       defaultData={defaultData}
       columns={columns}
       getCellContent={getCellContent}
