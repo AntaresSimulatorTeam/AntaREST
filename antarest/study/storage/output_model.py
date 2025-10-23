@@ -95,15 +95,15 @@ class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
         args = {}
 
         # Areas
-        all_area_variables = []
+        all_area_variables = set()
         for area in variables_list.mc_ind.areas:
-            all_area_variables.extend(area.variables)
-        args["area"] = sorted(set(all_area_variables))
+            all_area_variables.update(area.variables)
+        args["area"] = sorted(all_area_variables)
 
         # Links
-        all_link_variables = []
+        all_link_variables = set()
         for link in variables_list.mc_ind.links:
-            all_link_variables.extend(link.variables)
-        args["link"] = sorted(set(all_link_variables))
+            all_link_variables.update(link.variables)
+        args["link"] = sorted(all_link_variables)
 
         return OutputVariablesInformation.model_validate(args)
