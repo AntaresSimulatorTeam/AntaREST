@@ -16,7 +16,6 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 
-from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.model import Identity
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import Directory, DirectoryCreation, DirectoryUpdate
@@ -92,26 +91,6 @@ class TestDirectoryService:
         assert exc_info.value.status_code == 404
         assert fake_parent_id in str(exc_info.value.detail)
 
-    def test_create_directory_no_permission_on_parent(
-        self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
-    ) -> None:
-        # Setup
-        parent = Directory(
-            id=str(uuid.uuid4()),
-            name="Parent",
-            parent_id=None,
-        )
-        data = DirectoryCreation(name="Child", parent_id=parent.id)
-
-        mock_directory_repo.get.return_value = parent
-        mock_directory_repo.has_permission.return_value = False
-
-        # Execute & Verify
-        with pytest.raises(HTTPException) as exc_info:
-            directory_service.create_directory(data)
-
-        assert exc_info.value.status_code == 403
-
     def test_create_directory_duplicate_name(
         self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
     ) -> None:
@@ -139,7 +118,6 @@ class TestDirectoryService:
         data = DirectoryUpdate(name="New Name")
 
         mock_directory_repo.get.return_value = existing_directory
-        mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.has_duplicate_name.return_value = False
         mock_directory_repo.save.return_value = existing_directory
         mock_directory_repo.get_all_descendant_directories.return_value = []
@@ -167,25 +145,6 @@ class TestDirectoryService:
 
         assert exc_info.value.status_code == 404
 
-    def test_update_directory_no_permission(
-        self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
-    ) -> None:
-        # Setup
-        directory_id = str(uuid.uuid4())
-        existing_directory = Directory(
-            id=directory_id,
-            name="Directory",
-            parent_id=None,
-        )
-        data = DirectoryUpdate(name="New Name")
-
-        mock_directory_repo.get.return_value = existing_directory
-        mock_directory_repo.has_permission.return_value = False
-
-        # Execute & Verify
-        with pytest.raises(UserHasNotPermissionError):
-            directory_service.update_directory(directory_id, data)
-
     def test_update_directory_cycle_detection(
         self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
     ) -> None:
@@ -200,7 +159,6 @@ class TestDirectoryService:
         data = DirectoryUpdate(parent_id=new_parent_id)
 
         mock_directory_repo.get.return_value = existing_directory
-        mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.check_cycle.return_value = True
         mock_directory_repo.get_all_descendant_directories.return_value = []
         mock_directory_repo.get_all_studies_in_tree.return_value = []
@@ -223,7 +181,6 @@ class TestDirectoryService:
             parent_id=None,
         )
         mock_directory_repo.get.return_value = directory
-        mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 0
         mock_directory_repo.has_children_directories.return_value = False
 
@@ -244,7 +201,6 @@ class TestDirectoryService:
             parent_id=None,
         )
         mock_directory_repo.get.return_value = directory
-        mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 0
         mock_directory_repo.has_children_directories.return_value = True
 
@@ -266,7 +222,6 @@ class TestDirectoryService:
             parent_id=None,
         )
         mock_directory_repo.get.return_value = directory
-        mock_directory_repo.has_permission.return_value = True
         mock_directory_repo.count_studies.return_value = 5
         mock_directory_repo.has_children_directories.return_value = False
 
@@ -276,23 +231,6 @@ class TestDirectoryService:
 
         assert exc_info.value.status_code == 409
         assert "studies" in str(exc_info.value.detail).lower()
-
-    def test_delete_directory_no_permission(
-        self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
-    ) -> None:
-        # Setup
-        directory_id = str(uuid.uuid4())
-        directory = Directory(
-            id=directory_id,
-            name="Directory",
-            parent_id=None,
-        )
-        mock_directory_repo.get.return_value = directory
-        mock_directory_repo.has_permission.return_value = False
-
-        # Execute & Verify
-        with pytest.raises(UserHasNotPermissionError):
-            directory_service.delete_directory(directory_id)
 
     def test_list_directories(
         self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity

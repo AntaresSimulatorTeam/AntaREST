@@ -29,13 +29,6 @@ class DirectoryAlreadyExistsError(HTTPException):
         super().__init__(HTTPStatus.CONFLICT, f"A directory named '{name}' already exists in this location")
 
 
-class DirectoryPermissionError(HTTPException):
-    """Raised when user doesn't have permission to perform an operation on a directory."""
-
-    def __init__(self, message: str):
-        super().__init__(HTTPStatus.FORBIDDEN, message)
-
-
 class DirectoryCycleError(HTTPException):
     """Raised when moving a directory would create a cycle in the directory tree."""
 

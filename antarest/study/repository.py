@@ -489,13 +489,8 @@ class DirectoryRepository:
             .scalar_one_or_none()
         )
 
-    def get_all(self, access_permissions: AccessPermissions = AccessPermissions()) -> Sequence[Directory]:
+    def get_all(self) -> Sequence[Directory]:
         stmt = select(Directory).options(joinedload(Directory.parent))
-
-        if not access_permissions.is_admin:
-            if access_permissions.user_id is None:
-                return []
-
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
@@ -512,16 +507,6 @@ class DirectoryRepository:
     def count_studies(self, directory_id: str) -> int:
         stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
         return int(self.session.scalar(stmt))
-
-    def has_permission(self, access_permissions: AccessPermissions) -> bool:
-        # Admin always has access
-        if access_permissions.is_admin:
-            return True
-
-        if access_permissions.user_id is not None:
-            return True
-
-        return False
 
     def check_cycle(self, directory_id: str, new_parent_id: str) -> bool:
         if directory_id == new_parent_id:

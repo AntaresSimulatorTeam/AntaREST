@@ -58,10 +58,9 @@ def create_directory_routes(
     )
     def update_directory(directory_id: str, data: DirectoryUpdate) -> DirectoryMetadata:
         """
-        Update directory name, parent, or public mode.
+        Update directory name or parent.
         """
         logger.info(f"Updating directory {directory_id}")
-
         return directory_service.update_directory(directory_id, data)
 
     @bp.delete(
@@ -73,7 +72,6 @@ def create_directory_routes(
     def delete_directory(directory_id: str) -> None:
         """
         Delete a directory only if it and all its subdirectories contain no studies.
-        Empty subdirectories are deleted recursively along with the parent directory.
         """
         logger.info(f"Deleting directory {directory_id}")
         directory_service.delete_directory(directory_id)

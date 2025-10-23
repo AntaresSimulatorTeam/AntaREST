@@ -61,13 +61,6 @@ class GroupRepository:
         groups: List[Group] = list(self.session.execute(select(Group)).scalars().all())
         return groups
 
-    def get_by_ids(self, ids: List[str]) -> List[Group]:
-        """Get all groups matching the provided IDs."""
-        if not ids:
-            return []
-        groups: List[Group] = list(self.session.execute(select(Group).where(Group.id.in_(ids))).scalars().all())
-        return groups
-
     def delete(self, id: str) -> None:
         g = self.session.get(Group, id)
         if g:

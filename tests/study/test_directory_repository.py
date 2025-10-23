@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from antarest.login.model import Identity
 from antarest.study.model import Directory
-from antarest.study.repository import AccessPermissions, DirectoryRepository
+from antarest.study.repository import DirectoryRepository
 
 
 @pytest.fixture
@@ -62,9 +62,7 @@ class TestDirectoryRepository:
             )
             directory_repo.save(directory)
 
-        # Get all as logged-in user
-        access_permissions = AccessPermissions(user_id=test_user.id)
-        directories = directory_repo.get_all(access_permissions)
+        directories = directory_repo.get_all()
         assert len(directories) >= 3
 
     def test_delete_directory(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
