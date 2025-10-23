@@ -13,6 +13,7 @@
 import io
 import json
 import os
+import time
 import zipfile
 from http import HTTPStatus
 from pathlib import Path
@@ -312,14 +313,19 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         "owner": {"id": fred_id, "name": "Fred"},
     }
 
+    # wait for job completion, otherwise next tests may interfere as we can't have multiple runs on the same study
+    max_attempts = 10
+    attempt = 0
     status = "pending"
-    while status == "pending":
+    while status == "pending" and attempt < max_attempts:
         res = client.get(
             f"/v1/launcher/jobs?study_id={study_id}",
             headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
         )
         job_info = res.json()[0]
         status = job_info["status"]
+        attempt += 1
+        time.sleep(1)
 
     # create a new launcher configuration
     create_launch_config_payload = {
