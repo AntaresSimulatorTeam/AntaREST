@@ -847,3 +847,9 @@ class OutputAggregationError(HTTPException):
     def __init__(self, output_id: str, message: str) -> None:
         msg = f"Could not aggregate output data for output '{output_id}' : {message}."
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, msg)
+
+
+class ConfigurationError(RuntimeError):
+    """
+    Raised when some configuration is invalid.
+    """
