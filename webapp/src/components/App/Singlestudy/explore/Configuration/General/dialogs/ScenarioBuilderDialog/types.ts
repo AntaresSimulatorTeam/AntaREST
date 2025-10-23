@@ -13,8 +13,10 @@
  */
 
 import type {
+  Level1Display,
   Level2Display,
   Level3Display,
+  ScenarioDisplay,
   ScenarioDisplayMap,
 } from "@/services/api/studies/config/scenarioBuilder/types";
 
@@ -40,6 +42,20 @@ export function hasAreaSelection(
     Array.isArray(config.areas) &&
     config.areas.every((area) => typeof area === "string")
   );
+}
+
+/**
+ * Checks if a configuration is Level 1 Display structure (no area selection)
+ *
+ * @param config - The configuration to check
+ * @returns True if the configuration is Level 1 Display, false otherwise
+ */
+export function isLevel1Display(config: ScenarioDisplay): config is Level1Display {
+  if (typeof config !== "object" || config === null) {
+    return false;
+  }
+
+  return !("areas" in config) && !("entities" in config) && !("flattenedEntities" in config);
 }
 
 /**
