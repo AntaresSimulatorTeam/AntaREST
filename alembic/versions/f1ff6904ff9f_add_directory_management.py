@@ -18,7 +18,7 @@ from sqlalchemy.sql import and_, column, select, table
 
 # revision identifiers, used by Alembic.
 revision = "f1ff6904ff9f"
-down_revision = "d2942741ae68"
+down_revision = "a9dfa0e1f23d"
 branch_labels = None
 depends_on = None
 
@@ -47,12 +47,6 @@ def upgrade() -> None:
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("parent_id", sa.String(36), nullable=True),
-        sa.Column(
-            "public_mode",
-            sa.Enum("NONE", "READ", "EDIT", "FULL", name="publicmode"),
-            nullable=False,
-            server_default="NONE",
-        ),
         sa.ForeignKeyConstraint(
             ["parent_id"], ["directory.id"], name="fk_directory_parent_id", ondelete="CASCADE"
         ),
@@ -124,25 +118,26 @@ def upgrade() -> None:
     )
     studies = bind.execute(stmt).fetchall()
 
-    # First pass: build directory structure and collect groups
+    # First pass: build directory structure
     for study_id, folder, owner_id in studies:
         path_parts = parse_folder_path(folder)
 
-        # Validate that the last part is indeed the study UUID
-        if len(path_parts) > 0 and path_parts[-1] != study_id:
-            print(
-                f"WARNING: Study {study_id} has folder '{folder}' that doesn't end with study ID. "
-                f"Expected last part to be '{study_id}' but got '{path_parts[-1]}'. Skipping."
-            )
-            continue
+        # Determine which parts are directories based on whether folder ends with study UUID
+        if len(path_parts) > 0 and path_parts[-1] == study_id:
+            # Case 1: Folder ends with study UUID (e.g., "project1/subfolder/uuid")
+            # Create directories excluding the last part (the UUID)
+            if len(path_parts) <= 1:
+                # No parent directories, study is at root level
+                continue
+            directory_parts = path_parts[:-1]  # Exclude the last part (study UUID)
+        else:
+            # Case 2: Folder does NOT end with study UUID (e.g., "project1/subfolder")
+            # Create ALL directories from the path
+            if len(path_parts) == 0:
+                # Empty folder, study is at root level
+                continue
+            directory_parts = path_parts  # Use all parts as directories
 
-        # Skip the last part (which is the study UUID itself, not a directory)
-        # Only create directories for the parent folders
-        if len(path_parts) <= 1:
-            # No parent directories, study is at root level
-            continue
-
-        directory_parts = path_parts[:-1]  # Exclude the last part (study UUID)
         current_path = ""
         parent_id = None
         final_dir_id = None
@@ -158,7 +153,6 @@ def upgrade() -> None:
                     "id": dir_id,
                     "name": dir_name,
                     "parent_id": parent_id,
-                    "public_mode": "FULL",
                 })
 
                 directory_cache[current_path] = dir_id

@@ -63,7 +63,7 @@ class DirectoryService:
             if parent is None:
                 raise DirectoryNotFoundError(data.parent_id)
 
-            if not self.directory_repository.has_permission(parent, access_permissions):
+            if not self.directory_repository.has_permission(access_permissions):
                 raise DirectoryPermissionError("You don't have permission to create directories in this parent")
 
         if self.directory_repository.has_duplicate_name(data.name, data.parent_id):
@@ -73,7 +73,6 @@ class DirectoryService:
             id=str(uuid.uuid4()),
             name=data.name,
             parent_id=data.parent_id,
-            public_mode=data.public_mode,
         )
 
         saved_directory = self.directory_repository.save(directory)
@@ -89,10 +88,10 @@ class DirectoryService:
         if directory is None:
             raise DirectoryNotFoundError(directory_id)
 
-        if not self.directory_repository.has_permission(directory, access_permissions):
+        if not self.directory_repository.has_permission(access_permissions):
             raise UserHasNotPermissionError()
 
-        # Check permissions on all subdirectories and studies in the tree
+        # Check permissions on all studies in the tree
         self._check_permissions_for_tree(directory_id, access_permissions)
 
         # Update parent first, then validate name in the target parent
@@ -107,7 +106,7 @@ class DirectoryService:
                 if new_parent is None:
                     raise DirectoryNotFoundError(data.parent_id)
 
-                if not self.directory_repository.has_permission(new_parent, access_permissions):
+                if not self.directory_repository.has_permission(access_permissions):
                     raise DirectoryPermissionError("You don't have permission to move directories to this parent")
 
                 new_parent_id = data.parent_id
@@ -125,10 +124,6 @@ class DirectoryService:
         if data.parent_id is not None:
             directory.parent_id = new_parent_id
 
-        if data.public_mode is not None:
-            # Update public mode
-            directory.public_mode = data.public_mode
-
         updated_directory = self.directory_repository.save(directory)
         return updated_directory.to_metadata()
 
@@ -144,7 +139,7 @@ class DirectoryService:
         if directory is None:
             raise DirectoryNotFoundError(directory_id)
 
-        if not self.directory_repository.has_permission(directory, access_permissions):
+        if not self.directory_repository.has_permission(access_permissions):
             raise UserHasNotPermissionError()
 
         # Check if directory contains studies
@@ -163,25 +158,21 @@ class DirectoryService:
 
     def _check_permissions_for_tree(self, directory_id: str, access_permissions: AccessPermissions) -> None:
         """
-        Check that user has permissions on the directory, all subdirectories, and all studies in the tree.
+        Check that user has permissions on all studies in the tree.
 
         Args:
             directory_id: The root directory ID to check
             access_permissions: The user's access permissions
 
         Raises:
-            UserHasNotPermissionError: If user doesn't have permission on any directory or study
+            UserHasNotPermissionError: If user doesn't have permission on any study
         """
         # Check current directory
         directory = self.directory_repository.get(directory_id)
-        if directory and not self.directory_repository.has_permission(directory, access_permissions):
+        if not directory:
+            raise DirectoryNotFoundError(directory_id)
+        if not self.directory_repository.has_permission(access_permissions):
             raise UserHasNotPermissionError()
-
-        # Check all subdirectories
-        descendants = self.directory_repository.get_all_descendant_directories(directory_id)
-        for subdirectory in descendants:
-            if not self.directory_repository.has_permission(subdirectory, access_permissions):
-                raise UserHasNotPermissionError()
 
         # Check all studies in the tree
         studies = self.directory_repository.get_all_studies_in_tree(directory_id)

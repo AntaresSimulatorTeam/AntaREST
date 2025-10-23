@@ -172,7 +172,6 @@ class Directory(Base):
         id: The unique identifier of the directory (UUID).
         name: The non-qualified name of the directory (e.g., "project1").
         parent_id: The ID of the parent directory, or None for root directories.
-        public_mode: Defines the actions any user logged in is allowed to take on the directory.
     """
 
     __tablename__ = "directory"
@@ -187,7 +186,6 @@ class Directory(Base):
     parent_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("directory.id", name="fk_directory_parent_id"), nullable=True, index=True
     )
-    public_mode: Mapped[PublicMode] = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
 
     # Relationships
     parent = relationship("Directory", remote_side=[id], uselist=False)
@@ -213,7 +211,6 @@ class Directory(Base):
             id=self.id,
             name=self.name,
             parent_id=self.parent_id,
-            public_mode=self.public_mode,
         )
 
 
@@ -758,7 +755,6 @@ class DirectoryMetadata(AntaresBaseModel):
     id: str
     name: str
     parent_id: Optional[str] = None
-    public_mode: PublicMode = PublicMode.NONE
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -787,7 +783,6 @@ def _validate_directory_name(name: str) -> str:
 class DirectoryCreation(AntaresBaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     parent_id: Optional[str] = None
-    public_mode: PublicMode = PublicMode.NONE
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -802,12 +797,10 @@ class DirectoryUpdate(AntaresBaseModel):
     """
     - **name**: New name for the directory (optional)
     - **parentId**: New parent directory ID (optional, empty string for root)
-    - **publicMode**: Public access mode (optional, replaces existing mode)
     """
 
     name: Optional[str] = Field(default=None, min_length=1, max_length=255)
     parent_id: Optional[str] = None
-    public_mode: Optional[PublicMode] = None
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 

@@ -15,7 +15,6 @@ import uuid
 import pytest
 from sqlalchemy.orm import Session
 
-from antarest.core.model import PublicMode
 from antarest.login.model import Identity
 from antarest.study.model import Directory
 from antarest.study.repository import AccessPermissions, DirectoryRepository
@@ -41,7 +40,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="Test Directory",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
 
         # Save
@@ -54,7 +52,6 @@ class TestDirectoryRepository:
         assert retrieved is not None
         assert retrieved.id == directory.id
         assert retrieved.name == "Test Directory"
-        assert retrieved.public_mode == PublicMode.NONE
 
     def test_get_all_directories(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
         for i in range(3):
@@ -62,7 +59,6 @@ class TestDirectoryRepository:
                 id=str(uuid.uuid4()),
                 name=f"Directory {i}",
                 parent_id=None,
-                public_mode=PublicMode.FULL,
             )
             directory_repo.save(directory)
 
@@ -77,7 +73,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="To Delete",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(directory)
 
@@ -90,19 +85,6 @@ class TestDirectoryRepository:
         # Verify deleted
         assert directory_repo.get(directory.id) is None
 
-    def test_has_permission_admin(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
-        directory = Directory(
-            id=str(uuid.uuid4()),
-            name="Private Directory",
-            parent_id=None,
-            public_mode=PublicMode.NONE,
-        )
-        directory_repo.save(directory)
-
-        # Check permission as admin (should always have access)
-        access_permissions = AccessPermissions(user_id=test_user.id, is_admin=True)
-        assert directory_repo.has_permission(directory, access_permissions)
-
     def test_check_cycle_self(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
         directory_id = str(uuid.uuid4())
         assert directory_repo.check_cycle(directory_id, directory_id)
@@ -113,7 +95,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="A",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(dir_a)
 
@@ -122,7 +103,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="B",
             parent_id=dir_a.id,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(dir_b)
 
@@ -135,7 +115,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="A",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(dir_a)
 
@@ -143,7 +122,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="B",
             parent_id=dir_a.id,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(dir_b)
 
@@ -151,7 +129,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="C",
             parent_id=dir_b.id,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(dir_c)
 
@@ -164,7 +141,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="A",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(dir_a)
 
@@ -172,7 +148,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="B",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(dir_b)
 
@@ -181,7 +156,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="C",
             parent_id=dir_a.id,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(dir_c)
 
@@ -194,7 +168,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="Parent",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(parent)
 
@@ -203,7 +176,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="Child",
             parent_id=parent.id,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(child)
 
@@ -218,7 +190,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="Parent1",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(parent1)
 
@@ -226,7 +197,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="Parent2",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(parent2)
 
@@ -235,7 +205,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="SameName",
             parent_id=parent1.id,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(child)
 
@@ -251,7 +220,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="Parent",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(parent)
 
@@ -263,7 +231,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="Child",
             parent_id=parent.id,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(child)
 
@@ -279,7 +246,6 @@ class TestDirectoryRepository:
             id=str(uuid.uuid4()),
             name="Study Directory",
             parent_id=None,
-            public_mode=PublicMode.FULL,
         )
         directory_repo.save(directory)
 

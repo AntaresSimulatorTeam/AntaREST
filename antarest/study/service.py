@@ -1223,8 +1223,6 @@ class StudyService:
 
         Args:
             folder_path: POSIX folder path like "project/subfolder"
-            owner_id: Owner ID for newly created directories
-            group_ids: List of group IDs for newly created directories
 
         Returns:
             Directory ID of the leaf directory, or None if path is empty
@@ -1251,7 +1249,6 @@ class StudyService:
                     id=str(uuid.uuid4()),
                     name=dir_name,
                     parent_id=parent_id,
-                    public_mode=PublicMode.FULL,  # Auto-created directories are fully public by default
                 )
                 self.repository.session.add(new_dir)
                 self.repository.session.flush()

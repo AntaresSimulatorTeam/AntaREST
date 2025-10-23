@@ -494,7 +494,7 @@ class DirectoryRepository:
 
         if not access_permissions.is_admin:
             if access_permissions.user_id is None:
-                stmt = stmt.where(Directory.public_mode != PublicMode.NONE)
+                return []
 
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
@@ -513,12 +513,9 @@ class DirectoryRepository:
         stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
         return int(self.session.scalar(stmt))
 
-    def has_permission(self, directory: Directory, access_permissions: AccessPermissions) -> bool:
+    def has_permission(self, access_permissions: AccessPermissions) -> bool:
+        # Admin always has access
         if access_permissions.is_admin:
-            return True
-
-        # Check if directory has public access
-        if directory.public_mode != PublicMode.NONE:
             return True
 
         if access_permissions.user_id is not None:

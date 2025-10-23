@@ -16,7 +16,6 @@ from unittest.mock import Mock
 import pytest
 from fastapi import HTTPException
 
-from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.model import Identity
 from antarest.study.directory_service import DirectoryService
@@ -60,14 +59,13 @@ class TestDirectoryService:
         self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
     ) -> None:
         # Setup
-        data = DirectoryCreation(name="New Directory", parent_id=None, public_mode=PublicMode.NONE)
+        data = DirectoryCreation(name="New Directory", parent_id=None)
 
         mock_directory_repo.has_duplicate_name.return_value = False
         mock_directory_repo.save.return_value = Directory(
             id=str(uuid.uuid4()),
             name="New Directory",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
 
         # Execute
@@ -83,7 +81,7 @@ class TestDirectoryService:
     ) -> None:
         # Setup
         fake_parent_id = str(uuid.uuid4())
-        data = DirectoryCreation(name="Child Directory", parent_id=fake_parent_id, public_mode=PublicMode.NONE)
+        data = DirectoryCreation(name="Child Directory", parent_id=fake_parent_id)
 
         mock_directory_repo.get.return_value = None
 
@@ -102,9 +100,8 @@ class TestDirectoryService:
             id=str(uuid.uuid4()),
             name="Parent",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
-        data = DirectoryCreation(name="Child", parent_id=parent.id, public_mode=PublicMode.NONE)
+        data = DirectoryCreation(name="Child", parent_id=parent.id)
 
         mock_directory_repo.get.return_value = parent
         mock_directory_repo.has_permission.return_value = False
@@ -119,7 +116,7 @@ class TestDirectoryService:
         self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
     ) -> None:
         # Setup
-        data = DirectoryCreation(name="Duplicate", parent_id=None, public_mode=PublicMode.NONE)
+        data = DirectoryCreation(name="Duplicate", parent_id=None)
 
         mock_directory_repo.has_duplicate_name.return_value = True
 
@@ -138,7 +135,6 @@ class TestDirectoryService:
         existing_directory = Directory(
             id=directory_id,
             name="Old Name",
-            public_mode=PublicMode.NONE,
         )
         data = DirectoryUpdate(name="New Name")
 
@@ -180,7 +176,6 @@ class TestDirectoryService:
             id=directory_id,
             name="Directory",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
         data = DirectoryUpdate(name="New Name")
 
@@ -201,7 +196,6 @@ class TestDirectoryService:
             id=directory_id,
             name="Directory",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
         data = DirectoryUpdate(parent_id=new_parent_id)
 
@@ -218,33 +212,6 @@ class TestDirectoryService:
         assert exc_info.value.status_code == 400
         assert "cycle" in str(exc_info.value.detail)
 
-    def test_update_directory_public_mode(
-        self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
-    ) -> None:
-        # Setup
-        directory_id = str(uuid.uuid4())
-        existing_directory = Directory(
-            id=directory_id,
-            name="Directory",
-            parent_id=None,
-            public_mode=PublicMode.NONE,
-        )
-
-        data = DirectoryUpdate(public_mode=PublicMode.READ)
-
-        mock_directory_repo.get.return_value = existing_directory
-        mock_directory_repo.has_permission.return_value = True
-        mock_directory_repo.save.return_value = existing_directory
-        mock_directory_repo.get_all_descendant_directories.return_value = []
-        mock_directory_repo.get_all_studies_in_tree.return_value = []
-
-        # Execute
-        directory_service.update_directory(directory_id, data)
-
-        # Verify public_mode was updated
-        assert existing_directory.public_mode == PublicMode.READ
-        mock_directory_repo.save.assert_called_once()
-
     def test_delete_empty_directory(
         self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
     ) -> None:
@@ -254,7 +221,6 @@ class TestDirectoryService:
             id=directory_id,
             name="Empty Directory",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
@@ -276,7 +242,6 @@ class TestDirectoryService:
             id=directory_id,
             name="Parent Directory",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
@@ -299,7 +264,6 @@ class TestDirectoryService:
             id=directory_id,
             name="Directory with Studies",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = True
@@ -322,7 +286,6 @@ class TestDirectoryService:
             id=directory_id,
             name="Directory",
             parent_id=None,
-            public_mode=PublicMode.NONE,
         )
         mock_directory_repo.get.return_value = directory
         mock_directory_repo.has_permission.return_value = False
@@ -340,7 +303,6 @@ class TestDirectoryService:
                 id=str(uuid.uuid4()),
                 name=f"Directory {i}",
                 parent_id=None,
-                public_mode=PublicMode.FULL,
             )
             for i in range(3)
         ]
@@ -352,3 +314,20 @@ class TestDirectoryService:
 
         # Verify
         assert len(result) == 3
+
+    def test_update_directory_tree_check_directory_not_found(
+        self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
+    ) -> None:
+        # Setup
+        directory_id = str(uuid.uuid4())
+        data = DirectoryUpdate(name="New Name")
+
+        # Mock the first get (for the main directory) to return None
+        mock_directory_repo.get.return_value = None
+
+        # Execute & Verify
+        with pytest.raises(HTTPException) as exc_info:
+            directory_service.update_directory(directory_id, data)
+
+        assert exc_info.value.status_code == 404
+        assert directory_id in str(exc_info.value.detail)
