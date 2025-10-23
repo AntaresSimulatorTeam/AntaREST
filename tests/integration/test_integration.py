@@ -327,8 +327,8 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         attempt += 1
         time.sleep(1)
 
-    # create a new launcher configuration
-    create_launch_config_payload = {
+    # create a new solver presets
+    create_solver_presets_payload = {
         "name": "test-xpress-config",
         "linear_solver": "xpress",
         "min_antares_version": {"major": 9, "minor": 2, "patch": 0},
@@ -338,18 +338,18 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         "use_optim_1_basis_next_week": True,
         "use_optim_1_basis_optim_2": False,
     }
-    create_launch_config_res = client.post(
-        "/v1/launcher/configurations",
+    create_solver_presets_res = client.post(
+        "/v1/launcher/solver-presets",
         headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
-        json=create_launch_config_payload,
+        json=create_solver_presets_payload,
     )
-    assert create_launch_config_res.status_code == 200
-    create_launch_config__data = create_launch_config_res.json()
+    assert create_solver_presets_res.status_code == 200
+    create_solver_presets_data = create_solver_presets_res.json()
 
     res_run_with_conf = client.post(
         f"/v1/launcher/run/{study_id}",
         headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
-        params={"launcher_configuration_id": create_launch_config__data["id"], "version": "9.2.0"},
+        params={"launcher_configuration_id": create_solver_presets_data["id"], "version": "9.2.0"},
     )
 
     job_id = res_run_with_conf.json()["job_id"]

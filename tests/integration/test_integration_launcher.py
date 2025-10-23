@@ -13,7 +13,7 @@
 from starlette.testclient import TestClient
 
 
-def test_launcher(client: TestClient, user_access_token: str, admin_access_token: str) -> None:
+def test_solver_presets(client: TestClient, user_access_token: str, admin_access_token: str) -> None:
     # Test creating a new launcher configuration
     payload1 = {
         "name": "test-xpress-config",
@@ -27,7 +27,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     res1 = client.post(
-        "/v1/launcher/configurations",
+        "/v1/launcher/solver-presets",
         headers={"Authorization": f"Bearer {user_access_token}"},
         json=payload1,
     )
@@ -50,7 +50,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     res2 = client.post(
-        "/v1/launcher/configurations",
+        "/v1/launcher/solver-presets",
         headers={"Authorization": f"Bearer {user_access_token}"},
         json=payload2,
     )
@@ -72,7 +72,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     create_res3 = client.post(
-        "/v1/launcher/configurations",
+        "/v1/launcher/solver-presets",
         headers={"Authorization": f"Bearer {user_access_token}"},
         json=create_payload3,
     )
@@ -80,7 +80,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
 
     # Now retrieve it
     res3 = client.get(
-        f"/v1/launcher/configurations/{config_id3}",
+        f"/v1/launcher/solver-presets/{config_id3}",
         headers={"Authorization": f"Bearer {user_access_token}"},
     )
 
@@ -98,7 +98,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     res4 = client.post(
-        "/v1/launcher/configurations",
+        "/v1/launcher/solver-presets",
         headers={"Authorization": f"Bearer {user_access_token}"},
         json=invalid_payload4,
     )
@@ -114,7 +114,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     res5 = client.post(
-        "/v1/launcher/configurations",
+        "/v1/launcher/solver-presets",
         headers={"Authorization": f"Bearer {user_access_token}"},
         json=invalid_payload5,
     )
@@ -130,7 +130,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     res6 = client.post(
-        "/v1/launcher/configurations",
+        "/v1/launcher/solver-presets",
         headers={"Authorization": f"Bearer {user_access_token}"},
         json=invalid_payload6,
     )
@@ -139,7 +139,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
 
     # Retrieve all configs created before
     res7 = client.get(
-        "/v1/launcher/configurations/",
+        "/v1/launcher/solver-presets/",
         headers={"Authorization": f"Bearer {user_access_token}"},
     )
 
@@ -159,7 +159,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     config1_id = data1["id"]
 
     res8 = client.put(
-        f"/v1/launcher/configurations/{config1_id}",
+        f"/v1/launcher/solver-presets/{config1_id}",
         headers={"Authorization": f"Bearer {admin_access_token}"},
         json=update_payload8,
     )
@@ -168,7 +168,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
 
     # Verify the update by retrieving the config again
     res8_verify = client.get(
-        f"/v1/launcher/configurations/{config1_id}",
+        f"/v1/launcher/solver-presets/{config1_id}",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
 
@@ -183,7 +183,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     res9 = client.put(
-        f"/v1/launcher/configurations/{config1_id}",  # config1 has optim_1 params defined
+        f"/v1/launcher/solver-presets/{config1_id}",  # config1 has optim_1 params defined
         headers={"Authorization": f"Bearer {admin_access_token}"},
         json=update_payload9,
     )
@@ -198,7 +198,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     res10 = client.put(
-        f"/v1/launcher/configurations/{config1_id}",
+        f"/v1/launcher/solver-presets/{config1_id}",
         headers={"Authorization": f"Bearer {admin_access_token}"},
         json=update_payload10,
     )
@@ -207,7 +207,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
 
     # Verify the update
     res10_verify = client.get(
-        f"/v1/launcher/configurations/{config1_id}",
+        f"/v1/launcher/solver-presets/{config1_id}",
         headers={"Authorization": f"Bearer {user_access_token}"},
     )
 
@@ -219,7 +219,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
 
     # Test deleting a launcher configuration
     res_delete = client.delete(
-        f"/v1/launcher/configurations/{config1_id}",
+        f"/v1/launcher/solver-presets/{config1_id}",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
 
@@ -227,7 +227,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
 
     # Verify it's deleted by trying to retrieve it
     res_deleted_verify = client.get(
-        f"/v1/launcher/configurations/{config1_id}",
+        f"/v1/launcher/solver-presets/{config1_id}",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
 
@@ -235,7 +235,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
 
     # Test that regular users cannot delete configurations (need admin)
     res_delete_user = client.delete(
-        f"/v1/launcher/configurations/{config_id3}",
+        f"/v1/launcher/solver-presets/{config_id3}",
         headers={"Authorization": f"Bearer {user_access_token}"},
     )
 
@@ -247,7 +247,7 @@ def test_launcher(client: TestClient, user_access_token: str, admin_access_token
     }
 
     res_update_user = client.put(
-        f"/v1/launcher/configurations/{config_id3}",
+        f"/v1/launcher/solver-presets/{config_id3}",
         headers={"Authorization": f"Bearer {user_access_token}"},
         json=update_payload_user,
     )

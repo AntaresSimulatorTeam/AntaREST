@@ -22,12 +22,12 @@ from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
-    LaunchConfigDTO,
-    LaunchConfigUpdate,
     LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
+    SolverPresetsDTO,
+    SolverPresetsUpdate,
 )
 from antarest.launcher.service import LauncherService
 from antarest.launcher.ssh_client import SlurmError
@@ -187,52 +187,52 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return service.get_solver_versions(solver)
 
     @bp.post(
-        "/configurations",
+        "/solver-presets",
         tags=[APITag.launcher],
-        summary="Create a new launcher configuration",
-        response_model=LaunchConfigDTO,
+        summary="Create new solver presets",
+        response_model=SolverPresetsDTO,
     )
-    def create_launcher_config(launcher_config_creation: LaunchConfigDTO) -> LaunchConfigDTO:
-        logger.info("Creating a new launcher configuration")
-        return service.create_launcher_config(launcher_config_creation)
+    def create_solver_presets(solver_presets_creation: SolverPresetsDTO) -> SolverPresetsDTO:
+        logger.info("Creating new solver presets")
+        return service.create_solver_presets(solver_presets_creation)
 
     @bp.get(
-        "/configurations/{configuration_id}",
+        "/solver-presets/{solver_presets_id}",
         tags=[APITag.launcher],
-        summary="Retrieve a launcher configuration by ID",
-        response_model=LaunchConfigDTO,
+        summary="Retrieve solver presets by ID",
+        response_model=SolverPresetsDTO,
     )
-    def get_launcher_config(configuration_id: str) -> LaunchConfigDTO:
-        logger.info(f"Retrieving launcher configuration for ID {configuration_id}")
-        return service.get_launcher_config(configuration_id)
+    def get_solver_presets(solver_presets_id: str) -> SolverPresetsDTO:
+        logger.info(f"Retrieving solver presets for ID {solver_presets_id}")
+        return service.get_solver_presets(solver_presets_id)
 
     @bp.get(
-        "/configurations/",
+        "/solver-presets/",
         tags=[APITag.launcher],
-        summary="Retrieve all launcher configurations",
-        response_model=List[LaunchConfigDTO],
+        summary="Retrieve all solver presets",
+        response_model=List[SolverPresetsDTO],
     )
-    def get_launcher_configs() -> List[LaunchConfigDTO]:
-        logger.info("Retrieving launcher configurations")
-        return service.get_launcher_configs()
+    def get_solver_presets_list() -> List[SolverPresetsDTO]:
+        logger.info("Retrieving solver presets")
+        return service.get_solver_presets_list()
 
     @bp.put(
-        "/configurations/{configuration_id}",
+        "/solver-presets/{solver_presets_id}",
         tags=[APITag.launcher],
-        summary="Update an existing launcher configuration",
-        response_model=LaunchConfigDTO,
+        summary="Update an existing solver preset",
+        response_model=SolverPresetsDTO,
     )
-    def update_launcher_config(configuration_id: str, launcher_config_update: LaunchConfigUpdate) -> Any:
-        logger.info(f"Updating launcher configuration for ID {configuration_id}")
-        return service.update_launcher_config(configuration_id, launcher_config_update)
+    def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> Any:
+        logger.info(f"Updating solver preset for ID {solver_presets_id}")
+        return service.update_solver_presets(solver_presets_id, solver_presets_update)
 
     @bp.delete(
-        "/configurations/{configuration_id}",
+        "/solver-presets/{solver_presets_id}",
         tags=[APITag.launcher],
-        summary="Delete a launch configuration",
+        summary="Delete a solver preset",
     )
-    def delete_launcher_config(configuration_id: str) -> None:
-        logger.info(f"Deleting launch configuration for ID {configuration_id}")
-        service.delete_launch_config(configuration_id)
+    def delete_solver_presets(solver_presets_id: str) -> None:
+        logger.info(f"Deleting solver preset for ID {solver_presets_id}")
+        service.delete_solver_presets(solver_presets_id)
 
     return bp

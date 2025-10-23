@@ -40,25 +40,25 @@ from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
-    BadLaunchConfigInput,
+    BadSolverPresetsInput,
     JobLog,
     JobLogType,
     JobResult,
     JobStatus,
-    LaunchConfigDTO,
-    LaunchConfigModel,
-    LaunchConfigUpdate,
     LauncherInfoDTO,
     LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
     LogType,
+    SolverPresetsDTO,
+    SolverPresetsModel,
+    SolverPresetsUpdate,
     XpansionParametersDTO,
-    apply_update_launcher_config,
+    apply_update_solver_presets,
     is_version_covered_by_config,
 )
-from antarest.launcher.repository import JobResultRepository, LaunchConfigRepository
+from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -74,7 +74,7 @@ class JobNotFound(HTTPException):
         super(JobNotFound, self).__init__(HTTPStatus.NOT_FOUND)
 
 
-class IncompatibleLaunchConfig(HTTPException):
+class IncompatibleSolverPresets(HTTPException):
     def __init__(self, message: str = "Invalid launch configuration"):
         super().__init__(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -82,7 +82,7 @@ class IncompatibleLaunchConfig(HTTPException):
         )
 
 
-class LaunchConfigNotFound(HTTPException):
+class SolverPresetsNotFound(HTTPException):
     def __init__(self, message: str = "Launcher configuration not found"):
         super().__init__(
             status_code=HTTPStatus.NOT_FOUND,
@@ -109,7 +109,7 @@ class LauncherService:
         output_service: OutputService,
         login_service: LoginService,
         job_result_repository: JobResultRepository,
-        launcher_config_repository: LaunchConfigRepository,
+        solver_presets_repository: SolverPresetsRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -121,7 +121,7 @@ class LauncherService:
         self.output_service = output_service
         self.login_service = login_service
         self.job_result_repository = job_result_repository
-        self.launcher_config_repository = launcher_config_repository
+        self.solver_presets_repository = solver_presets_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -244,7 +244,7 @@ class LauncherService:
         study_uuid: str,
         launcher: str,
         launcher_parameters: LauncherParametersDTO,
-        launcher_configuration_id: Optional[str] = None,
+        solver_presets_id: Optional[str] = None,
         version: Optional[str] = None,
     ) -> str:
         job_uuid = self._generate_new_id()
@@ -252,13 +252,13 @@ class LauncherService:
         study_info = self.study_service.get_study_information(uuid=study_uuid)
         solver_version = SolverVersion.parse(version or study_info.version)
 
-        if launcher_configuration_id is not None:
-            launcher_config = self.get_launcher_config(launcher_configuration_id)
-            if not is_version_covered_by_config(launcher_config, solver_version):
-                raise IncompatibleLaunchConfig("Launcher configuration is not compatible with study version")
+        if solver_presets_id is not None:
+            solver_presets = self.get_solver_presets(solver_presets_id)
+            if not is_version_covered_by_config(solver_presets, solver_version):
+                raise IncompatibleSolverPresets("Launcher configuration is not compatible with study version")
             if launcher_parameters.other_options:
-                raise IncompatibleLaunchConfig("Cannot use other_options when a launcher configuration is specified")
-            launcher_parameters.other_options = launcher_config.other_options
+                raise IncompatibleSolverPresets("Cannot use other_options when a launcher configuration is specified")
+            launcher_parameters.other_options = solver_presets.other_options
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
@@ -688,39 +688,39 @@ class LauncherService:
         }
         return launch_progress_json.get("progress", 0)
 
-    def create_launcher_config(self, launch_config_creation: LaunchConfigDTO) -> LaunchConfigDTO:
+    def create_solver_presets(self, solver_presets_creation: SolverPresetsDTO) -> SolverPresetsDTO:
         """
-        Create a new launcher configuration using LauncherParametersDTO.
+        Create a new solver presets.
         """
         with db():
-            if launch_config_creation.id and self.launcher_config_repository.exists(launch_config_creation.id):
-                raise BadLaunchConfigInput(f"A configuration with id '{launch_config_creation.id}' already exists.")
-            launch_config_creation.id = str(uuid4())
-            launcher_config = LaunchConfigModel.from_dto(launch_config_creation)  # validate dto
-            config = self.launcher_config_repository.save(launcher_config)
+            if solver_presets_creation.id and self.solver_presets_repository.exists(solver_presets_creation.id):
+                raise BadSolverPresetsInput(f"A solver presets with id '{solver_presets_creation.id}' already exists.")
+            solver_presets_creation.id = str(uuid4())
+            solver_presets = SolverPresetsModel.from_dto(solver_presets_creation)  # validate dto
+            config = self.solver_presets_repository.save(solver_presets)
             return config.to_dto()
 
-    def get_launcher_config(self, configuration_id: str) -> LaunchConfigDTO:
+    def get_solver_presets(self, solver_presets_id: str) -> SolverPresetsDTO:
         """
-        Retrieve a launcher configuration by its ID.
+        Retrieve a solver presets configuration by its ID.
         """
         with db():
-            config = self.launcher_config_repository.get(configuration_id)
+            config = self.solver_presets_repository.get(solver_presets_id)
             if not config:
-                raise LaunchConfigNotFound(f"Launcher configuration with id '{configuration_id}' not found.")
+                raise SolverPresetsNotFound(f"Solver presets configuration with id '{solver_presets_id}' not found.")
             return config.to_dto()
 
-    def get_launcher_configs(self) -> List[LaunchConfigDTO]:
+    def get_solver_presets_list(self) -> List[SolverPresetsDTO]:
         """
         Retrieve all launcher configurations.
         """
         with db():
-            configs = self.launcher_config_repository.get_all()
+            configs = self.solver_presets_repository.get_all()
             return [config.to_dto() for config in configs]
 
-    def update_launcher_config(
-        self, configuration_id: str, launch_config_update: LaunchConfigUpdate
-    ) -> LaunchConfigDTO:
+    def update_solver_presets(
+        self, configuration_id: str, solver_presets_update: SolverPresetsUpdate
+    ) -> SolverPresetsDTO:
         """
         Update an existing launcher configuration using LauncherParametersDTO.
         """
@@ -729,28 +729,28 @@ class LauncherService:
             raise UserHasNotPermissionError()
 
         with db():
-            launcher_config = self.launcher_config_repository.get(configuration_id)
-            if not launcher_config:
-                raise LaunchConfigNotFound(configuration_id)
+            solver_presets = self.solver_presets_repository.get(configuration_id)
+            if not solver_presets:
+                raise SolverPresetsNotFound(configuration_id)
             # Update only the fields that are provided in the update DTO
-            updated_launcher_config = apply_update_launcher_config(launcher_config, launch_config_update)
-            config = self.launcher_config_repository.save(updated_launcher_config)
+            updated_solver_presets = apply_update_solver_presets(solver_presets, solver_presets_update)
+            config = self.solver_presets_repository.save(updated_solver_presets)
             if not config:
-                raise ValueError("Failed to update launcher configuration")
+                raise ValueError("Failed to update solver presets")
             return config.to_dto()
 
-    def delete_launch_config(self, configuration_id: str) -> None:
+    def delete_solver_presets(self, solver_presets_id: str) -> None:
         """
-        Delete a launcher configuration by its ID. Only site administrators can delete configs.
+        Delete a solver presets by its ID. Only site administrators can delete configs.
         """
         user = get_current_user()
         if not user or not user.is_site_admin():
             raise UserHasNotPermissionError()
 
         with db():
-            launcher_config = self.launcher_config_repository.get(configuration_id)
-            if not launcher_config:
-                raise LaunchConfigNotFound(configuration_id)
+            solver_presets = self.solver_presets_repository.get(solver_presets_id)
+            if not solver_presets:
+                raise SolverPresetsNotFound(solver_presets_id)
 
-            logger.info(f"Deleting launcher configuration {configuration_id}")
-            self.launcher_config_repository.delete(configuration_id)
+            logger.info(f"Deleting solver presets {solver_presets_id}")
+            self.solver_presets_repository.delete(solver_presets_id)

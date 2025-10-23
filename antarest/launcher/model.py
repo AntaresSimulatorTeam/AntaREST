@@ -32,14 +32,14 @@ from antarest.login.model import Identity, UserInfo
 
 SolverParams = List[Tuple[str, str]]
 
-ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN = re.compile(
+ALLOWED_SOLVER_PRESETS_PARAM_PATTERN = re.compile(
     r"^[a-zA-Z0-9_]+$|^\d+\.\d+$"
 )  # alphanumeric, underscore, or decimal number
-MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS = StudyVersion(9, 2)
+MIN_SOLVER_PRESETS_FOR_OPTIM_PARAMS = StudyVersion(9, 2)
 
 
-class BadLaunchConfigInput(ValueError):
-    def __init__(self, message: str = "Invalid launcher configuration"):
+class BadSolverPresetsInput(ValueError):
+    def __init__(self, message: str = "Invalid solver presets configuration"):
         super().__init__(message)
 
 
@@ -341,7 +341,7 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
     )
 
 
-class LaunchConfigDTO(AntaresBaseModel):
+class SolverPresetsDTO(AntaresBaseModel):
     id: Optional[str] = None
     name: str
     linear_solver: str
@@ -368,25 +368,25 @@ class LaunchConfigDTO(AntaresBaseModel):
         if not sp:
             return sp
         for k, v in sp:
-            if not ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN.match(k):
+            if not ALLOWED_SOLVER_PRESETS_PARAM_PATTERN.match(k):
                 raise ValueError(
                     f"Invalid key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
                 )
-            if not ALLOWED_LAUNCHER_CONFIG_PARAM_PATTERN.match(v):
+            if not ALLOWED_SOLVER_PRESETS_PARAM_PATTERN.match(v):
                 raise ValueError(
                     f"Invalid value '{v}' for key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
                 )
         return sp
 
     @model_validator(mode="after")
-    def validate_versions_and_optim_params(self) -> "LaunchConfigDTO":
+    def validate_versions_and_optim_params(self) -> "SolverPresetsDTO":
         # min <= max
         if self.min_antares_version and self.max_antares_version:
             if self.min_antares_version > self.max_antares_version:
                 raise ValueError("min_antares_version cannot be greater than max_antares_version")
 
         is_min_version_9_2 = (
-            self.min_antares_version is not None and self.min_antares_version >= MIN_SUPPORTED_VERSION_FOR_OPTIM_PARAMS
+            self.min_antares_version is not None and self.min_antares_version >= MIN_SOLVER_PRESETS_FOR_OPTIM_PARAMS
         )
 
         # linear_solver_param_optim_* only valid for >= 9.2
@@ -443,7 +443,7 @@ class LaunchConfigDTO(AntaresBaseModel):
         return " ".join(options)
 
 
-class LaunchConfigUpdate(AntaresBaseModel):
+class SolverPresetsUpdate(AntaresBaseModel):
     linear_solver: Optional[str] = None
     min_antares_version: Optional[SolverVersion] = None
     max_antares_version: Optional[SolverVersion] = None
@@ -456,13 +456,13 @@ class LaunchConfigUpdate(AntaresBaseModel):
 
 def overwrite_params_other_options_with_config(
     launcher_params: LauncherParametersDTO,
-    launcher_config: LaunchConfigDTO,
+    solver_presets: SolverPresetsDTO,
 ) -> None:
-    launcher_params.other_options = launcher_config.other_options
+    launcher_params.other_options = solver_presets.other_options
 
 
-class LaunchConfigModel(Base):
-    __tablename__ = "launch_configuration"
+class SolverPresetsModel(Base):
+    __tablename__ = "solver_presets"
 
     id = mapped_column(String(36), primary_key=True)
     name = mapped_column(String)
@@ -475,7 +475,7 @@ class LaunchConfigModel(Base):
     use_optim_1_basis_next_week = mapped_column(Boolean)
     use_optim_1_basis_optim_2 = mapped_column(Boolean)
 
-    def to_dto(self) -> LaunchConfigDTO:
+    def to_dto(self) -> SolverPresetsDTO:
         min_version = None
         if self.min_antares_version is not None:
             try:
@@ -511,7 +511,7 @@ class LaunchConfigModel(Base):
             except Exception as e:
                 raise ValueError(f"Failed to parse linear_solver_param: {e}") from e
 
-        return LaunchConfigDTO(
+        return SolverPresetsDTO(
             id=self.id,
             name=self.name,
             linear_solver=self.linear_solver,
@@ -525,7 +525,7 @@ class LaunchConfigModel(Base):
         )
 
     @classmethod
-    def from_dto(cls, dto: LaunchConfigDTO) -> "LaunchConfigModel":
+    def from_dto(cls, dto: SolverPresetsDTO) -> "SolverPresetsModel":
         data = dto.model_dump(exclude_none=True, exclude={"other_options"})
         if dto.min_antares_version is not None:
             data["min_antares_version"] = f"{dto.min_antares_version:2d}"
@@ -547,7 +547,7 @@ class LaunchConfigModel(Base):
     @override
     def __repr__(self) -> str:
         return (
-            f"<LaunchConfigModel(id={self.id!r},"
+            f"<SolverPresetsModel(id={self.id!r},"
             f" name={self.name!r},"
             f" linear_solver={self.linear_solver!r},"
             f" min_antares_version={self.min_antares_version!r},"
@@ -560,34 +560,34 @@ class LaunchConfigModel(Base):
         )
 
 
-def apply_update_launcher_config(
-    launcher_config: LaunchConfigModel,
-    launcher_config_update: LaunchConfigUpdate,
-) -> LaunchConfigModel:
-    return LaunchConfigModel.from_dto(
-        LaunchConfigDTO.model_validate(
-            {**launcher_config.to_dto().model_dump(), **launcher_config_update.model_dump(exclude_none=True)}
+def apply_update_solver_presets(
+    solver_presets: SolverPresetsModel,
+    solver_presets_update: SolverPresetsUpdate,
+) -> SolverPresetsModel:
+    return SolverPresetsModel.from_dto(
+        SolverPresetsDTO.model_validate(
+            {**solver_presets.to_dto().model_dump(), **solver_presets_update.model_dump(exclude_none=True)}
         )
     )
 
 
 def is_version_covered_by_config(
-    launcher_config: LaunchConfigDTO,
+    solver_presets: SolverPresetsDTO,
     solver_version: SolverVersion,
 ) -> bool:
     """
     Check if the given launch configuration is compatible with the specified Antares study version.
 
-    :param launcher_config: The launch configuration to check.
+    :param solver_presets: The launch configuration to check.
     :param study_version: The Antares study version to check against.
     :return: True if the configuration is compatible, False otherwise.
     """
-    if launcher_config.min_antares_version:
-        if solver_version < launcher_config.min_antares_version:
+    if solver_presets.min_antares_version:
+        if solver_version < solver_presets.min_antares_version:
             return False
 
-    if launcher_config.max_antares_version:
-        if solver_version > launcher_config.max_antares_version:
+    if solver_presets.max_antares_version:
+        if solver_version > solver_presets.max_antares_version:
             return False
 
     return True

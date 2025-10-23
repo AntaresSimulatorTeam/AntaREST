@@ -47,19 +47,19 @@ from antarest.launcher.model import (
     JobLogType,
     JobResult,
     JobStatus,
-    LaunchConfigDTO,
-    LaunchConfigModel,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
+    SolverPresetsDTO,
+    SolverPresetsModel,
 )
 from antarest.launcher.service import (
     EXECUTION_INFO_FILE,
     LAUNCHER_PARAM_NAME_SUFFIX,
-    IncompatibleLaunchConfig,
+    IncompatibleSolverPresets,
     JobNotFound,
-    LaunchConfigNotFound,
     LauncherService,
+    SolverPresetsNotFound,
 )
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
@@ -117,7 +117,7 @@ class TestLauncherService:
             output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
             login_service=Mock(),
             job_result_repository=repository,
-            launcher_config_repository=config_repository,
+            solver_presets_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),
@@ -179,7 +179,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
-            launcher_config_repository=config_repository,
+            solver_presets_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -220,7 +220,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
-            launcher_config_repository=config_repository,
+            solver_presets_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -298,7 +298,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
-            launcher_config_repository=config_repository,
+            solver_presets_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -548,7 +548,7 @@ class TestLauncherService:
             output_service=Mock(),
             login_service=Mock(),
             job_result_repository=Mock(),
-            launcher_config_repository=Mock(),
+            solver_presets_repository=Mock(),
             factory_launcher=mock_factory,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -571,7 +571,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
-            launcher_config_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -605,7 +605,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
-            launcher_config_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -644,7 +644,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
-            launcher_config_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -704,7 +704,7 @@ class TestLauncherService:
             output_service=output_service,
             login_service=Mock(),
             job_result_repository=Mock(),
-            launcher_config_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -823,7 +823,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
-            launcher_config_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -980,7 +980,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=job_repository,
-            launcher_config_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=factory_launcher_mock,
             file_transfer_manager=Mock(),
@@ -1029,7 +1029,7 @@ class TestLauncherService:
             output_service=output_service,
             login_service=login_service,
             job_result_repository=job_repository,
-            launcher_config_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -1042,7 +1042,7 @@ class TestLauncherService:
 
     @with_admin_user
     @pytest.mark.unit_test
-    def test_run_study_with_launch_config_and_overrides(self) -> None:
+    def test_run_study_with_solver_presets(self) -> None:
         # set up mocks
         storage_service_mock = Mock()
         storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
@@ -1065,18 +1065,18 @@ class TestLauncherService:
         factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
         event_bus = Mock()
         repository = Mock()
-        config_repository = Mock()
+        solver_presets_repository = Mock()
 
-        def get_mock_launch_config(config_id: str):
+        def get_mock_solver_presets(config_id: str):
             if config_id == "config-1":
-                return LaunchConfigModel.from_dto(
-                    LaunchConfigDTO(
+                return SolverPresetsModel.from_dto(
+                    SolverPresetsDTO(
                         id="config-1", name="Config 1", linear_solver="xpress", min_antares_version=SOLVER_VERSION_9_2
                     )
                 )
             return None
 
-        config_repository.get.side_effect = get_mock_launch_config
+        solver_presets_repository.get.side_effect = get_mock_solver_presets
 
         # create the service
         launcher_service = LauncherService(
@@ -1085,7 +1085,7 @@ class TestLauncherService:
             output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
             login_service=Mock(),
             job_result_repository=repository,
-            launcher_config_repository=config_repository,
+            solver_presets_repository=solver_presets_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),
@@ -1107,16 +1107,16 @@ class TestLauncherService:
         saved_other_options = saved_launcher_params.get("other_options", "")
         assert saved_other_options == "solver=xpress", "The other_options should include the merged solver option"
 
-        # Test that non-existent config raises LaunchConfigNotFound
-        with pytest.raises(LaunchConfigNotFound):
+        # Test that non-existent config raises SolverPresetsNotFound
+        with pytest.raises(SolverPresetsNotFound):
             launcher_service.run_study("study_uuid", "local", params, "config-2")
 
-        # Test that incompatible antares version raises IncompatibleLaunchConfig
-        with pytest.raises(IncompatibleLaunchConfig):
+        # Test that incompatible antares version raises IncompatibleSolverPresets
+        with pytest.raises(IncompatibleSolverPresets):
             launcher_service.run_study("study_uuid", "local", params, "config-1", "8.0")
 
-        # Test that when solver version is not given, but study version is incompatible, it raises IncompatibleLaunchConfig
-        with pytest.raises(IncompatibleLaunchConfig):
+        # Test that when solver version is not given, but study version is incompatible, it raises IncompatibleSolverPresets
+        with pytest.raises(IncompatibleSolverPresets):
             storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
                 id="id",
                 name="name",
@@ -1133,7 +1133,7 @@ class TestLauncherService:
             )
             launcher_service.run_study("study_uuid", "local", params, "config-1")
 
-        # Test that when other_options is set, it raises IncompatibleLaunchConfig
+        # Test that when other_options is set, it raises IncompatibleSolverPresets
         params_with_other_options = LauncherParametersDTO(other_options="--some-option")
-        with pytest.raises(IncompatibleLaunchConfig):
+        with pytest.raises(IncompatibleSolverPresets):
             launcher_service.run_study("study_uuid", "local", params_with_other_options, "config-1", "8.0")
