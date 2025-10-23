@@ -919,7 +919,8 @@ class StudyService:
         """
         user = get_current_user()
         if user:
-            if curr_user := self.user_service.get_user(user.impersonator):
+            user_id = user.impersonator if user.type == "bots" else user.id
+            if curr_user := self.user_service.get_user(user_id):
                 return curr_user.to_dto().name
         return "Unknown"
 
