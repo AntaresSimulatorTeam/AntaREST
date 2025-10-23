@@ -60,7 +60,7 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.login.service import LoginService
-from antarest.login.utils import current_user_context, get_current_user
+from antarest.login.utils import current_user_context, get_current_user, require_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -75,7 +75,7 @@ class JobNotFound(HTTPException):
 
 
 class IncompatibleSolverPresets(HTTPException):
-    def __init__(self, message: str = "Invalid launch configuration"):
+    def __init__(self, message: str = "Invalid solver presets"):
         super().__init__(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=message,
@@ -83,7 +83,7 @@ class IncompatibleSolverPresets(HTTPException):
 
 
 class SolverPresetsNotFound(HTTPException):
-    def __init__(self, message: str = "Launcher configuration not found"):
+    def __init__(self, message: str = "Solver presets not found"):
         super().__init__(
             status_code=HTTPStatus.NOT_FOUND,
             detail=message,
@@ -255,9 +255,9 @@ class LauncherService:
         if solver_presets_id is not None:
             solver_presets = self.get_solver_presets(solver_presets_id)
             if not is_version_covered_by_config(solver_presets, solver_version):
-                raise IncompatibleSolverPresets("Launcher configuration is not compatible with study version")
+                raise IncompatibleSolverPresets("Solver presets are not compatible with study version")
             if launcher_parameters.other_options:
-                raise IncompatibleSolverPresets("Cannot use other_options when a launcher configuration is specified")
+                raise IncompatibleSolverPresets("Cannot use other_options when solver presets are specified")
             launcher_parameters.other_options = solver_presets.other_options
 
         self._assert_launcher_is_initialized(launcher)
@@ -712,7 +712,7 @@ class LauncherService:
 
     def get_solver_presets_list(self) -> List[SolverPresetsDTO]:
         """
-        Retrieve all launcher configurations.
+        Retrieve all solver presets.
         """
         with db():
             configs = self.solver_presets_repository.get_all()
@@ -722,10 +722,10 @@ class LauncherService:
         self, configuration_id: str, solver_presets_update: SolverPresetsUpdate
     ) -> SolverPresetsDTO:
         """
-        Update an existing launcher configuration using LauncherParametersDTO.
+        Update an existing solver presets using SolverPresetsUpdate.
         """
-        user = get_current_user()
-        if not user or not user.is_site_admin():
+        user = require_current_user()
+        if not user.is_site_admin():
             raise UserHasNotPermissionError()
 
         with db():
@@ -743,8 +743,8 @@ class LauncherService:
         """
         Delete a solver presets by its ID. Only site administrators can delete configs.
         """
-        user = get_current_user()
-        if not user or not user.is_site_admin():
+        user = require_current_user()
+        if not user.is_site_admin():
             raise UserHasNotPermissionError()
 
         with db():

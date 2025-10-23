@@ -542,7 +542,7 @@ class SolverPresetsModel(Base):
 
     @override
     def __str__(self) -> str:
-        return f"Launcher configuration #{self.id} '{self.name}' (solver: {self.linear_solver})"
+        return f"Solver presets #{self.id} '{self.name}' (solver: {self.linear_solver})"
 
     @override
     def __repr__(self) -> str:
@@ -576,11 +576,11 @@ def is_version_covered_by_config(
     solver_version: SolverVersion,
 ) -> bool:
     """
-    Check if the given launch configuration is compatible with the specified Antares study version.
+    Check if the given solver presets are compatible with the specified Antares study version.
 
-    :param solver_presets: The launch configuration to check.
+    :param solver_presets: The solver presets to check.
     :param study_version: The Antares study version to check against.
-    :return: True if the configuration is compatible, False otherwise.
+    :return: True if the presets are compatible, False otherwise.
     """
     if solver_presets.min_antares_version:
         if solver_version < solver_presets.min_antares_version:

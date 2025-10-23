@@ -14,7 +14,7 @@ from starlette.testclient import TestClient
 
 
 def test_solver_presets(client: TestClient, user_access_token: str, admin_access_token: str) -> None:
-    # Test creating a new launcher configuration
+    # Test creating solver presets
     payload1 = {
         "name": "test-xpress-config",
         "linear_solver": "xpress",
@@ -43,7 +43,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert data1["linear_solver_param_optim_2"] == [["MIPRELSTOP", "0.01"]]
     assert data1["use_optim_1_basis_optim_2"] is False
 
-    # Test creating a launcher config with minimal required fields
+    # Test creating solver presets with minimal required fields
     payload2 = {
         "name": "minimal-config",
         "linear_solver": "sirius",
@@ -62,8 +62,8 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert data2["use_optim_1_basis_next_week"] is True
     assert data2["use_optim_1_basis_optim_2"] is True
 
-    # Test retrieving a launcher configuration by ID
-    # First create a config
+    # Test retrieving a solver presets by ID
+    # First create one
     create_payload3 = {
         "name": "retrieve-test",
         "linear_solver": "coin",
@@ -91,7 +91,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert data3["linear_solver"] == "coin"
     assert data3["linear_solver_param"] == [["THREADS", "2"]]
 
-    # Test creating a launcher config with empty name
+    # Test creating solver presets with empty name
     invalid_payload4 = {
         "name": "   ",  # Empty/whitespace name
         "linear_solver": "xpress",
@@ -105,7 +105,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
 
     assert res4.status_code == 422
 
-    # Test creating a launcher config with min > max version
+    # Test creating solver presets with min > max version
     invalid_payload5 = {
         "name": "invalidversion",
         "linear_solver": "xpress",
@@ -150,7 +150,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     for expected_name_7 in ["test-xpress-config", "minimal-config", "retrieve-test"]:
         assert expected_name_7 in config_names7
 
-    # Test updating a launcher configuration
+    # Test updating solver presets
     update_payload8 = {
         "min_antares_version": {"major": 9, "minor": 3, "patch": 0},
     }
@@ -217,7 +217,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert data10_verify["linear_solver_param_optim_1"] == []
     assert data10_verify["linear_solver_param_optim_2"] == []
 
-    # Test deleting a launcher configuration
+    # Test deleting solver presets
     res_delete = client.delete(
         f"/v1/launcher/solver-presets/{config1_id}",
         headers={"Authorization": f"Bearer {admin_access_token}"},
