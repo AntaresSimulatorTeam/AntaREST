@@ -31,6 +31,7 @@ from antarest.login.utils import require_current_user
 from antarest.study.model import (
     CommentsDto,
     MatrixIndex,
+    StorageMode,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudyVersionStr,
@@ -374,13 +375,30 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Create a new empty study",
         response_model=str,
     )
-    def create_study(name: str, version: StudyVersionStr | None = None, groups: str = "") -> Any:
-        logger.info(f"Creating new study '{name}'")
+    def create_study(
+        name: str,
+        version: StudyVersionStr | None = None,
+        groups: str = "",
+        storage_mode: StorageMode = StorageMode.FILESYSTEM,
+    ) -> Any:
+        """
+        Create a new empty study.
+
+        Args:
+        - `name`: The name of the study to create.
+        - `version`: The version of the study (optional).
+        - `groups`: Comma-separated list of group IDs to associate with the study.
+        - `storage_mode`: Storage mode for the study ("filesystem" or "database"). Defaults to "filesystem".
+
+        Returns:
+        - The ID of the newly created study.
+        """
+        logger.info(f"Creating new study '{name}' with storage_mode={storage_mode}")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
-        uuid = study_service.create_study(name_sanitized, version, group_ids)
+        uuid = study_service.create_study(name_sanitized, version, group_ids, storage_mode)
 
         return uuid
 

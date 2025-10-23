@@ -113,6 +113,7 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     MatrixIndex,
     RawStudy,
+    StorageMode,
     Study,
     StudyAdditionalData,
     StudyContentStatus,
@@ -406,32 +407,62 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
+        from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+        from antarest.study.model import StorageMode
+
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(self._study.id, self._repository.session).read_only()
         return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+        from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+        from antarest.study.model import StorageMode
+
         study = self._study
         should_invalidate_cache = False
-        file_study = self.get_files()
 
-        for command in commands:
-            result = command.apply(
-                FileStudyTreeDao(file_study, command.command_context.generator_matrix_constants), listener
-            )
-            if result.should_invalidate_cache:
-                should_invalidate_cache = True
-            if not result.status:
-                raise CommandApplicationError(result.message)
+        # Apply commands based on storage mode
+        if study.storage_mode == StorageMode.DATABASE:
+            # DATABASE mode: apply to database
+            database_dao = DatabaseStudyDao(study.id, self._repository.session)
 
-        # if commands that can't update the cache are applied, we need to invalidate it.
-        # Otherwise, we can update it.
-        if should_invalidate_cache:
-            remove_from_cache(self._raw_study_service.cache, study.id)
+            for command in commands:
+                result = command.apply(database_dao, listener)
+                if result.should_invalidate_cache:
+                    should_invalidate_cache = True
+                if not result.status:
+                    raise CommandApplicationError(result.message)
+
+            # Invalidate cache if needed
+            if should_invalidate_cache:
+                remove_from_cache(self._raw_study_service.cache, study.id)
         else:
-            data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
-            update_cache(self._raw_study_service.cache, study.id, data)
+            # FILESYSTEM mode: apply to file system
+            file_study = self.get_files()
+
+            for command in commands:
+                result = command.apply(
+                    FileStudyTreeDao(file_study, command.command_context.generator_matrix_constants), listener
+                )
+                if result.should_invalidate_cache:
+                    should_invalidate_cache = True
+                if not result.status:
+                    raise CommandApplicationError(result.message)
+
+            # Update cache (only in FILESYSTEM mode)
+            if should_invalidate_cache:
+                remove_from_cache(self._raw_study_service.cache, study.id)
+            else:
+                # Update cache when it's not invalidated
+                data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+                update_cache(self._raw_study_service.cache, study.id, data)
+
+            # Update editor metadata (only in FILESYSTEM mode)
+            self._update_editor(file_study)
+
+        # Notify changes to child variants
         self._variant_study_service.on_parent_change(study.id)
-        self._update_editor(file_study)
 
     def _update_editor(self, file_study: FileStudy) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
@@ -455,8 +486,9 @@ class VariantStudyInterface(StudyInterface):
     to the variant.
     """
 
-    def __init__(self, variant_service: VariantStudyService, study: VariantStudy):
+    def __init__(self, variant_service: VariantStudyService, repository: StudyMetadataRepository, study: VariantStudy):
         self._variant_service = variant_service
+        self._repository = repository
         self._study = study
         self._version = StudyVersion.parse(self._study.version)
 
@@ -476,6 +508,11 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
+        from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+        from antarest.study.model import StorageMode
+
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(self._study.id, self._repository.session).read_only()
         return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
@@ -829,6 +866,7 @@ class StudyService:
         if isinstance(study, VariantStudy):
             return VariantStudyInterface(
                 self.storage_service.variant_study_service,
+                self.repository,
                 study,
             )
         elif isinstance(study, RawStudy):
@@ -860,14 +898,17 @@ class StudyService:
         logger.info("study %s path asked by user %s", uuid, get_user_id())
         return self.storage_service.get_storage(study).get_study_path(study)
 
-    def create_study(self, study_name: str, version: Optional[StudyVersion], group_ids: List[str]) -> str:
+    def create_study(
+        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], storage_mode: StorageMode
+    ) -> str:
         """
-        Creates a study with the specified study name, version, group IDs, and user parameters.
+        Creates a study with the specified study name, version, group IDs, and storage mode.
 
         Args:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
+            storage_mode: The storage mode for the study (FILESYSTEM or DATABASE).
 
         Returns:
             str: The ID of the newly created study.
@@ -887,6 +928,7 @@ class StudyService:
             updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author, editor=author),
+            storage_mode=storage_mode,
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -899,7 +941,7 @@ class StudyService:
             )
         )
 
-        logger.info("study %s created by user %s", raw.id, get_user_id())
+        logger.info("study %s created by user %s with storage_mode=%s", raw.id, get_user_id(), storage_mode)
         return str(raw.id)
 
     def get_user_name(self) -> str:
