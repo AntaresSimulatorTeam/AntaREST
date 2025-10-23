@@ -415,8 +415,10 @@ class RawStudyInterface(StudyInterface):
         file_study = self.get_files()
 
         for command in commands:
+            context = command.command_context
             result = command.apply(
-                FileStudyTreeDao(file_study, command.command_context.generator_matrix_constants), listener
+                FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service),
+                listener,
             )
             if result.should_invalidate_cache:
                 should_invalidate_cache = True
@@ -1464,7 +1466,10 @@ class StudyService:
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
             user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
-            args = {"path": user_path, "resource_type": ResourceType.FILE, "content": data or b""}
+            content = data or b""
+            assert isinstance(content, bytes)
+            blob_id = context.blob_service.save(content)
+            args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
             command_data = UserResourceDataCreation.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
             commands.append(cmd_1)
@@ -2325,7 +2330,6 @@ class StudyService:
         args = {
             "path": _get_path_inside_user_folder(path, ResourceCreationNotAllowed),
             "resource_type": ResourceType.FOLDER,
-            "content": None,
         }
         command_data = UserResourceDataCreation.model_validate(args)
         self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)

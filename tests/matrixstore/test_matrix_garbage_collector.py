@@ -16,6 +16,7 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
+from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.model import MatrixMetadataDTO, MatrixReference
@@ -40,6 +41,7 @@ def matrix_garbage_collector(tmp_path: Path) -> MatrixGarbageCollector:
     command_factory = CommandFactory(
         generator_matrix_constants=matrix_constant_generator,
         matrix_service=Mock(spec=MatrixService),
+        blob_service=Mock(spec=BlobService),
     )
     study_service = Mock()
     study_service.storage_service.variant_study_service.command_factory = command_factory

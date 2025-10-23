@@ -20,6 +20,8 @@ from zipfile import ZipFile
 import py7zr
 import pytest
 
+from antarest.blobstore.repository import BlobContentRepository
+from antarest.blobstore.service import BlobService
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import (
     CacheConfig,
@@ -121,10 +123,19 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     job_result_repository = Mock()
     job_result_repository.find_by_study.return_value = []
 
+    # Matrices
     matrix_path = tmp_path / "matrices"
     matrix_path.mkdir()
     matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
     matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
+
+    # Blob
+    blob_path = tmp_path / "blob"
+    blob_path.mkdir()
+    blob_content_repository = BlobContentRepository(bucket_dir=blob_path)
+    blob_service = BlobService(blob_content_repository=blob_content_repository)
+
+    # Final object
     storage_service = build_study_service(
         app_ctxt=Mock(),
         cache=LocalCache(config=config.cache),
@@ -132,6 +143,7 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
         task_service=task_service_mock,
         user_service=user_service,
         matrix_service=matrix_service,
+        blob_service=blob_service,
         config=config,
         metadata_repository=repo,
         variant_repository=variant_repo,

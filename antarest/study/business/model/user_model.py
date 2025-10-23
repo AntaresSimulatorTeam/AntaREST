@@ -26,12 +26,12 @@ class ResourceType(StrEnum):
 class UserResourceDataCreation(AntaresBaseModel):
     path: PurePosixPath
     resource_type: ResourceType
-    content: bytes | None = None
+    blob_id: str | None = None
 
     @model_validator(mode="after")
     def _validate_coherence(self) -> Self:
-        if self.resource_type == ResourceType.FOLDER and self.content is not None:
-            raise ValueError("You cannot provide a content for a folder")
+        if self.resource_type == ResourceType.FOLDER and self.blob_id is not None:
+            raise ValueError("You cannot provide a blob_id for a folder")
         return self
 
 

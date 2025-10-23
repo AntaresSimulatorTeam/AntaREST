@@ -16,6 +16,7 @@ from typing import Dict, List, Optional, Type
 
 from antares.study.version import StudyVersion
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -184,10 +185,12 @@ class CommandFactory:
         self,
         generator_matrix_constants: GeneratorMatrixConstants,
         matrix_service: ISimpleMatrixService,
+        blob_service: IBlobService,
     ):
         self.command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=matrix_service,
+            blob_service=blob_service,
         )
 
     def _to_single_command(

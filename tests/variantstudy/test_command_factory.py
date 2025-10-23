@@ -18,6 +18,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -804,6 +805,7 @@ COMMANDS = [
             action=CommandName.CREATE_USER_RESOURCE.value,
             args=[{"data": {"path": "folder_1", "resource_type": "folder"}}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_user_resource_list",
@@ -1043,11 +1045,16 @@ def command_factory() -> CommandFactory:
     def get_matrix_id(matrix: str) -> str:
         return matrix.removeprefix("matrix://")
 
+    def create_blob(content: bytes) -> str:
+        return "created_blob_id"
+
     matrix_service = Mock(spec=MatrixService, get_matrix_id=get_matrix_id)
+    blob_service = Mock(spec=BlobService, save=create_blob)
 
     return CommandFactory(
         generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
         matrix_service=matrix_service,
+        blob_service=blob_service,
     )
 
 
@@ -1105,6 +1112,7 @@ def test_unknown_command() -> None:
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
             matrix_service=Mock(spec=MatrixService),
+            blob_service=Mock(spec=BlobService),
         )
         command_factory.to_command(
             command_dto=CommandDTO(action="unknown_command", args={}, study_version=STUDY_VERSION_8_8)
@@ -1576,3 +1584,21 @@ def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory) ->
     # The metadata should be dropped and not stored in the converted command
     assert dto.args == {"area_name": "test_area"}
     assert "metadata" not in dto.args
+
+
+def test_parse_legacy_create_user_resource_command(command_factory: CommandFactory):
+    """Test that version 1 format (with content field) can still be loaded."""
+    dto = CommandDTO(
+        action=CommandName.CREATE_USER_RESOURCE.value,
+        args={"data": {"path": "folder_1", "resource_type": "file", "content": b"Hello World !"}},
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_user_resource"
+    assert dto.version == 2
+    # Ensures the content was transformed into a blob_id when saving it inside the blob store.
+    assert dto.args == {"data": {"blob_id": "created_blob_id", "path": "folder_1", "resource_type": "file"}}
