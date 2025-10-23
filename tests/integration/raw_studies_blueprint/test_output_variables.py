@@ -83,16 +83,16 @@ def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_t
             "WIND",
         ],
         "link": [
-            "FLOW LIN.",
-            "UCAP LIN.",
-            "LOOP FLOW",
-            "FLOW QUAD.",
-            "CONG. FEE (ALG.)",
             "CONG. FEE (ABS.)",
-            "MARG. COST",
+            "CONG. FEE (ALG.)",
             "CONG. PROB +",
             "CONG. PROB -",
+            "FLOW LIN.",
+            "FLOW QUAD.",
             "HURDLE COST",
+            "LOOP FLOW",
+            "MARG. COST",
+            "UCAP LIN.",
         ],
     }
     assert res.json() == expected_result

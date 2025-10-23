@@ -102,7 +102,7 @@ class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
 
         # Links
         all_link_variables = []
-        for link in variables_list.mc_all.links:
+        for link in variables_list.mc_ind.links:
             all_link_variables.extend(link.variables)
         args["link"] = sorted(set(all_link_variables))
 
