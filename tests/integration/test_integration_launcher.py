@@ -10,6 +10,9 @@
 #
 # This file is part of the Antares project.
 
+import json
+
+from more_itertools import first
 from starlette.testclient import TestClient
 
 
@@ -189,6 +192,34 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     )
 
     assert res9.status_code == 422
+
+    # Test running a study with a solver presets and verify launcher params
+    get_studies_res = client.get(
+        "/v1/studies",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+    )
+    studies = get_studies_res.json()
+    study_id = first(id for id in studies if studies[id]["name"] == "STA-mini")
+
+    res_run_with_conf = client.post(
+        f"/v1/launcher/run/{study_id}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+        params={"solver_presets_id": data1["id"], "version": "9.3.0"},
+    )
+
+    job_id = res_run_with_conf.json()["job_id"]
+
+    res = client.get(
+        f"/v1/launcher/jobs?study_id={study_id}",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+    )
+    job_info = res.json()[0]
+    assert job_info["id"] == job_id
+    job_launcher_params_json = job_info["launcher_params"]
+    job_launcher_params = json.loads(job_launcher_params_json)
+    assert job_launcher_params["other_options"] == (
+        'solver=xpress nobasis2 param-optim1="DEFAULTALG 4 THREADS 4 PRESOLVE 1" param-optim2="DEFAULTALG 4 MIPRELSTOP 0.01"'
+    )
 
     # Test updating optim params to None/empty when version < 9.2
     update_payload10 = {

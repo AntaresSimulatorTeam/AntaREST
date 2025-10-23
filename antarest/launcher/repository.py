@@ -92,9 +92,6 @@ class JobResultRepository:
 
 
 class SolverPresetsRepository:
-    def __init__(self) -> None:
-        pass
-
     def exists(self, id: str) -> bool:
         logger.debug(f"Checking existence of SolverPresetsModel {id}")
         stmt = select(SolverPresetsModel).where(SolverPresetsModel.id == id)

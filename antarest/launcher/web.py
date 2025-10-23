@@ -52,7 +52,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         study_id: str,
         launcher: Optional[str] = None,
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
-        launcher_configuration_id: Optional[str] = None,
+        solver_presets_id: Optional[str] = None,
         version: Optional[str] = None,
     ) -> Any:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
@@ -63,7 +63,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
                 study_id,
                 selected_launcher,
                 launcher_parameters,
-                launcher_configuration_id,
+                solver_presets_id,
                 version,
             )
         )
@@ -190,7 +190,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/solver-presets",
         tags=[APITag.launcher],
         summary="Create new solver presets",
-        response_model=SolverPresetsDTO,
     )
     def create_solver_presets(solver_presets_creation: SolverPresetsDTO) -> SolverPresetsDTO:
         logger.info("Creating new solver presets")
@@ -200,7 +199,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/solver-presets/{solver_presets_id}",
         tags=[APITag.launcher],
         summary="Retrieve solver presets by ID",
-        response_model=SolverPresetsDTO,
     )
     def get_solver_presets(solver_presets_id: str) -> SolverPresetsDTO:
         logger.info(f"Retrieving solver presets for ID {solver_presets_id}")
@@ -210,7 +208,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/solver-presets/",
         tags=[APITag.launcher],
         summary="Retrieve all solver presets",
-        response_model=List[SolverPresetsDTO],
     )
     def get_solver_presets_list() -> List[SolverPresetsDTO]:
         logger.info("Retrieving solver presets")
@@ -220,9 +217,8 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/solver-presets/{solver_presets_id}",
         tags=[APITag.launcher],
         summary="Update an existing solver preset",
-        response_model=SolverPresetsDTO,
     )
-    def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> Any:
+    def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresetsDTO:
         logger.info(f"Updating solver preset for ID {solver_presets_id}")
         return service.update_solver_presets(solver_presets_id, solver_presets_update)
 

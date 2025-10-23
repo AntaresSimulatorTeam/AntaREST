@@ -1105,7 +1105,7 @@ class TestLauncherService:
         actual_obj: JobResult = mock_call.args[0]
         saved_launcher_params = json.loads(actual_obj.launcher_params)
         saved_other_options = saved_launcher_params.get("other_options", "")
-        assert saved_other_options == "solver=xpress", "The other_options should include the merged solver option"
+        assert saved_other_options == "solver=xpress", "The other_options was not set correctly"
 
         # Test that non-existent config raises SolverPresetsNotFound
         with pytest.raises(SolverPresetsNotFound):

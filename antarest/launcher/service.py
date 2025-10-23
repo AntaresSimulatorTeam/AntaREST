@@ -23,7 +23,7 @@ from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
 from antarest.core.config import Config, InvalidConfigurationError
-from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.exceptions import BadSolverPresetsInput, StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
@@ -40,7 +40,6 @@ from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
-    BadSolverPresetsInput,
     JobLog,
     JobLogType,
     JobResult,

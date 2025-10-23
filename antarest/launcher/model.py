@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Any, Dict, List, MutableMapping, Optional, Tuple
 from uuid import uuid4
 
-from antares.study.version import SolverVersion, StudyVersion
+from antares.study.version import SolverVersion
 from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
@@ -29,18 +29,14 @@ from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.login.model import Identity, UserInfo
+from antarest.study.model import STUDY_VERSION_9_2
 
 SolverParams = List[Tuple[str, str]]
 
 ALLOWED_SOLVER_PRESETS_PARAM_PATTERN = re.compile(
     r"^[a-zA-Z0-9_]+$|^\d+\.\d+$"
 )  # alphanumeric, underscore, or decimal number
-MIN_SOLVER_PRESETS_FOR_OPTIM_PARAMS = StudyVersion(9, 2)
-
-
-class BadSolverPresetsInput(ValueError):
-    def __init__(self, message: str = "Invalid solver presets configuration"):
-        super().__init__(message)
+MIN_SOLVER_PRESETS_FOR_OPTIM_PARAMS = STUDY_VERSION_9_2
 
 
 class XpansionParametersDTO(AntaresBaseModel, extra="forbid"):
