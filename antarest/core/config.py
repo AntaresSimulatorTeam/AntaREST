@@ -599,6 +599,39 @@ class ServerConfig:
 
 
 @dataclass(frozen=True)
+class PrometheusConfig:
+    """
+    Sub config object dedicated to prometheus metrics
+
+    Attributes:
+        multiprocess: if True, metrics of workers will be aggregated before exposition.
+                      Environment variable `PROMETHEUS_MULTIPROC_DIR` must be set.
+    """
+
+    multiprocess: bool = False
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "PrometheusConfig":
+        return cls(multiprocess=bool(data["multiprocess"]))
+
+
+@dataclass(frozen=True)
+class MetricsConfig:
+    """
+    Sub config object dedicated to metrics
+
+    Attributes:
+        prometheus: if not None, metrics will be exposed in prometheus format
+    """
+
+    prometheus: PrometheusConfig | None = None
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "MetricsConfig":
+        return cls(prometheus=PrometheusConfig.from_dict(data["prometheus"]) if "prometheus" in data else None)
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
@@ -616,6 +649,7 @@ class Config:
     eventbus: EventBusConfig = EventBusConfig()
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
+    metrics: MetricsConfig = MetricsConfig()
     root_path: str = ""
     api_prefix: str = ""
     desktop_mode: bool = False
@@ -645,6 +679,7 @@ class Config:
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
             desktop_mode=desktop_mode,
+            metrics=MetricsConfig.from_dict(data["metrics"]) if "metrics" in data else MetricsConfig(),
         )
 
     @classmethod

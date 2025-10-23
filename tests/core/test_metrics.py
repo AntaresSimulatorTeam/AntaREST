@@ -1,0 +1,316 @@
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+import time
+
+import prometheus_client
+import pytest
+from prometheus_client import CollectorRegistry, Metric
+from sqlalchemy import QueuePool, create_engine, text
+from sqlalchemy.orm import sessionmaker
+
+from antarest.core.metrics import (
+    TasksMetricsRecorder,
+    _add_db_connection_metrics,
+    _add_db_session_metrics,
+)
+
+
+def _is_subset(small_dict: dict[str, str], big_dict: dict[str, str]) -> bool:
+    return all(item in big_dict.items() for item in small_dict.items())
+
+
+def _get_metric(registry: CollectorRegistry, name: str) -> Metric | None:
+    try:
+        return next(m for m in registry.collect() if m.name == name)
+    except StopIteration:
+        return None
+
+
+def _get_value(registry: CollectorRegistry, name: str, labels: dict[str, str] | None = None) -> float | None:
+    """
+    Returns the value of the first (unique) sample of the metric matching the given name and labels.
+    """
+    metric = _get_metric(registry, name)
+    if not metric:
+        return None
+    if not labels:
+        return metric.samples[0].value if metric.samples else None
+    else:
+        try:
+            sample = next(s for s in metric.samples if _is_subset(labels, s.labels))
+            return sample.value
+        except StopIteration:
+            return None
+
+
+def _get_histo_count(registry: CollectorRegistry, name: str) -> float | None:
+    """
+    Returns the count of values for a histogram metric.
+    """
+    count_sample_name = f"{name}_count"
+    metric = _get_metric(registry, name)
+    if not metric:
+        return None
+    try:
+        sample = next(s for s in metric.samples if s.name == count_sample_name)
+        return sample.value
+    except StopIteration:
+        return None
+
+
+def test_task_metrics_recorder():
+    registry = CollectorRegistry()
+    recorder = TasksMetricsRecorder(registry)
+    metrics_names = {m.name for m in registry.collect()}
+    assert metrics_names == {"tasks_duration_seconds", "tasks_wait_seconds", "tasks_running", "tasks_pending"}
+
+    recorder.on_task_submit("task1")
+    assert _get_value(registry, "tasks_running") is None
+    assert _get_value(registry, "tasks_pending") == 1
+    assert _get_histo_count(registry, "tasks_wait_seconds") is None
+    assert _get_histo_count(registry, "tasks_duration_seconds") is None
+
+    recorder.on_task_start("task1")
+    assert _get_value(registry, "tasks_running") == 1
+    assert _get_value(registry, "tasks_pending") == 0
+    assert _get_histo_count(registry, "tasks_wait_seconds") == 1
+    assert _get_histo_count(registry, "tasks_duration_seconds") is None
+
+    recorder.on_task_end("task1")
+    assert _get_value(registry, "tasks_running") == 0
+    assert _get_value(registry, "tasks_pending") == 0
+    assert _get_histo_count(registry, "tasks_wait_seconds") == 1
+    assert _get_histo_count(registry, "tasks_duration_seconds") == 1
+
+
+def test_db_connection_metrics():
+    engine = create_engine("sqlite:///:memory:")
+
+    registry = CollectorRegistry()
+    _add_db_connection_metrics(registry, engine)
+
+    metrics_names = {m.name for m in registry.collect()}
+    assert metrics_names == {
+        "db_connections_duration_seconds",
+        "db_connections_used",
+        "db_connections_idle",
+        "db_connections_events",
+    }
+
+    assert _get_value(registry, "db_connections_used") == 0
+    assert _get_value(registry, "db_connections_idle") == 0
+
+    with engine.connect() as conn:
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 1
+        conn.execute(text("CREATE TABLE test (id INTEGER PRIMARY KEY)"))
+        conn.commit()
+
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+
+    assert _get_value(registry, "db_connections_used") == 0
+    assert _get_value(registry, "db_connections_idle") == 1
+    assert _get_histo_count(registry, "db_connections_duration_seconds") == 1
+    assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 1
+    assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 1
+    assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) == 1
+
+
+def test_db_connection_metrics_detach():
+    engine = create_engine("sqlite:///:memory:")
+
+    registry = CollectorRegistry()
+    _add_db_connection_metrics(registry, engine)
+
+    with engine.connect() as conn:
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 1
+        conn.detach()
+
+        assert _get_value(registry, "db_connections_used") == 0
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "detach"}) == 1
+
+    assert _get_value(registry, "db_connections_used") == 0
+    assert _get_value(registry, "db_connections_idle") == 0
+    assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) is None
+
+
+def test_db_connection_metrics_overflow():
+    engine = create_engine("sqlite:///:memory:", poolclass=QueuePool, max_overflow=1, pool_size=1)
+
+    registry = CollectorRegistry()
+    _add_db_connection_metrics(registry, engine)
+
+    with engine.connect():
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 1
+
+        # This connection will be an overflow connection
+        with engine.connect():
+            assert _get_value(registry, "db_connections_used") == 2
+            assert _get_value(registry, "db_connections_idle") == 0
+            # We get 1 more connect and 1 more checkout from the pool
+            assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 2
+            assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 2
+
+    assert _get_value(registry, "db_connections_used") == 0
+    # The overflow connection is checked in but closed instantly, we have only 1 idle connection
+    assert _get_value(registry, "db_connections_idle") == 1
+    assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) == 2
+    assert _get_value(registry, "db_connections_events", {"event_type": "close"}) == 1
+
+
+def test_db_connection_metrics_invalidate():
+    engine = create_engine("sqlite:///:memory:")
+
+    registry = CollectorRegistry()
+    _add_db_connection_metrics(registry, engine)
+
+    with engine.connect() as conn:
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "invalidate"}) is None
+        conn.invalidate()
+
+        assert _get_value(registry, "db_connections_used") == 0
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "invalidate"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "close"}) == 1
+
+    assert _get_value(registry, "db_connections_used") == 0
+    assert _get_value(registry, "db_connections_idle") == 0
+    assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) == 1
+
+    with engine.connect():
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 2
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 2
+
+    assert _get_value(registry, "db_connections_used") == 0
+    assert _get_value(registry, "db_connections_idle") == 1
+    assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) == 2
+
+
+def test_db_connection_metrics_recycle():
+    engine = create_engine("sqlite:///:memory:", pool_recycle=1)
+
+    registry = CollectorRegistry()
+    _add_db_connection_metrics(registry, engine)
+
+    with engine.connect():
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 1
+
+    time.sleep(1.1)
+
+    # The underlying connection should be closed and recreated
+    with engine.connect():
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 2
+        assert _get_value(registry, "db_connections_events", {"event_type": "invalidate"}) is None
+        assert _get_value(registry, "db_connections_events", {"event_type": "close"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 2
+
+    assert _get_value(registry, "db_connections_used") == 0
+    assert _get_value(registry, "db_connections_idle") == 1
+    assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) == 2
+
+
+@pytest.mark.skip(reason="to be run manually with a local postgres server in debug mode")
+def test_db_connection_metrics_preping():
+    engine = create_engine("postgresql+psycopg2://postgres:somepass@127.0.0.1:5432/postgres", pool_pre_ping=True)
+
+    registry = CollectorRegistry()
+    _add_db_connection_metrics(registry, engine)
+
+    with engine.connect():
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+
+    # Pause here and restart postgres server
+    # With preping enabled, connections should be closed and recreated
+    with engine.connect():
+        assert _get_value(registry, "db_connections_used") == 1
+        assert _get_value(registry, "db_connections_idle") == 0
+        assert _get_value(registry, "db_connections_events", {"event_type": "connect"}) == 2
+        assert _get_value(registry, "db_connections_events", {"event_type": "invalidate"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "close"}) == 1
+        assert _get_value(registry, "db_connections_events", {"event_type": "checkout"}) == 2
+
+    assert _get_value(registry, "db_connections_used") == 0
+    assert _get_value(registry, "db_connections_idle") == 1
+
+
+def test_db_session_metrics():
+    prometheus_client.disable_created_metrics()
+    engine = create_engine("sqlite:///:memory:")
+    session_factory = sessionmaker(bind=engine)
+
+    registry = CollectorRegistry()
+    _add_db_session_metrics(registry, session_factory)
+
+    metrics_names = {m.name for m in registry.collect()}
+    assert metrics_names == {
+        "db_transactions_current",
+        "db_transactions_duration_seconds",
+        "db_session_events",
+    }
+
+    assert _get_value(registry, "db_transactions_current") == 0
+    assert _get_histo_count(registry, "db_transactions_duration_seconds") is None
+    assert _get_value(registry, "db_session_events", labels={"event_type": "begin"}) is None
+    assert _get_value(registry, "db_session_events", labels={"event_type": "rollback"}) is None
+    assert _get_value(registry, "db_session_events", labels={"event_type": "commit"}) is None
+
+    with session_factory() as session:
+        session.execute(text("CREATE TABLE test (id INTEGER PRIMARY KEY)"))
+        assert _get_value(registry, "db_session_events", labels={"event_type": "begin"}) == 1
+        assert _get_value(registry, "db_session_events", labels={"event_type": "rollback"}) is None
+        assert _get_value(registry, "db_session_events", labels={"event_type": "commit"}) is None
+        assert _get_value(registry, "db_transactions_current") == 1
+        assert _get_histo_count(registry, "db_transactions_duration_seconds") is None
+
+        session.rollback()
+        assert _get_value(registry, "db_session_events", labels={"event_type": "begin"}) == 1
+        assert _get_value(registry, "db_session_events", labels={"event_type": "rollback"}) == 1
+        assert _get_value(registry, "db_session_events", labels={"event_type": "commit"}) is None
+        assert _get_value(registry, "db_transactions_current") == 0
+        assert _get_histo_count(registry, "db_transactions_duration_seconds") == 1
+
+    with session_factory() as session:
+        session.execute(text("CREATE TABLE test2 (id INTEGER PRIMARY KEY)"))
+        assert _get_value(registry, "db_session_events", labels={"event_type": "begin"}) == 2
+        assert _get_value(registry, "db_session_events", labels={"event_type": "rollback"}) == 1
+        assert _get_value(registry, "db_session_events", labels={"event_type": "commit"}) is None
+        assert _get_value(registry, "db_transactions_current") == 1
+        assert _get_histo_count(registry, "db_transactions_duration_seconds") == 1
+
+        session.commit()
+        assert _get_value(registry, "db_session_events", labels={"event_type": "begin"}) == 2
+        assert _get_value(registry, "db_session_events", labels={"event_type": "rollback"}) == 1
+        assert _get_value(registry, "db_session_events", labels={"event_type": "commit"}) == 1
+        assert _get_value(registry, "db_transactions_current") == 0
+        assert _get_histo_count(registry, "db_transactions_duration_seconds") == 2
