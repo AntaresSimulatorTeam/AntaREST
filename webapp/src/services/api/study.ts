@@ -19,8 +19,6 @@ import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import type {
   AreasConfig,
   FileStudyTreeConfigDTO,
-  LaunchJob,
-  LaunchJobDTO,
   MatrixAggregationResult,
   StudyLayer,
   StudyMetadata,
@@ -292,36 +290,6 @@ export const getLauncherMetrics = async (launcherId?: string): Promise<LauncherM
 export const killStudy = async (jid: string): Promise<string> => {
   const res = await client.post(`/v1/launcher/jobs/${jid}/kill`);
   return res.data;
-};
-
-export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
-  id: j.id,
-  studyId: j.study_id,
-  status: j.status,
-  creationDate: j.creation_date,
-  completionDate: j.completion_date,
-  launcherParams: JSON.parse(j.launcher_params),
-  msg: j.msg,
-  outputId: j.output_id,
-  exitCode: j.exit_code,
-  ownerId: j.owner.id,
-  ownerName: j.owner.name,
-});
-
-export const getStudyJobs = (
-  studyId?: string,
-  filterOrphans = true,
-  latest = false,
-): Promise<LaunchJob[]> => {
-  const queryParams = new URLSearchParams({
-    filter_orphans: filterOrphans.toString(),
-    ...(studyId && { study: studyId }),
-    ...(latest && { latest: "100" }),
-  });
-
-  return client
-    .get(`/v1/launcher/jobs?${queryParams}`)
-    .then(({ data }) => data.map(mapLaunchJobDTO));
 };
 
 export const getStudyJobLog = async (
