@@ -2469,16 +2469,6 @@ class StudyService:
         obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
 
         ##########################
-        # Outputs
-        ##########################
-
-        # We don't have access to the output service, so we have to do it like this
-        outputs = []
-        for output in study_interface.get_files().config.outputs.values():
-            outputs.append({"name": output.name, "archived": output.archived})
-        obj["outputs"] = outputs
-
-        ##########################
         # Settings
         ##########################
 

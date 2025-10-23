@@ -42,7 +42,7 @@
                     "spreadUnsuppliedEnergyCost": 0.0
                 },
                 "renewables": [],
-                "st_storages": [],
+                "stStorages": [],
                 "thermals": [
                     {
                         "co2": 0.0,
@@ -435,7 +435,7 @@
                     "spreadUnsuppliedEnergyCost": 0.0
                 },
                 "renewables": [],
-                "st_storages": [],
+                "stStorages": [],
                 "thermals": [
                     {
                         "co2": 0.0,
@@ -828,7 +828,7 @@
                     "spreadUnsuppliedEnergyCost": 0.0
                 },
                 "renewables": [],
-                "st_storages": [],
+                "stStorages": [],
                 "thermals": [
                     {
                         "co2": 0.0,
@@ -1221,7 +1221,7 @@
                     "spreadUnsuppliedEnergyCost": 0.0
                 },
                 "renewables": [],
-                "st_storages": [],
+                "stStorages": [],
                 "thermals": [
                     {
                         "co2": 0.0,
@@ -1578,7 +1578,7 @@
                 "ui": {"colorRgb": [0, 128, 255], "x": -99, "y": -55}
             }
         ],
-        "binding_constraints": [],
+        "bindingConstraints": [],
         "links": [
             {
                 "area1": "de",
@@ -1635,16 +1635,8 @@
                 "usePhaseShifter": false
             }
         ],
-        "outputs": [
-            {"archived": false, "name": "hello"},
-            {"archived": false, "name": "goodbye"},
-            {"archived": false, "name": ""},
-            {"archived": false, "name": ""},
-            {"archived": true, "name": "2"},
-            {"archived": false, "name": "extra-outputs"}
-        ],
         "settings": {
-            "adequacy_patch": {
+            "adequacyPatch": {
                 "checkCsrCostFunction": false,
                 "enableAdequacyPatch": false,
                 "includeHurdleCostCsr": false,
@@ -1655,7 +1647,7 @@
                 "thresholdDisplayLocalMatchingRuleViolations": 0.0,
                 "thresholdInitiateCurtailmentSharingRule": 1.0
             },
-            "advanced_parameters": {
+            "advancedParameters": {
                 "accuracyOnCorrelation": "",
                 "dayAheadReserveManagement": "global",
                 "hydroHeuristicPolicy": "accommodate rule curves",
@@ -1711,7 +1703,7 @@
                 "unfeasibleProblemBehavior": "error-verbose"
             },
             "playlist": {"years": {"1": {"status": true, "weight": 1}}},
-            "thematic_trimming": {
+            "thematicTrimming": {
                 "avlDtg": true,
                 "balance": true,
                 "batteryInjection": true,
@@ -1809,7 +1801,7 @@
                 "windOffshore": true,
                 "windOnshore": true
             },
-            "time_series": {"thermal": {"number": 1}}
+            "timeSeries": {"thermal": {"number": 1}}
         },
         "xpansion": {
             "candidates": [],
