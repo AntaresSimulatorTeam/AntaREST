@@ -33,7 +33,7 @@ from antarest.study.business.model.xpansion_model import XpansionCandidate, Xpan
 from antarest.study.model import StudyVersionStr
 
 
-class StudySettingsDTO(AntaresBaseModel, alias_generator=to_camel):
+class StudySettingsDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
     time_series: TimeSeriesConfiguration
     general: GeneralConfig
     advanced_parameters: AdvancedParameters
@@ -49,28 +49,28 @@ class XpansionConstraintSign(EnumIgnoreCase):
     EQUAL = "equal"
 
 
-class XpansionConstraint(AntaresBaseModel, alias_generator=to_camel):
+class XpansionConstraint(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
     name: str
     sign: XpansionConstraintSign
     right_hand_side: float
     candidates_coefficients: dict[str, float] = {}
 
 
-class StudyXpansionDTO(AntaresBaseModel, alias_generator=to_camel):
+class StudyXpansionDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
     settings: XpansionSettings
     candidates: list[XpansionCandidate]
     constraints: list[XpansionConstraint]
 
 
-class StudyShortTermStorageDTO(STStorage, alias_generator=to_camel):
+class StudyShortTermStorageDTO(STStorage, alias_generator=to_camel, populate_by_name=True):
     constraints: list[STStorageAdditionalConstraint]
 
 
-class StudyHydroDTO(HydroProperties, alias_generator=to_camel):
+class StudyHydroDTO(HydroProperties, alias_generator=to_camel, populate_by_name=True):
     allocation: HydroAllocation
 
 
-class StudyAreasDTO(AntaresBaseModel, alias_generator=to_camel):
+class StudyAreasDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
     id: str
     name: str
     properties: AreaProperties
@@ -81,13 +81,13 @@ class StudyAreasDTO(AntaresBaseModel, alias_generator=to_camel):
     hydro: StudyHydroDTO
 
 
-class StudyMetaDataDTO(AntaresBaseModel, alias_generator=to_camel):
+class StudyMetaDataDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
     name: str
     version: StudyVersionStr
     folder: str | None
 
 
-class StudyDataDTO(AntaresBaseModel, alias_generator=to_camel):
+class StudyDataDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
     """
     DTO representing data of the whole study.
     """
