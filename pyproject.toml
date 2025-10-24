@@ -65,6 +65,7 @@ test = [
 ]
 desktop = [
     "PyQt5~=5.15.6",
+    "PyQt5-Qt5<=5.15.16",  # 5.15.17 has no Windows wheels
 ]
 windows = [
     "win10toast; platform_system == 'Windows'",
@@ -168,8 +169,8 @@ skip-magic-trailing-comma = false
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "ruff~=0.9.6",
     "mypy~=1.15.0",
     "pre-commit~=4.1.0",
