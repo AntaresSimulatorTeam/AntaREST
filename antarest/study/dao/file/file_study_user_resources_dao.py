@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, cast
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ResourceCreationNotAllowed, ResourceDeletionNotAllowed
-from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
+from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
@@ -48,9 +48,16 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         try:
             study_tree.get_node(["user"] + url)
         except ChildNotFoundError:
+            content: bytes | dict[str, str] = {}
+            if resource_data.blob_id:
+                # We need to fetch the actual content inside the blob store
+                blob_service = self.get_impl()._blob_service
+                if blob_service is None:
+                    raise ValueError("Blob service not available in DAO")
+                content = blob_service.get(resource_data.blob_id)
+
             # Creates the tree recursively to be able to create a resource inside a non-existing folder.
-            last_value = resource_data.content or b"" if resource_data.resource_type == ResourceType.FILE else {}
-            nested_dict: dict[str, Any] = {url[-1]: last_value}
+            nested_dict: dict[str, Any] = {url[-1]: content}
             for key in reversed(url[:-1]):
                 nested_dict = {key: nested_dict}
             study_tree.save({"user": nested_dict})

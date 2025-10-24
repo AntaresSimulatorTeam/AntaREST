@@ -13,18 +13,20 @@
 
 import pytest
 
+from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 
 
 @pytest.fixture(name="command_factory")
-def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
+def command_factory_fixture(matrix_service: MatrixService, blob_service: BlobService) -> CommandFactory:
     """
     Fixture for creating a CommandFactory object.
 
     Args:
         matrix_service: The MatrixService object.
+        blob_service: The BlobService object.
 
     Returns:
         CommandFactory: The CommandFactory object.
@@ -32,6 +34,5 @@ def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
     generator_matrix_constants.init_constant_matrices()
     return CommandFactory(
-        generator_matrix_constants=generator_matrix_constants,
-        matrix_service=matrix_service,
+        generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )

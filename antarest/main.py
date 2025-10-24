@@ -283,10 +283,13 @@ def fastapi_app(
     # for each HTTP worker, but only for one dedicated background worker.
     if services.watcher and Module.WATCHER in config.server.services:
         services.watcher.start()
+
     if services.matrix_gc and Module.MATRIX_GC in config.server.services:
         services.matrix_gc.start()
     if services.auto_archiver and Module.AUTO_ARCHIVER in config.server.services:
         services.auto_archiver.start()
+    if services.blob_gc and Module.BLOB_GC in config.server.services:
+        services.blob_gc.start()
 
     customize_openapi(application)
 

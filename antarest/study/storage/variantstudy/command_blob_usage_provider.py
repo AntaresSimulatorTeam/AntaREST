@@ -14,8 +14,8 @@ from typing import Iterable, List
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
-from antarest.matrixstore.model import MatrixReference
+from antarest.blobstore.blob_usage_provider import IBlobUsageProvider
+from antarest.blobstore.model import BlobReference
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
@@ -25,7 +25,7 @@ from antarest.study.storage.variantstudy.repository import VariantStudyRepositor
 logger = logging.getLogger(__name__)
 
 
-class CommandMatrixUsageProvider(IMatrixUsageProvider):
+class CommandBlobUsageProvider(IBlobUsageProvider):
     def __init__(
         self,
         variant_study_repo: VariantStudyRepository,
@@ -33,12 +33,11 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
     ):
         self.variant_study_repo = variant_study_repo
         self.command_factory = command_factory
-        self.matrix_service = command_factory.command_context.matrix_service
-        self.matrix_service.register_usage_provider(self)
+        self.command_factory.command_context.blob_service.register_usage_provider(self)
 
     @override
-    def get_matrix_usage(self) -> Iterable[MatrixReference]:
-        logger.info("Getting all matrices used in variant studies")
+    def get_blob_usage(self) -> Iterable[BlobReference]:
+        logger.info("Getting all blobs used in variant studies")
         command_blocks: List[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
 
         def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
@@ -55,10 +54,9 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
             (cmd, c.study_id) for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)
         ]
         for command, study_id in variant_study_commands:
-            for matrix in command.get_inner_matrices():
-                command_id = str(matrix)
-                mat_reference = MatrixReference(
-                    matrix_id=command_id,
-                    use_description=f"Used by command {command_id} from variant study {study_id}",
+            for blob in command.get_inner_blobs():
+                blob_reference = BlobReference(
+                    blob_id=blob,
+                    use_description=f"Used by command {command.command_id} from variant study {study_id}",
                 )
-                yield mat_reference
+                yield blob_reference

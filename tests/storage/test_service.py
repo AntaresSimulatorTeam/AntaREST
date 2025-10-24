@@ -30,6 +30,7 @@ from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from starlette.responses import Response
 
+from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
@@ -1483,6 +1484,7 @@ def test_create_command(
     command_context = CommandContext(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService, create=Mock(return_value=matrix_id)),
+        blob_service=Mock(spec=BlobService),
     )
 
     service = build_study_service(
