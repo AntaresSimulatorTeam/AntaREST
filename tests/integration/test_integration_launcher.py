@@ -12,7 +12,6 @@
 
 import json
 
-from more_itertools import first
 from starlette.testclient import TestClient
 
 
@@ -199,7 +198,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
         headers={"Authorization": f"Bearer {user_access_token}"},
     )
     studies = get_studies_res.json()
-    study_id = first(id for id in studies if studies[id]["name"] == "STA-mini")
+    study_id = next(id for id in studies if studies[id]["name"] == "STA-mini")
 
     res_run_with_conf = client.post(
         f"/v1/launcher/run/{study_id}",
