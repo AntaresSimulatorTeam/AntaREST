@@ -17,18 +17,18 @@ import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import React, { useContext, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   Controller,
+  type Control,
   type ControllerRenderProps,
   type FieldPath,
   type FieldPathValue,
   type FieldValues,
+  type RegisterOptions,
   type Validate,
   type ValidateResult,
 } from "react-hook-form";
-import FormContext from "../components/common/Form/FormContext";
-import type { ControlPlus, RegisterOptionsPlus } from "../components/common/Form/types";
 import type { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
 import { composeRefs, getComponentDisplayName } from "../utils/reactUtils";
 
@@ -59,9 +59,9 @@ export type ReactHookFormSupportProps<
   TContext = any,
 > =
   | {
-      control: ControlPlus<TFieldValues, TContext>;
+      control: Control<TFieldValues, TContext>;
       rules?: Omit<
-        RegisterOptionsPlus<TFieldValues, TFieldName>,
+        RegisterOptions<TFieldValues, TFieldName>,
         // cf. UseControllerProps#rules
         | "valueAsNumber"
         | "valueAsDate"
@@ -119,8 +119,6 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
 
       const { validate, setValueAs: setValueAsFromRules = R.identity, ...restRules } = rules;
 
-      const { isAutoSubmitEnabled } = useContext(FormContext);
-
       ////////////////////////////////////////////////////////////////
       // Event Handlers
       ////////////////////////////////////////////////////////////////
@@ -163,9 +161,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
       // Utils
       ////////////////////////////////////////////////////////////////
 
-      const validateWrapper = useMemo<
-        RegisterOptionsPlus<TFieldValues, TFieldName>["validate"]
-      >(() => {
+      const validateWrapper = useMemo<RegisterOptions<TFieldValues, TFieldName>["validate"]>(() => {
         if (preValidate) {
           if (RA.isFunction(validate)) {
             return (value, formValues) => {
@@ -236,9 +232,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
                 error={invalid}
                 helperText={error?.message || feProps.helperText}
                 disabled={
-                  (control._formState.isSubmitting && !isAutoSubmitEnabled) ||
-                  fieldProps.disabled ||
-                  feProps.disabled
+                  control._formState.isSubmitting || fieldProps.disabled || feProps.disabled
                 }
               />
             )}

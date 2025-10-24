@@ -24,7 +24,7 @@ import UsePromiseCond from "../../../../../../../../../../common/utils/UsePromis
 import { type BindingConstraint, type ConstraintTerm, isLinkTerm } from "../../../../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
 
-interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
+interface Props extends Omit<FormDialogProps, "children" | "onSubmit"> {
   studyId: string;
   constraintId: string;
   append: UseFieldArrayAppend<BindingConstraint, "terms">;
