@@ -25,6 +25,7 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
+from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
@@ -70,6 +71,7 @@ def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
         file_transfer_manager=Mock(),
         study_service=storage_service,
         matrix_service=Mock(spec=MatrixService),
+        blob_service=Mock(spec=BlobService),
         config=storage_service.storage_service.raw_study_service.config,
     )
     return TestClient(build_ctxt.build())

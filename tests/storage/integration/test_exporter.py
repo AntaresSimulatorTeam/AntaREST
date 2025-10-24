@@ -22,6 +22,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -70,6 +71,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         task_service=SimpleSyncTaskService(),
         file_transfer_manager=ftm,
         matrix_service=Mock(spec=MatrixService),
+        blob_service=Mock(spec=BlobService),
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         metadata_repository=repo,
         config=config,

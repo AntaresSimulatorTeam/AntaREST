@@ -37,6 +37,7 @@ from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filesystem_blueprint import create_file_system_blueprint
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
+from antarest.core.metrics import add_metrics
 from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
 from antarest.core.tasks.model import cancel_orphan_tasks
@@ -282,12 +283,17 @@ def fastapi_app(
     # for each HTTP worker, but only for one dedicated background worker.
     if services.watcher and Module.WATCHER in config.server.services:
         services.watcher.start()
+
     if services.matrix_gc and Module.MATRIX_GC in config.server.services:
         services.matrix_gc.start()
     if services.auto_archiver and Module.AUTO_ARCHIVER in config.server.services:
         services.auto_archiver.start()
+    if services.blob_gc and Module.BLOB_GC in config.server.services:
+        services.blob_gc.start()
 
     customize_openapi(application)
+
+    add_metrics(application, config)
 
     if mount_front:
         add_front_app(application, res, config.api_prefix)
