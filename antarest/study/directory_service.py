@@ -12,7 +12,7 @@
 import logging
 import uuid
 from pathlib import PurePosixPath
-from typing import List, Optional
+from typing import Optional
 
 from antarest.core.model import StudyPermissionType
 from antarest.study.directory_exceptions import (
@@ -42,7 +42,7 @@ class DirectoryService:
     ):
         self.repository = directory_repository
 
-    def list_directories(self) -> List[DirectoryMetadata]:
+    def list_directories(self) -> list[DirectoryMetadata]:
         directories = self.repository.get_all()
         return [directory.to_metadata() for directory in directories]
 
@@ -168,6 +168,35 @@ class DirectoryService:
                 parent_id = existing_dir.id
 
         return parent_id
+
+    def build_folder_path_from_directory(self, directory_id: str, study_id: str) -> str:
+        """
+        Reconstruct the folder path from a directory ID.
+
+        Args:
+            directory_id: The directory ID containing the study
+            study_id: The study ID to append at the end of the path
+
+        Returns:
+            The reconstructed folder path in the format "parent/child/study-id"
+        """
+        path_parts: list[str] = []
+        current_id: str | None = directory_id
+
+        # Traverse up the directory hierarchy
+        while current_id is not None:
+            directory = self.repository.get_by_id(current_id)
+            if directory is None:
+                # Directory not found, fallback to empty path
+                break
+            path_parts.insert(0, directory.name)
+            current_id = directory.parent_id
+
+        # Build the complete path with study ID at the end
+        if path_parts:
+            return "/".join(path_parts) + f"/{study_id}"
+        else:
+            return study_id
 
     def _has_studies(self, directory_id: str) -> bool:
         return self.repository.count_studies(directory_id) > 0
