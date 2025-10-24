@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { WeekDay } from "@/utils/date/constants";
 import type { Month } from "date-fns";
 import * as R from "ramda";
-import { WeekDay } from "@/utils/date/constants";
 import client from "../../../../../../services/api/client";
 import type { StudyMetadata } from "../../../../../../types/types";
 
