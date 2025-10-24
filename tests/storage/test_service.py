@@ -245,7 +245,9 @@ def test_study_listing(db_session: Session) -> None:
 
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
-    service = build_study_service(raw_study_service, Mock(spec=DirectoryService), repository, config, cache_service=cache)
+    service = build_study_service(
+        raw_study_service, Mock(spec=DirectoryService), repository, config, cache_service=cache
+    )
     user = JWTUser(id=2, impersonator=2, type="users")
 
     # retrieve studies that are not managed
@@ -590,7 +592,9 @@ def test_create_study() -> None:
     }
     study_service.create.return_value = expected
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service)
+    service = build_study_service(
+        study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     jwt_user = JWT_USER
     with pytest.raises(UserHasNotPermissionError):
@@ -929,7 +933,9 @@ def test_manage_group() -> None:
     repository = Mock()
     user_service = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service)
+    service = build_study_service(
+        Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     repository.get.return_value = create_study(id=study_id, owner=alice, groups=[group_a])
 
@@ -967,7 +973,9 @@ def test_set_public_mode() -> None:
     repository = Mock()
     user_service = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service)
+    service = build_study_service(
+        Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     repository.get.return_value = create_study(id=study_id)
 
