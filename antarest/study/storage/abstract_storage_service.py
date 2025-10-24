@@ -107,6 +107,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             horizon=additional_data.horizon,
             folder=folder,
             tags=[tag.label for tag in study.tags],
+            directory_id=study.directory_id,
         )
 
     @override
