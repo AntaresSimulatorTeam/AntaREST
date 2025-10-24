@@ -191,17 +191,6 @@ class Directory(Base):
     parent = relationship("Directory", remote_side=[id], uselist=False)
 
     @override
-    def __str__(self) -> str:
-        cls = self.__class__.__name__
-        return f"[{cls}] id={self.id}, name={self.name}, parent_id={self.parent_id}"
-
-    @override
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Directory):
-            return False
-        return bool(other.id == self.id and other.name == self.name and other.parent_id == self.parent_id)
-
-    @override
     def __repr__(self) -> str:
         return f'Directory(id="{self.id}", name="{self.name}", parent_id="{self.parent_id}")'
 
