@@ -51,7 +51,16 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: 🐍 Install dependencies
-        run: uv sync --all-extras
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            # On Windows, skip desktop extra due to PyQt5-Qt5 wheel availability issues
+            uv sync --extra test --extra windows
+            # Install PyQt5 separately via pip (it manages its own Qt binaries)
+            uv pip install PyQt5~=5.15.6
+          else
+            uv sync --all-extras
+          fi
 
       - name: 📦 Packaging
         run: bash ./package_antares_web.sh
