@@ -109,6 +109,7 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -496,6 +497,7 @@ class StudyService:
         self,
         raw_study_service: RawStudyService,
         variant_study_service: VariantStudyService,
+        directory_service: DirectoryService,
         command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
@@ -508,6 +510,7 @@ class StudyService:
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
+        self.directory_service = directory_service
         self.repository = repository
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
@@ -883,8 +886,7 @@ class StudyService:
 
         author = self.get_user_name()
 
-        # Get or create directory from path
-        directory_id = self._get_directory_from_path(directory)
+        directory_id = self.directory_service.get_directory_by_path(directory)
 
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         raw = RawStudy(

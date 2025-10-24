@@ -48,7 +48,7 @@ class TestDirectoryRepository:
         assert saved.name == "Test Directory"
 
         # Retrieve
-        retrieved = directory_repo.get(directory.id)
+        retrieved = directory_repo.get_by_id(directory.id)
         assert retrieved is not None
         assert retrieved.id == directory.id
         assert retrieved.name == "Test Directory"
@@ -75,13 +75,13 @@ class TestDirectoryRepository:
         directory_repo.save(directory)
 
         # Verify exists
-        assert directory_repo.get(directory.id) is not None
+        assert directory_repo.get_by_id(directory.id) is not None
 
         # Delete
         directory_repo.delete(directory.id)
 
         # Verify deleted
-        assert directory_repo.get(directory.id) is None
+        assert directory_repo.get_by_id(directory.id) is None
 
     def test_check_cycle_self(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
         directory_id = str(uuid.uuid4())
@@ -178,7 +178,7 @@ class TestDirectoryRepository:
         directory_repo.save(child)
 
         # Check for duplicate (should be true)
-        assert directory_repo.has_duplicate_name("Child", parent.id)
+        assert directory_repo.exists("Child", parent.id)
 
     def test_has_duplicate_name_different_parent(
         self, directory_repo: DirectoryRepository, test_user: Identity
@@ -207,7 +207,7 @@ class TestDirectoryRepository:
         directory_repo.save(child)
 
         # Check for duplicate in parent2 (should be false)
-        assert not directory_repo.has_duplicate_name("SameName", parent2.id)
+        assert not directory_repo.exists("SameName", parent2.id)
 
     def test_has_children_directories(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
         """

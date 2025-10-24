@@ -480,7 +480,7 @@ class DirectoryRepository:
         session.commit()
         return directory
 
-    def get(self, directory_id: str) -> Optional[Directory]:
+    def get_by_id(self, directory_id: str) -> Optional[Directory]:
         return (
             self.session.execute(
                 select(Directory).options(joinedload(Directory.parent)).where(Directory.id == directory_id)
@@ -488,6 +488,10 @@ class DirectoryRepository:
             .unique()
             .scalar_one_or_none()
         )
+
+    def get_by_name(self, directory_name: str, parent_id: Optional[str]) -> Optional[Directory]:
+        stmt = select(Directory).where(Directory.name == directory_name, Directory.parent_id == parent_id)
+        return self.session.scalar(stmt)
 
     def get_all(self) -> Sequence[Directory]:
         stmt = select(Directory).options(joinedload(Directory.parent))
@@ -525,7 +529,7 @@ class DirectoryRepository:
 
         return False
 
-    def has_duplicate_name(self, name: str, parent_id: Optional[str]) -> bool:
+    def exists(self, name: str, parent_id: Optional[str]) -> bool:
         stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
         return bool(self.session.scalar(stmt))
 

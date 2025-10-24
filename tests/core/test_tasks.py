@@ -529,6 +529,7 @@ nominalcapacity = 14.0
     user_service.get_identity.return_value = regular_user
     study_service = build_study_service(
         raw_study_service,
+        Mock(),
         study_metadata_repository,
         config,
         user_service=user_service,

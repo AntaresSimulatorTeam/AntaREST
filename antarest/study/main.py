@@ -110,9 +110,15 @@ def build_study_service(
         config=config,
     )
 
+    directory_repository = DirectoryRepository()
+    directory_service = DirectoryService(
+        directory_repository=directory_repository,
+    )
+
     study_service = study_service or StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        directory_service=directory_service,
         command_context=command_factory.command_context,
         user_service=user_service,
         repository=metadata_repository,
@@ -130,14 +136,6 @@ def build_study_service(
         task_service=task_service,
         file_transfer_manager=file_transfer_manager,
         event_bus=event_bus,
-    )
-
-    # Initialize directory service with study_service for cascade deletions
-    directory_repository = DirectoryRepository()
-    directory_service = DirectoryService(
-        directory_repository=directory_repository,
-        study_repository=metadata_repository,
-        study_service=study_service,
     )
 
     if app_ctxt:

@@ -47,6 +47,7 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.district_model import District
+from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
@@ -137,6 +138,7 @@ def with_jwt_user(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
 
 def build_study_service(
     raw_study_service: RawStudyService,
+    directory_service: DirectoryService,
     repository: StudyMetadataRepository,
     config: Config,
     user_service: LoginService = Mock(spec=LoginService),
@@ -148,6 +150,7 @@ def build_study_service(
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        directory_service=directory_service,
         command_context=Mock(),
         user_service=user_service,
         repository=repository,
@@ -241,7 +244,7 @@ def test_study_listing(db_session: Session) -> None:
 
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
-    service = build_study_service(raw_study_service, repository, config, cache_service=cache)
+    service = build_study_service(raw_study_service, Mock(spec=DirectoryService), repository, config, cache_service=cache)
     user = JWTUser(id=2, impersonator=2, type="users")
 
     # retrieve studies that are not managed
@@ -361,8 +364,7 @@ def test_sync_studies_from_disk() -> None:
             }
         )
     )
-    raw_service = Mock(spec=RawStudyService)
-    service = build_study_service(raw_service, repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     # call function with scanned folders
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
@@ -412,7 +414,7 @@ def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
     repository.get_all_raw.side_effect = [[]]
     config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
     raw_service = Mock(spec=RawStudyService)
-    service = build_study_service(raw_service, repository, config)
+    service = build_study_service(raw_service, Mock(spec=DirectoryService), repository, config)
 
     def fake_compatibility_check(study: Study) -> None:
         if not hasattr(fake_compatibility_check, "call_count"):
@@ -478,7 +480,7 @@ def test_partial_sync_studies_from_disk() -> None:
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
     config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
 
@@ -515,7 +517,7 @@ def test_delete_missing_studies_desktop(study_tree: Path) -> None:
             }
         )
     )
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     service.delete_missing_studies()
 
@@ -535,7 +537,7 @@ def test_remove_duplicate(db_session: Session) -> None:
     with db_session:
         repository = StudyMetadataRepository(Mock(), db_session)
         config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-        service = build_study_service(Mock(), repository, config)
+        service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
         service.remove_duplicates()
 
     # example with 1 duplicate with same path
@@ -587,7 +589,7 @@ def test_create_study() -> None:
     }
     study_service.create.return_value = expected
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config, user_service=user_service)
+    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service)
 
     jwt_user = JWT_USER
     with pytest.raises(UserHasNotPermissionError):
@@ -636,7 +638,7 @@ def test_save_metadata() -> None:
         groups=[group],
     )
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config)
+    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
 
     service.user_service.get_user.return_value = user  # type: ignore
     with current_user_context(jwt):
@@ -706,7 +708,7 @@ def test_download_output() -> None:
 
     repository.get.return_value = input_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config)
+    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
     storage = OutputStorageDispatcher(
         service.storage_service.raw_study_service, service.storage_service.variant_study_service
     )
@@ -888,6 +890,7 @@ def test_change_owner() -> None:
     )
     service = build_study_service(
         study_service,
+        Mock(spec=DirectoryService),
         repository,
         config,
         user_service=user_service,
@@ -925,7 +928,7 @@ def test_manage_group() -> None:
     repository = Mock()
     user_service = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config, user_service=user_service)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service)
 
     repository.get.return_value = create_study(id=study_id, owner=alice, groups=[group_a])
 
@@ -963,7 +966,7 @@ def test_set_public_mode() -> None:
     repository = Mock()
     user_service = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config, user_service=user_service)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service)
 
     repository.get.return_value = create_study(id=study_id)
 
@@ -992,7 +995,7 @@ def test_assert_permission() -> None:
 
     repository = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     # wrong owner
     repository.get.return_value = create_study(id=study_id, owner=wrong)
@@ -1161,7 +1164,7 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
     )
-    service = build_study_service(Mock(), repository_mock, Mock())
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository_mock, Mock())
     callback = Mock()
     service.add_on_deletion_callback(callback)
     service.storage_service.variant_study_service.has_children.return_value = False  # type: ignore
@@ -1192,6 +1195,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     # noinspection PyArgumentList
     service = build_study_service(
         raw_study_service,
+        Mock(spec=DirectoryService),
         study_metadata_repository,
         Mock(),
         variant_study_service=variant_study_service,
@@ -1280,6 +1284,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
     )
     service = build_study_service(
         raw_study_service,
+        Mock(spec=DirectoryService),
         study_metadata_repository,
         Mock(),
         variant_study_service=variant_study_service,
@@ -1441,6 +1446,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=raw_study_service,
+        directory_service=Mock(spec=DirectoryService),
         repository=repository,
         config=config,
         variant_study_service=variant_study_service,
@@ -1481,6 +1487,7 @@ def test_create_command(
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository),
         config=Mock(spec=Config),
         variant_study_service=Mock(
@@ -1517,6 +1524,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1579,6 +1587,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1703,6 +1712,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1769,7 +1779,8 @@ def test_get_save_logs(tmp_path: Path) -> None:
 @with_admin_user
 def test_task_upgrade_study(tmp_path: Path) -> None:
     service = build_study_service(
-        raw_study_service=Mock(),
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(),
         config=Mock(),
     )

@@ -40,11 +40,9 @@ def mock_study_service() -> Mock:
 
 
 @pytest.fixture
-def directory_service(mock_directory_repo: Mock, mock_study_repo: Mock, mock_study_service: Mock) -> DirectoryService:
+def directory_service(mock_directory_repo: Mock) -> DirectoryService:
     return DirectoryService(
         directory_repository=mock_directory_repo,
-        study_repository=mock_study_repo,
-        study_service=mock_study_service,
     )
 
 
@@ -60,7 +58,7 @@ class TestDirectoryService:
         # Setup
         data = DirectoryCreation(name="New Directory", parent_id=None)
 
-        mock_directory_repo.has_duplicate_name.return_value = False
+        mock_directory_repo.exists.return_value = False
         mock_directory_repo.save.return_value = Directory(
             id=str(uuid.uuid4()),
             name="New Directory",
@@ -72,7 +70,7 @@ class TestDirectoryService:
 
         # Verify
         assert result.name == "New Directory"
-        mock_directory_repo.has_duplicate_name.assert_called_once_with("New Directory", None)
+        mock_directory_repo.exists.assert_called_once_with("New Directory", None)
         mock_directory_repo.save.assert_called_once()
 
     def test_create_directory_with_parent_not_found(
@@ -82,7 +80,7 @@ class TestDirectoryService:
         fake_parent_id = str(uuid.uuid4())
         data = DirectoryCreation(name="Child Directory", parent_id=fake_parent_id)
 
-        mock_directory_repo.get.return_value = None
+        mock_directory_repo.get_by_id.return_value = None
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
@@ -97,7 +95,7 @@ class TestDirectoryService:
         # Setup
         data = DirectoryCreation(name="Duplicate", parent_id=None)
 
-        mock_directory_repo.has_duplicate_name.return_value = True
+        mock_directory_repo.exists.return_value = True
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
@@ -117,8 +115,8 @@ class TestDirectoryService:
         )
         data = DirectoryUpdate(name="New Name")
 
-        mock_directory_repo.get.return_value = existing_directory
-        mock_directory_repo.has_duplicate_name.return_value = False
+        mock_directory_repo.get_by_id.return_value = existing_directory
+        mock_directory_repo.exists.return_value = False
         mock_directory_repo.save.return_value = existing_directory
         mock_directory_repo.get_all_descendant_directories.return_value = []
         mock_directory_repo.get_all_studies_in_tree.return_value = []
@@ -137,7 +135,7 @@ class TestDirectoryService:
         directory_id = str(uuid.uuid4())
         data = DirectoryUpdate(name="New Name")
 
-        mock_directory_repo.get.return_value = None
+        mock_directory_repo.get_by_id.return_value = None
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
@@ -158,7 +156,7 @@ class TestDirectoryService:
         )
         data = DirectoryUpdate(parent_id=new_parent_id)
 
-        mock_directory_repo.get.return_value = existing_directory
+        mock_directory_repo.get_by_id.return_value = existing_directory
         mock_directory_repo.check_cycle.return_value = True
         mock_directory_repo.get_all_descendant_directories.return_value = []
         mock_directory_repo.get_all_studies_in_tree.return_value = []
@@ -180,7 +178,7 @@ class TestDirectoryService:
             name="Empty Directory",
             parent_id=None,
         )
-        mock_directory_repo.get.return_value = directory
+        mock_directory_repo.get_by_id.return_value = directory
         mock_directory_repo.count_studies.return_value = 0
         mock_directory_repo.has_children_directories.return_value = False
 
@@ -200,7 +198,7 @@ class TestDirectoryService:
             name="Parent Directory",
             parent_id=None,
         )
-        mock_directory_repo.get.return_value = directory
+        mock_directory_repo.get_by_id.return_value = directory
         mock_directory_repo.count_studies.return_value = 0
         mock_directory_repo.has_children_directories.return_value = True
 
@@ -221,7 +219,7 @@ class TestDirectoryService:
             name="Directory with Studies",
             parent_id=None,
         )
-        mock_directory_repo.get.return_value = directory
+        mock_directory_repo.get_by_id.return_value = directory
         mock_directory_repo.count_studies.return_value = 5
         mock_directory_repo.has_children_directories.return_value = False
 
@@ -260,8 +258,7 @@ class TestDirectoryService:
         directory_id = str(uuid.uuid4())
         data = DirectoryUpdate(name="New Name")
 
-        # Mock the first get (for the main directory) to return None
-        mock_directory_repo.get.return_value = None
+        mock_directory_repo.get_by_id.return_value = None
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
