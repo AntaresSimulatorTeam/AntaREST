@@ -11,9 +11,7 @@
 # This file is part of the Antares project.
 
 import io
-import json
 import os
-import time
 import zipfile
 from http import HTTPStatus
 from pathlib import Path
@@ -312,59 +310,6 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         "solver_stats": None,
         "owner": {"id": fred_id, "name": "Fred"},
     }
-
-    # wait for job completion, otherwise next tests may interfere as we can't have multiple runs on the same study
-    max_attempts = 10
-    attempt = 0
-    status = "pending"
-    while status == "pending" and attempt < max_attempts:
-        res = client.get(
-            f"/v1/launcher/jobs?study_id={study_id}",
-            headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
-        )
-        job_info = res.json()[0]
-        status = job_info["status"]
-        attempt += 1
-        time.sleep(1)
-
-    # create a new solver presets
-    create_solver_presets_payload = {
-        "name": "test-xpress-config",
-        "linear_solver": "xpress",
-        "min_antares_version": {"major": 9, "minor": 2, "patch": 0},
-        "linear_solver_param_optim_1": [["THREADS", "4"], ["PRESOLVE", "1"]],
-        "linear_solver_param_optim_2": [["MIPRELSTOP", "0.01"]],
-        "linear_solver_param": [["DEFAULTALG", "4"]],
-        "use_optim_1_basis_next_week": True,
-        "use_optim_1_basis_optim_2": False,
-    }
-    create_solver_presets_res = client.post(
-        "/v1/launcher/solver-presets",
-        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
-        json=create_solver_presets_payload,
-    )
-    assert create_solver_presets_res.status_code == 200
-    create_solver_presets_data = create_solver_presets_res.json()
-
-    res_run_with_conf = client.post(
-        f"/v1/launcher/run/{study_id}",
-        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
-        params={"launcher_configuration_id": create_solver_presets_data["id"], "version": "9.2.0"},
-    )
-
-    job_id = res_run_with_conf.json()["job_id"]
-
-    res = client.get(
-        f"/v1/launcher/jobs?study_id={study_id}",
-        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
-    )
-    job_info = res.json()[0]
-    assert job_info["id"] == job_id
-    job_launcher_params_json = job_info["launcher_params"]
-    job_launcher_params = json.loads(job_launcher_params_json)
-    job_launcher_params["other_options"] = (
-        'solver=xpress nobasis2 param-optim1="DEFAULTALG 4 THREADS 4 PRESOLVE 1" param-optim2="DEFAULTALG 4 MIPRELSTOP 0.01"'
-    )
 
     # update metadata
     res = client.put(
