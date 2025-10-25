@@ -13,8 +13,9 @@ from pathlib import PurePosixPath
 from typing import Dict
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.sql import and_, column, select, table
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "f1ff6904ff9f"
@@ -54,6 +55,8 @@ def upgrade() -> None:
 
     # Create indexes
     op.create_index("ix_directory_parent_id", "directory", ["parent_id"])
+    # Create unique constraint to prevent duplicate directory names under the same parent
+    op.create_index("idx_directory_name_parent_unique", "directory",["name", "parent_id"], unique=True)
 
     # Step 2: Add directory_id column to study table
     with op.batch_alter_table("study", schema=None) as batch_op:
@@ -192,5 +195,5 @@ def downgrade() -> None:
         batch_op.drop_index("ix_study_directory_id")
         batch_op.drop_column("directory_id")
 
-    # Step 2: Drop directory table
+    # Step 2: Drop directory table (indexes are dropped automatically with the table)
     op.drop_table("directory")
