@@ -64,6 +64,7 @@ class DirectoryService:
             parent_id=data.parent_id,
         )
 
+        logger.info(f"Creating directory '{data.name}' under parent '{data.parent_id}'")
         saved_directory = self.repository.save(directory)
         return saved_directory.to_metadata()
 
@@ -161,8 +162,7 @@ class DirectoryService:
                     name=dir_name,
                     parent_id=parent_id,
                 )
-                self.repository.session.add(new_dir)
-                self.repository.session.flush()
+                self.repository.save(new_dir)
                 parent_id = new_dir.id
             else:
                 parent_id = existing_dir.id

@@ -18,7 +18,6 @@ import io
 import logging
 import os
 import time
-import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
@@ -28,7 +27,6 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
-from sqlalchemy import select
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -114,7 +112,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
-    Directory,
     MatrixIndex,
     RawStudy,
     Study,
@@ -1220,48 +1217,6 @@ class StudyService:
 
         return task_or_study_id
 
-    def _get_directory_from_path(self, folder_path: str) -> Optional[str]:
-        """
-        Get or create directory ID from a folder path.
-        Creates missing directories automatically with the specified owner and groups.
-
-        Args:
-            folder_path: POSIX folder path like "project/subfolder"
-
-        Returns:
-            Directory ID of the leaf directory, or None if path is empty
-        """
-        if not folder_path:
-            return None
-
-        # Parse path
-        path = PurePosixPath(folder_path)
-
-        if not path.parts:
-            return None
-
-        # Navigate/create directory hierarchy
-        parent_id = None
-        for dir_name in path.parts:
-            # Check if directory exists
-            stmt = select(Directory).where(Directory.name == dir_name, Directory.parent_id == parent_id)
-            existing_dir = self.repository.session.scalar(stmt)
-
-            if not existing_dir:
-                # Create missing directory
-                new_dir = Directory(
-                    id=str(uuid.uuid4()),
-                    name=dir_name,
-                    parent_id=parent_id,
-                )
-                self.repository.session.add(new_dir)
-                self.repository.session.flush()
-                parent_id = new_dir.id
-            else:
-                parent_id = existing_dir.id
-
-        return parent_id
-
     def move_study(self, study_id: str, folder_dest: str) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
@@ -1270,8 +1225,7 @@ class StudyService:
 
         if folder_dest:
             new_folder = folder_dest.rstrip("/") + f"/{study.id}"
-            # Get or create directory from path
-            directory_id = self._get_directory_from_path(folder_dest)
+            directory_id = self.directory_service.get_directory_by_path(folder_dest)
             study.directory_id = directory_id
         else:
             new_folder = None
