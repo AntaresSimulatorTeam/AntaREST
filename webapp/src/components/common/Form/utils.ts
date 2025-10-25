@@ -15,14 +15,6 @@
 import isMatchWith from "lodash/isMatchWith";
 import * as RA from "ramda-adjunct";
 import type { FieldValues } from "react-hook-form";
-import type { AutoSubmitConfig, FormProps } from ".";
-
-export function toAutoSubmitConfig(value: FormProps["autoSubmit"]): AutoSubmitConfig {
-  return {
-    wait: 500,
-    ...(RA.isPlainObj(value) ? value : { enable: !!value }),
-  };
-}
 
 // From https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/stringToPath.ts
 export function stringToPath(input: string): string[] {
