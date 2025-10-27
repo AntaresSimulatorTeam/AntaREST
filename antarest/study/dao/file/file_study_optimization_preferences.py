@@ -26,6 +26,11 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
+def _get_optimization_preferences(file_study: FileStudy) -> dict[str, Any]:
+    data = file_study.tree.get(["settings", "generaldata"])
+    return cast(dict[str, Any], data.get("optimization", {}))
+
+
 class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
@@ -38,7 +43,7 @@ class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
         file_study = self.get_file_study()
-        tree_data = self._get_optimization_preferences(file_study)
+        tree_data = _get_optimization_preferences(file_study)
 
         return parse_optimization_preferences(tree_data)
 
@@ -49,14 +54,9 @@ class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
         optimization_preferences = serialize_optimization_preferences(config)
 
         # Include fields that are in the optimization part of the generaldata.ini file but not in the optimization class
-        current_optimization_preferences = self._get_optimization_preferences(file_study)
+        current_optimization_preferences = _get_optimization_preferences(file_study)
         optimization_preferences.update(
             {k: v for k, v in current_optimization_preferences.items() if k not in optimization_preferences}
         )
 
         file_study.tree.save(optimization_preferences, ["settings", "generaldata", "optimization"])
-
-    @staticmethod
-    def _get_optimization_preferences(file_study: FileStudy) -> dict[str, Any]:
-        data = file_study.tree.get(["settings", "generaldata"])
-        return cast(dict[str, Any], data.get("optimization", {}))

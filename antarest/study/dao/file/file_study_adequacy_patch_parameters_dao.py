@@ -26,6 +26,11 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
+def _get_adequacy_patch_parameters(file_study: FileStudy) -> dict[str, Any]:
+    data = file_study.tree.get(["settings", "generaldata"])
+    return cast(dict[str, Any], data.get("adequacy patch", {}))
+
+
 class FileStudyAdequacyPatchParametersDao(AdequacyPatchParametersDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
@@ -38,21 +43,16 @@ class FileStudyAdequacyPatchParametersDao(AdequacyPatchParametersDao, ABC):
     @override
     def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
         file_study = self.get_file_study()
-        data = self._get_adequacy_patch_parameters(file_study)
+        data = _get_adequacy_patch_parameters(file_study)
         return parse_adequacy_patch_parameters(file_study.config.version, data)
 
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
         file_study = self.get_file_study()
-        data = self._get_adequacy_patch_parameters(file_study)
+        data = _get_adequacy_patch_parameters(file_study)
         new_content = serialize_adequacy_patch_parameters(file_study.config.version, parameters)
 
         # Include fields that are in the generaldata.ini file but not in the FileData class
         new_content.update({k: v for k, v in data.items() if k not in new_content})
 
         file_study.tree.save(new_content, ["settings", "generaldata", "adequacy patch"])
-
-    @staticmethod
-    def _get_adequacy_patch_parameters(file_study: FileStudy) -> dict[str, Any]:
-        data = file_study.tree.get(["settings", "generaldata"])
-        return cast(dict[str, Any], data.get("adequacy patch", {}))
