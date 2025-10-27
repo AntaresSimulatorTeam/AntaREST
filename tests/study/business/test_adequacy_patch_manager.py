@@ -18,13 +18,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_missing_section(empty_study_880: FileStudy, command_context: CommandContext) -> None:
-    # Remove the section from the generaldata file
-    study = empty_study_880
-    general_data_content = study.tree.get(["settings", "generaldata"])
-    del general_data_content["adequacy patch"]
-    study.tree.save(general_data_content, ["settings", "generaldata"])
-    # Ensures we're still able to read the data.
+def _check_content(study: FileStudy, command_context: CommandContext):
     manager = AdequacyPatchManager(command_context)
     params = manager.get_adequacy_patch_parameters(FileStudyInterface(study))
     assert params == AdequacyPatchParameters(
@@ -39,3 +33,23 @@ def test_missing_section(empty_study_880: FileStudy, command_context: CommandCon
         ntc_between_physical_areas_out_adequacy_patch=True,
         redispatch=None,
     )
+
+
+def test_missing_section(empty_study_880: FileStudy, command_context: CommandContext) -> None:
+    # Remove the section from the generaldata file
+    study = empty_study_880
+    general_data_content = study.tree.get(["settings", "generaldata"])
+    del general_data_content["adequacy patch"]
+    study.tree.save(general_data_content, ["settings", "generaldata"])
+    # Ensures we're still able to read the data.
+    _check_content(study, command_context)
+
+
+def test_section_not_in_lowercase(empty_study_880: FileStudy, command_context: CommandContext) -> None:
+    # Rewrite the section not in lowercase
+    study = empty_study_880
+    general_data_content = study.tree.get(["settings", "generaldata"])
+    general_data_content["Adequacy PATCH"] = general_data_content.pop("adequacy patch")
+    study.tree.save(general_data_content, ["settings", "generaldata"])
+    # Ensures we're still able to read the data.
+    _check_content(study, command_context)
