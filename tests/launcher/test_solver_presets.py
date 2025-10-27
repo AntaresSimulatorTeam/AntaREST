@@ -88,20 +88,21 @@ def test_presolve_detected_in_optim2_only(base_solver_presets):
 
 
 def test_valid_solver_presets_minimal():
-    cfg = SolverPresetsDTO(name="default", linear_solver="xpress")
+    cfg = SolverPresetsDTO(id="123", name="default", linear_solver="xpress")
     assert cfg.linear_solver == "xpress"
     assert cfg.use_optim_1_basis_next_week is True
     assert cfg.use_optim_1_basis_optim_2 is True
 
 
 def test_name_cannot_be_empty():
-    with pytest.raises(ValidationError, match="name cannot be empty"):
-        SolverPresetsDTO(name="   ", linear_solver="xpress")
+    with pytest.raises(ValidationError, match="Invalid name"):
+        SolverPresetsDTO(id="123", name="   ", linear_solver="xpress")
 
 
 def test_min_version_must_not_exceed_max():
     with pytest.raises(ValidationError, match="min_antares_version cannot be greater"):
         SolverPresetsDTO(
+            id="123",
             name="valid",
             linear_solver="xpress",
             min_antares_version=SOLVER_VERSION_9_3,
@@ -130,6 +131,7 @@ def test_invalid_value_in_solver_params():
 def test_optim_params_before_9_2_not_allowed():
     with pytest.raises(ValidationError, match="not supported before Antares version 9.2"):
         SolverPresetsDTO(
+            id="123",
             name="valid",
             linear_solver="xpress",
             min_antares_version=SOLVER_VERSION_8_8,
