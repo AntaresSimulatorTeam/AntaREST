@@ -493,6 +493,7 @@ class OutputService:
         ids_to_consider: Sequence[str],
         download_name: str,
         download_log: str,
+        timeout: int,
         mc_years: Optional[Sequence[int]] = None,
     ) -> str:
         """
@@ -519,7 +520,7 @@ class OutputService:
 
         logger.info(download_log)
         file_download = self._file_transfer_manager.request_download(
-            f"{study.name}-{uuid}-{output_id}{export_format.suffix}", download_name, expiration_time_in_minutes=10
+            f"{study.name}-{uuid}-{output_id}{export_format.suffix}", download_name, expiration_time_in_minutes=timeout
         )
         file_download_path = Path(file_download.path)
         download_id: str = file_download.id
