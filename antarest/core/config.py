@@ -163,7 +163,7 @@ class StorageConfig:
     matrix_gc_retention_time: int = 3600
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
-    auto_archive_sleeping_time: int = 3600
+    auto_archive_sleeping_time: int = 60
     auto_archive_max_parallel: int = 5
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV

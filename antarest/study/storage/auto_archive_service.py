@@ -40,6 +40,11 @@ class AutoArchiveService(IService):
         self.config = config
         self.sleep_cycle = self.config.storage.auto_archive_sleeping_time
         self.max_parallel = self.config.storage.auto_archive_max_parallel
+        logger.info(
+            f"AutoArchiveService initialized with: threshold={config.storage.auto_archive_threshold_days} days, "
+            f"check_interval={self.sleep_cycle}s, max_parallel={self.max_parallel}, "
+            f"dry_run={config.storage.auto_archive_dry_run}"
+        )
 
     def _try_archive_studies(self) -> None:
         """
@@ -49,11 +54,17 @@ class AutoArchiveService(IService):
         old_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
             days=self.config.storage.auto_archive_threshold_days
         )
+        logger.info(
+            f"Auto-archive check starting: threshold={self.config.storage.auto_archive_threshold_days} days, "
+            f"cutoff_date={old_date.isoformat()}, dry_run={self.config.storage.auto_archive_dry_run}"
+        )
         with db():
             # in this part full `Read` rights over studies are granted to this function
             studies: Sequence[Study] = self.study_service.repository.get_all(
                 study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions(is_admin=True))
             )
+            logger.info(f"Found {len(studies)} managed studies to check for archival")
+
             # list of study IDs and boolean indicating if it's a raw study (True) or a variant (False)
             study_ids_to_archive = [
                 (study.id, isinstance(study, RawStudy))
@@ -62,6 +73,14 @@ class AutoArchiveService(IService):
                 and last_activity < old_date
                 and (isinstance(study, VariantStudy) or not study.archived)
             ]
+
+            if len(study_ids_to_archive) == 0:
+                logger.info("No studies eligible for archiving at this time")
+            else:
+                logger.info(
+                    f"Found {len(study_ids_to_archive)} studies eligible for archiving "
+                    f"(will process {min(len(study_ids_to_archive), self.max_parallel)} in this batch)"
+                )
         for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:
             try:
                 if is_raw_study:
@@ -92,6 +111,7 @@ class AutoArchiveService(IService):
 
     @override
     def _loop(self) -> None:
+        logger.info(f"AutoArchiveService starting main loop (check every {self.sleep_cycle}s)")
         with current_user_context(DEFAULT_ADMIN_USER):
             while True:
                 try:
@@ -102,4 +122,5 @@ class AutoArchiveService(IService):
                         exc_info=e,
                     )
                 finally:
+                    logger.info(f"AutoArchiveService sleeping for {self.sleep_cycle}s before next check")
                     time.sleep(self.sleep_cycle)
