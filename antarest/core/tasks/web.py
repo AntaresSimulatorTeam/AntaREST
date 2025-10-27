@@ -15,7 +15,7 @@ import http
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
@@ -41,8 +41,12 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
-    @bp.post("/tasks", tags=[APITag.tasks])
-    def list_tasks(filter: TaskListFilter) -> Any:
+    @bp.post("/tasks", tags=[APITag.tasks], deprecated=True)
+    def _list_tasks_deprecated(filter: TaskListFilter) -> Any:
+        return service.list_tasks(filter)
+
+    @bp.get("/tasks", tags=[APITag.tasks])
+    def list_tasks(filter: TaskListFilter = Depends()) -> list[TaskDTO]:
         return service.list_tasks(filter)
 
     @bp.get("/tasks/{task_id}", tags=[APITag.tasks], response_model=TaskDTO)
@@ -88,8 +92,8 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         return service.status_task(sanitized_task_id, with_logs)
 
     @bp.put("/tasks/{task_id}/cancel", tags=[APITag.tasks])
-    def cancel_task(task_id: str) -> Any:
-        return service.cancel_task(task_id, dispatch=True)
+    def cancel_task(task_id: str) -> None:
+        service.cancel_task(task_id, dispatch=True)
 
     @bp.get(
         "/tasks/{task_id}/progress",

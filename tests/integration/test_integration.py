@@ -2174,3 +2174,12 @@ def test_update_variant_with_editor(client: TestClient, admin_access_token: str)
     assert res_copy["author"] == "admin"
     assert res_copy["editor"] == "admin"
     # END DELETING AREA
+
+
+def test_list_tasks(client: TestClient, admin_access_token: str) -> None:
+    """Test GET /v1/tasks endpoint returns list of tasks."""
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    res = client.get("/v1/tasks")
+    assert res.status_code == 200
+    assert isinstance(res.json(), list)
