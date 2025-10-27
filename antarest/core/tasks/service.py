@@ -82,7 +82,7 @@ class ITaskService(ABC):
         self,
         action: Task,
         name: Optional[str],
-        task_type: Optional[TaskType],
+        task_type: TaskType,
         ref_id: Optional[str],
         progress: Optional[int],
         custom_event_messages: Optional[CustomTaskEventMessages],
@@ -161,15 +161,15 @@ class TaskLogAndProgressRecorder(ITaskNotifier):
 
 class TaskServiceListener(ABC):
     @abstractmethod
-    def on_task_submit(self, task_id: str) -> None:
+    def on_task_submit(self, task_id: str, task_type: TaskType) -> None:
         pass
 
     @abstractmethod
-    def on_task_start(self, task_id: str) -> None:
+    def on_task_start(self, task_id: str, task_type: TaskType) -> None:
         pass
 
     @abstractmethod
-    def on_task_end(self, task_id: str) -> None:
+    def on_task_end(self, task_id: str, task_type: TaskType, task_status: TaskStatus) -> None:
         pass
 
 
@@ -260,7 +260,7 @@ class TaskJobService(ITaskService):
         self,
         action: Task,
         name: Optional[str],
-        task_type: Optional[TaskType],
+        task_type: TaskType,
         ref_id: Optional[str],
         progress: Optional[int],
         custom_event_messages: Optional[CustomTaskEventMessages],
@@ -311,9 +311,9 @@ class TaskJobService(ITaskService):
         )
 
         for listener in self._listeners:
-            listener.on_task_submit(task.id)
+            listener.on_task_submit(task.id, task_type=task.get_type())
 
-        future = self.threadpool.submit(self._run_task, action, task.id, user, custom_event_messages)
+        future = self.threadpool.submit(self._run_task, action, task.id, task.get_type(), user, custom_event_messages)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
@@ -333,9 +333,12 @@ class TaskJobService(ITaskService):
     def _cancel_task(self, task_id: str, dispatch: bool = False) -> None:
         task = self.repo.get_or_raise(task_id)
         if task_id in self.tasks:
-            self.tasks[task_id].cancel()
-            task.status = TaskStatus.CANCELLED.value
-            self.repo.save(task)
+            cancelled = self.tasks[task_id].cancel()
+            if cancelled:
+                task.status = TaskStatus.CANCELLED.value
+                self.repo.save(task)
+                for listener in self._listeners:
+                    listener.on_task_end(task.id, task.get_type(), TaskStatus.CANCELLED)
         elif dispatch:
             self.event_bus.push(
                 Event(
@@ -409,14 +412,16 @@ class TaskJobService(ITaskService):
         self,
         callback: Task,
         task_id: str,
+        task_type: TaskType,
         jwt_user: JWTUser,
         custom_event_messages: Optional[CustomTaskEventMessages] = None,
     ) -> None:
         # We need to catch all exceptions so that the calling thread is guaranteed
         # to not die
         try:
+            status = TaskStatus.FAILED
             for listener in self._listeners:
-                listener.on_task_start(task_id)
+                listener.on_task_start(task_id, task_type)
 
             # attention: this function is executed in a thread, not in the main process
             with task_context(task_id=task_id, user=jwt_user):
@@ -424,7 +429,6 @@ class TaskJobService(ITaskService):
                     # Important to keep this retry for now,
                     # in case commit is not visible (read from replica ...)
                     task = retry(lambda: self.repo.get_or_raise(task_id))
-                    task_type = task.type
                     study_id = task.ref_id
 
                 self.event_bus.push(
@@ -534,7 +538,7 @@ class TaskJobService(ITaskService):
                 )
         finally:
             for listener in self._listeners:
-                listener.on_task_end(task_id)
+                listener.on_task_end(task_id, task_type, status)
 
     def get_task_progress(self, task_id: str) -> Optional[int]:
         task = self.repo.get_or_raise(task_id)

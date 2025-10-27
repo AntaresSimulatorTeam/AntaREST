@@ -34,6 +34,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import ConfigurationError
+from antarest.core.tasks.model import TaskStatus, TaskType
 from antarest.core.tasks.service import TaskServiceListener
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,14 @@ logger = logging.getLogger(__name__)
 _PROMETHEUS_MULTIPROCESS_ENV_VAR = "PROMETHEUS_MULTIPROC_DIR"
 
 WORKER_ID = str(os.getpid())
+
+
+def add_db_metrics(config: Config) -> None:
+    """
+    Registers metrics related to database activity.
+    """
+    if config.metrics.prometheus:
+        _add_db_metrics(prometheus_client.REGISTRY)
 
 
 def _add_db_metrics(registry: CollectorRegistry = prometheus_client.REGISTRY) -> None:
@@ -232,8 +241,6 @@ def add_metrics(application: FastAPI, config: Config) -> None:
     if not prometheus_config:
         return
 
-    prometheus_client.disable_created_metrics()  # type: ignore
-
     if prometheus_config.multiprocess:
         if _PROMETHEUS_MULTIPROCESS_ENV_VAR not in os.environ:
             raise ConfigurationError(
@@ -248,7 +255,10 @@ def add_metrics(application: FastAPI, config: Config) -> None:
     application.mount("/metrics", metrics_app)
 
     _add_metrics_middleware(application)
-    _add_db_metrics()
+
+
+def _task_labels(task_type: TaskType, status: TaskStatus | None = None) -> list[str]:
+    return [WORKER_ID, task_type.value.lower()] + ([status.name.lower()] if status else [])
 
 
 class TasksMetricsRecorder(TaskServiceListener):
@@ -260,26 +270,26 @@ class TasksMetricsRecorder(TaskServiceListener):
         self._duration_histo = Histogram(
             "tasks_duration_seconds",
             "Tasks duration in seconds",
-            ["worker_id"],
+            ["worker_id", "type", "status"],
             registry=registry,
         )
         self._wait_time_histo = Histogram(
             "tasks_wait_seconds",
             "Tasks wait time in seconds",
-            ["worker_id"],
+            ["worker_id", "type"],
             registry=registry,
         )
         self._running_gauge = Gauge(
             "tasks_running",
             "Count of running tasks",
-            ["worker_id"],
+            ["worker_id", "type"],
             multiprocess_mode="liveall",
             registry=registry,
         )
         self._pending_gauge = Gauge(
             "tasks_pending",
             "Count of pending tasks",
-            ["worker_id"],
+            ["worker_id", "type"],
             multiprocess_mode="liveall",
             registry=registry,
         )
@@ -288,20 +298,24 @@ class TasksMetricsRecorder(TaskServiceListener):
         self._start_times: dict[str, float] = {}
 
     @override
-    def on_task_submit(self, task_id: str) -> None:
-        self._pending_gauge.labels(WORKER_ID).inc()
+    def on_task_submit(self, task_id: str, task_type: TaskType) -> None:
+        self._pending_gauge.labels(*_task_labels(task_type)).inc()
         self._submit_times[task_id] = time.time()
 
     @override
-    def on_task_start(self, task_id: str) -> None:
-        self._pending_gauge.labels(WORKER_ID).dec()
-        self._running_gauge.labels(WORKER_ID).inc()
-        self._wait_time_histo.labels(WORKER_ID).observe(time.time() - self._submit_times[task_id])
-        del self._submit_times[task_id]
+    def on_task_start(self, task_id: str, task_type: TaskType) -> None:
+        labels = _task_labels(task_type)
+        self._pending_gauge.labels(*labels).dec()
+        self._running_gauge.labels(*labels).inc()
+        if task_id in self._submit_times:
+            self._wait_time_histo.labels(*labels).observe(time.time() - self._submit_times[task_id])
+            del self._submit_times[task_id]
         self._start_times[task_id] = time.time()
 
     @override
-    def on_task_end(self, task_id: str) -> None:
-        self._running_gauge.labels(WORKER_ID).dec()
-        self._duration_histo.labels(WORKER_ID).observe(time.time() - self._start_times[task_id])
-        del self._start_times[task_id]
+    def on_task_end(self, task_id: str, task_type: TaskType, task_status: TaskStatus) -> None:
+        labels = _task_labels(task_type, task_status)
+        self._running_gauge.labels(*labels).dec()
+        if task_id in self._start_times:
+            self._duration_histo.labels(*labels).observe(time.time() - self._start_times[task_id])
+            del self._start_times[task_id]
