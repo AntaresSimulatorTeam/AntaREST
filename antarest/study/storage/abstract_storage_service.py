@@ -65,22 +65,13 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
     def get_study_information(
         self,
         study: Study,
+        folder_path: Optional[str] = None,
     ) -> StudyMetadataDTO:
         additional_data = study.additional_data or StudyAdditionalData()
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        folder: Optional[str] = None
+        folder: Optional[str] = folder_path
 
-        # For managed studies with directory_id, reconstruct folder path from directory hierarchy
-        # This ensures the folder path is always synchronized with directory structure,
-        # even after directory renames
-        if hasattr(study, "directory_id") and study.directory_id is not None:
-            from antarest.study.directory_service import DirectoryService
-            from antarest.study.repository import DirectoryRepository
-
-            directory_service = DirectoryService(directory_repository=DirectoryRepository())
-            folder = directory_service.build_folder_path_from_directory(study.directory_id, study.id)
-        elif hasattr(study, "folder"):
-            # Fallback to legacy folder field for non-managed studies or studies without directory_id
+        if hasattr(study, "folder"):
             folder = study.folder
 
         owner_info = (

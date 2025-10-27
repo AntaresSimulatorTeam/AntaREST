@@ -192,6 +192,43 @@ class DirectoryService:
         else:
             return study_id
 
+    def build_folder_paths_bulk(self, directory_to_study_map: dict[str, list[str]]) -> dict[str, str]:
+        """
+        Reconstruct folder paths for multiple studies in bulk using a single CTE query.
+
+        Args:
+            directory_to_study_map: Mapping of directory_id -> list of study_ids
+
+        Returns:
+            Dictionary mapping study_id -> folder_path (e.g., {"study-123": "parent/child/study-123"})
+        """
+        if not directory_to_study_map:
+            return {}
+
+        # Get unique directory IDs
+        directory_ids = [dir_id for dir_id in directory_to_study_map.keys() if dir_id is not None]
+
+        # Get all directory paths in one query
+        dir_paths = self.repository.get_directory_paths_bulk(directory_ids)
+
+        # Build the result mapping study_id -> folder_path
+        result = {}
+        for directory_id, study_ids in directory_to_study_map.items():
+            if directory_id is None:
+                # Studies without directory_id
+                for study_id in study_ids:
+                    result[study_id] = study_id
+            else:
+                # Studies with directory_id
+                dir_path = dir_paths.get(directory_id, "")
+                for study_id in study_ids:
+                    if dir_path:
+                        result[study_id] = f"{dir_path}/{study_id}"
+                    else:
+                        result[study_id] = study_id
+
+        return result
+
     def _has_studies(self, directory_id: str) -> bool:
         return self.repository.count_studies(directory_id) > 0
 

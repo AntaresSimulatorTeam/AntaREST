@@ -712,8 +712,28 @@ class StudyService:
             pagination=pagination,
         )
         logger.info("Studies retrieved")
+
+        # Bulk optimization: pre-calculate all directory paths in one query
+        from collections import defaultdict
+
+        from antarest.study.directory_service import DirectoryService
+        from antarest.study.repository import DirectoryRepository
+
+        directory_to_studies = defaultdict(list)
         for study in matching_studies:
-            study_metadata = self._try_get_studies_information(study)
+            if hasattr(study, "directory_id") and study.directory_id is not None:
+                directory_to_studies[study.directory_id].append(study.id)
+
+        # Get all folder paths in bulk (single CTE query)
+        folder_paths = {}
+        if directory_to_studies:
+            directory_service = DirectoryService(directory_repository=DirectoryRepository())
+            folder_paths = directory_service.build_folder_paths_bulk(dict(directory_to_studies))
+
+        # Build study metadata with pre-calculated paths
+        for study in matching_studies:
+            folder_path = folder_paths.get(study.id) if hasattr(study, "directory_id") and study.directory_id else None
+            study_metadata = self._try_get_studies_information(study, folder_path)
             if study_metadata is not None:
                 studies[study_metadata.id] = study_metadata
         return studies
@@ -734,9 +754,11 @@ class StudyService:
         )
         return total
 
-    def _try_get_studies_information(self, study: Study) -> Optional[StudyMetadataDTO]:
+    def _try_get_studies_information(
+        self, study: Study, folder_path: Optional[str] = None
+    ) -> Optional[StudyMetadataDTO]:
         try:
-            return self.storage_service.get_storage(study).get_study_information(study)
+            return self.storage_service.get_storage(study).get_study_information(study, folder_path)
         except Exception as e:
             logger.warning(
                 "Failed to build study %s (%s) metadata",

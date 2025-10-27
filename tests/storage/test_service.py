@@ -164,7 +164,7 @@ def build_study_service(
     )
 
 
-def study_to_dto(study: Study) -> StudyMetadataDTO:
+def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMetadataDTO:
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
@@ -186,7 +186,7 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
         scenario=None,
         status=None,
         doc=None,
-        folder=None,
+        folder=folder_path,
     )
 
 

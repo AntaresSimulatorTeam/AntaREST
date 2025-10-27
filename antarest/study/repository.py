@@ -577,3 +577,49 @@ class DirectoryRepository:
 
         stmt = select(func.count(Study.id)).where(Study.directory_id.in_(all_directory_ids))
         return int(self.session.scalar(stmt))
+
+    def get_directory_paths_bulk(self, directory_ids: List[str]) -> dict[str, str]:
+        """
+        Get directory paths for multiple directories in bulk using a recursive CTE.
+
+        Args:
+            directory_ids: List of directory IDs to get paths for
+
+        Returns:
+            Dictionary mapping directory_id -> path (e.g., {"dir-123": "parent/child"})
+        """
+        from sqlalchemy import literal
+        from sqlalchemy.dialects.postgresql import TEXT
+
+        if not directory_ids:
+            return {}
+
+        # Base case: get all directories with their names
+        base = (
+            select(
+                Directory.id.label("id"),
+                Directory.name.label("name"),
+                Directory.parent_id.label("parent_id"),
+                Directory.name.cast(TEXT).label("path"),
+                literal(0).label("depth"),
+            )
+            .where(Directory.parent_id.is_(None))
+            .cte(name="directory_hierarchy", recursive=True)
+        )
+
+        # Recursive case: join with parent and concatenate path
+        recursive = select(
+            Directory.id.label("id"),
+            Directory.name.label("name"),
+            Directory.parent_id.label("parent_id"),
+            (base.c.path + "/" + Directory.name).cast(TEXT).label("path"),
+            (base.c.depth + 1).label("depth"),
+        ).join(base, Directory.parent_id == base.c.id)
+
+        cte = base.union_all(recursive)
+
+        # Query the CTE for requested directory IDs
+        stmt = select(cte.c.id, cte.c.path).where(cte.c.id.in_(directory_ids))
+
+        result = self.session.execute(stmt)
+        return {row[0]: row[1] for row in result}
