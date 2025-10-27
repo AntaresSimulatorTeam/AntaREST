@@ -16,6 +16,7 @@ from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Dict, List, Optional, Sequence
 
+from antares.study.version import StudyVersion
 from fastapi import APIRouter, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
@@ -371,10 +372,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies",
         status_code=HTTPStatus.CREATED,
         tags=[APITag.study_management],
-        summary="Create a new empty study",
-        response_model=str,
+        summary="Create a new empty study"
     )
-    def create_study(name: str, version: StudyVersionStr | None = None, groups: str = "") -> Any:
+    def create_study(name: str, version: str | None = None, groups: str = "") -> str:
+        if version:
+            version = StudyVersion.parse(version)
+
         logger.info(f"Creating new study '{name}'")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
