@@ -106,22 +106,27 @@ class AutoArchiveService(IService):
         for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:
             try:
                 if is_raw_study:
+                    print(f"[AUTO-ARCHIVER] Archiving raw study {study_id}...", file=sys.stderr, flush=True)
                     logger.info(
                         f"Auto Archiving raw study {study_id} (dry_run: {self.config.storage.auto_archive_dry_run})"
                     )
                     if not self.config.storage.auto_archive_dry_run:
                         with db():
                             self.study_service.archive(study_id)
+                        print(f"[AUTO-ARCHIVER] ✓ Raw study {study_id} archived", file=sys.stderr, flush=True)
                 else:
+                    print(f"[AUTO-ARCHIVER] Archiving variant study outputs {study_id}...", file=sys.stderr, flush=True)
                     logger.info(
                         f"Auto Archiving variant study {study_id} (dry_run: {self.config.storage.auto_archive_dry_run})"
                     )
                     if not self.config.storage.auto_archive_dry_run:
                         with db():
                             self.output_service.archive_outputs(study_id)
+                        print(f"[AUTO-ARCHIVER] ✓ Variant study {study_id} outputs archived", file=sys.stderr, flush=True)
             except TaskAlreadyRunning:
-                pass
+                print(f"[AUTO-ARCHIVER] ⚠ Study {study_id} already being archived", file=sys.stderr, flush=True)
             except Exception as e:
+                print(f"[AUTO-ARCHIVER] ✗ ERROR archiving {study_id}: {e}", file=sys.stderr, flush=True)
                 logger.error(
                     f"Failed to auto archive study {study_id}",
                     exc_info=e,
