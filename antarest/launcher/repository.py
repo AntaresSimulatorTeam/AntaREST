@@ -92,12 +92,6 @@ class JobResultRepository:
 
 
 class SolverPresetsRepository:
-    def exists(self, id: str) -> bool:
-        logger.debug(f"Checking existence of SolverPresetsModel {id}")
-        stmt = select(SolverPresetsModel).where(SolverPresetsModel.id == id)
-        existing_config = db.session.scalar(stmt)
-        return existing_config is not None
-
     def save(self, config: SolverPresetsModel) -> SolverPresetsModel:
         logger.debug(f"Saving SolverPresetsModel {config.id}")
 
