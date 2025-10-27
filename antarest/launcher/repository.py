@@ -124,7 +124,6 @@ class SolverPresetsRepository:
 
     def delete(self, id: str) -> None:
         logger.debug(f"Deleting SolverPresetsModel {id}")
-        config = db.session.get(SolverPresetsModel, id)
-        if config:
-            db.session.delete(config)
-            db.session.commit()
+        stmt = delete(SolverPresetsModel).where(SolverPresetsModel.id == id)
+        db.session.execute(stmt)
+        db.session.commit()

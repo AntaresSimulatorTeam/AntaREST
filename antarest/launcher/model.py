@@ -30,6 +30,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.login.model import Identity, UserInfo
 from antarest.study.model import STUDY_VERSION_9_2
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
 SolverParams = List[Tuple[str, str]]
 
@@ -339,7 +340,7 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
 
 class SolverPresetsDTO(AntaresBaseModel):
     id: Optional[str] = None
-    name: str
+    name: ItemName
     linear_solver: str
     min_antares_version: Optional[SolverVersion] = None
     max_antares_version: Optional[SolverVersion] = None
@@ -348,12 +349,6 @@ class SolverPresetsDTO(AntaresBaseModel):
     linear_solver_param: Optional[SolverParams] = None
     use_optim_1_basis_next_week: bool = True
     use_optim_1_basis_optim_2: bool = True
-
-    @field_validator("name")
-    def name_not_empty(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("name cannot be empty or whitespace")
-        return v
 
     @field_validator(
         "linear_solver_param",
