@@ -39,7 +39,6 @@ class AutoArchiveService(IService):
         self.output_service = output_service
         self.config = config
         self.sleep_cycle = self.config.storage.auto_archive_sleeping_time
-        self.max_parallel = self.config.storage.auto_archive_max_parallel
 
     def _try_archive_studies(self) -> None:
         """
@@ -62,7 +61,7 @@ class AutoArchiveService(IService):
                 and last_activity < old_date
                 and (isinstance(study, VariantStudy) or not study.archived)
             ]
-        for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:
+        for study_id, is_raw_study in study_ids_to_archive:
             try:
                 if is_raw_study:
                     logger.info(
