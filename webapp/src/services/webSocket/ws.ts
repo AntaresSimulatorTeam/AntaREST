@@ -29,7 +29,8 @@ import {
   setWebSocketConnected,
 } from "../../redux/ducks/ui";
 import type { AppDispatch } from "../../redux/store";
-import type { LaunchJobDTO, UserInfo } from "../../types/types";
+import type { UserInfo } from "../../types/types";
+import type { JobDTO } from "../api/launcher/jobs/types";
 import { TaskType } from "../api/tasks/constants";
 import { getConfig } from "../config";
 import { isStringEmpty, isUserExpired } from "../utils";
@@ -216,7 +217,7 @@ function makeStudyListener(dispatch: AppDispatch): WsEventListener {
 }
 
 function makeStudyJobStatusListener(dispatch: AppDispatch): WsEventListener {
-  const unsubscribeById: Record<LaunchJobDTO["id"], VoidFunction> = {};
+  const unsubscribeById: Record<JobDTO["id"], VoidFunction> = {};
 
   return function listener(e: WsEvent) {
     switch (e.type) {

@@ -29,7 +29,7 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
 )
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
-from antarest.study.storage.output_model import OutputVariablesList
+from antarest.study.storage.output_model import OutputVariablesInformation, OutputVariablesList
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -82,11 +82,11 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         tags=[APITag.study_outputs],
         summary="Get outputs data variables",
     )
-    def output_variables_information(study_id: str, output_id: str) -> Any:
+    def output_variables_information(study_id: str, output_id: str) -> OutputVariablesInformation:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
-        return output_service.output_variables_information(study_uuid=study_id, output_uuid=output_id)
+        return output_service.get_output_variables_information(study_id, output_id)
 
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/export",
