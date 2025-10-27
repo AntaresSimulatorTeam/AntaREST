@@ -424,17 +424,6 @@ class TaskJobService(ITaskService):
                 time.sleep(2)
 
             logger.error(f"Timeout while awaiting task '{task_id}'")
-            stmt = (
-                update(TaskJob)
-                .where(TaskJob.id == task_id)
-                .values(
-                    status=TaskStatus.TIMEOUT.value,
-                    result_msg=f"Task '{task_id}' timeout after {timeout_sec} seconds",
-                    result_status=False,
-                )
-            )
-            db.session.execute(stmt)
-            db.session.commit()
 
     def _run_task(
         self,
