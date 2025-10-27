@@ -493,7 +493,7 @@ class OutputService:
         ids_to_consider: Sequence[str],
         download_name: str,
         download_log: str,
-        timeout: int,
+        download_expiration_time_in_minutes: int,
         mc_years: Optional[Sequence[int]] = None,
     ) -> str:
         """
@@ -509,6 +509,7 @@ class OutputService:
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             download_name: name of the aggregation outputs file,
             download_log: log to display while launching aggregation output task,
+            download_expiration_time_in_minutes: expiration time in minutes for the download file,
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
         Returns: download id
@@ -520,7 +521,9 @@ class OutputService:
 
         logger.info(download_log)
         file_download = self._file_transfer_manager.request_download(
-            f"{study.name}-{uuid}-{output_id}{export_format.suffix}", download_name, expiration_time_in_minutes=timeout
+            f"{study.name}-{uuid}-{output_id}{export_format.suffix}",
+            download_name,
+            expiration_time_in_minutes=download_expiration_time_in_minutes,
         )
         file_download_path = Path(file_download.path)
         download_id: str = file_download.id

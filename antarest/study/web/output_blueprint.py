@@ -37,7 +37,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
-DEFAULT_AGGREGATE_TIMEOUT_MINUTES = 60
+DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
@@ -233,7 +233,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        timeout: int = DEFAULT_AGGREGATE_TIMEOUT_MINUTES,
+        download_expiration_time: int = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -248,8 +248,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
+        - `download_expiration_time`: Expiration time for the download file (in minutes).
         - `export_format`: Returned file format (csv by default).
-        - `timeout`: Timeout for the aggregation task (in minutes).
 
         Returns:
             download id
@@ -276,7 +276,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             ids_to_consider=_split_comma_separated_values(areas_ids),
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             download_name=download_name,
-            timeout=timeout,
+            download_expiration_time_in_minutes=download_expiration_time,
             download_log=download_log,
         )
 
@@ -314,7 +314,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        timeout: int = DEFAULT_AGGREGATE_TIMEOUT_MINUTES,
+        download_expiration_time: int = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
         Create an aggregation of links raw data
@@ -328,8 +328,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
+        - `download_expiration_time`: Expiration time for the download file (in minutes).
         - `export_format`: Returned file format (csv by default).
-        - `timeout`: Timeout for the aggregation task (in minutes).
 
         Returns:
             download id
@@ -355,7 +355,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             ids_to_consider=_split_comma_separated_values(links_ids),
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             download_name=download_name,
-            timeout=timeout,
+            download_expiration_time_in_minutes=download_expiration_time,
             download_log=download_log,
         )
 
@@ -392,7 +392,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        timeout: int = DEFAULT_AGGREGATE_TIMEOUT_MINUTES,
+        download_expiration_time: int = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -406,8 +406,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
+        - `download_expiration_time`: Expiration time for the download file (in minutes).
         - `export_format`: Returned file format (csv by default).
-        - `timeout`: Timeout for the aggregation task (in minutes).
 
         Returns:
             download id
@@ -433,7 +433,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             download_name=download_name,
-            timeout=timeout,
+            download_expiration_time_in_minutes=download_expiration_time,
             download_log=download_log,
         )
 
@@ -469,7 +469,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        timeout: int = DEFAULT_AGGREGATE_TIMEOUT_MINUTES,
+        download_expiration_time: int = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
         Create an aggregation of links in mc-all
@@ -482,8 +482,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
+        - `download_expiration_time`: Expiration time for the download file (in minutes).
         - `export_format`: Returned file format (csv by default).
-        - `timeout`: Timeout for the aggregation task (in minutes).
 
         Returns:
             download id
@@ -511,7 +511,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
             download_name=download_name,
-            timeout=timeout,
+            download_expiration_time_in_minutes=download_expiration_time,
             download_log=download_log,
         )
 
