@@ -82,12 +82,7 @@ class AutoArchiveService(IService):
                 for study in studies
                 if (last_activity := study.last_access or study.updated_at) is not None
                 and last_activity < old_date
-                and (
-                    # Variants: always archive outputs (even if already processed)
-                    isinstance(study, VariantStudy)
-                    # Raw studies: only archive if not already archived
-                    or (isinstance(study, RawStudy) and not study.archived)
-                )
+                and not study.archived  # Don't archive studies that are already archived (both raw and variants)
             ]
 
             if len(study_ids_to_archive) == 0:
@@ -122,6 +117,10 @@ class AutoArchiveService(IService):
                     if not self.config.storage.auto_archive_dry_run:
                         with db():
                             self.output_service.archive_outputs(study_id)
+                            # Mark the variant study as archived to avoid re-archiving
+                            study = self.study_service.get_study(study_id)
+                            study.archived = True
+                            self.study_service.repository.save(study)
                         print(f"[AUTO-ARCHIVER] ✓ Variant study {study_id} outputs archived", file=sys.stderr, flush=True)
             except TaskAlreadyRunning:
                 print(f"[AUTO-ARCHIVER] ⚠ Study {study_id} already being archived", file=sys.stderr, flush=True)
