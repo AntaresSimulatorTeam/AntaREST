@@ -338,7 +338,7 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
     )
 
 
-class SolverPresetsDTO(AntaresBaseModel):
+class SolverPresets(AntaresBaseModel):
     id: str
     name: ItemName
     linear_solver: str
@@ -370,7 +370,7 @@ class SolverPresetsDTO(AntaresBaseModel):
         return sp
 
     @model_validator(mode="after")
-    def validate_versions_and_optim_params(self) -> "SolverPresetsDTO":
+    def validate_versions_and_optim_params(self) -> "SolverPresets":
         # min <= max
         if self.min_antares_version and self.max_antares_version:
             if self.min_antares_version > self.max_antares_version:
@@ -457,13 +457,6 @@ class SolverPresetsUpdate(AntaresBaseModel):
     use_optim_1_basis_optim_2: Optional[bool] = None
 
 
-def overwrite_params_other_options_with_config(
-    launcher_params: LauncherParametersDTO,
-    solver_presets: SolverPresetsDTO,
-) -> None:
-    launcher_params.other_options = solver_presets.other_options
-
-
 class SolverPresetsModel(Base):
     __tablename__ = "solver_presets"
 
@@ -478,7 +471,7 @@ class SolverPresetsModel(Base):
     use_optim_1_basis_next_week = mapped_column(Boolean)
     use_optim_1_basis_optim_2 = mapped_column(Boolean)
 
-    def to_dto(self) -> SolverPresetsDTO:
+    def to_dto(self) -> SolverPresets:
         min_version = None
         if self.min_antares_version is not None:
             try:
@@ -514,7 +507,7 @@ class SolverPresetsModel(Base):
             except Exception as e:
                 raise ValueError(f"Failed to parse linear_solver_param: {e}") from e
 
-        return SolverPresetsDTO(
+        return SolverPresets(
             id=self.id,
             name=self.name,
             linear_solver=self.linear_solver,
@@ -528,7 +521,7 @@ class SolverPresetsModel(Base):
         )
 
     @classmethod
-    def from_dto(cls, dto: SolverPresetsDTO) -> "SolverPresetsModel":
+    def from_dto(cls, dto: SolverPresets) -> "SolverPresetsModel":
         data = dto.model_dump(exclude_none=True, exclude={"other_options"})
         if dto.min_antares_version is not None:
             data["min_antares_version"] = f"{dto.min_antares_version:2d}"
@@ -573,14 +566,14 @@ def apply_update_solver_presets(
     merged_dict = {**current_dto_dict, **update_dict}
 
     # Validate the merged data
-    updated_dto = SolverPresetsDTO.model_validate(merged_dict)
+    updated_dto = SolverPresets.model_validate(merged_dict)
 
     # turn back to model
     return SolverPresetsModel.from_dto(updated_dto)
 
 
 def is_version_covered_by_config(
-    solver_presets: SolverPresetsDTO,
+    solver_presets: SolverPresets,
     solver_version: SolverVersion,
 ) -> bool:
     """

@@ -50,7 +50,7 @@ from antarest.launcher.model import (
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
-    SolverPresetsDTO,
+    SolverPresets,
     SolverPresetsModel,
 )
 from antarest.launcher.service import (
@@ -1070,7 +1070,7 @@ class TestLauncherService:
         def get_mock_solver_presets(config_id: str):
             if config_id == "config-1":
                 return SolverPresetsModel.from_dto(
-                    SolverPresetsDTO(
+                    SolverPresets(
                         id="config-1", name="Config 1", linear_solver="xpress", min_antares_version=SOLVER_VERSION_9_2
                     )
                 )

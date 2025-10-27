@@ -18,7 +18,7 @@ from antarest.launcher.adapters.local_launcher.local_launcher import (
     SOLVER_VERSION_9_2,
     SOLVER_VERSION_9_3,
 )
-from antarest.launcher.model import SolverPresetsDTO
+from antarest.launcher.model import SolverPresets
 
 
 @pytest.fixture
@@ -38,12 +38,12 @@ def base_solver_presets():
 
 
 def test_basic_xpress_solver_only(base_solver_presets):
-    solver_presets = SolverPresetsDTO(**base_solver_presets)
+    solver_presets = SolverPresets(**base_solver_presets)
     assert solver_presets.other_options == "solver=xpress"
 
 
 def test_xpress_nobasis_flags(base_solver_presets):
-    solver_presets = SolverPresetsDTO(
+    solver_presets = SolverPresets(
         **{**base_solver_presets, "use_optim_1_basis_next_week": False, "use_optim_1_basis_optim_2": False}
     )
     result = solver_presets.other_options
@@ -52,21 +52,19 @@ def test_xpress_nobasis_flags(base_solver_presets):
 
 
 def test_xpress_single_nobasis1(base_solver_presets):
-    solver_presets = SolverPresetsDTO(**{**base_solver_presets, "use_optim_1_basis_next_week": False})
+    solver_presets = SolverPresets(**{**base_solver_presets, "use_optim_1_basis_next_week": False})
     assert solver_presets.other_options == "solver=xpress nobasis1"
 
 
 def test_xpress_with_common_params(base_solver_presets):
-    solver_presets = SolverPresetsDTO(
-        **{**base_solver_presets, "linear_solver_param": [("THREADS", 4), ("FEASTOL", 1)]}
-    )
+    solver_presets = SolverPresets(**{**base_solver_presets, "linear_solver_param": [("THREADS", 4), ("FEASTOL", 1)]})
     result = solver_presets.other_options
     assert 'param-optim1="THREADS 4 FEASTOL 1"' in result
     assert 'param-optim2="THREADS 4 FEASTOL 1"' in result
 
 
 def test_xpress_combined_common_and_specific_params(base_solver_presets):
-    solver_presets = SolverPresetsDTO(
+    solver_presets = SolverPresets(
         **{
             **base_solver_presets,
             "linear_solver_param": [("THREADS", 4)],
@@ -80,7 +78,7 @@ def test_xpress_combined_common_and_specific_params(base_solver_presets):
 
 
 def test_presolve_detected_in_optim2_only(base_solver_presets):
-    solver_presets = SolverPresetsDTO(
+    solver_presets = SolverPresets(
         **{**base_solver_presets, "linear_solver_param_optim_2": [("PRESOLVE", 100), ("THREADS", 2)]}
     )
     result = solver_presets.other_options
@@ -88,7 +86,7 @@ def test_presolve_detected_in_optim2_only(base_solver_presets):
 
 
 def test_valid_solver_presets_minimal():
-    cfg = SolverPresetsDTO(id="123", name="default", linear_solver="xpress")
+    cfg = SolverPresets(id="123", name="default", linear_solver="xpress")
     assert cfg.linear_solver == "xpress"
     assert cfg.use_optim_1_basis_next_week is True
     assert cfg.use_optim_1_basis_optim_2 is True
@@ -96,12 +94,12 @@ def test_valid_solver_presets_minimal():
 
 def test_name_cannot_be_empty():
     with pytest.raises(ValidationError, match="Invalid name"):
-        SolverPresetsDTO(id="123", name="   ", linear_solver="xpress")
+        SolverPresets(id="123", name="   ", linear_solver="xpress")
 
 
 def test_min_version_must_not_exceed_max():
     with pytest.raises(ValidationError, match="min_antares_version cannot be greater"):
-        SolverPresetsDTO(
+        SolverPresets(
             id="123",
             name="valid",
             linear_solver="xpress",
@@ -112,7 +110,7 @@ def test_min_version_must_not_exceed_max():
 
 def test_invalid_key_in_solver_params():
     with pytest.raises(ValidationError, match="Invalid key"):
-        SolverPresetsDTO(
+        SolverPresets(
             name="valid",
             linear_solver="xpress",
             linear_solver_param=[("INVALID-KEY!", "1")],
@@ -121,7 +119,7 @@ def test_invalid_key_in_solver_params():
 
 def test_invalid_value_in_solver_params():
     with pytest.raises(ValidationError, match="Invalid value"):
-        SolverPresetsDTO(
+        SolverPresets(
             name="valid",
             linear_solver="xpress",
             linear_solver_param=[("KEY", "1.2.3")],
@@ -130,7 +128,7 @@ def test_invalid_value_in_solver_params():
 
 def test_optim_params_before_9_2_not_allowed():
     with pytest.raises(ValidationError, match="not supported before Antares version 9.2"):
-        SolverPresetsDTO(
+        SolverPresets(
             id="123",
             name="valid",
             linear_solver="xpress",

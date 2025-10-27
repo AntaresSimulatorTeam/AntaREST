@@ -50,8 +50,8 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
     LogType,
+    SolverPresets,
     SolverPresetsCreation,
-    SolverPresetsDTO,
     SolverPresetsModel,
     SolverPresetsUpdate,
     XpansionParametersDTO,
@@ -688,20 +688,20 @@ class LauncherService:
         }
         return launch_progress_json.get("progress", 0)
 
-    def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresetsDTO:
+    def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         """
         Create a new solver presets.
         """
         with db():
             solver_presets_id = str(uuid4())
-            solver_presets_dto = SolverPresetsDTO.model_validate(
+            solver_presets_dto = SolverPresets.model_validate(
                 {**solver_presets_creation.model_dump(exclude_unset=True), "id": solver_presets_id}
             )
             solver_presets = SolverPresetsModel.from_dto(solver_presets_dto)
             config = self.solver_presets_repository.save(solver_presets)
             return config.to_dto()
 
-    def get_solver_presets(self, solver_presets_id: str) -> SolverPresetsDTO:
+    def get_solver_presets(self, solver_presets_id: str) -> SolverPresets:
         """
         Retrieve a solver presets configuration by its ID.
         """
@@ -711,7 +711,7 @@ class LauncherService:
                 raise SolverPresetsNotFound(f"Solver presets configuration with id '{solver_presets_id}' not found.")
             return config.to_dto()
 
-    def get_solver_presets_list(self) -> List[SolverPresetsDTO]:
+    def get_solver_presets_list(self) -> List[SolverPresets]:
         """
         Retrieve all solver presets.
         """
@@ -719,9 +719,7 @@ class LauncherService:
             configs = self.solver_presets_repository.get_all()
             return [config.to_dto() for config in configs]
 
-    def update_solver_presets(
-        self, configuration_id: str, solver_presets_update: SolverPresetsUpdate
-    ) -> SolverPresetsDTO:
+    def update_solver_presets(self, configuration_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresets:
         """
         Update an existing solver presets using SolverPresetsUpdate.
         """
@@ -736,8 +734,6 @@ class LauncherService:
             # Update only the fields that are provided in the update DTO
             updated_solver_presets = apply_update_solver_presets(solver_presets, solver_presets_update)
             config = self.solver_presets_repository.save(updated_solver_presets)
-            if not config:
-                raise ValueError("Failed to update solver presets")
             return config.to_dto()
 
     def delete_solver_presets(self, solver_presets_id: str) -> None:

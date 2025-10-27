@@ -849,11 +849,6 @@ class OutputAggregationError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, msg)
 
 
-class BadSolverPresetsInput(ValueError):
-    def __init__(self, message: str = "Invalid solver presets configuration"):
-        super().__init__(message)
-
-
 class ConfigurationError(RuntimeError):
     """
     Raised when some configuration is invalid.

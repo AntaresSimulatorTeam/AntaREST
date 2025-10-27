@@ -26,8 +26,8 @@ from antarest.launcher.model import (
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
+    SolverPresets,
     SolverPresetsCreation,
-    SolverPresetsDTO,
     SolverPresetsUpdate,
 )
 from antarest.launcher.service import LauncherService
@@ -192,7 +192,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         tags=[APITag.launcher],
         summary="Create new solver presets",
     )
-    def create_solver_presets(solver_presets_creation: SolverPresetsCreation) -> SolverPresetsDTO:
+    def create_solver_presets(solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         logger.info("Creating new solver presets")
         return service.create_solver_presets(solver_presets_creation)
 
@@ -201,7 +201,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         tags=[APITag.launcher],
         summary="Retrieve solver presets by ID",
     )
-    def get_solver_presets(solver_presets_id: str) -> SolverPresetsDTO:
+    def get_solver_presets(solver_presets_id: str) -> SolverPresets:
         logger.info(f"Retrieving solver presets for ID {solver_presets_id}")
         return service.get_solver_presets(solver_presets_id)
 
@@ -210,7 +210,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         tags=[APITag.launcher],
         summary="Retrieve all solver presets",
     )
-    def get_solver_presets_list() -> List[SolverPresetsDTO]:
+    def get_solver_presets_list() -> List[SolverPresets]:
         logger.info("Retrieving solver presets")
         return service.get_solver_presets_list()
 
@@ -219,7 +219,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         tags=[APITag.launcher],
         summary="Update an existing solver preset",
     )
-    def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresetsDTO:
+    def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresets:
         logger.info(f"Updating solver preset for ID {solver_presets_id}")
         return service.update_solver_presets(solver_presets_id, solver_presets_update)
 
