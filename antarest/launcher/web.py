@@ -26,6 +26,7 @@ from antarest.launcher.model import (
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
+    SolverPresetsCreation,
     SolverPresetsDTO,
     SolverPresetsUpdate,
 )
@@ -191,7 +192,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         tags=[APITag.launcher],
         summary="Create new solver presets",
     )
-    def create_solver_presets(solver_presets_creation: SolverPresetsDTO) -> SolverPresetsDTO:
+    def create_solver_presets(solver_presets_creation: SolverPresetsCreation) -> SolverPresetsDTO:
         logger.info("Creating new solver presets")
         return service.create_solver_presets(solver_presets_creation)
 
