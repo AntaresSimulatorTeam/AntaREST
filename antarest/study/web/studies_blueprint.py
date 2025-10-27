@@ -34,7 +34,6 @@ from antarest.study.model import (
     MatrixIndex,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
-    StudyVersionStr,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
@@ -369,21 +368,16 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         study_service.move_study(uuid, validate_folder_path(folder_dest))
 
     @bp.post(
-        "/studies",
-        status_code=HTTPStatus.CREATED,
-        tags=[APITag.study_management],
-        summary="Create a new empty study"
+        "/studies", status_code=HTTPStatus.CREATED, tags=[APITag.study_management], summary="Create a new empty study"
     )
     def create_study(name: str, version: str | None = None, groups: str = "") -> str:
-        if version:
-            version = StudyVersion.parse(version)
-
+        study_version = StudyVersion.parse(version) if version else None
         logger.info(f"Creating new study '{name}'")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
-        uuid = study_service.create_study(name_sanitized, version, group_ids)
+        uuid = study_service.create_study(name_sanitized, study_version, group_ids)
 
         return uuid
 
