@@ -59,6 +59,11 @@ class AutoArchiveService(IService):
         old_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
             days=self.config.storage.auto_archive_threshold_days
         )
+        print(
+            f"[AUTO-ARCHIVER] Check starting: threshold={self.config.storage.auto_archive_threshold_days} days, "
+            f"cutoff_date={old_date.isoformat()}, dry_run={self.config.storage.auto_archive_dry_run}",
+            file=sys.stderr, flush=True
+        )
         logger.info(
             f"Auto-archive check starting: threshold={self.config.storage.auto_archive_threshold_days} days, "
             f"cutoff_date={old_date.isoformat()}, dry_run={self.config.storage.auto_archive_dry_run}"
@@ -68,6 +73,7 @@ class AutoArchiveService(IService):
             studies: Sequence[Study] = self.study_service.repository.get_all(
                 study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions(is_admin=True))
             )
+            print(f"[AUTO-ARCHIVER] Found {len(studies)} managed studies to check", file=sys.stderr, flush=True)
             logger.info(f"Found {len(studies)} managed studies to check for archival")
 
             # list of study IDs and boolean indicating if it's a raw study (True) or a variant (False)
@@ -85,8 +91,14 @@ class AutoArchiveService(IService):
             ]
 
             if len(study_ids_to_archive) == 0:
+                print("[AUTO-ARCHIVER] No studies eligible for archiving at this time", file=sys.stderr, flush=True)
                 logger.info("No studies eligible for archiving at this time")
             else:
+                print(
+                    f"[AUTO-ARCHIVER] Found {len(study_ids_to_archive)} studies eligible "
+                    f"(will process {min(len(study_ids_to_archive), self.max_parallel)})",
+                    file=sys.stderr, flush=True
+                )
                 logger.info(
                     f"Found {len(study_ids_to_archive)} studies eligible for archiving "
                     f"(will process {min(len(study_ids_to_archive), self.max_parallel)} in this batch)"
