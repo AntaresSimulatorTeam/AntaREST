@@ -314,8 +314,9 @@ class TasksMetricsRecorder(TaskServiceListener):
 
     @override
     def on_task_end(self, task_id: str, task_type: TaskType, task_status: TaskStatus) -> None:
-        labels = _task_labels(task_type, task_status)
-        self._running_gauge.labels(*labels).dec()
+        self._running_gauge.labels(*_task_labels(task_type)).dec()
         if task_id in self._start_times:
-            self._duration_histo.labels(*labels).observe(time.time() - self._start_times[task_id])
+            self._duration_histo.labels(*_task_labels(task_type, task_status)).observe(
+                time.time() - self._start_times[task_id]
+            )
             del self._start_times[task_id]

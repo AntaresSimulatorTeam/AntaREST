@@ -22,6 +22,7 @@ from antarest.core.metrics import (
     _add_db_connection_metrics,
     _add_db_session_metrics,
 )
+from antarest.core.tasks.model import TaskStatus, TaskType
 
 
 def _is_subset(small_dict: dict[str, str], big_dict: dict[str, str]) -> bool:
@@ -52,7 +53,7 @@ def _get_value(registry: CollectorRegistry, name: str, labels: dict[str, str] | 
             return None
 
 
-def _get_histo_count(registry: CollectorRegistry, name: str) -> float | None:
+def _get_histo_count(registry: CollectorRegistry, name: str, labels: dict[str, str] | None = None) -> float | None:
     """
     Returns the count of values for a histogram metric.
     """
@@ -61,7 +62,8 @@ def _get_histo_count(registry: CollectorRegistry, name: str) -> float | None:
     if not metric:
         return None
     try:
-        sample = next(s for s in metric.samples if s.name == count_sample_name)
+        labels = labels or {}
+        sample = next(s for s in metric.samples if s.name == count_sample_name and _is_subset(labels, s.labels))
         return sample.value
     except StopIteration:
         return None
@@ -73,23 +75,23 @@ def test_task_metrics_recorder():
     metrics_names = {m.name for m in registry.collect()}
     assert metrics_names == {"tasks_duration_seconds", "tasks_wait_seconds", "tasks_running", "tasks_pending"}
 
-    recorder.on_task_submit("task1")
-    assert _get_value(registry, "tasks_running") is None
-    assert _get_value(registry, "tasks_pending") == 1
-    assert _get_histo_count(registry, "tasks_wait_seconds") is None
-    assert _get_histo_count(registry, "tasks_duration_seconds") is None
+    recorder.on_task_submit("task1", TaskType.ARCHIVE)
+    assert _get_value(registry, "tasks_running", {"type": "archive"}) is None
+    assert _get_value(registry, "tasks_pending", {"type": "archive"}) == 1
+    assert _get_histo_count(registry, "tasks_wait_seconds", {"type": "archive"}) is None
+    assert _get_histo_count(registry, "tasks_duration_seconds", {"type": "archive"}) is None
 
-    recorder.on_task_start("task1")
-    assert _get_value(registry, "tasks_running") == 1
-    assert _get_value(registry, "tasks_pending") == 0
-    assert _get_histo_count(registry, "tasks_wait_seconds") == 1
-    assert _get_histo_count(registry, "tasks_duration_seconds") is None
+    recorder.on_task_start("task1", TaskType.ARCHIVE)
+    assert _get_value(registry, "tasks_running", {"type": "archive"}) == 1
+    assert _get_value(registry, "tasks_pending", {"type": "archive"}) == 0
+    assert _get_histo_count(registry, "tasks_wait_seconds", {"type": "archive"}) == 1
+    assert _get_histo_count(registry, "tasks_duration_seconds", {"type": "archive"}) is None
 
-    recorder.on_task_end("task1")
-    assert _get_value(registry, "tasks_running") == 0
-    assert _get_value(registry, "tasks_pending") == 0
-    assert _get_histo_count(registry, "tasks_wait_seconds") == 1
-    assert _get_histo_count(registry, "tasks_duration_seconds") == 1
+    recorder.on_task_end("task1", TaskType.ARCHIVE, TaskStatus.COMPLETED)
+    assert _get_value(registry, "tasks_running", {"type": "archive"}) == 0
+    assert _get_value(registry, "tasks_pending", {"type": "archive"}) == 0
+    assert _get_histo_count(registry, "tasks_wait_seconds", {"type": "archive"}) == 1
+    assert _get_histo_count(registry, "tasks_duration_seconds", {"type": "archive", "status": "completed"}) == 1
 
 
 def test_db_connection_metrics():
