@@ -54,12 +54,14 @@ def app_and_services(tmp_path: Path) -> Iterable[tuple[FastAPI, Services]]:
 
     # Prepare the directories used by the repos
     matrix_dir = tmp_path / "matrix_store"
+    blob_dir = tmp_path / "blob_store"
     archive_dir = tmp_path / "archive_dir"
     tmp_dir = tmp_path / "tmp"
     default_workspace = tmp_path / "internal_workspace"
     ext_workspace_path = tmp_path / "ext_workspace"
 
     matrix_dir.mkdir()
+    blob_dir.mkdir()
     archive_dir.mkdir()
     tmp_dir.mkdir()
     default_workspace.mkdir()
@@ -84,6 +86,7 @@ def app_and_services(tmp_path: Path) -> Iterable[tuple[FastAPI, Services]]:
                 default_workspace_path=str(default_workspace),
                 ext_workspace_path=str(ext_workspace_path),
                 matrix_dir=str(matrix_dir),
+                blob_dir=str(blob_dir),
                 archive_dir=str(archive_dir),
                 tmp_dir=str(tmp_dir),
                 launcher_mock=ASSETS_DIR / launcher_name,
