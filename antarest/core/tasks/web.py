@@ -89,7 +89,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
 
     @bp.put("/tasks/{task_id}/cancel", tags=[APITag.tasks])
     def cancel_task(task_id: str) -> Any:
-        return service.cancel_task(task_id, dispatch=True)
+        return service.cancel_task(task_id)
 
     @bp.get(
         "/tasks/{task_id}/progress",

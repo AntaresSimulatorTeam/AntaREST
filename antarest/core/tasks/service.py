@@ -344,30 +344,24 @@ class TaskJobService(ITaskService):
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
         async def task_event_callback(event: Event) -> None:
-            self._cancel_task(str(event.payload), dispatch=False)
+            self._do_cancel_task(str(event.payload))
 
         return task_event_callback
 
-    def cancel_task(self, task_id: str, dispatch: bool = False) -> None:
+    def cancel_task(self, task_id: str) -> None:
         task = self.repo.get_or_raise(task_id)
         user = require_current_user()
         if user.is_site_admin() or task.owner_id == user.impersonator:
-            self._cancel_task(task_id, dispatch)
+            # Since the task may be executed in another worker,
+            # we need to send a request to cancel it.
+            self._request_cancel(task_id)
         else:
             raise UserHasNotPermissionError()
 
-    def _cancel_task(self, task_id: str, dispatch: bool = False) -> None:
-        task = self.repo.get_or_raise(task_id)
+    def _request_cancel(self, task_id: str) -> None:
         if task_id in self.tasks:
-            cancelled = self.tasks[task_id].cancel()
-            task.status = TaskStatus.CANCELLED.value
-            self.repo.save(task)
-            # Only notifying listeners when the task is actually cancelled,
-            # otherwise the listeners will be notified again when the task is done.
-            if cancelled:
-                for listener in self._listeners:
-                    listener.on_task_cancel(task.id, task.get_type())
-        elif dispatch:
+            self._do_cancel_task(task_id)
+        else:
             self.event_bus.push(
                 Event(
                     type=EventType.TASK_CANCEL_REQUEST,
@@ -376,6 +370,17 @@ class TaskJobService(ITaskService):
                     permissions=PermissionInfo(public_mode=PublicMode.NONE),
                 )
             )
+
+    def _do_cancel_task(self, task_id: str) -> None:
+        task = self.repo.get_or_raise(task_id)
+        if task_id in self.tasks:
+            cancelled = self.tasks[task_id].cancel()
+            # Only udpating status when the task is actually cancelled.
+            if cancelled:
+                task.status = TaskStatus.CANCELLED.value
+                self.repo.save(task)
+                for listener in self._listeners:
+                    listener.on_task_cancel(task.id, task.get_type())
 
     @override
     def status_task(

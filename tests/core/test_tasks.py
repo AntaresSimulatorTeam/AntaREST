@@ -267,7 +267,7 @@ def test_repository() -> None:
 
 
 @with_db_context
-def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
+def test_cancel_dispatches_request_to_event_bus(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
     # Create a TaskJobService and add tasks
     task_job_repo = TaskJobRepository()
     task_job_repo.save(TaskJob(id="a", name="foo"))
@@ -282,13 +282,10 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
     # The event_bus fixture is actually a EventBusService with LocalEventBus backend
     backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
 
-    # Test Case: cancel a task that is not in the service tasks map
-    # =============================================================
-
     backend.clear_events()
 
     with current_user_context(admin_user):
-        service.cancel_task("b", dispatch=True)
+        service.cancel_task("b")
 
     collected_events = backend.get_events()
 
@@ -297,15 +294,53 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
     assert collected_events[0].payload == "b"
     assert collected_events[0].permissions == PermissionInfo(public_mode=PublicMode.NONE)
 
-    # Test Case: cancel a task that is in the service tasks map
-    # =========================================================
 
-    service.tasks["a"] = Mock(cancel=Mock(return_value=None))
+@with_db_context
+def test_cancel_started_task_should_not_update_status(
+    core_config: Config, event_bus: IEventBus, admin_user: JWTUser
+) -> None:
+    # Create a TaskJobService and add tasks
+    task_job_repo = TaskJobRepository()
+    task_job_repo.save(TaskJob(id="not-cancelled", name="not-cancelled", status=TaskStatus.RUNNING.value))
+
+    # Create a TaskJobService
+    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+
+    # The event_bus fixture is actually a EventBusService with LocalEventBus backend
+    backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
+
+    service.tasks["not-cancelled"] = Mock(cancel=Mock(return_value=False))
 
     backend.clear_events()
 
     with current_user_context(admin_user):
-        service.cancel_task("a", dispatch=True)
+        service.cancel_task("not-cancelled")
+
+    collected_events = backend.get_events()
+    assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
+    task_not_cancelled = task_job_repo.get("not-cancelled")
+    assert task_not_cancelled is not None
+    assert task_not_cancelled.status == TaskStatus.RUNNING.value
+
+
+@with_db_context
+def test_cancel_not_started_task_should_update_status(
+    core_config: Config, event_bus: IEventBus, admin_user: JWTUser
+) -> None:
+    # Create a TaskJobService and add tasks
+    task_job_repo = TaskJobRepository()
+    task_job_repo.save(TaskJob(id="a", name="foo"))
+
+    # Create a TaskJobService
+    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+    # The event_bus fixture is actually a EventBusService with LocalEventBus backend
+    backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
+
+    # mock successful cancel
+    service.tasks["a"] = Mock(cancel=Mock(return_value=True))
+
+    with current_user_context(admin_user):
+        service.cancel_task("a")
 
     collected_events = backend.get_events()
     assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
