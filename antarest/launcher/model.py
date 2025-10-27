@@ -560,11 +560,16 @@ def apply_update_solver_presets(
     solver_presets: SolverPresetsModel,
     solver_presets_update: SolverPresetsUpdate,
 ) -> SolverPresetsModel:
-    return SolverPresetsModel.from_dto(
-        SolverPresetsDTO.model_validate(
-            {**solver_presets.to_dto().model_dump(), **solver_presets_update.model_dump(exclude_none=True)}
-        )
-    )
+    # Merge existing DTO with update DTO
+    current_dto_dict = solver_presets.to_dto().model_dump()
+    update_dict = solver_presets_update.model_dump(exclude_none=True)
+    merged_dict = {**current_dto_dict, **update_dict}
+
+    # Validate the merged data
+    updated_dto = SolverPresetsDTO.model_validate(merged_dict)
+
+    # turn back to model
+    return SolverPresetsModel.from_dto(updated_dto)
 
 
 def is_version_covered_by_config(
