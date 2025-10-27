@@ -160,17 +160,43 @@ class TaskLogAndProgressRecorder(ITaskNotifier):
 
 
 class TaskServiceListener(ABC):
+    """
+    Allows to observe tasks lifecycle.
+
+    There are 2 alternative flows of operation:
+
+     - the standard flow is submit -> start -> end.
+     - If a task is cancelled before it starts executing, the flow will be
+       submit -> cancel.
+    """
+
     @abstractmethod
     def on_task_submit(self, task_id: str, task_type: TaskType) -> None:
-        pass
+        """
+        Called as soon as a new task has been submitted for execution.
+        """
 
     @abstractmethod
     def on_task_start(self, task_id: str, task_type: TaskType) -> None:
-        pass
+        """
+        Called when a task is actually started.
+
+        At that point, it is guaranteed that:
+          - the listener will also be notified of the end of the task
+          - the task cannot be cancelled anymore
+        """
+
+    @abstractmethod
+    def on_task_cancel(self, task_id: str, task_type: TaskType) -> None:
+        """
+        Called when a task is actually cancelled, which means it has not started.
+        """
 
     @abstractmethod
     def on_task_end(self, task_id: str, task_type: TaskType, task_status: TaskStatus) -> None:
-        pass
+        """
+        Called when a started task completes, either successfully or not.
+        """
 
 
 class TaskJobService(ITaskService):
@@ -334,11 +360,13 @@ class TaskJobService(ITaskService):
         task = self.repo.get_or_raise(task_id)
         if task_id in self.tasks:
             cancelled = self.tasks[task_id].cancel()
+            task.status = TaskStatus.CANCELLED.value
+            self.repo.save(task)
+            # Only notifying listeners when the task is actually cancelled,
+            # otherwise the listeners will be notified again when the task is done.
             if cancelled:
-                task.status = TaskStatus.CANCELLED.value
-                self.repo.save(task)
                 for listener in self._listeners:
-                    listener.on_task_end(task.id, task.get_type(), TaskStatus.CANCELLED)
+                    listener.on_task_cancel(task.id, task.get_type())
         elif dispatch:
             self.event_bus.push(
                 Event(

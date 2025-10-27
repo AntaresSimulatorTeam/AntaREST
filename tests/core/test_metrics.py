@@ -94,6 +94,24 @@ def test_task_metrics_recorder():
     assert _get_histo_count(registry, "tasks_duration_seconds", {"type": "archive", "status": "completed"}) == 1
 
 
+def test_cancelled_task_metrics():
+    registry = CollectorRegistry()
+    recorder = TasksMetricsRecorder(registry)
+
+    recorder.on_task_submit("task1", TaskType.ARCHIVE)
+    assert _get_value(registry, "tasks_running", {"type": "archive"}) is None
+    assert _get_value(registry, "tasks_pending", {"type": "archive"}) == 1
+    assert _get_histo_count(registry, "tasks_wait_seconds", {"type": "archive"}) is None
+    assert _get_histo_count(registry, "tasks_duration_seconds", {"type": "archive"}) is None
+
+    recorder.on_task_cancel("task1", TaskType.ARCHIVE)
+    assert _get_value(registry, "tasks_running", {"type": "archive"}) is None
+    assert _get_value(registry, "tasks_pending", {"type": "archive"}) == 0
+    assert _get_histo_count(registry, "tasks_wait_seconds", {"type": "archive"}) == 1
+    # We get one observation for cancelled tasks.
+    assert _get_histo_count(registry, "tasks_duration_seconds", {"type": "archive", "status": "cancelled"}) == 1
+
+
 def test_db_connection_metrics():
     engine = create_engine("sqlite:///:memory:")
 

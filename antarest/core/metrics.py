@@ -303,6 +303,18 @@ class TasksMetricsRecorder(TaskServiceListener):
         self._submit_times[task_id] = time.time()
 
     @override
+    def on_task_cancel(self, task_id: str, task_type: TaskType) -> None:
+        labels = _task_labels(task_type)
+        if task_id in self._submit_times:
+            self._pending_gauge.labels(*labels).dec()
+            self._wait_time_histo.labels(*labels).observe(time.time() - self._submit_times[task_id])
+            del self._submit_times[task_id]
+
+            # Adding one observation to duration histo as well, so that we can get stats
+            # on actually cancelled tasks
+            self._duration_histo.labels(*_task_labels(task_type, TaskStatus.CANCELLED)).observe(0)
+
+    @override
     def on_task_start(self, task_id: str, task_type: TaskType) -> None:
         labels = _task_labels(task_type)
         self._pending_gauge.labels(*labels).dec()
