@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from pathlib import Path
 
 from starlette.testclient import TestClient
 
@@ -22,7 +21,7 @@ from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_
 ASSETS_DIR = assets_dir / "output_variables_list"
 
 
-def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path):
+def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     # Checks the endpoint works correctly
@@ -39,3 +38,61 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
         assert db_content.output_id == output_id
         assert db_content.variables_list_version == 1
         assert db_content.to_model().model_dump(by_alias=True) == expected_content
+
+
+def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_token: str, internal_study_id: str):
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    output_id = "20201014-1425eco-goodbye"
+    res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/variables")
+    expected_result = {
+        "area": [
+            "AVL DTG",
+            "BALANCE",
+            "CO2 EMIS.",
+            "COAL",
+            "DTG MRG",
+            "GAS",
+            "H. COST",
+            "H. INFL",
+            "H. LEV",
+            "H. OVFL",
+            "H. PUMP",
+            "H. ROR",
+            "H. STOR",
+            "H. VAL",
+            "LIGNITE",
+            "LOAD",
+            "LOLD",
+            "LOLP",
+            "MAX MRG",
+            "MISC. DTG",
+            "MISC. NDG",
+            "MIX. FUEL",
+            "MRG. PRICE",
+            "NODU",
+            "NP COST",
+            "NUCLEAR",
+            "OIL",
+            "OP. COST",
+            "OV. COST",
+            "PSP",
+            "ROW BAL.",
+            "SOLAR",
+            "SPIL. ENRG",
+            "UNSP. ENRG",
+            "WIND",
+        ],
+        "link": [
+            "CONG. FEE (ABS.)",
+            "CONG. FEE (ALG.)",
+            "CONG. PROB +",
+            "CONG. PROB -",
+            "FLOW LIN.",
+            "FLOW QUAD.",
+            "HURDLE COST",
+            "LOOP FLOW",
+            "MARG. COST",
+            "UCAP LIN.",
+        ],
+    }
+    assert res.json() == expected_result

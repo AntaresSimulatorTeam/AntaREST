@@ -180,6 +180,11 @@ class TaskJob(Base):
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
     study: Mapped["Study"] = relationship("Study", back_populates="jobs", uselist=False)
 
+    def get_type(self) -> TaskType:
+        if not self.type:
+            raise ValueError("Task type is not set")
+        return TaskType(self.type)
+
     def to_dto(self, with_logs: bool = False) -> TaskDTO:
         result = None
         if self.completion_date:
