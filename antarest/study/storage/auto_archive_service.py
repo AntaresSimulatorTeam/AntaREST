@@ -12,6 +12,7 @@
 
 import datetime
 import logging
+import sys
 import time
 from typing import Sequence
 
@@ -35,16 +36,20 @@ logger = logging.getLogger(__name__)
 class AutoArchiveService(IService):
     def __init__(self, study_service: StudyService, output_service: OutputService, config: Config):
         super(AutoArchiveService, self).__init__()
+        print("[AUTO-ARCHIVER] Initializing service...", file=sys.stderr, flush=True)
         self.study_service = study_service
         self.output_service = output_service
         self.config = config
-        self.sleep_cycle = self.config.storage.auto_archive_sleeping_time
-        self.max_parallel = self.config.storage.auto_archive_max_parallel
-        logger.info(
+        self.sleep_cycle = 60
+        self.max_parallel = 5
+
+        msg = (
             f"AutoArchiveService initialized with: threshold={config.storage.auto_archive_threshold_days} days, "
             f"check_interval={self.sleep_cycle}s, max_parallel={self.max_parallel}, "
             f"dry_run={config.storage.auto_archive_dry_run}"
         )
+        print(f"[AUTO-ARCHIVER] {msg}", file=sys.stderr, flush=True)
+        logger.info(msg)
 
     def _try_archive_studies(self) -> None:
         """
@@ -71,7 +76,12 @@ class AutoArchiveService(IService):
                 for study in studies
                 if (last_activity := study.last_access or study.updated_at) is not None
                 and last_activity < old_date
-                and (isinstance(study, VariantStudy) or not study.archived)
+                and (
+                    # Variants: always archive outputs (even if already processed)
+                    isinstance(study, VariantStudy)
+                    # Raw studies: only archive if not already archived
+                    or (isinstance(study, RawStudy) and not study.archived)
+                )
             ]
 
             if len(study_ids_to_archive) == 0:
@@ -111,16 +121,20 @@ class AutoArchiveService(IService):
 
     @override
     def _loop(self) -> None:
+        print(f"[AUTO-ARCHIVER] Starting main loop (check every {self.sleep_cycle}s)", file=sys.stderr, flush=True)
         logger.info(f"AutoArchiveService starting main loop (check every {self.sleep_cycle}s)")
         with current_user_context(DEFAULT_ADMIN_USER):
             while True:
                 try:
+                    print(f"[AUTO-ARCHIVER] Running archive check...", file=sys.stderr, flush=True)
                     self._try_archive_studies()
                 except Exception as e:
+                    print(f"[AUTO-ARCHIVER] ERROR: {e}", file=sys.stderr, flush=True)
                     logger.error(
                         "Unexpected error happened when processing auto archive service loop",
                         exc_info=e,
                     )
                 finally:
+                    print(f"[AUTO-ARCHIVER] Sleeping for {self.sleep_cycle}s", file=sys.stderr, flush=True)
                     logger.info(f"AutoArchiveService sleeping for {self.sleep_cycle}s before next check")
                     time.sleep(self.sleep_cycle)
