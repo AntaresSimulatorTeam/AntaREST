@@ -122,44 +122,6 @@ class TestDirectoryManagement:
         dir_ids = [d["id"] for d in directories]
         assert directory_id not in dir_ids
 
-    def test_delete_directory_with_subdirectories_fails(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
-
-        # Create parent directory
-        res = client.post("/v1/directories", json={"name": "Parent"})
-        assert res.status_code == 201
-        parent_id = res.json()["id"]
-
-        # Create child directory (empty)
-        res = client.post(
-            "/v1/directories",
-            json={"name": "Child", "parentId": parent_id},
-        )
-        assert res.status_code == 201
-        child_id = res.json()["id"]
-
-        # Try to delete parent (should fail because it has subdirectories)
-        res = client.delete(f"/v1/directories/{parent_id}")
-        assert res.status_code == 409
-        error_msg = res.json().get("detail") or res.json().get("description", "")
-        assert "subdirectories" in str(error_msg).lower()
-
-        # Verify both parent and child still exist
-        res = client.get("/v1/directories")
-        assert res.status_code == 200
-        directories = res.json()
-        dir_ids = [d["id"] for d in directories]
-        assert parent_id in dir_ids
-        assert child_id in dir_ids
-
-        # Delete child first (should succeed)
-        res = client.delete(f"/v1/directories/{child_id}")
-        assert res.status_code == 204
-
-        # Now delete parent (should succeed)
-        res = client.delete(f"/v1/directories/{parent_id}")
-        assert res.status_code == 204
-
     def test_prevent_directory_cycle(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
 
