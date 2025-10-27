@@ -115,19 +115,13 @@ class DirectoryService:
         directory_id: str,
     ) -> None:
         """
-        Delete a directory only if it is completely empty (no studies and no subdirectories).
+        Delete a directory only if it contains no studies (even in subdirectories).
         """
-        directory = self.repository.get_by_id(directory_id)
-        if directory is None:
+        if not self.repository.exists_by_id(directory_id):
             raise DirectoryNotFoundError(directory_id)
 
-        # Check if directory contains studies
-        if self._has_studies(directory_id):
+        if self.repository.count_studies_in_tree(directory_id) > 0:
             raise DirectoryNotEmptyError("Cannot delete directory: it contains studies.")
-
-        # Check if directory contains subdirectories
-        if self.repository.has_children_directories(directory_id):
-            raise DirectoryNotEmptyError("Cannot delete directory: it contains subdirectories.")
 
         # Delete the directory
         self.repository.delete(directory_id)
@@ -211,8 +205,6 @@ class DirectoryService:
         Raises:
             UserHasNotPermissionError: If user doesn't have permission on any study
         """
-
-        # Check all studies in the tree
         studies = self.repository.get_all_studies_in_tree(directory_id)
         for study in studies:
             assert_permission(study, StudyPermissionType.WRITE)

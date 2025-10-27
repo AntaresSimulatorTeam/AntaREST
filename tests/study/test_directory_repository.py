@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from antarest.login.model import Identity
 from antarest.study.model import Directory
 from antarest.study.repository import DirectoryRepository
+from tests.helpers import create_raw_study
 
 
 @pytest.fixture
@@ -250,3 +251,108 @@ class TestDirectoryRepository:
         # Count studies (should be 0 initially)
         count = directory_repo.count_studies(directory.id)
         assert count == 0
+
+    def test_exists_by_id(self, directory_repo: DirectoryRepository, db_session: Session, test_user: Identity) -> None:
+        """
+        Test checking if directory exists by ID.
+        """
+        # Create directory
+        directory = Directory(
+            id=str(uuid.uuid4()),
+            name="Test Directory",
+            parent_id=None,
+        )
+        directory_repo.save(directory)
+
+        # Should exist
+        assert directory_repo.exists_by_id(directory.id)
+
+        # Should not exist for random ID
+        assert not directory_repo.exists_by_id(str(uuid.uuid4()))
+
+        # Delete and verify it no longer exists
+        directory_repo.delete(directory.id)
+        assert not directory_repo.exists_by_id(directory.id)
+
+    def test_count_studies_in_tree(
+        self, directory_repo: DirectoryRepository, db_session: Session, test_user: Identity
+    ) -> None:
+        """
+        Test counting studies in a directory tree (including subdirectories).
+        """
+        # Create directory hierarchy: parent -> child1, child2 -> grandchild
+        parent = Directory(
+            id=str(uuid.uuid4()),
+            name="Parent",
+            parent_id=None,
+        )
+        directory_repo.save(parent)
+
+        child1 = Directory(
+            id=str(uuid.uuid4()),
+            name="Child1",
+            parent_id=parent.id,
+        )
+        directory_repo.save(child1)
+
+        child2 = Directory(
+            id=str(uuid.uuid4()),
+            name="Child2",
+            parent_id=parent.id,
+        )
+        directory_repo.save(child2)
+
+        grandchild = Directory(
+            id=str(uuid.uuid4()),
+            name="Grandchild",
+            parent_id=child2.id,
+        )
+        directory_repo.save(grandchild)
+
+        # Initially no studies
+        assert directory_repo.count_studies_in_tree(parent.id) == 0
+
+        # Add study to parent
+        study1 = create_raw_study(id=str(uuid.uuid4()), name="Study1", directory_id=parent.id, owner=test_user)
+        db_session.add(study1)
+        db_session.commit()
+
+        # Should count 1 study
+        assert directory_repo.count_studies_in_tree(parent.id) == 1
+
+        # Add study to child1
+        study2 = create_raw_study(id=str(uuid.uuid4()), name="Study2", directory_id=child1.id, owner=test_user)
+        db_session.add(study2)
+        db_session.commit()
+
+        # Should count 2 studies (parent + child1)
+        assert directory_repo.count_studies_in_tree(parent.id) == 2
+
+        # Add study to grandchild
+        study3 = create_raw_study(id=str(uuid.uuid4()), name="Study3", directory_id=grandchild.id, owner=test_user)
+        db_session.add(study3)
+        db_session.commit()
+
+        # Should count 3 studies (parent + child1 + grandchild)
+        assert directory_repo.count_studies_in_tree(parent.id) == 3
+
+        # Count from child2 should only include grandchild
+        assert directory_repo.count_studies_in_tree(child2.id) == 1
+
+        # Count from child1 should only include itself
+        assert directory_repo.count_studies_in_tree(child1.id) == 1
+
+    def test_count_studies_in_tree_empty(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
+        """
+        Test counting studies in an empty directory tree.
+        """
+        # Create directory with no children and no studies
+        directory = Directory(
+            id=str(uuid.uuid4()),
+            name="Empty Directory",
+            parent_id=None,
+        )
+        directory_repo.save(directory)
+
+        # Should count 0 studies
+        assert directory_repo.count_studies_in_tree(directory.id) == 0

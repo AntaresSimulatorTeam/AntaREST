@@ -533,6 +533,10 @@ class DirectoryRepository:
         stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
         return bool(self.session.scalar(stmt))
 
+    def exists_by_id(self, directory_id: str) -> bool:
+        stmt = select(exists(select(Directory).where(Directory.id == directory_id)))
+        return bool(self.session.scalar(stmt))
+
     def get_children_directories(self, directory_id: str) -> Sequence[Directory]:
         stmt = select(Directory).where(Directory.parent_id == directory_id)
         result = self.session.execute(stmt)
@@ -565,3 +569,11 @@ class DirectoryRepository:
         )
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
+
+    def count_studies_in_tree(self, directory_id: str) -> int:
+        all_directory_ids = [directory_id]
+        descendants = self.get_all_descendant_directories(directory_id)
+        all_directory_ids.extend([d.id for d in descendants])
+
+        stmt = select(func.count(Study.id)).where(Study.directory_id.in_(all_directory_ids))
+        return int(self.session.scalar(stmt))

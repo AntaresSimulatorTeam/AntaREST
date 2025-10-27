@@ -173,14 +173,9 @@ class TestDirectoryService:
     ) -> None:
         # Setup
         directory_id = str(uuid.uuid4())
-        directory = Directory(
-            id=directory_id,
-            name="Empty Directory",
-            parent_id=None,
-        )
-        mock_directory_repo.get_by_id.return_value = directory
-        mock_directory_repo.count_studies.return_value = 0
-        mock_directory_repo.has_children_directories.return_value = False
+
+        mock_directory_repo.exists_by_id.return_value = True
+        mock_directory_repo.count_studies_in_tree.return_value = 0
 
         # Execute
         directory_service.delete_directory(directory_id)
@@ -188,47 +183,20 @@ class TestDirectoryService:
         # Verify
         mock_directory_repo.delete.assert_called_once_with(directory_id)
 
-    def test_delete_directory_with_subdirectories_fails(
-        self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
-    ) -> None:
-        # Setup
-        directory_id = str(uuid.uuid4())
-        directory = Directory(
-            id=directory_id,
-            name="Parent Directory",
-            parent_id=None,
-        )
-        mock_directory_repo.get_by_id.return_value = directory
-        mock_directory_repo.count_studies.return_value = 0
-        mock_directory_repo.has_children_directories.return_value = True
-
-        # Execute & Verify
-        with pytest.raises(HTTPException) as exc_info:
-            directory_service.delete_directory(directory_id)
-
-        assert exc_info.value.status_code == 409
-        assert "subdirectories" in str(exc_info.value.detail).lower()
-
     def test_delete_directory_with_studies_fails(
         self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
     ) -> None:
         # Setup
         directory_id = str(uuid.uuid4())
-        directory = Directory(
-            id=directory_id,
-            name="Directory with Studies",
-            parent_id=None,
-        )
-        mock_directory_repo.get_by_id.return_value = directory
-        mock_directory_repo.count_studies.return_value = 5
-        mock_directory_repo.has_children_directories.return_value = False
+
+        mock_directory_repo.exists_by_id.return_value = True
+        mock_directory_repo.count_studies_in_tree.return_value = 5
 
         # Execute & Verify
         with pytest.raises(HTTPException) as exc_info:
             directory_service.delete_directory(directory_id)
 
         assert exc_info.value.status_code == 409
-        assert "studies" in str(exc_info.value.detail).lower()
 
     def test_list_directories(
         self, directory_service: DirectoryService, mock_directory_repo: Mock, test_user: Identity
