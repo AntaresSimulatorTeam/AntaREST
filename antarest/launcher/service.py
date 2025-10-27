@@ -23,7 +23,7 @@ from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
 from antarest.core.config import Config, InvalidConfigurationError
-from antarest.core.exceptions import BadSolverPresetsInput, StudyNotFoundError
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
@@ -50,6 +50,7 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
     LogType,
+    SolverPresetsCreation,
     SolverPresetsDTO,
     SolverPresetsModel,
     SolverPresetsUpdate,
@@ -687,15 +688,16 @@ class LauncherService:
         }
         return launch_progress_json.get("progress", 0)
 
-    def create_solver_presets(self, solver_presets_creation: SolverPresetsDTO) -> SolverPresetsDTO:
+    def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresetsDTO:
         """
         Create a new solver presets.
         """
         with db():
-            if solver_presets_creation.id and self.solver_presets_repository.exists(solver_presets_creation.id):
-                raise BadSolverPresetsInput(f"A solver presets with id '{solver_presets_creation.id}' already exists.")
-            solver_presets_creation.id = str(uuid4())
-            solver_presets = SolverPresetsModel.from_dto(solver_presets_creation)  # validate dto
+            solver_presets_id = str(uuid4())
+            solver_presets_dto = SolverPresetsDTO.model_validate(
+                {**solver_presets_creation.model_dump(exclude_unset=True), "id": solver_presets_id}
+            )
+            solver_presets = SolverPresetsModel.from_dto(solver_presets_dto)
             config = self.solver_presets_repository.save(solver_presets)
             return config.to_dto()
 

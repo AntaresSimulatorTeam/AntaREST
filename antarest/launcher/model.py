@@ -339,7 +339,7 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
 
 
 class SolverPresetsDTO(AntaresBaseModel):
-    id: Optional[str] = None
+    id: str
     name: ItemName
     linear_solver: str
     min_antares_version: Optional[SolverVersion] = None
@@ -432,6 +432,18 @@ class SolverPresetsDTO(AntaresBaseModel):
             options.append(f'param-optim2="{combined2}"')
 
         return " ".join(options)
+
+
+class SolverPresetsCreation(AntaresBaseModel):
+    name: ItemName
+    linear_solver: str
+    min_antares_version: Optional[SolverVersion] = None
+    max_antares_version: Optional[SolverVersion] = None
+    linear_solver_param_optim_1: Optional[SolverParams] = None
+    linear_solver_param_optim_2: Optional[SolverParams] = None
+    linear_solver_param: Optional[SolverParams] = None
+    use_optim_1_basis_next_week: Optional[bool] = None
+    use_optim_1_basis_optim_2: Optional[bool] = None
 
 
 class SolverPresetsUpdate(AntaresBaseModel):
