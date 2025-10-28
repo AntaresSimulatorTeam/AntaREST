@@ -304,12 +304,6 @@ default:
 - **Default value:** 60
 - **Description:** Number of days after the last study access date before it should be archived.
 
-## **auto_archive_max_parallel**
-
-- **Type:** Integer
-- **Default value:** 5
-- **Description:** Max auto archival tasks in parallel.
-
 ## **snapshot_retention_days**
 
 - **Type:** Integer

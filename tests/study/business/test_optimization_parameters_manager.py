@@ -11,7 +11,10 @@
 # This file is part of the Antares project.
 
 
-from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.optimization_config_model import (
+    OptimizationPreferences,
+    TransmissionCapacities,
+)
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -28,3 +31,15 @@ def test_missing_section(empty_study_880: FileStudy, command_context: CommandCon
     manager = OptimizationManager(command_context)
     params = manager.get_optimization_preferences(FileStudyInterface(study))
     assert params == OptimizationPreferences()
+
+
+def test_section_not_in_lowercase(empty_study_880: FileStudy, command_context: CommandContext) -> None:
+    # Rewrite the section not in lowercase
+    study = empty_study_880
+    general_data_content = study.tree.get(["settings", "generaldata"])
+    general_data_content["OPtimizaTION"] = general_data_content.pop("optimization")
+    study.tree.save(general_data_content, ["settings", "generaldata"])
+    # Ensures we're still able to read the data.
+    manager = OptimizationManager(command_context)
+    params = manager.get_optimization_preferences(FileStudyInterface(study))
+    assert params == OptimizationPreferences(transmission_capacities=TransmissionCapacities.LOCAL_VALUES)
