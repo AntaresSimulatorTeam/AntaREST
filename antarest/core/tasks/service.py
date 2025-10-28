@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import datetime
 import logging
 import time
@@ -50,6 +49,11 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
 """Default timeout for `await_task` in seconds."""
+
+
+class TaskNotFoundError(HTTPException):
+    def __init__(self, detail: str):
+        super().__init__(status_code=HTTPStatus.NOT_FOUND, detail=detail)
 
 
 class ITaskNotifier(ABC):
@@ -95,6 +99,12 @@ class ITaskService(ABC):
         task_id: str,
         with_logs: bool = False,
     ) -> TaskDTO:
+        """
+        Retrieves information about a task.
+
+        Raise:
+            TaskNotFoundError: if the task is not found in the database.
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -103,6 +113,12 @@ class ITaskService(ABC):
 
     @abstractmethod
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+        """
+        Waits for the completion of task for the specified time.
+
+        Raises:
+            TimeoutError: if the task is not completed before the timeout
+        """
         raise NotImplementedError()
 
 
@@ -394,10 +410,7 @@ class TaskJobService(ITaskService):
         if task := self.repo.get(task_id):
             return task.to_dto(with_logs)
         else:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail=f"Failed to retrieve task {task_id} in db",
-            )
+            raise TaskNotFoundError(detail=f"Failed to retrieve task {task_id} in db")
 
     @override
     def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
@@ -415,6 +428,10 @@ class TaskJobService(ITaskService):
                 logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
                 self.tasks[task_id].result(timeout_sec)
                 logger.info(f"📌 Task '{task_id}' done.")
+            except TimeoutError as timeout_exc:
+                error_msg = f"Timeout while awaiting task '{task_id}'"
+                logger.warning(error_msg)
+                raise TimeoutError(error_msg) from timeout_exc
             except Exception as exc:
                 logger.critical(f"🤕 Task '{task_id}' failed: {exc}.")
                 raise
@@ -430,8 +447,9 @@ class TaskJobService(ITaskService):
                     return
                 logger.info("💤 Sleeping 2 seconds...")
                 time.sleep(2)
-
-            logger.error(f"Timeout while awaiting task '{task_id}'")
+            error_msg = f"Timeout while awaiting task '{task_id}'"
+            logger.warning(error_msg)
+            raise TimeoutError(error_msg)
 
     def _run_task(
         self,

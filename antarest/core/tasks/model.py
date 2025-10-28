@@ -47,7 +47,7 @@ class TaskStatus(Enum):
     RUNNING = 2
     COMPLETED = 3
     FAILED = 4
-    TIMEOUT = 5
+    TIMEOUT = 5  # Not used anymore, kept for backward compat with tasks save in database.
     CANCELLED = 6
 
     def is_final(self) -> bool:
