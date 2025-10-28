@@ -630,3 +630,71 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
     assert task_list[0].owner != DEFAULT_ADMIN_USER.id
     assert task_list[0].owner == jwt_user.id
     assert task_list[0].result.return_value == str(jwt_user.id)
+
+
+@with_db_context
+def test_get_tasks(core_config: Config, event_bus: IEventBus):
+    # Create a user who has no admin rights
+    regular_user = User(id=99, name="regular")
+    db.session.add(regular_user)
+
+    # Define its token
+    jwt_user = Mock(spec=JWTUser, id=regular_user.id, type="users", impersonator=regular_user.id)
+
+    task_job_repository = TaskJobRepository()
+    task_job_service = TaskJobService(config=core_config, event_bus=event_bus, repository=task_job_repository)
+
+    # Newly created user initialize a task
+    def action_task(notifier: ITaskNotifier) -> TaskResult:
+        notifier.notify_message("start")
+
+        # get current user
+        current_user = get_current_user()
+
+        notifier.notify_message("end")
+        # must set the task 'result' field at regular_user.id
+        return TaskResult(success=True, message="success", return_value=str(current_user.id))
+
+    with current_user_context(jwt_user):
+        task_1 = task_job_service.add_task(
+            action=action_task,
+            name="task_test_2",
+            task_type=TaskType.SCAN,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    task_job_service.await_task(task_1, 10)
+
+    with current_user_context(jwt_user):
+        task_2 = task_job_service.add_task(
+            action=action_task,
+            name="task_test_3",
+            task_type=TaskType.EXPORT,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    task_job_service.await_task(task_2, 10)
+
+    with current_user_context(jwt_user):
+        task_3 = task_job_service.add_task(
+            action=action_task,
+            name="task_test_4",
+            task_type=TaskType.COPY,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    task_job_service.await_task(task_3, 10)
+
+    with current_user_context(jwt_user):
+        task_list = task_job_service.list_tasks(TaskListFilter())
+
+    assert len(task_list) == 3
+    assert task_list[0] == task_job_repository.get(task_1).to_dto()
+    assert task_list[1] == task_job_repository.get(task_2).to_dto()
+    assert task_list[2] == task_job_repository.get(task_3).to_dto()
