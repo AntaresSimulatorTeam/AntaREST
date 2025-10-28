@@ -38,6 +38,12 @@ jobs:
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
         uses: actions/checkout@v4
+      - name: Configure Windows Defender exclusions
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          Add-MpPreference -ExclusionPath "$env:TEMP"
+          Add-MpPreference -ExclusionPath "${{ github.workspace }}"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
