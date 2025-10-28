@@ -391,7 +391,7 @@ class TaskJobService(ITaskService):
         task = self.repo.get_or_raise(task_id)
         if task_id in self.tasks:
             cancelled = self.tasks[task_id].cancel()
-            # Only udpating status when the task is actually cancelled.
+            # Only updating status when the task is actually cancelled.
             if cancelled:
                 logger.info(f"Successfully cancelled task {task_id}")
                 task.status = TaskStatus.CANCELLED.value
