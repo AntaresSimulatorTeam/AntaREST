@@ -53,9 +53,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-      - name: Test with pytest
+      - name: Test with pytest (Linux - all tests)
+        if: matrix.os == 'ubuntu-22.04'
         run: |
-          pytest ${{ matrix.os == 'ubuntu-22.04' && '--cov antarest --cov-report xml' || '' }} -n auto --dist=worksteal
+          pytest --cov antarest --cov-report xml -n auto --dist=worksteal
+      - name: Test with pytest (Windows - unit tests only)
+        if: matrix.os == 'windows-latest'
+        run: |
+          pytest -n auto --dist=worksteal -m "not integration_test"
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
