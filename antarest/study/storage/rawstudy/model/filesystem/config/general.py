@@ -76,8 +76,8 @@ class GeneralFileData(AntaresBaseModel):
 
 
 def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> GeneralConfig:
-    config_data = data.get("general", {})
-    config_data.update(data.get("output", {}))
+    config_data = data["general"]
+    config_data.update(data["output"])
     config = GeneralFileData.model_validate(config_data).to_model()
     validate_general_config_version(config, version)
     initialize_default_values(config, version)

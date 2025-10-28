@@ -164,7 +164,6 @@ class StorageConfig:
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
-    auto_archive_max_parallel: int = 5
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
     blobstore: Path = Path("./blobstore")
@@ -202,7 +201,6 @@ class StorageConfig:
             auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
             auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
-            auto_archive_max_parallel=data.get("auto_archive_max_parallel", defaults.auto_archive_max_parallel),
             snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
             matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
             blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
