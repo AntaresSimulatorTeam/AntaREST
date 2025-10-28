@@ -35,7 +35,7 @@ where = ["."]
 include = ["antarest*"]
 
 [tool.mypy]
-exclude = ["antarest/fastapi_jwt_auth/*", "antarest/desktop/*"]
+exclude = "antarest/fastapi_jwt_auth/*"
 strict = true
 files = "antarest"
 plugins = "pydantic.mypy"
