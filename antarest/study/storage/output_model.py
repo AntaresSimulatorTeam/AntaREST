@@ -84,3 +84,26 @@ class OutputVariables(Base):
             variables_list_version=1,
             variables_list=compressed_content,
         )
+
+
+class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
+    area: list[str]
+    link: list[str]
+
+    @staticmethod
+    def from_variables_list(variables_list: OutputVariablesList) -> "OutputVariablesInformation":
+        args = {}
+
+        # Areas
+        all_area_variables = set()
+        for area in variables_list.mc_ind.areas:
+            all_area_variables.update(area.variables)
+        args["area"] = sorted(all_area_variables)
+
+        # Links
+        all_link_variables = set()
+        for link in variables_list.mc_ind.links:
+            all_link_variables.update(link.variables)
+        args["link"] = sorted(all_link_variables)
+
+        return OutputVariablesInformation.model_validate(args)

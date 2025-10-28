@@ -98,8 +98,8 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
-    assert res.status_code == 417
-    assert res.json()["description"] == "Not a year by year simulation"
+    assert res.status_code == 200
+    assert res.json() == {"area": [], "link": []}
 
     # study synthesis
     res = client.get(
