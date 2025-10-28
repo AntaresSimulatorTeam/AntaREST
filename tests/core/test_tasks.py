@@ -631,6 +631,7 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
     assert task_list[0].owner == jwt_user.id
     assert task_list[0].result.return_value == str(jwt_user.id)
 
+
 @with_db_context
 def test_get_tasks(core_config: Config, event_bus: IEventBus):
     # Create a user who has no admin rights

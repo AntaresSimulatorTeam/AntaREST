@@ -18,7 +18,7 @@ from tests.integration.utils import wait_task_completion
 def test_list_tasks(client: TestClient, user_access_token: str, internal_study_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-    #getting an internal study and doing multiple actions, so we can add tasks on it
+    # getting an internal study and doing multiple actions, so we can add tasks on it
     expected_task_list = []
     actual_task_list = []
 

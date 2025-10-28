@@ -15,7 +15,7 @@ import http
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
