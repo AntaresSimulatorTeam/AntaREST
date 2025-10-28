@@ -15,11 +15,19 @@ import json
 import re
 import typing
 from datetime import datetime
-from typing import Any, Dict, List, MutableMapping, Optional, Tuple
+from typing import Annotated, Any, Dict, List, MutableMapping, Optional, TypeAlias
 from uuid import uuid4
 
 from antares.study.version import SolverVersion
-from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
+from pydantic import (
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 from pydantic.alias_generators import to_camel
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -32,7 +40,16 @@ from antarest.login.model import Identity, UserInfo
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
-SolverParams = List[Tuple[str, str]]
+SolverParams = Dict[str, str]
+
+
+def _format_solver_version(v: SolverVersion) -> str:
+    return f"{v:2d}"
+
+
+SolverVersionStr: TypeAlias = Annotated[
+    SolverVersion, BeforeValidator(SolverVersion.parse), PlainSerializer(_format_solver_version, return_type=str)
+]
 
 ALLOWED_SOLVER_PRESETS_PARAM_PATTERN = re.compile(
     r"^[a-zA-Z0-9_]+$|^\d+\.\d+$"
@@ -339,11 +356,29 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
 
 
 class SolverPresets(AntaresBaseModel):
+    class Config:
+        extra = "forbid"
+
+        @staticmethod
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = SolverPresets(
+                id="preset-001",
+                name="xpress-fast",
+                linear_solver="xpress",
+                min_antares_version=SolverVersion.parse("9.2"),
+                max_antares_version=None,
+                linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
+                linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
+                linear_solver_param={"MAXTIME": "3600"},
+                use_optim_1_basis_next_week=True,
+                use_optim_1_basis_optim_2=True,
+            ).model_dump(mode="json")
+
     id: str
     name: ItemName
     linear_solver: str
-    min_antares_version: Optional[SolverVersion] = None
-    max_antares_version: Optional[SolverVersion] = None
+    min_antares_version: Optional[SolverVersionStr] = None
+    max_antares_version: Optional[SolverVersionStr] = None
     linear_solver_param_optim_1: Optional[SolverParams] = None
     linear_solver_param_optim_2: Optional[SolverParams] = None
     linear_solver_param: Optional[SolverParams] = None
@@ -358,7 +393,7 @@ class SolverPresets(AntaresBaseModel):
     def validate_solver_params(cls, sp: Optional[SolverParams]) -> Optional[SolverParams]:
         if not sp:
             return sp
-        for k, v in sp:
+        for k, v in sp.items():
             if not ALLOWED_SOLVER_PRESETS_PARAM_PATTERN.match(k):
                 raise ValueError(
                     f"Invalid key '{k}' in solver params. Allowed: letters, digits, underscores, and decimal points."
@@ -397,9 +432,11 @@ class SolverPresets(AntaresBaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def other_options(self) -> str:
+    def cli_options(self) -> str:
         """
-        Generate an 'other_options' string. This will be passed to the antares launcher script
+        Generate an 'cli_options' string. This will be passed to the antares launcher script.
+
+        This represents the solver presets in a command-line format.
 
         Example output:
             solver=xpress nobasis1 param-optim1="THREADS 4 PRESOLVE 1" param-optim2="MIPRELSTOP 0.01"
@@ -415,18 +452,18 @@ class SolverPresets(AntaresBaseModel):
             options.append("nobasis2")
 
         # Build per-optim strings
-        def build_param_str(param_list: List[Tuple[str, str]]) -> str:
-            return " ".join(f"{k} {v}" for k, v in param_list)
+        def build_param_str(param_list: Dict[str, str]) -> str:
+            return " ".join(f"{k} {v}" for k, v in param_list.items())
 
         # param-optim1
-        param1 = build_param_str(self.linear_solver_param_optim_1 or [])
-        param_common = build_param_str(self.linear_solver_param or [])
+        param1 = build_param_str(self.linear_solver_param_optim_1 or {})
+        param_common = build_param_str(self.linear_solver_param or {})
         combined1 = f"{param_common} {param1}".strip()
         if combined1:
             options.append(f'param-optim1="{combined1}"')
 
         # param-optim2
-        param2 = build_param_str(self.linear_solver_param_optim_2 or [])
+        param2 = build_param_str(self.linear_solver_param_optim_2 or {})
         combined2 = f"{param_common} {param2}".strip()
         if combined2:
             options.append(f'param-optim2="{combined2}"')
@@ -435,10 +472,27 @@ class SolverPresets(AntaresBaseModel):
 
 
 class SolverPresetsCreation(AntaresBaseModel):
+    class Config:
+        extra = "forbid"
+
+        @staticmethod
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = SolverPresetsCreation(
+                name="xpress-fast",
+                linear_solver="xpress",
+                min_antares_version=SolverVersion.parse("9.2"),
+                max_antares_version=None,
+                linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
+                linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
+                linear_solver_param={"MAXTIME": "3600"},
+                use_optim_1_basis_next_week=True,
+                use_optim_1_basis_optim_2=True,
+            ).model_dump(mode="json")
+
     name: ItemName
     linear_solver: str
-    min_antares_version: Optional[SolverVersion] = None
-    max_antares_version: Optional[SolverVersion] = None
+    min_antares_version: Optional[SolverVersionStr] = None
+    max_antares_version: Optional[SolverVersionStr] = None
     linear_solver_param_optim_1: Optional[SolverParams] = None
     linear_solver_param_optim_2: Optional[SolverParams] = None
     linear_solver_param: Optional[SolverParams] = None
@@ -447,9 +501,25 @@ class SolverPresetsCreation(AntaresBaseModel):
 
 
 class SolverPresetsUpdate(AntaresBaseModel):
+    class Config:
+        extra = "forbid"
+
+        @staticmethod
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = SolverPresetsUpdate(
+                linear_solver="xpress",
+                min_antares_version=SolverVersion.parse("9.2"),
+                max_antares_version=None,
+                linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
+                linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
+                linear_solver_param={"MAXTIME": "3600"},
+                use_optim_1_basis_next_week=True,
+                use_optim_1_basis_optim_2=True,
+            ).model_dump(mode="json")
+
     linear_solver: Optional[str] = None
-    min_antares_version: Optional[SolverVersion] = None
-    max_antares_version: Optional[SolverVersion] = None
+    min_antares_version: Optional[SolverVersionStr] = None
+    max_antares_version: Optional[SolverVersionStr] = None
     linear_solver_param_optim_1: Optional[SolverParams] = None
     linear_solver_param_optim_2: Optional[SolverParams] = None
     linear_solver_param: Optional[SolverParams] = None
@@ -524,9 +594,9 @@ class SolverPresetsDB(Base):
     def from_model(cls, dto: SolverPresets) -> "SolverPresetsDB":
         data = dto.model_dump(exclude_none=True, exclude={"other_options"})
         if dto.min_antares_version is not None:
-            data["min_antares_version"] = f"{dto.min_antares_version:2d}"
+            data["min_antares_version"] = str(dto.min_antares_version)
         if dto.max_antares_version is not None:
-            data["max_antares_version"] = f"{dto.max_antares_version:2d}"
+            data["max_antares_version"] = str(dto.max_antares_version)
         for key in [
             "linear_solver_param_optim_1",
             "linear_solver_param_optim_2",

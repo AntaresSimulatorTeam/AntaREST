@@ -206,7 +206,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return service.get_solver_presets(solver_presets_id)
 
     @bp.get(
-        "/solver-presets/",
+        "/solver-presets",
         tags=[APITag.launcher],
         summary="Retrieve all solver presets",
     )

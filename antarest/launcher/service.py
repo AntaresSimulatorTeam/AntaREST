@@ -258,7 +258,7 @@ class LauncherService:
                 raise IncompatibleSolverPresets("Solver presets are not compatible with study version")
             if launcher_parameters.other_options:
                 raise IncompatibleSolverPresets("Cannot use other_options when solver presets are specified")
-            launcher_parameters.other_options = solver_presets.other_options
+            launcher_parameters.other_options = solver_presets.cli_options
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(

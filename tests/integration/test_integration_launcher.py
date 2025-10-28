@@ -20,10 +20,10 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     payload1 = {
         "name": "test-xpress-config",
         "linear_solver": "xpress",
-        "min_antares_version": {"major": 9, "minor": 2, "patch": 0},
-        "linear_solver_param_optim_1": [["THREADS", "4"], ["PRESOLVE", "1"]],
-        "linear_solver_param_optim_2": [["MIPRELSTOP", "0.01"]],
-        "linear_solver_param": [["DEFAULTALG", "4"]],
+        "min_antares_version": "9.2",
+        "linear_solver_param_optim_1": {"THREADS": "4", "PRESOLVE": "1"},
+        "linear_solver_param_optim_2": {"MIPRELSTOP": "0.01"},
+        "linear_solver_param": {"DEFAULTALG": "4"},
         "use_optim_1_basis_next_week": True,
         "use_optim_1_basis_optim_2": False,
     }
@@ -39,10 +39,10 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert data1["name"] == "test-xpress-config"
     assert data1["linear_solver"] == "xpress"
     assert "id" in data1
-    assert data1["min_antares_version"] == {"major": 9, "minor": 2, "patch": 0}
-    assert data1["linear_solver_param"] == [["DEFAULTALG", "4"]]
-    assert data1["linear_solver_param_optim_1"] == [["THREADS", "4"], ["PRESOLVE", "1"]]
-    assert data1["linear_solver_param_optim_2"] == [["MIPRELSTOP", "0.01"]]
+    assert data1["min_antares_version"] == "9.2"
+    assert data1["linear_solver_param"] == {"DEFAULTALG": "4"}
+    assert data1["linear_solver_param_optim_1"] == {"THREADS": "4", "PRESOLVE": "1"}
+    assert data1["linear_solver_param_optim_2"] == {"MIPRELSTOP": "0.01"}
     assert data1["use_optim_1_basis_optim_2"] is False
 
     # Test creating solver presets with minimal required fields
@@ -69,8 +69,8 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     create_payload3 = {
         "name": "retrieve-test",
         "linear_solver": "coin",
-        "min_antares_version": {"major": 8, "minor": 0, "patch": 0},
-        "linear_solver_param": [["THREADS", "2"]],
+        "min_antares_version": "8.0",
+        "linear_solver_param": {"THREADS": "2"},
     }
 
     create_res3 = client.post(
@@ -91,7 +91,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert data3["id"] == config_id3
     assert data3["name"] == "retrieve-test"
     assert data3["linear_solver"] == "coin"
-    assert data3["linear_solver_param"] == [["THREADS", "2"]]
+    assert data3["linear_solver_param"] == {"THREADS": "2"}
 
     # Test creating solver presets with empty name
     invalid_payload4 = {
@@ -111,8 +111,8 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     invalid_payload5 = {
         "name": "invalidversion",
         "linear_solver": "xpress",
-        "min_antares_version": {"major": 9, "minor": 2, "patch": 0},
-        "max_antares_version": {"major": 9, "minor": 0, "patch": 0},  # max < min
+        "min_antares_version": "9.2",
+        "max_antares_version": "9.0",  # max < min
     }
 
     res5 = client.post(
@@ -127,8 +127,8 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     invalid_payload6 = {
         "name": "invalid-optim-version",
         "linear_solver": "xpress",
-        "min_antares_version": "8.0.0",  # < 9.2
-        "linear_solver_param_optim_1": [["THREADS", "4"]],  # Not allowed for < 9.2
+        "min_antares_version": "8.0",  # < 9.2
+        "linear_solver_param_optim_1": {"THREADS": "4"},  # Not allowed for < 9.2
     }
 
     res6 = client.post(
@@ -154,7 +154,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
 
     # Test updating solver presets
     update_payload8 = {
-        "min_antares_version": {"major": 9, "minor": 3, "patch": 0},
+        "min_antares_version": "9.3",
     }
 
     # Get the ID of minimal-config
@@ -176,12 +176,12 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
 
     assert res8_verify.status_code == 200
     data8_verify = res8_verify.json()
-    assert data8_verify["min_antares_version"] == {"major": 9, "minor": 3, "patch": 0}
+    assert data8_verify["min_antares_version"] == "9.3"
     assert data8_verify["linear_solver"] == "xpress"  # unchanged although not in update payload
 
     # Test that we can't update to version < 9.2 if optim params are defined
     update_payload9 = {
-        "min_antares_version": {"major": 8, "minor": 0, "patch": 0},  # < 9.2
+        "min_antares_version": "8.0",  # < 9.2
     }
 
     res9 = client.put(
@@ -203,7 +203,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     res_run_with_conf = client.post(
         f"/v1/launcher/run/{study_id}",
         headers={"Authorization": f"Bearer {user_access_token}"},
-        params={"solver_presets_id": data1["id"], "version": "9.3.0"},
+        params={"solver_presets_id": data1["id"], "version": "9.3"},
     )
 
     job_id = res_run_with_conf.json()["job_id"]
@@ -222,9 +222,9 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
 
     # Test updating optim params to None/empty when version < 9.2
     update_payload10 = {
-        "min_antares_version": {"major": 8, "minor": 0, "patch": 0},  # < 9.2
-        "linear_solver_param_optim_1": [],  # Override to empty
-        "linear_solver_param_optim_2": [],  # Override to empty
+        "min_antares_version": "8.0",  # < 9.2
+        "linear_solver_param_optim_1": {},  # Override to empty
+        "linear_solver_param_optim_2": {},  # Override to empty
     }
 
     res10 = client.put(
@@ -243,9 +243,9 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
 
     assert res10_verify.status_code == 200
     data10_verify = res10_verify.json()
-    assert data10_verify["min_antares_version"] == {"major": 8, "minor": 0, "patch": 0}
-    assert data10_verify["linear_solver_param_optim_1"] == []
-    assert data10_verify["linear_solver_param_optim_2"] == []
+    assert data10_verify["min_antares_version"] == "8.0"
+    assert data10_verify["linear_solver_param_optim_1"] == {}
+    assert data10_verify["linear_solver_param_optim_2"] == {}
 
     # Test deleting solver presets
     res_delete = client.delete(
@@ -273,7 +273,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
 
     # Test that regular users cannot update configurations (need admin)
     update_payload_user = {
-        "min_antares_version": {"major": 8, "minor": 0, "patch": 0},
+        "min_antares_version": "8.0",
     }
 
     res_update_user = client.put(

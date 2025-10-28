@@ -92,17 +92,17 @@ class JobResultRepository:
 
 
 class SolverPresetsRepository:
-    def save(self, config: SolverPresetsDB) -> SolverPresetsDB:
-        logger.debug(f"Saving SolverPresetsModel {config.id}")
+    def save(self, solver_presets_db: SolverPresetsDB) -> SolverPresetsDB:
+        logger.debug(f"Saving SolverPresetsModel {solver_presets_db.id}")
 
-        stmt = select(SolverPresetsDB).where(SolverPresetsDB.id == config.id)
+        stmt = select(SolverPresetsDB).where(SolverPresetsDB.id == solver_presets_db.id)
         existing_config = db.session.scalar(stmt)
 
         if existing_config:
-            merged_config = db.session.merge(config)
+            merged_config = db.session.merge(solver_presets_db)
         else:
-            db.session.add(config)
-            merged_config = config
+            db.session.add(solver_presets_db)
+            merged_config = solver_presets_db
 
         db.session.commit()
         return merged_config

@@ -1067,8 +1067,8 @@ class TestLauncherService:
         repository = Mock()
         solver_presets_repository = Mock()
 
-        def get_mock_solver_presets(config_id: str):
-            if config_id == "config-1":
+        def get_mock_solver_presets(solver_presets_id: str):
+            if solver_presets_id == "config-1":
                 return SolverPresetsDB.from_model(
                     SolverPresets(
                         id="config-1", name="Config 1", linear_solver="xpress", min_antares_version=SOLVER_VERSION_9_2

@@ -39,26 +39,26 @@ def base_solver_presets():
 
 def test_basic_xpress_solver_only(base_solver_presets):
     solver_presets = SolverPresets(**base_solver_presets)
-    assert solver_presets.other_options == "solver=xpress"
+    assert solver_presets.cli_options == "solver=xpress"
 
 
 def test_xpress_nobasis_flags(base_solver_presets):
     solver_presets = SolverPresets(
         **{**base_solver_presets, "use_optim_1_basis_next_week": False, "use_optim_1_basis_optim_2": False}
     )
-    result = solver_presets.other_options
+    result = solver_presets.cli_options
     # order should be deterministic
     assert result == "solver=xpress nobasis1 nobasis2"
 
 
 def test_xpress_single_nobasis1(base_solver_presets):
     solver_presets = SolverPresets(**{**base_solver_presets, "use_optim_1_basis_next_week": False})
-    assert solver_presets.other_options == "solver=xpress nobasis1"
+    assert solver_presets.cli_options == "solver=xpress nobasis1"
 
 
 def test_xpress_with_common_params(base_solver_presets):
-    solver_presets = SolverPresets(**{**base_solver_presets, "linear_solver_param": [("THREADS", 4), ("FEASTOL", 1)]})
-    result = solver_presets.other_options
+    solver_presets = SolverPresets(**{**base_solver_presets, "linear_solver_param": {"THREADS": 4, "FEASTOL": 1}})
+    result = solver_presets.cli_options
     assert 'param-optim1="THREADS 4 FEASTOL 1"' in result
     assert 'param-optim2="THREADS 4 FEASTOL 1"' in result
 
@@ -67,21 +67,21 @@ def test_xpress_combined_common_and_specific_params(base_solver_presets):
     solver_presets = SolverPresets(
         **{
             **base_solver_presets,
-            "linear_solver_param": [("THREADS", 4)],
-            "linear_solver_param_optim_1": [("PRESOLVE", 1)],
-            "linear_solver_param_optim_2": [("MIPRELSTOP", 0.01)],
+            "linear_solver_param": {"THREADS": 4},
+            "linear_solver_param_optim_1": {"PRESOLVE": 1},
+            "linear_solver_param_optim_2": {"MIPRELSTOP": 0.01},
         }
     )
-    result = solver_presets.other_options
+    result = solver_presets.cli_options
     assert 'param-optim1="THREADS 4 PRESOLVE 1"' in result, "common + optim1 combined"
     assert 'param-optim2="THREADS 4 MIPRELSTOP 0.01"' in result, "common + optim2 combined"
 
 
 def test_presolve_detected_in_optim2_only(base_solver_presets):
     solver_presets = SolverPresets(
-        **{**base_solver_presets, "linear_solver_param_optim_2": [("PRESOLVE", 100), ("THREADS", 2)]}
+        **{**base_solver_presets, "linear_solver_param_optim_2": {"PRESOLVE": 100, "THREADS": 2}}
     )
-    result = solver_presets.other_options
+    result = solver_presets.cli_options
     assert result == 'solver=xpress param-optim2="PRESOLVE 100 THREADS 2"'
 
 
@@ -113,7 +113,7 @@ def test_invalid_key_in_solver_params():
         SolverPresets(
             name="valid",
             linear_solver="xpress",
-            linear_solver_param=[("INVALID-KEY!", "1")],
+            linear_solver_param={"INVALID-KEY!": "1"},
         )
 
 
@@ -122,7 +122,7 @@ def test_invalid_value_in_solver_params():
         SolverPresets(
             name="valid",
             linear_solver="xpress",
-            linear_solver_param=[("KEY", "1.2.3")],
+            linear_solver_param={"KEY": "1.2.3"},
         )
 
 
@@ -133,5 +133,5 @@ def test_optim_params_before_9_2_not_allowed():
             name="valid",
             linear_solver="xpress",
             min_antares_version=SOLVER_VERSION_8_8,
-            linear_solver_param_optim_1=[("PRESOLVE", "1")],
+            linear_solver_param_optim_1={"PRESOLVE": "1"},
         )
