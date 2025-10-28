@@ -19,7 +19,7 @@ jobs:
         with:
           enable-cache: true
       - name: Install dependencies
-        run: uv pip install click
+        run: uv pip install --system click
       - name: Check licenses header
         run: |
           python license_checker_and_adder.py --path=../antarest/ --action=check-strict
