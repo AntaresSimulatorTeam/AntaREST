@@ -13,9 +13,9 @@
 import concurrent.futures
 import http
 import logging
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
@@ -46,7 +46,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         return service.list_tasks(filter)
 
     @bp.get("/tasks", tags=[APITag.tasks])
-    def get_task_list(task_filter: TaskListFilter = Depends()) -> list[TaskDTO]:
+    def get_task_list(task_filter: Annotated[TaskListFilter, Query()]) -> list[TaskDTO]:
         return service.list_tasks(task_filter)
 
     @bp.get("/tasks/{task_id}", tags=[APITag.tasks], response_model=TaskDTO)
