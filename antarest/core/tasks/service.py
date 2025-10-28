@@ -377,10 +377,13 @@ class TaskJobService(ITaskService):
             cancelled = self.tasks[task_id].cancel()
             # Only udpating status when the task is actually cancelled.
             if cancelled:
+                logger.info(f"Successfully cancelled task {task_id}")
                 task.status = TaskStatus.CANCELLED.value
                 self.repo.save(task)
                 for listener in self._listeners:
                     listener.on_task_cancel(task.id, task.get_type())
+            else:
+                logger.info(f"Failed to cancel task {task_id}")
 
     @override
     def status_task(

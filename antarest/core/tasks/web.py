@@ -13,7 +13,8 @@
 import concurrent.futures
 import http
 import logging
-from typing import Any, Optional
+from http import HTTPStatus
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
@@ -42,7 +43,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.post("/tasks", tags=[APITag.tasks])
-    def list_tasks(filter: TaskListFilter) -> Any:
+    def list_tasks(filter: TaskListFilter) -> list[TaskDTO]:
         return service.list_tasks(filter)
 
     @bp.get("/tasks/{task_id}", tags=[APITag.tasks], response_model=TaskDTO)
@@ -87,9 +88,10 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
 
         return service.status_task(sanitized_task_id, with_logs)
 
-    @bp.put("/tasks/{task_id}/cancel", tags=[APITag.tasks])
-    def cancel_task(task_id: str) -> Any:
-        return service.cancel_task(task_id)
+    @bp.put("/tasks/{task_id}/cancel", tags=[APITag.tasks], status_code=HTTPStatus.ACCEPTED)
+    def cancel_task(task_id: str) -> None:
+        logger.info(f"Requesting cancellation for task {task_id}")
+        service.cancel_task(task_id)
 
     @bp.get(
         "/tasks/{task_id}/progress",
