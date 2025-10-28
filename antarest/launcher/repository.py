@@ -16,7 +16,7 @@ from typing import List, Optional
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult
+from antarest.launcher.model import JobResult, SolverPresetsDB
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -87,5 +87,37 @@ class JobResultRepository:
     def delete_by_study_id(self, study_id: str) -> None:
         logger.debug(f"Deleting JobResults from_study {study_id}")
         stmt = delete(JobResult).where(JobResult.study_id == study_id)
+        db.session.execute(stmt)
+        db.session.commit()
+
+
+class SolverPresetsRepository:
+    def save(self, solver_presets_db: SolverPresetsDB) -> SolverPresetsDB:
+        logger.debug(f"Saving SolverPresetsModel {solver_presets_db.id}")
+
+        stmt = select(SolverPresetsDB).where(SolverPresetsDB.id == solver_presets_db.id)
+        existing_config = db.session.scalar(stmt)
+
+        if existing_config:
+            merged_config = db.session.merge(solver_presets_db)
+        else:
+            db.session.add(solver_presets_db)
+            merged_config = solver_presets_db
+
+        db.session.commit()
+        return merged_config
+
+    def get(self, id: str) -> Optional[SolverPresetsDB]:
+        logger.debug(f"Retrieving SolverPresetsModel {id}")
+        return db.session.get(SolverPresetsDB, id)
+
+    def get_all(self) -> List[SolverPresetsDB]:
+        logger.debug("Retrieving all SolverPresetsModel")
+        stmt = select(SolverPresetsDB)
+        return list(db.session.scalars(stmt).all())
+
+    def delete(self, id: str) -> None:
+        logger.debug(f"Deleting SolverPresetsModel {id}")
+        stmt = delete(SolverPresetsDB).where(SolverPresetsDB.id == id)
         db.session.execute(stmt)
         db.session.commit()

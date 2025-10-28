@@ -91,6 +91,16 @@ function Table({ config, type, areaId }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
+  const transformCellValue = useCallback((_location: Item, newValue: unknown) => {
+    // Handle clearing a cell when user deletes content, return empty string to display "rand"
+    if (newValue === undefined) {
+      return ""; // Reset to "rand"
+    }
+
+    // Return undefined to let DataGridForm handle it normally
+    return undefined;
+  }, []);
+
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
     try {
       await updateScenarioBuilderForm({
@@ -123,6 +133,7 @@ function Table({ config, type, areaId }: Props) {
       defaultData={defaultData}
       columns={columns}
       getCellContent={getCellContent}
+      transformCellValue={transformCellValue}
       onSubmit={handleSubmit}
       rowMarkers={{
         kind: "clickable-string",
