@@ -692,32 +692,29 @@ class LauncherService:
         """
         Create a new solver presets.
         """
-        with db():
-            solver_presets_id = str(uuid4())
-            solver_presets = SolverPresets.model_validate(
-                {**solver_presets_creation.model_dump(exclude_unset=True), "id": solver_presets_id}
-            )
-            solver_presets_db = SolverPresetsDB.from_model(solver_presets)
-            created_solver_presets_db = self.solver_presets_repository.save(solver_presets_db)
-            return created_solver_presets_db.to_model()
+        solver_presets_id = str(uuid4())
+        solver_presets = SolverPresets.model_validate(
+            {**solver_presets_creation.model_dump(exclude_unset=True), "id": solver_presets_id}
+        )
+        solver_presets_db = SolverPresetsDB.from_model(solver_presets)
+        created_solver_presets_db = self.solver_presets_repository.save(solver_presets_db)
+        return created_solver_presets_db.to_model()
 
     def get_solver_presets(self, solver_presets_id: str) -> SolverPresets:
         """
         Retrieve a solver presets configuration by its ID.
         """
-        with db():
-            solver_presets_db = self.solver_presets_repository.get(solver_presets_id)
-            if not solver_presets_db:
-                raise SolverPresetsNotFound(f"Solver presets configuration with id '{solver_presets_id}' not found.")
-            return solver_presets_db.to_model()
+        solver_presets_db = self.solver_presets_repository.get(solver_presets_id)
+        if not solver_presets_db:
+            raise SolverPresetsNotFound(f"Solver presets configuration with id '{solver_presets_id}' not found.")
+        return solver_presets_db.to_model()
 
     def get_solver_presets_list(self) -> List[SolverPresets]:
         """
         Retrieve all solver presets.
         """
-        with db():
-            configs = self.solver_presets_repository.get_all()
-            return [config.to_model() for config in configs]
+        configs = self.solver_presets_repository.get_all()
+        return [config.to_model() for config in configs]
 
     def update_solver_presets(self, configuration_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresets:
         """
@@ -727,14 +724,13 @@ class LauncherService:
         if not user.is_site_admin():
             raise UserHasNotPermissionError()
 
-        with db():
-            solver_presets_db = self.solver_presets_repository.get(configuration_id)
-            if not solver_presets_db:
-                raise SolverPresetsNotFound(configuration_id)
-            # Update only the fields that are provided in the update DTO
-            updated_solver_presets = apply_update_solver_presets(solver_presets_db, solver_presets_update)
-            updated_solver_presets_db = self.solver_presets_repository.save(updated_solver_presets)
-            return updated_solver_presets_db.to_model()
+        solver_presets_db = self.solver_presets_repository.get(configuration_id)
+        if not solver_presets_db:
+            raise SolverPresetsNotFound(configuration_id)
+        # Update only the fields that are provided in the update DTO
+        updated_solver_presets = apply_update_solver_presets(solver_presets_db, solver_presets_update)
+        updated_solver_presets_db = self.solver_presets_repository.save(updated_solver_presets)
+        return updated_solver_presets_db.to_model()
 
     def delete_solver_presets(self, solver_presets_id: str) -> None:
         """
@@ -744,10 +740,9 @@ class LauncherService:
         if not user.is_site_admin():
             raise UserHasNotPermissionError()
 
-        with db():
-            solver_presets_db = self.solver_presets_repository.get(solver_presets_id)
-            if not solver_presets_db:
-                raise SolverPresetsNotFound(solver_presets_id)
+        solver_presets_db = self.solver_presets_repository.get(solver_presets_id)
+        if not solver_presets_db:
+            raise SolverPresetsNotFound(solver_presets_id)
 
-            logger.info(f"Deleting solver presets {solver_presets_id}")
-            self.solver_presets_repository.delete(solver_presets_id)
+        logger.info(f"Deleting solver presets {solver_presets_id}")
+        self.solver_presets_repository.delete(solver_presets_id)
