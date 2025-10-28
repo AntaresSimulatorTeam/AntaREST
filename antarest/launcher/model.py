@@ -457,7 +457,7 @@ class SolverPresetsUpdate(AntaresBaseModel):
     use_optim_1_basis_optim_2: Optional[bool] = None
 
 
-class SolverPresetsModel(Base):
+class SolverPresetsDB(Base):
     __tablename__ = "solver_presets"
 
     id = mapped_column(String(36), primary_key=True)
@@ -471,7 +471,7 @@ class SolverPresetsModel(Base):
     use_optim_1_basis_next_week = mapped_column(Boolean)
     use_optim_1_basis_optim_2 = mapped_column(Boolean)
 
-    def to_dto(self) -> SolverPresets:
+    def to_model(self) -> SolverPresets:
         min_version = None
         if self.min_antares_version is not None:
             try:
@@ -521,7 +521,7 @@ class SolverPresetsModel(Base):
         )
 
     @classmethod
-    def from_dto(cls, dto: SolverPresets) -> "SolverPresetsModel":
+    def from_model(cls, dto: SolverPresets) -> "SolverPresetsDB":
         data = dto.model_dump(exclude_none=True, exclude={"other_options"})
         if dto.min_antares_version is not None:
             data["min_antares_version"] = f"{dto.min_antares_version:2d}"
@@ -557,11 +557,11 @@ class SolverPresetsModel(Base):
 
 
 def apply_update_solver_presets(
-    solver_presets: SolverPresetsModel,
+    solver_presets_db: SolverPresetsDB,
     solver_presets_update: SolverPresetsUpdate,
-) -> SolverPresetsModel:
+) -> SolverPresetsDB:
     # Merge existing DTO with update DTO
-    current_dto_dict = solver_presets.to_dto().model_dump()
+    current_dto_dict = solver_presets_db.to_model().model_dump()
     update_dict = solver_presets_update.model_dump(exclude_none=True)
     merged_dict = {**current_dto_dict, **update_dict}
 
@@ -569,7 +569,7 @@ def apply_update_solver_presets(
     updated_dto = SolverPresets.model_validate(merged_dict)
 
     # turn back to model
-    return SolverPresetsModel.from_dto(updated_dto)
+    return SolverPresetsDB.from_model(updated_dto)
 
 
 def is_version_covered_by_config(
