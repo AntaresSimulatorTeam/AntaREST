@@ -24,7 +24,6 @@ from pydantic import (
     ConfigDict,
     Field,
     PlainSerializer,
-    computed_field,
     field_validator,
     model_validator,
 )
@@ -430,9 +429,7 @@ class SolverPresets(AntaresBaseModel):
 
         return self
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def cli_options(self) -> str:
+    def to_cli_options(self) -> str:
         """
         Generate an 'cli_options' string. This will be passed to the antares launcher script.
 
