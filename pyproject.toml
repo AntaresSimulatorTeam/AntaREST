@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "AntaREST"
@@ -12,7 +13,7 @@ requires-python = ">=3.11"
 classifiers=[
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.11",
-        "License :: Apache License :: 2.0",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ]
 dependencies = [
@@ -79,20 +80,8 @@ doc = [
 [project.urls]
 Repository="https://github.com/AntaresSimulatorTeam/api-iso-antares"
 
-[tool.setuptools]
-platforms = [
-    "linux-x86_64",
-    "macosx-10.14-x86_64",
-    "macosx-10.15-x86_64",
-    "macosx-11-x86_64",
-    "macosx-12-x86_64",
-    "macosx-13-x86_64",
-    "win-amd64",
-]
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["antarest*"]
+[tool.hatch.build.targets.wheel]
+packages = ["antarest"]
 
 [tool.mypy]
 exclude = "antarest/fastapi_jwt_auth/*"

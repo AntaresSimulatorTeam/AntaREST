@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bullseye
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 
 # RUN apt update && apt install -y procps gdb
 
@@ -9,13 +9,17 @@ ENV ANTAREST_CONF /resources/application.yaml
 
 RUN mkdir -p examples/studies
 
-COPY ./requirements.txt ./conf/* /conf/
-COPY ./antarest /antarest
+COPY ./pyproject.toml ./uv.lock /app/
+COPY ./conf/* /conf/
+COPY ./antarest /app/antarest
 COPY ./resources /resources
 COPY ./scripts /scripts
-COPY ./alembic /alembic
-COPY ./alembic.ini /alembic.ini
+COPY ./alembic /app/alembic
+COPY ./alembic.ini /app/alembic.ini
 
-RUN pip3 install --no-cache-dir --upgrade pip && pip3 install --no-cache-dir -r /conf/requirements.txt
+WORKDIR /app
+
+# Install dependencies using uv
+RUN uv sync --frozen --no-dev
 
 ENTRYPOINT ["./scripts/start.sh"]

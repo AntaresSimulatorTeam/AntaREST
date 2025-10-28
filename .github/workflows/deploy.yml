@@ -55,11 +55,11 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             # On Windows, skip desktop extra due to PyQt5-Qt5 wheel availability issues
-            uv sync --extra test --extra windows
+            uv sync --frozen --extra test --extra windows --compile-bytecode
             # Install PyQt5 separately via pip (it manages its own Qt binaries)
             uv pip install PyQt5~=5.15.6
           else
-            uv sync --all-extras
+            uv sync --frozen --all-extras --compile-bytecode
           fi
 
       - name: 📦 Packaging

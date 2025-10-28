@@ -20,13 +20,13 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev --compile-bytecode
       - name: Check format (ruff)
         run: |
-          uv run ruff check antarest/ tests/
-          uv run ruff format --check antarest/ tests/
+          uv run --frozen ruff check antarest/ tests/
+          uv run --frozen ruff format --check antarest/ tests/
       - name: Check Typing (mypy)
-        run: uv run mypy --install-types --non-interactive
+        run: uv run --frozen mypy --install-types --non-interactive
 
   python-test:
     runs-on: ${{ matrix.os }}
@@ -48,9 +48,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --all-extras --compile-bytecode
       - name: Test with pytest
-        run: uv run pytest --cov antarest --cov-report xml -n auto --dist=worksteal
+        run: uv run --frozen pytest --cov antarest --cov-report xml -n auto --dist=worksteal
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4

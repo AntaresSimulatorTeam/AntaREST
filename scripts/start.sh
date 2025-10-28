@@ -48,7 +48,7 @@ fi
 
 if [ -z "$1" ] ; then
   sh $CUR_DIR/pre-start.sh
-  gunicorn --config $BASE_DIR/conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
+  uv run gunicorn --config $BASE_DIR/conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 elif [ "$use_uvicorn" = true ]; then
   sh $CUR_DIR/pre-start.sh
   pids=() # Initialize empty array to store background process IDs
@@ -56,7 +56,7 @@ elif [ "$use_uvicorn" = true ]; then
   do
     # we still use gunicorn in that case to restart workers in case they are killed,
     # although each gunicorn instance has only one worker
-    gunicorn --worker-class=uvicorn.workers.UvicornWorker \
+    uv run gunicorn --worker-class=uvicorn.workers.UvicornWorker \
              --bind=0.0.0.0:$((5000 + $i)) \
              --workers=1 \
              --log-level info \
@@ -71,5 +71,5 @@ elif [ "$use_uvicorn" = true ]; then
   done
 else
   export PYTHONPATH=$BASE_DIR
-  python3 $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
+  uv run python $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
 fi
