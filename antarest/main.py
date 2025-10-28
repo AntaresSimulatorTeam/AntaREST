@@ -261,14 +261,52 @@ def fastapi_app(
 
     # rate limiter
     auth_manager = Auth(config)
+    # Prefer Redis backend with redis-py asyncio on Py3.11; fall back to legacy signature and finally to memory
+    rate_limit_backend: Any
+    if config.redis is None:
+        rate_limit_backend = MemoryBackend()
+    else:
+        try:
+            # Use redis.asyncio client when available (compatible with Python 3.11)
+            try:
+                from redis.asyncio import Redis as AsyncRedis  # type: ignore
+
+                redis_client = AsyncRedis(
+                    host=config.redis.host,
+                    port=config.redis.port,
+                    db=1,
+                    password=config.redis.password,
+                )
+                try:
+                    # Newer asgi-ratelimit accepts a client instance
+                    rate_limit_backend = RedisBackend(redis=redis_client)  # type: ignore[arg-type]
+                except TypeError:
+                    # Older versions expect connection params
+                    rate_limit_backend = RedisBackend(
+                        config.redis.host,
+                        config.redis.port,
+                        1,
+                        config.redis.password,
+                    )
+            except ImportError:
+                # redis.asyncio not available, use legacy path
+                rate_limit_backend = RedisBackend(
+                    config.redis.host,
+                    config.redis.port,
+                    1,
+                    config.redis.password,
+                )
+        except Exception as exc:  # noqa: BLE001 - ensure no startup crash
+            logger.warning(
+                "Redis rate limit backend initialization failed, falling back to MemoryBackend. Error: %s",
+                exc,
+            )
+            rate_limit_backend = MemoryBackend()
+
     application.add_middleware(
         RateLimitMiddleware,
         authenticate=auth_manager.create_auth_function(),
-        backend=(
-            MemoryBackend()
-            if config.redis is None
-            else RedisBackend(config.redis.host, config.redis.port, 1, config.redis.password)
-        ),
+        backend=rate_limit_backend,
         config=RATE_LIMIT_CONFIG,
     )
 
