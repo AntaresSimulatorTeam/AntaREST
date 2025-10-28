@@ -10,6 +10,7 @@ Requirements:
 
 - python : 3.11.x
 - node : 22.13.0
+- uv : latest (see [installation](https://docs.astral.sh/uv/getting-started/installation/))
 
 Then perform the following steps:
 
@@ -20,22 +21,17 @@ Then perform the following steps:
    cd AntaREST
    ```
 
-2. Create and activate a Python virtual environment:
+2. Install back-end dependencies using uv:
 
    ```shell
-   python3 -m venv venv
-   source venv/bin/activate
+   # Install uv if not already installed
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+
+   # Install all dependencies (production, test, and dev)
+   uv sync --all-extras
    ```
 
-3. Install dependencies to build, test or develop the back end:
-
-   ```shell
-   python3 -m pip install --upgrade pip
-   pip install -e .                     # to install in development mode (editable)
-   pip install -r requirements-dev.txt  # production, unit tests and development requirements
-   ```
-
-4. Install dependencies to build the front end:
+3. Install dependencies to build the front end:
 
    ```shell
    cd webapp
@@ -47,10 +43,10 @@ Then perform the following steps:
    > IMPORTANT : make sur the generated files are in the `dist` (or `build`) folder.
    > Using another folder may require substantial adaptations in the CI/CD pipelines.
 
-5. Run the application
+4. Run the application
 
    ```shell
-   python3 antarest/main.py -c resources/application.yaml --auto-upgrade-db --no-front
+   uv run python antarest/main.py -c resources/application.yaml --auto-upgrade-db --no-front
    ```
 
 ## Deploy

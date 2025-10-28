@@ -19,11 +19,14 @@ git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
 cd AntaREST
 ```
 
-Install back-end dependencies
+Install back-end dependencies using [uv](https://docs.astral.sh/uv/):
 
 ```shell script
-python -m pip install --upgrade pip
-pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install all dependencies
+uv sync --all-extras
 ```
 
 Install the front-end dependencies:
@@ -106,19 +109,15 @@ and an external REDIS instance, please refer to the deployement instructions on 
 #### Using uvicorn
 
 ```shell script
-pip install -e .
-
-python ./antarest/main.py -c resources/application.yaml
+uv run python ./antarest/main.py -c resources/application.yaml
 ```
 
 #### Using gunicorn wsgi server with uvicorn workers
 
 ```shell script
-pip install -e .
-
 export ANTAREST_CONF=resources/application.yaml
 export GUNICORN_WORKERS=4
-gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
+uv run gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 ```
 
 ## Examples
