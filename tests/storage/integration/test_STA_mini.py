@@ -29,15 +29,15 @@ from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from antarest.study.storage.output_model import OutputVariablesInformation
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.study_download_utils import BadOutputFormat
 from tests.helpers import assert_study, with_admin_user
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -651,83 +651,97 @@ def test_sta_mini_filter(storage_service: StudyService, url: str, expected_outpu
     )
 
 
-@with_admin_user
-def test_sta_mini_output_variables_nominal_case(output_service: Any) -> None:
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
-    assert variables["area"] == [
-        "OV. COST",
-        "OP. COST",
-        "MRG. PRICE",
-        "CO2 EMIS.",
-        "BALANCE",
-        "ROW BAL.",
-        "PSP",
-        "MISC. NDG",
-        "LOAD",
-        "H. ROR",
-        "WIND",
-        "SOLAR",
-        "NUCLEAR",
-        "LIGNITE",
-        "COAL",
-        "GAS",
-        "OIL",
-        "MIX. FUEL",
-        "MISC. DTG",
-        "H. STOR",
-        "H. PUMP",
-        "H. LEV",
-        "H. INFL",
-        "H. OVFL",
-        "H. VAL",
-        "H. COST",
-        "UNSP. ENRG",
-        "SPIL. ENRG",
-        "LOLD",
-        "LOLP",
-        "AVL DTG",
-        "DTG MRG",
-        "MAX MRG",
-        "NP COST",
-        "NODU",
-    ]
-    assert variables["link"] == [
-        "FLOW LIN.",
-        "UCAP LIN.",
-        "LOOP FLOW",
-        "FLOW QUAD.",
-        "CONG. FEE (ALG.)",
-        "CONG. FEE (ABS.)",
-        "MARG. COST",
-        "CONG. PROB +",
-        "CONG. PROB -",
-        "HURDLE COST",
-    ]
+def _add_study_in_db(output_service: OutputService) -> None:
+    """Adds the study UUID inside the DB to avoid ForeginKey issues"""
+    with db():
+        study = output_service._study_service.get_study(UUID)
+        db.session.add(study)
+        db.session.commit()
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_mc_ind(output_service: Any) -> None:
-    with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
-        output_service.output_variables_information(UUID, "20201014-1427eco")
+def test_sta_mini_output_variables_nominal_case(output_service: OutputService) -> None:
+    _add_study_in_db(output_service)
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
+    assert variables.model_dump() == {
+        "area": [
+            "AVL DTG",
+            "BALANCE",
+            "CO2 EMIS.",
+            "COAL",
+            "DTG MRG",
+            "GAS",
+            "H. COST",
+            "H. INFL",
+            "H. LEV",
+            "H. OVFL",
+            "H. PUMP",
+            "H. ROR",
+            "H. STOR",
+            "H. VAL",
+            "LIGNITE",
+            "LOAD",
+            "LOLD",
+            "LOLP",
+            "MAX MRG",
+            "MISC. DTG",
+            "MISC. NDG",
+            "MIX. FUEL",
+            "MRG. PRICE",
+            "NODU",
+            "NP COST",
+            "NUCLEAR",
+            "OIL",
+            "OP. COST",
+            "OV. COST",
+            "PSP",
+            "ROW BAL.",
+            "SOLAR",
+            "SPIL. ENRG",
+            "UNSP. ENRG",
+            "WIND",
+        ],
+        "link": [
+            "CONG. FEE (ABS.)",
+            "CONG. FEE (ALG.)",
+            "CONG. PROB +",
+            "CONG. PROB -",
+            "FLOW LIN.",
+            "FLOW QUAD.",
+            "HURDLE COST",
+            "LOOP FLOW",
+            "MARG. COST",
+            "UCAP LIN.",
+        ],
+    }
+
+
+@with_admin_user
+def test_sta_mini_output_variables_no_mc_ind(output_service: OutputService) -> None:
+    _add_study_in_db(output_service)
+    res = output_service.get_output_variables_information(UUID, "20201014-1427eco")
+    assert res == OutputVariablesInformation(area=[], link=[])
 
 
 @with_admin_user
 def test_sta_mini_output_variables_no_links(output_service: OutputService) -> None:
+    _add_study_in_db(output_service)
     study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     # When there's no links folder, asserts the endpoint doesn't fail and simply return an empty list
-    assert variables["link"] == []
+    assert variables.link == []
 
 
 @with_admin_user
 def test_sta_mini_output_variables_no_areas(output_service: OutputService) -> None:
+    _add_study_in_db(output_service)
     study_path = Path(output_service._study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)
     shutil.rmtree(areas_mc_all_folder)
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     # When there's no areas folder, asserts the endpoint doesn't fail and simply return an empty list
-    assert variables["area"] == []
+    assert variables.area == []

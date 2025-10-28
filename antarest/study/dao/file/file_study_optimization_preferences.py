@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -25,7 +25,15 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
+
 OPTIMIZATION_PATH = ["settings", "generaldata", "optimization"]
+
+
+def _get_optimization_preferences(file_study: FileStudy) -> dict[str, Any]:
+    try:
+        return file_study.tree.get(OPTIMIZATION_PATH)
+    except KeyError:
+        return {}
 
 
 class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
@@ -40,8 +48,7 @@ class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
         file_study = self.get_file_study()
-
-        tree_data = file_study.tree.get(OPTIMIZATION_PATH)
+        tree_data = _get_optimization_preferences(file_study)
 
         return parse_optimization_preferences(tree_data)
 
@@ -52,7 +59,7 @@ class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
         optimization_preferences = serialize_optimization_preferences(config)
 
         # Include fields that are in the optimization part of the generaldata.ini file but not in the optimization class
-        current_optimization_preferences = file_study.tree.get(OPTIMIZATION_PATH)
+        current_optimization_preferences = _get_optimization_preferences(file_study)
         optimization_preferences.update(
             {k: v for k, v in current_optimization_preferences.items() if k not in optimization_preferences}
         )

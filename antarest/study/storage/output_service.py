@@ -51,14 +51,14 @@ from antarest.study.model import (
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_df_chunks
-from antarest.study.storage.output_model import OutputVariables, OutputVariablesList
+from antarest.study.storage.output_model import OutputVariables, OutputVariablesInformation, OutputVariablesList
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
 )
-from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
+from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import assert_permission, get_start_date, is_output_archived, remove_from_cache
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
@@ -213,18 +213,6 @@ class OutputService:
             self.unarchive_output(uuid, output_id)
 
         return output_id
-
-    def output_variables_information(self, study_uuid: str, output_uuid: str) -> dict[str, list[str]]:
-        """
-        Returns information about output variables using thematic and geographic trimming information
-        Args:
-            study_uuid: study id
-            output_uuid: output id
-        """
-        study = self._study_service.get_study(study_uuid)
-        assert_permission(study, StudyPermissionType.READ)
-        self._study_service.assert_study_unarchived(study)
-        return get_output_variables_information(self._study_service.get_file_study(study), output_uuid)
 
     def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
         """
@@ -413,15 +401,19 @@ class OutputService:
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
-    def archive_outputs(self, study_id: str) -> None:
+    def archive_outputs(self, study_id: str) -> list[str]:
         logger.info(f"Archiving all outputs for study {study_id}")
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
         self._study_service.assert_study_unarchived(study)
         file_study = self._study_service.get_file_study(study)
+        task_ids = []
         for output in file_study.config.outputs:
             if not file_study.config.outputs[output].archived:
-                self.archive_output(study_id, output)
+                task_id = self.archive_output(study_id, output)
+                if task_id:
+                    task_ids.append(task_id)
+        return task_ids
 
     def archive_output(
         self,
@@ -598,3 +590,13 @@ class OutputService:
 
         # Returns it
         return model
+
+    def get_output_variables_information(self, study_id: str, output_id: str) -> OutputVariablesInformation:
+        """
+        Endpoint used by ImaGrid
+        """
+        study = self._study_service.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        self._study_service.assert_study_unarchived(study)
+        variables_list = self.get_output_variables_list(study_id, output_id)
+        return OutputVariablesInformation.from_variables_list(variables_list)

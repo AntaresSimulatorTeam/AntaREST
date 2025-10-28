@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import type { LauncherParamsDTO } from "@/services/api/launcher/types";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -133,38 +132,6 @@ export interface VariantTreeDTO {
 export interface VariantTree {
   node: StudyMetadata;
   children: VariantTree[];
-}
-
-export type JobStatus = "running" | "pending" | "success" | "failed";
-
-export interface LaunchJob {
-  id: string;
-  studyId: string;
-  status: JobStatus;
-  creationDate: string;
-  completionDate: string;
-  launcherParams?: LauncherParamsDTO;
-  msg: string;
-  outputId: string;
-  exitCode: number;
-  ownerId: number;
-  ownerName: string;
-}
-
-export interface LaunchJobDTO {
-  id: string;
-  study_id: string;
-  status: JobStatus;
-  creation_date: string;
-  completion_date: string;
-  launcher_params: string;
-  msg: string;
-  output_id: string;
-  exit_code: number;
-  owner: {
-    id: number;
-    name: string;
-  };
 }
 
 export interface LaunchJobProgressDTO {

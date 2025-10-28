@@ -33,6 +33,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.maintenance.service import MaintenanceService
+from antarest.core.metrics import add_db_metrics
 from antarest.core.persistence import upgrade_db
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
@@ -110,6 +111,8 @@ def init_db_engine(
             extra["pool_use_lifo"] = config.db.pool_use_lifo
 
     engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
+
+    add_db_metrics(config)
 
     return engine
 
