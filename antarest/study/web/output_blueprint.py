@@ -60,13 +60,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         The FastAPI route for Study data management
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_outputs], dependencies=[auth.required()])
 
     # noinspection PyShadowingBuiltins
     @bp.post(
         "/studies/{uuid}/output",
         status_code=HTTPStatus.ACCEPTED,
-        tags=[APITag.study_outputs],
         summary="Import Output",
         response_model=str,
     )
@@ -78,7 +77,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/variables",
-        tags=[APITag.study_outputs],
         summary="Get outputs data variables",
     )
     def output_variables_information(study_id: str, output_id: str) -> OutputVariablesInformation:
@@ -89,7 +87,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/export",
-        tags=[APITag.study_outputs],
         summary="Get outputs data",
     )
     def output_export(study_id: str, output_id: str) -> Any:
@@ -100,7 +97,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/time-index",
-        tags=[APITag.study_outputs],
         summary="Get time index for output matrices by frequency",
     )
     def get_output_time_index(
@@ -130,7 +126,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/download",
-        tags=[APITag.study_outputs],
         summary="Get outputs data",
     )
     def output_download(
@@ -159,7 +154,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Delete a simulation output",
     )
     def delete_output(study_id: str, output_id: str) -> None:
@@ -170,7 +164,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/_archive",
-        tags=[APITag.study_outputs],
         summary="Archive output",
     )
     def archive_output(study_id: str, output_id: str) -> Any:
@@ -183,7 +176,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/_unarchive",
-        tags=[APITag.study_outputs],
         summary="Unarchive output",
     )
     def unarchive_output(study_id: str, output_id: str) -> Any:
@@ -196,7 +188,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
-        tags=[APITag.study_outputs],
         summary="Display an output digest file for the front-end",
         response_model=DigestUI,
     )
@@ -209,7 +200,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     @bp.get(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
-        tags=[APITag.study_outputs],
         response_model=List[StudySimResultDTO],
     )
     def sim_result(study_id: str) -> Any:
@@ -220,7 +210,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/aggregate/areas/mc-ind",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_areas_raw_data(
@@ -278,7 +267,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
         include_in_schema=False,
     )
@@ -298,7 +286,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/aggregate/links/mc-ind",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_links_raw_data(
@@ -354,7 +341,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/links/aggregate/mc-ind/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
         include_in_schema=False,
     )
@@ -374,7 +360,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/aggregate/areas/mc-all",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
     )
     def aggregate_areas_raw_data__all(
@@ -429,7 +414,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-all/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
         include_in_schema=False,
     )
@@ -448,7 +432,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/aggregate/links/mc-all",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
     )
     def aggregate_links_raw_data__all(
@@ -504,7 +487,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/links/aggregate/mc-all/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
         include_in_schema=False,
     )
@@ -523,7 +505,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/variables-list",
-        tags=[APITag.study_outputs],
         summary="Retrieves the list of variables for a given output",
     )
     def get_output_variables_list(uuid: str, output_id: str) -> OutputVariablesList:

@@ -123,11 +123,10 @@ def create_raw_study_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[auth.required()])
 
     @bp.get(
         "/studies/{uuid}/raw",
-        tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
     def get_study_data(
@@ -215,7 +214,6 @@ def create_raw_study_routes(
 
     @bp.get(
         "/studies/{uuid}/raw/original-file",
-        tags=[APITag.study_raw_data],
         summary="Retrieve Raw file from a Study folder in its original format",
     )
     def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Any:
@@ -244,7 +242,6 @@ def create_raw_study_routes(
 
     @bp.delete(
         "/studies/{uuid}/raw",
-        tags=[APITag.study_raw_data],
         summary="Delete files or folders located inside the 'User' folder",
         response_model=None,
     )
@@ -266,7 +263,6 @@ def create_raw_study_routes(
     @bp.post(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.OK,
-        tags=[APITag.study_raw_data],
         summary="Update study by posting formatted data",
     )
     def edit_study(uuid: str, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
@@ -289,7 +285,6 @@ def create_raw_study_routes(
     @bp.put(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.NO_CONTENT,
-        tags=[APITag.study_raw_data],
         summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
@@ -330,7 +325,6 @@ def create_raw_study_routes(
     @bp.get(
         "/studies/{uuid}/raw/download",
         summary="Download a matrix in a given format",
-        tags=[APITag.study_raw_data],
     )
     def get_matrix(
         uuid: str,

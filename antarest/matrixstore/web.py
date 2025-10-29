@@ -57,16 +57,15 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.matrix], dependencies=[auth.required()])
 
-    @bp.post("/matrix", tags=[APITag.matrix], description="Upload a new matrix")
+    @bp.post("/matrix", description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
         logger.info("Creating new matrix")
         return service.create(pd.DataFrame(matrix))
 
     @bp.post(
         "/matrix/_import",
-        tags=[APITag.matrix],
         description="Import a new matrix or zip matrices",
         response_model=List[MatrixInfoDTO],
     )
@@ -87,7 +86,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
         return service.get_matrices()
 
-    @bp.get("/matrix/{id}", tags=[APITag.matrix])
+    @bp.get("/matrix/{id}")
     def get(id: str) -> MatrixDTO:
         logger.info("Fetching matrix")
         df = service.get(id)
@@ -100,7 +99,6 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     @bp.get(
         "/matrix/_references/",
-        tags=[APITag.matrix],
         description="Fetching a list of matrices statistics",
         response_model_exclude_none=True,
     )
@@ -116,14 +114,13 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
         return service.get_matrices_references(disk_usage)
 
-    @bp.post("/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO)
+    @bp.post("/matrixdataset", response_model=MatrixDataSetDTO)
     def create_dataset(metadata: MatrixDataSetUpdateDTO = Body(...), matrices: List[MatrixInfoDTO] = Body(...)) -> Any:
         logger.info(f"Creating new matrix dataset metadata {metadata.name}")
         return service.create_dataset(metadata, matrices).to_dto()
 
     @bp.put(
         "/matrixdataset/{id}/metadata",
-        tags=[APITag.matrix],
         response_model=MatrixDataSetDTO,
     )
     def update_dataset_metadata(id: str, metadata: MatrixDataSetUpdateDTO) -> Any:
@@ -132,7 +129,6 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     @bp.get(
         "/matrixdataset/_search",
-        tags=[APITag.matrix],
         response_model=List[MatrixDataSetDTO],
     )
     def query_datasets(name: Optional[str], filter_own: bool = False) -> Any:
@@ -141,8 +137,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     @bp.get(
         "/matrixdataset/{dataset_id}/download",
-        tags=[APITag.study_outputs],
-        summary="Get outputs data",
+        summary="Download dataset",
     )
     def download_dataset(dataset_id: str) -> Any:
         logger.info(f"Download {dataset_id} matrix dataset")
@@ -150,8 +145,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     @bp.get(
         "/matrix/{matrix_id}/download",
-        tags=[APITag.study_outputs],
-        summary="Get outputs data",
+        summary="Download matrix content",
     )
     def download_matrix(
         matrix_id: str,
@@ -165,7 +159,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
             media_type="text/plain",
         )
 
-    @bp.delete("/matrixdataset/{id}", tags=[APITag.matrix])
+    @bp.delete("/matrixdataset/{id}")
     def delete_datasets(id: str) -> Any:
         logger.info(f"Removing matrix dataset metadata {id}")
         service.delete_dataset(id)

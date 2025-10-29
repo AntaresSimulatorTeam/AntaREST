@@ -41,11 +41,10 @@ DEFAULT_MAX_LATEST_JOBS = 200
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1/launcher", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1/launcher", tags=[APITag.launcher], dependencies=[auth.required()])
 
     @bp.post(
         "/run/{study_id}",
-        tags=[APITag.launcher],
         summary="Run study",
         response_model=JobCreationDTO,
     )
@@ -71,7 +70,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/jobs",
-        tags=[APITag.launcher],
         summary="Retrieve jobs",
         response_model=List[JobResultDTO],
     )
@@ -81,7 +79,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/jobs/{job_id}/logs",
-        tags=[APITag.launcher],
         summary="Retrieve job logs from job id",
     )
     def get_job_log(job_id: str, log_type: LogType = LogType.STDOUT) -> Any:
@@ -90,7 +87,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/jobs/{job_id}/output",
-        tags=[APITag.launcher],
         summary="Export job output",
         response_model=FileDownloadTaskDTO,
     )
@@ -100,7 +96,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.post(
         "/jobs/{job_id}/kill",
-        tags=[APITag.launcher],
         summary="Kill job",
     )
     def kill_job(
@@ -112,7 +107,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/jobs/{job_id}",
-        tags=[APITag.launcher],
         summary="Retrieve job info from job id",
         response_model=JobResultDTO,
     )
@@ -122,7 +116,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/jobs/{job_id}/progress",
-        tags=[APITag.launcher],
         summary="Retrieve job progress from job id",
         response_model=int,
     )
@@ -132,7 +125,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.delete(
         "/jobs/{job_id}",
-        tags=[APITag.launcher],
         summary="Remove job",
         responses={204: {"description": "Job removed"}},
     )
@@ -142,7 +134,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/launchers",
-        tags=[APITag.launcher],
         summary="Retrieve configured launchers",
         response_model=LauncherListDTO,
     )
@@ -152,7 +143,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/load",
-        tags=[APITag.launcher],
         summary="Get the SLURM cluster or local machine load",
         response_model=LauncherLoadDTO,
     )
@@ -172,7 +162,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/versions",
-        tags=[APITag.launcher],
         summary="Get list of supported solver versions",
         response_model=List[str],
     )
@@ -189,7 +178,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.post(
         "/solver-presets",
-        tags=[APITag.launcher],
         summary="Create new solver presets",
     )
     def create_solver_presets(solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
@@ -198,7 +186,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/solver-presets/{solver_presets_id}",
-        tags=[APITag.launcher],
         summary="Retrieve solver presets by ID",
     )
     def get_solver_presets(solver_presets_id: str) -> SolverPresets:
@@ -207,7 +194,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/solver-presets",
-        tags=[APITag.launcher],
         summary="Retrieve all solver presets",
     )
     def get_solver_presets_list() -> List[SolverPresets]:
@@ -216,7 +202,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.put(
         "/solver-presets/{solver_presets_id}",
-        tags=[APITag.launcher],
         summary="Update an existing solver preset",
     )
     def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresets:
@@ -225,7 +210,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.delete(
         "/solver-presets/{solver_presets_id}",
-        tags=[APITag.launcher],
         summary="Delete a solver preset",
     )
     def delete_solver_presets(solver_presets_id: str) -> None:

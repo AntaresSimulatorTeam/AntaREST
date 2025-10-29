@@ -44,11 +44,10 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         config: main server configuration
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.xpansion_study_management], dependencies=[auth.required()])
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion",
-        tags=[APITag.xpansion_study_management],
         summary="Create Xpansion Configuration",
     )
     def create_xpansion_configuration(uuid: str) -> Any:
@@ -57,7 +56,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion",
-        tags=[APITag.xpansion_study_management],
         summary="Delete Xpansion Configuration",
     )
     def delete_xpansion_configuration(uuid: str) -> Any:
@@ -66,7 +64,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/settings",
-        tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Settings",
     )
     def get_settings(uuid: str) -> XpansionSettings:
@@ -75,7 +72,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.put(
         "/studies/{uuid}/extensions/xpansion/settings",
-        tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Settings",
     )
     def update_settings(uuid: str, xpansion_settings: XpansionSettingsUpdate) -> XpansionSettings:
@@ -84,7 +80,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.put(
         "/studies/{uuid}/extensions/xpansion/settings/additional-constraints",
-        tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Settings Additional Constraints",
     )
     def update_additional_constraints_settings(uuid: str, filename: str = "") -> XpansionSettings:
@@ -93,7 +88,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion/candidates",
-        tags=[APITag.xpansion_study_management],
         summary="Create Xpansion Candidate",
     )
     def add_candidate(uuid: str, xpansion_candidate: XpansionCandidateCreation) -> XpansionCandidate:
@@ -102,7 +96,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
-        tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Candidate",
     )
     def get_candidate(uuid: str, candidate_name: str) -> XpansionCandidate:
@@ -111,7 +104,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/candidates",
-        tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Candidates",
     )
     def get_candidates(uuid: str) -> Sequence[XpansionCandidate]:
@@ -120,7 +112,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.put(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
-        tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Candidate",
     )
     def update_candidate(
@@ -131,7 +122,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
-        tags=[APITag.xpansion_study_management],
         summary="Delete Xpansion Candidate",
     )
     def delete_candidate(uuid: str, candidate_name: str) -> None:
@@ -140,7 +130,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
-        tags=[APITag.xpansion_study_management],
         summary="Add Xpansion resource file",
     )
     def add_resource(uuid: str, resource_type: XpansionResourceFileType, file: UploadFile = File(...)) -> None:
@@ -151,7 +140,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
-        tags=[APITag.xpansion_study_management],
         summary="Delete Xpansion resource file",
     )
     def delete_resource(uuid: str, resource_type: XpansionResourceFileType, filename: str) -> Any:
@@ -162,7 +150,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
-        tags=[APITag.xpansion_study_management],
         summary="Getting Xpansion resource file content",
     )
     def get_resource_content(uuid: str, resource_type: XpansionResourceFileType, filename: str) -> Response:
@@ -181,7 +168,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
-        tags=[APITag.xpansion_study_management],
         summary="Getting all Xpansion resources files",
     )
     def list_resources(uuid: str, resource_type: XpansionResourceFileType) -> list[str]:
@@ -192,7 +178,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/adequacy_criterion",
-        tags=[APITag.xpansion_study_management],
         summary="Gets the Xpansion adequacy criterion configuration",
     )
     def get_adequacy_criterion(uuid: str) -> XpansionAdequacyCriterion:
@@ -203,7 +188,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
     @bp.put(
         "/studies/{uuid}/extensions/xpansion/adequacy_criterion",
-        tags=[APITag.xpansion_study_management],
         summary="Replace the Xpansion adequacy criterion configuration",
     )
     def update_security_criterion(uuid: str, criterion: XpansionAdequacyCriterion) -> XpansionAdequacyCriterion:

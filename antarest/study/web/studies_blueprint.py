@@ -58,18 +58,16 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     Endpoint implementation for studies management
     Args:
         study_service: study service facade to handle request
-        ftm: file transfer manager
         config: main server configuration
 
     Returns:
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_management], dependencies=[auth.required()])
 
     @bp.get(
         "/studies",
-        tags=[APITag.study_management],
         summary="Get Studies",
     )
     def get_studies(
@@ -158,7 +156,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.get(
         "/studies/count",
-        tags=[APITag.study_management],
         summary="Count Studies",
     )
     def count_studies(
@@ -222,7 +219,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.get(
         "/studies/{uuid}/comments",
-        tags=[APITag.study_management],
         summary="Get comments",
     )
     def get_comments(uuid: str) -> str:
@@ -244,7 +240,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.post(
         "/studies/_import",
         status_code=HTTPStatus.CREATED,
-        tags=[APITag.study_management],
         summary="Import Study",
         response_model=str,
     )
@@ -278,7 +273,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.put(
         "/studies/{uuid}/upgrade",
         status_code=HTTPStatus.OK,
-        tags=[APITag.study_management],
         summary="Upgrade study to the target version (or next version if not specified)",
     )
     def upgrade_study(uuid: str, target_version: str = "") -> str:
@@ -307,7 +301,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.post(
         "/studies/{uuid}/copy",
         status_code=HTTPStatus.CREATED,
-        tags=[APITag.study_management],
         summary="Copy Study",
         response_model=str,
     )
@@ -360,7 +353,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.put(
         "/studies/{uuid}/move",
-        tags=[APITag.study_management],
         summary="Move study",
     )
     def move_study(uuid: str, folder_dest: str) -> Any:
@@ -370,7 +362,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.post(
         "/studies",
         status_code=HTTPStatus.CREATED,
-        tags=[APITag.study_management],
         summary="Create a new empty study",
     )
     def create_study(
@@ -394,7 +385,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.get(
         "/studies/{uuid}/synthesis",
-        tags=[APITag.study_management],
         summary="Return study synthesis",
         response_model=FileStudyTreeConfigDTO,
     )
@@ -405,7 +395,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.get(
         "/studies/{uuid}/matrixindex",
-        tags=[APITag.study_management],
         summary="Return study input matrix start date index",
     )
     def get_study_matrix_index(uuid: str, path: str = "") -> MatrixIndex:
@@ -415,7 +404,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.get(
         "/studies/{uuid}/export",
-        tags=[APITag.study_management],
         summary="Export Study",
         response_model=FileDownloadTaskDTO,
     )
@@ -428,7 +416,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.delete(
         "/studies/{uuid}",
         status_code=HTTPStatus.OK,
-        tags=[APITag.study_management],
         summary="Delete Study",
     )
     def delete_study(uuid: str, children: bool = False) -> Any:
@@ -492,7 +479,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.get(
         "/studies/_versions",
-        tags=[APITag.study_management],
         summary="Show available study versions",
         response_model=List[str],
     )
@@ -502,7 +488,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.get(
         "/studies/{uuid}",
-        tags=[APITag.study_management],
         summary="Get Study information",
         response_model=StudyMetadataDTO,
     )
@@ -513,7 +498,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.put(
         "/studies/{uuid}",
-        tags=[APITag.study_management],
         summary="Update Study information",
         response_model=StudyMetadataDTO,
     )
@@ -527,7 +511,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.put(
         "/studies/{study_id}/archive",
         summary="Archive a study",
-        tags=[APITag.study_management],
     )
     def archive_study(study_id: str) -> Any:
         logger.info(f"Archiving study {study_id}")
@@ -537,7 +520,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.put(
         "/studies/{study_id}/unarchive",
         summary="Unarchive a study",
-        tags=[APITag.study_management],
     )
     def unarchive_study(study_id: str) -> Any:
         logger.info(f"Unarchiving study {study_id}")
@@ -547,7 +529,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.get(
         "/studies/{uuid}/disk-usage",
         summary="Compute study disk usage",
-        tags=[APITag.study_management],
     )
     def study_disk_usage(uuid: str) -> int:
         """
@@ -565,7 +546,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     @bp.put(
         "/studies/{study_id}/normalize",
         summary="Move study matrices into the matrix-store and replace them with symbolic links.",
-        tags=[APITag.study_management],
     )
     def normalize_study(study_id: str) -> None:
         """
