@@ -31,7 +31,14 @@ def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: flo
 
 
 IS_WINDOWS = os.name == "nt"
-TIMEOUT_MULTIPLIER = 2 if IS_WINDOWS else 1
+
+
+def is_windows_ci() -> bool:
+    """
+    Check if running on Windows in GitHub Actions CI.
+    Used to apply more lenient performance thresholds due to slower/variable CI runners.
+    """
+    return IS_WINDOWS and os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def wait_task_completion(
@@ -42,9 +49,10 @@ def wait_task_completion(
     base_timeout: float = 10,
 ) -> TaskDTO:
     """
-    base_timeout is multiplied by 2 on windows to cope with slow CI
+    base_timeout is multiplied by 2 on Windows CI to cope with slow CI runners
     """
-    timeout = TIMEOUT_MULTIPLIER * base_timeout
+    multiplier = 2 if is_windows_ci() else 1
+    timeout = multiplier * base_timeout
     params = {"wait_for_completion": True, "timeout": timeout}
     res = client.request(
         "GET",

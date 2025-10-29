@@ -22,6 +22,7 @@ from starlette.testclient import TestClient
 
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
 from tests.integration.prepare_proxy import PreparerProxy
+from tests.integration.utils import is_windows_ci
 
 MATRIX_SIZES = {"hourly": 8784, "daily": 366, "weekly": 366}
 
@@ -110,7 +111,8 @@ class TestBindingConstraints:
         end = time.time()
         duration = end - start
         # due to new code this should be extremely fast.
-        assert duration < 0.2
+        threshold = 0.4 if is_windows_ci() else 0.2
+        assert duration < threshold
         # asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
         assert res.status_code == 200
