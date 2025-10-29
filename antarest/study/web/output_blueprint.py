@@ -38,6 +38,12 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
 DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
+download_expiration_time_query: int = Query(
+    DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+    gt=0,
+    lt=1000,
+    description="Expiration time for the download file (in minutes)",
+)
 
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
@@ -233,7 +239,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        download_expiration_time: int = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+        download_expiration_time: int = download_expiration_time_query,
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -314,7 +320,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        download_expiration_time: int = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+        download_expiration_time: int = download_expiration_time_query,
     ) -> str:
         """
         Create an aggregation of links raw data
@@ -392,7 +398,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        download_expiration_time: int = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+        download_expiration_time: int = download_expiration_time_query,
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -469,7 +475,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        download_expiration_time: int = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+        download_expiration_time: int = download_expiration_time_query,
     ) -> str:
         """
         Create an aggregation of links in mc-all
