@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from pathlib import Path
 
 from starlette.testclient import TestClient
 
@@ -80,13 +80,18 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     ]
 
 
-def test_get_output_variables_list_other_output(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_get_output_variables_list_limit_case(
+    client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-    # Checks the endpoint works correctly
-    output_id = "20241807-1540eco-extra-outputs"
+    # Some areas have a `-` inside their ids. We need to ensure we're able to read their links' related variables
+    output_id = "20201014-1425eco-goodbye"
+    folder_path = tmp_path / "ext_workspace" / "STA-mini" / "output" / output_id / "economy" / "mc-all" / "links"
+    link_path = folder_path / "fr - psp-open"
+    link_path.mkdir()
     res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
-    print(res.json()["mcAll"]["links"])
+    assert res.status_code == 200
 
 
 def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_token: str, internal_study_id: str):
