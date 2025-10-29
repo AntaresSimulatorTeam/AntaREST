@@ -69,10 +69,6 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
     ) -> StudyMetadataDTO:
         additional_data = study.additional_data or StudyAdditionalData()
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        folder: Optional[str] = folder_path
-
-        if hasattr(study, "folder"):
-            folder = study.folder
 
         owner_info = (
             OwnerInfo(id=study.owner.id, name=study.owner.name)
@@ -96,7 +92,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
             public_mode=study.public_mode or PublicMode.NONE,
             horizon=additional_data.horizon,
-            folder=folder,
+            folder=folder_path or study.folder,
             tags=[tag.label for tag in study.tags],
             directory_id=study.directory_id,
         )

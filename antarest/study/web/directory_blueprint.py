@@ -34,7 +34,7 @@ def create_directory_routes(
 
     @bp.get(
         "/directories",
-        tags=[APITag.study_management],
+        tags=[APITag.directory_management],
         summary="List directories",
     )
     def list_directories() -> List[DirectoryMetadata]:
@@ -44,7 +44,7 @@ def create_directory_routes(
     @bp.post(
         "/directories",
         status_code=HTTPStatus.CREATED,
-        tags=[APITag.study_management],
+        tags=[APITag.directory_management],
         summary="Create a new directory",
     )
     def create_directory(data: DirectoryCreation) -> DirectoryMetadata:
@@ -53,7 +53,7 @@ def create_directory_routes(
 
     @bp.patch(
         "/directories/{directory_id}",
-        tags=[APITag.study_management],
+        tags=[APITag.directory_management],
         summary="Update directory",
     )
     def update_directory(directory_id: str, data: DirectoryUpdate) -> DirectoryMetadata:
@@ -66,7 +66,7 @@ def create_directory_routes(
     @bp.delete(
         "/directories/{directory_id}",
         status_code=HTTPStatus.NO_CONTENT,
-        tags=[APITag.study_management],
+        tags=[APITag.directory_management],
         summary="Delete directory",
     )
     def delete_directory(directory_id: str) -> None:
