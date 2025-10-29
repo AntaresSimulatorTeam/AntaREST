@@ -39,15 +39,8 @@ IS_WINDOWS = os.name == "nt"
 def is_windows_ci() -> bool:
     """
     Check if running on Windows in GitHub Actions CI.
-    Used to apply more lenient performance thresholds due to slower/variable CI runners.
     """
-    result = IS_WINDOWS and os.getenv("GITHUB_ACTIONS") == "true"
-    if result:
-        logger.warning(
-            "[CI Detection] Running on Windows CI - Using relaxed performance thresholds "
-            f"(IS_WINDOWS={IS_WINDOWS}, GITHUB_ACTIONS={os.getenv('GITHUB_ACTIONS')})"
-        )
-    return result
+    return IS_WINDOWS and os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def wait_task_completion(
