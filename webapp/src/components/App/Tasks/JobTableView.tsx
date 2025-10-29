@@ -12,18 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import SelectFE, { type SelectFEChangeEvent } from "@/components/common/fieldEditors/SelectFE";
-import storage, { StorageKey } from "@/services/utils/localStorage";
-import { isSearchMatching } from "@/utils/stringUtils";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import {
   Box,
   IconButton,
   Paper,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -31,20 +24,20 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Tooltip,
-  Typography,
   type TableSortLabelProps,
+  Tooltip,
 } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useInterval } from "react-use";
-import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import { getLauncherMetrics } from "../../../services/api/study";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import SelectFE, { type SelectFEChangeEvent } from "@/components/common/fieldEditors/SelectFE";
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import { isSearchMatching } from "@/utils/stringUtils";
 import { TaskType } from "../../../services/api/tasks/constants";
 import type { TaskView } from "../../../types/types";
-import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
-import UsePromiseCond from "../../common/utils/UsePromiseCond";
+import ClustersMetrics from "./ClustersMetrics";
 
 const FILTER_LIST: Array<TaskView["type"]> = [
   "DOWNLOAD",
@@ -65,8 +58,7 @@ interface Props {
   refresh: () => void;
 }
 
-function JobTableView(props: Props) {
-  const { content, refresh } = props;
+function JobTableView({ content, refresh }: Props) {
   const [t] = useTranslation();
   const [orderBy, setOrderBy] = useState<"date" | "user">("date");
   const [orderDirection, setOrderDirection] =
@@ -74,14 +66,6 @@ function JobTableView(props: Props) {
   const [filterType, setFilterType] = useState<FilterListType | "">("");
   const [filterUser, setFilterUser] = useState(storage.getItem(StorageKey.TasksFilterUser) || "");
   const [filterRunningStatus, setFilterRunningStatus] = useState<boolean>(false);
-
-  const launcherMetrics = usePromiseWithSnackbarError(getLauncherMetrics, {
-    errorMessage: t("study.error.launchLoad"),
-    deps: [],
-  });
-
-  // Refresh launcher metrics every minute
-  useInterval(launcherMetrics.reload, 60_000);
 
   const displayContent = useMemo(() => {
     const filteredContent = R.filter(
@@ -132,74 +116,38 @@ function JobTableView(props: Props) {
   ////////////////////////////////////////////////////////////////
   return (
     <>
-      {/* Header */}
-      <CustomScrollbar>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 1,
+        }}
+      >
+        <Box sx={{ maxWidth: "60%" }}>
+          <ClustersMetrics />
+        </Box>
         <Box
           sx={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 1,
-            px: 1,
+            flexDirection: "column",
+            gap: 0.5,
+            alignItems: "flex-end",
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              alignContent: "center",
-              alignSelf: "center",
-              gap: 1,
-            }}
-          >
-            <UsePromiseCond
-              response={launcherMetrics}
-              keepLastResolvedOnReload
-              ifFulfilled={(data) => (
-                <>
-                  <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
-                    {t("study.allocatedCpuRate")}
-                  </Typography>
-                  <LinearProgressWithLabel
-                    value={Math.floor(data.allocatedCpuRate)}
-                    tooltip={t("study.allocatedCpuRate")}
-                    sx={{ width: 100 }}
-                    colorMode="cluster"
-                  />
-                  <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
-                    {t("study.clusterLoadRate")}
-                  </Typography>
-                  <LinearProgressWithLabel
-                    value={Math.floor(data.clusterLoadRate)}
-                    tooltip={t("study.clusterLoadRate")}
-                    sx={{ width: 100 }}
-                    colorMode="cluster"
-                  />
-                  <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
-                    {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}
-                  </Typography>
-                </>
-              )}
-              ifPending={() => <Skeleton width={300} />}
-            />
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Tooltip title={t("tasks.refresh")}>
-              <IconButton
-                onClick={() => {
-                  refresh();
-                  launcherMetrics.reload();
-                }}
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
+          <Box>
             <CheckBoxFE
               label={t("tasks.runningTasks")}
               value={filterRunningStatus}
               onChange={handleFilterStatusChange}
               sx={{ textWrap: "nowrap" }}
             />
-
+            <Tooltip title={t("tasks.refresh")}>
+              <IconButton onClick={refresh}>
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "flex-end", gap: 2 }}>
             <SearchFE
               size="extra-small"
               value={filterUser}
@@ -217,12 +165,11 @@ function JobTableView(props: Props) {
                 label: t(`tasks.type.${item}`),
               }))}
               size="extra-small"
-              margin="dense"
               sx={{ minWidth: 160 }}
             />
           </Box>
         </Box>
-      </CustomScrollbar>
+      </Box>
       {/* List */}
       <TableContainer component={Paper} elevation={2} sx={{ flex: 1 }}>
         <Table stickyHeader>

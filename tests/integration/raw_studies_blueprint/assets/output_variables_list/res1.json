@@ -217,8 +217,8 @@
             ],
             "links": [
                 {
-                    "area1Name": "de ",
-                    "area2Name": " fr",
+                    "area1Name": "de",
+                    "area2Name": "fr",
                     "variables": [
                         "CONG. FEE (ABS.)",
                         "CONG. FEE (ALG.)",
@@ -233,8 +233,8 @@
                     ]
                 },
                 {
-                    "area1Name": "es ",
-                    "area2Name": " fr",
+                    "area1Name": "es",
+                    "area2Name": "fr",
                     "variables": [
                         "CONG. FEE (ABS.)",
                         "CONG. FEE (ALG.)",
@@ -249,8 +249,8 @@
                     ]
                 },
                 {
-                    "area1Name": "fr ",
-                    "area2Name": " it",
+                    "area1Name": "fr",
+                    "area2Name": "it",
                     "variables": [
                         "CONG. FEE (ABS.)",
                         "CONG. FEE (ALG.)",
@@ -564,9 +564,9 @@
                 }
             ],
             "links": [
-                {"area1Name": "de ", "area2Name": " fr", "variables": []},
-                {"area1Name": "es ", "area2Name": " fr", "variables": []},
-                {"area1Name": "fr ", "area2Name": " it", "variables": []}
+                {"area1Name": "de", "area2Name": "fr", "variables": []},
+                {"area1Name": "es", "area2Name": "fr", "variables": []},
+                {"area1Name": "fr", "area2Name": "it", "variables": []}
             ]
         }
     }

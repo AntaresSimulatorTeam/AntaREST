@@ -158,12 +158,11 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
         links_folder = mc_path / "links"
         file_type_klass = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
         if links_folder.exists():
-            for link_name in sorted(links_folder.iterdir()):
-                area1, area2 = link_name.name.split("-")
+            for link_path in sorted(links_folder.iterdir()):
+                area1, area2 = link_path.name.split(" - ")
                 links_dict: dict[str, Any] = {"area_1_name": area1, "area_2_name": area2}
-                parent_path = links_folder / link_name
 
-                for col_headers, _ in _get_all_headers_and_file_type(mc_root, parent_path, file_type_klass):
+                for col_headers, _ in _get_all_headers_and_file_type(mc_root, link_path, file_type_klass):
                     links_dict["variables"] = links_dict.get("variables", set()) | {col.name for col in col_headers}
 
                 variables[mc_root_key]["links"].append(links_dict)
