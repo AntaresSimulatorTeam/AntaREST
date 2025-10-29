@@ -356,3 +356,183 @@ class TestDirectoryRepository:
 
         # Should count 0 studies
         assert directory_repo.count_studies_in_tree(directory.id) == 0
+
+    def test_get_all_descendant_directories(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
+        """
+        Test getting all descendant directories using recursive CTE.
+        """
+        # Create directory hierarchy: root -> child1, child2 -> grandchild1, grandchild2
+        root = Directory(
+            id=str(uuid.uuid4()),
+            name="Root",
+            parent_id=None,
+        )
+        directory_repo.save(root)
+
+        child1 = Directory(
+            id=str(uuid.uuid4()),
+            name="Child1",
+            parent_id=root.id,
+        )
+        directory_repo.save(child1)
+
+        child2 = Directory(
+            id=str(uuid.uuid4()),
+            name="Child2",
+            parent_id=root.id,
+        )
+        directory_repo.save(child2)
+
+        grandchild1 = Directory(
+            id=str(uuid.uuid4()),
+            name="Grandchild1",
+            parent_id=child1.id,
+        )
+        directory_repo.save(grandchild1)
+
+        grandchild2 = Directory(
+            id=str(uuid.uuid4()),
+            name="Grandchild2",
+            parent_id=child2.id,
+        )
+        directory_repo.save(grandchild2)
+
+        # Get all descendants from root
+        descendants = directory_repo.get_all_descendant_directories(root.id)
+
+        # Should include all 4 descendants
+        descendant_ids = {d.id for d in descendants}
+        assert len(descendant_ids) == 4
+        assert child1.id in descendant_ids
+        assert child2.id in descendant_ids
+        assert grandchild1.id in descendant_ids
+        assert grandchild2.id in descendant_ids
+
+        # Get descendants from child1
+        descendants_child1 = directory_repo.get_all_descendant_directories(child1.id)
+        descendant_ids_child1 = {d.id for d in descendants_child1}
+        assert len(descendant_ids_child1) == 1
+        assert grandchild1.id in descendant_ids_child1
+
+        # Get descendants from child2
+        descendants_child2 = directory_repo.get_all_descendant_directories(child2.id)
+        descendant_ids_child2 = {d.id for d in descendants_child2}
+        assert len(descendant_ids_child2) == 1
+        assert grandchild2.id in descendant_ids_child2
+
+    def test_get_all_descendant_directories_empty(
+        self, directory_repo: DirectoryRepository, test_user: Identity
+    ) -> None:
+        """
+        Test getting descendants from a directory with no children.
+        """
+        # Create leaf directory
+        leaf = Directory(
+            id=str(uuid.uuid4()),
+            name="Leaf",
+            parent_id=None,
+        )
+        directory_repo.save(leaf)
+
+        # Should return empty list
+        descendants = directory_repo.get_all_descendant_directories(leaf.id)
+        assert len(descendants) == 0
+
+    def test_get_directory_paths_bulk(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
+        """
+        Test getting directory paths in bulk using recursive CTE.
+        """
+        # Create directory hierarchy: root -> child -> grandchild
+        root = Directory(
+            id=str(uuid.uuid4()),
+            name="project",
+            parent_id=None,
+        )
+        directory_repo.save(root)
+
+        child = Directory(
+            id=str(uuid.uuid4()),
+            name="subfolder",
+            parent_id=root.id,
+        )
+        directory_repo.save(child)
+
+        grandchild = Directory(
+            id=str(uuid.uuid4()),
+            name="deep",
+            parent_id=child.id,
+        )
+        directory_repo.save(grandchild)
+
+        # Get paths for all directories
+        paths = directory_repo.get_directory_paths_bulk([root.id, child.id, grandchild.id])
+
+        # Verify paths
+        assert paths[root.id] == "project"
+        assert paths[child.id] == "project/subfolder"
+        assert paths[grandchild.id] == "project/subfolder/deep"
+
+    def test_get_directory_paths_bulk_multiple_roots(
+        self, directory_repo: DirectoryRepository, test_user: Identity
+    ) -> None:
+        """
+        Test getting directory paths for multiple root-level directories.
+        """
+        # Create two separate hierarchies
+        root1 = Directory(
+            id=str(uuid.uuid4()),
+            name="project1",
+            parent_id=None,
+        )
+        directory_repo.save(root1)
+
+        child1 = Directory(
+            id=str(uuid.uuid4()),
+            name="src",
+            parent_id=root1.id,
+        )
+        directory_repo.save(child1)
+
+        root2 = Directory(
+            id=str(uuid.uuid4()),
+            name="project2",
+            parent_id=None,
+        )
+        directory_repo.save(root2)
+
+        child2 = Directory(
+            id=str(uuid.uuid4()),
+            name="lib",
+            parent_id=root2.id,
+        )
+        directory_repo.save(child2)
+
+        # Get paths for all directories
+        paths = directory_repo.get_directory_paths_bulk([root1.id, child1.id, root2.id, child2.id])
+
+        # Verify paths
+        assert paths[root1.id] == "project1"
+        assert paths[child1.id] == "project1/src"
+        assert paths[root2.id] == "project2"
+        assert paths[child2.id] == "project2/lib"
+
+    def test_get_directory_paths_bulk_empty(self, directory_repo: DirectoryRepository, test_user: Identity) -> None:
+        """
+        Test getting directory paths with empty input.
+        """
+        # Should return empty dict
+        paths = directory_repo.get_directory_paths_bulk([])
+        assert paths == {}
+
+    def test_get_directory_paths_bulk_nonexistent(
+        self, directory_repo: DirectoryRepository, test_user: Identity
+    ) -> None:
+        """
+        Test getting directory paths for non-existent directory IDs.
+        """
+        # Request paths for non-existent IDs
+        fake_id = str(uuid.uuid4())
+        paths = directory_repo.get_directory_paths_bulk([fake_id])
+
+        # Should return empty dict (no matches)
+        assert fake_id not in paths

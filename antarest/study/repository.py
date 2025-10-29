@@ -15,7 +15,7 @@ import enum
 from typing import List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import and_, delete, exists, func, not_, or_, select, sql
+from sqlalchemy import TEXT, and_, delete, exists, func, literal, not_, or_, select, sql
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
@@ -537,22 +537,40 @@ class DirectoryRepository:
         stmt = select(exists(select(Directory).where(Directory.id == directory_id)))
         return bool(self.session.scalar(stmt))
 
-    def get_children_directories(self, directory_id: str) -> Sequence[Directory]:
-        stmt = select(Directory).where(Directory.parent_id == directory_id)
+    def get_all_descendant_directories(self, directory_id: str) -> Sequence[Directory]:
+        """
+        Get all descendant directories using a recursive CTE query.
+
+        Args:
+            directory_id: The parent directory ID
+
+        Returns:
+            List of all descendant Directory objects
+        """
+        # Base case: start with the given directory's children
+        base = (
+            select(
+                Directory.id,
+                Directory.name,
+                Directory.parent_id,
+            )
+            .where(Directory.parent_id == directory_id)
+            .cte(name="descendant_hierarchy", recursive=True)
+        )
+
+        # Recursive case: get children of children
+        recursive = select(
+            Directory.id,
+            Directory.name,
+            Directory.parent_id,
+        ).join(base, Directory.parent_id == base.c.id)
+
+        cte = base.union_all(recursive)
+
+        # Query all descendants
+        stmt = select(Directory).where(Directory.id.in_(select(cte.c.id)))
         result = self.session.execute(stmt)
         return list(result.scalars().all())
-
-    def get_all_descendant_directories(self, directory_id: str) -> Sequence[Directory]:
-        descendants: List[Directory] = []
-        to_process = [directory_id]
-
-        while to_process:
-            current_id = to_process.pop(0)
-            children = self.get_children_directories(current_id)
-            descendants.extend(children)
-            to_process.extend([child.id for child in children])
-
-        return descendants
 
     def get_all_studies_in_tree(self, directory_id: str) -> Sequence[Study]:
         # Get all directory IDs (current + descendants)
@@ -588,9 +606,6 @@ class DirectoryRepository:
         Returns:
             Dictionary mapping directory_id -> path (e.g., {"dir-123": "parent/child"})
         """
-        from sqlalchemy import literal
-        from sqlalchemy.dialects.postgresql import TEXT
-
         if not directory_ids:
             return {}
 
