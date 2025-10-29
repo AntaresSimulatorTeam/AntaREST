@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import contextlib
+import logging
 import os
 import time
 from typing import Callable
@@ -18,6 +19,8 @@ from typing import Callable
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+
+logger = logging.getLogger(__name__)
 
 
 def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: float = 1) -> None:
@@ -40,8 +43,9 @@ def is_windows_ci() -> bool:
     """
     result = IS_WINDOWS and os.getenv("GITHUB_ACTIONS") == "true"
     if result:
-        print(
-            f"[CI Detection] Running on Windows CI - Using relaxed performance thresholds (IS_WINDOWS={IS_WINDOWS}, GITHUB_ACTIONS={os.getenv('GITHUB_ACTIONS')})"
+        logger.warning(
+            "[CI Detection] Running on Windows CI - Using relaxed performance thresholds "
+            f"(IS_WINDOWS={IS_WINDOWS}, GITHUB_ACTIONS={os.getenv('GITHUB_ACTIONS')})"
         )
     return result
 
