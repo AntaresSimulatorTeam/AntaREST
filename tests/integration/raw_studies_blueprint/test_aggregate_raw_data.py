@@ -954,7 +954,7 @@ class TestDataAggregationCreationOperations:
         expected_expiration_date = creation_time + datetime.timedelta(minutes=expiration_time_in_minutes)
         res = client.get(
             f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind",
-            params={**params, "timeout": expiration_time_in_minutes},
+            params={**params, "download_expiration_time": expiration_time_in_minutes},
         )
         assert res.status_code == 200
         download_id = res.json()
