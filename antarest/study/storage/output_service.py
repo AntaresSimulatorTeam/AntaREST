@@ -401,15 +401,19 @@ class OutputService:
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
-    def archive_outputs(self, study_id: str) -> None:
+    def archive_outputs(self, study_id: str) -> list[str]:
         logger.info(f"Archiving all outputs for study {study_id}")
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
         self._study_service.assert_study_unarchived(study)
         file_study = self._study_service.get_file_study(study)
+        task_ids = []
         for output in file_study.config.outputs:
             if not file_study.config.outputs[output].archived:
-                self.archive_output(study_id, output)
+                task_id = self.archive_output(study_id, output)
+                if task_id:
+                    task_ids.append(task_id)
+        return task_ids
 
     def archive_output(
         self,
