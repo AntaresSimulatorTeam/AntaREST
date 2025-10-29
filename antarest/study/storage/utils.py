@@ -20,7 +20,7 @@ import tempfile
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence, cast
+from typing import List, Optional, Sequence, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -221,21 +221,6 @@ def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
 
     app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
     app()
-
-
-def study_matcher(
-    name: Optional[str], workspace: Optional[str], folder: Optional[str]
-) -> Callable[[StudyMetadataDTO], bool]:
-    def study_match(study: StudyMetadataDTO) -> bool:
-        if name and not study.name.startswith(name):
-            return False
-        if workspace and study.workspace != workspace:
-            return False
-        if folder and (not study.folder or not study.folder.startswith(folder)):
-            return False
-        return True
-
-    return study_match
 
 
 def assert_permission_on_studies(
