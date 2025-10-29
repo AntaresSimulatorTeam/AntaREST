@@ -13,7 +13,7 @@ import collections
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, List, Sequence
+from typing import Annotated, Any, List, Sequence
 
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
 
@@ -38,8 +38,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
 DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
-download_expiration_time_query: int = Query(
-    DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+download_expiration_time_query: Any = Query(
     gt=0,
     lt=1000,
     description="Expiration time for the download file (in minutes)",
@@ -239,7 +238,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        download_expiration_time: int = download_expiration_time_query,
+        download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -320,7 +319,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        download_expiration_time: int = download_expiration_time_query,
+        download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
         Create an aggregation of links raw data
@@ -398,7 +397,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        download_expiration_time: int = download_expiration_time_query,
+        download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -475,7 +474,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        download_expiration_time: int = download_expiration_time_query,
+        download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
         Create an aggregation of links in mc-all
