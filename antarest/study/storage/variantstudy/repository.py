@@ -113,7 +113,7 @@ class VariantStudyRepository(StudyMetadataRepository):
             .options(
                 joinedload(VariantStudy.snapshot),
                 joinedload(VariantStudy.commands),
-                joinedload(VariantStudy.additional_data),
+                # joinedload(VariantStudy.additional_data),
                 joinedload(VariantStudy.owner),
                 joinedload(VariantStudy.groups),
             )

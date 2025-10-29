@@ -442,10 +442,11 @@ class RawStudyInterface(StudyInterface):
             study_antares = file_study.tree.get(["study", "antares"])
             study_antares["editor"] = user.name
             file_study.tree.save(study_antares, ["study", "antares"])
-            if not self._study.additional_data:
-                self._study.additional_data = StudyAdditionalData(author=user_name, editor=user_name)
-            else:
-                self._study.additional_data.editor = user_name
+            # if not self._study.additional_data:
+            #     self._study.additional_data = StudyAdditionalData(author=user_name, editor=user_name)
+            # else:
+            #     self._study.additional_data.editor = user_name
+            self._study.editor = user_name
             self._repository.save(self._study)
 
 
@@ -797,13 +798,13 @@ class StudyService:
 
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
 
-        study.additional_data = study.additional_data or StudyAdditionalData()
+        # study.additional_data = study.additional_data or StudyAdditionalData()
         if metadata_patch.name:
             study.name = metadata_patch.name
         if metadata_patch.author:
-            study.additional_data.author = metadata_patch.author
+            study.author = metadata_patch.author
         if metadata_patch.horizon:
-            study.additional_data.horizon = metadata_patch.horizon
+            study.horizon = metadata_patch.horizon
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
@@ -888,7 +889,7 @@ class StudyService:
             created_at=now_utc,
             updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
-            additional_data=StudyAdditionalData(author=author, editor=author),
+            #additional_data=StudyAdditionalData(author=author, editor=author),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)

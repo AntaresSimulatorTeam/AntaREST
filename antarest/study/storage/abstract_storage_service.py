@@ -66,7 +66,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         self,
         study: Study,
     ) -> StudyMetadataDTO:
-        additional_data = study.additional_data or StudyAdditionalData()
+        # additional_data = study.additional_data or StudyAdditionalData()
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         folder: Optional[str] = None
         if hasattr(study, "folder"):
@@ -75,15 +75,18 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         owner_info = (
             OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
-            else OwnerInfo(name=additional_data.author or "Unknown")
+            else OwnerInfo(name=study.author)
+            # remplacer add_data.author par juste study.author
+            # additional_data.author or "Unknown"
         )
 
+        # replaced mentions of additional data by study."author/editor/horizon"
         return StudyMetadataDTO(
             id=study.id,
             name=study.name,
             version=study.version,
-            author=additional_data.author,
-            editor=additional_data.editor,
+            author=study.author,
+            editor=study.editor,
             created=str(study.created_at),
             updated=str(study.updated_at),
             workspace=study_workspace,
@@ -93,7 +96,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             owner=owner_info,
             groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
             public_mode=study.public_mode or PublicMode.NONE,
-            horizon=additional_data.horizon,
+            horizon=study.horizon,
             folder=folder,
             tags=[tag.label for tag in study.tags],
         )
@@ -337,17 +340,17 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
         stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {metadata.path} exported in {x}s"))
 
-    def _read_additional_data_from_files(self, file_study: FileStudy) -> StudyAdditionalData:
-        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        study_antares = file_study.tree.get(url=["study", "antares"])
-        author = study_antares.get("author")
-        editor = study_antares.get("editor", author)
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, editor=editor)
-        return study_additional_data
+    # def _read_additional_data_from_files(self, file_study: FileStudy) -> StudyAdditionalData:
+    #     logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+    #     horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+    #     study_antares = file_study.tree.get(url=["study", "antares"])
+    #     author = study_antares.get("author")
+    #     editor = study_antares.get("editor", author)
+    #     assert isinstance(author, str)
+    #     assert isinstance(editor, str)
+    #     assert isinstance(horizon, (str, int))
+    #     study_additional_data = StudyAdditionalData(horizon=horizon, author=author, editor=editor)
+    #     return study_additional_data
 
     @override
     def archive_study_output(self, study: Study, output_id: str) -> bool:
