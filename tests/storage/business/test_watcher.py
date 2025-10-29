@@ -168,7 +168,6 @@ def study_tree(tmp_path: Path) -> Path:
     return tmp_path
 
 
-@pytest.mark.unit_test
 def test_scan(study_tree: Path) -> None:
     clean_files()
 
@@ -189,7 +188,6 @@ def test_scan(study_tree: Path) -> None:
     assert call.args[1] is None
 
 
-@pytest.mark.unit_test
 def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
     def count_studies() -> int:
         return db_session.query(Study).count()
@@ -254,7 +252,6 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
         assert repository.delete.call_count == 1
 
 
-@pytest.mark.unit_test
 def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
@@ -324,7 +321,6 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
     assert f"TS generation temporary folder found. Will skip further scan of folder {ts_gen_folder}" in caplog.text
 
 
-@pytest.mark.unit_test
 def test_scan_disabled_exception(study_tree: Path) -> None:
     clean_files()
 
@@ -346,7 +342,6 @@ def process(x: int) -> bool:
     return Watcher._get_lock(2)
 
 
-@pytest.mark.unit_test
 def test_get_lock() -> None:
     clean_files()
 

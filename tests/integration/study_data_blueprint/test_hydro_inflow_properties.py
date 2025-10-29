@@ -12,11 +12,9 @@
 from http import HTTPStatus
 from unittest.mock import ANY
 
-import pytest
 from starlette.testclient import TestClient
 
 
-@pytest.mark.unit_test
 class TestHydroInflowProperties:
     """
     Test the end points related to hydraulic inflow-structure.

@@ -98,7 +98,6 @@ def assert_with_errors(
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -118,7 +117,6 @@ def test_sta_mini_settings(storage_service: StudyService, url: str, expected_out
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -141,7 +139,6 @@ def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: s
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -165,7 +162,6 @@ def test_sta_mini_desktop(storage_service: StudyService, url: str, expected_outp
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -195,7 +191,6 @@ def expected_min_gen_response() -> bytes:
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output, formatted",
     [
@@ -328,7 +323,6 @@ def test_sta_mini_input(storage_service: StudyService, url: str, expected_output
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -461,7 +455,6 @@ def test_sta_mini_output(storage_service: StudyService, url: str, expected_outpu
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -501,7 +494,6 @@ def test_sta_mini_expansion(storage_service: StudyService, url: str, expected_ou
 
 
 @with_admin_user
-@pytest.mark.integration_test
 def test_sta_mini_copy(
     storage_service: StudyService, tmp_path: Path, matrix_service: ISimpleMatrixService, client: TestClient
 ) -> None:
@@ -542,7 +534,6 @@ def test_sta_mini_copy(
 
 
 @with_admin_user
-@pytest.mark.integration_test
 def test_sta_mini_list_studies(client: TestClient) -> None:
     expected_output = {
         UUID: {
@@ -573,7 +564,6 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
     )
 
 
-@pytest.mark.integration_test
 def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_mini_path: Path) -> None:
     # TODO why a wrong test should success
     (sta_mini_path / "output" / "maps").mkdir()
@@ -589,7 +579,6 @@ def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_
 
 
 @with_admin_user
-@pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study = storage_service.get_study_path(UUID)
     sta_mini_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study)
@@ -602,7 +591,6 @@ def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: 
 
 
 @with_admin_user
-@pytest.mark.integration_test
 def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study_output = storage_service.get_study_path(UUID) / "output" / "20201014-1422eco-hello"
     sta_mini_output_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study_output)
@@ -621,7 +609,6 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
