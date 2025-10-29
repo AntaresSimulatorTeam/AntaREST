@@ -39,6 +39,55 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
         assert db_content.variables_list_version == 1
         assert db_content.to_model().model_dump(by_alias=True) == expected_content
 
+    # Checks mc-all links work properly as we didn't have any info in the first output
+    output_id = "20241807-1540eco-extra-outputs"
+    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
+    assert res.json()["mcAll"]["links"] == [
+        {
+            "area1Name": "de",
+            "area2Name": "fr",
+            "variables": [
+                "CONG. FEE (ABS.) EXP",
+                "CONG. FEE (ABS.) MAX",
+                "CONG. FEE (ABS.) MIN",
+                "CONG. FEE (ABS.) STD",
+                "CONG. FEE (ALG.) EXP",
+                "CONG. FEE (ALG.) MAX",
+                "CONG. FEE (ALG.) MIN",
+                "CONG. FEE (ALG.) STD",
+                "CONG. PROB + VALUES",
+                "CONG. PROB - VALUES",
+                "FLOW LIN. EXP",
+                "FLOW LIN. MAX",
+                "FLOW LIN. MIN",
+                "FLOW LIN. STD",
+                "FLOW QUAD. VALUES",
+                "HURDLE COST EXP",
+                "HURDLE COST MAX",
+                "HURDLE COST MIN",
+                "HURDLE COST STD",
+                "LOOP FLOW VALUES",
+                "MARG. COST EXP",
+                "MARG. COST MAX",
+                "MARG. COST MIN",
+                "MARG. COST STD",
+                "UCAP LIN. EXP",
+                "UCAP LIN. MAX",
+                "UCAP LIN. MIN",
+                "UCAP LIN. STD",
+            ],
+        }
+    ]
+
+
+def test_get_output_variables_list_other_output(client: TestClient, user_access_token: str, internal_study_id: str):
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Checks the endpoint works correctly
+    output_id = "20241807-1540eco-extra-outputs"
+    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
+    print(res.json()["mcAll"]["links"])
+
 
 def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_token: str, internal_study_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
