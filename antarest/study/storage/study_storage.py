@@ -87,8 +87,13 @@ class IStudyStorage(ABC):
         """
 
     @abstractmethod
-    def get_study_information(self, metadata: Study) -> StudyMetadataDTO:
-        """Get study information."""
+    def get_study_information(self, metadata: Study, folder_path: Optional[str] = None) -> StudyMetadataDTO:
+        """Get study information.
+
+        Args:
+            metadata: The study to get information for
+            folder_path: Optional pre-calculated folder path to avoid database queries
+        """
 
     @abstractmethod
     def get_raw(

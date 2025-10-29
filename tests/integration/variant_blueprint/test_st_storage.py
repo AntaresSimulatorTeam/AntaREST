@@ -76,6 +76,7 @@ class TestSTStorage:
             "horizon": "2030",
             "folder": "STA-mini",
             "tags": [],
+            "directory_id": None,
         }
 
         # Here is the list of available areas
