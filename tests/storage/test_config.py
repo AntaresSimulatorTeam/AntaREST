@@ -32,7 +32,6 @@ def storage_config_default() -> dict[str, Any]:
         "auto_archive_threshold_days": 120,
         "auto_archive_dry_run": True,
         "auto_archive_sleeping_time": 7200,
-        "auto_archive_max_parallel": 10,
         "snapshot_retention_days": 14,
         "matrixstore_format": "tsv",
     }
@@ -67,7 +66,6 @@ def test_storage_config_from_dict(storage_config_default: dict[str, Any]) -> Non
     assert config.auto_archive_threshold_days == 120
     assert config.auto_archive_dry_run is True
     assert config.auto_archive_sleeping_time == 7200
-    assert config.auto_archive_max_parallel == 10
     assert config.snapshot_retention_days == 14
     assert config.matrixstore_format == InternalMatrixFormat.TSV
 

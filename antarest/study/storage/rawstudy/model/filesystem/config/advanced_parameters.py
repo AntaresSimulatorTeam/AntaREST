@@ -97,11 +97,7 @@ class AdvancedParametersFileData(AntaresBaseModel):
 
 
 def parse_advanced_parameters(version: StudyVersion, data: dict[str, Any]) -> AdvancedParameters:
-    args = {}
-    args["advanced_parameters"] = data.get("advanced parameters", {})
-    args["other_preferences"] = data.get("other preferences", {})
-    args["seed_parameters"] = data.get("seeds - Mersenne Twister", {})
-    parameters = AdvancedParametersFileData.model_validate(args).to_model()
+    parameters = AdvancedParametersFileData.model_validate(data).to_model()
     validate_advanced_parameters_against_version(version, parameters)
     initialize_advanced_parameters_against_version(parameters, version)
     return parameters

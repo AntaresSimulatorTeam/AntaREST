@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any
 
 from fastapi import APIRouter
 
@@ -35,15 +34,14 @@ def create_utils_routes(config: Config) -> APIRouter:
     Args:
         config: main server configuration
     """
-    bp = APIRouter()
+    bp = APIRouter(tags=[APITag.misc])
 
-    @bp.get("/health", tags=[APITag.misc], response_model=StatusDTO)
-    def health() -> Any:
+    @bp.get("/health")
+    def health() -> StatusDTO:
         return StatusDTO(status="available")
 
     @bp.get(
         "/version",
-        tags=[APITag.misc],
         summary="Get application version",
     )
     def version_info(with_deps: bool = False) -> VersionInfoDTO:
@@ -66,11 +64,9 @@ def create_utils_routes(config: Config) -> APIRouter:
 
     @bp.get(
         "/desktop_mode",
-        tags=[APITag.misc],
         summary="Get if application is running on desktop mode",
-        response_model=DesktopModeDTO,
     )
-    def desktop_mode() -> Any:
+    def desktop_mode() -> DesktopModeDTO:
         """
         Returns weither the application is running on desktop mode.
 

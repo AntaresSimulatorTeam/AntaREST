@@ -13,9 +13,9 @@
 import http
 import logging
 from http import HTTPStatus
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
@@ -39,13 +39,17 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         API router
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.tasks], dependencies=[auth.required()])
 
-    @bp.post("/tasks", tags=[APITag.tasks])
+    @bp.post("/tasks", deprecated=True)
     def list_tasks(filter: TaskListFilter) -> list[TaskDTO]:
         return service.list_tasks(filter)
 
-    @bp.get("/tasks/{task_id}", tags=[APITag.tasks], response_model=TaskDTO)
+    @bp.get("/tasks")
+    def get_task_list(task_filter: Annotated[TaskListFilter, Query()]) -> list[TaskDTO]:
+        return service.list_tasks(task_filter)
+
+    @bp.get("/tasks/{task_id}")
     def get_task(
         task_id: str,
         wait_for_completion: bool = False,
@@ -87,16 +91,14 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
 
         return service.status_task(sanitized_task_id, with_logs)
 
-    @bp.put("/tasks/{task_id}/cancel", tags=[APITag.tasks], status_code=HTTPStatus.ACCEPTED)
+    @bp.put("/tasks/{task_id}/cancel", status_code=HTTPStatus.ACCEPTED)
     def cancel_task(task_id: str) -> None:
         logger.info(f"Requesting cancellation for task {task_id}")
         service.cancel_task(task_id)
 
     @bp.get(
         "/tasks/{task_id}/progress",
-        tags=[APITag.tasks],
         summary="Retrieve task progress from task id",
-        response_model=Optional[int],
     )
     def get_progress(task_id: str) -> Optional[int]:
         sanitized_task_id = sanitize_uuid(task_id)

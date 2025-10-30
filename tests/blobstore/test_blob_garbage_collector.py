@@ -27,7 +27,6 @@ def blob_garbage_collector(tmp_path: Path):
     return BlobGarbageCollector(blob_service=Mock(), dry_run=False, sleeping_time=3600)
 
 
-@pytest.mark.unit_test
 def test_delete_unused_saved_blobs(
     blob_garbage_collector: BlobGarbageCollector,
 ):
@@ -44,7 +43,6 @@ def test_delete_unused_saved_blobs(
     blob_garbage_collector.blob_service.delete.assert_not_called()
 
 
-@pytest.mark.unit_test
 def test_clean_blobs(blob_garbage_collector: BlobGarbageCollector):
     blob_garbage_collector.blob_service.get_saved_blobs.return_value = ["blob_saved", "blob_used"]
     blob_garbage_collector.blob_service.get_used_blobs.return_value = [

@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
-import type { AxiosError } from "axios";
-import { useTranslation } from "react-i18next";
-import { Box, Tooltip } from "@mui/material";
+import type { Job } from "@/services/api/launcher/jobs/types";
 import ErrorIcon from "@mui/icons-material/Error";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import { Box, Tooltip } from "@mui/material";
+import type { AxiosError } from "axios";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { getStudyJobLog } from "../../../services/api/study";
 import LogModal from "../../common/LogModal";
-import type { LaunchJob } from "../../../types/types";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 
 interface PropsType {
-  job: LaunchJob;
+  job: Job;
   logButton?: boolean;
   logErrorButton?: boolean;
 }

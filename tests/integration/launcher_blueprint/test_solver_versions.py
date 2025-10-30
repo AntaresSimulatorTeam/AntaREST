@@ -11,11 +11,9 @@
 # This file is part of the Antares project.
 
 
-import pytest
 from starlette.testclient import TestClient
 
 
-@pytest.mark.integration_test
 class TestSolverVersions:
     """
     The purpose of this unit test is to check the `/v1/launcher/versions` endpoint.

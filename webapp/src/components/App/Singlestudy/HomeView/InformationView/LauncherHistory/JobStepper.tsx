@@ -12,21 +12,27 @@
  * This file is part of the Antares project.
  */
 
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import type { Job, JobStatus } from "@/services/api/launcher/jobs/types";
+import { getStudyOutputs, killStudy } from "@/services/api/study";
+import { convertUTCToLocalTime } from "@/services/utils";
+import type { LaunchJobsProgress } from "@/types/types";
+import type { EmptyObject } from "@/utils/tsUtils";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
-import { Tooltip, Typography, Stepper, Step, StepLabel } from "@mui/material";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import { Step, StepLabel, Stepper, Tooltip, Typography } from "@mui/material";
+import type { AxiosError } from "axios";
 import moment from "moment";
+import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import type { AxiosError } from "axios";
-import type { JobStatus, LaunchJob, LaunchJobsProgress } from "@/types/types";
-import { convertUTCToLocalTime } from "@/services/utils";
-import { getStudyOutputs, killStudy } from "@/services/api/study";
-import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
+import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
+import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
 import {
   CancelContainer,
   JobRoot,
@@ -35,11 +41,6 @@ import {
   StepLabelRoot,
   StepLabelRow,
 } from "./style";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
-import type { EmptyObject } from "@/utils/tsUtils";
-import DigestDialog from "@/components/common/dialogs/DigestDialog";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 
 export const ColorStatus = {
   running: "warning.main",
@@ -75,13 +76,13 @@ function QontoStepIcon(props: { className: string | undefined; status: JobStatus
 type DialogState =
   | {
       type: "killJob" | "digest";
-      job: LaunchJob;
+      job: Job;
     }
   | EmptyObject;
 
 interface Props {
   studyId: string;
-  jobs: LaunchJob[];
+  jobs: Job[];
   jobsProgress: LaunchJobsProgress;
 }
 
@@ -103,7 +104,7 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const canDisplayDigest = (job: LaunchJob) => {
+  const canDisplayDigest = (job: Job) => {
     if (job.status !== "success") {
       return false;
     }
@@ -118,7 +119,7 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
   // Actions
   ////////////////////////////////////////////////////////////////
 
-  const killTask = async (jobId: LaunchJob["id"]) => {
+  const killTask = async (jobId: Job["id"]) => {
     closeDialog();
 
     try {
@@ -128,7 +129,7 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
     }
   };
 
-  const copyId = (jobId: LaunchJob["id"]) => {
+  const copyId = (jobId: Job["id"]) => {
     try {
       navigator.clipboard.writeText(jobId);
 

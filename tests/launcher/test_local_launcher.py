@@ -45,7 +45,6 @@ def launcher_config(tmp_path: Path) -> LocalConfig:
     return LocalConfig.from_dict(data)
 
 
-@pytest.mark.unit_test
 def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
@@ -118,7 +117,6 @@ def xpress_env() -> Any:
     del os.environ["XPRESSDIR"]
 
 
-@pytest.mark.unit_test
 def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env: Any) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     solver_version_8_8 = SolverVersion.parse("8.8")
@@ -196,7 +194,6 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env: Any)
         ]
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "solver_version,arguments",
     [
@@ -217,7 +214,6 @@ def test_unsupported_launcher_other_options_should_raise(
         local_launcher._parse_launcher_options(launcher_parameters, solver_version)
 
 
-@pytest.mark.unit_test
 def test_parse_xpress_dir(tmp_path: Path) -> None:
     data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
     launcher_config = LocalConfig.from_dict(data)
@@ -227,7 +223,6 @@ def test_parse_xpress_dir(tmp_path: Path) -> None:
     assert env_variables["XPRESSDIR"] == "fake_path_for_test"
 
 
-@pytest.mark.unit_test
 def test_select_best_binary() -> None:
     binaries = {
         "700": Path("700"),

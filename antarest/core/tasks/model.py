@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
+from pydantic import field_validator
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String, update
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
@@ -107,6 +108,20 @@ class TaskListFilter(AntaresBaseModel, extra="forbid"):
     to_creation_date_utc: Optional[float] = None
     from_completion_date_utc: Optional[float] = None
     to_completion_date_utc: Optional[float] = None
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def convert_status_strings_to_ints(cls, v: Any) -> Any:
+        """
+        Convert string values to integers for TaskStatus enum validation.
+
+        Query parameters are received as strings by FastAPI. While Pydantic normally
+        handles string-to-int conversion, it doesn't do this automatically for integer
+        enums within lists, requiring explicit pre-validation conversion.
+        """
+        if isinstance(v, list):
+            return [int(item) if isinstance(item, str) and item.isdigit() else item for item in v]
+        return v
 
 
 class TaskJobLog(Base):

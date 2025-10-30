@@ -14,7 +14,6 @@ from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import Mock
 
-import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -30,7 +29,6 @@ CONFIG = Config(
 )
 
 
-@pytest.mark.unit_test
 def test_version() -> None:
     mock_storage_service = Mock()
     mock_storage_service.study_service.path_resources = Path("/")
@@ -46,7 +44,6 @@ def test_version() -> None:
     assert result.json()["version"] == __version__
 
 
-@pytest.mark.unit_test
 def test_server_health() -> None:
     app = FastAPI(title=__name__)
     app.include_router(create_utils_routes(Config()))

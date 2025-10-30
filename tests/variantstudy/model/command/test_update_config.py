@@ -12,8 +12,6 @@
 
 import json
 
-import pytest
-
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -22,7 +20,6 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.mark.unit_test
 def test_update_config(empty_study_880: FileStudy, command_context: CommandContext) -> None:
     empty_study = empty_study_880
     study_path = empty_study.config.study_path

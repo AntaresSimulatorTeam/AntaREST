@@ -50,7 +50,6 @@ hydro_ini_content = {
 
 
 class TestHydroManagement:
-    @pytest.mark.unit_test
     def test_get_hydro_management_options(self, hydro_manager: HydroManager, empty_study_880: FileStudy) -> None:
         """
         Set up:
@@ -79,7 +78,6 @@ class TestHydroManagement:
             assert data_area_raw == data_area_lower
             assert data_area_raw == data_area_upper
 
-    @pytest.mark.unit_test
     def test_set_field_values(self, hydro_manager: HydroManager, empty_study_880: FileStudy) -> None:
         """
         Set up:
@@ -138,7 +136,6 @@ class TestHydroManagement:
                     study, HydroManagementUpdate(overflow_spilled_cost_difference=0.3), area
                 )
 
-    @pytest.mark.unit_test
     def test_get_all_hydro_properties(
         self,
         hydro_manager: HydroManager,

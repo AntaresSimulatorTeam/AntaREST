@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -26,9 +26,14 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
+OPTIMIZATION_PATH = ["settings", "generaldata", "optimization"]
+
+
 def _get_optimization_preferences(file_study: FileStudy) -> dict[str, Any]:
-    data = file_study.tree.get(["settings", "generaldata"])
-    return cast(dict[str, Any], data.get("optimization", {}))
+    try:
+        return file_study.tree.get(OPTIMIZATION_PATH)
+    except KeyError:
+        return {}
 
 
 class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
@@ -59,4 +64,4 @@ class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
             {k: v for k, v in current_optimization_preferences.items() if k not in optimization_preferences}
         )
 
-        file_study.tree.save(optimization_preferences, ["settings", "generaldata", "optimization"])
+        file_study.tree.save(optimization_preferences, OPTIMIZATION_PATH)
