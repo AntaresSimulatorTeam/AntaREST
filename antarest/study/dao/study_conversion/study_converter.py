@@ -16,12 +16,18 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
+from antarest.study.business.model.binding_constraint_model import BindingConstraintOperator
 from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_9_2
+from antarest.study.model import (
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_7,
+    STUDY_VERSION_9_2,
+)
 
 
 class StudyConverter:
@@ -40,11 +46,14 @@ class StudyConverter:
     def convert_study_inputs(self) -> None:
         # Areas
         self._convert_areas()
-        # todo: matrices are not in the DAO ...
+        # todo: Hydro matrices are not in the DAO ...
 
         # Links
+        self._convert_links()
+        # todo: Link Matrices GET are not in the DAO ...
 
         # Binding constraints
+        self._convert_binding_constraints()
 
         # Xpansion
 
@@ -64,6 +73,31 @@ class StudyConverter:
         self._new_dao.save_advanced_parameters(self._source_dao.get_advanced_parameters())
         self._new_dao.save_optimization_preferences(self._source_dao.get_optimization_preferences())
         self._new_dao.save_thematic_trimming(self._source_dao.get_thematic_trimming())
+
+    def _convert_binding_constraints(self) -> None:
+        constraints = list(self._source_dao.get_all_constraints().values())
+        self._new_dao.save_constraints(constraints)
+
+        for constraint in constraints:
+            bc_id = constraint.id
+            if self._study_version < STUDY_VERSION_8_7:
+                matrix_id = self._matrix_service.create(self._source_dao.get_constraint_values_matrix(bc_id))
+                self._new_dao.save_constraint_values_matrix(bc_id, matrix_id)
+            else:
+                if constraint.operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
+                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_less_term_matrix(bc_id))
+                    self._new_dao.save_constraint_less_term_matrix(bc_id, matrix_id)
+                if constraint.operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
+                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_greater_term_matrix(bc_id))
+                    self._new_dao.save_constraint_greater_term_matrix(bc_id, matrix_id)
+                if constraint.operator == BindingConstraintOperator.EQUAL:
+                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_equal_term_matrix(bc_id))
+                    self._new_dao.save_constraint_equal_term_matrix(bc_id, matrix_id)
+
+    def _convert_links(self) -> None:
+        links = self._source_dao.get_links()
+        for link in links:
+            self._new_dao.save_link(link)
 
     def _convert_areas(self) -> None:
         area_properties = self._source_dao.get_all_area_properties()
