@@ -26,6 +26,7 @@ from antarest.study.business.model.xpansion_model import XpansionResourceFileTyp
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.model import (
     STUDY_VERSION_8_1,
+    STUDY_VERSION_8_3,
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
     STUDY_VERSION_9_2,
@@ -81,10 +82,11 @@ class StudyConverter:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
         self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())
         self._new_dao.save_timeseries_config(self._source_dao.get_timeseries_config())
-        self._new_dao.save_adequacy_patch_parameters(self._source_dao.get_adequacy_patch_parameters())
         self._new_dao.save_advanced_parameters(self._source_dao.get_advanced_parameters())
         self._new_dao.save_optimization_preferences(self._source_dao.get_optimization_preferences())
         self._new_dao.save_thematic_trimming(self._source_dao.get_thematic_trimming())
+        if self._study_version > STUDY_VERSION_8_3:
+            self._new_dao.save_adequacy_patch_parameters(self._source_dao.get_adequacy_patch_parameters())
 
     def _convert_xpansion(self) -> None:
         self._new_dao.save_xpansion_settings(self._source_dao.get_xpansion_settings())
