@@ -22,7 +22,7 @@ from antarest.study.model import RawStudy
 from tests.helpers import create_raw_study
 
 
-def test_database_constraints(self, db_session: Session) -> None:
+def test_database_constraints(db_session: Session) -> None:
     # Data insertion example
     with db_session:
         task_job = TaskJob(id=str(uuid.uuid4()), name="TaskJob 1")
@@ -48,7 +48,7 @@ def test_database_constraints(self, db_session: Session) -> None:
         assert db_session.query(TaskJobLog).count() == 0
 
 
-def test_owner_constraints(self, db_session: Session) -> None:
+def test_owner_constraints(db_session: Session) -> None:
     # Insert a user and attach several TaskJob objects to him
     with db_session:
         db_session.add(User(id=0o007, name="James Bond", password=Password("007")))
@@ -75,7 +75,7 @@ def test_owner_constraints(self, db_session: Session) -> None:
         assert db_session.query(TaskJob).filter(TaskJob.owner_id.is_(None)).count() == 3
 
 
-def test_study_constraints(self, db_session: Session) -> None:
+def test_study_constraints(db_session: Session) -> None:
     # Insert a Study object and attach several TaskJob objects to it
     with db_session:
         study_id = str(uuid.uuid4())
