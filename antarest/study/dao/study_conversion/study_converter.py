@@ -68,6 +68,14 @@ class StudyConverter:
         # Scenario Builder
         # todo: the DAO only offers a request by ScenarioType (not efficient at all)
 
+        # Districts
+        for district in self._source_dao.get_districts():
+            self._new_dao.save_district(district)
+
+        # Layers
+        for layer in self._source_dao.get_layers():
+            self._new_dao.save_layer(layer)
+
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
         self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())
