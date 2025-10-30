@@ -243,7 +243,6 @@ def create_raw_study_routes(
     @bp.delete(
         "/studies/{uuid}/raw",
         summary="Delete files or folders located inside the 'User' folder",
-        response_model=None,
     )
     def delete_file(
         uuid: str,

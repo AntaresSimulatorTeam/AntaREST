@@ -190,7 +190,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     @bp.get(
         "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
         summary="Display an output digest file for the front-end",
-        response_model=DigestUI,
     )
     def get_digest_file(study_id: str, output_id: str) -> DigestUI:
         study_id = sanitize_uuid(study_id)

@@ -126,7 +126,6 @@ def create_study_variant_routes(
     @bp.get(
         "/studies/{uuid}/commands/_matrices",
         summary="Export a variant's commands matrices",
-        response_model=FileDownloadTaskDTO,
     )
     def export_matrices(
         uuid: str,
@@ -249,7 +248,6 @@ def create_study_variant_routes(
     @bp.put(
         "/studies/{uuid}/generate",
         summary="Generate variant snapshot",
-        response_model=str,
     )
     def generate_variant(uuid: str, denormalize: bool = False, from_scratch: bool = False) -> str:
         logger.info(f"Generating snapshot for variant study {uuid}")
@@ -259,7 +257,6 @@ def create_study_variant_routes(
     @bp.get(
         "/studies/{uuid}/task",
         summary="Get study generation task",
-        response_model=TaskDTO,
     )
     def get_study_generation_task(uuid: str) -> TaskDTO:
         sanitized_uuid = sanitize_uuid(uuid)

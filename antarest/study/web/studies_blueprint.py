@@ -220,7 +220,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/_import",
         status_code=HTTPStatus.CREATED,
         summary="Import Study",
-        response_model=str,
     )
     def import_study(study: UploadFile, groups: str = "") -> str:
         """
@@ -281,7 +280,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/copy",
         status_code=HTTPStatus.CREATED,
         summary="Copy Study",
-        response_model=str,
     )
     def copy_study(
         uuid: str,

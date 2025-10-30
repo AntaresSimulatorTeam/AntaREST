@@ -12,7 +12,7 @@
 
 import logging
 from datetime import timedelta
-from typing import List, Optional, Union
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -123,7 +123,6 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
 
     @bp.get(
         "/groups",
-        response_model=List[Union[GroupDetailDTO, GroupDTO]],
     )
     def groups_get_all(details: bool = False) -> list[GroupDetailDTO | GroupDTO]:
         logger.info("Fetching groups list")

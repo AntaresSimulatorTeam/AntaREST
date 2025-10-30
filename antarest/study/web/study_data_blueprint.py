@@ -258,7 +258,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         "/studies/{uuid}/layers",
         summary="Get all layers info",
-        response_model=List[Layer],
     )
     def get_layers(uuid: str) -> List[Layer]:
         logger.info(f"Fetching layer list for study {uuid}")
@@ -291,7 +290,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers/{layer_id}",
         summary="Remove layer",
         status_code=HTTPStatus.NO_CONTENT,
-        response_model=None,
     )
     def remove_layer(uuid: str, layer_id: str) -> None:
         logger.info(f"Remove layer {layer_id} for study {uuid}")
@@ -301,7 +299,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         "/studies/{uuid}/districts",
         summary="Get the list of districts defined in this study",
-        response_model=List[DistrictDTO],
     )
     def get_districts(uuid: str) -> List[DistrictDTO]:
         logger.info(f"Fetching districts list for study {uuid}")
@@ -312,7 +309,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.post(
         "/studies/{uuid}/districts",
         summary="Create a new district in the study",
-        response_model=DistrictDTO,
     )
     def create_district(uuid: str, district_creation: DistrictCreation) -> DistrictDTO:
         logger.info(f"Create district {district_creation.name} for study {uuid}")
@@ -343,7 +339,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
         summary="Get Hydro config values for form",
-        response_model=HydroManagement,
         response_model_exclude_none=True,
     )
     def get_hydro_form_values(uuid: str, area_id: str) -> HydroManagement:
@@ -366,7 +361,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         summary="Get inflow properties",
-        response_model=InflowStructure,
     )
     def get_inflow_structure(uuid: str, area_id: str) -> InflowStructure:
         """Get the configuration for the hydraulic inflow structure of the given area."""
@@ -452,7 +446,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
         summary="Get MC Scenario builder config",
-        response_model=RulesetsView,
         response_model_exclude_none=True,
     )
     def get_scenario_builder_config(uuid: str) -> RulesetsView:
@@ -842,7 +835,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         # We use "validate-all" because it is unlikely to conflict with a group name.
         "/studies/{uuid}/constraint-groups/validate-all",
         summary="Validate all binding constraint groups",
-        response_model=None,
     )
     def validate_constraint_groups(uuid: str) -> bool:
         """
@@ -890,7 +882,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         "/studies/{uuid}/constraint-groups/{group}/validate",
         summary="Validate the binding constraint group",
-        response_model=None,
     )
     def validate_constraint_group(uuid: str, group: str) -> bool:
         """
@@ -939,7 +930,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.delete(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         summary="Delete a binding constraint",
-        response_model=None,
     )
     def delete_binding_constraint(uuid: str, binding_constraint_id: str) -> None:
         logger.info(f"Deleting the binding constraint {binding_constraint_id} for study {uuid}")
@@ -952,7 +942,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.delete(
         "/studies/{uuid}/bindingconstraints",
         summary="Delete multiple binding constraints",
-        response_model=None,
     )
     def delete_multiple_binding_constraints(uuid: str, binding_constraints_ids: List[str]) -> None:
         logger.info(f"Deleting the binding constraints {binding_constraints_ids!r} for study {uuid}")
@@ -1224,7 +1213,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
         summary="Get properties for a given area",
-        response_model=AreaProperties,
         response_model_exclude_none=True,
     )
     def get_properties_form_values(uuid: str, area_id: str) -> AreaProperties:
@@ -1327,7 +1315,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         summary="Remove renewable clusters",
         status_code=HTTPStatus.NO_CONTENT,
-        response_model=None,
     )
     def delete_renewable_clusters(uuid: str, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
@@ -1453,7 +1440,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         summary="Remove thermal clusters for a given area",
         status_code=HTTPStatus.NO_CONTENT,
-        response_model=None,
     )
     def delete_thermal_clusters(uuid: str, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
