@@ -43,6 +43,14 @@ def is_windows_ci() -> bool:
     return IS_WINDOWS and os.getenv("GITHUB_ACTIONS") == "true"
 
 
+def duration_threshold(base_duration: float) -> float:
+    """
+    base_duration is multiplied by 2 on Windows CI to cope with slow CI runners
+    """
+    multiplier = 2 if is_windows_ci() else 1
+    return multiplier * base_duration
+
+
 def wait_task_completion(
     client: TestClient,
     access_token: str,
@@ -53,8 +61,7 @@ def wait_task_completion(
     """
     base_timeout is multiplied by 2 on Windows CI to cope with slow CI runners
     """
-    multiplier = 2 if is_windows_ci() else 1
-    timeout = multiplier * base_timeout
+    timeout = duration_threshold(base_timeout)
     params = {"wait_for_completion": True, "timeout": timeout}
     res = client.request(
         "GET",

@@ -16,10 +16,10 @@ import time
 from pathlib import Path
 from typing import Any
 
+from integration.utils import duration_threshold
 from starlette.testclient import TestClient
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
-from tests.integration.utils import is_windows_ci
 
 
 def _compare_resource_file(actual: dict[str, Any], res_path: Path) -> None:
@@ -73,8 +73,7 @@ class TestStudySynthesis:
         )
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        threshold = 0.6 if is_windows_ci() else 0.3
-        assert 0 <= duration <= threshold, f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.3), f"Duration is {duration} seconds"
 
     def test_variant_study(
         self,
@@ -124,5 +123,4 @@ class TestStudySynthesis:
         )
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        threshold = 0.4 if is_windows_ci() else 0.2
-        assert 0 <= duration <= threshold, f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.2), f"Duration is {duration} seconds"

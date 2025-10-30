@@ -14,10 +14,10 @@ import io
 import time
 from xml.etree import ElementTree
 
+from integration.utils import duration_threshold
 from starlette.testclient import TestClient
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
-from tests.integration.utils import is_windows_ci
 from tests.xml_compare import compare_elements
 
 
@@ -53,8 +53,7 @@ class TestStudyComments:
         res = client.get(f"/v1/studies/{internal_study_id}/comments")
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        threshold = 0.2 if is_windows_ci() else 0.1
-        assert 0 <= duration <= threshold, f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.1), f"Duration is {duration} seconds"
 
         # Update the comments of the study
         res = client.put(
@@ -107,8 +106,7 @@ class TestStudyComments:
         res = client.get(f"/v1/studies/{variant_id}/comments")
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        threshold = 0.6 if is_windows_ci() else 0.3
-        assert 0 <= duration <= threshold, f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.3), f"Duration is {duration} seconds"
 
         # Update the comments of the study
         res = client.put(

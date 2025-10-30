@@ -48,11 +48,12 @@ import typing as t
 import numpy as np
 import pandas as pd
 import pytest
+from integration.utils import duration_threshold
 from starlette.testclient import TestClient
 
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from tests.integration.utils import is_windows_ci, wait_task_completion
+from tests.integration.utils import wait_task_completion
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS = [
@@ -1138,8 +1139,7 @@ class TestThermal:
         end = time.time()
         assert res.status_code in {200, 201}
         duration = end - start
-        threshold = 2 if is_windows_ci() else 1
-        assert duration < threshold
+        assert duration < duration_threshold(1)
 
         # Asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal")
