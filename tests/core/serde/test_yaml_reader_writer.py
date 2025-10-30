@@ -11,12 +11,9 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
-import pytest
-
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader, YAMLWriter
 
 
-@pytest.mark.unit_test
 def test_yaml_reader_and_writer(tmp_path: Path) -> None:
     yaml_file = tmp_path / "test.yaml"
     yaml_dict = {

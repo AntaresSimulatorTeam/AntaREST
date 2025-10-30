@@ -190,7 +190,6 @@ def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMeta
     )
 
 
-@pytest.mark.unit_test
 def test_study_listing(db_session: Session) -> None:
     bob = User(id=2, name="bob")
     alice = User(id=3, name="alice")
@@ -308,7 +307,6 @@ def test_study_listing(db_session: Session) -> None:
     assert expected_result == studies
 
 
-@pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -408,7 +406,6 @@ def test_sync_studies_from_disk() -> None:
     assert study_f2.public_mode == PublicMode.FULL
 
 
-@pytest.mark.unit_test
 def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
     folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
@@ -452,7 +449,6 @@ def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_partial_sync_studies_from_disk() -> None:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     ma = create_raw_study(id="a", path="a")
@@ -502,7 +498,6 @@ def test_partial_sync_studies_from_disk() -> None:
     )
 
 
-@pytest.mark.unit_test
 def test_delete_missing_studies_desktop(study_tree: Path) -> None:
     ma = create_raw_study(id="a", folder="folder/studyA", workspace="workspace1")
     mb = create_raw_study(id="b", folder="folder/studyB", workspace="workspace1")
@@ -554,7 +549,6 @@ def test_remove_duplicate(db_session: Session) -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_create_study() -> None:
     # Mock
     repository = Mock()
@@ -610,7 +604,6 @@ def test_create_study() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_save_metadata() -> None:
     # Mock
     repository = Mock()
@@ -652,7 +645,6 @@ def test_save_metadata() -> None:
 
 
 @with_jwt_user
-@pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
     repository = Mock(spec=StudyMetadataRepository)
@@ -872,7 +864,6 @@ def test_download_output() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_change_owner() -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=2)
@@ -921,7 +912,6 @@ def test_change_owner() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_manage_group() -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=1)
@@ -964,7 +954,6 @@ def test_manage_group() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_set_public_mode() -> None:
     study_id = str(uuid.uuid4())
     group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -990,7 +979,6 @@ def test_set_public_mode() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_assert_permission() -> None:
     study_id = str(uuid.uuid4())
     admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -1156,7 +1144,6 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_delete_study_calls_callback(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
     repository_mock = Mock()
@@ -1184,7 +1171,6 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
@@ -1472,7 +1458,6 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "tree_node,url,data,expected_name",
     [
@@ -2165,7 +2150,6 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     event_bus.push.assert_not_called()
 
 
-@pytest.mark.unit_test
 def test_is_output_archived(tmp_path: Path) -> None:
     assert not is_output_archived(path_output=Path("fake_path"))
     assert is_output_archived(path_output=Path("fake_path.zip"))

@@ -40,7 +40,6 @@ ST_STORAGE_INI_880 = STStorageFileData.from_model(_ST_STORAGE_880).model_dump(
 
 
 # noinspection SpellCheckingInspection
-@pytest.mark.unit_test
 class TestSTStorage:
     # noinspection GrazieInspection
     """
