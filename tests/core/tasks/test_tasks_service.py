@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import datetime
-import time
 import typing as t
 from pathlib import Path
 from unittest.mock import ANY, Mock
@@ -23,7 +22,6 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import sessionmaker
-from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
@@ -54,7 +52,6 @@ from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
 from tests.storage.test_service import build_study_service
 
@@ -77,20 +74,26 @@ def db_engine_fixture(tmp_path: Path) -> t.Generator[Engine, None, None]:
     engine.dispose()
 
 
+@pytest.fixture
+def task_repo() -> TaskJobRepository:
+    return TaskJobRepository()
+
+
+@pytest.fixture
+def task_service(core_config: Config, event_bus: IEventBus, task_repo: TaskJobRepository) -> TaskJobService:
+    return TaskJobService(config=core_config, repository=task_repo, event_bus=event_bus)
+
+
 @with_admin_user
 @with_db_context
-def test_service(core_config: Config, event_bus: IEventBus) -> None:
+def test_service(task_repo: TaskJobRepository, task_service: TaskJobService) -> None:
     engine = db.session.bind
-
-    task_job_repo = TaskJobRepository()
+    service = task_service
 
     # Prepare a TaskJob in the database
     creation_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     running_task = TaskJob(id="a", name="b", status=TaskStatus.RUNNING.value, creation_date=creation_date)
-    task_job_repo.save(running_task)
-
-    # Create a TaskJobService
-    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+    task_repo.save(running_task)
 
     # Cancel pending and running tasks
     cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
@@ -137,7 +140,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     failed_id = service.add_task(action_fail, "failed action", TaskType.COPY, None, None, None)
     service.await_task(failed_id, timeout_sec=2)
 
-    failed_task = task_job_repo.get(failed_id)
+    failed_task = task_repo.get(failed_id)
     assert failed_task is not None
     assert failed_task.status == TaskStatus.FAILED.value
     assert failed_task.result_status is False
@@ -155,7 +158,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     ok_id = service.add_task(action_ok, None, TaskType.COPY, None, None, None)
     service.await_task(ok_id, timeout_sec=2)
 
-    ok_task = task_job_repo.get(ok_id)
+    ok_task = task_repo.get(ok_id)
     assert ok_task is not None
     assert ok_task.status == TaskStatus.COMPLETED.value
     assert ok_task.result_status is True
@@ -164,20 +167,6 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     assert len(ok_task.logs) == 2
     assert ok_task.logs[0].message == "start"
     assert ok_task.logs[1].message == "end"
-
-
-class DummyWorker(AbstractWorker):
-    def __init__(self, event_bus: IEventBus, accept: t.List[str], tmp_path: Path):
-        super().__init__("test", event_bus, accept)
-        self.tmp_path = tmp_path
-
-    @override
-    def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
-        # simulate a "long" task ;-)
-        time.sleep(0.01)
-        relative_path = t.cast(str, task_info.task_args["file"])
-        (self.tmp_path / relative_path).touch()
-        return TaskResult(success=True, message="")
 
 
 @with_db_context
