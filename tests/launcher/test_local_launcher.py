@@ -226,7 +226,7 @@ def test_parse_xpress_dir(tmp_path: Path) -> None:
 def test_parse_solver_presets(launcher_config: LocalConfig):
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     launch_parameters = LauncherParametersDTO()
-    solver_preestes = SolverPresets.model_validate(
+    solver_presets = SolverPresets.model_validate(
         {
             "id": "id-test-xpress-config",
             "name": "test-xpress-config",
@@ -239,7 +239,7 @@ def test_parse_solver_presets(launcher_config: LocalConfig):
             "use_optim_1_basis_optim_2": False,
         }
     )
-    launch_parameters.other_options = solver_preestes.to_cli_options()
+    launch_parameters.other_options = solver_presets.to_cli_options()
     args, _ = local_launcher._parse_launcher_options(launch_parameters, SolverVersion.parse("9.2"))
     assert args == [
         "--linear-solver",
