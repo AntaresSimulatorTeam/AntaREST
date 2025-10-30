@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import Sequence
 
+import pandas as pd
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -21,6 +22,7 @@ from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.model import (
     STUDY_VERSION_8_1,
@@ -56,6 +58,7 @@ class StudyConverter:
         self._convert_binding_constraints()
 
         # Xpansion
+        self._convert_xpansion()
 
         # User resources
 
@@ -73,6 +76,29 @@ class StudyConverter:
         self._new_dao.save_advanced_parameters(self._source_dao.get_advanced_parameters())
         self._new_dao.save_optimization_preferences(self._source_dao.get_optimization_preferences())
         self._new_dao.save_thematic_trimming(self._source_dao.get_thematic_trimming())
+
+    def _convert_xpansion(self) -> None:
+        self._new_dao.save_xpansion_settings(self._source_dao.get_xpansion_settings())
+        # Candidates
+        for candidate in self._source_dao.get_all_xpansion_candidates():
+            self._new_dao.save_xpansion_candidate(candidate)
+        # Adequacy criterion
+        self._new_dao.save_xpansion_adequacy_criterion(self._source_dao.get_xpansion_adequacy_criterion())
+        # Resources
+        for resource_type in XpansionResourceFileType:
+            resources = self._source_dao.get_xpansion_resources(resource_type)
+            for filename in resources:
+                content = self._source_dao.get_xpansion_resource(resource_type, filename)
+
+                if resource_type == XpansionResourceFileType.WEIGHTS:
+                    assert isinstance(content, pd.DataFrame)
+                    self._new_dao.save_xpansion_weight(filename, self._matrix_service.create(content))
+                elif resource_type == XpansionResourceFileType.CAPACITIES:
+                    assert isinstance(content, pd.DataFrame)
+                    self._new_dao.save_xpansion_capacity(filename, self._matrix_service.create(content))
+                else:
+                    assert isinstance(content, bytes)
+                    self._new_dao.save_xpansion_constraint(filename, content)
 
     def _convert_binding_constraints(self) -> None:
         constraints = list(self._source_dao.get_all_constraints().values())
