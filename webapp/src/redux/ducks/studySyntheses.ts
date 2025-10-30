@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { JobDTO } from "@/services/api/launcher/jobs/types";
+import type { Job } from "@/services/api/launcher/jobs/types";
+import { getVariants } from "@/services/api/variant";
 import {
   createAction,
   createAsyncThunk,
@@ -24,7 +25,7 @@ import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../
 import { getStudyMapsIds, getStudySynthesis, getStudySynthesisIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
-import { setStudyMap } from "./studyMaps";
+import { deleteStudyMap, setStudyMap } from "./studyMaps";
 
 export const studySynthesesAdapter = createEntityAdapter<FileStudyTreeConfigDTO>({
   selectId: (studyData) => studyData.study_id,
@@ -129,29 +130,40 @@ export const setStudySynthesis = createAsyncThunk<
   return api.getStudySynthesis(studyId).catch(rejectWithValue);
 });
 
-export const refreshStudySynthesis =
-  (payload: GenericInfo | JobDTO): AppThunk =>
-  (dispatch, getState) => {
-    const state = getState();
-    const id = "study_id" in payload ? payload.study_id : payload.id;
-
-    if (getStudySynthesisIds(state).includes(id)) {
-      dispatch(setStudySynthesis(id as string));
-
-      if (getStudyMapsIds(state).includes(id)) {
-        dispatch(setStudyMap(id as string));
-      }
-    }
-  };
-
 export const deleteStudySynthesis = createAsyncThunk<
   FileStudyTreeConfigDTO["study_id"],
   FileStudyTreeConfigDTO["study_id"],
   AppAsyncThunkConfig
 >(n("DELETE_STUDY_SYNTHESIS"), (id) => {
-  // TODO Why empty?
   return id;
 });
+
+export const refreshStudySynthesis =
+  (payload: GenericInfo<string> | Job): AppThunk =>
+  async (dispatch, getState) => {
+    const state = getState();
+    const id = "studyId" in payload ? payload.studyId : payload.id;
+
+    if (getStudySynthesisIds(state).includes(id)) {
+      dispatch(setStudySynthesis(id));
+
+      if (getStudyMapsIds(state).includes(id)) {
+        dispatch(setStudyMap(id));
+      }
+    }
+
+    const variants = await getVariants(id);
+
+    variants.forEach(({ id }) => {
+      if (getStudySynthesisIds(state).includes(id)) {
+        dispatch(deleteStudySynthesis(id));
+
+        if (getStudyMapsIds(state).includes(id)) {
+          dispatch(deleteStudyMap(id));
+        }
+      }
+    });
+  };
 
 ////////////////////////////////////////////////////////////////
 // Reducer
