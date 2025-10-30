@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { Job } from "@/services/api/launcher/jobs/types";
 import { getVariants } from "@/services/api/variant";
 import {
   createAction,
@@ -20,13 +21,7 @@ import {
   createReducer,
 } from "@reduxjs/toolkit";
 import * as api from "../../services/api/study";
-import type {
-  FileStudyTreeConfigDTO,
-  GenericInfo,
-  LaunchJobDTO,
-  Link,
-  LinkElement,
-} from "../../types/types";
+import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../../types/types";
 import { getStudyMapsIds, getStudySynthesis, getStudySynthesisIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
@@ -144,10 +139,10 @@ export const deleteStudySynthesis = createAsyncThunk<
 });
 
 export const refreshStudySynthesis =
-  (payload: GenericInfo<string> | LaunchJobDTO): AppThunk =>
+  (payload: GenericInfo<string> | Job): AppThunk =>
   async (dispatch, getState) => {
     const state = getState();
-    const id = "study_id" in payload ? payload.study_id : payload.id;
+    const id = "studyId" in payload ? payload.studyId : payload.id;
 
     if (getStudySynthesisIds(state).includes(id)) {
       dispatch(setStudySynthesis(id));
