@@ -51,8 +51,19 @@ class StudyConverter:
         # User resources
 
         # Settings
+        self._convert_settings()
 
         # Scenario Builder
+        # todo: the DAO only offers a request by ScenarioType (not efficient at all)
+
+    def _convert_settings(self) -> None:
+        self._new_dao.save_general_config(self._source_dao.get_general_config())
+        self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())
+        self._new_dao.save_timeseries_config(self._source_dao.get_timeseries_config())
+        self._new_dao.save_adequacy_patch_parameters(self._source_dao.get_adequacy_patch_parameters())
+        self._new_dao.save_advanced_parameters(self._source_dao.get_advanced_parameters())
+        self._new_dao.save_optimization_preferences(self._source_dao.get_optimization_preferences())
+        self._new_dao.save_thematic_trimming(self._source_dao.get_thematic_trimming())
 
     def _convert_areas(self) -> None:
         area_properties = self._source_dao.get_all_area_properties()
