@@ -13,7 +13,7 @@
 import concurrent.futures
 import http
 import logging
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -39,17 +39,17 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         API router
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.tasks], dependencies=[auth.required()])
 
-    @bp.post("/tasks", tags=[APITag.tasks], deprecated=True)
-    def list_tasks(filter: TaskListFilter) -> Any:
+    @bp.post("/tasks", deprecated=True)
+    def list_tasks(filter: TaskListFilter) -> list[TaskDTO]:
         return service.list_tasks(filter)
 
-    @bp.get("/tasks", tags=[APITag.tasks])
+    @bp.get("/tasks")
     def get_task_list(task_filter: Annotated[TaskListFilter, Query()]) -> list[TaskDTO]:
         return service.list_tasks(task_filter)
 
-    @bp.get("/tasks/{task_id}", tags=[APITag.tasks], response_model=TaskDTO)
+    @bp.get("/tasks/{task_id}")
     def get_task(
         task_id: str,
         wait_for_completion: bool = False,
@@ -91,15 +91,13 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
 
         return service.status_task(sanitized_task_id, with_logs)
 
-    @bp.put("/tasks/{task_id}/cancel", tags=[APITag.tasks])
-    def cancel_task(task_id: str) -> Any:
-        return service.cancel_task(task_id, dispatch=True)
+    @bp.put("/tasks/{task_id}/cancel")
+    def cancel_task(task_id: str) -> None:
+        service.cancel_task(task_id, dispatch=True)
 
     @bp.get(
         "/tasks/{task_id}/progress",
-        tags=[APITag.tasks],
         summary="Retrieve task progress from task id",
-        response_model=Optional[int],
     )
     def get_progress(task_id: str) -> Optional[int]:
         sanitized_task_id = sanitize_uuid(task_id)

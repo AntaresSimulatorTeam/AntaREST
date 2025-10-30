@@ -146,7 +146,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
         df_date = df.iloc[:, 2:4]
         df_date.columns = pd.Index(["day", "month"])
         df_date["month"] = df_date["month"].map(IDateMatrixSerializer._MONTHS)
-        date = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2)
+        date: pd.Series[str] = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2)
 
         # Extract right part with data
         to_remove = cast(Sequence[Hashable], df.columns[0:4])

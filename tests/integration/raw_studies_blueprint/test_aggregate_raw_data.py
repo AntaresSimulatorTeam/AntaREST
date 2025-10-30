@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import datetime
 import io
 import shutil
 import zipfile
@@ -945,7 +946,13 @@ class TestDataAggregationCreationOperations:
         assert res.status_code == 422, "Output 'fake_output_id not found'" in res.json()["description"]
 
         # create a correct aggregated output task and get its id
-        res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
+        creation_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        expiration_time_in_minutes = 123
+        expected_expiration_date = creation_time + datetime.timedelta(minutes=expiration_time_in_minutes)
+        res = client.get(
+            f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind",
+            params={**params, "download_expiration_time": expiration_time_in_minutes},
+        )
         assert res.status_code == 200
         download_id = res.json()
 
@@ -961,7 +968,12 @@ class TestDataAggregationCreationOperations:
 
         # wait for the task to be completed
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-        assert res.status_code == 200, res.json()
+        download_metadata_json = res.json()
+        assert res.status_code == 200, download_metadata_json
+
+        expiration_date = datetime.datetime.fromisoformat(download_metadata_json["expiration_date"])
+        # it's cumbersome to test exact expiration date, we just check it's almost equal
+        assert abs((expiration_date - expected_expiration_date).total_seconds()) < 3
 
         res = client.get(f"v1/downloads/{download_id}")
 
