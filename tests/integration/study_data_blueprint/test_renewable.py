@@ -42,6 +42,7 @@ import typing as t
 
 import numpy as np
 import pytest
+from integration.utils import duration_threshold
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -581,7 +582,7 @@ class TestRenewable:
         end = time.time()
         assert res.status_code in {200, 201}
         duration = end - start
-        assert duration < 1
+        assert duration < duration_threshold(1)
 
         # Asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable")
