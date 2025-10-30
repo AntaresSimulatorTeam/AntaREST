@@ -18,7 +18,6 @@ import io
 import logging
 import os
 import time
-import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
@@ -2571,9 +2570,8 @@ class StudyService:
         app()
 
         # Create the FileStudyDAO
-        study_id = str(uuid.uuid4())
         file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(
-            path, with_matrix_normalization=False, study_id=study_id, use_cache=False
+            path, with_matrix_normalization=False, study_id="", use_cache=False
         )
         context = self.storage_service.variant_study_service.command_factory.command_context
         file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
