@@ -15,6 +15,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -48,16 +49,18 @@ class StudyConverter:
             renewable_clusters = {}
 
         for area_id in area_properties:
-            # todo: ui
             area_name = area_names_and_thermals[area_id].name
             self._new_dao.save_area(area_name)
-            # Hydro
 
-            self._new_dao.save_hydro_management(hydro_properties[area_id].management_options, area_id)
-            self._new_dao.save_inflow_structure(hydro_properties[area_id].inflow_structure, area_id)
-            self._new_dao.save_hydro_allocation(area_id, self._source_dao.get_hydro_allocation(area_id))
-            self._new_dao.save_hydro_correlation(area_id, self._source_dao.get_hydro_correlation(area_id))
-            # todo: matrices
+            # Properties
+            self._new_dao.save_area_properties(area_id, area_properties[area_id])
+
+            # Ui
+            # todo
+
+            # Hydro
+            self._convert_hydro(area_id, hydro_properties[area_id])
+            # todo: matrices are not in the DAO ...
 
             # Thermals
             thermals = area_names_and_thermals[area_id].thermals or []
@@ -142,3 +145,9 @@ class StudyConverter:
                 cost_var_withdrawal = self._source_dao.get_st_storage_cost_variation_withdrawal(area_id, sts_id)
                 cost_var_withdrawal_id = self._matrix_service.create(cost_var_withdrawal)
                 self._new_dao.save_st_storage_cost_variation_withdrawal(area_id, sts_id, cost_var_withdrawal_id)
+
+    def _convert_hydro(self, area_id: str, properties: HydroProperties) -> None:
+        self._new_dao.save_hydro_management(properties.management_options, area_id)
+        self._new_dao.save_inflow_structure(properties.inflow_structure, area_id)
+        self._new_dao.save_hydro_allocation(area_id, self._source_dao.get_hydro_allocation(area_id))
+        self._new_dao.save_hydro_correlation(area_id, self._source_dao.get_hydro_correlation(area_id))
