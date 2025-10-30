@@ -48,8 +48,8 @@ import typing as t
 import numpy as np
 import pandas as pd
 import pytest
-from integration.utils import duration_threshold
 from starlette.testclient import TestClient
+from test.integration.utils import duration_threshold
 
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id

@@ -16,8 +16,8 @@ import time
 from pathlib import Path
 from typing import Any
 
-from integration.utils import duration_threshold
 from starlette.testclient import TestClient
+from test.integration.utils import duration_threshold
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
 

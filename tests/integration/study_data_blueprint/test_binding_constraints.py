@@ -18,8 +18,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from httpx._exceptions import HTTPError
-from integration.utils import duration_threshold
 from starlette.testclient import TestClient
+from test.integration.utils import duration_threshold
 
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
 from tests.integration.prepare_proxy import PreparerProxy

@@ -42,8 +42,8 @@ import typing as t
 
 import numpy as np
 import pytest
-from integration.utils import duration_threshold
 from starlette.testclient import TestClient
+from test.integration.utils import duration_threshold
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
