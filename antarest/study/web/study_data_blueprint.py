@@ -13,7 +13,7 @@
 import enum
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence
+from typing import Dict, List, Literal, Mapping, Optional, Sequence
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Query
@@ -247,9 +247,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.delete(
         "/studies/{uuid}/links/{area_from}/{area_to}",
         summary="Delete a link",
-        response_model=str,
     )
-    def delete_link(uuid: str, area_from: str, area_to: str) -> Any:
+    def delete_link(uuid: str, area_from: str, area_to: str) -> str:
         logger.info(f"Removing link {area_from}%{area_to} in study {uuid}")
         area_from = transform_name_to_id(area_from)
         area_to = transform_name_to_id(area_to)
@@ -391,7 +390,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/matrix",
         summary="Edit matrix",
     )
-    def edit_matrix(uuid: str, path: str, matrix_edit_instructions: List[MatrixEditInstruction] = Body(...)) -> Any:
+    def edit_matrix(uuid: str, path: str, matrix_edit_instructions: List[MatrixEditInstruction] = Body(...)) -> None:
         # NOTE: This Markdown documentation is reflected in the Swagger API
         """
         Edit a matrix in a study based on the provided edit instructions.

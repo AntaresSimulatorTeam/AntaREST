@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Any
 
 from fastapi import APIRouter
 from starlette.responses import FileResponse
@@ -34,9 +33,8 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
     @bp.get(
         "/downloads/{download_id}",
         summary="Retrieve download file",
-        response_class=FileResponse,
     )
-    def fetch_download(download_id: str) -> Any:
+    def fetch_download(download_id: str) -> FileResponse:
         download = filetransfer_manager.fetch_download(download_id)
         return FileResponse(
             Path(download.path),

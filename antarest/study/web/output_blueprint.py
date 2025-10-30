@@ -13,11 +13,13 @@ import collections
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, List, Sequence
+from typing import Sequence
 
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -67,9 +69,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         "/studies/{uuid}/output",
         status_code=HTTPStatus.ACCEPTED,
         summary="Import Output",
-        response_model=str,
     )
-    def import_output(uuid: str, output: UploadFile) -> Any:
+    def import_output(uuid: str, output: UploadFile) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
         output_id = output_service.import_output(uuid_sanitized, output.file)
@@ -89,7 +90,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         "/studies/{study_id}/outputs/{output_id}/export",
         summary="Get outputs data",
     )
-    def output_export(study_id: str, output_id: str) -> Any:
+    def output_export(study_id: str, output_id: str) -> FileDownloadTaskDTO:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
@@ -135,7 +136,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         request: Request,
         use_task: bool = False,
         tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
-    ) -> Any:
+    ) -> Response | FileDownloadTaskDTO | FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
@@ -166,7 +167,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         "/studies/{study_id}/outputs/{output_id}/_archive",
         summary="Archive output",
     )
-    def archive_output(study_id: str, output_id: str) -> Any:
+    def archive_output(study_id: str, output_id: str) -> str | None:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
@@ -178,7 +179,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         "/studies/{study_id}/outputs/{output_id}/_unarchive",
         summary="Unarchive output",
     )
-    def unarchive_output(study_id: str, output_id: str) -> Any:
+    def unarchive_output(study_id: str, output_id: str) -> str | None:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
@@ -200,9 +201,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     @bp.get(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
-        response_model=List[StudySimResultDTO],
     )
-    def sim_result(study_id: str) -> Any:
+    def sim_result(study_id: str) -> list[StudySimResultDTO]:
         logger.info(f"Fetching output list for study {study_id}")
         study_id = sanitize_uuid(study_id)
         content = output_service.get_study_sim_result(study_id)

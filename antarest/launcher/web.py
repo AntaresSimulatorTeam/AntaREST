@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Any, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -46,7 +46,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.post(
         "/run/{study_id}",
         summary="Run study",
-        response_model=JobCreationDTO,
     )
     def run(
         study_id: str,
@@ -54,7 +53,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
         solver_presets_id: Optional[str] = None,
         version: Optional[str] = None,
-    ) -> Any:
+    ) -> JobCreationDTO:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default
 
@@ -71,9 +70,10 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/jobs",
         summary="Retrieve jobs",
-        response_model=List[JobResultDTO],
     )
-    def get_job(study: Optional[str] = None, filter_orphans: bool = True, latest: Optional[int] = None) -> Any:
+    def get_job(
+        study: Optional[str] = None, filter_orphans: bool = True, latest: Optional[int] = None
+    ) -> List[JobResultDTO]:
         logger.info(f"Fetching execution jobs for study {study or '<all>'}")
         return [job.to_dto() for job in service.get_jobs(study, filter_orphans, latest)]
 
@@ -81,16 +81,15 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/jobs/{job_id}/logs",
         summary="Retrieve job logs from job id",
     )
-    def get_job_log(job_id: str, log_type: LogType = LogType.STDOUT) -> Any:
+    def get_job_log(job_id: str, log_type: LogType = LogType.STDOUT) -> str | None:
         logger.info(f"Fetching logs for job {job_id}")
         return service.get_log(job_id, log_type)
 
     @bp.get(
         "/jobs/{job_id}/output",
         summary="Export job output",
-        response_model=FileDownloadTaskDTO,
     )
-    def export_job_output(job_id: str) -> Any:
+    def export_job_output(job_id: str) -> FileDownloadTaskDTO:
         logger.info(f"Exporting output for job {job_id}")
         return service.download_output(job_id)
 
@@ -100,7 +99,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def kill_job(
         job_id: str,
-    ) -> Any:
+    ) -> JobResultDTO:
         logger.info(f"Killing job {job_id}")
 
         return service.kill_job(job_id=job_id).to_dto()
@@ -108,18 +107,16 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/jobs/{job_id}",
         summary="Retrieve job info from job id",
-        response_model=JobResultDTO,
     )
-    def get_result(job_id: UUID) -> Any:
+    def get_result(job_id: UUID) -> JobResultDTO:
         logger.info(f"Fetching job info {job_id}")
         return service.get_result(job_id).to_dto()
 
     @bp.get(
         "/jobs/{job_id}/progress",
         summary="Retrieve job progress from job id",
-        response_model=int,
     )
-    def get_progress(job_id: str) -> Any:
+    def get_progress(job_id: str) -> int:
         logger.info(f"Fetching job progress of job {job_id}")
         return int(service.get_launch_progress(job_id))
 
@@ -135,16 +132,14 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/launchers",
         summary="Retrieve configured launchers",
-        response_model=LauncherListDTO,
     )
-    def get_launchers() -> Any:
+    def get_launchers() -> LauncherListDTO:
         logger.info("Listing launchers")
         return service.get_launchers()
 
     @bp.get(
         "/load",
         summary="Get the SLURM cluster or local machine load",
-        response_model=LauncherLoadDTO,
     )
     def get_load(launcher_id: Optional[str] = None) -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
@@ -163,7 +158,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/versions",
         summary="Get list of supported solver versions",
-        response_model=List[str],
     )
     def get_solver_versions(solver: Optional[str] = None) -> List[str]:
         """

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import io
 import logging
-from typing import Any, Sequence
+from typing import Sequence
 
 import pandas as pd
 from fastapi import APIRouter, File, UploadFile
@@ -50,7 +50,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion",
         summary="Create Xpansion Configuration",
     )
-    def create_xpansion_configuration(uuid: str) -> Any:
+    def create_xpansion_configuration(uuid: str) -> None:
         logger.info(f"Creating Xpansion Configuration for study {uuid}")
         study_service.create_xpansion_configuration(uuid=uuid)
 
@@ -58,7 +58,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion",
         summary="Delete Xpansion Configuration",
     )
-    def delete_xpansion_configuration(uuid: str) -> Any:
+    def delete_xpansion_configuration(uuid: str) -> None:
         logger.info(f"Deleting Xpansion Configuration for study {uuid}")
         study_service.delete_xpansion_configuration(uuid=uuid)
 
@@ -142,7 +142,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
         summary="Delete Xpansion resource file",
     )
-    def delete_resource(uuid: str, resource_type: XpansionResourceFileType, filename: str) -> Any:
+    def delete_resource(uuid: str, resource_type: XpansionResourceFileType, filename: str) -> None:
         logger.info(f"Deleting xpansion {resource_type} file from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)

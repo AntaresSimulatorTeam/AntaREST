@@ -216,7 +216,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/original-file",
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Any:
+    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Response:
         """
         Fetches for a file in its original format from a study folder
 
@@ -255,7 +255,7 @@ def create_raw_study_routes(
                 },
             ),
         ] = "/",
-    ) -> Any:
+    ) -> None:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
         study_service.delete_user_file_or_folder(uuid, path)
