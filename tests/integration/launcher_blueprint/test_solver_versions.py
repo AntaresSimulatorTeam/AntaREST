@@ -59,11 +59,6 @@ def test_get_solver_versions__default(
     client: TestClient,
     user_access_token: str,
 ) -> None:
-    """
-    This unit test checks that the default value
-    of the `solver` parameter is indeed "default".
-    """
-
     res = client.get(
         "/v1/launcher/versions",
         headers={"Authorization": f"Bearer {user_access_token}"},
