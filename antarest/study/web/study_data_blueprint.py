@@ -103,6 +103,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdate,
 )
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
+from antarest.study.model import CommentsDto
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.web.views.scenario_builder_views import RulesetsView, rulesets_model_to_view, rulesets_view_to_model
@@ -160,6 +161,25 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             default=AreaType.AREA,
             json_schema_extra={"deprecated": True},
         )
+
+    @bp.get(
+        "/studies/{uuid}/comments",
+        summary="Get comments",
+    )
+    def get_comments(uuid: str) -> str:
+        logger.info(f"Get comments of study {uuid}")
+        study_id = sanitize_uuid(uuid)
+        return study_service.get_comments(study_id)
+
+    @bp.put(
+        "/studies/{uuid}/comments",
+        status_code=HTTPStatus.NO_CONTENT,
+        summary="Update comments",
+    )
+    def edit_comments(uuid: str, data: CommentsDto) -> None:
+        logger.info(f"Editing comments for study {uuid}")
+        study_id = sanitize_uuid(uuid)
+        study_service.set_comments(study_id, data.comments)
 
     @bp.get(
         "/studies/{uuid}/areas",

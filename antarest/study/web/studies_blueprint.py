@@ -29,7 +29,6 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
 from antarest.study.model import (
-    CommentsDto,
     MatrixIndex,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
@@ -216,26 +215,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         )
 
         return count
-
-    @bp.get(
-        "/studies/{uuid}/comments",
-        summary="Get comments",
-    )
-    def get_comments(uuid: str) -> str:
-        logger.info(f"Get comments of study {uuid}")
-        study_id = sanitize_uuid(uuid)
-        return study_service.get_comments(study_id)
-
-    @bp.put(
-        "/studies/{uuid}/comments",
-        status_code=HTTPStatus.NO_CONTENT,
-        tags=[APITag.study_raw_data],
-        summary="Update comments",
-    )
-    def edit_comments(uuid: str, data: CommentsDto) -> None:
-        logger.info(f"Editing comments for study {uuid}")
-        study_id = sanitize_uuid(uuid)
-        study_service.set_comments(study_id, data.comments)
 
     @bp.post(
         "/studies/_import",

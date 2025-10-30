@@ -25,15 +25,14 @@ from antarest.login.auth import Auth
 
 def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: Config) -> APIRouter:
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.downloads], dependencies=[auth.required()])
 
-    @bp.get("/downloads", tags=[APITag.downloads], summary="Get available downloads")
+    @bp.get("/downloads", summary="Get available downloads")
     def get_downloads() -> list[FileDownloadDTO]:
         return filetransfer_manager.list_downloads()
 
     @bp.get(
         "/downloads/{download_id}",
-        tags=[APITag.downloads],
         summary="Retrieve download file",
         response_class=FileResponse,
     )
@@ -47,7 +46,6 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
 
     @bp.get(
         "/downloads/{download_id}/metadata",
-        tags=[APITag.downloads],
         summary="Retrieve information on a file's state of preparation",
     )
     def get_download_metadata(download_id: str, wait_for_availability: bool = False) -> FileDownloadDTO:

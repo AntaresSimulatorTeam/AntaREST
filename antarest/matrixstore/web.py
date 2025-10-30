@@ -76,7 +76,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         logger.info("Importing new matrix dataset")
         return service.create_by_importation(file, is_json=json)
 
-    @bp.get("/matrix", tags=[APITag.matrix], description="Return a list of matrices metadata")
+    @bp.get("/matrix", description="Return a list of matrices metadata")
     def get_matrices() -> list[MatrixMetadataDTO]:
         logger.info("Fetching matrices metadatas")
         user = require_current_user()
