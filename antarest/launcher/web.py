@@ -166,7 +166,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         Get list of supported solver versions for the specified launcher.
 
         Args:
-           launcher_id: name of the configuration to read. If no launcher is specified, returns solvers
+           launcher_id: ID of the considered launcher. If no launcher is specified, returns solvers
                         of the default launcher.
         """
         launcher_id = launcher_id or solver
