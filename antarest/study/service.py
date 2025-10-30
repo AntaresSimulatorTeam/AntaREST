@@ -114,6 +114,9 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
     MatrixIndex,
     RawStudy,
     Study,
@@ -2577,8 +2580,45 @@ class StudyService:
         context = self.storage_service.variant_study_service.command_factory.command_context
         file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
 
-        print(source_dao)
-        print(file_study_dao)
+        # Areas
+        area_properties = source_dao.get_all_area_properties()
+        area_names_and_thermals = {a.id: a for a in source_dao.get_all_areas_info()}
+        st_storages = source_dao.get_all_st_storages()
+        st_storages_constraints = source_dao.get_all_st_storage_additional_constraints()
+        hydro_properties = source_dao.get_all_hydro_properties()
+        try:
+            renewable_clusters = source_dao.get_all_renewables()
+        except ChildNotFoundError:  # Can happen, according to the enr-modeling
+            renewable_clusters = {}
+
+        for area_id in area_properties:
+            # todo: ui
+            area_name = area_names_and_thermals[area_id].name
+            file_study_dao.save_area(area_name)
+            # Hydro
+            file_study_dao.save_hydro_management(hydro_properties[area_id].management_options, area_id)
+            file_study_dao.save_inflow_structure(hydro_properties[area_id].inflow_structure, area_id)
+            file_study_dao.save_hydro_allocation(area_id, source_dao.get_hydro_allocation(area_id))
+            file_study_dao.save_hydro_correlation(area_id, source_dao.get_hydro_correlation(area_id))
+            # todo: matrices
+            # Thermals
+            file_study_dao.save_thermals(area_id, area_names_and_thermals[area_id].thermals or [])
+            # todo: matrices
+            # Renewables
+            if study_version >= STUDY_VERSION_8_1:
+                file_study_dao.save_renewables(area_id, list(renewable_clusters.get(area_id, {}).values()))
+                # todo: matrices
+            # Short-term storages
+            if study_version >= STUDY_VERSION_8_6:
+                storages = list(st_storages[area_id].values())
+                file_study_dao.save_st_storages(area_id, storages)
+                # todo: matrices
+                if study_version >= STUDY_VERSION_9_2:
+                    for storage in storages:
+                        file_study_dao.save_st_storage_additional_constraints(
+                            area_id, storage.id, st_storages_constraints[area_id][storage.id]
+                        )
+                        # todo: matrices
 
 
 # todo:
