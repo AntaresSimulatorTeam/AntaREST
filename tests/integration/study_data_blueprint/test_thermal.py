@@ -49,11 +49,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from starlette.testclient import TestClient
-from test.integration.utils import duration_threshold
 
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from tests.integration.utils import wait_task_completion
+from tests.integration.utils import duration_threshold, wait_task_completion
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS = [

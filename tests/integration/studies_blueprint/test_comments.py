@@ -15,9 +15,9 @@ import time
 from xml.etree import ElementTree
 
 from starlette.testclient import TestClient
-from test.integration.utils import duration_threshold
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
+from tests.integration.utils import duration_threshold
 from tests.xml_compare import compare_elements
 
 

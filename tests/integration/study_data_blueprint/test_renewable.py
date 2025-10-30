@@ -43,11 +43,10 @@ import typing as t
 import numpy as np
 import pytest
 from starlette.testclient import TestClient
-from test.integration.utils import duration_threshold
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from tests.integration.utils import wait_task_completion
+from tests.integration.utils import duration_threshold, wait_task_completion
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS: list[str] = []
