@@ -15,7 +15,6 @@ from typing import Any
 from unittest.mock import Mock
 
 import pandas as pd
-import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -57,7 +56,6 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_create() -> None:
     service = Mock()
     service.create.return_value = "matrix_hash"
@@ -74,7 +72,6 @@ def test_create() -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_get() -> None:
     matrix = MatrixDTO(
         id="123",
@@ -97,7 +94,6 @@ def test_get() -> None:
     service.get.assert_called_once_with("123")
 
 
-@pytest.mark.unit_test
 def test_delete() -> None:
     id = "123"
     service = Mock()
@@ -110,7 +106,6 @@ def test_delete() -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_import() -> None:
     matrix_info = [MatrixInfoDTO(id="123", name="Matrix/matrix.txt")]
     service = Mock()
@@ -128,7 +123,6 @@ def test_import() -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_get_matrices_references() -> None:
     command_id = "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664"
     dataset_id = "data_1"

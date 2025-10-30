@@ -403,7 +403,6 @@ WRONGLY_TYPED_REQUESTS__ALL = [
 ]
 
 
-@pytest.mark.integration_test
 class TestRawDataAggregationMCInd:
     """
     Check the aggregation of Raw Data from studies outputs
@@ -610,7 +609,6 @@ class TestRawDataAggregationMCInd:
         assert "economy/mc-ind" in res.json()["description"]
 
 
-@pytest.mark.integration_test
 class TestRawDataAggregationMCAll:
     """
     Check the aggregation of Raw Data from studies outputs in `economy/mc-all`
@@ -876,7 +874,6 @@ class TestRawDataAggregationMCAll:
         assert "economy/mc-all" in res.json()["description"]
 
 
-@pytest.mark.integration_test
 class TestRawDataAggregationColumnsFormatting:
     def test_columns_formatting(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path

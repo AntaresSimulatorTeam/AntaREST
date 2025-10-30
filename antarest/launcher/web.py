@@ -26,6 +26,9 @@ from antarest.launcher.model import (
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
+    SolverPresets,
+    SolverPresetsCreation,
+    SolverPresetsUpdate,
 )
 from antarest.launcher.service import LauncherService
 from antarest.launcher.ssh_client import SlurmError
@@ -50,6 +53,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         study_id: str,
         launcher: Optional[str] = None,
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
+        solver_presets_id: Optional[str] = None,
         version: Optional[str] = None,
     ) -> Any:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
@@ -60,6 +64,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
                 study_id,
                 selected_launcher,
                 launcher_parameters,
+                solver_presets_id,
                 version,
             )
         )
@@ -181,5 +186,50 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         """
         logger.info(f"Fetching the list of solver versions for the '{solver}' configuration")
         return service.get_solver_versions(solver)
+
+    @bp.post(
+        "/solver-presets",
+        tags=[APITag.launcher],
+        summary="Create new solver presets",
+    )
+    def create_solver_presets(solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
+        logger.info("Creating new solver presets")
+        return service.create_solver_presets(solver_presets_creation)
+
+    @bp.get(
+        "/solver-presets/{solver_presets_id}",
+        tags=[APITag.launcher],
+        summary="Retrieve solver presets by ID",
+    )
+    def get_solver_presets(solver_presets_id: str) -> SolverPresets:
+        logger.info(f"Retrieving solver presets for ID {solver_presets_id}")
+        return service.get_solver_presets(solver_presets_id)
+
+    @bp.get(
+        "/solver-presets",
+        tags=[APITag.launcher],
+        summary="Retrieve all solver presets",
+    )
+    def get_solver_presets_list() -> List[SolverPresets]:
+        logger.info("Retrieving solver presets")
+        return service.get_solver_presets_list()
+
+    @bp.put(
+        "/solver-presets/{solver_presets_id}",
+        tags=[APITag.launcher],
+        summary="Update an existing solver preset",
+    )
+    def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresets:
+        logger.info(f"Updating solver preset for ID {solver_presets_id}")
+        return service.update_solver_presets(solver_presets_id, solver_presets_update)
+
+    @bp.delete(
+        "/solver-presets/{solver_presets_id}",
+        tags=[APITag.launcher],
+        summary="Delete a solver preset",
+    )
+    def delete_solver_presets(solver_presets_id: str) -> None:
+        logger.info(f"Deleting solver preset for ID {solver_presets_id}")
+        service.delete_solver_presets(solver_presets_id)
 
     return bp

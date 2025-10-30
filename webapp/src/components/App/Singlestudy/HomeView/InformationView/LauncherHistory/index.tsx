@@ -12,20 +12,22 @@
  * This file is part of the Antares project.
  */
 
+import { getJobs } from "@/services/api/launcher/jobs";
+import { adaptJobDtoToJob } from "@/services/api/launcher/jobs/adapters";
+import type { Job } from "@/services/api/launcher/jobs/types";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import type { WsEvent } from "@/services/webSocket/types";
+import HistoryIcon from "@mui/icons-material/History";
 import { Paper, Typography } from "@mui/material";
+import type { AxiosError } from "axios";
+import moment from "moment";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { AxiosError } from "axios";
-import HistoryIcon from "@mui/icons-material/History";
-import moment from "moment";
-import type { LaunchJob, LaunchJobsProgress, StudyMetadata } from "../../../../../../types/types";
-import { getStudyJobs, mapLaunchJobDTO } from "../../../../../../services/api/study";
-import { addWsEventListener, subscribeWsChannels } from "../../../../../../services/webSocket/ws";
-import JobStepper from "./JobStepper";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { getJobProgress } from "../../../../../../services/api/launcher";
-import type { WsEvent } from "@/services/webSocket/types";
-import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import { addWsEventListener, subscribeWsChannels } from "../../../../../../services/webSocket/ws";
+import type { LaunchJobsProgress, StudyMetadata } from "../../../../../../types/types";
+import JobStepper from "./JobStepper";
 
 interface Props {
   study: StudyMetadata | undefined;
@@ -34,7 +36,7 @@ interface Props {
 function LauncherHistory(props: Props) {
   const { study } = props;
   const [t] = useTranslation();
-  const [studyJobs, setStudyJobs] = useState<LaunchJob[]>([]);
+  const [studyJobs, setStudyJobs] = useState<Job[]>([]);
   const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
@@ -44,25 +46,25 @@ function LauncherHistory(props: Props) {
         return;
       }
       if (event.type === WsEventType.StudyJobStarted) {
-        const newJob = mapLaunchJobDTO(event.payload);
-        if (newJob.studyId === study.id) {
+        const job = adaptJobDtoToJob(event.payload);
+        if (job.studyId === study.id) {
           const existingJobs = studyJobs || [];
-          setStudyJobs([newJob].concat(existingJobs));
+          setStudyJobs([job].concat(existingJobs));
         }
       } else if (
         event.type === WsEventType.StudyJobStatusUpdate ||
         event.type === WsEventType.StudyJobCompleted
       ) {
-        const newJob = mapLaunchJobDTO(event.payload);
-        if (newJob.studyId === study.id) {
+        const job = adaptJobDtoToJob(event.payload);
+        if (job.studyId === study.id) {
           const existingJobs = studyJobs || [];
-          if (!existingJobs.find((j) => j.id === newJob.id)) {
-            setStudyJobs([newJob].concat(existingJobs));
+          if (!existingJobs.find((j) => j.id === job.id)) {
+            setStudyJobs([job].concat(existingJobs));
           } else {
             setStudyJobs(
               existingJobs.map((j) => {
-                if (j.id === newJob.id) {
-                  return newJob;
+                if (j.id === job.id) {
+                  return job;
                 }
                 return j;
               }),
@@ -88,7 +90,7 @@ function LauncherHistory(props: Props) {
     if (study) {
       const fetchStudyJob = async (sid: string) => {
         try {
-          const data = await getStudyJobs(sid);
+          const data = await getJobs({ studyId: sid });
 
           const initJobProgress: Record<string, number> = {};
           const jobProgress = await Promise.all(

@@ -26,6 +26,9 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
+THEMATIC_TRIMMING_PATH = ["settings", "generaldata", "variables selection"]
+
+
 class FileStudyThematicTrimmingDao(ThematicTrimmingDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
@@ -38,12 +41,14 @@ class FileStudyThematicTrimmingDao(ThematicTrimmingDao, ABC):
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         file_study = self.get_file_study()
-        general_data = file_study.tree.get(["settings", "generaldata"])
-        trimming_config = general_data.get("variables selection") or {}
+        try:
+            trimming_config = file_study.tree.get(THEMATIC_TRIMMING_PATH)
+        except KeyError:
+            trimming_config = {}
         return parse_thematic_trimming(file_study.config.version, trimming_config)
 
     @override
     def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
         file_study = self.get_file_study()
         ini_content = serialize_thematic_trimming(file_study.config.version, trimming)
-        file_study.tree.save(ini_content, ["settings", "generaldata", "variables selection"])
+        file_study.tree.save(ini_content, THEMATIC_TRIMMING_PATH)

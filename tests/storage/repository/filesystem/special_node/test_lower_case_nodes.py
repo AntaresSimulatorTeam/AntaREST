@@ -55,7 +55,6 @@ def create_study_config(study_dir: Path, ini_file: Path, version: StudyVersion, 
     return FileStudyTreeConfig(study_path=study_dir, path=ini_file, version=version, study_id="id", areas=areas)
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "ini_node_cluster_class",
     [InputSTStorageAreaList, ClusteredRenewableClusterConfig, InputThermalClustersAreaList],
@@ -83,7 +82,6 @@ def test_group_is_parsed_to_lower_case(
     assert node.get() == {"Cluster 1": {"group": "gas"}}
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "ini_node_cluster_class",
     [InputSTStorageAreaList, ClusteredRenewableClusterConfig, InputThermalClustersAreaList],
@@ -113,7 +111,6 @@ def test_cluster_ini_list(
     assert content == {"Cluster 1": {"group": "nuclear"}}
 
 
-@pytest.mark.unit_test
 def test_binding_constraint_group_writing(
     study_dir: Path,
     ini_file: Path,
@@ -129,7 +126,6 @@ def test_binding_constraint_group_writing(
     assert read_ini(ini_file) == {"0": {"name": "BC_1", "group": "grp_2"}}
 
 
-@pytest.mark.unit_test
 def test_binding_constraint_group_parsing(
     study_dir: Path,
     ini_file: Path,
@@ -151,7 +147,6 @@ def test_binding_constraint_group_parsing(
     assert content == {"0": {"group": "grp"}}
 
 
-@pytest.mark.unit_test
 def test_st_storage_group_is_written_to_title_case_for_8_6(study_dir: Path, ini_file: Path) -> None:
     ini_file.write_text(
         textwrap.dedent(

@@ -96,7 +96,6 @@ def config_scenario_a(tmp_path: Path) -> Config:
     return config
 
 
-@pytest.mark.unit_test
 def test_list_dir_empty_string(config_scenario_a: Config) -> None:
     explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "")
@@ -106,7 +105,6 @@ def test_list_dir_empty_string(config_scenario_a: Config) -> None:
     assert result[0] == FolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True)
 
 
-@pytest.mark.unit_test
 def test_list_dir_show_hidden_file(config_scenario_a: Config) -> None:
     explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "", show_hidden_file=True)
@@ -119,7 +117,6 @@ def test_list_dir_show_hidden_file(config_scenario_a: Config) -> None:
     assert FolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True) in result
 
 
-@pytest.mark.unit_test
 def test_list_dir_several_subfolders(config_scenario_a: Config) -> None:
     explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "folder")
@@ -156,7 +153,6 @@ def test_list_dir_several_subfolders(config_scenario_a: Config) -> None:
     assert str(result[0].parent_path) == result[0].parent_path.as_posix()
 
 
-@pytest.mark.unit_test
 def test_list_dir_in_empty_folder(config_scenario_a: Config) -> None:
     explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "folder/subfolder1")
@@ -164,7 +160,6 @@ def test_list_dir_in_empty_folder(config_scenario_a: Config) -> None:
     assert len(result) == 0
 
 
-@pytest.mark.unit_test
 def test_list_dir_with_permission_error(config_scenario_a: Config) -> None:
     explorer = Explorer(config_scenario_a)
     with patch("os.listdir", side_effect=PermissionError("Permission denied")):
@@ -173,7 +168,6 @@ def test_list_dir_with_permission_error(config_scenario_a: Config) -> None:
         assert len(result) == 0
 
 
-@pytest.mark.unit_test
 def test_list_workspaces(tmp_path: Path) -> None:
     config = build_config(tmp_path)
     explorer = Explorer(config)

@@ -10,14 +10,12 @@
 #
 # This file is part of the Antares project.
 
-import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.config import LocalConfig
 
 
 # noinspection SpellCheckingInspection
-@pytest.mark.integration_test
 class TestLauncherConfiguration:
     """
     The purpose of this unit test is to check the `/v1/launcher/launchers` endpoint.

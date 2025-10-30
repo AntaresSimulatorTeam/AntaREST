@@ -368,16 +368,28 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         study_service.move_study(uuid, validate_folder_path(folder_dest))
 
     @bp.post(
-        "/studies", status_code=HTTPStatus.CREATED, tags=[APITag.study_management], summary="Create a new empty study"
+        "/studies",
+        status_code=HTTPStatus.CREATED,
+        tags=[APITag.study_management],
+        summary="Create a new empty study",
     )
-    def create_study(name: str, version: str | None = None, groups: str = "") -> str:
+    def create_study(
+        name: str,
+        version: str | None = None,
+        groups: str = "",
+        directory: str = Query(
+            "", description="Directory path where the study will be created (e.g., 'project/subfolder')"
+        ),
+    ) -> str:
         study_version = StudyVersion.parse(version) if version else None
         logger.info(f"Creating new study '{name}'")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
-        uuid = study_service.create_study(name_sanitized, study_version, group_ids)
+        directory_path_sanitized = validate_folder_path(directory) if directory else ""
+
+        uuid = study_service.create_study(name_sanitized, study_version, group_ids, directory=directory_path_sanitized)
 
         return uuid
 

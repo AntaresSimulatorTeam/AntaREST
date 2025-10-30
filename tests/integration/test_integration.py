@@ -98,8 +98,8 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
-    assert res.status_code == 417
-    assert res.json()["description"] == "Not a year by year simulation"
+    assert res.status_code == 200
+    assert res.json() == {"area": [], "link": []}
 
     # study synthesis
     res = client.get(
@@ -198,6 +198,22 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert copied.status_code == 201
+
+    # Create directory structure 'foo/bar' before moving the study
+    res = client.post(
+        "/v1/directories",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+        json={"name": "foo"},
+    )
+    assert res.status_code == 201, res.json()
+    foo_id = res.json()["id"]
+
+    res = client.post(
+        "/v1/directories",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+        json={"name": "bar", "parentId": foo_id},
+    )
+    assert res.status_code == 201, res.json()
 
     updated = client.put(
         f"/v1/studies/{copied.json()}/move?folder_dest=foo/bar",

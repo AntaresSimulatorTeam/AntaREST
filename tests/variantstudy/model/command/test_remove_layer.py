@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.layer_model import LayerCreation
@@ -20,7 +19,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestRemoveLayer:
-    @pytest.mark.unit_test
     def test_remove_layer_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
 
