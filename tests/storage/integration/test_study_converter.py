@@ -11,8 +11,6 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
-from checksumdir import dirhash
-
 from antarest.study.service import StudyService
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
