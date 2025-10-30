@@ -108,8 +108,8 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
-from antarest.study.dao.conversion import StudyConverter
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -2580,11 +2580,3 @@ class StudyService:
 
         converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
         converter.convert_study_inputs()
-
-
-# todo:
-# What's missing in this model
-# ScenarioBuilder
-# Outputs -> Just copy the entire folder
-# Matrices -> Don't forget to also fetch the xpansion ones.
-# User resources

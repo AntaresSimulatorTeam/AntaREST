@@ -39,6 +39,22 @@ class StudyConverter:
 
     def convert_study_inputs(self) -> None:
         # Areas
+        self._convert_areas()
+        # todo: matrices are not in the DAO ...
+
+        # Links
+
+        # Binding constraints
+
+        # Xpansion
+
+        # User resources
+
+        # Settings
+
+        # Scenario Builder
+
+    def _convert_areas(self) -> None:
         area_properties = self._source_dao.get_all_area_properties()
         areas_ui = self._source_dao.get_all_areas_ui_info()
         area_names_and_thermals = {a.id: a for a in self._source_dao.get_all_areas_info()}
@@ -68,7 +84,6 @@ class StudyConverter:
 
             # Hydro
             self._convert_hydro(area_id, hydro_properties[area_id])
-            # todo: matrices are not in the DAO ...
 
             # Thermals
             thermals = area_names_and_thermals[area_id].thermals or []
