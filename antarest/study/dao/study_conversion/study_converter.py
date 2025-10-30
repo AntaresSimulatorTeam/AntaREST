@@ -62,7 +62,7 @@ class StudyConverter:
         self._convert_xpansion()
 
         # User resources
-        # todo
+        # todo: this doesn't exist in the DAO
 
         # Settings
         self._convert_settings()
