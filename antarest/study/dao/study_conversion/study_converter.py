@@ -137,13 +137,15 @@ class StudyConverter:
         area_properties = self._source_dao.get_all_area_properties()
         areas_ui = self._source_dao.get_all_areas_ui_info()
         area_names_and_thermals = {a.id: a for a in self._source_dao.get_all_areas_info()}
-        st_storages = self._source_dao.get_all_st_storages()
-        st_storages_constraints = self._source_dao.get_all_st_storage_additional_constraints()
         hydro_properties = self._source_dao.get_all_hydro_properties()
         try:
             renewable_clusters = self._source_dao.get_all_renewables()
-        except ChildNotFoundError:  # Can happen, according to the enr-modeling
+            st_storages = self._source_dao.get_all_st_storages()
+            st_storages_constraints = self._source_dao.get_all_st_storage_additional_constraints()
+        except ChildNotFoundError:  # Can happen, according to the enr-modeling and to the study version
             renewable_clusters = {}
+            st_storages = {}
+            st_storages_constraints = {}
 
         for area_id in area_properties:
             area_name = area_names_and_thermals[area_id].name
