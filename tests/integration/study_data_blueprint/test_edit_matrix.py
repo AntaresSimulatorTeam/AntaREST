@@ -12,13 +12,11 @@
 
 from urllib.parse import quote
 
-import pytest
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.area_model import AreaType
 
 
-@pytest.mark.unit_test
 class TestEditMatrix:
     """
     Test the end points "/studies/{uuid}/matrix".

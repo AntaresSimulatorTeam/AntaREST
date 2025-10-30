@@ -50,7 +50,6 @@ def create_app(service: Mock) -> FastAPI:
     return build_ctxt.build()
 
 
-@pytest.mark.unit_test
 def test_run() -> None:
     job = uuid4()
     study = "my-study"
@@ -67,7 +66,6 @@ def test_run() -> None:
     service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None, None)
 
 
-@pytest.mark.unit_test
 def test_result() -> None:
     job = uuid4()
     result = JobResult(
@@ -91,7 +89,6 @@ def test_result() -> None:
     service.get_result.assert_called_once_with(job)
 
 
-@pytest.mark.unit_test
 def test_jobs() -> None:
     job_id = uuid4()
     study_id = uuid4()
@@ -128,7 +125,6 @@ def test_jobs() -> None:
     )
 
 
-@pytest.mark.unit_test
 def test_get_solver_versions() -> None:
     service = Mock()
     output = ["1", "2", "3"]
@@ -141,7 +137,6 @@ def test_get_solver_versions() -> None:
     assert res.json() == output
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "solver, status_code, expected",
     [
@@ -173,7 +168,6 @@ def test_get_solver_versions__with_query_string(
         assert actual["msg"] == expected
 
 
-@pytest.mark.unit_test
 def test_get_job_log() -> None:
     service = Mock()
     service.get_log.return_value = ""
@@ -186,7 +180,6 @@ def test_get_job_log() -> None:
     service.get_log.assert_called_once_with(job_id, LogType.STDOUT)
 
 
-@pytest.mark.unit_test
 def test_kill_job() -> None:
     service = Mock()
     service.kill_job.return_value.to_dto.return_value = JobResultDTO(

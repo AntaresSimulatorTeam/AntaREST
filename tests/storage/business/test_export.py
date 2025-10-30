@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.helpers import create_raw_study
 
 
-@pytest.mark.unit_test
 def test_export_file(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
@@ -48,7 +47,6 @@ def test_export_file(tmp_path: Path) -> None:
     study_service.export_study(md, export_path)
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize("outputs", [True, False])
 def test_export_archived_study(tmp_path: Path, outputs: bool) -> None:
     root = tmp_path / "folder"
@@ -80,7 +78,6 @@ def test_export_archived_study(tmp_path: Path, outputs: bool) -> None:
         assert ("output/results1/file.txt" in szf_files) == outputs
 
 
-@pytest.mark.unit_test
 def test_export_flat(tmp_path: Path) -> None:
     root = tmp_path / "folder-with-output"
     root.mkdir()
@@ -128,7 +125,6 @@ def test_export_flat(tmp_path: Path) -> None:
     assert root_without_output_hash == copy_without_output_hash
 
 
-@pytest.mark.unit_test
 def test_export_output(tmp_path: Path) -> None:
     output_id = "output_id"
     root = tmp_path / "folder"

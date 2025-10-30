@@ -10,14 +10,12 @@
 #
 # This file is part of the Antares project.
 
-import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.mark.unit_test
 def test_update_comments(empty_study_870: FileStudy, command_context: CommandContext) -> None:
     study_path = empty_study_870.config.study_path
     study_version = empty_study_870.config.version

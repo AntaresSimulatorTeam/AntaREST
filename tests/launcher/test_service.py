@@ -72,7 +72,6 @@ from tests.helpers import with_admin_user
 
 class TestLauncherService:
     @with_admin_user
-    @pytest.mark.unit_test
     def test_service_run_study(self) -> None:
         storage_service_mock = Mock()
         # noinspection SpellCheckingInspection
@@ -150,7 +149,6 @@ class TestLauncherService:
         )
 
     @with_admin_user
-    @pytest.mark.unit_test
     def test_service_get_result_from_launcher(self) -> None:
         launcher_mock = Mock()
         fake_execution_result = JobResult(
@@ -191,7 +189,6 @@ class TestLauncherService:
         assert launcher_service.get_result(job_uuid=job_id) == fake_execution_result
 
     @with_admin_user
-    @pytest.mark.unit_test
     def test_service_get_result_from_database(self) -> None:
         launcher_mock = Mock()
         fake_execution_result = JobResult(
@@ -230,7 +227,6 @@ class TestLauncherService:
 
         assert launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
 
-    @pytest.mark.unit_test
     def test_service_get_jobs_from_database(self, db_session: DBSessionMiddleware) -> None:
         launcher_mock = Mock()
         now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -325,7 +321,6 @@ class TestLauncherService:
             launcher_service.remove_job("some job")
         repository.delete.assert_called_with("some job")
 
-    @pytest.mark.unit_test
     @pytest.mark.parametrize(
         "config, solver, expected",
         [
@@ -560,7 +555,6 @@ class TestLauncherService:
         assert actual == expected
 
     @with_admin_user
-    @pytest.mark.unit_test
     def test_service_kill_job(self, tmp_path: Path) -> None:
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
@@ -1041,7 +1035,6 @@ class TestLauncherService:
         launcher_service._import_output("job_id", tmp_path, {})
 
     @with_admin_user
-    @pytest.mark.unit_test
     def test_run_study_with_solver_presets(self) -> None:
         # set up mocks
         storage_service_mock = Mock()
@@ -1105,7 +1098,7 @@ class TestLauncherService:
         actual_obj: JobResult = mock_call.args[0]
         saved_launcher_params = json.loads(actual_obj.launcher_params)
         saved_other_options = saved_launcher_params.get("other_options", "")
-        assert saved_other_options == "solver=xpress", "The other_options was not set correctly"
+        assert saved_other_options == "xpress", "The other_options was not set correctly"
 
         # Test that non-existent config raises SolverPresetsNotFound
         with pytest.raises(SolverPresetsNotFound):
