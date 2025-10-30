@@ -15,6 +15,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
@@ -39,6 +40,7 @@ class StudyConverter:
     def convert_study_inputs(self) -> None:
         # Areas
         area_properties = self._source_dao.get_all_area_properties()
+        areas_ui = self._source_dao.get_all_areas_ui_info()
         area_names_and_thermals = {a.id: a for a in self._source_dao.get_all_areas_info()}
         st_storages = self._source_dao.get_all_st_storages()
         st_storages_constraints = self._source_dao.get_all_st_storage_additional_constraints()
@@ -56,7 +58,13 @@ class StudyConverter:
             self._new_dao.save_area_properties(area_id, area_properties[area_id])
 
             # Ui
-            # todo
+            source_ui = areas_ui[area_id]
+            for layer, x in source_ui.layer_x.items():
+                y = source_ui.layer_y[layer]
+                color = source_ui.layer_color[layer]
+                color_rgb = [int(c) for c in color.strip(" ").split(",")]
+                area_ui = AreaUI(x=x, y=y, color_rgb=color_rgb)
+                self._new_dao.save_area_ui(area_id, layer, area_ui)
 
             # Hydro
             self._convert_hydro(area_id, hydro_properties[area_id])
