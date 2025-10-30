@@ -18,6 +18,7 @@ import io
 import logging
 import os
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
@@ -25,6 +26,7 @@ from uuid import uuid4
 
 import pandas as pd
 from antares.study.version import StudyVersion
+from antares.study.version.create_app import CreateApp
 from fastapi import HTTPException
 from markupsafe import escape
 from typing_extensions import override
@@ -2555,3 +2557,33 @@ class StudyService:
         ##########################
 
         return StudyDataDTO.model_validate(obj)
+
+    def write_study_as_file_study(self, study_id: str, path: Path) -> None:
+        study = self.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        source_dao = self.get_study_interface(study).get_study_dao()
+
+        # Create empty study on the filesystem
+        study_version = StudyVersion.parse(study.version)
+        assert study.name is not None
+        app = CreateApp(study_dir=path, caption=study.name, version=study_version, author=study.author or "Unknown")
+        app()
+
+        # Create the FileStudyDAO
+        study_id = str(uuid.uuid4())
+        file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(
+            path, with_matrix_normalization=False, study_id=study_id, use_cache=False
+        )
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+
+        print(source_dao)
+        print(file_study_dao)
+
+
+# todo:
+# What's missing in this model
+# ScenarioBuilder
+# Outputs -> Just copy the entire folder
+# Matrices -> Don't forget to also fetch the xpansion ones.
+# User resources
