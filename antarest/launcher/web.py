@@ -11,10 +11,11 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from pydantic import Field
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -157,18 +158,23 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
 
     @bp.get(
         "/versions",
-        summary="Get list of supported solver versions",
+        summary="Get list of supported solver versions for the specified launcher",
+        response_description='List of supported solver versions formatted as "880" for 8.8.',
     )
-    def get_solver_versions(solver: Optional[str] = None) -> List[str]:
+    def get_solver_versions(
+        launcher_id: str | None = None, solver: Annotated[str | None, Query(deprecated=True)] = None
+    ) -> Annotated[list[str], Field(examples=[["820", "880", "920"]])]:
         """
-        Get list of supported solver versions defined in the configuration.
+        Get list of supported solver versions for the specified launcher.
 
         Args:
-        - `solver`: name of the configuration to read.
-          If no solver is specified, retrieve the configuration of the default launcher.
+           launcher_id: ID of the considered launcher. If no launcher is specified, returns solvers
+                        of the default launcher.
         """
-        logger.info(f"Fetching the list of solver versions for the '{solver}' configuration")
-        return service.get_solver_versions(solver)
+        launcher_id = launcher_id or solver
+        launcher_msg = f"launcher '{launcher_id}'" if launcher_id else "default launcher"
+        logger.info(f"Fetching the list of solver versions for {launcher_msg}")
+        return service.get_solver_versions(launcher_id)
 
     @bp.post(
         "/solver-presets",
