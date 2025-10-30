@@ -14,7 +14,6 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import timezone
 from http import HTTPStatus
 from typing import Awaitable, Callable, Dict, List, Optional, Sequence, TypeAlias
 
@@ -415,9 +414,9 @@ class TaskJobService(ITaskService):
 
     @override
     def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
-        return [task.to_dto() for task in self.list_db_tasks(task_filter)]
+        return [task.to_dto() for task in self._list_db_tasks(task_filter)]
 
-    def list_db_tasks(self, task_filter: TaskListFilter) -> List[TaskJob]:
+    def _list_db_tasks(self, task_filter: TaskListFilter) -> List[TaskJob]:
         current_user = require_current_user()
         user = None if current_user.is_site_admin() else current_user.impersonator
         return self.repo.list(task_filter, user)
@@ -591,24 +590,3 @@ class TaskJobService(ITaskService):
             return task.progress
         else:
             raise UserHasNotPermissionError()
-
-    def _cancel_orphan_tasks(self) -> None:
-        """
-        Cancel all tasks that are currently running or pending.
-
-        When the web application restarts, such as after a new deployment, any pending or running tasks may be lost.
-        To mitigate this, it is preferable to set these tasks to a "FAILED" status.
-        This ensures that users can easily identify the tasks that were affected by the restart and take appropriate
-        actions, such as restarting the tasks manually.
-        """
-        updated_values = {
-            TaskJob.status: TaskStatus.FAILED.value,
-            TaskJob.result_status: False,
-            TaskJob.result_msg: "Task was interrupted due to server restart",
-            TaskJob.completion_date: datetime.datetime.now(timezone.utc).replace(tzinfo=None),
-        }
-        orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
-        with db():
-            stmt = update(TaskJob).where(TaskJob.status.in_(orphan_status)).values(updated_values)
-            db.session.execute(stmt)
-            db.session.commit()

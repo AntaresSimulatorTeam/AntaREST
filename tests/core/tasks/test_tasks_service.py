@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import datetime
+import time
 import typing as t
 from pathlib import Path
 from unittest.mock import ANY, Mock
@@ -723,3 +724,32 @@ def test_get_tasks(core_config: Config, event_bus: IEventBus):
     assert task_list[0] == task_job_repository.get(task_1).to_dto()
     assert task_list[1] == task_job_repository.get(task_2).to_dto()
     assert task_list[2] == task_job_repository.get(task_3).to_dto()
+
+
+def test_task_timeout_other_worker(task_repo: TaskJobRepository, task_service: TaskJobService) -> None:
+    with db():
+        running_task = TaskJob(id="a", name="b", status=TaskStatus.RUNNING.value, creation_date=datetime.datetime.now())
+        task_repo.save(running_task)
+
+    with pytest.raises(TimeoutError):
+        with db():
+            task_service.await_task("a", 1)
+
+            assert task_service.status_task("a").status == TaskStatus.RUNNING
+
+
+@with_admin_user
+def test_task_timeout_this_worker(task_service: TaskJobService) -> None:
+    with db():
+
+        def long_task(notifier: ITaskNotifier) -> TaskResult:
+            time.sleep(3)
+            return TaskResult(success=True, message="success")
+
+        task_id = task_service.add_task(long_task, "a", TaskType.SCAN, None, None, None)
+
+    with pytest.raises(TimeoutError):
+        with db():
+            task_service.await_task(task_id, 1)
+
+            assert task_service.status_task("a").status == TaskStatus.RUNNING
