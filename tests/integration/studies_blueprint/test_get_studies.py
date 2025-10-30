@@ -288,6 +288,14 @@ class TestStudiesListing:
         )
         assert res.status_code in CREATE_STATUS_CODES, res.json()
         folder1_study_id = res.json()
+
+        res = client.post(
+            "/v1/directories",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            json={"name": "folder1"},
+        )
+        assert res.status_code == 201, res.json()
+
         res = client.put(
             f"{STUDIES_URL}/{folder1_study_id}/move",
             headers={"Authorization": f"Bearer {admin_access_token}"},

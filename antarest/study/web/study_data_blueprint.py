@@ -992,7 +992,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
         tags=[APITag.study_data],
-        summary="Create a binding constraint term",
+        summary="Deprecated, please use PUT /bindingconstraints/<id> to modify the list of terms",
+        deprecated=True,
     )
     def add_constraint_term(uuid: str, binding_constraint_id: str, term: ConstraintTerm) -> None:
         """
@@ -1013,7 +1014,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/terms",
         tags=[APITag.study_data],
-        summary="Create terms for a given binding constraint",
+        summary="Deprecated, please use PUT /bindingconstraints/<id> to modify the list of terms",
+        deprecated=True,
     )
     def add_constraint_terms(uuid: str, binding_constraint_id: str, terms: Sequence[ConstraintTerm]) -> None:
         """
@@ -1034,7 +1036,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
         tags=[APITag.study_data],
-        summary="Update a binding constraint term",
+        summary="Deprecated, please use PUT /bindingconstraints/<id> to modify the list of terms",
+        deprecated=True,
     )
     def update_constraint_term(uuid: str, binding_constraint_id: str, term: ConstraintTermUpdate) -> None:
         """
@@ -1055,7 +1058,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/terms",
         tags=[APITag.study_data],
-        summary="Update terms for a given binding constraint",
+        summary="Deprecated, please use PUT /bindingconstraints/<id> to modify the list of terms",
+        deprecated=True,
     )
     def update_constraint_terms(uuid: str, binding_constraint_id: str, terms: Sequence[ConstraintTermUpdate]) -> None:
         """
@@ -1076,7 +1080,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.delete(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term/{term_id}",
         tags=[APITag.study_data],
-        summary="Remove a binding constraint term",
+        summary="Deprecated, please use PUT /bindingconstraints/<id> to modify the list of terms",
+        deprecated=True,
     )
     def remove_constraint_term(uuid: str, binding_constraint_id: str, term_id: str) -> None:
         logger.info(f"Remove constraint term {term_id} from {binding_constraint_id} for study {uuid}")

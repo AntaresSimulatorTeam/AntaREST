@@ -554,6 +554,7 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
             "horizon": "2030",
             "folder": None,
             "tags": [],
+            "directory_id": None,
         }
     }
     url = "/v1/studies"
