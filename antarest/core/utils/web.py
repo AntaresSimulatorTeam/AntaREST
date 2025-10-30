@@ -27,6 +27,7 @@ class APITag:
     tasks = "Manage tasks"
     misc = "Miscellaneous"
     filesystem = "Filesystem Management"
+    explorer = "Explore external disks"
 
 
 tags_metadata = [

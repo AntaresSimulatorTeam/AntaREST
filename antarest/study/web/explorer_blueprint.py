@@ -16,6 +16,7 @@ from typing import List
 from fastapi import APIRouter
 
 from antarest.core.config import Config
+from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import FolderDTO, WorkspaceDTO
 from antarest.study.storage.explorer_service import Explorer
@@ -34,19 +35,17 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1/private", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1/private", tags=[APITag.explorer], dependencies=[auth.required()])
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",
         summary="For a given directory, list sub directories.",
-        response_model=List[FolderDTO],
     )
     def list_dir(workspace: str, path: str) -> List[FolderDTO]:
         """
         Endpoint to list sub directories of a given directory
         Args:
             path: path to the directory to scan
-            current_user: user that perform the request
 
         Returns:
             List of sub directories
@@ -58,13 +57,11 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
     @bp.get(
         "/explorer/_list_workspaces",
         summary="List all workspaces",
-        response_model=List[WorkspaceDTO],
     )
     def list_workspaces() -> List[WorkspaceDTO]:
         """
         Endpoint to list workspaces
         Args:
-            current_user: user that perform the request
 
         Returns:
             List of workspace
