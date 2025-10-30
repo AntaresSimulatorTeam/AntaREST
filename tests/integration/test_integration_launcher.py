@@ -11,11 +11,40 @@
 # This file is part of the Antares project.
 
 import json
+import os
+from pathlib import Path
+from unittest.mock import Mock
 
+import pytest
 from starlette.testclient import TestClient
 
+from antarest.core.config import LocalConfig
+from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2, LocalLauncher
+from antarest.launcher.model import LauncherParametersDTO
 
-def test_solver_presets(client: TestClient, user_access_token: str, admin_access_token: str) -> None:
+
+@pytest.fixture
+def basic_local_launcher(tmp_path: Path) -> LocalLauncher:
+    """
+    Fixture to create a local launcher.
+    """
+    solver_name = "solver.bat" if os.name == "nt" else "solver.sh"
+    solver_path = tmp_path.joinpath(solver_name)
+    data = {
+        "id": "id",
+        "name": "name",
+        "type": "local",
+        "binaries": {"700": solver_path},
+        "enable_nb_cores_detection": True,
+        "local_workspace": tmp_path,
+    }
+    local_config = LocalConfig.from_dict(data)
+    return LocalLauncher(local_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+
+
+def test_solver_presets(
+    client: TestClient, user_access_token: str, admin_access_token: str, basic_local_launcher: LocalLauncher
+) -> None:
     # Test creating solver presets
     payload1 = {
         "name": "test-xpress-config",
@@ -219,6 +248,20 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert job_launcher_params["other_options"] == (
         'solver=xpress nobasis2 param-optim1="DEFAULTALG 4 THREADS 4 PRESOLVE 1" param-optim2="DEFAULTALG 4 MIPRELSTOP 0.01"'
     )
+
+    # Test launcher params are parseable
+    launcher_params = LauncherParametersDTO.model_validate(job_launcher_params)
+    args, _ = basic_local_launcher._parse_launcher_options(launcher_params, SOLVER_VERSION_9_2)
+    assert args == [
+        "--linear-solver",
+        "xpress",
+        "--use-optim-1-basis-optim-2",
+        "false",
+        "--lp-solver-param-optim-1",
+        "DEFAULTALG 4 THREADS 4 PRESOLVE 1",
+        "--lp-solver-param-optim-2",
+        "DEFAULTALG 4 MIPRELSTOP 0.01",
+    ]
 
     # Test updating optim params to None/empty when version < 9.2
     update_payload10 = {
