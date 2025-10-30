@@ -17,6 +17,7 @@ import http
 import io
 import logging
 import os
+import shutil
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
@@ -2576,5 +2577,11 @@ class StudyService:
         context = self.storage_service.variant_study_service.command_factory.command_context
         file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
 
+        # Write the given study input in the filesystem
         converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
         converter.convert_study_inputs()
+
+        # Copy the `output` folder
+        output_src_path = Path(study.path) / "output"
+        if output_src_path.exists():
+            shutil.copytree(output_src_path, path / "output", dirs_exist_ok=True)

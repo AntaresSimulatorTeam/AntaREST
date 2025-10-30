@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+from checksumdir import dirhash
+
 from antarest.study.service import StudyService
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
@@ -21,4 +23,8 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path) -> None:
     """
     For the moment, it only ensures the method doesn't crash
     """
-    storage_service.write_study_as_file_study(UUID, tmp_path / "new_study")
+    outputs_before = [f.name for f in (tmp_path / "studies" / UUID / "output").iterdir()]
+    new_study_path = tmp_path / "studies" / "new_study"
+    storage_service.write_study_as_file_study(UUID, new_study_path)
+    # Checks the output folder was copied
+    assert [f.name for f in (tmp_path / "studies" / "new_study" / "output").iterdir()] == outputs_before
