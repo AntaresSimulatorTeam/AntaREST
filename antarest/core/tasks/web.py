@@ -13,7 +13,7 @@
 import concurrent.futures
 import http
 import logging
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -92,8 +92,8 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         return service.status_task(sanitized_task_id, with_logs)
 
     @bp.put("/tasks/{task_id}/cancel")
-    def cancel_task(task_id: str) -> Any:
-        return service.cancel_task(task_id, dispatch=True)
+    def cancel_task(task_id: str) -> None:
+        service.cancel_task(task_id, dispatch=True)
 
     @bp.get(
         "/tasks/{task_id}/progress",

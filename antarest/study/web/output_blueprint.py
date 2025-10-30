@@ -128,6 +128,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/download",
         summary="Get outputs data",
+        response_model=None,  # only pydantic models are supported as response model
     )
     def output_download(
         study_id: str,

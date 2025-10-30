@@ -189,7 +189,20 @@ def test_get_job_log() -> None:
 @pytest.mark.unit_test
 def test_kill_job() -> None:
     service = Mock()
-    service.kill_job.return_value.to_dto.return_value = ""
+    service.kill_job.return_value.to_dto.return_value = JobResultDTO(
+        id="job_id",
+        study_id="study",
+        output_id="output",
+        exit_code=10,
+        launcher=None,
+        launcher_params=None,
+        msg=None,
+        owner=None,
+        status=JobStatus.SUCCESS,
+        solver_stats=None,
+        creation_date="date",
+        completion_date=None,
+    )
     job_id = "job_id"
 
     app = create_app(service)
