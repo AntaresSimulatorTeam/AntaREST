@@ -61,6 +61,7 @@ class StudyConverter:
         self._convert_xpansion()
 
         # User resources
+        # todo
 
         # Settings
         self._convert_settings()
@@ -147,10 +148,12 @@ class StudyConverter:
             st_storages = {}
             st_storages_constraints = {}
 
+        # First create all areas to avoid config issues
         for area_id in area_properties:
             area_name = area_names_and_thermals[area_id].name
             self._new_dao.save_area(area_name)
 
+        for area_id in area_properties:
             # Properties
             self._new_dao.save_area_properties(area_id, area_properties[area_id])
 
