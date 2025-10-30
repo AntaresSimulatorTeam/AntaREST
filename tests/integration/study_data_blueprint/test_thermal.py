@@ -290,7 +290,6 @@ def _upload_matrix(
     res.raise_for_status()
 
 
-@pytest.mark.unit_test
 class TestThermal:
     @pytest.mark.parametrize(
         "version",

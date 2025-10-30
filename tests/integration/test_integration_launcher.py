@@ -246,7 +246,7 @@ def test_solver_presets(
     job_launcher_params_json = job_info["launcher_params"]
     job_launcher_params = json.loads(job_launcher_params_json)
     assert job_launcher_params["other_options"] == (
-        'solver=xpress nobasis2 param-optim1="DEFAULTALG 4 THREADS 4 PRESOLVE 1" param-optim2="DEFAULTALG 4 MIPRELSTOP 0.01"'
+        'xpress nobasis2 param-optim1="DEFAULTALG 4 THREADS 4 PRESOLVE 1" param-optim2="DEFAULTALG 4 MIPRELSTOP 0.01"'
     )
 
     # Test launcher params are parseable

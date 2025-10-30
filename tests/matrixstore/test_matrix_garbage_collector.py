@@ -54,7 +54,6 @@ def matrix_garbage_collector(tmp_path: Path) -> MatrixGarbageCollector:
     return matrix_garbage_collector
 
 
-@pytest.mark.unit_test
 def test_delete_unused_saved_matrices(
     matrix_garbage_collector: MatrixGarbageCollector,
 ) -> None:
@@ -71,7 +70,6 @@ def test_delete_unused_saved_matrices(
     matrix_garbage_collector.matrix_service.delete.assert_not_called()
 
 
-@pytest.mark.unit_test
 def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector) -> None:
     matrix_garbage_collector.matrix_service.get_matrices.return_value = [
         MatrixMetadataDTO(id="matrix2", width=0, height=0, version=0, created_at=datetime(2020, 1, 1, 0, 0, 0))

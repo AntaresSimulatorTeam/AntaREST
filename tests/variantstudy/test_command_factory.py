@@ -1078,7 +1078,6 @@ class TestCommandFactory:
         ["command_dto", "expected_args"],
         COMMANDS,
     )
-    @pytest.mark.unit_test
     def test_command_factory(
         self,
         command_dto: CommandDTO,
@@ -1106,7 +1105,6 @@ class TestCommandFactory:
             assert actual_version == expected_version
 
 
-@pytest.mark.unit_test
 def test_unknown_command() -> None:
     with pytest.raises(NotImplementedError):
         command_factory = CommandFactory(
@@ -1119,7 +1117,6 @@ def test_unknown_command() -> None:
         )
 
 
-@pytest.mark.unit_test
 def test_parse_create_cluster_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
@@ -1142,7 +1139,6 @@ def test_parse_create_cluster_dto_v1(command_factory: CommandFactory) -> None:
     assert "cluster_name" not in dto.args
 
 
-@pytest.mark.unit_test
 def test_parse_create_cluster_dto_v2(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
