@@ -11,10 +11,11 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Query
+from pydantic import Field
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -158,10 +159,11 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     @bp.get(
         "/versions",
         summary="Get list of supported solver versions for the specified launcher",
+        response_description='List of supported solver versions formatted as "880" for 8.8.',
     )
     def get_solver_versions(
-        launcher_id: str | None = None, solver: str | None = Query(deprecated=True, default=None)
-    ) -> List[str]:
+        launcher_id: str | None = None, solver: Annotated[str | None, Query(deprecated=True)] = None
+    ) -> Annotated[list[str], Field(examples=[["820", "880", "920"]])]:
         """
         Get list of supported solver versions for the specified launcher.
 
