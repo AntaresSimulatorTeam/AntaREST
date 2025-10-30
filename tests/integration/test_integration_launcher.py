@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import json
-import os
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -28,13 +27,11 @@ def basic_local_launcher(tmp_path: Path) -> LocalLauncher:
     """
     Fixture to create a local launcher.
     """
-    solver_name = "solver.bat" if os.name == "nt" else "solver.sh"
-    solver_path = tmp_path.joinpath(solver_name)
     data = {
         "id": "id",
         "name": "name",
         "type": "local",
-        "binaries": {"700": solver_path},
+        "binaries": {"700": "mock"},
         "enable_nb_cores_detection": True,
         "local_workspace": tmp_path,
     }
