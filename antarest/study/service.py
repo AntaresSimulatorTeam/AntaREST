@@ -26,7 +26,6 @@ from uuid import uuid4
 
 import pandas as pd
 from antares.study.version import StudyVersion
-from antares.study.version.create_app import CreateApp
 from fastapi import HTTPException
 from markupsafe import escape
 from typing_extensions import override
@@ -145,6 +144,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
+    create_new_empty_study,
     get_start_date,
     is_managed,
     is_study_folder,
@@ -2567,8 +2567,7 @@ class StudyService:
         # Create empty study on the filesystem
         study_version = StudyVersion.parse(study.version)
         assert study.name is not None
-        app = CreateApp(study_dir=path, caption=study.name, version=study_version, author=study.author or "Unknown")
-        app()
+        create_new_empty_study(study_version, path, study.name, study.author or "Unknown")
 
         # Create the FileStudyDAO
         file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(

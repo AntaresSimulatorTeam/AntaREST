@@ -68,7 +68,7 @@ class StudyConverter:
         self._convert_settings()
 
         # Scenario Builder
-        # todo: the DAO only offers a request by ScenarioType (not efficient at all)
+        self._new_dao.save_scenario_builder(self._source_dao.get_rulesets())
 
         # Districts
         for district in self._source_dao.get_districts():
