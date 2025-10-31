@@ -211,14 +211,9 @@ class FileStudyAreaDao(AreaDao):
         """Helper method to build the complete area data structure."""
         # Import here to avoid circular import
 
-        study_data = self.get_file_study()
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
         if generator_matrix_constants is None:
             raise ValueError("Generator matrix constants not available in DAO")
-
-        # Ensure the "annual" key exists in the hydro correlation configuration
-        new_correlation = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
-        new_correlation.setdefault("annual", {})
 
         new_area_data: JSON = {
             "input": {
