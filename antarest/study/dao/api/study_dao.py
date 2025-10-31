@@ -183,6 +183,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.link_exists(area1_id, area2_id)
 
     @override
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        return self._adaptee.get_link_direct_capacities(area_from, area_to)
+
+    @override
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        return self._adaptee.get_link_direct_capacities(area_from, area_to)
+
+    @override
+    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+        return self._adaptee.get_link_series(area_from, area_to)
+
+    @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
         return self._adaptee.get_all_thermals()
 

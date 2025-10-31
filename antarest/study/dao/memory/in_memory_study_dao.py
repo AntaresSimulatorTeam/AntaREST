@@ -220,6 +220,21 @@ class InMemoryStudyDao(StudyDao):
             raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
 
     @override
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        matrix_id = self._link_indirect_capacities[link_key(area_from, area_to)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        matrix_id = self._link_direct_capacities[link_key(area_from, area_to)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+        matrix_id = self._link_capacities[link_key(area_from, area_to)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
     def save_link(self, link: Link) -> None:
         self._links[link_key(link.area1, link.area2)] = link
 

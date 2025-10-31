@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Sequence
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
@@ -22,6 +23,7 @@ from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link, serialize_link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -56,6 +58,28 @@ class FileStudyLinkDao(LinkDao, ABC):
             return True
         except KeyError:
             return False
+
+    @override
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        area_from, area_to = sorted((area_from, area_to))
+        url = ["input", "links", area_from, "capacities", f"{area_to}_indirect"]
+        return self._get_link_matrix(url)
+
+    @override
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        area_from, area_to = sorted((area_from, area_to))
+        url = ["input", "links", area_from, "capacities", f"{area_to}_direct"]
+        return self._get_link_matrix(url)
+
+    @override
+    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        area_from, area_to = sorted((area_from, area_to))
+        if study_data.config.version < STUDY_VERSION_8_2:
+            url = ["input", "links", area_from, area_to]
+        else:
+            url = ["input", "links", area_from, f"{area_to}_parameters"]
+        return self._get_link_matrix(url)
 
     @override
     def get_link(self, area1_id: str, area2_id: str) -> Link:
@@ -139,3 +163,9 @@ class FileStudyLinkDao(LinkDao, ABC):
                     del ruleset[key]
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+    def _get_link_matrix(self, url: list[str]) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        node = study_data.tree.get_node(url)
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
