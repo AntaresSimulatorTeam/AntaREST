@@ -151,19 +151,25 @@ def test_create_study(tmp_path: str, project_path: Path) -> None:
 
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", None, [], directory="", StorageMode.FILESYSTEM)
+    storage_service.create_study.assert_called_once_with(
+        "study2", None, [], directory="", storage_mode=StorageMode.FILESYSTEM
+    )
     storage_service.create_study.reset_mock()
 
     result_right = client.post("/v1/studies?name=study2&version=8.8")
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], directory="", StorageMode.FILESYSTEM)
+    storage_service.create_study.assert_called_once_with(
+        "study2", STUDY_VERSION_8_8, [], directory="", storage_mode=StorageMode.FILESYSTEM
+    )
     storage_service.create_study.reset_mock()
 
     result_right = client.post("/v1/studies?name=study2&version=880")
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], directory="", StorageMode.FILESYSTEM)
+    storage_service.create_study.assert_called_once_with(
+        "study2", STUDY_VERSION_8_8, [], directory="", storage_mode=StorageMode.FILESYSTEM
+    )
     storage_service.create_study.reset_mock()
 
 

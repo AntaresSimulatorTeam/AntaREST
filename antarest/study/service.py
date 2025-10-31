@@ -917,7 +917,12 @@ class StudyService:
         return self.storage_service.get_storage(study).get_study_path(study)
 
     def create_study(
-        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], storage_mode: StorageMode, directory: str = ""
+        self,
+        study_name: str,
+        version: Optional[StudyVersion],
+        group_ids: List[str],
+        storage_mode: StorageMode,
+        directory: str = "",
     ) -> str:
         """
         Creates a study with the specified study name, version, group IDs, and storage mode.
