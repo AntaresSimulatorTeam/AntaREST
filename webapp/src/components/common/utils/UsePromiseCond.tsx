@@ -12,9 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import debug from "debug";
 import { PromiseStatus, type UsePromiseResponse } from "../../../hooks/usePromise";
 import SimpleLoader from "../loaders/SimpleLoader";
 import EmptyView from "../page/EmptyView";
+
+const log = debug("antares:utils:UsePromiseCond");
 
 export type Response<T = unknown> = Pick<UsePromiseResponse<T>, "data" | "status" | "error">;
 
@@ -81,6 +84,7 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
   }
 
   if (status === PromiseStatus.Rejected) {
+    log(error);
     return ifRejected(error);
   }
 }

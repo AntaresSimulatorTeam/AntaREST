@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-import concurrent.futures
 import http
 import logging
+from http import HTTPStatus
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -80,7 +80,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
             timeout = min(max(0, timeout), DEFAULT_AWAIT_MAX_TIMEOUT)
             try:
                 service.await_task(sanitized_task_id, timeout_sec=timeout)
-            except concurrent.futures.TimeoutError as exc:  # pragma: no cover
+            except TimeoutError as exc:  # pragma: no cover
                 # Note that if the task does not complete within the specified time,
                 # the task will continue running but the user will receive a timeout.
                 # In this case, it is the user's responsibility to cancel the task.
@@ -91,9 +91,10 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
 
         return service.status_task(sanitized_task_id, with_logs)
 
-    @bp.put("/tasks/{task_id}/cancel")
+    @bp.put("/tasks/{task_id}/cancel", status_code=HTTPStatus.ACCEPTED)
     def cancel_task(task_id: str) -> None:
-        service.cancel_task(task_id, dispatch=True)
+        logger.info(f"Requesting cancellation for task {task_id}")
+        service.cancel_task(task_id)
 
     @bp.get(
         "/tasks/{task_id}/progress",
