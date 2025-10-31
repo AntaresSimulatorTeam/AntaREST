@@ -583,6 +583,10 @@ class TaskJobService(ITaskService):
             for listener in self._listeners:
                 listener.on_task_end(task_id, task_type, status)
 
+            # Task has been updated in database, we can safely remove it from running tasks
+            if task_id in self.tasks:
+                del self.tasks[task_id]
+
     def get_task_progress(self, task_id: str) -> Optional[int]:
         task = self.repo.get_or_raise(task_id)
         user = get_current_user()
