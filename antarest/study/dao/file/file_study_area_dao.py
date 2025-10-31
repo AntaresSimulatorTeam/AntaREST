@@ -181,22 +181,8 @@ class FileStudyAreaDao(AreaDao):
             filters_year=[],
         )
 
-        version = config.version
-
-        # Get matrix constants from the DAO
-        generator_matrix_constants = self.get_impl()._generator_matrix_constants
-        if generator_matrix_constants is None:
-            raise ValueError("Generator matrix constants not available in DAO")
-        null_matrix = generator_matrix_constants.get_null_matrix()
-
         # Build the new area data structure
-
-        new_area_data: JSON = self._build_area_data_structure(
-            area_id=area_id,
-            config=config,
-            version=version,
-            null_matrix=null_matrix,
-        )
+        new_area_data: JSON = self._build_area_data_structure(area_id=area_id, config=config, version=config.version)
 
         # Save to filesystem
         study_data.tree.save(new_area_data)
@@ -206,7 +192,6 @@ class FileStudyAreaDao(AreaDao):
         area_id: str,
         config: Any,
         version: Any,
-        null_matrix: str,
     ) -> JSON:
         """Helper method to build the complete area data structure."""
         # Import here to avoid circular import
@@ -214,6 +199,8 @@ class FileStudyAreaDao(AreaDao):
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
         if generator_matrix_constants is None:
             raise ValueError("Generator matrix constants not available in DAO")
+        null_matrix = generator_matrix_constants.get_null_matrix()
+        null_scenario_matrix = generator_matrix_constants.get_null_scenario_matrix()
 
         new_area_data: JSON = {
             "input": {
@@ -224,7 +211,7 @@ class FileStudyAreaDao(AreaDao):
                 "load": {
                     "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
                     "series": {
-                        f"load_{area_id}": generator_matrix_constants.get_null_scenario_matrix(),
+                        f"load_{area_id}": null_scenario_matrix,
                     },
                 },
                 "misc-gen": {f"miscgen-{area_id}": generator_matrix_constants.get_default_miscgen()},
@@ -232,7 +219,7 @@ class FileStudyAreaDao(AreaDao):
                 "solar": {
                     "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
                     "series": {
-                        f"solar_{area_id}": generator_matrix_constants.get_null_scenario_matrix(),
+                        f"solar_{area_id}": null_scenario_matrix,
                     },
                 },
                 "thermal": {
@@ -240,7 +227,7 @@ class FileStudyAreaDao(AreaDao):
                 },
                 "wind": {
                     "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
-                    "series": {f"wind_{area_id}": generator_matrix_constants.get_null_scenario_matrix()},
+                    "series": {f"wind_{area_id}": null_scenario_matrix},
                 },
             }
         }
