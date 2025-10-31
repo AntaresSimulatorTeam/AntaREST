@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 from typing import BinaryIO, Optional, Sequence
 
+import pandas as pd
 from starlette.responses import FileResponse
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
@@ -306,7 +307,7 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
         for query_file in query_files:
-            self.aggregate_output_data(
+            download_id = self.aggregate_output_data(
                 study_id,
                 output_id,
                 query_file,
@@ -319,6 +320,11 @@ class OutputService:
                 DEFAULT_DOWNLOAD_EXPIRATION_TIME,
                 data.years,
             )
+            self._file_transfer_manager.get_download_metadata(download_id, True)
+            download = self._file_transfer_manager.fetch_download(download_id)
+            dataframe = pd.read_parquet(Path(download.path))
+            print(dataframe.head())
+            # todo: convert this inside the expected Imagrid Response
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """
