@@ -184,7 +184,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
 
     @override
     def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
-        return self._adaptee.get_link_direct_capacities(area_from, area_to)
+        return self._adaptee.get_link_indirect_capacities(area_from, area_to)
 
     @override
     def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
