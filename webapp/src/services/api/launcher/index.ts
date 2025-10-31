@@ -13,11 +13,22 @@
  */
 
 import client from "../client";
-import type { JobCreationDTO, LauncherParamsDTO, LaunchStudyParams } from "./types";
+import type {
+  GetLauncherVersionsParams,
+  JobCreationDTO,
+  LauncherParamsDTO,
+  LaunchStudyParams,
+} from "./types";
 
 const BASE_URL = "/v1/launcher";
 
-export async function launchStudy({ studyId, launcherId, version, config }: LaunchStudyParams) {
+export async function launchStudy({
+  studyId,
+  launcherId,
+  solverPresetsId,
+  version,
+  config,
+}: LaunchStudyParams) {
   const launcherParams: LauncherParamsDTO = {
     nb_cpu: config?.nbCores,
     xpansion: config?.xpansion && {
@@ -32,8 +43,15 @@ export async function launchStudy({ studyId, launcherId, version, config }: Laun
   };
 
   const { data } = await client.post<JobCreationDTO>(`${BASE_URL}/run/${studyId}`, launcherParams, {
-    params: { version, launcher: launcherId },
+    params: { version, launcher: launcherId, solver_presets_id: solverPresetsId },
   });
 
+  return data;
+}
+
+export async function getLauncherVersions({ launcherId }: GetLauncherVersionsParams = {}) {
+  const { data } = await client.get<string[]>(`${BASE_URL}/versions`, {
+    params: { solver: launcherId },
+  });
   return data;
 }

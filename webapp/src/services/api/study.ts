@@ -265,11 +265,6 @@ export const getLaunchersConfig = async () => {
   return res.data;
 };
 
-export const getLauncherVersions = async (): Promise<string[]> => {
-  const res = await client.get("/v1/launcher/versions");
-  return res.data;
-};
-
 interface LauncherMetrics {
   allocatedCpuRate: number;
   clusterLoadRate: number;

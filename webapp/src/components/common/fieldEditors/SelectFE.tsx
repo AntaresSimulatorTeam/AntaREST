@@ -61,6 +61,7 @@ interface SingleSelect<OptionValue extends AllowedValue, EmptyValue extends bool
   value?: AllowedValue;
   defaultValue?: AllowedValue;
   emptyValue?: EmptyValue;
+  emptyValueLabel?: string;
   onChange?: (event: SelectFEChangeEvent<OptionValue, EmptyValue>) => void;
   onSelectAllOptions?: never;
   onDeselectAllOptions?: never;
@@ -71,6 +72,7 @@ interface MultipleSelect<OptionValue extends AllowedValue, Value extends Allowed
   value?: Value[];
   defaultValue?: Value[];
   emptyValue?: never;
+  emptyValueLabel?: never;
   onChange?: (event: SelectFEChangeEvent<Array<Value | OptionValue>>) => void;
   onSelectAllOptions?: (optionValues: OptionValue[]) => void;
   onDeselectAllOptions?: VoidFunction;
@@ -92,6 +94,7 @@ export type SelectFEProps<
 function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
   options = [],
   emptyValue = false,
+  emptyValueLabel,
   startCaseLabel = false,
   multiple = false,
   helperText,
@@ -244,7 +247,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
     >
       {emptyValue && !multiple && (
         <MenuItem value="">
-          <em>{t("global.none")}</em>
+          <em>{emptyValueLabel ?? t("global.none")}</em>
         </MenuItem>
       )}
       {invalidOptions.map(({ value, label, id }) => (
