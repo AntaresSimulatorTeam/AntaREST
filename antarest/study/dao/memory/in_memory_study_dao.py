@@ -121,6 +121,15 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_properties: Dict[str, HydroProperties] = {}
         self._hydro_allocation: dict[str, HydroAllocation] = {}
         self._hydro_correlation: dict[str, HydroCorrelation] = {}
+        self._hydro_maxpower: dict[str, str] = {}
+        self._hydro_reservoir: dict[str, str] = {}
+        self._hydro_energy: dict[str, str] = {}
+        self._hydro_run_of_river: dict[str, str] = {}
+        self._hydro_modulation: dict[str, str] = {}
+        self._hydro_credit_modulations: dict[str, str] = {}
+        self._hydro_inflow_pattern: dict[str, str] = {}
+        self._hydro_water_values: dict[str, str] = {}
+        self._hydro_mingen: dict[str, str] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -946,3 +955,48 @@ class InMemoryStudyDao(StudyDao):
                 raise AreaNotFound(area_id)
 
         self._layer_areas[layer_id] = set(area_ids)
+
+    @override
+    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_maxpower[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_reservoir[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_energy[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_run_of_river[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_modulation[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_credit_modulations[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_inflow_pattern[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_water_values[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_mingen[area_id]
+        return self._matrix_service.get(matrix_id)

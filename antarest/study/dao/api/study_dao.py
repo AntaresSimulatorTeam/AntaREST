@@ -360,6 +360,42 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_hydro_correlation_matrix()
 
     @override
+    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_maxpower(area_id)
+
+    @override
+    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_reservoir(area_id)
+
+    @override
+    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_energy(area_id)
+
+    @override
+    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_run_of_river(area_id)
+
+    @override
+    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_modulation(area_id)
+
+    @override
+    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_credit_modulations(area_id)
+
+    @override
+    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_inflow_pattern(area_id)
+
+    @override
+    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_water_values(area_id)
+
+    @override
+    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_mingen(area_id)
+
+    @override
     def get_general_config(self) -> GeneralConfig:
         return self._adaptee.get_general_config()
 

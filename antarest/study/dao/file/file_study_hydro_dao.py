@@ -13,6 +13,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 
 import numpy as np
+import pandas as pd
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
@@ -21,6 +22,7 @@ from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelationMatrix,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -200,3 +202,63 @@ class FileStudyHydroDao(HydroDao):
         # Saves the data inside the file
         url = get_allocation_path(area_id)
         file_study.tree.save({"[allocation]": data}, url)
+
+    """
+        if version > STUDY_VERSION_6_5:
+
+                new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
+                    generator_matrix_constants.get_hydro_inflow_pattern()
+                )
+                new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
+    """
+
+    @override
+    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"]
+        return self._get_hydro_matrix(url)
+
+    @override
+    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"]
+        return self._get_hydro_matrix(url)
+
+    @override
+    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "prepro", area_id, "energy"]
+        return self._get_hydro_matrix(url)
+
+    @override
+    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "series", area_id, "ror"]
+        return self._get_hydro_matrix(url)
+
+    @override
+    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "series", area_id, "mod"]
+        return self._get_hydro_matrix(url)
+
+    @override
+    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"]
+        return self._get_hydro_matrix(url)
+
+    @override
+    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"]
+        return self._get_hydro_matrix(url)
+
+    @override
+    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"]
+        return self._get_hydro_matrix(url)
+
+    @override
+    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "series", area_id, "mingen"]
+        return self._get_hydro_matrix(url)
+
+    def _get_hydro_matrix(self, url: list[str]) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        node = study_data.tree.get_node(url)
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
