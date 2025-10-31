@@ -18,7 +18,6 @@ from antarest.login.model import Bot, Group, Password, Role, User, UserLdap
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
 
 
-@pytest.mark.unit_test
 def test_users(db_session: Session) -> None:
     with db_session:
         repo = UserRepository(session=db_session)
@@ -40,7 +39,6 @@ def test_users(db_session: Session) -> None:
         assert repo.get(a.id) is None
 
 
-@pytest.mark.unit_test
 def test_users_ldap(db_session: Session) -> None:
     repo = UserLdapRepository(session=db_session)
     with repo.session:
@@ -55,7 +53,6 @@ def test_users_ldap(db_session: Session) -> None:
         assert repo.get(a.id) is None
 
 
-@pytest.mark.unit_test
 def test_bots(db_session: Session) -> None:
     repo = BotRepository(session=db_session)
     with repo.session:
@@ -77,7 +74,6 @@ def test_bots(db_session: Session) -> None:
         assert repo.get(a.id) is None
 
 
-@pytest.mark.unit_test
 def test_groups(db_session: Session) -> None:
     repo = GroupRepository(session=db_session)
     with repo.session:
@@ -94,7 +90,6 @@ def test_groups(db_session: Session) -> None:
         assert repo.get(a.id) is None
 
 
-@pytest.mark.unit_test
 def test_roles(db_session: Session) -> None:
     repo = RoleRepository(session=db_session)
     with repo.session:

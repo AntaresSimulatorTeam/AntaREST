@@ -52,7 +52,6 @@ from tests.integration.utils import duration_threshold, wait_task_completion
 EXISTING_CLUSTERS: list[str] = []
 
 
-@pytest.mark.unit_test
 class TestRenewable:
     def test_lifecycle(
         self,

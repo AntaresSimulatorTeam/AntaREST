@@ -177,6 +177,7 @@ function JobTableView({ content, refresh }: Props) {
             <TableRow>
               <TableCell>{t("global.jobs")}</TableCell>
               <TableCell align="right">{t("study.type")}</TableCell>
+              <TableCell align="right">{t("study.cluster")}</TableCell>
               <TableCell align="right">
                 <TableSortLabel
                   active={orderBy === "date"}
@@ -205,6 +206,7 @@ function JobTableView({ content, refresh }: Props) {
                   {row.name}
                 </TableCell>
                 <TableCell align="right">{t(`tasks.type.${row.type}`)}</TableCell>
+                <TableCell align="right">{row.launcher || ""}</TableCell>
                 <TableCell align="right">{row.dateView}</TableCell>
                 <TableCell align="right">{row.userName || ""}</TableCell>
                 <TableCell align="right">{row.action}</TableCell>

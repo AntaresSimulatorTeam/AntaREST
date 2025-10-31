@@ -85,7 +85,6 @@ class TestConstraintTerm:
         assert term.generate_id() == term.data.generate_id()
 
 
-@pytest.mark.unit_test
 class TestBindingConstraints:
     """
     Test the end points related to binding constraints.

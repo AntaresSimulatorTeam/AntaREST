@@ -39,7 +39,7 @@ def base_solver_presets():
 
 def test_basic_xpress_solver_only(base_solver_presets):
     solver_presets = SolverPresets(**base_solver_presets)
-    assert solver_presets.to_cli_options() == "solver=xpress"
+    assert solver_presets.to_cli_options() == "xpress"
 
 
 def test_xpress_nobasis_flags(base_solver_presets):
@@ -48,12 +48,12 @@ def test_xpress_nobasis_flags(base_solver_presets):
     )
     result = solver_presets.to_cli_options()
     # order should be deterministic
-    assert result == "solver=xpress nobasis1 nobasis2"
+    assert result == "xpress nobasis1 nobasis2"
 
 
 def test_xpress_single_nobasis1(base_solver_presets):
     solver_presets = SolverPresets(**{**base_solver_presets, "use_optim_1_basis_next_week": False})
-    assert solver_presets.to_cli_options() == "solver=xpress nobasis1"
+    assert solver_presets.to_cli_options() == "xpress nobasis1"
 
 
 def test_xpress_with_common_params(base_solver_presets):
@@ -82,7 +82,7 @@ def test_presolve_detected_in_optim2_only(base_solver_presets):
         **{**base_solver_presets, "linear_solver_param_optim_2": {"PRESOLVE": 100, "THREADS": 2}}
     )
     result = solver_presets.to_cli_options()
-    assert result == 'solver=xpress param-optim2="PRESOLVE 100 THREADS 2"'
+    assert result == 'xpress param-optim2="PRESOLVE 100 THREADS 2"'
 
 
 def test_valid_solver_presets_minimal():

@@ -436,12 +436,9 @@ class SolverPresets(AntaresBaseModel):
         This represents the solver presets in a command-line format.
 
         Example output:
-            solver=xpress nobasis1 param-optim1="THREADS 4 PRESOLVE 1" param-optim2="MIPRELSTOP 0.01"
+            xpress nobasis1 param-optim1="THREADS 4 PRESOLVE 1" param-optim2="MIPRELSTOP 0.01"
         """
-        options: List[str] = []
-
-        solver = self.linear_solver.lower()
-        options.append(f"solver={solver}")
+        options: list[str] = [self.linear_solver.lower()]
 
         if not self.use_optim_1_basis_next_week:
             options.append("nobasis1")

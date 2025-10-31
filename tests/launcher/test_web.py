@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import http
-from typing import List, Union
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -50,7 +49,6 @@ def create_app(service: Mock) -> FastAPI:
     return build_ctxt.build()
 
 
-@pytest.mark.unit_test
 def test_run() -> None:
     job = uuid4()
     study = "my-study"
@@ -67,7 +65,6 @@ def test_run() -> None:
     service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None, None)
 
 
-@pytest.mark.unit_test
 def test_result() -> None:
     job = uuid4()
     result = JobResult(
@@ -91,7 +88,6 @@ def test_result() -> None:
     service.get_result.assert_called_once_with(job)
 
 
-@pytest.mark.unit_test
 def test_jobs() -> None:
     job_id = uuid4()
     study_id = uuid4()
@@ -128,7 +124,6 @@ def test_jobs() -> None:
     )
 
 
-@pytest.mark.unit_test
 def test_get_solver_versions() -> None:
     service = Mock()
     output = ["1", "2", "3"]
@@ -141,39 +136,35 @@ def test_get_solver_versions() -> None:
     assert res.json() == output
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
-    "solver, status_code, expected",
+    "launcher",
     [
-        pytest.param("default", http.HTTPStatus.OK, ["1", "2", "3"], id="default"),
-        pytest.param("slurm", http.HTTPStatus.OK, ["1", "2", "3"], id="slurm"),
-        pytest.param("local", http.HTTPStatus.OK, ["1", "2", "3"], id="local"),
+        "default",
+        "slurm",
+        "local",
+    ],
+)
+@pytest.mark.parametrize(
+    "param_name",
+    [
+        "solver",  # deprecated
+        "launcher_id",
     ],
 )
 def test_get_solver_versions__with_query_string(
-    solver: str,
-    status_code: http.HTTPStatus,
-    expected: Union[List[str], str],
+    launcher: str,
+    param_name: str,
 ) -> None:
     service = Mock()
-    if status_code == http.HTTPStatus.OK:
-        service.get_solver_versions.return_value = ["1", "2", "3"]
-    else:
-        service.get_solver_versions.side_effect = KeyError(solver)
+    service.get_solver_versions.return_value = ["1", "2", "3"]
 
     app = create_app(service)
     client = TestClient(app)
-    res = client.get(f"/v1/launcher/versions?solver={solver}")
-    assert res.status_code == status_code  # OK or UNPROCESSABLE_ENTITY
-    if status_code == http.HTTPStatus.OK:
-        assert res.json() == expected
-    else:
-        actual = res.json()["detail"][0]
-        assert actual["type"] == "enum"
-        assert actual["msg"] == expected
+    res = client.get(f"/v1/launcher/versions?{param_name}={launcher}")
+    assert res.status_code == http.HTTPStatus.OK  # OK or UNPROCESSABLE_ENTITY
+    assert res.json() == ["1", "2", "3"]
 
 
-@pytest.mark.unit_test
 def test_get_job_log() -> None:
     service = Mock()
     service.get_log.return_value = ""
@@ -186,10 +177,22 @@ def test_get_job_log() -> None:
     service.get_log.assert_called_once_with(job_id, LogType.STDOUT)
 
 
-@pytest.mark.unit_test
 def test_kill_job() -> None:
     service = Mock()
-    service.kill_job.return_value.to_dto.return_value = ""
+    service.kill_job.return_value.to_dto.return_value = JobResultDTO(
+        id="job_id",
+        study_id="study",
+        output_id="output",
+        exit_code=10,
+        launcher=None,
+        launcher_params=None,
+        msg=None,
+        owner=None,
+        status=JobStatus.SUCCESS,
+        solver_stats=None,
+        creation_date="date",
+        completion_date=None,
+    )
     job_id = "job_id"
 
     app = create_app(service)
