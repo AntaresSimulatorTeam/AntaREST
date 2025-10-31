@@ -21,6 +21,7 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -76,6 +77,12 @@ class CreateArea(ICommand):
         study_data.save_hydro_modulation(area_id, null_matrix)
         study_data.save_hydro_maxpower(area_id, constants.get_hydro_max_power(version=self.study_version))
         study_data.save_hydro_reservoir(area_id, constants.get_hydro_reservoir(version=self.study_version))
+        if self.study_version > STUDY_VERSION_6_5:
+            study_data.save_hydro_credit_modulations(area_id, constants.get_hydro_credit_modulations())
+            study_data.save_hydro_inflow_pattern(area_id, constants.get_hydro_inflow_pattern())
+            study_data.save_hydro_water_values(area_id, null_matrix)
+        if self.study_version >= STUDY_VERSION_8_6:
+            study_data.save_hydro_mingen(area_id, null_matrix)
 
         return command_succeeded(message=f"Area '{self.area_name}' created")
 

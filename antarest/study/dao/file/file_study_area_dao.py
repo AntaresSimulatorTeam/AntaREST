@@ -278,22 +278,12 @@ class FileStudyAreaDao(AreaDao):
         }
 
         # Version-specific additions
-        if version > STUDY_VERSION_6_5:
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
-                generator_matrix_constants.get_hydro_credit_modulations()
-            )
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
-                generator_matrix_constants.get_hydro_inflow_pattern()
-            )
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
-
         has_renewables = version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         if has_renewables:
             new_area_data["input"]["renewables"] = {"clusters": {area_id: {"list": {}}}}
 
         if version >= STUDY_VERSION_8_6:
             new_area_data["input"]["st-storage"] = {"clusters": {area_id: {"list": {}}}}
-            new_area_data["input"]["hydro"]["series"][area_id]["mingen"] = null_matrix
 
         return new_area_data
 
