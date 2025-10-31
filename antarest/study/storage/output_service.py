@@ -285,7 +285,6 @@ class OutputService:
             study_id: study ID.
             output_id: output ID.
             data: Json parameters.
-            tmp_export_file: temporary file to write the response.
 
         Returns: FileResponse containing the asked data.
 
@@ -326,6 +325,41 @@ class OutputService:
             dataframe = pd.read_parquet(Path(download.path))
             print(dataframe.head())
             # todo: convert this inside the expected Imagrid Response
+            """
+            Old part of the code that used to fill the data;
+                        df = cast(OutputSeriesMatrix, elm).parse_dataframe()
+            columns = df.columns
+
+            for index, column in enumerate(columns):
+                if len(column) > 0:
+                    column_name = column[0]
+                    if data.columns and len(data.columns) > 0 and column_name not in data.columns:
+                        continue
+
+                    if target not in matrix.data:
+                        matrix.data[target] = dict()
+
+                    year_str = str(year)
+                    if year_str not in matrix.data[target]:
+                        matrix.data[target][year_str] = []
+
+                    matrix.data[target][year_str].append(
+                        TimeSerie.model_construct(
+                            name=column_name,
+                            unit=column[1] if len(column) > 1 else "",
+                            data=df[column].to_numpy(),
+                        )
+                    )
+            
+            """
+            # We should just return the Model it would be easier IMO.
+            # The model is MatrixAggregationResultDTO.
+
+            # Old Code equivalent
+            # tmp_export_file = self._file_transfer_manager.request_tmp_file()
+            # with open(tmp_export_file, "w", encoding="utf-8") as fh:
+            #                 fh.write(matrix.model_dump_json())
+            # return FileResponse(tmp_export_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """

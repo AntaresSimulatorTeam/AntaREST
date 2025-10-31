@@ -16,7 +16,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -669,38 +669,13 @@ class TimeSerie(AntaresBaseModel):
 class TimeSeriesData(AntaresBaseModel):
     type: StudyDownloadType
     name: str
-    data: Dict[str, List[TimeSerie]] = {}
+    data: dict[str, list[TimeSerie]] = {}
 
 
 class MatrixAggregationResultDTO(AntaresBaseModel):
     index: MatrixIndex
-    data: List[TimeSeriesData]
-    warnings: List[str]
-
-
-class MatrixAggregationResult(AntaresBaseModel):
-    index: MatrixIndex
-    data: Dict[Tuple[StudyDownloadType, str], Dict[str, List[TimeSerie]]]
-    warnings: List[str]
-
-    def to_dto(self) -> MatrixAggregationResultDTO:
-        return MatrixAggregationResultDTO.model_construct(
-            index=self.index,
-            data=[
-                TimeSeriesData.model_construct(
-                    type=key_type,
-                    name=key_name,
-                    data=self.data[(key_type, key_name)],
-                )
-                for key_type, key_name in self.data
-            ],
-            warnings=self.warnings,
-        )
-
-
-class ReferenceStudy(AntaresBaseModel):
-    version: str
-    template_name: str
+    data: list[TimeSeriesData]
+    warnings: list[str]
 
 
 class DirectoryMetadata(AntaresBaseModel):
