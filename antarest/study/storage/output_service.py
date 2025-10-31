@@ -42,11 +42,11 @@ from antarest.study.business.output.utils import (
 )
 from antarest.study.business.output.variables_management import extract_variables_list
 from antarest.study.model import (
-    ExportFormat,
     MatrixIndex,
     Study,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
+    StudyDownloadType,
     StudySimResultDTO,
 )
 from antarest.study.service import StudyService
@@ -58,8 +58,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestSynthesis,
     DigestUI,
 )
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import assert_permission, get_start_date, is_output_archived, remove_from_cache
+from antarest.study.web.output_blueprint import DEFAULT_DOWNLOAD_EXPIRATION_TIME
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -276,9 +276,7 @@ class OutputService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def download_outputs(
-        self, study_id: str, output_id: str, data: StudyDownloadDTO, tmp_export_file: Path
-    ) -> FileResponse:
+    def download_outputs(self, study_id: str, output_id: str, data: StudyDownloadDTO) -> FileResponse:
         """
         Download outputs
         Args:
@@ -295,18 +293,32 @@ class OutputService:
         self._study_service.assert_study_unarchived(study)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
-        stopwatch = StopWatch()
-        matrix = StudyDownloader.build(
-            self._study_service.get_file_study(study),
-            output_id,
-            data,
-        )
-        stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s"))
-        StudyDownloader.export(matrix, tmp_export_file)
-        stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s"))
+        export_format = TableExportFormat.PARQUET
+        download_name = f"aggregated_output_{study_id}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{study_id}' as {export_format} file"
 
-        headers = {"Content-Disposition": "inline"}
-        return FileResponse(tmp_export_file, headers=headers, media_type=ExportFormat.JSON)
+        if data.type == StudyDownloadType.LINK:
+            query_files = [MCIndLinksQueryFile.VALUES]
+        else:
+            query_files = [MCIndAreasQueryFile.VALUES]
+            if data.includeClusters:
+                query_files.append(MCIndAreasQueryFile.DETAILS)
+                query_files.append(MCIndAreasQueryFile.DETAILS_RES)
+
+        for query_file in query_files:
+            self.aggregate_output_data(
+                study_id,
+                output_id,
+                query_file,
+                MatrixFrequency(data.level.value),
+                TableExportFormat.PARQUET,
+                data.columns,
+                data.filter,
+                download_name,
+                download_log,
+                DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+                data.years,
+            )
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """

@@ -642,7 +642,7 @@ def test_save_metadata() -> None:
 
 
 @with_jwt_user
-def test_download_output(tmp_path: Path) -> None:
+def test_download_output() -> None:
     study_service = Mock()
     repository = Mock(spec=StudyMetadataRepository)
 
@@ -766,7 +766,7 @@ def test_download_output(tmp_path: Path) -> None:
         ],
         warnings=[],
     )
-    res = output_service.download_outputs("study-id", "output-id", input_data, tmp_path)
+    res = output_service.download_outputs("study-id", "output-id", input_data)
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
     # Ensures it was called with economy in lower case
     file_study_tree.get_node.assert_called_with(
@@ -792,7 +792,7 @@ def test_download_output(tmp_path: Path) -> None:
         ],
         warnings=[],
     )
-    res = output_service.download_outputs("study-id", "output-id", input_data, tmp_path)
+    res = output_service.download_outputs("study-id", "output-id", input_data)
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
     # CLUSTER TYPE
@@ -820,7 +820,7 @@ def test_download_output(tmp_path: Path) -> None:
         ],
         warnings=[],
     )
-    res = output_service.download_outputs("study-id", "output-id", input_data, tmp_path)
+    res = output_service.download_outputs("study-id", "output-id", input_data)
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
 
