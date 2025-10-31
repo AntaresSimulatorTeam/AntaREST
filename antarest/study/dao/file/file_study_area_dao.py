@@ -21,7 +21,6 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
-from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.model import (
@@ -36,6 +35,21 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if t.TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+
+
+def _create_prepro_data(
+    generator_matrix_constants: "GeneratorMatrixConstants", null_matrix: str, area_id: str
+) -> dict[str, Any]:
+    return {
+        area_id: {
+            "conversion": generator_matrix_constants.get_prepro_conversion(),
+            "data": generator_matrix_constants.get_prepro_data(),
+            "k": null_matrix,
+            "settings": {},
+            "translation": null_matrix,
+        }
+    }
 
 
 class FileStudyAreaDao(AreaDao):
@@ -202,14 +216,6 @@ class FileStudyAreaDao(AreaDao):
         if generator_matrix_constants is None:
             raise ValueError("Generator matrix constants not available in DAO")
 
-        # Use AreaProperties defaults for area initialization
-        default_props = AreaProperties()
-
-        # Generate thermal areas ini
-        thermal_areas_ini = study_data.tree.get(["input", "thermal", "areas"])
-        thermal_areas_ini.setdefault("unserverdenergycost", {})[area_id] = default_props.energy_cost_unsupplied
-        thermal_areas_ini.setdefault("spilledenergycost", {})[area_id] = default_props.energy_cost_spilled
-
         # Ensure the "annual" key exists in the hydro correlation configuration
         new_correlation = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
         new_correlation.setdefault("annual", {})
@@ -229,15 +235,7 @@ class FileStudyAreaDao(AreaDao):
                 },
                 "links": {area_id: {"properties": {}}},
                 "load": {
-                    "prepro": {
-                        area_id: {
-                            "conversion": generator_matrix_constants.get_prepro_conversion(),
-                            "data": generator_matrix_constants.get_prepro_data(),
-                            "k": null_matrix,
-                            "settings": {},
-                            "translation": null_matrix,
-                        }
-                    },
+                    "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
                     "series": {
                         f"load_{area_id}": generator_matrix_constants.get_null_scenario_matrix(),
                     },
@@ -245,33 +243,16 @@ class FileStudyAreaDao(AreaDao):
                 "misc-gen": {f"miscgen-{area_id}": generator_matrix_constants.get_default_miscgen()},
                 "reserves": {area_id: generator_matrix_constants.get_default_reserves()},
                 "solar": {
-                    "prepro": {
-                        area_id: {
-                            "conversion": generator_matrix_constants.get_prepro_conversion(),
-                            "data": generator_matrix_constants.get_prepro_data(),
-                            "k": null_matrix,
-                            "settings": {},
-                            "translation": null_matrix,
-                        }
-                    },
+                    "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
                     "series": {
                         f"solar_{area_id}": generator_matrix_constants.get_null_scenario_matrix(),
                     },
                 },
                 "thermal": {
                     "clusters": {area_id: {"list": {}}},
-                    "areas": thermal_areas_ini,
                 },
                 "wind": {
-                    "prepro": {
-                        area_id: {
-                            "conversion": generator_matrix_constants.get_prepro_conversion(),
-                            "data": generator_matrix_constants.get_prepro_data(),
-                            "k": null_matrix,
-                            "settings": {},
-                            "translation": null_matrix,
-                        }
-                    },
+                    "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
                     "series": {f"wind_{area_id}": generator_matrix_constants.get_null_scenario_matrix()},
                 },
             }
