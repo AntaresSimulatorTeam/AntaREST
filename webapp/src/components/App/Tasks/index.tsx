@@ -343,6 +343,7 @@ function JobsListing() {
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
         userName: job.owner ? usersByID[job.owner.id]?.name || job.owner.name : "",
+        launcher: job.launcher,
       })),
     [jobs, studyJobsProgress, studies],
   );

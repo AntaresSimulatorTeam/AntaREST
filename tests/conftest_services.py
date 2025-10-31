@@ -39,6 +39,8 @@ from antarest.eventbus.service import EventBusService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import MatrixService, SimpleMatrixService
+from antarest.study.directory_service import DirectoryService
+from antarest.study.repository import DirectoryRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -67,6 +69,8 @@ __all__ = (
     "raw_study_service_fixture",
     "variant_study_service_fixture",
     "study_storage_service_fixture",
+    "directory_repository_fixture",
+    "directory_service_fixture",
     "study_service_fixture",
 )
 
@@ -447,10 +451,38 @@ def study_storage_service_fixture(
     )
 
 
+@pytest.fixture(name="directory_repository")
+def directory_repository_fixture() -> Mock:
+    """
+    Fixture that creates a Mock instance of DirectoryRepository.
+
+    Returns:
+        A Mock instance of the DirectoryRepository class for directory repository-related testing.
+    """
+    return Mock(spec=DirectoryRepository)
+
+
+@pytest.fixture(name="directory_service")
+def directory_service_fixture(directory_repository: Mock) -> DirectoryService:
+    """
+    Fixture that creates a DirectoryService instance.
+
+    Args:
+        directory_repository: A Mock instance of the DirectoryRepository class.
+
+    Returns:
+        An instance of the DirectoryService class with the provided directory repository.
+    """
+    return DirectoryService(
+        directory_repository=directory_repository,
+    )
+
+
 @pytest.fixture(name="study_service")
 def study_service_fixture(
     raw_study_service: RawStudyService,
     variant_study_service: VariantStudyService,
+    directory_service: DirectoryService,
     command_context: CommandContext,
     event_bus: IEventBus,
     task_service: ITaskService,
@@ -459,6 +491,7 @@ def study_service_fixture(
     return StudyService(
         raw_study_service,
         variant_study_service,
+        directory_service,
         command_context,
         Mock(),
         Mock(),

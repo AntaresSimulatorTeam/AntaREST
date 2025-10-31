@@ -51,7 +51,4 @@ Then perform the following steps:
 
 ## Deploy
 
-There are 2 ways to use and/or deploy the application:
-
-- As [a server application](./2-DEPLOY.md#production-server-deployment)
-- As [a desktop systray application](./2-DEPLOY.md#local-application-build)
+See [server application](./2-DEPLOY.md#production-server-deployment):

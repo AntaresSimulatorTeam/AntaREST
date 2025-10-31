@@ -23,8 +23,8 @@ export interface IdentityDTO<T extends IdType = string> {
 
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 
-export interface GenericInfo {
-  id: IdType;
+export interface GenericInfo<T extends IdType = IdType> {
+  id: T;
   name: string;
 }
 
@@ -522,6 +522,7 @@ export interface TaskView {
   type: TaskTypeValue | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
   userName?: string;
+  launcher?: string;
 }
 
 export type ValidationReturn = string | true;

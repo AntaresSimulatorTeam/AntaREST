@@ -44,7 +44,6 @@ def build_config(
     )
 
 
-@pytest.mark.unit_test
 def test_get(tmp_path: str, project_path: Path) -> None:
     """
     path_to_studies
@@ -85,7 +84,6 @@ def test_get(tmp_path: str, project_path: Path) -> None:
     study.get.assert_called_once_with(["settings"], depth=2, formatted=True)
 
 
-@pytest.mark.unit_test
 def test_get_cache(tmp_path: str) -> None:
     # Create folders
     path_to_studies = Path(tmp_path)
@@ -123,7 +121,6 @@ def test_get_cache(tmp_path: str) -> None:
     cache.get.assert_called_with(cache_id)
 
 
-@pytest.mark.unit_test
 def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -147,7 +144,6 @@ def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
     study_service._check_study_exists(metadata)
 
 
-@pytest.mark.unit_test
 def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
     # Create folders
     tmp = Path(tmp_path)
@@ -173,7 +169,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
         study_service._check_study_exists(metadata)
 
 
-@pytest.mark.unit_test
 def test_create(tmp_path: Path, project_path: Path) -> None:
     study = Mock()
     data = {"antares": {"caption": None}}
@@ -207,7 +202,6 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
     assert path_study_antares_infos.is_file()
 
 
-@pytest.mark.unit_test
 def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
 
@@ -361,7 +355,6 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     )
 
 
-@pytest.mark.unit_test
 @with_db_context
 @with_admin_user
 def test_copy_study(tmp_path: Path) -> None:
@@ -414,7 +407,6 @@ def test_copy_study(tmp_path: Path) -> None:
     study.get.assert_called_once_with(["study"])
 
 
-@pytest.mark.unit_test
 def test_zipped_output(tmp_path: Path) -> None:
     if not platform.platform().startswith("Windows"):
         os.environ["TZ"] = "Europe/Paris"  # set new timezone
@@ -467,7 +459,6 @@ timestamp = 1599488150
     assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
 
 
-@pytest.mark.unit_test
 def test_delete_study(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
@@ -503,7 +494,6 @@ def test_delete_study(tmp_path: Path) -> None:
     assert not study_path.exists()
 
 
-@pytest.mark.unit_test
 def test_initialize_additional_data(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
@@ -530,7 +520,6 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
     assert study_service.initialize_additional_data(raw_study)
 
 
-@pytest.mark.unit_test
 def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
@@ -590,7 +579,6 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
     assert raw_study.version == "100"
 
 
-@pytest.mark.unit_test
 def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
@@ -629,7 +617,6 @@ def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
     assert raw_study.version == "800"
 
 
-@pytest.mark.unit_test
 def test_checks_study_compatibility(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
