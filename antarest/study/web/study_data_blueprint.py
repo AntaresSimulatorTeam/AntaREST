@@ -277,7 +277,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers/{layer_id}",
         summary="Update layer",
     )
-    def update_layer(uuid: str, layer_id: str, name: str = "", areas: Optional[List[str]] = None) -> None:
+    def update_layer(uuid: str, layer_id: str, name: str = Query(""), areas: Optional[List[str]] = None) -> None:
         logger.info(f"Updating layer {layer_id} for study {uuid} with name {name}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
