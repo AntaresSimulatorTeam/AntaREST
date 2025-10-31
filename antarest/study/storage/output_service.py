@@ -60,10 +60,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.utils import assert_permission, get_start_date, is_output_archived, remove_from_cache
-from antarest.study.web.output_blueprint import DEFAULT_DOWNLOAD_EXPIRATION_TIME
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
 class OutputService:
