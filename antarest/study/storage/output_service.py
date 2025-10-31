@@ -277,11 +277,7 @@ class OutputService:
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
     def download_outputs(
-        self,
-        study_id: str,
-        output_id: str,
-        data: StudyDownloadDTO,
-        tmp_export_file: Path,
+        self, study_id: str, output_id: str, data: StudyDownloadDTO, tmp_export_file: Path
     ) -> FileResponse:
         """
         Download outputs
@@ -289,14 +285,11 @@ class OutputService:
             study_id: study ID.
             output_id: output ID.
             data: Json parameters.
-            use_task: use task or not.
-            filetype: type of returning file,.
-            tmp_export_file: temporary file (if `use_task` is false),.
+            tmp_export_file: temporary file to write the response.
 
-        Returns: CSV content file
+        Returns: FileResponse containing the asked data.
 
         """
-        # GET STUDY ID
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
@@ -309,7 +302,7 @@ class OutputService:
             data,
         )
         stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s"))
-        StudyDownloader.export(matrix, ExportFormat.JSON, tmp_export_file)
+        StudyDownloader.export(matrix, tmp_export_file)
         stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s"))
 
         headers = {"Content-Disposition": "inline"}

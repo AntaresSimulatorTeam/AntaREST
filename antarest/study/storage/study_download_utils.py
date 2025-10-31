@@ -10,31 +10,19 @@
 #
 # This file is part of the Antares project.
 
-import csv
 import logging
-import os
 import re
-import tarfile
-from datetime import datetime, timedelta
-from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
-from zipfile import ZIP_DEFLATED, ZipFile
-
-import numpy as np
+from typing import Any, Callable, Tuple, cast
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.model import (
     STUDY_VERSION_8_1,
-    ExportFormat,
     MatrixAggregationResult,
     MatrixAggregationResultDTO,
-    MatrixIndex,
     StudyDownloadDTO,
-    StudyDownloadLevelDTO,
     StudyDownloadType,
     TimeSerie,
-    TimeSeriesData,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -294,7 +282,7 @@ class StudyDownloader:
         url = f"/output/{output_id}"
         matrix: MatrixAggregationResult = MatrixAggregationResult(
             index=get_start_date(file_study, output_id, data.level),
-            data=dict(),
+            data={},
             warnings=[],
         )
 
@@ -326,68 +314,6 @@ class StudyDownloader:
         return matrix.to_dto()
 
     @staticmethod
-    def export_infos(data: Dict[str, List[TimeSerie]]) -> Tuple[int, List[str]]:
-        years = list(data.keys())
-        if len(years) > 0:
-            columns: List[str] = list(map(lambda x: f"{x.name}", data[years[0]]))
-            if len(columns) > 0:
-                return len(data[years[0]][0].data), (["Time", "Version"] + columns)
-        return -1, []
-
-    @staticmethod
-    def export(
-        matrix: MatrixAggregationResultDTO,
-        filetype: ExportFormat,
-        target_file: Path,
-    ) -> None:
-        if filetype == ExportFormat.JSON:
-            with open(target_file, "w", encoding="utf-8") as fh:
-                fh.write(matrix.model_dump_json())
-        else:
-            StudyDownloader.write_inside_archive(target_file, filetype, matrix)
-
-    @staticmethod
-    def write_inside_archive(path: Path, file_type: ExportFormat, matrix: MatrixAggregationResultDTO) -> None:
-        if file_type == ExportFormat.ZIP:
-            with ZipFile(path, "w", ZIP_DEFLATED) as f:
-                for ts_data in matrix.data:
-                    bytes_to_writes = StudyDownloader.create_csv_file(ts_data, matrix.index)
-                    f.writestr(f"{ts_data.name}.csv", bytes_to_writes)
-        else:
-            with tarfile.open(path, mode="w:gz") as f:
-                for ts_data in matrix.data:
-                    bytes_to_writes = StudyDownloader.create_csv_file(ts_data, matrix.index)
-                    data_file = BytesIO(bytes_to_writes)
-                    data_file.seek(0, os.SEEK_END)
-                    file_size = data_file.tell()
-                    data_file.seek(0)
-                    info = tarfile.TarInfo(name=f"{ts_data.name}.csv")
-                    info.size = file_size
-                    f.addfile(tarinfo=info, fileobj=data_file)
-
-    @staticmethod
-    def create_csv_file(ts_data: TimeSeriesData, index: MatrixIndex) -> bytes:
-        output = StringIO()
-        writer = csv.writer(output, quoting=csv.QUOTE_NONE)
-        nb_rows, csv_titles = StudyDownloader.export_infos(ts_data.data)
-        if nb_rows == -1:
-            raise ExportException(f"Outputs export: No rows for {ts_data.name} CSV")
-        writer.writerow(csv_titles)
-        row_date = datetime.strptime(index.start_date, "%Y-%m-%d %H:%M:%S")
-        for year in ts_data.data:
-            for i in range(0, nb_rows):
-                columns = ts_data.data[year]
-                csv_row: List[Optional[Union[int, float, str]]] = [
-                    str(row_date),
-                    int(year),
-                ]
-                values = [column_data.data[i] for column_data in columns]
-                values = [v if not np.isnan(v) else None for v in values]
-                csv_row.extend(values)
-                writer.writerow(csv_row)
-                if index.level == StudyDownloadLevelDTO.WEEKLY and i == 0:
-                    row_date = row_date + timedelta(days=index.first_week_size)
-                else:
-                    row_date = index.level.inc_date(row_date)
-
-        return str.encode(output.getvalue(), "utf-8")
+    def export(matrix: MatrixAggregationResultDTO, target_file: Path) -> None:
+        with open(target_file, "w", encoding="utf-8") as fh:
+            fh.write(matrix.model_dump_json())
