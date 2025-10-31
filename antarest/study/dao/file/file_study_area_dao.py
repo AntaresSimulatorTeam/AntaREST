@@ -442,10 +442,10 @@ class FileStudyAreaDao(AreaDao):
         layer_int = int(layer)
 
         # Initialize sections if missing (happens when creating the area)
-        for section in ["layerX", "layerY", "layerColor", "ui"]:
+        for section in ["layerX", "layerY", "layerColor"]:
             current_area.setdefault(section, {})
-            if section == "ui":
-                current_area[section]["layers"] = 0
+        if "ui" not in current_area:
+            current_area["ui"] = {"layers": 0}
 
         # Save all UI properties
         current_area["layerX"][layer] = area_ui.x
