@@ -39,7 +39,6 @@ def assert_with_errors(
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -58,7 +57,6 @@ def test_sta_mini_settings(storage_service: StudyService, url: str, new: SUB_JSO
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -77,7 +75,6 @@ def test_sta_mini_layers_layers(storage_service: StudyService, url: str, new: SU
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -104,7 +101,6 @@ def test_sta_mini_desktop(storage_service: StudyService, url: str, new: SUB_JSON
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -127,7 +123,6 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new, expected",
     [
@@ -405,7 +400,6 @@ def test_sta_mini_input(storage_service: StudyService, url: str, new: SUB_JSON, 
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [

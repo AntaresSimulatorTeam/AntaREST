@@ -24,7 +24,6 @@ POLLUTANTS_860 = ("nh3", "nmvoc", "nox", "op1", "op2", "op3", "op4", "op5", "pm1
 
 
 # noinspection SpellCheckingInspection
-@pytest.mark.unit_test
 class TestTableMode:
     """
     Test the end points related to the table mode.

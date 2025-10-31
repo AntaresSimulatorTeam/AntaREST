@@ -12,11 +12,9 @@
 
 from http import HTTPStatus
 
-import pytest
 from starlette.testclient import TestClient
 
 
-@pytest.mark.unit_test
 class TestConfigGeneralForm:
     """
     Test the end points related to hydraulic correlation.

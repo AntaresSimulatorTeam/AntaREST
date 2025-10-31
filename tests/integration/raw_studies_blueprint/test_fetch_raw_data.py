@@ -64,7 +64,6 @@ def _check_endpoint_response(
         res.raise_for_status()
 
 
-@pytest.mark.integration_test
 class TestFetchRawData:
     """
     Check the retrieval of Raw Data from Study: JSON, Text, or File Attachment.
@@ -567,7 +566,6 @@ class TestFetchRawData:
         assert res.status_code == 200
 
 
-@pytest.mark.integration_test
 class TestFetchOriginalFile:
     """
     Check the retrieval of a file from Study folder

@@ -51,6 +51,7 @@ class TestStudy:
         assert index_names == {
             "ix_study_archived",
             "ix_study_created_at",
+            "ix_study_directory_id",
             "ix_study_folder",
             "ix_study_name",
             "ix_study_owner_id",

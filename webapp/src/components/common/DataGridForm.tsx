@@ -70,6 +70,11 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
     location: Item,
     data: TData[string][keyof TData[string]],
   ) => ReturnType<DataEditorProps["getCellContent"]>;
+  transformCellValue?: (
+    location: Item,
+    newValue: unknown,
+    data: TData,
+  ) => TData[string][keyof TData[string]] | undefined;
   onSubmit: (
     data: SubmitHandlerPlus<TData>,
     event: React.FormEvent<HTMLFormElement>,
@@ -96,6 +101,7 @@ function DataGridForm<TData extends Data>({
   enableColumnResize,
   rowMarkers: rowMarkersFromProps,
   getCellContent: getCellContentFromProps,
+  transformCellValue,
   onSubmit,
   onSubmitSuccessful,
   onDataChange,
@@ -264,6 +270,23 @@ function DataGridForm<TData extends Data>({
       items.reduce((acc, { location, value }) => {
         const [rowName, columnName] = getRowAndColumnNames(location);
         const newValue = value.data;
+
+        // If transformCellValue callback is provided, it can transform or validate the new value
+        // before it's stored. Return undefined to use default handling, or return a custom
+        // value to override the cell's new data.
+        if (transformCellValue) {
+          const customValue = transformCellValue(location, newValue, acc);
+
+          if (customValue !== undefined) {
+            return {
+              ...acc,
+              [rowName]: {
+                ...acc[rowName],
+                [columnName]: customValue,
+              },
+            };
+          }
+        }
 
         if (R.isNotNil(newValue)) {
           return {

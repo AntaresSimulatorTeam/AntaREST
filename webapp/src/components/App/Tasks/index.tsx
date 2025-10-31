@@ -14,6 +14,8 @@
 
 import ViewWrapper from "@/components/common/page/ViewWrapper";
 import { resetTaskNotifications } from "@/redux/ducks/ui";
+import { getJobs } from "@/services/api/launcher/jobs";
+import type { Job } from "@/services/api/launcher/jobs/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import AssignmentIcon from "@mui/icons-material/Assignment";
@@ -27,9 +29,9 @@ import {
   Box,
   Chip,
   CircularProgress,
+  Link as MuiLink,
   Tooltip,
   Typography,
-  Link as MuiLink,
   colors,
   useTheme,
 } from "@mui/material";
@@ -52,13 +54,13 @@ import {
   type FileDownload,
 } from "../../../services/api/downloads";
 import { getJobProgress } from "../../../services/api/launcher";
-import { downloadJobOutput, getStudyJobs, killStudy } from "../../../services/api/study";
+import { downloadJobOutput, killStudy } from "../../../services/api/study";
 import { getTask, getTasks } from "../../../services/api/tasks";
 import { TaskStatus } from "../../../services/api/tasks/constants";
 import type { TaskDTO } from "../../../services/api/tasks/types";
 import { convertUTCToLocalTime } from "../../../services/utils/index";
 import { addWsEventListener, subscribeWsChannels } from "../../../services/webSocket/ws";
-import type { LaunchJob, LaunchJobsProgress, TaskView } from "../../../types/types";
+import type { LaunchJobsProgress, TaskView } from "../../../types/types";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import DownloadLink from "../../common/DownloadLink";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
@@ -75,7 +77,7 @@ function JobsListing() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
-  const [jobs, setJobs] = useState<LaunchJob[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -93,7 +95,11 @@ function JobsListing() {
   const init = async (fetchOnlyLatest = true) => {
     setLoaded(false);
     try {
-      const allJobs = await getStudyJobs(undefined, true, fetchOnlyLatest);
+      const allJobs = await getJobs({
+        filterOrphans: true,
+        latest: fetchOnlyLatest ? 100 : undefined,
+      });
+
       setJobs(allJobs);
 
       const dlList = await getDownloadsList();
@@ -134,7 +140,7 @@ function JobsListing() {
     }
   };
 
-  const renderStatus = (job: LaunchJob) => {
+  const renderStatus = (job: Job) => {
     let color = theme.palette.grey[400];
     if (job.status === "success") {
       color = theme.palette.success.main;
@@ -146,7 +152,7 @@ function JobsListing() {
     return <FiberManualRecordIcon style={{ color, fontSize: "10px", marginRight: "8px" }} />;
   };
 
-  const renderTags = (job: LaunchJob) => {
+  const renderTags = (job: Job) => {
     return (
       <Box sx={{ ml: 2 }}>
         {job.launcherParams?.xpansion?.enabled && (
@@ -336,7 +342,8 @@ function JobsListing() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
-        userName: usersByID[job.ownerId]?.name || job.ownerName || "",
+        userName: job.owner ? usersByID[job.owner.id]?.name || job.owner.name : "",
+        launcher: job.launcher,
       })),
     [jobs, studyJobsProgress, studies],
   );

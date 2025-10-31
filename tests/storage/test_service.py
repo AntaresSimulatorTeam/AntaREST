@@ -48,6 +48,7 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.district_model import District
+from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
@@ -91,7 +92,6 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     is_output_archived,
-    study_matcher,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -140,6 +140,7 @@ def with_jwt_user(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
 
 def build_study_service(
     raw_study_service: RawStudyService,
+    directory_service: DirectoryService,
     repository: StudyMetadataRepository,
     config: Config,
     user_service: LoginService = Mock(spec=LoginService),
@@ -151,6 +152,7 @@ def build_study_service(
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        directory_service=directory_service,
         command_context=Mock(),
         user_service=user_service,
         repository=repository,
@@ -163,7 +165,7 @@ def build_study_service(
     )
 
 
-def study_to_dto(study: Study) -> StudyMetadataDTO:
+def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMetadataDTO:
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
@@ -185,11 +187,10 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
         scenario=None,
         status=None,
         doc=None,
-        folder=None,
+        folder=folder_path,
     )
 
 
-@pytest.mark.unit_test
 def test_study_listing(db_session: Session) -> None:
     bob = User(id=2, name="bob")
     alice = User(id=3, name="alice")
@@ -244,7 +245,9 @@ def test_study_listing(db_session: Session) -> None:
 
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
-    service = build_study_service(raw_study_service, repository, config, cache_service=cache)
+    service = build_study_service(
+        raw_study_service, Mock(spec=DirectoryService), repository, config, cache_service=cache
+    )
     user = JWTUser(id=2, impersonator=2, type="users")
 
     # retrieve studies that are not managed
@@ -305,7 +308,6 @@ def test_study_listing(db_session: Session) -> None:
     assert expected_result == studies
 
 
-@pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -364,8 +366,7 @@ def test_sync_studies_from_disk() -> None:
             }
         )
     )
-    raw_service = Mock(spec=RawStudyService)
-    service = build_study_service(raw_service, repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     # call function with scanned folders
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
@@ -406,7 +407,6 @@ def test_sync_studies_from_disk() -> None:
     assert study_f2.public_mode == PublicMode.FULL
 
 
-@pytest.mark.unit_test
 def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
     folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
@@ -415,7 +415,7 @@ def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
     repository.get_all_raw.side_effect = [[]]
     config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
     raw_service = Mock(spec=RawStudyService)
-    service = build_study_service(raw_service, repository, config)
+    service = build_study_service(raw_service, Mock(spec=DirectoryService), repository, config)
 
     def fake_compatibility_check(study: Study) -> None:
         if not hasattr(fake_compatibility_check, "call_count"):
@@ -450,7 +450,6 @@ def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_partial_sync_studies_from_disk() -> None:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     ma = create_raw_study(id="a", path="a")
@@ -481,7 +480,7 @@ def test_partial_sync_studies_from_disk() -> None:
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
     config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
 
@@ -500,7 +499,6 @@ def test_partial_sync_studies_from_disk() -> None:
     )
 
 
-@pytest.mark.unit_test
 def test_delete_missing_studies_desktop(study_tree: Path) -> None:
     ma = create_raw_study(id="a", folder="folder/studyA", workspace="workspace1")
     mb = create_raw_study(id="b", folder="folder/studyB", workspace="workspace1")
@@ -518,7 +516,7 @@ def test_delete_missing_studies_desktop(study_tree: Path) -> None:
             }
         )
     )
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     service.delete_missing_studies()
 
@@ -538,7 +536,7 @@ def test_remove_duplicate(db_session: Session) -> None:
     with db_session:
         repository = StudyMetadataRepository(Mock(), db_session)
         config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-        service = build_study_service(Mock(), repository, config)
+        service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
         service.remove_duplicates()
 
     # example with 1 duplicate with same path
@@ -552,7 +550,6 @@ def test_remove_duplicate(db_session: Session) -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_create_study() -> None:
     # Mock
     repository = Mock()
@@ -590,7 +587,9 @@ def test_create_study() -> None:
     }
     study_service.create.return_value = expected
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config, user_service=user_service)
+    service = build_study_service(
+        study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     jwt_user = JWT_USER
     with pytest.raises(UserHasNotPermissionError):
@@ -606,7 +605,6 @@ def test_create_study() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_save_metadata() -> None:
     # Mock
     repository = Mock()
@@ -639,7 +637,7 @@ def test_save_metadata() -> None:
         groups=[group],
     )
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config)
+    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
 
     service.user_service.get_user.return_value = user  # type: ignore
     with current_user_context(jwt):
@@ -648,7 +646,6 @@ def test_save_metadata() -> None:
 
 
 @with_jwt_user
-@pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
     repository = Mock(spec=StudyMetadataRepository)
@@ -709,7 +706,7 @@ def test_download_output() -> None:
 
     repository.get.return_value = input_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config)
+    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
     storage = OutputStorageDispatcher(
         service.storage_service.raw_study_service, service.storage_service.variant_study_service
     )
@@ -868,7 +865,6 @@ def test_download_output() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_change_owner() -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=2)
@@ -891,6 +887,7 @@ def test_change_owner() -> None:
     )
     service = build_study_service(
         study_service,
+        Mock(spec=DirectoryService),
         repository,
         config,
         user_service=user_service,
@@ -916,7 +913,6 @@ def test_change_owner() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_manage_group() -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=1)
@@ -928,7 +924,9 @@ def test_manage_group() -> None:
     repository = Mock()
     user_service = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config, user_service=user_service)
+    service = build_study_service(
+        Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     repository.get.return_value = create_study(id=study_id, owner=alice, groups=[group_a])
 
@@ -957,7 +955,6 @@ def test_manage_group() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_set_public_mode() -> None:
     study_id = str(uuid.uuid4())
     group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -966,7 +963,9 @@ def test_set_public_mode() -> None:
     repository = Mock()
     user_service = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config, user_service=user_service)
+    service = build_study_service(
+        Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     repository.get.return_value = create_study(id=study_id)
 
@@ -980,30 +979,7 @@ def test_set_public_mode() -> None:
     repository.save.assert_called_with(create_study(id=study_id, public_mode=PublicMode.FULL))
 
 
-@pytest.mark.unit_test
-def test_study_match() -> None:
-    assert not study_matcher(name=None, folder="ab", workspace="hell")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name=None, folder="abd", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", workspace="hello")
-    )
-    assert study_matcher(name="f", folder=None, workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name="foob", folder=None, workspace="hell")(
-        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
-    )
-
-
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_assert_permission() -> None:
     study_id = str(uuid.uuid4())
     admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -1017,7 +993,7 @@ def test_assert_permission() -> None:
 
     repository = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     # wrong owner
     repository.get.return_value = create_study(id=study_id, owner=wrong)
@@ -1169,7 +1145,6 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_delete_study_calls_callback(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
     repository_mock = Mock()
@@ -1186,7 +1161,7 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
     )
-    service = build_study_service(Mock(), repository_mock, Mock())
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository_mock, Mock())
     callback = Mock()
     service.add_on_deletion_callback(callback)
     service.storage_service.variant_study_service.has_children.return_value = False  # type: ignore
@@ -1197,7 +1172,6 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
@@ -1217,6 +1191,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     # noinspection PyArgumentList
     service = build_study_service(
         raw_study_service,
+        Mock(spec=DirectoryService),
         study_metadata_repository,
         Mock(),
         variant_study_service=variant_study_service,
@@ -1305,6 +1280,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
     )
     service = build_study_service(
         raw_study_service,
+        Mock(spec=DirectoryService),
         study_metadata_repository,
         Mock(),
         variant_study_service=variant_study_service,
@@ -1466,6 +1442,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=raw_study_service,
+        directory_service=Mock(spec=DirectoryService),
         repository=repository,
         config=config,
         variant_study_service=variant_study_service,
@@ -1482,7 +1459,6 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "tree_node,url,data,expected_name",
     [
@@ -1507,6 +1483,7 @@ def test_create_command(
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository),
         config=Mock(spec=Config),
         variant_study_service=Mock(
@@ -1543,6 +1520,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1605,6 +1583,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1729,6 +1708,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1795,7 +1775,8 @@ def test_get_save_logs(tmp_path: Path) -> None:
 @with_admin_user
 def test_task_upgrade_study(tmp_path: Path) -> None:
     service = build_study_service(
-        raw_study_service=Mock(),
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(),
         config=Mock(),
     )
@@ -2170,7 +2151,6 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     event_bus.push.assert_not_called()
 
 
-@pytest.mark.unit_test
 def test_is_output_archived(tmp_path: Path) -> None:
     assert not is_output_archived(path_output=Path("fake_path"))
     assert is_output_archived(path_output=Path("fake_path.zip"))

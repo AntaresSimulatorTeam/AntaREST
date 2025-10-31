@@ -16,6 +16,7 @@ class APITag:
     launcher = "Launch Studies"
     study_permissions = "Manage Study Permissions"
     study_management = "Manage Studies"
+    directory_management = "Manage Directories"
     xpansion_study_management = "Manage Expansion Studies"
     study_data = "Manage Study Data"
     study_variant_management = "Manage Study Variant"
@@ -26,6 +27,7 @@ class APITag:
     tasks = "Manage tasks"
     misc = "Miscellaneous"
     filesystem = "Filesystem Management"
+    explorer = "Explore external disks"
 
 
 tags_metadata = [
