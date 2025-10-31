@@ -203,15 +203,6 @@ class FileStudyHydroDao(HydroDao):
         url = get_allocation_path(area_id)
         file_study.tree.save({"[allocation]": data}, url)
 
-    """
-        if version > STUDY_VERSION_6_5:
-
-                new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
-                    generator_matrix_constants.get_hydro_inflow_pattern()
-                )
-                new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
-    """
-
     @override
     def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"]
