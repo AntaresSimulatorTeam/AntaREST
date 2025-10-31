@@ -51,7 +51,8 @@ export async function launchStudy({
 
 export async function getLauncherVersions({ launcherId }: GetLauncherVersionsParams = {}) {
   const { data } = await client.get<string[]>(`${BASE_URL}/versions`, {
-    params: { solver: launcherId },
+    params: { launcher_id: launcherId },
   });
+
   return data;
 }
