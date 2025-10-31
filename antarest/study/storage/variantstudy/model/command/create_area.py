@@ -16,7 +16,12 @@ from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
+from antarest.study.business.model.area_model import AreaUI
+from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
+from antarest.study.business.model.hydro_model import HydroManagement
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -56,6 +61,13 @@ class CreateArea(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.save_area(self.area_name)
+        area_id = transform_name_to_id(self.area_name)
+        study_data.save_hydro_management(HydroManagement(), area_id)
+        study_data.save_area_properties(area_id, AreaProperties())
+        study_data.save_area_ui(area_id, layer="0", area_ui=AreaUI())
+        study_data.save_hydro_allocation(
+            area_id, HydroAllocation(allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)])
+        )
         return command_succeeded(message=f"Area '{self.area_name}' created")
 
     @override

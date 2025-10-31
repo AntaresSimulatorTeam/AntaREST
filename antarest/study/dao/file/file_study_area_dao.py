@@ -28,7 +28,6 @@ from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_2,
-    STUDY_VERSION_8_3,
     STUDY_VERSION_8_6,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -170,12 +169,6 @@ class FileStudyAreaDao(AreaDao):
 
         version = config.version
 
-        # Update hydro configuration
-        hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
-        hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
-        hydro_config.setdefault("intra-daily-modulation", {})[area_id] = 24
-        hydro_config.setdefault("inter-monthly-breakdown", {})[area_id] = 1
-
         # Get matrix constants from the DAO
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
         if generator_matrix_constants is None:
@@ -188,7 +181,6 @@ class FileStudyAreaDao(AreaDao):
             area_id=area_id,
             config=config,
             version=version,
-            hydro_config=hydro_config,
             null_matrix=null_matrix,
         )
 
@@ -200,12 +192,10 @@ class FileStudyAreaDao(AreaDao):
         area_id: str,
         config: Any,
         version: Any,
-        hydro_config: Dict[str, Any],
         null_matrix: str,
     ) -> JSON:
         """Helper method to build the complete area data structure."""
         # Import here to avoid circular import
-        from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 
         study_data = self.get_file_study()
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
@@ -228,38 +218,8 @@ class FileStudyAreaDao(AreaDao):
             "input": {
                 "areas": {
                     "list": [area.name for area in config.areas.values()],
-                    area_id: {
-                        "optimization": {
-                            "nodal optimization": {
-                                "non-dispatchable-power": default_props.non_dispatch_power,
-                                "dispatchable-hydro-power": default_props.dispatch_hydro_power,
-                                "other-dispatchable-power": default_props.other_dispatch_power,
-                                "spread-unsupplied-energy-cost": default_props.spread_unsupplied_energy_cost,
-                                "spread-spilled-energy-cost": default_props.spread_spilled_energy_cost,
-                            },
-                            "filtering": {
-                                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
-                                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
-                            },
-                        },
-                        "ui": {
-                            "ui": {
-                                "x": 0,
-                                "y": 0,
-                                "color_r": 230,
-                                "color_g": 108,
-                                "color_b": 44,
-                                "layers": 0,
-                            },
-                            "layerX": {"0": 0},
-                            "layerY": {"0": 0},
-                            "layerColor": {"0": "230 , 108 , 44"},
-                        },
-                    },
                 },
                 "hydro": {
-                    "hydro": hydro_config,
-                    "allocation": {area_id: {"[allocation]": {area_id: 1}}},
                     "common": {
                         "capacity": {
                             f"maxpower_{area_id}": generator_matrix_constants.get_hydro_max_power(version=version),
@@ -332,11 +292,6 @@ class FileStudyAreaDao(AreaDao):
 
         # Version-specific additions
         if version > STUDY_VERSION_6_5:
-            hydro_config.setdefault("initialize reservoir date", {})[area_id] = 0
-            hydro_config.setdefault("leeway low", {})[area_id] = 1
-            hydro_config.setdefault("leeway up", {})[area_id] = 1
-            hydro_config.setdefault("pumping efficiency", {})[area_id] = 1
-
             new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
                 generator_matrix_constants.get_hydro_credit_modulations()
             )
@@ -348,11 +303,6 @@ class FileStudyAreaDao(AreaDao):
         has_renewables = version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         if has_renewables:
             new_area_data["input"]["renewables"] = {"clusters": {area_id: {"list": {}}}}
-
-        if version >= STUDY_VERSION_8_3:
-            new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {
-                "adequacy-patch": {"adequacy-patch-mode": "outside"}
-            }
 
         if version >= STUDY_VERSION_8_6:
             new_area_data["input"]["st-storage"] = {"clusters": {area_id: {"list": {}}}}
@@ -550,6 +500,10 @@ class FileStudyAreaDao(AreaDao):
         study_data = self.get_file_study()
         current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
         layer_int = int(layer)
+
+        # Initialize sections if missing (happens when creating the area)
+        for section in ["layerX", "layerY", "layerColor", "ui"]:
+            current_area.setdefault(section, {})
 
         # Save all UI properties
         current_area["layerX"][layer] = area_ui.x
