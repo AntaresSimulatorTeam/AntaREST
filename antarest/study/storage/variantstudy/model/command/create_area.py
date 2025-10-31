@@ -19,6 +19,7 @@ from typing_extensions import override
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
 from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6
@@ -69,7 +70,9 @@ class CreateArea(ICommand):
 
         # Hydro
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)])
+        correlation = HydroCorrelation(correlation=[HydroCorrelationArea(area_id=area_id, coefficient=1)])
         study_data.save_hydro_allocation(area_id, allocation)
+        study_data.save_hydro_correlation(area_id, correlation)
         study_data.save_inflow_structure(InflowStructure(), area_id)
         constants = self.command_context.generator_matrix_constants
         null_matrix = constants.get_null_matrix()

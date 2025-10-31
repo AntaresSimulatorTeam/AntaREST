@@ -225,11 +225,6 @@ class FileStudyAreaDao(AreaDao):
                 "areas": {
                     "list": [area.name for area in config.areas.values()],
                 },
-                "hydro": {
-                    "prepro": {
-                        "correlation": new_correlation,
-                    }
-                },
                 "links": {area_id: {"properties": {}}},
                 "load": {
                     "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
