@@ -635,44 +635,6 @@ class StudyDownloadLevelDTO(enum.StrEnum):
             raise ShouldNotHappenException()
 
 
-class ExportFormat(enum.StrEnum):
-    ZIP = "application/zip"
-    TAR_GZ = "application/tar+gz"
-    JSON = "application/json"
-
-    @classmethod
-    def from_dto(cls, accept_header: str) -> "ExportFormat":
-        """
-        Convert the "Accept" header to the corresponding content type.
-
-        Args:
-            accept_header: Value of the "Accept" header.
-
-        Returns:
-            The corresponding content type: ZIP, TAR_GZ or JSON.
-            By default, JSON is returned if the format is not recognized.
-            For instance, if the "Accept" header is "*/*", JSON is returned.
-        """
-        mapping = {
-            "application/zip": ExportFormat.ZIP,
-            "application/tar+gz": ExportFormat.TAR_GZ,
-            "application/json": ExportFormat.JSON,
-        }
-        return mapping.get(accept_header, ExportFormat.JSON)
-
-    @property
-    def suffix(self) -> str:
-        """
-        Returns the file suffix associated with the format: ".zip", ".tar.gz" or ".json".
-        """
-        mapping = {
-            ExportFormat.ZIP: ".zip",
-            ExportFormat.TAR_GZ: ".tar.gz",
-            ExportFormat.JSON: ".json",
-        }
-        return mapping[self]
-
-
 class StudyDownloadDTO(AntaresBaseModel):
     """
     DTO used to download outputs
