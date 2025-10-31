@@ -227,9 +227,6 @@ class FileStudyAreaDao(AreaDao):
                 },
                 "hydro": {
                     "prepro": {
-                        area_id: {
-                            "prepro": {"prepro": {"intermonthly-correlation": 0.5}},
-                        },
                         "correlation": new_correlation,
                     }
                 },
