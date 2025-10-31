@@ -70,7 +70,7 @@ class CreateArea(ICommand):
 
         # Hydro
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)])
-        correlation = HydroCorrelation(correlation=[HydroCorrelationArea(area_id=area_id, coefficient=1)])
+        correlation = HydroCorrelation(correlation=[HydroCorrelationArea(area_id=area_id, coefficient=100)])
         study_data.save_hydro_allocation(area_id, allocation)
         study_data.save_hydro_correlation(area_id, correlation)
         study_data.save_inflow_structure(InflowStructure(), area_id)

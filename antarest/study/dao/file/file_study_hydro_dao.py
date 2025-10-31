@@ -215,17 +215,17 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
-        url = ["input", "hydro", "common", "prepro", area_id, "energy"]
+        url = ["input", "hydro", "prepro", area_id, "energy"]
         return self._get_hydro_matrix(url)
 
     @override
     def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
-        url = ["input", "hydro", "common", "series", area_id, "ror"]
+        url = ["input", "hydro", "series", area_id, "ror"]
         return self._get_hydro_matrix(url)
 
     @override
     def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
-        url = ["input", "hydro", "common", "series", area_id, "mod"]
+        url = ["input", "hydro", "series", area_id, "mod"]
         return self._get_hydro_matrix(url)
 
     @override
@@ -261,17 +261,17 @@ class FileStudyHydroDao(HydroDao):
     @override
     def save_hydro_energy(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "prepro", area_id, "energy"])
+        file_study.tree.save(series_id, ["input", "hydro", "prepro", area_id, "energy"])
 
     @override
     def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "series", area_id, "ror"])
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "ror"])
 
     @override
     def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "series", area_id, "mod"])
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mod"])
 
     @override
     def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
