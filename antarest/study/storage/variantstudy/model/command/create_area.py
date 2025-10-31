@@ -65,9 +65,18 @@ class CreateArea(ICommand):
         study_data.save_hydro_management(HydroManagement(), area_id)
         study_data.save_area_properties(area_id, AreaProperties())
         study_data.save_area_ui(area_id, layer="0", area_ui=AreaUI())
-        study_data.save_hydro_allocation(
-            area_id, HydroAllocation(allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)])
-        )
+
+        # Hydro
+        allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)])
+        study_data.save_hydro_allocation(area_id, allocation)
+        constants = self.command_context.generator_matrix_constants
+        null_matrix = constants.get_null_matrix()
+        study_data.save_hydro_energy(area_id, null_matrix)
+        study_data.save_hydro_run_of_river(area_id, null_matrix)
+        study_data.save_hydro_modulation(area_id, null_matrix)
+        study_data.save_hydro_maxpower(area_id, constants.get_hydro_max_power(version=self.study_version))
+        study_data.save_hydro_reservoir(area_id, constants.get_hydro_reservoir(version=self.study_version))
+
         return command_succeeded(message=f"Area '{self.area_name}' created")
 
     @override

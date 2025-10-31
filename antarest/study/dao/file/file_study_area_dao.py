@@ -220,25 +220,12 @@ class FileStudyAreaDao(AreaDao):
                     "list": [area.name for area in config.areas.values()],
                 },
                 "hydro": {
-                    "common": {
-                        "capacity": {
-                            f"maxpower_{area_id}": generator_matrix_constants.get_hydro_max_power(version=version),
-                            f"reservoir_{area_id}": generator_matrix_constants.get_hydro_reservoir(version=version),
-                        }
-                    },
                     "prepro": {
                         area_id: {
-                            "energy": null_matrix,
                             "prepro": {"prepro": {"intermonthly-correlation": 0.5}},
                         },
                         "correlation": new_correlation,
-                    },
-                    "series": {
-                        area_id: {
-                            "mod": null_matrix,
-                            "ror": null_matrix,
-                        },
-                    },
+                    }
                 },
                 "links": {area_id: {"properties": {}}},
                 "load": {
