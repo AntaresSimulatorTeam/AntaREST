@@ -248,6 +248,51 @@ class FileStudyHydroDao(HydroDao):
         url = ["input", "hydro", "series", area_id, "mingen"]
         return self._get_hydro_matrix(url)
 
+    @override
+    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"])
+
+    @override
+    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"])
+
+    @override
+    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "prepro", area_id, "energy"])
+
+    @override
+    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "series", area_id, "ror"])
+
+    @override
+    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "series", area_id, "mod"])
+
+    @override
+    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"])
+
+    @override
+    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"])
+
+    @override
+    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"])
+
+    @override
+    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mingen"])
+
     def _get_hydro_matrix(self, url: list[str]) -> pd.DataFrame:
         study_data = self.get_file_study()
         node = study_data.tree.get_node(url)

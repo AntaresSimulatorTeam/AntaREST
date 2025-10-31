@@ -105,3 +105,39 @@ class HydroDao(ReadOnlyHydroDao):
     @abstractmethod
     def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()

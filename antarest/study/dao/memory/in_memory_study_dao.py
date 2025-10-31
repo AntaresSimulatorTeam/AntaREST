@@ -1000,3 +1000,39 @@ class InMemoryStudyDao(StudyDao):
     def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
         matrix_id = self._hydro_mingen[area_id]
         return self._matrix_service.get(matrix_id)
+
+    @override
+    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+        self._hydro_maxpower[area_id] = series_id
+
+    @override
+    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+        self._hydro_reservoir[area_id] = series_id
+
+    @override
+    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+        self._hydro_energy[area_id] = series_id
+
+    @override
+    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+        self._hydro_run_of_river[area_id] = series_id
+
+    @override
+    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+        self._hydro_modulation[area_id] = series_id
+
+    @override
+    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+        self._hydro_credit_modulations[area_id] = series_id
+
+    @override
+    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+        self._hydro_inflow_pattern[area_id] = series_id
+
+    @override
+    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+        self._hydro_water_values[area_id] = series_id
+
+    @override
+    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        self._hydro_mingen[area_id] = series_id
