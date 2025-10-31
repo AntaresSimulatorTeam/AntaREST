@@ -70,8 +70,6 @@ class TestLayer:
         layer_id_2 = layers[2]["id"]
         assert layer_id_2 == "2"
 
-        # Test PUT - Update layer name (this is the critical test for the bug fix)
-        # Verify that layer_id from path and name from query parameter are correctly distinguished
         res = client.put(f"/v1/studies/{study_id}/layers/{layer_id_1}?name=Updated%20Layer%20One")
         assert res.status_code == 200
 
