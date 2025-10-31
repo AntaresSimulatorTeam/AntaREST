@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Sequence
+from typing import Iterator, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -40,6 +40,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -495,3 +496,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
         return self._adaptee.get_area_ui(area_id, layer)
+
+    @override
+    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+        return self._adaptee.get_all_user_resources()

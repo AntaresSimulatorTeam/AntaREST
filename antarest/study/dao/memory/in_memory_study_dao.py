@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, Iterator, List, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -52,7 +52,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.user_model import UserResourceDataCreation
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -819,6 +819,16 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
         self._playlist_config = playlist
+
+    @override
+    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+        for path, content in self._user_resources.items():
+            resource_type = ResourceType.FOLDER if content is None else ResourceType.FILE
+            yield UserResourceDataCreation(
+                path=path,
+                resource_type=resource_type,
+                blob_id=content,
+            )
 
     @override
     def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
