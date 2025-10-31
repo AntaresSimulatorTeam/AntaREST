@@ -28,6 +28,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_2,
     STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling
@@ -312,6 +313,14 @@ class FileStudyAreaDao(AreaDao):
             study_data.tree.delete(["input", "hydro", "hydro", "leeway low", area_id])
             study_data.tree.delete(["input", "hydro", "hydro", "leeway up", area_id])
             study_data.tree.delete(["input", "hydro", "hydro", "pumping efficiency", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "reservoir", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "reservoir capacity", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "follow load", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "use water", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "hard bounds", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "use heuristic", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "power to level", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "use leeway", area_id])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{area_id}"])
@@ -324,6 +333,9 @@ class FileStudyAreaDao(AreaDao):
         if study_version >= STUDY_VERSION_8_6:
             study_data.tree.delete(["input", "st-storage", "clusters", area_id])
             study_data.tree.delete(["input", "st-storage", "series", area_id])
+
+        if study_version > STUDY_VERSION_9_2:
+            study_data.tree.delete(["input", "hydro", "hydro", "overflow spilled cost difference", area_id])
 
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
@@ -432,6 +444,8 @@ class FileStudyAreaDao(AreaDao):
         # Initialize sections if missing (happens when creating the area)
         for section in ["layerX", "layerY", "layerColor", "ui"]:
             current_area.setdefault(section, {})
+            if section == "ui":
+                current_area[section]["layers"] = 0
 
         # Save all UI properties
         current_area["layerX"][layer] = area_ui.x
