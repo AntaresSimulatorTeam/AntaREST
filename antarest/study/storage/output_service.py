@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 from typing import BinaryIO, Optional, Sequence
 
-from starlette.responses import FileResponse, Response
+from starlette.responses import FileResponse
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
@@ -281,10 +281,8 @@ class OutputService:
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
-        use_task: bool,
-        filetype: ExportFormat,
-        tmp_export_file: Optional[Path] = None,
-    ) -> Response | FileDownloadTaskDTO | FileResponse:
+        tmp_export_file: Path,
+    ) -> FileResponse:
         """
         Download outputs
         Args:
@@ -304,78 +302,18 @@ class OutputService:
         self._study_service.assert_study_unarchived(study)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
-        if use_task:
-            logger.info(f"Exporting {output_id} from study {study_id}")
-            export_name = f"Study filtered output {study.name}/{output_id} export"
-            export_file_download = self._file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}", export_name
-            )
-            export_path = Path(export_file_download.path)
-            export_id = export_file_download.id
+        stopwatch = StopWatch()
+        matrix = StudyDownloader.build(
+            self._study_service.get_file_study(study),
+            output_id,
+            data,
+        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s"))
+        StudyDownloader.export(matrix, ExportFormat.JSON, tmp_export_file)
+        stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s"))
 
-            def export_task(_notifier: ITaskNotifier) -> TaskResult:
-                try:
-                    _study = self._study_service.get_study(study_id)
-                    _stopwatch = StopWatch()
-                    _matrix = StudyDownloader.build(
-                        self._study_service.get_file_study(_study),
-                        output_id,
-                        data,
-                    )
-                    _stopwatch.log_elapsed(
-                        lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s")
-                    )
-                    StudyDownloader.export(_matrix, filetype, export_path)
-                    _stopwatch.log_elapsed(
-                        lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
-                    )
-                    self._file_transfer_manager.set_ready(export_id)
-                    return TaskResult(
-                        success=True,
-                        message=f"Study filtered output {study_id}/{output_id} successfully exported",
-                    )
-                except Exception as e:
-                    self._file_transfer_manager.fail(export_id, str(e))
-                    raise
-
-            task_id = self._task_service.add_task(
-                export_task,
-                export_name,
-                task_type=TaskType.EXPORT,
-                ref_id=study.id,
-                progress=None,
-                custom_event_messages=None,
-            )
-
-            return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
-        else:
-            stopwatch = StopWatch()
-            matrix = StudyDownloader.build(
-                self._study_service.get_file_study(study),
-                output_id,
-                data,
-            )
-            stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s"))
-            if tmp_export_file is not None:
-                StudyDownloader.export(matrix, filetype, tmp_export_file)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
-                )
-
-                if filetype == ExportFormat.JSON:
-                    headers = {"Content-Disposition": "inline"}
-                elif filetype == ExportFormat.TAR_GZ:
-                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
-                elif filetype == ExportFormat.ZIP:
-                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
-                else:  # pragma: no cover
-                    raise NotImplementedError(f"Export format {filetype} is not supported")
-
-                return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
-
-            else:
-                json_response = matrix.model_dump_json()
-                return Response(content=json_response, media_type="application/json")
+        headers = {"Content-Disposition": "inline"}
+        return FileResponse(tmp_export_file, headers=headers, media_type=ExportFormat.JSON)
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """

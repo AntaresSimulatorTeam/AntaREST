@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Annotated, Any, Sequence
 
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
-from starlette.responses import FileResponse, Response
+from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -30,7 +30,7 @@ from antarest.study.business.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.model import MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
 from antarest.study.storage.output_model import OutputVariablesInformation, OutputVariablesList
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -131,33 +131,20 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
         return output_service.get_output_time_index(study_id, output_id, frequency)
 
-    @bp.post(
-        "/studies/{study_id}/outputs/{output_id}/download",
-        summary="Get outputs data",
-        response_model=None,  # only pydantic models are supported as response model
-    )
+    @bp.post("/studies/{study_id}/outputs/{output_id}/download", summary="Get outputs data")
     def output_download(
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
-        request: Request,
-        use_task: bool = False,
+        request: Request,  # deprecated, we always return a JSON response
+        use_task: bool = False,  # deprecated, we always consider it's False
         tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
-    ) -> Response | FileDownloadTaskDTO | FileResponse:
+    ) -> FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
-        accept = request.headers["Accept"]
-        filetype = ExportFormat.from_dto(accept)
 
-        content = output_service.download_outputs(
-            study_id,
-            output_id,
-            data,
-            use_task,
-            filetype,
-            tmp_export_file,
-        )
+        content = output_service.download_outputs(study_id, output_id, data, tmp_export_file)
         return content
 
     @bp.delete(
