@@ -31,6 +31,7 @@ def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_cont
     blob_id2 = command_context.blob_service.save(b"Gout Gout")
     path2 = PurePosixPath("folder_1/file2.txt")
     dao.save_user_resource(UserResourceDataCreation(path=path2, resource_type=ResourceType.FILE, blob_id=blob_id2))
+
     # Tests link matrices
 
     # Tests hydro matrices
