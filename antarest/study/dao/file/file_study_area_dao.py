@@ -210,17 +210,13 @@ class FileStudyAreaDao(AreaDao):
                 "links": {area_id: {"properties": {}}},
                 "load": {
                     "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
-                    "series": {
-                        f"load_{area_id}": null_scenario_matrix,
-                    },
+                    "series": {f"load_{area_id}": null_scenario_matrix},
                 },
                 "misc-gen": {f"miscgen-{area_id}": generator_matrix_constants.get_default_miscgen()},
                 "reserves": {area_id: generator_matrix_constants.get_default_reserves()},
                 "solar": {
                     "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
-                    "series": {
-                        f"solar_{area_id}": null_scenario_matrix,
-                    },
+                    "series": {f"solar_{area_id}": null_scenario_matrix},
                 },
                 "thermal": {
                     "clusters": {area_id: {"list": {}}},
