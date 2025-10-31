@@ -54,14 +54,12 @@ export interface LaunchStudyParams {
   studyId: StudyMetadata["id"];
   launcherId: Launcher["id"];
   version: StudyMetadata["version"];
+  solverPresetsId?: string;
   config?: LauncherConfig;
 }
 
-export interface LaunchStudyParams {
-  studyId: StudyMetadata["id"];
-  launcherId: Launcher["id"];
-  version: StudyMetadata["version"];
-  config?: LauncherConfig;
+export interface GetLauncherVersionsParams {
+  launcherId?: Launcher["id"]; // If not specified, retrieve the versions of the default launcher
 }
 
 export interface JobCreationDTO {

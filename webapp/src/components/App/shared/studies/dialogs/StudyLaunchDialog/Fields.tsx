@@ -19,10 +19,10 @@ import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import { useFormContextPlus } from "@/components/common/Form";
 import { validateNumber } from "@/utils/validation/number";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   isXpressAvailableForVersion,
-  NULL_LAUNCHER,
   otherOptionsToArray,
   XPRESS_OPTION,
   type FormValues,
@@ -32,36 +32,27 @@ function Fields() {
   const { control, setValue, setValues, getValues, watch } = useFormContextPlus<FormValues>();
   const { t } = useTranslation();
 
-  const { isSingleStudy, versionOptions, outputOptions, launcherOptions } =
-    getValues("_data") || {};
+  const {
+    isSingleStudy,
+    configurationOptions,
+    outputOptions,
+    launcherOptions,
+    getVersionOptionsForLauncher,
+  } = getValues("_data") || {};
 
-  const [version, isXpansionEnabled, isSensitivityModeEnabled = NULL_LAUNCHER] = watch([
-    "version",
+  const [configuration, isXpansionEnabled, isSensitivityModeEnabled, launcherId] = watch([
+    "configuration",
     "xpansion",
     "sensitivityMode",
+    "launcher",
   ]);
 
+  const versionOptions = useMemo(
+    () => getVersionOptionsForLauncher?.(launcherId) || [],
+    [getVersionOptionsForLauncher, launcherId],
+  );
+
   const isXpansionOutputEnabled = isXpansionEnabled && isSensitivityModeEnabled;
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const updateOtherOptions = ({ xpress }: { xpress: boolean }) => {
-    const currentOtherOptions = getValues("otherOptions");
-    const options = otherOptionsToArray(currentOtherOptions);
-    const hasXpress = options.includes(XPRESS_OPTION);
-
-    if (xpress === hasXpress) {
-      return;
-    }
-
-    const newOptions = xpress
-      ? [...options, XPRESS_OPTION]
-      : options.filter((opt) => opt !== XPRESS_OPTION);
-
-    setValue("otherOptions", newOptions.join(" "));
-  };
 
   ////////////////////////////////////////////////////////////////
   // Validations
@@ -109,24 +100,8 @@ function Fields() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleVersionChange = (event: SelectFEChangeEvent<FormValues["version"]>) => {
-    if (!isXpressAvailableForVersion(event.target.value) && getValues("xpress")) {
-      setValue("xpress", false);
-      updateOtherOptions({ xpress: false });
-    }
-  };
-
-  const handleOtherOptionsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const otherOptions = otherOptionsToArray(event.target.value);
-    const hasXpress = otherOptions.includes(XPRESS_OPTION);
-
-    if (hasXpress !== getValues("xpress")) {
-      setValue("xpress", hasXpress);
-    }
-  };
-
-  const handleXpressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateOtherOptions({ xpress: event.target.checked });
+  const handleConfigurationChange = () => {
+    setValue("otherOptions", "");
   };
 
   const handleXpansionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,40 +152,40 @@ function Fields() {
 
   return (
     <>
-      <Fieldset fullFieldWidth>
+      <Fieldset>
         <StringFE label={t("global.name")} name="name" control={control} fullWidth />
-      </Fieldset>
-
-      <Fieldset legend={t("launcher.legend.simulator")}>
+        <SwitchFE
+          label={t("launcher.field.autoUnzip")}
+          name="autoUnzip"
+          control={control}
+          fullWidth
+        />
         <SelectFE
-          label={t("global.version")}
+          label={t("launcher.field.version")}
           name="version"
           options={versionOptions}
           control={control}
-          onChange={handleVersionChange}
           rules={{ deps: ["otherOptions"] }}
+          sx={{ flex: 1 / 3 }}
+        />
+        <SelectFE
+          label={t("launcher.field.configuration")}
+          name="configuration"
+          options={configurationOptions}
+          emptyValue
+          emptyValueLabel={t("launcher.field.otherOptions")}
+          control={control}
+          rules={{ deps: ["otherOptions"] }}
+          onChange={handleConfigurationChange}
+          sx={{ flex: 2 / 3 }}
         />
         <StringFE
           label={t("launcher.field.otherOptions")}
           name="otherOptions"
           control={control}
-          sx={{ flex: 1 }}
-          onChange={handleOtherOptionsChange}
           rules={{ validate: validateOtherOptions }}
-        />
-        <Fieldset.Break />
-        <SwitchFE
-          label={t("launcher.field.xpress")}
-          name="xpress"
-          control={control}
-          onChange={handleXpressChange}
-          disabled={!isXpressAvailableForVersion(version)}
-        />
-        <SwitchFE
-          label={t("launcher.field.autoUnzip")}
-          name="autoUnzip"
-          control={control}
-          sx={{ flex: 1 }}
+          fullWidth
+          disabled={!!configuration}
         />
       </Fieldset>
 
@@ -233,12 +208,11 @@ function Fields() {
             control={control}
             onChange={handleAdequacyCriterionChange}
             rules={{ validate: validateAdequacyCriterion }}
-            sx={{ minWidth: 250 }}
+            fullWidth
             disabled={!isXpansionEnabled}
           />
           {isSingleStudy && (
             <>
-              <Fieldset.Break />
               <SwitchFE
                 label={t("launcher.field.sensitivityMode")}
                 name="sensitivityMode"
