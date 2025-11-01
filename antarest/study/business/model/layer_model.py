@@ -28,6 +28,7 @@ class Layer(AntaresBaseModel):
 class LayerCreation(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
+    id: str | None = None
     name: str
 
 
@@ -40,8 +41,18 @@ class LayerUpdate(AntaresBaseModel):
 
 
 def create_layer(current_layers: list[Layer], layer: LayerCreation) -> Layer:
-    new_id = max((int(layer.id) for layer in current_layers if layer.id is not None), default=0) + 1
-    return Layer(id=str(new_id), name=layer.name)
+    # Use the provided ID if available, otherwise calculate the next available ID
+    if layer.id is not None:
+        new_id = layer.id
+    else:
+        new_id = str(
+            max(
+                (int(existing_layer.id) for existing_layer in current_layers if existing_layer.id is not None),
+                default=0,
+            )
+            + 1
+        )
+    return Layer(id=new_id, name=layer.name)
 
 
 def update_layer_name(layers: List[Layer], data: LayerUpdate) -> Layer:

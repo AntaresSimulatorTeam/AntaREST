@@ -44,8 +44,8 @@ class TestLayer:
         # Test POST - Create a new layer
         res = client.post(f"/v1/studies/{study_id}/layers?name=Layer%20One")
         assert res.status_code == 200
-        layer_name_1 = res.json()
-        assert layer_name_1 == "Layer One"
+        layer_id_1 = res.json()
+        assert layer_id_1 == "1"
 
         # Test GET layers - should now have 2 layers
         res = client.get(f"/v1/studies/{study_id}/layers")
@@ -55,19 +55,11 @@ class TestLayer:
         assert layers[1]["id"] == "1"
         assert layers[1]["name"] == "Layer One"
         assert layers[1]["areas"] == []
-        layer_id_1 = layers[1]["id"]
 
         # Test POST - Create another layer
         res = client.post(f"/v1/studies/{study_id}/layers?name=Layer%20Two")
         assert res.status_code == 200
-        layer_name_2 = res.json()
-        assert layer_name_2 == "Layer Two"
-
-        # Get the ID of the second layer
-        res = client.get(f"/v1/studies/{study_id}/layers")
-        assert res.status_code == 200
-        layers = res.json()
-        layer_id_2 = layers[2]["id"]
+        layer_id_2 = res.json()
         assert layer_id_2 == "2"
 
         res = client.put(f"/v1/studies/{study_id}/layers/{layer_id_1}?name=Updated%20Layer%20One")
