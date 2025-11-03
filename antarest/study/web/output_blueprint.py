@@ -538,7 +538,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid: str,
         output_id: str,
         type: OutputVariablesType,
-        variable_name: str,  # For links, should be "area1 - area2" in alphabetical order.
+        variable_name: str,
         frequency: MatrixFrequency,
         area_id: str | None = None,
         area_from_id: str | None = None,
