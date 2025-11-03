@@ -9,7 +9,7 @@ import pathlib
 import re
 import typing as t
 
-from scripts import generate_changelog
+from scripts.generate_changelog import generate_changelog
 
 try:
     from antarest import __version__
@@ -44,6 +44,11 @@ class Token:
 class NewlineToken(Token):
     def __init__(self) -> None:
         super().__init__("NEWLINE", "\n")
+
+
+class ChangeLogContent(Token):
+    def __init__(self, text: str) -> None:
+        super().__init__("CHANGELOG_CONTENT", text)
 
 
 class TitleToken(Token):
@@ -82,7 +87,6 @@ def update_changelog(
     change_log: str, new_version: str, new_date: str, changelog_txt: str
 ) -> t.Generator[Token, None, None]:
     new_title = f"v{new_version} ({new_date})"
-
     first_release_found = False
     for token in parse_changelog(change_log):
         if first_release_found:
@@ -98,8 +102,8 @@ def update_changelog(
             else:
                 # Insert a new release title before the current one
                 yield TitleToken(kind=token.kind, text=new_title)
-                yield Token(changelog_txt)
                 yield NewlineToken()
+                yield ChangeLogContent(changelog_txt)
                 yield NewlineToken()
 
                 yield token
