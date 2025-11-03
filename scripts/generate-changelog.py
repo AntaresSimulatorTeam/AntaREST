@@ -1,6 +1,5 @@
-import re
-
 #!/usr/bin/env python3
+import re
 import subprocess
 from collections import defaultdict
 
@@ -11,30 +10,34 @@ REPO_URL = "https://github.com/AntaresSimulatorTeam/AntaREST"
 
 
 def run_git(*args):
+    """Run a git command and return its output."""
     return subprocess.run(["git", *args], capture_output=True, text=True, check=True).stdout.strip()
 
 
 def fetch_branches():
-    subprocess.run(["git", "fetch", "origin", "master", "dev"], check=True)
+    """Fetch the latest changes from origin for master and dev branches."""
+    subprocess.run(["git", "fetch", "origin", "master", "dev"], capture_output=True, check=True)
 
 
 def extract_pr_number(subject, body):
-    # Match PR numbers in "Merge pull request #1234" or "(#1234)" or "#1234"
+    """Extract PR number from commit subject or body."""
     patterns = [r"Merge pull request #(\d+)", r"\(#(\d+)\)", r"#(\d+)"]
     text = f"{subject}\n{body}"
     for pattern in patterns:
-        if m := re.search(pattern, text):
-            return m.group(1)
+        if match := re.search(pattern, text):
+            return match.group(1)
     return None
 
 
 def get_commits(base_branch, target_branch):
+    """Get commits in target_branch that are not in base_branch."""
     log_format = "%H|%s|%an|%b"
     output = run_git("log", f"{base_branch}..{target_branch}", f"--pretty=format:{log_format}")
     return output.splitlines() if output else []
 
 
-def get_commit_for_release():
+def get_commits_for_release():
+    """Generate formatted commit messages with PR links."""
     fetch_branches()
     commits = get_commits(BASE_BRANCH, TARGET_BRANCH)
 
@@ -49,10 +52,11 @@ def get_commit_for_release():
         sha, subject, author, body = parts
         pr = extract_pr_number(subject, body)
         pr_link = f"{REPO_URL}/pull/{pr}" if pr else "(no PR link)"
-        yield (f"* {subject} by @{author} in {pr_link}")
+        yield f"* {subject} by @{author} in {pr_link}"
 
 
 def parse_changes(release_commits_list):
+    """Parse commit messages and group by category (conventional commits format)."""
     CATEGORY_MAP = {
         "feat": "Features",
         "fix": "Bug fixes",
@@ -66,40 +70,62 @@ def parse_changes(release_commits_list):
     }
     grouped_changes = defaultdict(list)
 
-    # Parse each line
+    # Regex pattern to match conventional commits with optional breaking change indicator
+    pattern = r"\* (\w+)\(([^)]+)\)(!?): (.*?) by @.+ in .+/(\d+)"
+
     for line in release_commits_list:
-        match = re.match(r"\* (\w+)\(([^)]+)\)!?: (.*?) by @.+ in .+/(\d+)", line.strip())
+        match = re.match(pattern, line.strip())
         if not match:
             continue
-        match_breaking_change = re.match(r"\* (\w+)\(([^)]+)\)!: (.*?) by @.+ in .+/(\d+)", line.strip())
-        kind, scope, message, pr_number = match.groups()
+
+        kind, scope, breaking_indicator, message, pr_number = match.groups()
         category = CATEGORY_MAP.get(kind, "Other")
-        grouped_changes[category].append((scope, message, pr_number, bool(match_breaking_change)))
+        is_breaking = breaking_indicator == "!"
+        grouped_changes[category].append((scope, message, pr_number, is_breaking))
 
     return grouped_changes
 
 
 def mk_changelog_str(grouped_changes):
+    """Generate a formatted changelog string from grouped changes."""
     changelog = []
-    for category in ["Features", "Bug fixes", "Performances", "Refactorings", "Chore", "Other"]:
+    # Define the order of categories
+    category_order = [
+        "Features",
+        "Bug fixes",
+        "Performances",
+        "Refactorings",
+        "Documentation",
+        "Tests",
+        "Build",
+        "Chore",
+        "Other",
+    ]
+
+    for category in category_order:
         if category in grouped_changes:
-            changelog += [f"### {category}\n"]
-            for scope, message, pr_number, mbr in grouped_changes[category]:
-                if mbr:
-                    badge = " ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)"
-                else:
-                    badge = ""
-                changelog += [
-                    f"* **{scope}**: {message} [`{pr_number}`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/{pr_number}){badge}"
-                ]
+            changelog.append(f"### {category}\n")
+            for scope, message, pr_number, is_breaking in grouped_changes[category]:
+                badge = (
+                    " ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)"
+                    if is_breaking
+                    else ""
+                )
+                pr_link = f"{REPO_URL}/pull/{pr_number}"
+                changelog.append(f"* **{scope}**: {message} [`#{pr_number}`]({pr_link}){badge}")
+            changelog.append("")  # Add blank line between categories
+
     return "\n".join(changelog)
 
 
 def generate_changelog():
-    release_commits_list = get_commit_for_release()
+    """Generate the complete changelog."""
+    release_commits_list = list(get_commits_for_release())
+
+    if not release_commits_list:
+        return "No changes to report."
 
     changes_by_category = parse_changes(release_commits_list)
-
     return mk_changelog_str(changes_by_category)
 
 
