@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import gzip
+from enum import StrEnum
 from typing import Annotated, TypeAlias
 
 from pydantic import BeforeValidator
@@ -107,3 +108,11 @@ class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
         args["link"] = sorted(all_link_variables)
 
         return OutputVariablesInformation.model_validate(args)
+
+
+class OutputVariablesType(StrEnum):
+    AREA = "area"
+    LINK = "link"
+    THERMAL = "thermal"
+    RENEWABLE = "renewable"
+    SHORT_TERM_STORAGE = "st_storage"
