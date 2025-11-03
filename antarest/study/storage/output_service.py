@@ -114,34 +114,32 @@ def _checks_variables_view_coherence(
             raise OutputVariablesViewError(
                 output_id, "You should provide both `area_from_id` and `area_to_id` for links"
             )
+        return
 
+    if any([area_from_id, area_to_id]):
+        raise OutputVariablesViewError(output_id, "You provided an link related id for areas")
+
+    if not area_id:
+        raise OutputVariablesViewError(output_id, "You should provide `area_id` for areas")
+
+    if type == OutputVariablesType.THERMAL:
+        if not thermal_id:
+            raise OutputVariablesViewError(output_id, "You should provide `thermal_id` for thermal clusters")
+        if any([renewable_id, st_storage_id]):
+            raise OutputVariablesViewError(output_id, "You provided an storage/renewable id for thermal clusters")
+    elif type == OutputVariablesType.RENEWABLE:
+        if not renewable_id:
+            raise OutputVariablesViewError(output_id, "You should provide `renewable_id` for renewable clusters")
+        if any([thermal_id, st_storage_id]):
+            raise OutputVariablesViewError(output_id, "You provided an storage/thermal id for renewable clusters")
+    elif type == OutputVariablesType.SHORT_TERM_STORAGE:
+        if not st_storage_id:
+            raise OutputVariablesViewError(output_id, "You should provide `st_storage_id` for short-term storages")
+        if any([thermal_id, renewable_id]):
+            raise OutputVariablesViewError(output_id, "You provided an renewable/thermal id for short-term storages")
     else:
-        if any([area_from_id, area_to_id]):
-            raise OutputVariablesViewError(output_id, "You provided an link related id for areas")
-
-        if not area_id:
-            raise OutputVariablesViewError(output_id, "You should provide `area_id` for areas")
-
-        if type == OutputVariablesType.THERMAL:
-            if not thermal_id:
-                raise OutputVariablesViewError(output_id, "You should provide `thermal_id` for thermal clusters")
-            if any([renewable_id, st_storage_id]):
-                raise OutputVariablesViewError(output_id, "You provided an storage/renewable id for thermal clusters")
-        elif type == OutputVariablesType.RENEWABLE:
-            if not renewable_id:
-                raise OutputVariablesViewError(output_id, "You should provide `renewable_id` for renewable clusters")
-            if any([thermal_id, st_storage_id]):
-                raise OutputVariablesViewError(output_id, "You provided an storage/thermal id for renewable clusters")
-        elif type == OutputVariablesType.SHORT_TERM_STORAGE:
-            if not st_storage_id:
-                raise OutputVariablesViewError(output_id, "You should provide `st_storage_id` for short-term storages")
-            if any([thermal_id, renewable_id]):
-                raise OutputVariablesViewError(
-                    output_id, "You provided an renewable/thermal id for short-term storages"
-                )
-        else:
-            if any([thermal_id, renewable_id, st_storage_id]):
-                raise OutputVariablesViewError(output_id, "You provided an renewable/thermal/storage id for areas")
+        if any([thermal_id, renewable_id, st_storage_id]):
+            raise OutputVariablesViewError(output_id, "You provided an renewable/thermal/storage id for areas")
 
 
 class OutputService:
