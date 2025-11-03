@@ -72,11 +72,7 @@ logger = logging.getLogger(__name__)
 
 
 def _checks_links_variables_view_coherence(
-    output_id: str,
-    available_variables: OutputVariablesList,
-    variable_name: str,
-    area_from_id: str | None = None,
-    area_to_id: str | None = None,
+    output_id: str, available_variables: OutputVariablesList, variable_name: str, area_from_id: str, area_to_id: str
 ) -> None:
     link_variables = available_variables.mc_ind.links
     for link_variable in link_variables:
@@ -722,10 +718,14 @@ class OutputService:
         )
 
         if type == OutputVariablesType.LINK:
-            _checks_links_variables_view_coherence(output_id, available_variables, variable_name, area_id, area_from_id)
+            assert area_from_id is not None
+            assert area_to_id is not None
+            _checks_links_variables_view_coherence(
+                output_id, available_variables, variable_name, area_from_id, area_to_id
+            )
 
         else:
-            assert area_id is not None  # Just for mypy, we checked it previously
+            assert area_id is not None
             _checks_areas_variables_view_coherence(
                 output_id, available_variables, variable_name, type, area_id, thermal_id, renewable_id, st_storage_id
             )
