@@ -92,7 +92,7 @@ def mk_changelog_str(grouped_changes):
                 changelog += [
                     f"* **{scope}**: {message} [`{pr_number}`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/{pr_number}){badge}"
                 ]
-    return "/n".join(changelog)
+    return "\n".join(changelog)
 
 
 def generate_changelog():
