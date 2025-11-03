@@ -56,7 +56,9 @@ def test_csv_stream_writer(
     pd.testing.assert_frame_equal(parsed, expected_concatenation)
 
 
-def test_excel_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame):
+def test_excel_stream_writer(
+    tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame
+) -> None:
     export_path = tmp_path / "export.xlsx"
     writer = TableExportFormat.XLSX.get_stream_writer()
     writer(path=export_path, dataframes=dataframes)
@@ -67,7 +69,7 @@ def test_excel_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame],
 
 def test_parquet_stream_writer(
     tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame
-):
+) -> None:
     export_path = tmp_path / "export.parquet"
     writer = TableExportFormat.PARQUET.get_stream_writer()
     writer(path=export_path, dataframes=dataframes)

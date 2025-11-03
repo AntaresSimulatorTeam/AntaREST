@@ -21,7 +21,7 @@ from tests.helpers import with_db_context
 
 
 @with_db_context
-def test_hooks(tmp_path: Path):
+def test_hooks(tmp_path: Path) -> None:
     study_service = Mock()
     adq_ext = AdequacyPatchExtension(study_service, Config(storage=StorageConfig(tmp_dir=tmp_path)))
     assert adq_ext.get_name() == AdequacyPatchExtension.EXTENSION_NAME

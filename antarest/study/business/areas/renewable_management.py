@@ -34,10 +34,6 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
-_CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
-_CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
-_ALL_CLUSTERS_PATH = "input/renewables/clusters"
-
 
 class RenewableManager:
     """

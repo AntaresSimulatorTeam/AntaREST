@@ -11,8 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-import pathlib
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from redis.client import Redis
 from typing_extensions import override
@@ -43,8 +42,7 @@ class RedisEventBus(IEventBusBackend):
     def pull_queue(self, queue: str) -> Optional[Event]:
         event = self.redis.lpop(queue)
         if event:
-            event_string = pathlib.Path(event).read_text()
-            return cast(Optional[Event], Event.model_validate_json(event_string))
+            return Event.model_validate_json(event)
         return None
 
     @override

@@ -54,7 +54,7 @@ def study_tree(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path):
+def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path) -> None:
     # Don't be confused here by the workspace name is "ext" being different from its folder name "ext_workspace"
     # that's just how it's configured in the "client" fixture
     workspace = "ext"

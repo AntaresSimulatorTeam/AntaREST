@@ -40,8 +40,15 @@ class FileStudyAdvancedParametersDao(AdvancedParametersDao, ABC):
     @override
     def get_advanced_parameters(self) -> AdvancedParameters:
         file_study = self.get_file_study()
-        general_data = file_study.tree.get(GENERAL_DATA_PATH)
-        return parse_advanced_parameters(file_study.config.version, general_data)
+        args = {}
+        for keyword in ["seeds - Mersenne Twister", "other preferences", "advanced parameters"]:
+            try:
+                data = file_study.tree.get(["settings", "generaldata", keyword])
+            except KeyError:
+                data = {}
+            args[keyword] = data
+
+        return parse_advanced_parameters(file_study.config.version, args)
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:

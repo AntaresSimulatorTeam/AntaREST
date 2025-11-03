@@ -14,8 +14,6 @@ import datetime
 from unittest.mock import Mock
 from uuid import uuid4
 
-import pytest
-
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
@@ -24,7 +22,6 @@ from antarest.study.repository import StudyMetadataRepository
 from tests.helpers import create_raw_study, with_db_context
 
 
-@pytest.mark.unit_test
 @with_db_context
 def test_job_result() -> None:
     repo = JobResultRepository()
@@ -102,9 +99,8 @@ def test_job_result() -> None:
     assert repo.get(b3.id) is not None
 
 
-@pytest.mark.unit_test
 @with_db_context
-def test_update_object():
+def test_update_object() -> None:
     identity = Identity(id=1, name="test")
     db.session.add(identity)
     db.session.commit()
@@ -133,9 +129,8 @@ def test_update_object():
     assert c != d
 
 
-@pytest.mark.unit_test
 @with_db_context
-def test_logs():
+def test_logs() -> None:
     repo = JobResultRepository()
     uuid = str(uuid4())
     a = JobResult(

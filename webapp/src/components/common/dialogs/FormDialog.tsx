@@ -13,6 +13,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { mergeSxProp } from "@/utils/muiUtils";
 import SaveIcon from "@mui/icons-material/Save";
 import { Button } from "@mui/material";
 import * as RA from "ramda-adjunct";
@@ -37,8 +38,6 @@ export interface FormDialogProps<
   onCancel: VoidFunction;
 }
 
-// TODO: `formState.isSubmitting` doesn't update when auto submit enabled
-
 function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValue>(
   props: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>,
 ) {
@@ -48,7 +47,6 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
     onSubmitSuccessful,
     onInvalid,
     children,
-    autoSubmit,
     onStateChange,
     onCancel,
     onClose,
@@ -65,7 +63,6 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
     onSubmitSuccessful,
     onInvalid,
     children,
-    autoSubmit,
   };
 
   const { t } = useTranslation();
@@ -104,35 +101,35 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
       maxWidth="xs"
       fullWidth
       {...dialogProps}
+      contentProps={{
+        ...dialogProps.contentProps,
+        sx: mergeSxProp({ px: 2 }, dialogProps.contentProps?.sx),
+      }}
       onClose={handleClose}
       actions={
         <>
           <Button onClick={onCancel} disabled={isSubmitting}>
             {cancelButtonText || t("global.cancel")}
           </Button>
-          {!autoSubmit && (
-            <Button
-              type="submit"
-              form={formId}
-              variant="contained"
-              disabled={!isSubmitAllowed}
-              loading={isSubmitting}
-              loadingPosition="start"
-              startIcon={RA.isNotUndefined(submitButtonIcon) ? submitButtonIcon : <SaveIcon />}
-            >
-              {submitButtonText || t("global.save")}
-            </Button>
-          )}
+          <Button
+            type="submit"
+            form={formId}
+            variant="contained"
+            disabled={!isSubmitAllowed}
+            loading={isSubmitting}
+            loadingPosition="start"
+            startIcon={RA.isNotUndefined(submitButtonIcon) ? submitButtonIcon : <SaveIcon />}
+          >
+            {submitButtonText || t("global.save")}
+          </Button>
         </>
       }
     >
       <Form
         {...formProps}
         sx={{
-          ".Form__Loader": {
-            position: "absolute",
-            top: "10px",
-            right: "3px",
+          ".Form__Content": {
+            px: 1, // Prevent content from touching scrollbar
           },
         }}
         id={formId}

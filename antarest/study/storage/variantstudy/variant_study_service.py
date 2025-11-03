@@ -10,19 +10,17 @@
 #
 # This file is part of the Antares project.
 
-import concurrent.futures
 import logging
 import re
 import shutil
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import reduce
 from pathlib import Path, PurePosixPath
 from typing import Callable, Dict, List, Optional, Sequence, cast
 from uuid import uuid4
 
 import humanize
-from fastapi import HTTPException
 from filelock import FileLock
 from typing_extensions import override
 
@@ -45,10 +43,9 @@ from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
-from antarest.login.model import Identity
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
@@ -72,6 +69,7 @@ from antarest.study.storage.utils import (
     update_antares_info,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
+from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -116,19 +114,13 @@ class VariantStudyService(AbstractStorageService):
         self.command_factory = command_factory
         self.generator = VariantCommandGenerator(self.study_factory)
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
+        CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
-    @staticmethod
-    def _get_user_name_from_id(user_id: int) -> str:
-        """
-        Utility method that retrieves a user's name based on their id.
-        Args:
-            user_id: user id (user must exist)
-        Returns: String representing the user's name
-        """
-        user_obj: Identity | None = db.session.get(Identity, user_id)
-        if user_obj is None:
-            return "Unnamed"
-        return str(user_obj.name)
+    def _update_editor(self, study: VariantStudy) -> None:
+        user_name = self._get_current_user_name()
+        study.additional_data = study.additional_data or StudyAdditionalData()
+        study.additional_data.editor = user_name
+        self.repository.save(study)
 
     def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
         """
@@ -191,7 +183,7 @@ class VariantStudyService(AbstractStorageService):
                 if not previous_task.status.is_final():
                     logger.error(f"{metadata.id} generation in progress")
                     raise CommandUpdateAuthorizationError(metadata.id)
-            except HTTPException as e:
+            except TaskNotFoundError as e:
                 logger.warning(
                     f"Failed to retrieve generation task for study {metadata.id}",
                     exc_info=e,
@@ -231,11 +223,12 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_impersonator(),
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
             )
             for i, command in enumerate(validated_commands)
         ]
         study.commands.extend(new_commands)
+        self._update_editor(study)
         self.on_variant_advance(study)
         self.event_bus.push(
             Event(
@@ -267,10 +260,11 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_id(),
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
             )
             for i, command in enumerate(validated_commands)
         ]
+        self._update_editor(study)
         self.on_variant_rebase(study)
         return str(study.id)
 
@@ -293,6 +287,7 @@ class VariantStudyService(AbstractStorageService):
             study.commands.insert(new_index, command)
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
+            self._update_editor(study)
             self.on_variant_rebase(study)
 
     def remove_command(self, study_id: str, command_id: str) -> None:
@@ -311,6 +306,7 @@ class VariantStudyService(AbstractStorageService):
             study.commands.pop(index)
             for idx, command in enumerate(study.commands):
                 command.index = idx
+            self._update_editor(study)
             self.on_variant_rebase(study)
 
     def remove_all_commands(self, study_id: str) -> None:
@@ -324,6 +320,7 @@ class VariantStudyService(AbstractStorageService):
         self._check_update_authorization(study)
 
         study.commands = []
+        self._update_editor(study)
         self.on_variant_rebase(study)
 
     def update_command(self, study_id: str, command_id: str, command: CommandDTO) -> None:
@@ -344,6 +341,7 @@ class VariantStudyService(AbstractStorageService):
         if index >= 0:
             study.commands[index].command = validated_commands[0].action
             study.commands[index].args = to_json_string(validated_commands[0].args)
+            self._update_editor(study)
             self.on_variant_rebase(study)
 
     def export_commands_matrices(self, study_id: str) -> FileDownloadTaskDTO:
@@ -632,22 +630,25 @@ class VariantStudyService(AbstractStorageService):
         assert_permission(study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
+        user_name = self._get_current_user_name()
         if study.additional_data is None:
-            additional_data = StudyAdditionalData()
+            additional_data = StudyAdditionalData(editor=user_name)
         else:
             additional_data = StudyAdditionalData(
                 horizon=study.additional_data.horizon,
                 author=study.additional_data.author,
+                editor=user_name,
             )
 
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         variant_study = VariantStudy(
             id=new_id,
             name=name,
             parent_id=uuid,
             path=study_path,
             public_mode=study.public_mode,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
             version=study.version,
             folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
@@ -687,7 +688,7 @@ class VariantStudyService(AbstractStorageService):
                     if not previous_task.status.is_final():
                         logger.info(f"Returning already existing variant study {study_id} generation")
                         return str(metadata.generation_task)
-                except HTTPException as e:
+                except TaskNotFoundError as e:
                     logger.warning(
                         f"Failed to retrieve generation task for study {study_id}",
                         exc_info=e,
@@ -799,7 +800,6 @@ class VariantStudyService(AbstractStorageService):
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
-        editor: str,
     ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
@@ -811,7 +811,6 @@ class VariantStudyService(AbstractStorageService):
             destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
-            editor: The name of the editor that created the destination study.
 
         Returns:
             The newly created study.
@@ -833,7 +832,7 @@ class VariantStudyService(AbstractStorageService):
             dest_output_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
             copy_output_folders(src_path, dest_output_path, with_outputs, output_ids)
 
-        update_antares_info(dest_study, file_study.tree, update_author=True, editor=editor)
+        update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
@@ -857,10 +856,11 @@ class VariantStudyService(AbstractStorageService):
             stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {metadata.id}")
             raise ValueError(stripped_msg)
 
-        except concurrent.futures.TimeoutError as e:
+        except TimeoutError as e:
             # Raise a REQUEST_TIMEOUT error (408)
-            logger.error(f"⚡ Timeout while generating variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationTimeoutError(f"Timeout while generating variant {metadata.id}") from None
+            msg = f"⚡ Timeout while waiting for generation of variant study {metadata.id}"
+            logger.error(msg, exc_info=e)
+            raise VariantGenerationTimeoutError(msg) from None
 
         except Exception as e:
             # raise a EXPECTATION_FAILED error (417)
@@ -1080,8 +1080,9 @@ class SnapshotCleanerTask:
             )
             for variant in variant_list:
                 assert isinstance(variant, VariantStudy)
-                if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_time:
-                    if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
+                now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+                if variant.updated_at and variant.updated_at < now_utc - self._retention_time:
+                    if variant.last_access and variant.last_access < now_utc - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:

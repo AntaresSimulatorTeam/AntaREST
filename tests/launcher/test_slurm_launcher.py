@@ -16,6 +16,7 @@ import textwrap
 import uuid
 from argparse import Namespace
 from pathlib import Path
+from typing import Any
 from unittest.mock import ANY, Mock, patch
 
 import pytest
@@ -64,7 +65,6 @@ def launcher_config(tmp_path: Path) -> SlurmConfig:
     return SlurmConfig.from_dict(data)
 
 
-@pytest.mark.unit_test
 def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
     config = SlurmConfig(
         id="slurm_id",
@@ -95,7 +95,6 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
     assert Path(arguments.log_dir) == config.local_workspace / "LOGS"
 
 
-@pytest.mark.unit_test
 def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
     config = SlurmConfig(
         id="slurm_id",
@@ -133,7 +132,6 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
     assert main_parameters.db_primary_key == "name"
 
 
-@pytest.mark.unit_test
 def test_slurm_launcher_delete_function(tmp_path: str) -> None:
     config = SlurmConfig(id="slurm_id", name="slurm", local_workspace=Path(tmp_path))
     slurm_launcher = SlurmLauncher(
@@ -269,7 +267,6 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
         ),
     ],
 )
-@pytest.mark.unit_test
 def test_run_study(
     launcher_config: SlurmConfig,
     version: int,
@@ -302,11 +299,11 @@ def test_run_study(
     )
 
     # noinspection PyUnusedLocal
-    def call_launcher_mock(arguments: Namespace, parameters: MainParameters):
+    def call_launcher_mock(arguments: Namespace, parameters: MainParameters) -> None:
         if launcher_called:
             slurm_launcher.data_repo_tinydb.save_study(StudyDTO(job_id))
 
-    slurm_launcher._call_launcher = call_launcher_mock
+    slurm_launcher._call_launcher = call_launcher_mock  # type: ignore[method-assign]
 
     # When the launcher is called
     study_uuid = str(uuid.uuid4())
@@ -325,7 +322,6 @@ def test_run_study(
         slurm_launcher._delete_workspace_file.assert_called_once()
 
 
-@pytest.mark.unit_test
 def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
@@ -367,7 +363,6 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     slurm_launcher.stop.assert_called_once()
 
 
-@pytest.mark.unit_test
 def test_clean_local_workspace(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
@@ -384,7 +379,6 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: SlurmConfig) -> 
 
 
 # noinspection PyUnresolvedReferences
-@pytest.mark.unit_test
 def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> None:
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
@@ -436,9 +430,8 @@ def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> No
 
 
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
-@pytest.mark.unit_test
 def test_kill_job(
-    run_with_mock,
+    run_with_mock: Any,
     tmp_path: Path,
     launcher_config: SlurmConfig,
 ) -> None:
@@ -499,7 +492,7 @@ def test_kill_job(
 
 
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
-def test_launcher_workspace_init(run_with_mock, tmp_path: Path, launcher_config: SlurmConfig) -> None:
+def test_launcher_workspace_init(run_with_mock: Any, tmp_path: Path, launcher_config: SlurmConfig) -> None:
     callbacks = Mock()
     (tmp_path / LOG_DIR_NAME).mkdir()
 

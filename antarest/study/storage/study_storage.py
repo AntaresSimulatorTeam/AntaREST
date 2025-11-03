@@ -70,7 +70,6 @@ class IStudyStorage(ABC):
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
-        editor: str,
     ) -> Study:
         """
         Create a new study by copying a reference study.
@@ -82,15 +81,19 @@ class IStudyStorage(ABC):
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
-            editor: The editor's name that should be assigned to the destination study.
 
         Returns:
             The newly created study.
         """
 
     @abstractmethod
-    def get_study_information(self, metadata: Study) -> StudyMetadataDTO:
-        """Get study information."""
+    def get_study_information(self, metadata: Study, folder_path: Optional[str] = None) -> StudyMetadataDTO:
+        """Get study information.
+
+        Args:
+            metadata: The study to get information for
+            folder_path: Optional pre-calculated folder path to avoid database queries
+        """
 
     @abstractmethod
     def get_raw(

@@ -43,6 +43,7 @@ class CommandName(Enum):
     CREATE_LAYER = "create_layer"
     REMOVE_LAYER = "remove_layer"
     UPDATE_LAYER = "update_layer"
+    REPLACE_LAYER_AREAS = "replace_layer_areas"
     CREATE_DISTRICT = "create_district"
     REMOVE_DISTRICT = "remove_district"
     CREATE_LINK = "create_link"
@@ -96,3 +97,4 @@ class CommandName(Enum):
     UPDATE_ADEQUACY_PATCH_PARAMETERS = "update_adequacy_patch_parameters"
     UPDATE_TIMESERIES_CONFIG = "update_time"
     REPLACE_HYDRO_ALLOCATION = "replace_hydro_allocation"
+    REPLACE_HYDRO_CORRELATION = "replace_hydro_correlation"

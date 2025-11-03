@@ -12,13 +12,11 @@
 
 from urllib.parse import quote
 
-import pytest
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.area_model import AreaType
 
 
-@pytest.mark.unit_test
 class TestEditMatrix:
     """
     Test the end points "/studies/{uuid}/matrix".
@@ -28,7 +26,7 @@ class TestEditMatrix:
         self,
         client: TestClient,
         user_access_token: str,
-    ):
+    ) -> None:
         """
         This test creates a new study in the `internal_workspace` directory.
         It adds 2 areas and a link between.
@@ -254,7 +252,7 @@ class TestEditMatrix:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         # Given the following Area
         area_id = "fr"
 

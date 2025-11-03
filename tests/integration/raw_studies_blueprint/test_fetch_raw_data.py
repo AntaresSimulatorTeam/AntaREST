@@ -36,7 +36,7 @@ from tests.integration.utils import wait_for
 
 def _check_endpoint_response(
     study_type: str, res: Response, client: TestClient, study_id: str, expected_msg: str, exception: str
-):
+) -> None:
     # The command will only fail when applied so on raw studies only.
     # So we have to differentiate the test based on the study type.
     if study_type == "raw":
@@ -64,14 +64,15 @@ def _check_endpoint_response(
         res.raise_for_status()
 
 
-@pytest.mark.integration_test
 class TestFetchRawData:
     """
     Check the retrieval of Raw Data from Study: JSON, Text, or File Attachment.
     """
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_get_study_data(self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str):
+    def test_get_study_data(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str
+    ) -> None:
         """
         Test the `get_study_data` endpoint for fetching raw data from a study.
 
@@ -190,11 +191,14 @@ class TestFetchRawData:
             # Checks created commands
             res = client.get(f"/v1/studies/{internal_study_id}/commands")
             commands = res.json()
-            # First command is created automatically to respect owners, we ignore it.
-            assert len(commands) == 2
-            assert commands[1]["action"] == "create_user_resource"
-            assert commands[1]["args"] == {
-                "data": {"path": "somewhere/something.txt", "resource_type": "file", "content": "Goodbye Cruel World!"}
+            assert len(commands) == 1
+            assert commands[0]["action"] == "create_user_resource"
+            assert commands[0]["args"] == {
+                "data": {
+                    "path": "somewhere/something.txt",
+                    "resource_type": "file",
+                    "blob_id": "fb167339d154528437d39c6d79e734b0ac44e095070e8355f53f5b80c71783bb",
+                }
             }
 
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
@@ -562,7 +566,6 @@ class TestFetchRawData:
         assert res.status_code == 200
 
 
-@pytest.mark.integration_test
 class TestFetchOriginalFile:
     """
     Check the retrieval of a file from Study folder
@@ -573,7 +576,7 @@ class TestFetchOriginalFile:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Test the `get_study_file` endpoint for fetching for a file in its original format.
 

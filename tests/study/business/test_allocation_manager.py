@@ -10,11 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from antares.study.version import StudyVersion
 
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.model.hydro_allocation_model import (
@@ -22,26 +20,11 @@ from antarest.study.business.model.hydro_allocation_model import (
     HydroAllocationArea,
     HydroAllocationMatrix,
 )
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.model import STUDY_VERSION_8_6
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-def create_study_interface(tree: FileStudyTree, version: StudyVersion = STUDY_VERSION_8_6) -> StudyInterface:
-    """
-    Creates a mock study interface which returns the provided study tree.
-    """
-    file_study = Mock(spec=FileStudy)
-    file_study.tree = tree
-    study = Mock(StudyInterface)
-    study.get_files.return_value = file_study
-    study.version = version
-    file_study.config.version = version
-    return study
 
 
 def _set_up(command_context: CommandContext, study: FileStudy) -> None:
@@ -122,7 +105,9 @@ def test_error_cases() -> None:
         HydroAllocationMatrix.from_hydro_allocations({})
 
 
-def test_get_allocation_matrix(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_get_allocation_matrix(
+    manager: AllocationManager, empty_study_920: FileStudy, command_context: CommandContext
+) -> None:
     _set_up(command_context, empty_study_920)
 
     study = FileStudyInterface(empty_study_920)
@@ -143,7 +128,9 @@ def test_get_allocation_matrix(manager, empty_study_920: FileStudy, command_cont
     )
 
 
-def test_get_allocation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_get_allocation_for_area(
+    manager: AllocationManager, empty_study_920: FileStudy, command_context: CommandContext
+) -> None:
     _set_up(command_context, empty_study_920)
 
     expected_allocations = {
@@ -170,7 +157,9 @@ def test_get_allocation_for_area(manager, empty_study_920: FileStudy, command_co
         assert allocation == expected_allocations[area_id]
 
 
-def test_set_allocation_for_area(manager, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_set_allocation_for_area(
+    manager: AllocationManager, empty_study_920: FileStudy, command_context: CommandContext
+) -> None:
     _set_up(command_context, empty_study_920)
 
     study = FileStudyInterface(empty_study_920)

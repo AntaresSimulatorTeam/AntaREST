@@ -72,8 +72,14 @@ def test_get_all__general_case(
     study_2 = create_variant_study(name="s2")
     study_3 = create_variant_study(name="s3")
     study_4 = create_variant_study(name="s4")
-    study_5 = create_raw_study(name="s5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = create_raw_study(name="s6", missing=datetime.datetime.now(), workspace=test_workspace)
+    study_5 = create_raw_study(
+        name="s5",
+        missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    study_6 = create_raw_study(
+        name="s6", missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), workspace=test_workspace
+    )
     study_7 = create_raw_study(name="s7", missing=None, workspace=test_workspace)
     study_8 = create_raw_study(name="s8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
@@ -144,8 +150,18 @@ def test_get_all__incompatible_case(
     study_2 = create_variant_study(id=2, name="study-2")
     study_3 = create_variant_study(id=3, name="study-3")
     study_4 = create_variant_study(id=4, name="study-4")
-    study_5 = create_raw_study(id=5, name="study-5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = create_raw_study(id=6, name="study-6", missing=datetime.datetime.now(), workspace=test_workspace)
+    study_5 = create_raw_study(
+        id=5,
+        name="study-5",
+        missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    study_6 = create_raw_study(
+        id=6,
+        name="study-6",
+        missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        workspace=test_workspace,
+    )
     study_7 = create_raw_study(id=7, name="study-7", missing=None, workspace=test_workspace)
     study_8 = create_raw_study(id=8, name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
@@ -657,7 +673,9 @@ def test_get_all__study_existence_filter(
 
     study_1 = create_variant_study(id=1, name="study-1")
     study_2 = create_variant_study(id=2, name="study-2")
-    study_3 = create_raw_study(id=3, name="study-3", missing=datetime.datetime.now())
+    study_3 = create_raw_study(
+        id=3, name="study-3", missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    )
     study_4 = create_raw_study(id=4, name="study-4")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
@@ -1224,8 +1242,8 @@ def test_count_studies__general_case(
     study_2 = create_variant_study(id="2", name="study-2")
     study_3 = create_variant_study(id="3", name="study-3")
     study_4 = create_variant_study(id="4", name="study-4")
-    study_5 = create_raw_study(id="5", name="study-5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = create_raw_study(id="6", name="study-6", missing=datetime.datetime.now(), workspace=test_workspace)
+    study_5 = create_raw_study(id="5", name="study-5", missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(id="6", name="study-6", missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), workspace=test_workspace)
     study_7 = create_raw_study(id="7", name="study-7", missing=None, workspace=test_workspace)
     study_8 = create_raw_study(id="8", name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 

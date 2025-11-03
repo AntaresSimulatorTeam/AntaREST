@@ -20,8 +20,9 @@ import pytest
 from httpx._exceptions import HTTPError
 from starlette.testclient import TestClient
 
-from antarest.study.business.binding_constraint_management import ClusterTerm, ConstraintTerm, LinkTerm
+from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
 from tests.integration.prepare_proxy import PreparerProxy
+from tests.integration.utils import duration_threshold
 
 MATRIX_SIZES = {"hourly": 8784, "daily": 366, "weekly": 366}
 
@@ -84,7 +85,6 @@ class TestConstraintTerm:
         assert term.generate_id() == term.data.generate_id()
 
 
-@pytest.mark.unit_test
 class TestBindingConstraints:
     """
     Test the end points related to binding constraints.
@@ -110,7 +110,7 @@ class TestBindingConstraints:
         end = time.time()
         duration = end - start
         # due to new code this should be extremely fast.
-        assert duration < 0.2
+        assert duration < duration_threshold(0.2)
         # asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
         assert res.status_code == 200
@@ -469,7 +469,7 @@ class TestBindingConstraints:
         # Check that the matrix is a daily/weekly matrix
         res = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": f"input/bindingconstraints/{bc_id}", "depth": 1, "formatted": True},  # type: ignore
+            params={"path": f"input/bindingconstraints/{bc_id}", "depth": 1, "formatted": True},
         )
         assert res.status_code == 200, res.json()
         dataframe = res.json()
@@ -735,7 +735,7 @@ class TestBindingConstraints:
                 path = f"input/bindingconstraints/{bc_id}_{term}"
                 res = client.get(
                     f"/v1/studies/{study_id}/raw",
-                    params={"path": path, "depth": 1, "formatted": True},  # type: ignore
+                    params={"path": path, "depth": 1, "formatted": True},
                 )
                 # as we save only the operator matrix, we should have a matrix only for the operator
                 if term != operator:
@@ -980,7 +980,7 @@ class TestBindingConstraints:
                         "path": f"input/bindingconstraints/{bc_id_w_matrix}_{term_alias}",
                         "depth": 1,
                         "formatted": True,
-                    },  # type: ignore
+                    },
                 )
                 # check that update is made if no conflict between the operator and the matrix term alias
                 if term_operator == operator or (operator == "both" and term_operator in ["less", "greater"]):
@@ -1025,7 +1025,7 @@ class TestBindingConstraints:
         # Asserts that the deletion worked
         binding_constraints_list = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": "input/bindingconstraints/bindingconstraints"},  # type: ignore
+            params={"path": "input/bindingconstraints/bindingconstraints"},
         ).json()
         assert len(binding_constraints_list) == 2
         actual_ids = [constraint["id"] for constraint in binding_constraints_list.values()]

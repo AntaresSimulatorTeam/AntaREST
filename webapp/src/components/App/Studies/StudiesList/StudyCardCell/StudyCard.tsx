@@ -18,9 +18,9 @@ import { toError } from "@/utils/fnUtils";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
+import EditorIcon from "@/components/common/icons/EditorIcon";
 import {
   Box,
   Button,
@@ -253,10 +253,12 @@ const StudyCard = memo((props: Props) => {
             textOverflow: "ellipsis",
             overflow: "hidden",
             mt: 1,
+            alignItems: "center",
+            gap: 1,
           }}
         >
-          <PersonOutlineIcon sx={{ color: "text.secondary" }} />
-          <TinyText>{study.owner.name}</TinyText>
+          <EditorIcon />
+          <TinyText>{study.editor}</TinyText>
         </Box>
         <Box
           sx={{
@@ -293,7 +295,6 @@ const StudyCard = memo((props: Props) => {
         </NavLink>
         <Tooltip title={t("studies.moreActions")}>
           <Button
-            id="menu"
             color="primary"
             sx={{ width: "auto", minWidth: 0, p: 0 }}
             onClick={handleMenuOpen}

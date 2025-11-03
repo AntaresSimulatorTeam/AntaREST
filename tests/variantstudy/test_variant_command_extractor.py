@@ -11,11 +11,11 @@
 # This file is part of the Antares project.
 
 
-def test_extract():
+def test_extract() -> None:
     # Already covered by integration test "test_integration_variantmanager_tool"
     pass
 
 
-def test_diff():
+def test_diff() -> None:
     # TODO test diff generation
     pass

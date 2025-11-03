@@ -13,12 +13,15 @@ import pytest
 from checksumdir import dirhash
 from pydantic import ValidationError
 
-from antarest.study.business.model.thermal_cluster_model import ThermalClusterGroup, ThermalClusterUpdate
+from antarest.study.business.model.thermal_cluster_model import (
+    LawOption,
+    LocalTSGenerationBehavior,
+    ThermalClusterGroup,
+    ThermalClusterUpdate,
+)
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    LawOption,
-    LocalTSGenerationBehavior,
     parse_thermal_cluster,
     serialize_thermal_cluster,
 )
@@ -61,7 +64,7 @@ class TestUpdateThermalCluster:
         thermal_config = parse_thermal_cluster(study_version=study.config.version, data=thermal)
         study.config.areas[area_id].thermals.append(thermal_config)
 
-    def test_update_thermal(self, empty_study_810: FileStudy, command_context: CommandContext):
+    def test_update_thermal(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_810
         area_name = "FR"
         area_id = "fr"
@@ -114,7 +117,9 @@ class TestUpdateThermalCluster:
         assert thermal == expected
         assert serialize_thermal_cluster(STUDY_VERSION_8_1, empty_study.config.areas[area_id].thermals[0]) == expected
 
-    def test_update_thermal_cluster_does_not_exist(self, empty_study_810: FileStudy, command_context: CommandContext):
+    def test_update_thermal_cluster_does_not_exist(
+        self, empty_study_810: FileStudy, command_context: CommandContext
+    ) -> None:
         # Set up
         study = empty_study_810
         self._set_up(study, command_context, "fr", "test")
@@ -137,7 +142,7 @@ class TestUpdateThermalCluster:
         hash_after_update = dirhash(study.config.study_path / "input" / "thermal", "md5")
         assert hash_before_update == hash_after_update
 
-    def test_invalid_field_for_version_should_raise_validation_error(self, command_context: CommandContext):
+    def test_invalid_field_for_version_should_raise_validation_error(self, command_context: CommandContext) -> None:
         update_data = ThermalClusterUpdate(nox=12.0)
         with pytest.raises(ValidationError):
             UpdateThermalClusters(

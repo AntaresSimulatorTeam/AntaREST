@@ -29,12 +29,12 @@ from antarest.service_creator import SESSION_ARGS
 TEST_ADMIN_PASS_WORD = "test"
 
 
-def test_password():
+def test_password() -> None:
     assert Password("pwd").check("pwd")
 
 
 class TestInitAdminUser:
-    def test_init_admin_user_nominal(self, db_engine: Engine):
+    def test_init_admin_user_nominal(self, db_engine: Engine) -> None:
         init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
         make_session = sessionmaker(bind=db_engine)
         with make_session() as session:
@@ -52,13 +52,13 @@ class TestInitAdminUser:
             assert role.identity is user
             assert role.group is group
 
-    def test_init_admin_user_redundancy_check(self, db_engine: Engine):
+    def test_init_admin_user_redundancy_check(self, db_engine: Engine) -> None:
         # run first time
         init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
         # run second time
         init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
 
-    def test_init_admin_user_existing_group(self, db_engine: Engine):
+    def test_init_admin_user_existing_group(self, db_engine: Engine) -> None:
         make_session = sessionmaker(bind=db_engine)
         with make_session() as session:
             group = Group(id=GROUP_ID, name=GROUP_NAME)
@@ -66,7 +66,7 @@ class TestInitAdminUser:
             session.commit()
         init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
 
-    def test_init_admin_user_existing_user(self, db_engine: Engine):
+    def test_init_admin_user_existing_user(self, db_engine: Engine) -> None:
         make_session = sessionmaker(bind=db_engine)
         with make_session() as session:
             user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(TEST_ADMIN_PASS_WORD))

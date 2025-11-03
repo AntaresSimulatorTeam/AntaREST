@@ -12,7 +12,7 @@
 import logging
 import os
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from multiprocessing import Pool
 from pathlib import Path
 from unittest import mock
@@ -31,6 +31,7 @@ from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.model import GroupDTO
 from antarest.login.service import LoginService
+from antarest.study.directory_service import DirectoryService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, OwnerInfo, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -41,7 +42,7 @@ from tests.helpers import create_study
 from tests.storage.conftest import SimpleSyncTaskService
 
 
-def build_config(root: Path, desktop_mode=False) -> Config:
+def build_config(root: Path, desktop_mode: bool = False) -> Config:
     return Config(
         desktop_mode=desktop_mode,
         storage=StorageConfig(
@@ -73,6 +74,7 @@ def clean_files() -> None:
 
 def build_study_service(
     raw_study_service: RawStudyService,
+    directory_service: DirectoryService,
     repository: StudyMetadataRepository,
     config: Config,
     user_service: LoginService = Mock(spec=LoginService),
@@ -83,6 +85,7 @@ def build_study_service(
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        directory_service=directory_service,
         user_service=user_service,
         command_context=Mock(),
         repository=repository,
@@ -168,8 +171,7 @@ def study_tree(tmp_path: Path) -> Path:
     return tmp_path
 
 
-@pytest.mark.unit_test
-def test_scan(study_tree: Path):
+def test_scan(study_tree: Path) -> None:
     clean_files()
 
     service = Mock()
@@ -189,9 +191,8 @@ def test_scan(study_tree: Path):
     assert call.args[1] is None
 
 
-@pytest.mark.unit_test
-def test_scan_recursive_false(study_tree: Path, db_session: Session):
-    def count_studies():
+def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
+    def count_studies() -> int:
         return db_session.query(Study).count()
 
     clean_files()
@@ -201,6 +202,7 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session):
     (g / "study.antares").touch()
 
     raw_study_service = Mock(spec=RawStudyService)
+    directory_service = Mock(spec=DirectoryService)
 
     def update_meta(study: Study, fallback_on_default: bool = True) -> Study:
         study.version = "860"
@@ -222,7 +224,7 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session):
     repository = StudyMetadataRepository(session=db_session, cache_service=Mock(spec=ICache))
     repository.delete = Mock()
     config = build_config(study_tree)
-    service = build_study_service(raw_study_service, repository, config)
+    service = build_study_service(raw_study_service, directory_service, repository, config)
     watcher = Watcher(config, service, task_service=SimpleSyncTaskService())
 
     # at the beginning, no study in the database
@@ -247,15 +249,14 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session):
     assert repository.delete.call_count == 0
 
     # We simulate three days went by, now a delete should be triggered
-    in_3_days = datetime.utcnow() + timedelta(days=3)
+    in_3_days = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=3)
     with mock.patch("antarest.study.service.datetime") as mock_datetime:
-        mock_datetime.utcnow.return_value = in_3_days
+        mock_datetime.now.return_value = mock.Mock(replace=mock.Mock(return_value=in_3_days))
         watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
         assert repository.delete.call_count == 1
 
 
-@pytest.mark.unit_test
-def test_partial_scan(tmp_path: Path, caplog: t.Any):
+def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
@@ -324,8 +325,7 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any):
     assert f"TS generation temporary folder found. Will skip further scan of folder {ts_gen_folder}" in caplog.text
 
 
-@pytest.mark.unit_test
-def test_scan_disabled_exception(study_tree: Path):
+def test_scan_disabled_exception(study_tree: Path) -> None:
     clean_files()
 
     # Build a configuration with desktop_mode enabled
@@ -346,8 +346,7 @@ def process(x: int) -> bool:
     return Watcher._get_lock(2)
 
 
-@pytest.mark.unit_test
-def test_get_lock():
+def test_get_lock() -> None:
     clean_files()
 
     pool = Pool()

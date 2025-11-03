@@ -14,7 +14,7 @@ import contextlib
 import typing as t
 
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import StaticPool, create_engine, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -30,7 +30,8 @@ def db_engine_fixture() -> t.Generator[Engine, None, None]:
     Yields:
         An instance of the created SQLite database engine.
     """
-    engine = create_engine("sqlite:///:memory:")
+    # see https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#using-a-memory-database-in-multiple-threads
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     with engine.connect() as conn:
         conn.execute(text("PRAGMA foreign_keys = ON"))
         conn.commit()

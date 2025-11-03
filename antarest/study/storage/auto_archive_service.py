@@ -39,14 +39,15 @@ class AutoArchiveService(IService):
         self.output_service = output_service
         self.config = config
         self.sleep_cycle = self.config.storage.auto_archive_sleeping_time
-        self.max_parallel = self.config.storage.auto_archive_max_parallel
 
     def _try_archive_studies(self) -> None:
         """
         Archive old studies
         Clear old variant snapshots
         """
-        old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
+        old_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
+            days=self.config.storage.auto_archive_threshold_days
+        )
         with db():
             # in this part full `Read` rights over studies are granted to this function
             studies: Sequence[Study] = self.study_service.repository.get_all(
@@ -60,7 +61,7 @@ class AutoArchiveService(IService):
                 and last_activity < old_date
                 and (isinstance(study, VariantStudy) or not study.archived)
             ]
-        for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:
+        for study_id, is_raw_study in study_ids_to_archive:
             try:
                 if is_raw_study:
                     logger.info(
@@ -68,14 +69,19 @@ class AutoArchiveService(IService):
                     )
                     if not self.config.storage.auto_archive_dry_run:
                         with db():
-                            self.study_service.archive(study_id)
+                            task_id = self.study_service.archive(study_id)
+                            # Wait for the archive task to complete before moving to the next study
+                            self.study_service.task_service.await_task(task_id)
                 else:
                     logger.info(
                         f"Auto Archiving variant study {study_id} (dry_run: {self.config.storage.auto_archive_dry_run})"
                     )
                     if not self.config.storage.auto_archive_dry_run:
                         with db():
-                            self.output_service.archive_outputs(study_id)
+                            task_ids = self.output_service.archive_outputs(study_id)
+                            # Wait for all output archive tasks to complete before moving to the next study
+                            for task_id in task_ids:
+                                self.study_service.task_service.await_task(task_id)
             except TaskAlreadyRunning:
                 pass
             except Exception as e:

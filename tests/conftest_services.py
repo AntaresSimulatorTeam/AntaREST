@@ -24,7 +24,10 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from typing_extensions import override
 
+from antarest.blobstore.repository import BlobContentRepository
+from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
@@ -36,6 +39,8 @@ from antarest.eventbus.service import EventBusService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import MatrixService, SimpleMatrixService
+from antarest.study.directory_service import DirectoryService
+from antarest.study.repository import DirectoryRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -49,7 +54,9 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 __all__ = (
     "command_context_fixture",
     "bucket_dir_fixture",
+    "blob_dir_fixture",
     "simple_matrix_service_fixture",
+    "simple_blob_service_fixture",
     "generator_matrix_constants_fixture",
     "uri_resolver_service_fixture",
     "core_cache_fixture",
@@ -62,6 +69,8 @@ __all__ = (
     "raw_study_service_fixture",
     "variant_study_service_fixture",
     "study_storage_service_fixture",
+    "directory_repository_fixture",
+    "directory_service_fixture",
     "study_service_fixture",
 )
 
@@ -70,6 +79,7 @@ class SynchTaskService(ITaskService):
     def __init__(self) -> None:
         self._task_result: t.Optional[TaskResult] = None
 
+    @override
     def add_worker_task(
         self,
         task_type: TaskType,
@@ -80,6 +90,7 @@ class SynchTaskService(ITaskService):
     ) -> t.Optional[str]:
         raise NotImplementedError()
 
+    @override
     def add_task(
         self,
         action: Task,
@@ -92,27 +103,30 @@ class SynchTaskService(ITaskService):
         self._task_result = action(NoopNotifier())
         return str(uuid.uuid4())
 
+    @override
     def status_task(self, task_id: str, with_logs: bool = False) -> TaskDTO:
         return TaskDTO(
             id=task_id,
             name="mock",
             owner=None,
             status=TaskStatus.COMPLETED,
-            creation_date_utc=datetime.datetime.now().isoformat(" "),
+            creation_date_utc=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(" "),
             completion_date_utc=None,
             result=self._task_result,
             logs=None,
         )
 
+    @override
     def list_tasks(self, task_filter: TaskListFilter) -> t.List[TaskDTO]:
         return []
 
+    @override
     def await_task(self, task_id: str, timeout_sec: t.Optional[int] = None) -> None:
         pass
 
 
 @pytest.fixture(name="command_context")
-def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
+def command_context_fixture(matrix_service: MatrixService, blob_service: BlobService) -> CommandContext:
     """
     Fixture for creating a CommandContext object.
 
@@ -126,14 +140,13 @@ def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
     generator_matrix_constants.init_constant_matrices()
     command_context = CommandContext(
-        generator_matrix_constants=generator_matrix_constants,
-        matrix_service=matrix_service,
+        generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
     return command_context
 
 
 @pytest.fixture(name="bucket_dir", scope="session")
-def bucket_dir_fixture(tmp_path_factory: t.Any) -> Path:
+def bucket_dir_fixture(tmp_path_factory: Path) -> Path:
     """
     Fixture that creates a session-level temporary directory named "matrix_store" for storing matrices.
 
@@ -163,6 +176,19 @@ def simple_matrix_service_fixture(bucket_dir: Path) -> SimpleMatrixService:
     """
     matrix_content_repository = MatrixContentRepository(bucket_dir=bucket_dir, format=InternalMatrixFormat.TSV)
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
+
+
+@pytest.fixture(name="blob_dir", scope="session")
+def blob_dir_fixture(tmp_path_factory: t.Any) -> Path:
+    """Same as bucket_dir_fixture for the blob store"""
+    return t.cast(Path, tmp_path_factory.mktemp("blob_store"))
+
+
+@pytest.fixture(name="simple_blob_service", scope="session")
+def simple_blob_service_fixture(blob_dir: Path) -> BlobService:
+    """Same as simple_matrix_service_fixture for blob service"""
+    blob_content_repository = BlobContentRepository(bucket_dir=blob_dir)
+    return BlobService(blob_content_repository=blob_content_repository)
 
 
 @pytest.fixture(name="generator_matrix_constants", scope="session")
@@ -302,6 +328,7 @@ def event_bus_fixture() -> IEventBus:
 def command_factory_fixture(
     generator_matrix_constants: GeneratorMatrixConstants,
     simple_matrix_service: SimpleMatrixService,
+    simple_blob_service: BlobService,
 ) -> CommandFactory:
     """
     Fixture that creates a CommandFactory instance with a session-level scope.
@@ -309,6 +336,7 @@ def command_factory_fixture(
     Args:
         generator_matrix_constants: An instance of the GeneratorMatrixConstants class.
         simple_matrix_service: An instance of the SimpleMatrixService class.
+        simple_blob_service: An instance of the BlobService class.
 
     Returns:
         An instance of the CommandFactory class with the provided dependencies.
@@ -316,6 +344,7 @@ def command_factory_fixture(
     return CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=simple_matrix_service,
+        blob_service=simple_blob_service,
     )
 
 
@@ -422,18 +451,47 @@ def study_storage_service_fixture(
     )
 
 
+@pytest.fixture(name="directory_repository")
+def directory_repository_fixture() -> Mock:
+    """
+    Fixture that creates a Mock instance of DirectoryRepository.
+
+    Returns:
+        A Mock instance of the DirectoryRepository class for directory repository-related testing.
+    """
+    return Mock(spec=DirectoryRepository)
+
+
+@pytest.fixture(name="directory_service")
+def directory_service_fixture(directory_repository: Mock) -> DirectoryService:
+    """
+    Fixture that creates a DirectoryService instance.
+
+    Args:
+        directory_repository: A Mock instance of the DirectoryRepository class.
+
+    Returns:
+        An instance of the DirectoryService class with the provided directory repository.
+    """
+    return DirectoryService(
+        directory_repository=directory_repository,
+    )
+
+
 @pytest.fixture(name="study_service")
 def study_service_fixture(
     raw_study_service: RawStudyService,
     variant_study_service: VariantStudyService,
+    directory_service: DirectoryService,
     command_context: CommandContext,
     event_bus: IEventBus,
     task_service: ITaskService,
     core_config: Config,
-):
+) -> StudyService:
     return StudyService(
         raw_study_service,
         variant_study_service,
+        directory_service,
         command_context,
         Mock(),
         Mock(),

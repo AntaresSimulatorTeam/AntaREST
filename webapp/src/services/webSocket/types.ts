@@ -15,14 +15,14 @@
 import type {
   CommandResultDTO,
   GenericInfo,
-  LaunchJobDTO,
   LaunchJobProgressDTO,
   StudyMetadata,
 } from "@/types/types";
-import type { WsEventType } from "./constants";
 import type { O } from "ts-toolbelt";
 import type { FileDownloadDTO } from "../api/downloads";
+import type { JobDTO } from "../api/launcher/jobs/types";
 import type { TaskDTO, TaskTypeValue } from "../api/tasks/types";
+import type { WsEventType } from "./constants";
 
 /**
  * Copyright (c) 2024, RTE (https://www.rte-france.com)
@@ -78,7 +78,7 @@ interface StudyJobEvent {
     | typeof WsEventType.StudyJobStarted
     | typeof WsEventType.StudyJobCompleted
     | typeof WsEventType.StudyJobStatusUpdate;
-  payload: LaunchJobDTO;
+  payload: JobDTO;
 }
 
 interface StudyEvent {
@@ -91,7 +91,7 @@ interface StudyEvent {
 
 interface StudyDataEvent {
   type: typeof WsEventType.StudyDataEdited;
-  payload: GenericInfo;
+  payload: GenericInfo<string>;
 }
 
 interface MaintenanceModeEvent {

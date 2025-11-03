@@ -24,7 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 )
 
 
-def test_extract_hourly(tmp_path: Path):
+def test_extract_hourly(tmp_path: Path) -> None:
     file = tmp_path / "matrix-daily.txt"
     content = """
 DE	hourly				01_solar	02_wind_on
@@ -53,7 +53,7 @@ DE	hourly				01_solar	02_wind_on
     pd.testing.assert_frame_equal(body, expected)
 
 
-def test_build_hourly(tmp_path: Path):
+def test_build_hourly(tmp_path: Path) -> None:
     exp = pd.DataFrame(
         {
             0: ["DE", "", "", "", ""],
@@ -71,7 +71,7 @@ def test_build_hourly(tmp_path: Path):
     assert exp.values.tolist() == res.values.tolist()
 
 
-def test_extract_daily(tmp_path: Path):
+def test_extract_daily(tmp_path: Path) -> None:
     file = tmp_path / "matrix-daily.txt"
     content = """
 DE	daily			01_solar	02_wind_on
@@ -100,7 +100,7 @@ DE	daily			01_solar	02_wind_on
     )
 
 
-def test_build_daily(tmp_path: Path):
+def test_build_daily(tmp_path: Path) -> None:
     exp = pd.DataFrame(
         {
             0: ["DE", "", "", "", ""],
@@ -117,7 +117,7 @@ def test_build_daily(tmp_path: Path):
     assert exp.values.tolist() == res.values.tolist()
 
 
-def test_extract_weekly(tmp_path: Path):
+def test_extract_weekly(tmp_path: Path) -> None:
     file = tmp_path / "matrix-daily.txt"
     content = """
 DE	weekly	01_solar	02_wind_on
@@ -146,7 +146,7 @@ DE	weekly	01_solar	02_wind_on
     )
 
 
-def test_build_weekly(tmp_path: Path):
+def test_build_weekly(tmp_path: Path) -> None:
     exp = pd.DataFrame(
         {
             0: ["DE", "", "", "", ""],
@@ -161,7 +161,7 @@ def test_build_weekly(tmp_path: Path):
     assert exp.values.tolist() == res.values.tolist()
 
 
-def test_extract_monthly(tmp_path: Path):
+def test_extract_monthly(tmp_path: Path) -> None:
     file = tmp_path / "matrix-monthly.txt"
     content = """
 DE	monthly		01_solar	02_wind_on
@@ -189,7 +189,7 @@ DE	monthly		01_solar	02_wind_on
     )
 
 
-def test_build_monthly(tmp_path: Path):
+def test_build_monthly(tmp_path: Path) -> None:
     exp = pd.DataFrame(
         {
             0: ["DE", "", "", "", ""],
@@ -205,7 +205,7 @@ def test_build_monthly(tmp_path: Path):
     assert exp.values.tolist() == res.values.tolist()
 
 
-def test_extract_annual(tmp_path: Path):
+def test_extract_annual(tmp_path: Path) -> None:
     file = tmp_path / "matrix-daily.txt"
     content = """
 DE	annual	01_solar	02_wind_on
@@ -234,7 +234,7 @@ DE	annual	01_solar	02_wind_on
     )
 
 
-def test_build_annual():
+def test_build_annual() -> None:
     exp = pd.DataFrame(
         {
             0: ["DE", "", "", ""],
@@ -243,5 +243,5 @@ def test_build_annual():
     )
 
     serializer = AnnualMatrixSerializer(area="de")
-    res = serializer.build_date(None)
+    res = serializer.build_date(pd.Index([], dtype=str))
     assert exp.values.tolist() == res.values.tolist()

@@ -25,8 +25,10 @@ from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.model import JSON, PublicMode
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
-from antarest.login.model import GroupDTO
+from antarest.login.model import GroupDTO, Identity
+from antarest.login.utils import get_user_impersonator
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
@@ -63,12 +65,10 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
     def get_study_information(
         self,
         study: Study,
+        folder_path: Optional[str] = None,
     ) -> StudyMetadataDTO:
         additional_data = study.additional_data or StudyAdditionalData()
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        folder: Optional[str] = None
-        if hasattr(study, "folder"):
-            folder = study.folder
 
         owner_info = (
             OwnerInfo(id=study.owner.id, name=study.owner.name)
@@ -92,8 +92,9 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
             public_mode=study.public_mode or PublicMode.NONE,
             horizon=additional_data.horizon,
-            folder=folder,
+            folder=folder_path or study.folder,
             tags=[tag.label for tag in study.tags],
+            directory_id=study.directory_id,
         )
 
     @override
@@ -162,6 +163,22 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         file_node = study.tree.get_node(parts)
 
         return file_node.get_file_content()
+
+    @staticmethod
+    def _get_user_name_from_id(user_id: int) -> str:
+        """
+        Utility method that retrieves a user's name based on their id.
+        Args:
+            user_id: user id (user must exist)
+        Returns: String representing the user's name
+        """
+        user_obj: Identity | None = db.session.get(Identity, user_id)
+        if user_obj is None:
+            return "Unnamed"
+        return str(user_obj.name)
+
+    def _get_current_user_name(self) -> str:
+        return self._get_user_name_from_id(get_user_impersonator())
 
     @override
     def get_study_sim_result(

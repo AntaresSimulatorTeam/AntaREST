@@ -11,10 +11,10 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pandas as pd
-import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -22,7 +22,7 @@ from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.main import JwtSettings
+from antarest.login.auth import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
 from antarest.matrixstore.web import MatrixDTO
@@ -30,11 +30,11 @@ from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
 
-def create_app(service: Mock, auth_disabled=False) -> FastAPI:
+def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     build_ctxt = create_app_ctxt(FastAPI(title=__name__))
 
-    @AuthJWT.load_config
-    def get_config():
+    @AuthJWT.load_config  # type: ignore[misc]
+    def get_config() -> JwtSettings:
         return JwtSettings(
             authjwt_secret_key="super-secret",
             authjwt_token_location=("headers", "cookies"),
@@ -56,7 +56,6 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_create() -> None:
     service = Mock()
     service.create.return_value = "matrix_hash"
@@ -73,7 +72,6 @@ def test_create() -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_get() -> None:
     matrix = MatrixDTO(
         id="123",
@@ -96,7 +94,6 @@ def test_get() -> None:
     service.get.assert_called_once_with("123")
 
 
-@pytest.mark.unit_test
 def test_delete() -> None:
     id = "123"
     service = Mock()
@@ -109,7 +106,6 @@ def test_delete() -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_import() -> None:
     matrix_info = [MatrixInfoDTO(id="123", name="Matrix/matrix.txt")]
     service = Mock()
@@ -127,7 +123,6 @@ def test_import() -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_get_matrices_references() -> None:
     command_id = "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664"
     dataset_id = "data_1"
@@ -203,7 +198,7 @@ def test_get_matrices_references() -> None:
     assert res.json() == data__
 
 
-def creating_json_res_dict(res) -> dict[str, MatrixReferencesDTO]:
+def creating_json_res_dict(res: Any) -> dict[str, MatrixReferencesDTO]:
     res_dict_test = {}
     for matrix_id in res.json():
         description = res.json()[matrix_id]["refs"]

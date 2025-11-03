@@ -11,30 +11,35 @@
 # This file is part of the Antares project.
 
 import re
+from typing import Any
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
+from typing_extensions import override
 
 
 class RegEx:
     """A helper object that compares equal to a regex."""
 
-    def __init__(self, regex):
+    def __init__(self, regex: str) -> None:
         self.regex = regex
         self.match = re.compile(self.regex).fullmatch
 
-    def __eq__(self, other):
+    @override
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, str) and self.match(other)
 
-    def __ne__(self, other):
+    @override
+    def __ne__(self, other: Any) -> bool:
         return not isinstance(other, str) or not self.match(other)
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<RegEx({self.regex!r})>"
 
 
 class TestVersionInfo:
-    def test_version_info(self, app: FastAPI):
+    def test_version_info(self, app: FastAPI) -> None:
         client = TestClient(app, raise_server_exceptions=False)
         res = client.get("/version")
         res.raise_for_status()

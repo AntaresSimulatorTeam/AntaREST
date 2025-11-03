@@ -304,12 +304,6 @@ default:
 - **Default value:** 60
 - **Description:** Number of days after the last study access date before it should be archived.
 
-## **auto_archive_max_parallel**
-
-- **Type:** Integer
-- **Default value:** 5
-- **Description:** Max auto archival tasks in parallel.
-
 ## **snapshot_retention_days**
 
 - **Type:** Integer
@@ -343,6 +337,25 @@ default:
 - **Description:** Matrixstore internal storage format. `tsv` is the Antares studies format but to improve performance
 and to reduce the disk space allocated to these matrices, you can choose other formats supported by the app. 
 It doesn't impact users as it's for internal usage only, matrices will be displayed the same way no matter the format.
+
+
+## **blobstore**
+
+- **Type:** Path
+- **Default value:** `./blobstore`
+- **Description:** Antares Web uses this folder to store user resource of variants instead of storing them in DB.
+
+## **blob_gc_sleeping_time**
+
+- **Type:** Integer
+- **Default value:** 86400 (corresponds to 1 day)
+- **Description:** Time in seconds to sleep between two garbage collections (which means blob suppression).
+
+## **blob_gc_dry_run**
+
+- **Type:** Boolean
+- **Default value:** false
+- **Description:** If `true`, blobs will never be removed. Else, the ones that are unused will.
 
 
 ```yaml
@@ -736,4 +749,23 @@ This section is for the settings of Redis backend, which is used for managing th
 redis:
   host: localhost
   port: 9862
+```
+
+# metrics
+
+This section may be used to enable and export application metrics.
+For now, only exposing metrics in prometheus format is supported.
+
+## prometheus
+
+Enable the exposition of metrics in prometheus format at  `/metrics/` endpoint.
+
+The **multiprocess** option is required to gather metrics from multiple workers.
+If enabled, you **must** also define the environment variable `PROMETHEUS_MULTIPROC_DIR`,
+so that prometheus client can collect metrics from all workers.
+
+```yaml
+metrics:
+  prometheus:
+    multiprocess: true  # Enable prometheus multiprocess mode, to gather metrics from multiple workers.
 ```

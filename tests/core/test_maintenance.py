@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -29,7 +30,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.utils import current_user_context
 
 
-def test_service_without_cache(admin_user) -> None:
+def test_service_without_cache(admin_user: Any) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection

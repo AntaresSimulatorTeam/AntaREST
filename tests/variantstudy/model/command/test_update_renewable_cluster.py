@@ -21,7 +21,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateRenewableCluster:
-    def _set_up(self, study: FileStudy, command_context: CommandContext):
+    def _set_up(self, study: FileStudy, command_context: CommandContext) -> None:
         CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
         CreateArea(area_name="de", command_context=command_context, study_version=study.config.version).apply(study)
         # Modify the general data to put the sutdy in mode clusters
@@ -50,7 +50,7 @@ class TestUpdateRenewableCluster:
             study_version=study.config.version,
         ).apply(study)
 
-    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_870
         self._set_up(study, command_context)
         study_version = study.config.version
@@ -111,7 +111,7 @@ class TestUpdateRenewableCluster:
         assert fr_content == expected_fr_content
         assert de_content == expected_de_content
 
-    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
         self._set_up(study, command_context)
         study_version = study.config.version

@@ -3,7 +3,7 @@ requires = ["setuptools"]
 
 [project]
 name = "AntaREST"
-version = "2.24.0"
+version = "2.25.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -63,10 +63,6 @@ no_implicit_reexport = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = [
-    "unit_test",
-    "integration_test"
-]
 
 [tool.coverage.run]
 omit = ["antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]

@@ -14,14 +14,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import useFormCloseProtection from "@/hooks/useFormCloseProtection";
-import { toError } from "@/utils/fnUtils";
+import { toError, voidFn } from "@/utils/fnUtils";
 import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";
 import UndoIcon from "@mui/icons-material/Undo";
 import {
   Box,
   Button,
-  CircularProgress,
   Divider,
   IconButton,
   setRef,
@@ -32,15 +31,12 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import clsx from "clsx";
-import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   FormProvider,
   useForm,
   useFormContext as useFormContextOriginal,
-  type DeepPartial,
-  type FieldPath,
   type FieldValues,
   type FormState,
   type SubmitErrorHandler,
@@ -48,24 +44,15 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
-import useDebounce from "../../../hooks/useDebounce";
-import useDebouncedState from "../../../hooks/useDebouncedState";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { mergeSxProp } from "../../../utils/muiUtils";
 import CustomScrollbar from "../CustomScrollbar";
-import FormContext from "./FormContext";
 import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
-import { getDirtyValues, isMatch, ROOT_ERROR_KEY, stringToPath, toAutoSubmitConfig } from "./utils";
+import { isMatch, ROOT_ERROR_KEY } from "./utils";
 
-// TODO 1: Remove auto submit support when all forms that use it are migrated to manual submit.
-// TODO 2: Replace built-in validators by Zod (https://react-hook-form.com/docs/useform#resolver).
-
-export interface AutoSubmitConfig {
-  enable: boolean;
-  wait?: number;
-}
+// TODO: Replace built-in validators by Zod (https://react-hook-form.com/docs/useform#resolver).
 
 export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -91,7 +78,6 @@ export interface FormProps<
   hideSubmitButton?: boolean;
   hideFooterDivider?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
-  autoSubmit?: boolean | AutoSubmitConfig;
   allowSubmitOnPristine?: boolean;
   enableUndoRedo?: boolean;
   sx?: SxProps<Theme>;
@@ -117,7 +103,6 @@ function Form<TFieldValues extends FieldValues, TContext>({
   hideSubmitButton,
   hideFooterDivider,
   onStateChange,
-  autoSubmit,
   allowSubmitOnPristine = false,
   enableUndoRedo,
   className,
@@ -130,22 +115,8 @@ function Form<TFieldValues extends FieldValues, TContext>({
 }: FormProps<TFieldValues, TContext>) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
-  const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
-
-  const [showAutoSubmitLoader, setShowAutoSubmitLoader] = useDebouncedState(false, 750);
-
-  const fieldAutoSubmitListeners = useRef<
-    Record<string, ((v: any) => any | Promise<any>) | undefined>
-  >({});
-  const fieldsChangeDuringAutoSubmitting = useRef<Array<FieldPath<TFieldValues>>>([]);
   const lastSubmittedData = useRef<TFieldValues>();
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const submitSuccessfulCb = useRef(() => {});
-
-  const contextValue = useMemo(
-    () => ({ isAutoSubmitEnabled: autoSubmitConfig.enable }),
-    [autoSubmitConfig.enable],
-  );
+  const submitSuccessfulCb = useRef(voidFn);
 
   const formApi = useForm<TFieldValues, TContext>({
     mode: "onChange",
@@ -162,33 +133,19 @@ function Form<TFieldValues extends FieldValues, TContext>({
       : config?.defaultValues,
   });
 
-  const { getValues, setValue, setError, handleSubmit, formState, reset } = formApi;
+  const { getValues, setError, handleSubmit, formState, reset } = formApi;
 
-  // * /!\ `formState` is a proxy
-  const {
-    isSubmitting,
-    isSubmitSuccessful,
-    isDirty,
-    disabled: isDisabled,
-    dirtyFields,
-    errors,
-  } = formState;
+  // * /!\ `formState` is a Proxy
+  const { isSubmitting, isSubmitSuccessful, isDirty, disabled: isDisabled, errors } = formState;
 
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
   const canSubmit = (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
   const rootError = errors.root?.[ROOT_ERROR_KEY];
-  const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
+  const showSubmitButton = !hideSubmitButton;
   const showFooter = showSubmitButton || enableUndoRedo || extraActions || rootError;
 
-  const formApiPlus = useFormApiPlus({
-    formApi,
-    isAutoSubmitEnabled: autoSubmitConfig.enable,
-    fieldAutoSubmitListeners,
-    fieldsChangeDuringAutoSubmitting,
-    // eslint-disable-next-line no-use-before-define
-    submit: () => requestSubmit(),
-  });
+  const formApiPlus = useFormApiPlus(formApi);
 
   const { set: setNewPresent, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApiPlus);
 
@@ -197,24 +154,6 @@ function Form<TFieldValues extends FieldValues, TContext>({
     isDirty,
     disableHook: disableCloseProtection,
   });
-
-  // Auto Submit Loader
-  useEffect(
-    () => {
-      if (autoSubmitConfig.enable) {
-        setShowAutoSubmitLoader(isSubmitting);
-        // Show the loader immediately when the form is submitting
-        if (isSubmitting) {
-          setShowAutoSubmitLoader.flush();
-        }
-      } else if (showAutoSubmitLoader) {
-        setShowAutoSubmitLoader(false);
-        setShowAutoSubmitLoader.flush();
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isSubmitting, autoSubmitConfig.enable],
-  );
 
   // Reset after successful submit.
   // It's recommended to reset inside useEffect after submission: https://react-hook-form.com/api/useform/reset
@@ -225,20 +164,10 @@ function Form<TFieldValues extends FieldValues, TContext>({
         // in case the callback makes a view transition
         executeWithoutFormCloseCheck(submitSuccessfulCb.current);
 
-        const valuesToSetAfterReset = getValues(fieldsChangeDuringAutoSubmitting.current);
-
         // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
         reset(lastSubmittedData.current);
 
         setNewPresent(lastSubmittedData.current);
-
-        fieldsChangeDuringAutoSubmitting.current.forEach((fieldName, index) => {
-          setValue(fieldName, valuesToSetAfterReset[index], {
-            shouldDirty: true,
-          });
-        });
-
-        fieldsChangeDuringAutoSubmitting.current = [];
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -250,79 +179,43 @@ function Form<TFieldValues extends FieldValues, TContext>({
   useEffect(() => setRef(apiRef, formApiPlus));
 
   ////////////////////////////////////////////////////////////////
-  // Submit
-  ////////////////////////////////////////////////////////////////
-
-  const submit = () => {
-    const callback = handleSubmit(function onValid(data, event) {
-      lastSubmittedData.current = data;
-
-      const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<typeof data>;
-
-      const toResolve = [];
-
-      if (autoSubmitConfig.enable) {
-        const listeners = fieldAutoSubmitListeners.current;
-        toResolve.push(
-          ...Object.keys(listeners)
-            .filter((key) => R.hasPath(stringToPath(key), dirtyValues))
-            .map((key) => {
-              const listener = fieldAutoSubmitListeners.current[key];
-              return listener?.(R.path(stringToPath(key), data));
-            }),
-        );
-      }
-
-      const dataArg = { values: data, dirtyValues };
-
-      if (onSubmit) {
-        toResolve.push(onSubmit(dataArg, event));
-      }
-
-      return Promise.all(toResolve)
-        .then((values) => {
-          const submitRes = onSubmit ? R.last(values) : undefined;
-
-          if (isMatch(submitRes, data)) {
-            lastSubmittedData.current = submitRes;
-          }
-
-          submitSuccessfulCb.current = () => {
-            onSubmitSuccessful?.(dataArg, submitRes);
-          };
-        })
-        .catch((err) => {
-          enqueueErrorSnackbar(t("form.submit.error"), toError(err));
-
-          // Any error under the `root` key are not persisted with each submission.
-          // They will be deleted automatically.
-          // cf. https://www.react-hook-form.com/api/useform/seterror/
-          setError(`root.${ROOT_ERROR_KEY}`, {
-            message: axios.isAxiosError(err) ? err.response?.data.description : err?.toString(),
-          });
-        });
-    }, onInvalid);
-
-    return callback();
-  };
-
-  const submitDebounced = useDebounce(submit, autoSubmitConfig.wait);
-
-  const requestSubmit = () => {
-    if (autoSubmitConfig.enable) {
-      submitDebounced();
-    } else {
-      submit();
-    }
-  };
-
-  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    requestSubmit();
+    // Prevent parent forms from also submitting if this form is nested
+    event.stopPropagation();
+
+    const callback = handleSubmit(async function onValid(data, event) {
+      lastSubmittedData.current = data;
+
+      const dirtyValues: Partial<TFieldValues> = getValues(undefined, { dirtyFields: true });
+      const dataArg = { values: data, dirtyValues };
+
+      try {
+        const submitRes = await onSubmit?.(dataArg, event);
+
+        if (isMatch(submitRes, data)) {
+          lastSubmittedData.current = submitRes;
+        }
+
+        submitSuccessfulCb.current = () => {
+          onSubmitSuccessful?.(dataArg, submitRes);
+        };
+      } catch (err) {
+        enqueueErrorSnackbar(t("form.submit.error"), toError(err));
+
+        // Any error under the `root` key are not persisted with each submission.
+        // They will be deleted automatically.
+        // cf. https://www.react-hook-form.com/api/useform/seterror/
+        setError(`root.${ROOT_ERROR_KEY}`, {
+          message: axios.isAxiosError(err) ? err.response?.data.description : err?.toString(),
+        });
+      }
+    }, onInvalid);
+
+    return callback();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -345,28 +238,12 @@ function Form<TFieldValues extends FieldValues, TContext>({
       onSubmit={handleFormSubmit}
       className={clsx("Form", className)}
     >
-      {showAutoSubmitLoader && (
-        <Box
-          className="Form__Loader"
-          sx={{
-            position: "sticky",
-            top: 0,
-            right: 0,
-            height: 0,
-            textAlign: "right",
-          }}
-        >
-          <CircularProgress color="secondary" size={20} sx={{ mr: 1 }} />
-        </Box>
-      )}
       <Box className="Form__Content" sx={{ overflow: "auto" }}>
-        <FormContext.Provider value={contextValue}>
-          {RA.isFunction(children) ? (
-            children(formApiPlus)
-          ) : (
-            <FormProvider {...formApiPlus}>{children}</FormProvider>
-          )}
-        </FormContext.Provider>
+        {RA.isFunction(children) ? (
+          children(formApiPlus)
+        ) : (
+          <FormProvider {...formApiPlus}>{children}</FormProvider>
+        )}
       </Box>
       {showFooter && (
         <Box

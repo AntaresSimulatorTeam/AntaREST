@@ -21,16 +21,14 @@ import pytest
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
-from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
 from antarest.study.model import StudyAdditionalData
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import create_raw_study, with_db_context
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 class TestRawStudyService:
@@ -66,12 +64,12 @@ class TestRawStudyService:
         ],
     )
     @with_db_context
+    @with_admin_user
     def test_export_study_flat(
         self,
         tmp_path: Path,
         raw_study_service: RawStudyService,
-        simple_matrix_service: SimpleMatrixService,
-        generator_matrix_constants: GeneratorMatrixConstants,
+        command_factory: CommandFactory,
         study_service: StudyService,
         # pytest parameters
         outputs: bool,
@@ -98,7 +96,7 @@ class TestRawStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.utcnow(),
+            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             public_mode=PublicMode.FULL,
             owner=user,
             groups=[group],
@@ -111,10 +109,7 @@ class TestRawStudyService:
         # Prepare the RAW Study
         raw_study_service.create(raw_study)
 
-        command_context = CommandContext(
-            generator_matrix_constants=generator_matrix_constants,
-            matrix_service=simple_matrix_service,
-        )
+        command_context = command_factory.command_context
 
         create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)
 

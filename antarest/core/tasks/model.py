@@ -11,10 +11,11 @@
 # This file is part of the Antares project.
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
+from pydantic import field_validator
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String, update
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
@@ -47,7 +48,7 @@ class TaskStatus(Enum):
     RUNNING = 2
     COMPLETED = 3
     FAILED = 4
-    TIMEOUT = 5
+    TIMEOUT = 5  # Not used anymore, kept for backward compat with tasks save in database.
     CANCELLED = 6
 
     def is_final(self) -> bool:
@@ -107,6 +108,20 @@ class TaskListFilter(AntaresBaseModel, extra="forbid"):
     to_creation_date_utc: Optional[float] = None
     from_completion_date_utc: Optional[float] = None
     to_completion_date_utc: Optional[float] = None
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def convert_status_strings_to_ints(cls, v: Any) -> Any:
+        """
+        Convert string values to integers for TaskStatus enum validation.
+
+        Query parameters are received as strings by FastAPI. While Pydantic normally
+        handles string-to-int conversion, it doesn't do this automatically for integer
+        enums within lists, requiring explicit pre-validation conversion.
+        """
+        if isinstance(v, list):
+            return [int(item) if isinstance(item, str) and item.isdigit() else item for item in v]
+        return v
 
 
 class TaskJobLog(Base):
@@ -180,6 +195,11 @@ class TaskJob(Base):
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
     study: Mapped["Study"] = relationship("Study", back_populates="jobs", uselist=False)
 
+    def get_type(self) -> TaskType:
+        if not self.type:
+            raise ValueError("Task type is not set")
+        return TaskType(self.type)
+
     def to_dto(self, with_logs: bool = False) -> TaskDTO:
         result = None
         if self.completion_date:
@@ -252,7 +272,7 @@ def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, Any]) -> None
         TaskJob.status: TaskStatus.FAILED.value,
         TaskJob.result_status: False,
         TaskJob.result_msg: "Task was interrupted due to server restart",
-        TaskJob.completion_date: datetime.utcnow(),
+        TaskJob.completion_date: datetime.now(timezone.utc).replace(tzinfo=None),
     }
     orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
     make_session = sessionmaker(bind=engine, **session_args)

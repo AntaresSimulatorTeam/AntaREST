@@ -26,7 +26,7 @@ import type { UseFormReset } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 function SearchStudies() {
-  const searchValue = useAppSelector((state) => getStudyFilters(state).inputValue);
+  const searchValue = useAppSelector((state) => getStudyFilters(state).search);
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
   const defaultValues = { search: searchValue };
@@ -36,7 +36,7 @@ function SearchStudies() {
   ////////////////////////////////////////////////////////////////
 
   const setSearchValue = (newValue = "") => {
-    dispatch(updateStudyFilters({ inputValue: newValue }));
+    dispatch(updateStudyFilters({ search: newValue }));
   };
 
   ////////////////////////////////////////////////////////////////

@@ -55,7 +55,6 @@ def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
     link_manager.create_link(study, Link(area1="area1", area2="area2"))
 
 
-@pytest.mark.unit_test
 def test_create_configuration(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
@@ -93,7 +92,6 @@ def test_create_configuration(
     }
 
 
-@pytest.mark.unit_test
 def test_delete_xpansion_configuration(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
     """
     Test the deletion of a configuration.
@@ -112,7 +110,6 @@ def test_delete_xpansion_configuration(xpansion_manager: XpansionManager, empty_
         study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
 
-@pytest.mark.unit_test
 def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
     """
     Test the retrieval of the xpansion settings.
@@ -150,7 +147,6 @@ def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_81
     }
 
 
-@pytest.mark.unit_test
 def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
     """
     Test the retrieval of the xpansion settings.
@@ -196,7 +192,6 @@ def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study
     assert actual.model_dump(by_alias=True) == expected
 
 
-@pytest.mark.unit_test
 def test_add_candidate(
     link_manager: LinkManager,
     area_manager: AreaManager,
@@ -251,7 +246,6 @@ def test_add_candidate(
     assert actual == candidates
 
 
-@pytest.mark.unit_test
 def test_get_candidate(
     link_manager: LinkManager,
     area_manager: AreaManager,
@@ -286,7 +280,6 @@ def test_get_candidate(
     assert xpansion_manager.get_candidate(study, cdt_2["name"]) == XpansionCandidate(**cdt_2)
 
 
-@pytest.mark.unit_test
 def test_get_candidates(
     link_manager: LinkManager,
     area_manager: AreaManager,
@@ -320,7 +313,6 @@ def test_get_candidates(
     assert xpansion_manager.get_candidates(study) == [XpansionCandidate(**cdt_1), XpansionCandidate(**cdt_2)]
 
 
-@pytest.mark.unit_test
 def test_update_candidates(
     link_manager: LinkManager,
     area_manager: AreaManager,
@@ -355,7 +347,6 @@ def test_update_candidates(
     assert xpansion_manager.get_candidate(study, candidate_name=cdt_1["name"]) == XpansionCandidate(**cdt_2)
 
 
-@pytest.mark.unit_test
 def test_delete_candidate(
     link_manager: LinkManager,
     area_manager: AreaManager,
@@ -392,7 +383,6 @@ def test_delete_candidate(
     assert xpansion_manager.get_candidates(study) == [XpansionCandidate(**cdt_2)]
 
 
-@pytest.mark.unit_test
 def test_update_constraints(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
@@ -414,7 +404,6 @@ def test_update_constraints(
     assert actual_settings.additional_constraints == ""
 
 
-@pytest.mark.unit_test
 def test_update_constraints_via_the_front(xpansion_manager: XpansionManager, empty_study_880: FileStudy) -> None:
     study = FileStudyInterface(empty_study_880)
     xpansion_manager.create_xpansion_configuration(study)
@@ -444,7 +433,6 @@ def test_update_constraints_via_the_front(xpansion_manager: XpansionManager, emp
     assert "additional-constraints" not in json_content
 
 
-@pytest.mark.unit_test
 def test_update_weights_via_the_front(xpansion_manager: XpansionManager, empty_study_880: FileStudy) -> None:
     study = FileStudyInterface(empty_study_880)
     xpansion_manager.create_xpansion_configuration(study)
@@ -474,7 +462,6 @@ def test_update_weights_via_the_front(xpansion_manager: XpansionManager, empty_s
     assert "yearly-weights" not in json_content
 
 
-@pytest.mark.unit_test
 def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -525,7 +512,6 @@ def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface)
     xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
 
 
-@pytest.mark.unit_test
 def test_get_single_constraints(xpansion_manager: XpansionManager, empty_study_870: FileStudy) -> None:
     study = FileStudyInterface(empty_study_870)
     xpansion_manager.create_xpansion_configuration(study)
@@ -543,7 +529,6 @@ def test_get_single_constraints(xpansion_manager: XpansionManager, empty_study_8
     )
 
 
-@pytest.mark.unit_test
 def test_get_settings_without_sensitivity(xpansion_manager: XpansionManager, empty_study_870: FileStudy) -> None:
     study = FileStudyInterface(empty_study_870)
     xpansion_manager.create_xpansion_configuration(study)
@@ -553,7 +538,6 @@ def test_get_settings_without_sensitivity(xpansion_manager: XpansionManager, emp
     xpansion_manager.get_xpansion_settings(study)
 
 
-@pytest.mark.unit_test
 def test_get_all_constraints(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -574,7 +558,6 @@ def test_get_all_constraints(xpansion_manager: XpansionManager, study: StudyInte
     ]
 
 
-@pytest.mark.unit_test
 def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -604,7 +587,6 @@ def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> N
     } == study.get_files().tree.get(["user", "expansion", "capa", filename2])
 
 
-@pytest.mark.unit_test
 def test_delete_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -626,7 +608,6 @@ def test_delete_capa(xpansion_manager: XpansionManager, study: StudyInterface) -
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
 
 
-@pytest.mark.unit_test
 def test_get_single_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -647,7 +628,6 @@ def test_get_single_capa(xpansion_manager: XpansionManager, study: StudyInterfac
         xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
 
-@pytest.mark.unit_test
 def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -666,7 +646,6 @@ def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) 
 
 
 @pytest.mark.parametrize("optional_folder", [True, False])
-@pytest.mark.unit_test
 def test_adequacy_criterion(
     area_manager: AreaManager, xpansion_manager: XpansionManager, study: StudyInterface, optional_folder: bool
 ) -> None:

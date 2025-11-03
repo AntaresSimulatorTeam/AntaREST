@@ -21,7 +21,7 @@ import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import NumberFE from "@/components/common/fieldEditors/NumberFE";
 import NumberSelectionsFE from "@/components/common/fieldEditors/NumberSelectionsFE";
-import type { ControlPlus, SubmitHandlerPlus } from "@/components/common/Form/types";
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import useConfirm from "@/hooks/useConfirm";
 import type {
   AdditionalConstraint,
@@ -31,7 +31,7 @@ import { HOURS_IN } from "@/utils/date/constants";
 import { Box, Button, ButtonGroup, Divider } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useRef, useState } from "react";
-import { useWatch } from "react-hook-form";
+import { useWatch, type Control } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { validateOccurrences } from "../utils";
 import ColumnsResize from "./ColumnsResize";
@@ -47,7 +47,7 @@ import {
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  control: ControlPlus<AdditionalConstraint>;
+  control: Control<AdditionalConstraint>;
   occurrences: AdditionalConstraintOccurrences;
   onEdit: (occurrences: AdditionalConstraintOccurrences) => void;
 }

@@ -18,11 +18,12 @@ import { useOutletContext } from "react-router";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
+import type { GridColumn } from "@glideapps/glide-data-grid";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import TableForm from "../../../../../../../common/TableForm";
+import DataGridForm from "../../../../../../../common/DataGridForm";
 import CreateDistrictDialog from "./CreateDistrictDialog";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import { updateStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
@@ -37,9 +38,16 @@ function Districts() {
   const [createDistrictDialogOpen, setCreateDistrictDialogOpen] = useState(false);
   const [updateDistrictDialogOpen, setUpdateDistrictDialogOpen] = useState(false);
 
-  const columns = useMemo(() => Object.keys(districtsById).map((id) => id), [districtsById]);
+  const columns = useMemo<Array<GridColumn & { id: string }>>(
+    () =>
+      Object.keys(districtsById).map((id) => ({
+        id,
+        title: districtsById[id].name,
+      })),
+    [districtsById],
+  );
 
-  const defaultValues = useMemo(() => {
+  const defaultData = useMemo(() => {
     const districts = Object.values(districtsById);
 
     return areas.reduce(
@@ -129,15 +137,16 @@ function Districts() {
       </Box>
       <Box sx={{ flexGrow: 1, overflow: "hidden" }}>
         {columns.length > 0 && (
-          <TableForm
-            key={JSON.stringify(defaultValues)}
-            defaultValues={defaultValues}
-            tableProps={{
-              columns,
-              colHeaders: (_, colName) => districtsById[colName].name,
-              selectionMode: "single",
-            }}
+          <DataGridForm
+            key={JSON.stringify(defaultData)}
+            defaultData={defaultData}
+            columns={columns}
             onSubmit={handleSubmit}
+            rowMarkers={{
+              kind: "clickable-string",
+              getTitle: (index) => areas[index].name,
+              width: 150,
+            }}
           />
         )}
       </Box>

@@ -164,7 +164,7 @@ class TestCreateArea:
         assert output.status, output.message
 
         create_area_command: ICommand = CreateArea(
-            area_name=area_name, command_context=command_context, metadata={}, study_version=study_version
+            area_name=area_name, command_context=command_context, study_version=study_version
         )
         output = create_area_command.apply(study_data=empty_study)
         assert not output.status

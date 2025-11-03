@@ -18,7 +18,7 @@ class TestConfigPlaylist:
     Test the end points related to the playlist.
     """
 
-    def test_nominal_case(self, client: TestClient, user_access_token: str):
+    def test_nominal_case(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         base_study_res = client.post("/v1/studies?name=foo")

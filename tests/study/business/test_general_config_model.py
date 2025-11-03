@@ -23,7 +23,7 @@ from antarest.study.business.model.config.general_model import (
 from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_7_1, STUDY_VERSION_7_2
 
 
-def test_general_config_default_values():
+def test_general_config_default_values() -> None:
     config = GeneralConfig()
     initialize_default_values(config, version=STUDY_VERSION_7_0)
     assert config.filtering is False
@@ -47,7 +47,7 @@ def test_general_config_default_values():
 )
 def test_config_version_validation(
     invalid_versions: List[StudyVersion], valid_versions: List[StudyVersion], fields: dict[str, Any]
-):
+) -> None:
     """
     Check that the presence of the fields raise an error for "invalid_versions", but not for "valid_versions"
     """

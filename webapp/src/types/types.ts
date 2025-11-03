@@ -23,8 +23,8 @@ export interface IdentityDTO<T extends IdType = string> {
 
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 
-export interface GenericInfo {
-  id: IdType;
+export interface GenericInfo<T extends IdType = IdType> {
+  id: T;
   name: string;
 }
 
@@ -44,6 +44,8 @@ export enum StudyType {
 
 export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;
+  editor: string;
+  author: string;
   type: StudyType;
   created: string;
   updated: string;
@@ -64,6 +66,8 @@ export interface StudyMetadata {
   creationDate: string;
   modificationDate: string;
   owner: StudyMetadataOwner;
+  editor: string;
+  author: string;
   type: StudyType;
   version: string;
   workspace: string;
@@ -128,61 +132,6 @@ export interface VariantTreeDTO {
 export interface VariantTree {
   node: StudyMetadata;
   children: VariantTree[];
-}
-
-export interface AdequacyPatchParams {
-  legacy?: boolean;
-}
-
-export interface XpansionParams {
-  enabled: boolean;
-  sensitivity_mode?: boolean;
-  output_id?: string;
-}
-
-export interface LaunchOptions {
-  xpansion?: XpansionParams;
-  xpansion_r_version?: boolean;
-  nb_cpu?: number;
-  time_limit?: number;
-  post_processing?: boolean;
-  adequacy_patch?: AdequacyPatchParams;
-  output_suffix?: string;
-  other_options?: string;
-  auto_unzip?: boolean;
-  archive_output?: boolean;
-}
-
-export type JobStatus = "running" | "pending" | "success" | "failed";
-
-export interface LaunchJob {
-  id: string;
-  studyId: string;
-  status: JobStatus;
-  creationDate: string;
-  completionDate: string;
-  launcherParams?: LaunchOptions;
-  msg: string;
-  outputId: string;
-  exitCode: number;
-  ownerId: number;
-  ownerName: string;
-}
-
-export interface LaunchJobDTO {
-  id: string;
-  study_id: string;
-  status: JobStatus;
-  creation_date: string;
-  completion_date: string;
-  launcher_params: string;
-  msg: string;
-  output_id: string;
-  exit_code: number;
-  owner: {
-    id: number;
-    name: string;
-  };
 }
 
 export interface LaunchJobProgressDTO {
@@ -552,6 +501,12 @@ export interface UpdateAreaUi {
   layerColor: AreaLayerColor;
 }
 
+export interface AreaUIUpdatePayload {
+  x: number;
+  y: number;
+  color_rgb: number[];
+}
+
 export interface AreaCreationDTO {
   name: string;
   type: object;
@@ -573,6 +528,7 @@ export interface TaskView {
   type: TaskTypeValue | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
   userName?: string;
+  launcher?: string;
 }
 
 export type ValidationReturn = string | true;

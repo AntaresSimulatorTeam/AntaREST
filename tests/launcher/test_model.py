@@ -120,7 +120,8 @@ class TestJobResult:
         with db_session as db:
             # Update the job result with the owner
             user: t.Optional[Identity] = db.get(Identity, owner_id)
-            job_result = db.get(JobResult, job_result_id)
+            job_result: t.Optional[JobResult] = db.get(JobResult, job_result_id)
+            assert job_result is not None
             job_result.owner = user
             db.commit()
 

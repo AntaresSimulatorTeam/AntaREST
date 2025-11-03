@@ -44,7 +44,13 @@ class TestMatrixRepository:
     def test_db_lifecycle(self, db_session: Session) -> None:
         with db_session:
             repo = MatrixRepository(db_session)
-            m = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
+            m = Matrix(
+                id="hello",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
+            )
             repo.save(m)
             assert m.id
             assert m == repo.get(m.id)
@@ -84,9 +90,21 @@ class TestMatrixRepository:
 
             dataset_repo = MatrixDataSetRepository(session=db_session)
 
-            m1 = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
+            m1 = Matrix(
+                id="hello",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
+            )
             repo.save(m1)
-            m2 = Matrix(id="world", width=0, height=0, created_at=datetime.datetime.now(), version=0)
+            m2 = Matrix(
+                id="world",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
+            )
             repo.save(m2)
 
             dataset = MatrixDataSet(
@@ -94,8 +112,8 @@ class TestMatrixRepository:
                 public=True,
                 owner_id=user.id,
                 groups=[group],
-                created_at=datetime.datetime.now(),
-                updated_at=datetime.datetime.now(),
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             )
 
             matrix_relation = MatrixDataSetRelation(name="m1")
@@ -131,9 +149,21 @@ class TestMatrixRepository:
             user2 = user_repo.save(User(name="hello", password=Password("world  ")))
 
             repo = MatrixRepository(session=db_session)
-            m1 = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
+            m1 = Matrix(
+                id="hello",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
+            )
             repo.save(m1)
-            m2 = Matrix(id="world", width=0, height=0, created_at=datetime.datetime.now(), version=0)
+            m2 = Matrix(
+                id="world",
+                width=0,
+                height=0,
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                version=0,
+            )
             repo.save(m2)
 
             dataset_repo = MatrixDataSetRepository(session=db_session)
@@ -142,8 +172,8 @@ class TestMatrixRepository:
                 name="some name",
                 public=True,
                 owner_id=user1.id,
-                created_at=datetime.datetime.now(),
-                updated_at=datetime.datetime.now(),
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             )
             matrix_relation = MatrixDataSetRelation(name="m1")
             matrix_relation.matrix_id = "hello"
@@ -157,8 +187,8 @@ class TestMatrixRepository:
                 name="some name 2",
                 public=False,
                 owner_id=user2.id,
-                created_at=datetime.datetime.now(),
-                updated_at=datetime.datetime.now(),
+                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             )
             matrix_relation = MatrixDataSetRelation(name="m1")
             matrix_relation.matrix_id = "hello"
@@ -187,7 +217,9 @@ class TestMatrixRepository:
 
 
 @contextmanager
-def matrix_repository(temp_path: Path, matrix_format: InternalMatrixFormat):
+def matrix_repository(
+    temp_path: Path, matrix_format: InternalMatrixFormat
+) -> t.Generator[MatrixContentRepository, None, None]:
     try:
         yield MatrixContentRepository(bucket_dir=temp_path.joinpath("matrix-store"), format=matrix_format)
     finally:
@@ -201,6 +233,7 @@ class TestMatrixContentRepository:
         Saves the content of a matrix as a file in the directory and returns its SHA256 hash.
         """
         matrix_format = InternalMatrixFormat(matrix_format)
+        matrix_content_repo: MatrixContentRepository
         with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
             bucket_dir = matrix_content_repo.bucket_dir
 
@@ -230,7 +263,7 @@ class TestMatrixContentRepository:
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
             assert retrieved_matrix.empty
 
-    def test_concurrent_save(self, tmp_path: str):
+    def test_concurrent_save(self, tmp_path: str) -> None:
         """
         When 2 threads (or processes), want to create the same matrix, only one of them
         should actually create it.
@@ -239,6 +272,7 @@ class TestMatrixContentRepository:
         for more chances to generate problems.
         """
         trial_count = 10
+        matrix_content_repo: MatrixContentRepository
         with matrix_repository(Path(tmp_path), matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:
             with multiprocessing.pool.ThreadPool(2) as tp:
                 for i in range(0, trial_count):
@@ -257,6 +291,7 @@ class TestMatrixContentRepository:
         Retrieves the content of a matrix with a given SHA256 hash.
         """
         matrix_format = InternalMatrixFormat(matrix_format)
+        matrix_content_repo: MatrixContentRepository
         with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
             # when the data is saved in the repo
             df_to_save = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
@@ -293,6 +328,7 @@ class TestMatrixContentRepository:
             if repository_format != saved_format:
                 # MatrixContentRepository differs from the one where file were created.
                 # This situation will occur if we change the default format inside the app config.
+                matrix_content_repo: MatrixContentRepository
                 with matrix_repository(tmp_path, repository_format) as matrix_content_repo:
                     data: ArrayData = [[1, 2, 3], [4, 5, 6]]
                     df = pd.DataFrame(data=data, columns=["A", "B", "C"])
@@ -324,6 +360,7 @@ class TestMatrixContentRepository:
 
     @pytest.mark.parametrize("new_matrix_format", ["tsv", "hdf", "parquet", "feather"])
     def test_legacy_matrices(self, tmp_path: Path, new_matrix_format: str) -> None:
+        matrix_content_repo: MatrixContentRepository
         with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
             # Saves a matrix in the legacy format
             legacy_matrix = np.array([[1, 2, 3], [4, 5, 6]])
@@ -342,6 +379,7 @@ class TestMatrixContentRepository:
     def test_null_matrix(self, tmp_path: Path) -> None:
         """Ensures we can read the legacy null matrix"""
         matrix_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        matrix_content_repo: MatrixContentRepository
         with matrix_repository(tmp_path, InternalMatrixFormat.TSV) as matrix_content_repo:
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             matrix_path.write_text("\n")
@@ -352,6 +390,7 @@ class TestMatrixContentRepository:
     def test_null_matrix_mixed_formats(self, tmp_path: Path, new_matrix_format: str) -> None:
         """Ensures we can transition from a null matrix TSV to a new format"""
         matrix_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        matrix_content_repo: MatrixContentRepository
         with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             matrix_path.write_text("\n")

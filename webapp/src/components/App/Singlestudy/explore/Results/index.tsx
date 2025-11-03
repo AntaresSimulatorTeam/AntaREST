@@ -12,6 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import { getJobs } from "@/services/api/launcher/jobs";
+import type { Job } from "@/services/api/launcher/jobs/types";
+import { toError } from "@/utils/fnUtils";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
@@ -34,34 +39,30 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { compareDesc, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useOutletContext } from "react-router-dom";
-import DigestDialog from "@/components/common/dialogs/DigestDialog";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import {
   archiveOutput,
   deleteOutput,
   downloadJobOutput,
-  getStudyJobs,
   getStudyOutputs,
   unarchiveOutput,
 } from "../../../../../services/api/study";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
-import type { LaunchJob, StudyMetadata, StudyOutput } from "../../../../../types/types";
+import type { StudyMetadata, StudyOutput } from "../../../../../types/types";
 import type { EmptyObject } from "../../../../../utils/tsUtils";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
-import { compareDesc, parseISO } from "date-fns";
-import { toError } from "@/utils/fnUtils";
 
 interface OutputDetail {
   name: string;
   creationDate?: string;
   completionDate?: string;
-  job?: LaunchJob;
+  job?: Job;
   output?: StudyOutput;
   archived?: boolean;
   isRunning: boolean;
@@ -74,7 +75,7 @@ interface ShowConfirmDeleteDialog {
 
 interface ShowDigestDialog {
   type: "digest";
-  data: LaunchJob;
+  data: Job;
 }
 
 type DialogState = ShowConfirmDeleteDialog | ShowDigestDialog | EmptyObject;
@@ -92,7 +93,7 @@ function Results() {
   const [dialogState, setDialogState] = useState<DialogState>({});
 
   const { data: studyJobs, isLoading: studyJobsLoading } = usePromiseWithSnackbarError(
-    () => getStudyJobs(study.id),
+    () => getJobs({ studyId: study.id }),
     {
       errorMessage: t("results.error.jobs"),
       deps: [study.id],
@@ -116,7 +117,7 @@ function Results() {
     }
 
     const outputMap = new Map<string, OutputDetail>();
-    const jobsByOutputId = new Map<string, LaunchJob>();
+    const jobsByOutputId = new Map<string, Job>();
 
     studyJobs.forEach((job) => {
       if (job.outputId) {
@@ -207,13 +208,13 @@ function Results() {
     reloadOutputs();
   };
 
-  const handleDownload = (job?: LaunchJob) => {
+  const handleDownload = (job?: Job) => {
     if (job) {
       downloadJobOutput(job.id);
     }
   };
 
-  const openDigestDialog = (job: LaunchJob) => {
+  const openDigestDialog = (job: Job) => {
     setDialogState({ type: "digest", data: job });
   };
 

@@ -18,6 +18,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
@@ -33,7 +34,10 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 COMMANDS = [
     pytest.param(
         CommandDTO(
-            action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8
+            action=CommandName.CREATE_AREA.value,
+            args={"area_name": "area_name"},
+            study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_area",
@@ -43,6 +47,7 @@ COMMANDS = [
             action=CommandName.CREATE_AREA.value,
             args=[{"area_name": "area_name"}, {"area_name": "area2"}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_area2",
@@ -104,6 +109,15 @@ COMMANDS = [
         ),
         None,
         id="update_layer",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_LAYER_AREAS.value,
+            args={"layer_id": "layer_id", "area_ids": ["area1", "area2"]},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_layer_areas",
     ),
     pytest.param(
         CommandDTO(
@@ -791,6 +805,7 @@ COMMANDS = [
             action=CommandName.CREATE_USER_RESOURCE.value,
             args=[{"data": {"path": "folder_1", "resource_type": "folder"}}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_user_resource_list",
@@ -1006,6 +1021,22 @@ COMMANDS = [
         None,
         id="replace_hydro_allocation",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_CORRELATION.value,
+            args=[
+                {
+                    "area_id": "fr",
+                    "correlation": {
+                        "correlation": [{"areaId": "be", "coefficient": 2.4}, {"areaId": "fr", "coefficient": 100}]
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_hydro_correlation",
+    ),
 ]
 
 
@@ -1014,11 +1045,16 @@ def command_factory() -> CommandFactory:
     def get_matrix_id(matrix: str) -> str:
         return matrix.removeprefix("matrix://")
 
+    def create_blob(content: bytes) -> str:
+        return "created_blob_id"
+
     matrix_service = Mock(spec=MatrixService, get_matrix_id=get_matrix_id)
+    blob_service = Mock(spec=BlobService, save=create_blob)
 
     return CommandFactory(
         generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
         matrix_service=matrix_service,
+        blob_service=blob_service,
     )
 
 
@@ -1042,13 +1078,12 @@ class TestCommandFactory:
         ["command_dto", "expected_args"],
         COMMANDS,
     )
-    @pytest.mark.unit_test
     def test_command_factory(
         self,
         command_dto: CommandDTO,
         expected_args: Optional[Dict[str, Any]],
         command_factory: CommandFactory,
-    ):
+    ) -> None:
         commands = command_factory.to_command(command_dto=command_dto)
 
         expected_args = expected_args or command_dto.args
@@ -1070,20 +1105,19 @@ class TestCommandFactory:
             assert actual_version == expected_version
 
 
-@pytest.mark.unit_test
-def test_unknown_command():
+def test_unknown_command() -> None:
     with pytest.raises(NotImplementedError):
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
             matrix_service=Mock(spec=MatrixService),
+            blob_service=Mock(spec=BlobService),
         )
         command_factory.to_command(
             command_dto=CommandDTO(action="unknown_command", args={}, study_version=STUDY_VERSION_8_8)
         )
 
 
-@pytest.mark.unit_test
-def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
+def test_parse_create_cluster_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
         version=1,
@@ -1105,8 +1139,7 @@ def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-@pytest.mark.unit_test
-def test_parse_create_cluster_dto_v2(command_factory: CommandFactory):
+def test_parse_create_cluster_dto_v2(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
         version=2,
@@ -1127,7 +1160,7 @@ def test_parse_create_cluster_dto_v2(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
+def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         id="9f01931b-0f18-4477-9ef4-ac682c970d75",
         action=CommandName.CREATE_ST_STORAGE.value,
@@ -1161,7 +1194,7 @@ def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
     assert dto.args["parameters"]["name"] == "battery storage_2 candidate"
 
 
-def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
+def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
         version=1,
@@ -1181,7 +1214,7 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
+def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
         version=2,
@@ -1198,7 +1231,7 @@ def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
     assert "cluster_name" not in dto.args
 
 
-def test_parse_create_link_dto_v1(command_factory: CommandFactory):
+def test_parse_create_link_dto_v1(command_factory: CommandFactory) -> None:
     for parameters in [{"link-width": 0.56}, None]:  # legacy cases
         dto = CommandDTO(
             action=CommandName.CREATE_LINK.value,
@@ -1217,7 +1250,7 @@ def test_parse_create_link_dto_v1(command_factory: CommandFactory):
             assert dto.args["parameters"]["linkWidth"] == 0.56
 
 
-def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory):
+def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_BINDING_CONSTRAINT.value,
         args=[
@@ -1255,7 +1288,7 @@ def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory)
     }
 
 
-def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory):
+def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
         args={
@@ -1286,7 +1319,7 @@ def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory)
     }
 
 
-def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory):
+def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
         args={
@@ -1321,7 +1354,7 @@ def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory
     }
 
 
-def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory):
+def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
         args={"id": "id"},
@@ -1337,7 +1370,7 @@ def test_parse_legacy_command_remove_binding_constraint(command_factory: Command
     assert dto.args == {"ids": ["id"]}
 
 
-def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
+def test_parse_update_scenario_builder_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_SCENARIO_BUILDER.value,
         version=1,
@@ -1369,7 +1402,7 @@ def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
     }
 
 
-def test_parse_legacy_command_update_comments(command_factory: CommandFactory):
+def test_parse_legacy_command_update_comments(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_COMMENTS.value,
         args={"comments": "new comment"},
@@ -1384,7 +1417,7 @@ def test_parse_legacy_command_update_comments(command_factory: CommandFactory):
     assert dto.args == {"comments": "new comment"}
 
 
-def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
+def test_parse_legacy_command_update_playlist(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_PLAYLIST.value,
         args={
@@ -1405,7 +1438,7 @@ def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
     assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}
 
 
-def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory):
+def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory) -> None:
     """Test conversion from v1 format (area_ui) to v2 format (parameters)"""
     dto = CommandDTO(
         action=CommandName.UPDATE_AREA_UI.value,
@@ -1442,7 +1475,7 @@ def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory):
     assert "area_ui" not in dto.args
 
 
-def test_update_area_ui_invalid_layer(command_factory: CommandFactory):
+def test_update_area_ui_invalid_layer(command_factory: CommandFactory) -> None:
     """Test that invalid layer value raises validation error"""
     dto = CommandDTO(
         action=CommandName.UPDATE_AREA_UI.value,
@@ -1458,7 +1491,7 @@ def test_update_area_ui_invalid_layer(command_factory: CommandFactory):
         command_factory.to_command(dto)
 
 
-def test_parse_legacy_command_create_district(command_factory: CommandFactory):
+def test_parse_legacy_command_create_district(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_DISTRICT.value,
         args={
@@ -1514,7 +1547,7 @@ def test_parse_legacy_command_create_district(command_factory: CommandFactory):
     }
 
 
-def test_parse_legacy_command_update_district(command_factory: CommandFactory):
+def test_parse_legacy_command_update_district(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.UPDATE_DISTRICT.value,
         args={"id": "id", "filter_items": ["a"]},
@@ -1528,3 +1561,40 @@ def test_parse_legacy_command_update_district(command_factory: CommandFactory):
     assert dto.action == "update_district"
     assert dto.version == 2
     assert dto.args == {"parameters": {"areas": ["a"]}, "id": "id"}
+
+
+def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory) -> None:
+    """Test that version 1 format (with metadata field) can still be loaded and metadata is dropped."""
+    dto = CommandDTO(
+        action=CommandName.CREATE_AREA.value,
+        args={"area_name": "test_area", "metadata": {"country": "FR", "tag": "test"}},
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_area"
+    assert dto.version == 2
+    # The metadata should be dropped and not stored in the converted command
+    assert dto.args == {"area_name": "test_area"}
+    assert "metadata" not in dto.args
+
+
+def test_parse_legacy_create_user_resource_command(command_factory: CommandFactory):
+    """Test that version 1 format (with content field) can still be loaded."""
+    dto = CommandDTO(
+        action=CommandName.CREATE_USER_RESOURCE.value,
+        args={"data": {"path": "folder_1", "resource_type": "file", "content": b"Hello World !"}},
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "create_user_resource"
+    assert dto.version == 2
+    # Ensures the content was transformed into a blob_id when saving it inside the blob store.
+    assert dto.args == {"data": {"blob_id": "created_blob_id", "path": "folder_1", "resource_type": "file"}}

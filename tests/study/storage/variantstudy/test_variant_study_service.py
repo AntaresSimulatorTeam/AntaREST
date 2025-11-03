@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 from antares.study.version import StudyVersion
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
@@ -124,6 +125,7 @@ class TestVariantStudyService:
         variant_study_service: VariantStudyService,
         raw_study_service: RawStudyService,
         simple_matrix_service: SimpleMatrixService,
+        simple_blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         study_service: StudyService,
         # pytest parameters
@@ -154,7 +156,7 @@ class TestVariantStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.utcnow(),
+            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             public_mode=PublicMode.FULL,
             owner=user,
             groups=[group],
@@ -174,6 +176,7 @@ class TestVariantStudyService:
         command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=simple_matrix_service,
+            blob_service=simple_blob_service,
         )
 
         create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=study_version)
@@ -245,6 +248,8 @@ class TestVariantStudyService:
         by a monkeypatch context
         """
 
+        from typing import Optional
+
         class FakeDatetime:
             """
             Class that handle fake timestamp creation/update of variant
@@ -253,8 +258,9 @@ class TestVariantStudyService:
             fake_time: datetime.datetime
 
             @classmethod
-            def now(cls) -> datetime.datetime:
-                """Method used to get the custom timestamp"""
+            def now(cls, tz: Optional[datetime.timezone] = None) -> datetime.datetime:
+                """Method used to get the custom timestamp.
+                Returns naive datetime regardless of tz parameter to match database behavior."""
                 return datetime.datetime(2023, 12, 31)
 
             @classmethod
@@ -295,7 +301,7 @@ class TestVariantStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.utcnow(),
+            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             public_mode=PublicMode.FULL,
             owner=admin_user,
             groups=[group],
@@ -352,11 +358,17 @@ class TestVariantStudyService:
             assert list(variant.iterdir())
 
         # Simulate access for two old snapshots
-        variant_list[0].last_access = datetime.datetime.utcnow() - datetime.timedelta(days=60)
-        variant_list[1].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=6)
+        variant_list[0].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=None
+        ) - datetime.timedelta(days=60)
+        variant_list[1].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=None
+        ) - datetime.timedelta(hours=6)
 
         # Simulate access for a recent one
-        variant_list[2].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        variant_list[2].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=None
+        ) - datetime.timedelta(hours=1)
         db.session.commit()
 
         # Clear old snapshots

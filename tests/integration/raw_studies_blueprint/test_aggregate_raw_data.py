@@ -10,10 +10,12 @@
 #
 # This file is part of the Antares project.
 
+import datetime
 import io
 import shutil
 import zipfile
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -402,7 +404,6 @@ WRONGLY_TYPED_REQUESTS__ALL = [
 ]
 
 
-@pytest.mark.integration_test
 class TestRawDataAggregationMCInd:
     """
     Check the aggregation of Raw Data from studies outputs
@@ -414,9 +415,9 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        params: dict,
+        params: dict[str, Any],
         expected_result_filename: str,
-    ):
+    ) -> None:
         """
         Test the aggregation of areas data
         """
@@ -450,7 +451,7 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Test the aggregation of links data
         """
@@ -487,7 +488,7 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Tests that all formats work and produce the same result
         """
@@ -512,7 +513,7 @@ class TestRawDataAggregationMCInd:
             elif export_format == TableExportFormat.TSV.value:
                 df = pd.read_csv(content, sep="\t")
             else:
-                df = pd.read_excel(content)  # type: ignore
+                df = pd.read_excel(content)
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -528,7 +529,7 @@ class TestRawDataAggregationMCInd:
 
     def test_aggregation_errors(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Requesting a fake mc_year should crash
@@ -609,7 +610,6 @@ class TestRawDataAggregationMCInd:
         assert "economy/mc-ind" in res.json()["description"]
 
 
-@pytest.mark.integration_test
 class TestRawDataAggregationMCAll:
     """
     Check the aggregation of Raw Data from studies outputs in `economy/mc-all`
@@ -621,9 +621,9 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        params: dict,
+        params: dict[str, Any],
         expected_result_filename: str,
-    ):
+    ) -> None:
         """
         Test the aggregation of areas data
         """
@@ -659,7 +659,7 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Test the aggregation of links data
         """
@@ -696,7 +696,7 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """
         Tests that all formats work and produce the same result
         """
@@ -721,7 +721,7 @@ class TestRawDataAggregationMCAll:
             elif export_format == TableExportFormat.TSV.value:
                 df = pd.read_csv(content, sep="\t")
             elif export_format == TableExportFormat.XLSX.value:
-                df = pd.read_excel(content)  # type: ignore
+                df = pd.read_excel(content)
             else:
                 df = pd.read_parquet(content)
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
@@ -790,7 +790,7 @@ class TestRawDataAggregationMCAll:
 
     def test_aggregation_errors(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Requesting matrices that do not exist (daily outputs were not generated) should crash
@@ -875,11 +875,10 @@ class TestRawDataAggregationMCAll:
         assert "economy/mc-all" in res.json()["description"]
 
 
-@pytest.mark.integration_test
 class TestRawDataAggregationColumnsFormatting:
     def test_columns_formatting(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
-    ):
+    ) -> None:
         """
         Check returned columns names are post-processed
         """
@@ -947,7 +946,13 @@ class TestDataAggregationCreationOperations:
         assert res.status_code == 422, "Output 'fake_output_id not found'" in res.json()["description"]
 
         # create a correct aggregated output task and get its id
-        res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
+        creation_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        expiration_time_in_minutes = 123
+        expected_expiration_date = creation_time + datetime.timedelta(minutes=expiration_time_in_minutes)
+        res = client.get(
+            f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind",
+            params={**params, "download_expiration_time": expiration_time_in_minutes},
+        )
         assert res.status_code == 200
         download_id = res.json()
 
@@ -963,7 +968,12 @@ class TestDataAggregationCreationOperations:
 
         # wait for the task to be completed
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-        assert res.status_code == 200, res.json()
+        download_metadata_json = res.json()
+        assert res.status_code == 200, download_metadata_json
+
+        expiration_date = datetime.datetime.fromisoformat(download_metadata_json["expiration_date"])
+        # it's cumbersome to test exact expiration date, we just check it's almost equal
+        assert abs((expiration_date - expected_expiration_date).total_seconds()) < 3
 
         res = client.get(f"v1/downloads/{download_id}")
 

@@ -13,7 +13,7 @@ import functools
 import logging
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
@@ -50,11 +50,17 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
     LogType,
+    SolverPresets,
+    SolverPresetsCreation,
+    SolverPresetsDB,
+    SolverPresetsUpdate,
     XpansionParametersDTO,
+    apply_update_solver_presets,
+    is_version_covered_by_config,
 )
-from antarest.launcher.repository import JobResultRepository
+from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.login.service import LoginService
-from antarest.login.utils import current_user_context, get_current_user
+from antarest.login.utils import current_user_context, get_current_user, require_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -66,6 +72,22 @@ logger = logging.getLogger(__name__)
 class JobNotFound(HTTPException):
     def __init__(self) -> None:
         super(JobNotFound, self).__init__(HTTPStatus.NOT_FOUND)
+
+
+class IncompatibleSolverPresets(HTTPException):
+    def __init__(self, message: str = "Invalid solver presets"):
+        super().__init__(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=message,
+        )
+
+
+class SolverPresetsNotFound(HTTPException):
+    def __init__(self, message: str = "Solver presets not found"):
+        super().__init__(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=message,
+        )
 
 
 class LauncherServiceNotAvailableException(HTTPException):
@@ -87,6 +109,7 @@ class LauncherService:
         output_service: OutputService,
         login_service: LoginService,
         job_result_repository: JobResultRepository,
+        solver_presets_repository: SolverPresetsRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -98,6 +121,7 @@ class LauncherService:
         self.output_service = output_service
         self.login_service = login_service
         self.job_result_repository = job_result_repository
+        self.solver_presets_repository = solver_presets_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -160,23 +184,6 @@ class LauncherService:
                         launcher_params.__getattribute__(ext),
                     )
 
-    def _before_import_hooks(
-        self,
-        job_id: str,
-        study_id: str,
-        study_output_path: Path,
-        launcher_opts: LauncherParametersDTO,
-    ) -> None:
-        for ext in self.extensions:
-            if launcher_opts is not None and getattr(launcher_opts, ext, None) is not None:
-                logger.info(f"Applying extension {ext} before_import_hook on job {job_id}")
-                self.extensions[ext].before_import_hook(
-                    job_id,
-                    study_id,
-                    study_output_path,
-                    getattr(launcher_opts, ext),
-                )
-
     def update(
         self,
         job_uuid: str,
@@ -193,8 +200,7 @@ class LauncherService:
                 job_result.output_id = output_id
                 final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
                 if final_status:
-                    # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                    job_result.completion_date = datetime.utcnow()
+                    job_result.completion_date = datetime.now(timezone.utc).replace(tzinfo=None)
                 self.job_result_repository.save(job_result)
                 self.event_bus.push(
                     Event(
@@ -238,12 +244,21 @@ class LauncherService:
         study_uuid: str,
         launcher: str,
         launcher_parameters: LauncherParametersDTO,
-        study_version: Optional[str] = None,
+        solver_presets_id: Optional[str] = None,
+        version: Optional[str] = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid)
-        solver_version = SolverVersion.parse(study_version or study_info.version)
+        solver_version = SolverVersion.parse(version or study_info.version)
+
+        if solver_presets_id is not None:
+            solver_presets = self.get_solver_presets(solver_presets_id)
+            if not is_version_covered_by_config(solver_presets, solver_version):
+                raise IncompatibleSolverPresets("Solver presets are not compatible with study version")
+            if launcher_parameters.other_options:
+                raise IncompatibleSolverPresets("Cannot use other_options when solver presets are specified")
+            launcher_parameters.other_options = solver_presets.to_cli_options()
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
@@ -519,12 +534,6 @@ class LauncherService:
                 ),
             )
 
-            self._before_import_hooks(
-                job_id,
-                job_result.study_id,
-                output_true_path,
-                job_launch_params,
-            )
             self._save_solver_stats(job_result, output_true_path)
             if additional_logs and not output_is_zipped:
                 for log_name, log_paths in additional_logs.items():
@@ -678,3 +687,62 @@ class LauncherService:
             "progress": 0
         }
         return launch_progress_json.get("progress", 0)
+
+    def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
+        """
+        Create a new solver presets.
+        """
+        solver_presets_id = str(uuid4())
+        solver_presets = SolverPresets.model_validate(
+            {**solver_presets_creation.model_dump(exclude_unset=True), "id": solver_presets_id}
+        )
+        solver_presets_db = SolverPresetsDB.from_model(solver_presets)
+        created_solver_presets_db = self.solver_presets_repository.save(solver_presets_db)
+        return created_solver_presets_db.to_model()
+
+    def get_solver_presets(self, solver_presets_id: str) -> SolverPresets:
+        """
+        Retrieve a solver presets configuration by its ID.
+        """
+        solver_presets_db = self.solver_presets_repository.get(solver_presets_id)
+        if not solver_presets_db:
+            raise SolverPresetsNotFound(f"Solver presets configuration with id '{solver_presets_id}' not found.")
+        return solver_presets_db.to_model()
+
+    def get_solver_presets_list(self) -> List[SolverPresets]:
+        """
+        Retrieve all solver presets.
+        """
+        configs = self.solver_presets_repository.get_all()
+        return [config.to_model() for config in configs]
+
+    def update_solver_presets(self, configuration_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresets:
+        """
+        Update an existing solver presets using SolverPresetsUpdate.
+        """
+        user = require_current_user()
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError()
+
+        solver_presets_db = self.solver_presets_repository.get(configuration_id)
+        if not solver_presets_db:
+            raise SolverPresetsNotFound(configuration_id)
+        # Update only the fields that are provided in the update DTO
+        updated_solver_presets = apply_update_solver_presets(solver_presets_db, solver_presets_update)
+        updated_solver_presets_db = self.solver_presets_repository.save(updated_solver_presets)
+        return updated_solver_presets_db.to_model()
+
+    def delete_solver_presets(self, solver_presets_id: str) -> None:
+        """
+        Delete a solver presets by its ID. Only site administrators can delete configs.
+        """
+        user = require_current_user()
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError()
+
+        solver_presets_db = self.solver_presets_repository.get(solver_presets_id)
+        if not solver_presets_db:
+            raise SolverPresetsNotFound(solver_presets_id)
+
+        logger.info(f"Deleting solver presets {solver_presets_id}")
+        self.solver_presets_repository.delete(solver_presets_id)
