@@ -79,24 +79,29 @@ def parse_changes(release_commits_list):
     return grouped_changes
 
 
-def print_changelog(grouped_changes):
+def mk_changelog_str(grouped_changes):
+    changelog = []
     for category in ["Features", "Bug fixes", "Performances", "Refactorings", "Chore", "Other"]:
         if category in grouped_changes:
-            print(f"### {category}\n")
+            changelog += [f"### {category}\n"]
             for scope, message, pr_number, mbr in grouped_changes[category]:
                 if mbr:
                     badge = " ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)"
                 else:
                     badge = ""
-                print(
+                changelog += [
                     f"* **{scope}**: {message} [`{pr_number}`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/{pr_number}){badge}"
-                )
-            print()
+                ]
+    return "/n".join(changelog)
 
 
-def main(input_text):
+def generate_changelog():
     release_commits_list = get_commit_for_release()
 
     changes_by_category = parse_changes(release_commits_list)
 
-    print_changelog(changes_by_category)
+    return mk_changelog_str(changes_by_category)
+
+
+if __name__ == "__main__":
+    print(generate_changelog())
