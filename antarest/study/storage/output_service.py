@@ -74,14 +74,15 @@ logger = logging.getLogger(__name__)
 def _checks_links_variables_view_coherence(
     output_id: str, available_variables: OutputVariablesList, variable_name: str, area_from_id: str, area_to_id: str
 ) -> None:
+    error_msg = f"The variable {variable_name} does not exist for link {area_from_id} - {area_to_id}."
     link_variables = available_variables.mc_ind.links
     for link_variable in link_variables:
         if link_variable.area_1_name == area_from_id and link_variable.area_2_name == area_to_id:
             if variable_name in link_variable.variables:
                 return
+            raise OutputVariablesViewError(output_id, error_msg)
 
-    msg = f"The variable {variable_name} does not exist for link {area_from_id} - {area_to_id}."
-    raise OutputVariablesViewError(output_id, msg)
+    raise OutputVariablesViewError(output_id, error_msg)
 
 
 def _checks_areas_variables_view_coherence(
@@ -94,7 +95,37 @@ def _checks_areas_variables_view_coherence(
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
 ) -> None:
-    pass
+    error_msg = f"The variable {variable_name} does not exist for area {area_id} and type {type}"
+    area_variables = available_variables.mc_ind.areas
+    for area_variable in area_variables:
+        if area_variable.name == area_id:
+            if type == OutputVariablesType.THERMAL:
+                for thermal_variable in area_variable.thermal_clusters:
+                    if thermal_variable.name == thermal_id:
+                        if variable_name in thermal_variable.variables:
+                            return
+                        raise OutputVariablesViewError(output_id, error_msg)
+
+            elif type == OutputVariablesType.RENEWABLE:
+                for renewable_variable in area_variable.renewable_clusters:
+                    if renewable_variable.name == renewable_id:
+                        if variable_name in renewable_variable.variables:
+                            return
+                        raise OutputVariablesViewError(output_id, error_msg)
+
+            elif type == OutputVariablesType.SHORT_TERM_STORAGE:
+                for sts_variable in area_variable.short_term_storages:
+                    if sts_variable.name == st_storage_id:
+                        if variable_name in sts_variable.variables:
+                            return
+                        raise OutputVariablesViewError(output_id, error_msg)
+
+            else:
+                if variable_name in area_variable.variables:
+                    return
+                raise OutputVariablesViewError(output_id, error_msg)
+
+    raise OutputVariablesViewError(output_id, error_msg)
 
 
 def _checks_variables_view_coherence(
