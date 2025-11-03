@@ -19,6 +19,7 @@ from typing import Any
 from starlette.testclient import TestClient
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
+from tests.integration.utils import duration_threshold
 
 
 def _compare_resource_file(actual: dict[str, Any], res_path: Path) -> None:
@@ -72,7 +73,7 @@ class TestStudySynthesis:
         )
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        assert 0 <= duration <= 0.3, f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.3), f"Duration is {duration} seconds"
 
     def test_variant_study(
         self,
@@ -122,4 +123,4 @@ class TestStudySynthesis:
         )
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        assert 0 <= duration <= 0.2, f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.2), f"Duration is {duration} seconds"

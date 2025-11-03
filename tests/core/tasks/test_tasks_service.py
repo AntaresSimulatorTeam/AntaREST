@@ -753,3 +753,20 @@ def test_task_timeout_this_worker(task_service: TaskJobService) -> None:
             task_service.await_task(task_id, 1)
 
             assert task_service.status_task("a").status == TaskStatus.RUNNING
+
+
+@with_admin_user
+def test_memory_leak_fix(task_service: TaskJobService) -> None:
+    with db():
+
+        def dummy_task(notifier: ITaskNotifier) -> TaskResult:
+            return TaskResult(success=True, message="success")
+
+        task_id = task_service.add_task(dummy_task, "a", TaskType.SCAN, None, None, None)
+
+    with db():
+        task_service.await_task(task_id, 1)
+
+        # accessing an implementation detail, but no other way to check it
+        assert task_id not in task_service.tasks
+        assert task_service.status_task(task_id).status == TaskStatus.COMPLETED
