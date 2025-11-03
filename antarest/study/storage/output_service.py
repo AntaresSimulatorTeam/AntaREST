@@ -730,6 +730,7 @@ class OutputService:
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
+
         # Checks the asked couple `variable name` / `object_id` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)
         _checks_variables_view_coherence(
@@ -755,3 +756,8 @@ class OutputService:
                 renewable_id,
                 st_storage_id,
             )
+
+        # Calls the aggregation with the right arguments
+        # todo
+        # Pivots the dataframe to have the right format
+        # todo
