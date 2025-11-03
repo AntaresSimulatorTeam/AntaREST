@@ -9,6 +9,8 @@ import pathlib
 import re
 import typing as t
 
+from scripts import generate_changelog
+
 try:
     from antarest import __version__
 except ImportError:
@@ -76,7 +78,9 @@ def parse_changelog(change_log: str) -> t.Generator[Token, None, None]:
             raise NotImplementedError(kind, mo.group())
 
 
-def update_changelog(change_log: str, new_version: str, new_date: str) -> t.Generator[Token, None, None]:
+def update_changelog(
+    change_log: str, new_version: str, new_date: str, changelog_txt: str
+) -> t.Generator[Token, None, None]:
     new_title = f"v{new_version} ({new_date})"
 
     first_release_found = False
@@ -94,9 +98,10 @@ def update_changelog(change_log: str, new_version: str, new_date: str) -> t.Gene
             else:
                 # Insert a new release title before the current one
                 yield TitleToken(kind=token.kind, text=new_title)
+                yield Token(changelog_txt)
                 yield NewlineToken()
                 yield NewlineToken()
-                yield NewlineToken()
+
                 yield token
 
         else:
@@ -114,6 +119,9 @@ def upgrade_version(new_version: str, new_date: str) -> None:
     Returns:
 
     """
+    # prepare changelog content
+    changelog_txt = generate_changelog()
+
     # Patching version number
     files_to_patch = [
         (
@@ -165,7 +173,7 @@ def upgrade_version(new_version: str, new_date: str) -> None:
     changelog_path = PROJECT_DIR.joinpath("docs/CHANGELOG.md")
     change_log = changelog_path.read_text(encoding="utf-8")
     with changelog_path.open(mode="w", encoding="utf-8") as fd:
-        for token in update_changelog(change_log, new_version, new_date):
+        for token in update_changelog(change_log, new_version, new_date, changelog_txt):
             print(token, end="", file=fd)
 
     print("The version has been successfully updated.")
