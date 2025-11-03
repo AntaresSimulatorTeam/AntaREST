@@ -22,7 +22,6 @@ from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelationMatrix,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -206,47 +205,47 @@ class FileStudyHydroDao(HydroDao):
     @override
     def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "prepro", area_id, "energy"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "series", area_id, "ror"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "series", area_id, "mod"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
         url = ["input", "hydro", "series", area_id, "mingen"]
-        return self._get_hydro_matrix(url)
+        return self.get_impl().get_matrix(url)
 
     @override
     def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
@@ -292,9 +291,3 @@ class FileStudyHydroDao(HydroDao):
     def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
         file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mingen"])
-
-    def _get_hydro_matrix(self, url: list[str]) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(url)
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()

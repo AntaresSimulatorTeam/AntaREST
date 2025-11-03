@@ -12,6 +12,7 @@
 import typing as t
 from typing import Self
 
+import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
@@ -37,6 +38,7 @@ from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTim
 from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserResourceDao
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if t.TYPE_CHECKING:
     from antarest.blobstore.service import IBlobService
@@ -101,3 +103,8 @@ class FileStudyTreeDao(
     @override
     def save_comments(self, comments: str) -> None:
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
+
+    def get_matrix(self, url: list[str]) -> pd.DataFrame:
+        node = self._file_study.tree.get_node(url)
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
