@@ -171,7 +171,7 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
     return OutputVariablesList.model_validate(variables)
 
 
-def check_variables_view_coherence_and_return_id(
+def check_variables_view_coherence_and_return_aggregation_info(
     output_id: str,
     variable_type: OutputVariablesType,
     variable_name: str,

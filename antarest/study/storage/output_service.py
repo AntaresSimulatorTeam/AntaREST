@@ -42,7 +42,7 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
 )
 from antarest.study.business.output.variables_management import (
-    check_variables_view_coherence_and_return_id,
+    check_variables_view_coherence_and_return_aggregation_info,
     extract_variables_list,
 )
 from antarest.study.model import (
@@ -635,7 +635,7 @@ class OutputService:
 
         # Checks the asked couple `variable name` / `object_id` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)
-        id_to_consider, query_file = check_variables_view_coherence_and_return_id(
+        id_to_consider, query_file = check_variables_view_coherence_and_return_aggregation_info(
             output_id,
             variable_type,
             variable_name,
