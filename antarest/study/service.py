@@ -920,10 +920,8 @@ class StudyService:
             groups=groups,
         )
 
-        # Now that permissions are validated, create the study on filesystem
         raw = self.storage_service.raw_study_service.create(raw)
 
-        # Save to database (permissions already set)
         self._save_study(raw)
 
         self.event_bus.push(
@@ -1407,7 +1405,6 @@ class StudyService:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
             UserHasNotPermissionError: If the user doesn't have permission for the specified groups.
         """
-        # Validate permissions BEFORE importing the study
         owner, groups = self._validate_and_prepare_permissions(group_ids)
 
         sid = str(uuid4())
