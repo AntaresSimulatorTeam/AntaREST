@@ -64,6 +64,13 @@ AVAILABLE_VARIABLES = OutputVariablesList(
         pytest.param(OutputVariablesType.SHORT_TERM_STORAGE, "", "area", None, None, "r", None, "sts", "You provided an renewable/thermal id for short-term storages", id="STS with `st_storage_id`"),
         pytest.param(OutputVariablesType.SHORT_TERM_STORAGE, "", "fr", None, None, None, None, "fake_sts", "The variable '' does not exist for area 'fr' and type 'st_storage'", id="STS does not exist"),
         pytest.param(OutputVariablesType.SHORT_TERM_STORAGE, "fake_var", "fr", None, None, None, None, "01_sts", "The variable 'fake_var' does not exist for area 'fr' and type 'st_storage'", id="STS variable does not exist"),
+        # Links
+        pytest.param(OutputVariablesType.LINK, None, None, "", None, None, None, None, "You should provide both `area_from_id` and `area_to_id` for links", id="Link w/o area_from_id"),
+        pytest.param(OutputVariablesType.LINK, None, None, None, "", None, None, None, "You should provide both `area_from_id` and `area_to_id` for links", id="Link w/o area_to_id"),
+        pytest.param(OutputVariablesType.LINK, None, "area", "a", "b", None, None, None, "You provided an area related id for links", id="Link with area_id"),
+        pytest.param(OutputVariablesType.LINK, None, None, "a", "b", "th", None, None, "You provided an area related id for links", id="Link with thermal_id"),
+        pytest.param(OutputVariablesType.LINK, None, None, "a", "b", None, "renew", None, "You provided an area related id for links", id="Link with renewable_id"),
+        pytest.param(OutputVariablesType.LINK, None, None, "a", "b", None, None, "sts", "You provided an area related id for links", id="Link with st_storage_id"),
     ],
 )
 #fmt: on
