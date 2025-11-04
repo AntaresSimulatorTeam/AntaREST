@@ -44,6 +44,7 @@ AVAILABLE_VARIABLES = OutputVariablesList(
         pytest.param(OutputVariablesType.AREA, "", None, None, None, None, None, None, "You should provide `area_id` for areas", id="Area w/o area_id"),
         pytest.param(OutputVariablesType.AREA, "", "", "area_from_id", None, None, None, None, "You provided an link related id for areas", id="Area with `area_from_id`"),
         pytest.param(OutputVariablesType.AREA, "", "", None, "area_to_id", None, None, None, "You provided an link related id for areas", id="Area with `area_to_id`"),
+        pytest.param(OutputVariablesType.AREA, "a", "fake_area", None, None, None, None, None, "The variable 'a' does not exist for area 'fake_area' and type 'area'", id="Area does not exist"),
         # Thermal
         pytest.param(OutputVariablesType.THERMAL, "", "area", None, None, None, None, None, "You should provide `thermal_id` for thermal clusters", id="Thermal w/o `thermal_id`"),
         pytest.param(OutputVariablesType.THERMAL, "", "area", None, None, "th", "r", None, "You provided an storage/renewable id for thermal clusters", id="Thermal with `renewable_id`"),
