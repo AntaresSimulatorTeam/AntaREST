@@ -2004,10 +2004,8 @@ class StudyService:
         if not current_user:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
-        # Get the owner from the database
         owner = self.user_service.get_user(current_user.impersonator)
 
-        # Validate and collect groups
         groups: List[Group] = []
         for gid in group_ids:
             owned_groups = (g for g in current_user.groups if g.id == gid)

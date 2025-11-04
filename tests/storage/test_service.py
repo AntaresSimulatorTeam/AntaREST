@@ -595,14 +595,12 @@ def test_create_study() -> None:
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(jwt_user):
             service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
-    # Verify that study_service.create was NOT called (permissions checked before filesystem creation)
     study_service.create.assert_not_called()
 
     jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
     with current_user_context(jwt_user):
         service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
 
-    # Now verify that study_service.create was called once
     study_service.create.assert_called_once()
     repository.save.assert_called_once()
     jwt_user.groups = []
@@ -640,8 +638,6 @@ def test_save_metadata() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
 
-    # _save_study now only saves, it doesn't set owner/groups
-    # So we need to pass a study with owner and groups already set
     study_to_save = create_raw_study(
         id=study_id,
         workspace=DEFAULT_WORKSPACE_NAME,
