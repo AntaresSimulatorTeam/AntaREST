@@ -193,3 +193,12 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     }
 
     # Links
+    body = {
+        "type": "link",
+        "variable_name": "FLOW LIN.",
+        "frequency": "hourly",
+        "area_from_id": "de",
+        "area_to_id": "fr",
+    }
+    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data", params=body)
+    assert res.json() == {"data": 336 * [[0.0, 0.0]], "columns": [1, 2]}
