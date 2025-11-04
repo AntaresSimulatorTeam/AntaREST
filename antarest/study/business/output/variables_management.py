@@ -171,7 +171,7 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
     return OutputVariablesList.model_validate(variables)
 
 
-def check_variables_view_coherence(
+def check_variables_view_coherence_and_return_id(
     output_id: str,
     variable_type: OutputVariablesType,
     variable_name: str,
@@ -182,7 +182,7 @@ def check_variables_view_coherence(
     thermal_id: str | None = None,
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
-) -> None:
+) -> tuple[str, QueryFileType]:
     _checks_variables_view_arguments_coherence(
         variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
     )
@@ -191,10 +191,11 @@ def check_variables_view_coherence(
         assert area_from_id is not None
         assert area_to_id is not None
         _checks_links_variables_view_coherence(output_id, available_variables, variable_name, area_from_id, area_to_id)
+        return f"{area_from_id} - {area_to_id}", MCIndLinksQueryFile.VALUES
 
     else:
         assert area_id is not None
-        _checks_areas_variables_view_coherence(
+        file_type = _checks_areas_variables_view_coherence(
             output_id,
             available_variables,
             variable_name,
@@ -204,6 +205,7 @@ def check_variables_view_coherence(
             renewable_id,
             st_storage_id,
         )
+        return area_id, file_type
 
 
 def _checks_links_variables_view_coherence(
@@ -229,7 +231,7 @@ def _checks_areas_variables_view_coherence(
     thermal_id: str | None = None,
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
-) -> None:
+) -> QueryFileType:
     error_msg = f"The variable {variable_name} does not exist for area {area_id} and type {type}"
     area_variables = available_variables.mc_ind.areas
     for area_variable in area_variables:
@@ -238,26 +240,26 @@ def _checks_areas_variables_view_coherence(
                 for thermal_variable in area_variable.thermal_clusters:
                     if thermal_variable.name == thermal_id:
                         if variable_name in thermal_variable.variables:
-                            return
+                            return MCIndAreasQueryFile.DETAILS
                         raise OutputVariablesViewError(output_id, error_msg)
 
             elif variable_type == OutputVariablesType.RENEWABLE:
                 for renewable_variable in area_variable.renewable_clusters:
                     if renewable_variable.name == renewable_id:
                         if variable_name in renewable_variable.variables:
-                            return
+                            return MCIndAreasQueryFile.DETAILS_RES
                         raise OutputVariablesViewError(output_id, error_msg)
 
             elif variable_type == OutputVariablesType.SHORT_TERM_STORAGE:
                 for sts_variable in area_variable.short_term_storages:
                     if sts_variable.name == st_storage_id:
                         if variable_name in sts_variable.variables:
-                            return
+                            return MCIndAreasQueryFile.DETAILS_ST_STORAGE
                         raise OutputVariablesViewError(output_id, error_msg)
 
             else:
                 if variable_name in area_variable.variables:
-                    return
+                    return MCIndAreasQueryFile.VALUES
                 raise OutputVariablesViewError(output_id, error_msg)
 
     raise OutputVariablesViewError(output_id, error_msg)

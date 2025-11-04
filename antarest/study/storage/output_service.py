@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 from typing import BinaryIO, Optional, Sequence
 
+import pandas as pd
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
@@ -40,7 +41,10 @@ from antarest.study.business.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.business.output.variables_management import check_variables_view_coherence, extract_variables_list
+from antarest.study.business.output.variables_management import (
+    check_variables_view_coherence_and_return_id,
+    extract_variables_list,
+)
 from antarest.study.model import (
     ExportFormat,
     MatrixIndex,
@@ -68,6 +72,7 @@ from antarest.study.storage.utils import assert_permission, get_start_date, is_o
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
+DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
 class OutputService:
@@ -630,7 +635,7 @@ class OutputService:
 
         # Checks the asked couple `variable name` / `object_id` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)
-        check_variables_view_coherence(
+        id_to_consider, query_file = check_variables_view_coherence_and_return_id(
             output_id,
             variable_type,
             variable_name,
@@ -644,6 +649,24 @@ class OutputService:
         )
 
         # Calls the aggregation with the right arguments
-        # todo
+        export_format = TableExportFormat.PARQUET
+        download_name = f"aggregated_output_{study_id}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{study_id}' as {export_format} file"
+        download_id = self.aggregate_output_data(
+            study_id,
+            output_id,
+            query_file,
+            frequency,
+            TableExportFormat.PARQUET,
+            [variable_name],
+            [id_to_consider],
+            download_name,
+            download_log,
+            DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+        )
+        self._file_transfer_manager.get_download_metadata(download_id, True)
+        download = self._file_transfer_manager.fetch_download(download_id)
+        dataframe = pd.read_parquet(Path(download.path))
         # Pivots the dataframe to have the right format
+        print(dataframe.head())
         # todo

@@ -32,14 +32,13 @@ from antarest.study.business.output.utils import (
 )
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
 from antarest.study.storage.output_model import OutputVariablesInformation, OutputVariablesList, OutputVariablesType
-from antarest.study.storage.output_service import OutputService
+from antarest.study.storage.output_service import DEFAULT_DOWNLOAD_EXPIRATION_TIME, OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
-DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 download_expiration_time_query: Any = Query(
     gt=0,
     lt=1000,
