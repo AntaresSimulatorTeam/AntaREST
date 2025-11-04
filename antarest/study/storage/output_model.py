@@ -26,6 +26,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.np_array import NpArray
 
 Variables: TypeAlias = Annotated[list[str], BeforeValidator(lambda x: sorted(x))]
 
@@ -116,3 +117,9 @@ class OutputVariablesType(StrEnum):
     THERMAL = "thermal"
     RENEWABLE = "renewable"
     SHORT_TERM_STORAGE = "st_storage"
+
+
+class OutputVariablesView(AntaresBaseModel, extra="forbid"):
+    index: list[int]
+    data: NpArray
+    columns: list[int]

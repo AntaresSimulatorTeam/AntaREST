@@ -150,3 +150,11 @@ def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_t
         ],
     }
     assert res.json() == expected_result
+
+
+def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    output_id = "20201014-1425eco-goodbye"
+    body = {"type": "area", "variable_name": "OP. COST", "frequency": "hourly", "area_id": "fr"}
+    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data", params=body)
+    print(res.json())

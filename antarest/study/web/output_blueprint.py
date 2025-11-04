@@ -31,7 +31,12 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
 )
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
-from antarest.study.storage.output_model import OutputVariablesInformation, OutputVariablesList, OutputVariablesType
+from antarest.study.storage.output_model import (
+    OutputVariablesInformation,
+    OutputVariablesList,
+    OutputVariablesType,
+    OutputVariablesView,
+)
 from antarest.study.storage.output_service import DEFAULT_DOWNLOAD_EXPIRATION_TIME, OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -545,7 +550,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
-    ) -> None:
+    ) -> OutputVariablesView:
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         return output_service.get_output_variables_view(

@@ -60,6 +60,7 @@ from antarest.study.storage.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
+    OutputVariablesView,
 )
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -628,7 +629,7 @@ class OutputService:
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
-    ) -> None:
+    ) -> OutputVariablesView:
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
@@ -666,7 +667,10 @@ class OutputService:
         )
         self._file_transfer_manager.get_download_metadata(download_id, True)
         download = self._file_transfer_manager.fetch_download(download_id)
-        dataframe = pd.read_parquet(Path(download.path))
-        # Pivots the dataframe to have the right format
-        print(dataframe.head())
-        # todo
+        dataframe = pd.read_parquet(Path(download.path), columns=["mcYear", variable_name])
+
+        # Transform the dataframe to have the expected format
+        dataframe["idx"] = dataframe.groupby("mcYear").cumcount()
+        df_pivot = dataframe.pivot(index="idx", columns="mcYear", values=variable_name)
+        data = df_pivot.to_dict(orient="split")
+        return OutputVariablesView.model_validate(data)
