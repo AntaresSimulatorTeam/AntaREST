@@ -673,4 +673,5 @@ class OutputService:
         dataframe["idx"] = dataframe.groupby("mcYear").cumcount()
         df_pivot = dataframe.pivot(index="idx", columns="mcYear", values=variable_name)
         data = df_pivot.to_dict(orient="split")
+        del data["index"]
         return OutputVariablesView.model_validate(data)

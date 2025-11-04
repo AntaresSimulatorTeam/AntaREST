@@ -119,7 +119,6 @@ class OutputVariablesType(StrEnum):
     SHORT_TERM_STORAGE = "st_storage"
 
 
-class OutputVariablesView(AntaresBaseModel, extra="forbid"):
-    index: list[int]
+class OutputVariablesView(AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
     data: NpArray
     columns: list[int]
