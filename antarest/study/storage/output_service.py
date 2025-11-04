@@ -667,9 +667,9 @@ class OutputService:
         )
         self._file_transfer_manager.get_download_metadata(download_id, True)
         download = self._file_transfer_manager.fetch_download(download_id)
-        dataframe = pd.read_parquet(Path(download.path), columns=["mcYear", variable_name])
 
         # Transform the dataframe to have the expected format
+        dataframe = pd.read_parquet(Path(download.path), columns=["mcYear", variable_name])
         dataframe["idx"] = dataframe.groupby("mcYear").cumcount()
         df_pivot = dataframe.pivot(index="idx", columns="mcYear", values=variable_name)
         data = df_pivot.to_dict(orient="split")
