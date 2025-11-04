@@ -155,6 +155,41 @@ def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_t
 def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
-    body = {"type": "area", "variable_name": "OP. COST", "frequency": "hourly", "area_id": "fr"}
+    # Areas
+    body = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
     res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data", params=body)
-    print(res.json())
+    assert res.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": [1, 2]}
+    # Thermal clusters
+    body = {
+        "type": "thermal",
+        "variable_name": "NODU",
+        "frequency": "weekly",
+        "area_id": "de",
+        "thermal_id": "01_solar",
+    }
+    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data", params=body)
+    assert res.json() == {
+        "data": [
+            [167.0, 167.0],
+            [147.0, 147.0],
+            [127.0, 127.0],
+            [107.0, 107.0],
+            [87.0, 87.0],
+            [67.0, 67.0],
+            [47.0, 47.0],
+            [27.0, 27.0],
+            [7.0, 7.0],
+            [167.0, 167.0],
+            [147.0, 147.0],
+            [127.0, 127.0],
+            [107.0, 107.0],
+            [87.0, 87.0],
+            [67.0, 67.0],
+            [47.0, 47.0],
+            [27.0, 27.0],
+            [7.0, 7.0],
+        ],
+        "columns": [1, 2],
+    }
+
+    # Links

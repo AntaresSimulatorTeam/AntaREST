@@ -232,7 +232,7 @@ def _checks_areas_variables_view_coherence(
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
 ) -> QueryFileType:
-    error_msg = f"The variable {variable_name} does not exist for area {area_id} and type {type}"
+    error_msg = f"The variable {variable_name} does not exist for area '{area_id}' and type '{variable_type.value}'"
     area_variables = available_variables.mc_ind.areas
     for area_variable in area_variables:
         if area_variable.name == area_id:
