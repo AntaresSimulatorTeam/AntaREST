@@ -34,7 +34,7 @@ from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import get_user_id
-from antarest.study.business.output.aggregator_management import AggregatorManager
+from antarest.study.business.output.aggregator_management import MCYEAR_COL, AggregatorManager
 from antarest.study.business.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -669,9 +669,9 @@ class OutputService:
         download = self._file_transfer_manager.fetch_download(download_id)
 
         # Transform the dataframe to have the expected format
-        dataframe = pd.read_parquet(Path(download.path), columns=["mcYear", variable_name])
-        dataframe["idx"] = dataframe.groupby("mcYear").cumcount()
-        df_pivot = dataframe.pivot(index="idx", columns="mcYear", values=variable_name)
+        dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name])
+        dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
+        df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
         data = df_pivot.to_dict(orient="split")
         del data["index"]
         return OutputVariablesView.model_validate(data)
