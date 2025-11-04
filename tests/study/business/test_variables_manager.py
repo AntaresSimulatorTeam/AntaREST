@@ -12,6 +12,7 @@
 import pytest
 
 from antarest.core.exceptions import OutputVariablesViewError
+from antarest.study.business.output.utils import MCIndAreasQueryFile, MCIndLinksQueryFile
 from antarest.study.business.output.variables_management import (
     check_variables_view_coherence_and_return_aggregation_info,
 )
@@ -100,3 +101,40 @@ def test_get_variables_view_coherence_errors(
             renewable_id,
             st_storage_id
         )
+
+# fmt: off
+@pytest.mark.parametrize(
+    "variable_type, variable_name, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id, expected_result",
+    [
+        pytest.param(OutputVariablesType.AREA, "AVL DTG", "fr", None, None, None, None, None, ("fr", MCIndAreasQueryFile.VALUES), id="Area"),
+        pytest.param(OutputVariablesType.THERMAL, "NODU", "fr", None, None, "01_solar", None, None, ("fr", MCIndAreasQueryFile.DETAILS), id="Thermal"),
+        pytest.param(OutputVariablesType.RENEWABLE, "MWh", "fr", None, None, None, "01_renew", None, ("fr", MCIndAreasQueryFile.DETAILS_RES), id="Renewable"),
+        pytest.param(OutputVariablesType.SHORT_TERM_STORAGE, "NP Cost - Euro", "fr", None, None, None, None, "01_sts", ("fr", MCIndAreasQueryFile.DETAILS_ST_STORAGE), id="Short term storage"),
+        pytest.param(OutputVariablesType.LINK, "LOOP FLOW", None, "de", "fr", None, None, None, ("de - fr", MCIndLinksQueryFile.VALUES), id="Link"),
+    ],
+)
+#fmt: on
+def test_get_variables_view_coherence_success(
+    variable_type: OutputVariablesType,
+    variable_name: str,
+    area_id: str | None,
+    area_from_id: str | None,
+    area_to_id: str | None,
+    thermal_id: str | None,
+    renewable_id: str | None,
+    st_storage_id: str | None,
+expected_result
+) -> None:
+    object_id, query_file = check_variables_view_coherence_and_return_aggregation_info(
+        "",
+        variable_type,
+        variable_name,
+        AVAILABLE_VARIABLES,
+        area_id,
+        area_from_id,
+        area_to_id,
+        thermal_id,
+        renewable_id,
+        st_storage_id
+    )
+    assert (object_id, query_file) == expected_result
