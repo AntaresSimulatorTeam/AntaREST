@@ -5,7 +5,7 @@ from collections import defaultdict
 
 # Adjust if your main branch is named differently
 BASE_BRANCH = "origin/master"
-TARGET_BRANCH = "origin/dev"
+TARGET_BRANCH = "HEAD"
 REPO_URL = "https://github.com/AntaresSimulatorTeam/AntaREST"
 
 
