@@ -71,6 +71,8 @@ AVAILABLE_VARIABLES = OutputVariablesList(
         pytest.param(OutputVariablesType.LINK, None, None, "a", "b", "th", None, None, "You provided an area related id for links", id="Link with thermal_id"),
         pytest.param(OutputVariablesType.LINK, None, None, "a", "b", None, "renew", None, "You provided an area related id for links", id="Link with renewable_id"),
         pytest.param(OutputVariablesType.LINK, None, None, "a", "b", None, None, "sts", "You provided an area related id for links", id="Link with st_storage_id"),
+        pytest.param(OutputVariablesType.LINK, "", None, "de", "fr", None, None, None, "The variable '' does not exist for link 'de - fr'", id="Link does not exist"),
+        pytest.param(OutputVariablesType.LINK, "fake_var", None, "de", "fake_area", None, None, None, "The variable 'fake_var' does not exist for link 'de - fake_area'", id="Link variable does not exist"),
     ],
 )
 #fmt: on

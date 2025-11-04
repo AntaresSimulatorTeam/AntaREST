@@ -211,7 +211,7 @@ def check_variables_view_coherence_and_return_aggregation_info(
 def _checks_links_variables_view_coherence(
     output_id: str, available_variables: OutputVariablesList, variable_name: str, area_from_id: str, area_to_id: str
 ) -> None:
-    error_msg = f"The variable '{variable_name}' does not exist for link '{area_from_id} - {area_to_id}'."
+    error_msg = f"The variable '{variable_name}' does not exist for link '{area_from_id} - {area_to_id}'"
     link_variables = available_variables.mc_ind.links
     for link_variable in link_variables:
         if link_variable.area_1_name == area_from_id and link_variable.area_2_name == area_to_id:
