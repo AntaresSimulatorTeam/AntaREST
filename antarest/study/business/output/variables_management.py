@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
 
+from antarest.core.exceptions import OutputVariablesViewError
 from antarest.study.business.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -23,7 +24,7 @@ from antarest.study.business.output.utils import (
     normalize_column_names,
     parse_output_file,
 )
-from antarest.study.storage.output_model import OutputVariablesList
+from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
@@ -168,3 +169,140 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
                 variables[mc_root_key]["links"].append(links_dict)
 
     return OutputVariablesList.model_validate(variables)
+
+
+def check_variables_view_coherence(
+    output_id: str,
+    variable_type: OutputVariablesType,
+    variable_name: str,
+    available_variables: OutputVariablesList,
+    area_id: str | None = None,
+    area_from_id: str | None = None,
+    area_to_id: str | None = None,
+    thermal_id: str | None = None,
+    renewable_id: str | None = None,
+    st_storage_id: str | None = None,
+) -> None:
+    _checks_variables_view_arguments_coherence(
+        variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
+    )
+
+    if variable_type == OutputVariablesType.LINK:
+        assert area_from_id is not None
+        assert area_to_id is not None
+        _checks_links_variables_view_coherence(output_id, available_variables, variable_name, area_from_id, area_to_id)
+
+    else:
+        assert area_id is not None
+        _checks_areas_variables_view_coherence(
+            output_id,
+            available_variables,
+            variable_name,
+            variable_type,
+            area_id,
+            thermal_id,
+            renewable_id,
+            st_storage_id,
+        )
+
+
+def _checks_links_variables_view_coherence(
+    output_id: str, available_variables: OutputVariablesList, variable_name: str, area_from_id: str, area_to_id: str
+) -> None:
+    error_msg = f"The variable {variable_name} does not exist for link {area_from_id} - {area_to_id}."
+    link_variables = available_variables.mc_ind.links
+    for link_variable in link_variables:
+        if link_variable.area_1_name == area_from_id and link_variable.area_2_name == area_to_id:
+            if variable_name in link_variable.variables:
+                return
+            raise OutputVariablesViewError(output_id, error_msg)
+
+    raise OutputVariablesViewError(output_id, error_msg)
+
+
+def _checks_areas_variables_view_coherence(
+    output_id: str,
+    available_variables: OutputVariablesList,
+    variable_name: str,
+    variable_type: OutputVariablesType,
+    area_id: str,
+    thermal_id: str | None = None,
+    renewable_id: str | None = None,
+    st_storage_id: str | None = None,
+) -> None:
+    error_msg = f"The variable {variable_name} does not exist for area {area_id} and type {type}"
+    area_variables = available_variables.mc_ind.areas
+    for area_variable in area_variables:
+        if area_variable.name == area_id:
+            if variable_type == OutputVariablesType.THERMAL:
+                for thermal_variable in area_variable.thermal_clusters:
+                    if thermal_variable.name == thermal_id:
+                        if variable_name in thermal_variable.variables:
+                            return
+                        raise OutputVariablesViewError(output_id, error_msg)
+
+            elif variable_type == OutputVariablesType.RENEWABLE:
+                for renewable_variable in area_variable.renewable_clusters:
+                    if renewable_variable.name == renewable_id:
+                        if variable_name in renewable_variable.variables:
+                            return
+                        raise OutputVariablesViewError(output_id, error_msg)
+
+            elif variable_type == OutputVariablesType.SHORT_TERM_STORAGE:
+                for sts_variable in area_variable.short_term_storages:
+                    if sts_variable.name == st_storage_id:
+                        if variable_name in sts_variable.variables:
+                            return
+                        raise OutputVariablesViewError(output_id, error_msg)
+
+            else:
+                if variable_name in area_variable.variables:
+                    return
+                raise OutputVariablesViewError(output_id, error_msg)
+
+    raise OutputVariablesViewError(output_id, error_msg)
+
+
+def _checks_variables_view_arguments_coherence(
+    variable_type: OutputVariablesType,
+    output_id: str,
+    area_id: str | None = None,
+    area_from_id: str | None = None,
+    area_to_id: str | None = None,
+    thermal_id: str | None = None,
+    renewable_id: str | None = None,
+    st_storage_id: str | None = None,
+) -> None:
+    if variable_type == OutputVariablesType.LINK:
+        if any([area_id, thermal_id, renewable_id, st_storage_id]):
+            raise OutputVariablesViewError(output_id, "You provided an area related id for links")
+        if not area_from_id or not area_to_id:
+            raise OutputVariablesViewError(
+                output_id, "You should provide both `area_from_id` and `area_to_id` for links"
+            )
+        return
+
+    if any([area_from_id, area_to_id]):
+        raise OutputVariablesViewError(output_id, "You provided an link related id for areas")
+
+    if not area_id:
+        raise OutputVariablesViewError(output_id, "You should provide `area_id` for areas")
+
+    if variable_type == OutputVariablesType.THERMAL:
+        if not thermal_id:
+            raise OutputVariablesViewError(output_id, "You should provide `thermal_id` for thermal clusters")
+        if any([renewable_id, st_storage_id]):
+            raise OutputVariablesViewError(output_id, "You provided an storage/renewable id for thermal clusters")
+    elif variable_type == OutputVariablesType.RENEWABLE:
+        if not renewable_id:
+            raise OutputVariablesViewError(output_id, "You should provide `renewable_id` for renewable clusters")
+        if any([thermal_id, st_storage_id]):
+            raise OutputVariablesViewError(output_id, "You provided an storage/thermal id for renewable clusters")
+    elif variable_type == OutputVariablesType.SHORT_TERM_STORAGE:
+        if not st_storage_id:
+            raise OutputVariablesViewError(output_id, "You should provide `st_storage_id` for short-term storages")
+        if any([thermal_id, renewable_id]):
+            raise OutputVariablesViewError(output_id, "You provided an renewable/thermal id for short-term storages")
+    else:
+        if any([thermal_id, renewable_id, st_storage_id]):
+            raise OutputVariablesViewError(output_id, "You provided an renewable/thermal/storage id for areas")
