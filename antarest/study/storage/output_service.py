@@ -636,7 +636,7 @@ class OutputService:
 
         # Checks the asked couple `variable name` / `object_id` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)
-        id_to_consider, query_file = check_variables_view_coherence_and_return_aggregation_info(
+        output_identifier = check_variables_view_coherence_and_return_aggregation_info(
             output_id,
             variable_type,
             variable_name,
@@ -656,11 +656,11 @@ class OutputService:
         download_id = self.aggregate_output_data(
             study_id,
             output_id,
-            query_file,
+            output_identifier.query_file,
             frequency,
             TableExportFormat.PARQUET,
             [variable_name],
-            [id_to_consider],
+            [output_identifier.get_id_for_aggregation()],
             download_name,
             download_log,
             DEFAULT_DOWNLOAD_EXPIRATION_TIME,

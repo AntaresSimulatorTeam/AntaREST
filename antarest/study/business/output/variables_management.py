@@ -9,9 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Final, Iterator
+
+from typing_extensions import override
 
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.study.business.output.utils import (
@@ -171,6 +174,74 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
     return OutputVariablesList.model_validate(variables)
 
 
+class OutputIdentifier(ABC):
+    @abstractmethod
+    def get_id_for_aggregation(self) -> str: ...
+
+    @property
+    @abstractmethod
+    def query_file(self) -> QueryFileType: ...
+
+
+@dataclass(frozen=True)
+class ThermalClusterOutputIdentifier(OutputIdentifier):
+    area_id: str
+    cluster_id: str
+
+    query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS
+
+    @override
+    def get_id_for_aggregation(self) -> str:
+        return self.area_id
+
+
+@dataclass(frozen=True)
+class RenewableClusterOutputIdentifier(OutputIdentifier):
+    area_id: str
+    cluster_id: str
+
+    query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS_RES
+
+    @override
+    def get_id_for_aggregation(self) -> str:
+        return self.area_id
+
+
+@dataclass(frozen=True)
+class ShortTermStorageOutputIdentifier(OutputIdentifier):
+    area_id: str
+    storage_id: str
+
+    query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS_ST_STORAGE
+
+    @override
+    def get_id_for_aggregation(self) -> str:
+        return self.area_id
+
+
+@dataclass(frozen=True)
+class LinkOutputIdentifier(OutputIdentifier):
+    area_from_id: str
+    area_to_id: str
+
+    query_file: Final[QueryFileType] = MCIndLinksQueryFile.VALUES
+
+    @override
+    def get_id_for_aggregation(self) -> str:
+        return f"{self.area_from_id} - {self.area_to_id}"
+
+
+@dataclass(frozen=True)
+class AreaOutputIdentifier(OutputIdentifier):
+    area_id: str
+
+    query_file: Final[QueryFileType] = MCIndAreasQueryFile.VALUES
+
+    @override
+    def get_id_for_aggregation(self) -> str:
+        return self.area_id
+
+
 def check_variables_view_coherence_and_return_aggregation_info(
     output_id: str,
     variable_type: OutputVariablesType,
@@ -182,7 +253,7 @@ def check_variables_view_coherence_and_return_aggregation_info(
     thermal_id: str | None = None,
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
-) -> tuple[str, QueryFileType]:
+) -> OutputIdentifier:
     _checks_variables_view_arguments_coherence(
         variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
     )
@@ -191,11 +262,11 @@ def check_variables_view_coherence_and_return_aggregation_info(
         assert area_from_id is not None
         assert area_to_id is not None
         _checks_links_variables_view_coherence(output_id, available_variables, variable_name, area_from_id, area_to_id)
-        return f"{area_from_id} - {area_to_id}", MCIndLinksQueryFile.VALUES
+        return LinkOutputIdentifier(area_from_id, area_to_id)
 
     else:
         assert area_id is not None
-        file_type = _checks_areas_variables_view_coherence(
+        return _checks_areas_variables_view_coherence(
             output_id,
             available_variables,
             variable_name,
@@ -205,7 +276,6 @@ def check_variables_view_coherence_and_return_aggregation_info(
             renewable_id,
             st_storage_id,
         )
-        return area_id, file_type
 
 
 def _checks_links_variables_view_coherence(
@@ -231,7 +301,7 @@ def _checks_areas_variables_view_coherence(
     thermal_id: str | None = None,
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
-) -> QueryFileType:
+) -> OutputIdentifier:
     error_msg = f"The variable '{variable_name}' does not exist for area '{area_id}' and type '{variable_type.value}'"
     area_variables = available_variables.mc_ind.areas
     for area_variable in area_variables:
@@ -240,26 +310,26 @@ def _checks_areas_variables_view_coherence(
                 for thermal_variable in area_variable.thermal_clusters:
                     if thermal_variable.name == thermal_id:
                         if variable_name in thermal_variable.variables:
-                            return MCIndAreasQueryFile.DETAILS
+                            return ThermalClusterOutputIdentifier(area_id, thermal_id)
                         raise OutputVariablesViewError(output_id, error_msg)
 
             elif variable_type == OutputVariablesType.RENEWABLE:
                 for renewable_variable in area_variable.renewable_clusters:
                     if renewable_variable.name == renewable_id:
                         if variable_name in renewable_variable.variables:
-                            return MCIndAreasQueryFile.DETAILS_RES
+                            return RenewableClusterOutputIdentifier(area_id, renewable_id)
                         raise OutputVariablesViewError(output_id, error_msg)
 
             elif variable_type == OutputVariablesType.SHORT_TERM_STORAGE:
                 for sts_variable in area_variable.short_term_storages:
                     if sts_variable.name == st_storage_id:
                         if variable_name in sts_variable.variables:
-                            return MCIndAreasQueryFile.DETAILS_ST_STORAGE
+                            return ShortTermStorageOutputIdentifier(area_id, st_storage_id)
                         raise OutputVariablesViewError(output_id, error_msg)
 
             else:
                 if variable_name in area_variable.variables:
-                    return MCIndAreasQueryFile.VALUES
+                    return AreaOutputIdentifier(area_id)
                 raise OutputVariablesViewError(output_id, error_msg)
 
     raise OutputVariablesViewError(output_id, error_msg)
