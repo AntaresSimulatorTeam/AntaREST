@@ -193,6 +193,16 @@ class InMemoryStudyDao(StudyDao):
         # Scenario Builder
         self.rulesets: Rulesets = {}
         self.active_ruleset_name: Optional[str] = None
+        # Load
+        self._load: dict[str, str] = {}
+        # Reserves
+        self._reserves: dict[str, str] = {}
+        # Misc-gen
+        self._misc_gen: dict[str, str] = {}
+        # Solar
+        self._solar: dict[str, str] = {}
+        # Wind
+        self._wind: dict[str, str] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -1036,3 +1046,48 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
         self._hydro_mingen[area_id] = series_id
+
+    @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._load[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._misc_gen[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._reserves[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._solar[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._wind[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def save_load(self, area_id: str, series_id: str) -> None:
+        self._load[area_id] = series_id
+
+    @override
+    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+        self._misc_gen[area_id] = series_id
+
+    @override
+    def save_reserves(self, area_id: str, series_id: str) -> None:
+        self._reserves[area_id] = series_id
+
+    @override
+    def save_solar(self, area_id: str, series_id: str) -> None:
+        self._solar[area_id] = series_id
+
+    @override
+    def save_wind(self, area_id: str, series_id: str) -> None:
+        self._wind[area_id] = series_id

@@ -90,6 +90,12 @@ class CreateArea(ICommand):
             study_data.save_hydro_water_values(area_id, null_matrix)
         if self.study_version >= STUDY_VERSION_8_6:
             study_data.save_hydro_mingen(area_id, null_matrix)
+        # Matrices
+        study_data.save_load(area_id, null_matrix)
+        study_data.save_solar(area_id, null_matrix)
+        study_data.save_wind(area_id, null_matrix)
+        study_data.save_reserves(area_id, constants.get_default_reserves())
+        study_data.save_misc_gen(area_id, constants.get_default_miscgen())
 
         return command_succeeded(message=f"Area '{self.area_name}' created")
 
