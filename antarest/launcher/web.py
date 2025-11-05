@@ -160,12 +160,15 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/versions",
         summary="Get list of supported solver versions for the specified launcher",
         response_description='List of supported solver versions formatted as "880" for 8.8.',
+        deprecated=True,
     )
     def get_solver_versions(
         launcher_id: str | None = None, solver: Annotated[str | None, Query(deprecated=True)] = None
     ) -> Annotated[list[str], Field(examples=[["820", "880", "920"]])]:
         """
         Get list of supported solver versions for the specified launcher.
+
+        **DEPRECATED**: Use GET /launchers instead, which includes versions for each launcher.
 
         Args:
            launcher_id: ID of the considered launcher. If no launcher is specified, returns solvers

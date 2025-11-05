@@ -306,6 +306,7 @@ class LauncherInfoDTO(AntaresBaseModel):
     name: str
     nb_cores: LauncherResourceRangeDTO
     time_limit: LauncherResourceRangeDTO
+    versions: list[str]  # List of solver versions supported by this launcher (e.g., ["700", "880", "920"])
 
 
 class LauncherListDTO(AntaresBaseModel):
