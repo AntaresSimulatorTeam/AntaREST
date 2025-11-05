@@ -21,14 +21,14 @@ type SolverVersionStr = `${number}.${number}`;
 export interface SolverPresetsDTO {
   id: string;
   name: string;
-  linear_solver: string;
-  min_antares_version?: SolverVersionStr;
-  max_antares_version?: SolverVersionStr;
-  linear_solver_param_optim_1?: SolverParams;
-  linear_solver_param_optim_2?: SolverParams;
-  linear_solver_param?: SolverParams;
-  use_optim_1_basis_next_week?: boolean;
-  use_optim_1_basis_optim_2?: boolean;
+  linearSolver: string;
+  minAntaresVersion?: SolverVersionStr;
+  maxAntaresVersion?: SolverVersionStr;
+  linearSolverParamOptim1?: SolverParams;
+  linearSolverParamOptim2?: SolverParams;
+  linearSolverParam?: SolverParams;
+  useOptim1BasisNextWeek?: boolean;
+  useOptim1BasisOptim2?: boolean;
 }
 
 export interface SolverPresets {
