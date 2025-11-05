@@ -24,6 +24,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PlainSerializer,
+    computed_field,
     field_validator,
     model_validator,
 )
@@ -466,6 +467,15 @@ class SolverPresets(AntaresBaseModel):
 
         return " ".join(options)
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def other_options(self) -> str:
+        """
+        Generate the 'other_options' string for backward compatibility.
+        This is an alias for to_cli_options().
+        """
+        return self.to_cli_options()
+
 
 class SolverPresetsCreation(AntaresBaseModel):
     class Config:
@@ -631,7 +641,7 @@ def apply_update_solver_presets(
     solver_presets_update: SolverPresetsUpdate,
 ) -> SolverPresetsDB:
     # Merge existing DTO with update DTO
-    current_dto_dict = solver_presets_db.to_model().model_dump()
+    current_dto_dict = solver_presets_db.to_model().model_dump(exclude={"other_options"})
     update_dict = solver_presets_update.model_dump(exclude_none=True)
     merged_dict = {**current_dto_dict, **update_dict}
 
