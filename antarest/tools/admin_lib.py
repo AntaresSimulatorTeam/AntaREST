@@ -74,21 +74,7 @@ def reindex_table(config: Path) -> None:
         connection.execute(text("REINDEX INDEX rawstudy_pkey"))
 
 
-def fix_interrupted_tasks_status(engine_or_config_path: Engine | Path) -> None:
-    """
-    Cancel all tasks that are currently running or pending.
-
-    When the web application restarts, such as after a new deployment, any pending or running tasks may be lost.
-    To mitigate this, it is preferable to set these tasks to a "FAILED" status.
-    This ensures that users can easily identify the tasks that were affected by the restart and take appropriate
-    actions, such as restarting the tasks manually.
-    """
-    if isinstance(engine_or_config_path, Engine):
-        engine = engine_or_config_path
-    else:
-        config = _create_config(engine_or_config_path)
-        engine = _create_engine(config)
-
+def _do_fix_interrupted_tasks_status(engine: Engine) -> None:
     updated_values = {
         TaskJob.status: TaskStatus.FAILED.value,
         TaskJob.result_status: False,
@@ -103,3 +89,17 @@ def fix_interrupted_tasks_status(engine_or_config_path: Engine | Path) -> None:
         connection.execute(stmt)
         connection.commit()
     logger.info(f"Tasks status correctly updated in {time.time() - t0}s.")
+
+
+def fix_interrupted_tasks_status(config_file: Path) -> None:
+    """
+    Cancel all tasks that are currently running or pending.
+
+    When the web application restarts, such as after a new deployment, any pending or running tasks may be lost.
+    To mitigate this, it is preferable to set these tasks to a "FAILED" status.
+    This ensures that users can easily identify the tasks that were affected by the restart and take appropriate
+    actions, such as restarting the tasks manually.
+    """
+    config = _create_config(config_file)
+    engine = _create_engine(config)
+    _do_fix_interrupted_tasks_status(engine)

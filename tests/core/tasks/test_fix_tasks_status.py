@@ -11,65 +11,105 @@
 # This file is part of the Antares project.
 from datetime import datetime, timezone
 
-import pytest
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 
 from antarest.core.tasks.model import TaskJob, TaskStatus
-from antarest.tools.admin_lib import fix_interrupted_tasks_status
+from antarest.tools.admin_lib import _do_fix_interrupted_tasks_status
 
 
-@pytest.mark.parametrize(
-    ("status", "result_status", "result_msg"),
-    [
-        (TaskStatus.RUNNING.value, False, "task ongoing"),
-        (TaskStatus.PENDING.value, True, "task pending"),
-        (TaskStatus.FAILED.value, False, "task failed"),
-        (TaskStatus.COMPLETED.value, True, "task finished"),
-        (TaskStatus.TIMEOUT.value, False, "task timed out"),
-        (TaskStatus.CANCELLED.value, True, "task canceled"),
-    ],
-)
-def test_fix_tasks_status(
-    db_engine: Engine,
-    status: int,
-    result_status: bool,
-    result_msg: str,
-) -> None:
-    max_diff_seconds: int = 1
-    test_id: str = "2ea94758-9ea5-4015-a45f-b245a6ffc147"
-
-    completion_date: datetime = datetime.now(timezone.utc).replace(tzinfo=None)
-    task_job = TaskJob(
-        id=test_id,
-        name="test",
-        status=status,
-        result_status=result_status,
-        result_msg=result_msg,
-        completion_date=completion_date,
+def test_fix_tasks_status(db_engine: Engine) -> None:
+    completed_task = TaskJob(
+        id="completed",
+        name="completed",
+        status=TaskStatus.COMPLETED.value,
+        result_status=True,
+        result_msg="success",
+        completion_date=datetime(2025, 6, 1, 12, 0, 0),
+    )
+    failed_task = TaskJob(
+        id="failed",
+        name="failed",
+        status=TaskStatus.FAILED.value,
+        result_status=False,
+        result_msg="failed",
+        completion_date=datetime(2025, 6, 1, 12, 0, 0),
+    )
+    running_task = TaskJob(
+        id="running",
+        name="running",
+        status=TaskStatus.RUNNING.value,
+    )
+    pending_task = TaskJob(
+        id="pending",
+        name="pending",
+        status=TaskStatus.PENDING.value,
+    )
+    timeout_task = TaskJob(
+        id="timeout",
+        name="timeout",
+        status=TaskStatus.TIMEOUT.value,
+        result_status=False,
+        result_msg="timed out",
+        completion_date=datetime(2025, 6, 1, 12, 0, 0),
+    )
+    cancelled_task = TaskJob(
+        id="cancelled",
+        name="cancelled",
+        status=TaskStatus.CANCELLED.value,
+        result_status=False,
+        result_msg="was cancelled",
+        completion_date=datetime(2025, 6, 1, 12, 0, 0),
     )
     make_session = sessionmaker(bind=db_engine)
     with make_session() as session:
-        session.add(task_job)
+        session.add_all([pending_task, running_task, failed_task, completed_task, timeout_task, cancelled_task])
         session.commit()
-    fix_interrupted_tasks_status(db_engine)
+
+    _do_fix_interrupted_tasks_status(db_engine)
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
     with make_session() as session:
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        if status in [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]:
-            update_tasks_count = (
-                session.query(TaskJob)
-                .filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value]))
-                .count()
-            )
-            assert not update_tasks_count
-            updated_task_job = session.query(TaskJob).get(test_id)
-            assert updated_task_job.status == TaskStatus.FAILED.value
-            assert not updated_task_job.result_status
-            assert updated_task_job.result_msg == "Task was interrupted due to server restart"
-            assert (now - updated_task_job.completion_date).seconds <= max_diff_seconds
-        else:
-            updated_task_job = session.query(TaskJob).get(test_id)
-            assert updated_task_job.status == status
-            assert updated_task_job.result_status == result_status
-            assert updated_task_job.result_msg == result_msg
-            assert (now - updated_task_job.completion_date).seconds <= max_diff_seconds
+        tasks_in_progress = (
+            session.query(TaskJob)
+            .filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value]))
+            .count()
+        )
+        assert tasks_in_progress == 0
+
+        fixed_pending = session.query(TaskJob).get("pending")
+        assert fixed_pending.status == TaskStatus.FAILED.value
+        assert fixed_pending.result_status is False
+        assert fixed_pending.result_msg == "Task was interrupted due to server restart"
+        assert (now - fixed_pending.completion_date).seconds <= 1
+
+        fixed_running = session.query(TaskJob).get("running")
+        assert fixed_running.status == TaskStatus.FAILED.value
+        assert fixed_running.result_status is False
+        assert fixed_running.result_msg == "Task was interrupted due to server restart"
+        assert (now - fixed_running.completion_date).seconds <= 1
+
+        unchanged_completed = session.query(TaskJob).get("completed")
+        assert unchanged_completed.status == TaskStatus.COMPLETED.value
+        assert unchanged_completed.result_status is True
+        assert unchanged_completed.result_msg == "success"
+        assert unchanged_completed.completion_date == datetime(2025, 6, 1, 12, 0, 0)
+
+        unchanged_failed = session.query(TaskJob).get("failed")
+        assert unchanged_failed.status == TaskStatus.FAILED.value
+        assert unchanged_failed.result_status is False
+        assert unchanged_failed.result_msg == "failed"
+        assert unchanged_failed.completion_date == datetime(2025, 6, 1, 12, 0, 0)
+
+        unchanged_timeout = session.query(TaskJob).get("timeout")
+        assert unchanged_timeout.status == TaskStatus.TIMEOUT.value
+        assert unchanged_timeout.result_status is False
+        assert unchanged_timeout.result_msg == "timed out"
+        assert unchanged_timeout.completion_date == datetime(2025, 6, 1, 12, 0, 0)
+
+        unchanged_cancelled = session.query(TaskJob).get("cancelled")
+        assert unchanged_cancelled.status == TaskStatus.CANCELLED.value
+        assert unchanged_cancelled.result_status is False
+        assert unchanged_cancelled.result_msg == "was cancelled"
+        assert unchanged_cancelled.completion_date == datetime(2025, 6, 1, 12, 0, 0)
