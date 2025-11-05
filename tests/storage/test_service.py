@@ -591,16 +591,19 @@ def test_create_study() -> None:
     )
 
     jwt_user = JWT_USER
+    jwt_user.groups = []
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(jwt_user):
             service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
+    study_service.create.assert_not_called()
 
     jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
     with current_user_context(jwt_user):
         service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
 
-    study_service.create.assert_called()
-    repository.save.assert_called_once_with(expected)
+    study_service.create.assert_called_once()
+    repository.save.assert_called_once()
+    jwt_user.groups = []
 
 
 # noinspection PyArgumentList
@@ -621,9 +624,6 @@ def test_save_metadata() -> None:
         }
     }
 
-    # Input
-    jwt = JWT_USER
-    jwt.groups = [JWTGroup(id="my-group", name="group", role=RoleType.ADMIN)]
     user = User(id=0, name="user")
     group = Group(id="my-group", name="group")
 
@@ -638,9 +638,13 @@ def test_save_metadata() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
 
-    service.user_service.get_user.return_value = user  # type: ignore
-    with current_user_context(jwt):
-        service._save_study(create_raw_study(id=study_id, workspace=DEFAULT_WORKSPACE_NAME))
+    study_to_save = create_raw_study(
+        id=study_id,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=user,
+        groups=[group],
+    )
+    service._save_study(study_to_save)
     repository.save.assert_called_once_with(study)
 
 
