@@ -16,6 +16,7 @@ import typing as t
 from abc import abstractmethod
 from typing import Any, Dict, List
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
@@ -31,26 +32,11 @@ from antarest.study.model import (
     STUDY_VERSION_9_2,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if t.TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-
-
-def _create_prepro_data(
-    generator_matrix_constants: "GeneratorMatrixConstants", null_matrix: str, area_id: str
-) -> dict[str, Any]:
-    return {
-        area_id: {
-            "conversion": generator_matrix_constants.get_prepro_conversion(),
-            "data": generator_matrix_constants.get_prepro_data(),
-            "k": null_matrix,
-            "settings": {},
-            "translation": null_matrix,
-        }
-    }
 
 
 class FileStudyAreaDao(AreaDao):
@@ -160,6 +146,26 @@ class FileStudyAreaDao(AreaDao):
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
 
     @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "load", "series", f"load_{area_id}"])
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "misc-gen", f"miscgen-{area_id}"])
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "reserves", area_id])
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "solar", "series", f"solar_{area_id}"])
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "wind", "series", f"wind_{area_id}"])
+
+    @override
     def save_area(self, area_name: str) -> None:
         """
         Create a new area in the study with all necessary files and configurations.
@@ -183,53 +189,39 @@ class FileStudyAreaDao(AreaDao):
         )
 
         # Build the new area data structure
-        new_area_data: JSON = self._build_area_data_structure(area_id=area_id, config=config, version=config.version)
+        new_area_data: JSON = self._build_area_data_structure(area_id=area_id, config=config)
 
         # Save to filesystem
         study_data.tree.save(new_area_data)
 
-    def _build_area_data_structure(
-        self,
-        area_id: str,
-        config: Any,
-        version: Any,
-    ) -> JSON:
-        """Helper method to build the complete area data structure."""
-        # Import here to avoid circular import
-
+    def _build_area_data_structure(self, area_id: str, config: FileStudyTreeConfig) -> JSON:
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
         if generator_matrix_constants is None:
             raise ValueError("Generator matrix constants not available in DAO")
         null_matrix = generator_matrix_constants.get_null_matrix()
-        null_scenario_matrix = generator_matrix_constants.get_null_scenario_matrix()
+        prepro_data = {
+            area_id: {
+                "conversion": generator_matrix_constants.get_prepro_conversion(),
+                "data": generator_matrix_constants.get_prepro_data(),
+                "k": null_matrix,
+                "settings": {},
+                "translation": null_matrix,
+            }
+        }
 
         new_area_data: JSON = {
             "input": {
-                "areas": {
-                    "list": [area.name for area in config.areas.values()],
-                },
+                "areas": {"list": [area.name for area in config.areas.values()]},
                 "links": {area_id: {"properties": {}}},
-                "load": {
-                    "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
-                    "series": {f"load_{area_id}": null_scenario_matrix},
-                },
-                "misc-gen": {f"miscgen-{area_id}": generator_matrix_constants.get_default_miscgen()},
-                "reserves": {area_id: generator_matrix_constants.get_default_reserves()},
-                "solar": {
-                    "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
-                    "series": {f"solar_{area_id}": null_scenario_matrix},
-                },
-                "thermal": {
-                    "clusters": {area_id: {"list": {}}},
-                },
-                "wind": {
-                    "prepro": _create_prepro_data(generator_matrix_constants, null_matrix, area_id),
-                    "series": {f"wind_{area_id}": null_scenario_matrix},
-                },
+                "load": {"prepro": prepro_data},
+                "solar": {"prepro": prepro_data},
+                "thermal": {"clusters": {area_id: {"list": {}}}},
+                "wind": {"prepro": prepro_data},
             }
         }
 
         # Version-specific additions
+        version = config.version
         has_renewables = version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         if has_renewables:
             new_area_data["input"]["renewables"] = {"clusters": {area_id: {"list": {}}}}
@@ -522,3 +514,28 @@ class FileStudyAreaDao(AreaDao):
         # Save all modified areas
         for area in to_remove_areas + to_add_areas:
             study_data.tree.save(areas_ui[area], ["input", "areas", area, "ui"])
+
+    @override
+    def save_load(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "load", "series", f"load_{area_id}"])
+
+    @override
+    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "misc-gen", f"miscgen-{area_id}"])
+
+    @override
+    def save_reserves(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "reserves", area_id])
+
+    @override
+    def save_solar(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "solar", "series", f"solar_{area_id}"])
+
+    @override
+    def save_wind(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "wind", "series", f"wind_{area_id}"])

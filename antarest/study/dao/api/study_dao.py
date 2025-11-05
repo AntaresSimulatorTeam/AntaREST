@@ -536,3 +536,23 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
         return self._adaptee.get_all_user_resources()
+
+    @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_load(area_id)
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_misc_gen(area_id)
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_reserves(area_id)
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_solar(area_id)
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_wind(area_id)
