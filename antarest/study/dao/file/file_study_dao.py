@@ -16,6 +16,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.exceptions import NotAMatrixError
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
@@ -105,6 +106,11 @@ class FileStudyTreeDao(
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
 
     def get_matrix(self, url: list[str]) -> pd.DataFrame:
+        """
+        Given a url pointing towards an input matrix, parses it and returns it as a pandas dataframe.
+        If it is not a matrix url, it raises a NotAMatrixError exception.
+        """
         node = self._file_study.tree.get_node(url)
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
+        if isinstance(node, InputSeriesMatrix):
+            return node.parse_as_dataframe()
+        raise NotAMatrixError(url)

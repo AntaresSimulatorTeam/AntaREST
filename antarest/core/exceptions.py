@@ -853,3 +853,8 @@ class ConfigurationError(RuntimeError):
     """
     Raised when some configuration is invalid.
     """
+
+
+class NotAMatrixError(ValueError):
+    def __init__(self, url: list[str]) -> None:
+        super().__init__(f"The given url `{url}` does not reference an input matrix")
