@@ -12,8 +12,13 @@
 import pytest
 
 from antarest.core.exceptions import OutputVariablesViewError
-from antarest.study.business.output.utils import MCIndAreasQueryFile, MCIndLinksQueryFile
 from antarest.study.business.output.variables_management import (
+    AreaOutputIdentifier,
+    LinkOutputIdentifier,
+    OutputIdentifier,
+    RenewableClusterOutputIdentifier,
+    ShortTermStorageOutputIdentifier,
+    ThermalClusterOutputIdentifier,
     check_variables_view_coherence_and_return_aggregation_info,
 )
 from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType
@@ -106,11 +111,11 @@ def test_get_variables_view_coherence_errors(
 @pytest.mark.parametrize(
     "variable_type, variable_name, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id, expected_result",
     [
-        pytest.param(OutputVariablesType.AREA, "AVL DTG", "fr", None, None, None, None, None, ("fr", MCIndAreasQueryFile.VALUES), id="Area"),
-        pytest.param(OutputVariablesType.THERMAL, "NODU", "fr", None, None, "01_solar", None, None, ("fr", MCIndAreasQueryFile.DETAILS), id="Thermal"),
-        pytest.param(OutputVariablesType.RENEWABLE, "MWh", "fr", None, None, None, "01_renew", None, ("fr", MCIndAreasQueryFile.DETAILS_RES), id="Renewable"),
-        pytest.param(OutputVariablesType.SHORT_TERM_STORAGE, "NP Cost - Euro", "fr", None, None, None, None, "01_sts", ("fr", MCIndAreasQueryFile.DETAILS_ST_STORAGE), id="Short term storage"),
-        pytest.param(OutputVariablesType.LINK, "LOOP FLOW", None, "de", "fr", None, None, None, ("de - fr", MCIndLinksQueryFile.VALUES), id="Link"),
+        pytest.param(OutputVariablesType.AREA, "AVL DTG", "fr", None, None, None, None, None, AreaOutputIdentifier(area_id="fr"), id="Area"),
+        pytest.param(OutputVariablesType.THERMAL, "NODU", "fr", None, None, "01_solar", None, None, ThermalClusterOutputIdentifier(area_id="fr", cluster_id="01_solar"), id="Thermal"),
+        pytest.param(OutputVariablesType.RENEWABLE, "MWh", "fr", None, None, None, "01_renew", None, RenewableClusterOutputIdentifier(area_id="fr", cluster_id="01_renew"), id="Renewable"),
+        pytest.param(OutputVariablesType.SHORT_TERM_STORAGE, "NP Cost - Euro", "fr", None, None, None, None, "01_sts", ShortTermStorageOutputIdentifier(area_id="fr", cluster_id="01_sts"), id="Short term storage"),
+        pytest.param(OutputVariablesType.LINK, "LOOP FLOW", None, "de", "fr", None, None, None, LinkOutputIdentifier(area_from_id="de", area_to_id="fr"), id="Link"),
     ],
 )
 #fmt: on
@@ -123,9 +128,9 @@ def test_get_variables_view_coherence_success(
     thermal_id: str | None,
     renewable_id: str | None,
     st_storage_id: str | None,
-expected_result
+expected_result: OutputIdentifier
 ) -> None:
-    object_id, query_file = check_variables_view_coherence_and_return_aggregation_info(
+    output_identifier = check_variables_view_coherence_and_return_aggregation_info(
         "",
         variable_type,
         variable_name,
@@ -137,4 +142,4 @@ expected_result
         renewable_id,
         st_storage_id
     )
-    assert (object_id, query_file) == expected_result
+    assert expected_result == output_identifier
