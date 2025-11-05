@@ -155,28 +155,29 @@ def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_t
 def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
+    url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data"
     # Areas
-    body = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
-    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data", params=body)
+    query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
+    res = client.get(url, params=query_params)
     assert res.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": [1, 2]}
     # Thermal clusters
-    body = {
+    query_params = {
         "type": "thermal",
         "variable_name": "NODU",
         "frequency": "weekly",
         "area_id": "de",
         "thermal_id": "01_solar",
     }
-    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data", params=body)
+    res = client.get(url, params=query_params)
     assert res.json() == {"columns": [1, 2], "data": [[167.0, 167.0], [167.0, 167.0]]}
 
     # Links
-    body = {
+    query_params = {
         "type": "link",
         "variable_name": "FLOW LIN.",
         "frequency": "hourly",
         "area_from_id": "de",
         "area_to_id": "fr",
     }
-    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data", params=body)
+    res = client.get(url, params=query_params)
     assert res.json() == {"data": 336 * [[0.0, 0.0]], "columns": [1, 2]}
