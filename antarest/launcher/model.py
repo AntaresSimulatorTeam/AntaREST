@@ -374,7 +374,7 @@ class SolverPresets(AntaresBaseModel):
                 linear_solver_param={"MAXTIME": "3600"},
                 use_optim_1_basis_next_week=True,
                 use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json")
+            ).model_dump(mode="json", by_alias=True)
 
     id: str
     name: ItemName
@@ -495,7 +495,7 @@ class SolverPresetsCreation(AntaresBaseModel):
                 linear_solver_param={"MAXTIME": "3600"},
                 use_optim_1_basis_next_week=True,
                 use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json")
+            ).model_dump(mode="json", by_alias=True)
 
     name: ItemName
     linear_solver: str
@@ -525,7 +525,7 @@ class SolverPresetsUpdate(AntaresBaseModel):
                 linear_solver_param={"MAXTIME": "3600"},
                 use_optim_1_basis_next_week=True,
                 use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json")
+            ).model_dump(mode="json", by_alias=True)
 
     linear_solver: Optional[str] = None
     min_antares_version: Optional[SolverVersionStr] = None
