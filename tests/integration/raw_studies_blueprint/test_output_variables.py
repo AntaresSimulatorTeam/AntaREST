@@ -168,29 +168,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         "thermal_id": "01_solar",
     }
     res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data", params=body)
-    assert res.json() == {
-        "data": [
-            [167.0, 167.0],
-            [147.0, 147.0],
-            [127.0, 127.0],
-            [107.0, 107.0],
-            [87.0, 87.0],
-            [67.0, 67.0],
-            [47.0, 47.0],
-            [27.0, 27.0],
-            [7.0, 7.0],
-            [167.0, 167.0],
-            [147.0, 147.0],
-            [127.0, 127.0],
-            [107.0, 107.0],
-            [87.0, 87.0],
-            [67.0, 67.0],
-            [47.0, 47.0],
-            [27.0, 27.0],
-            [7.0, 7.0],
-        ],
-        "columns": [1, 2],
-    }
+    assert res.json() == {"columns": [1, 2], "data": [[167.0, 167.0], [167.0, 167.0]]}
 
     # Links
     body = {

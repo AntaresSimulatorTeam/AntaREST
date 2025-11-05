@@ -178,45 +178,41 @@ class OutputIdentifier(ABC):
     @abstractmethod
     def get_id_for_aggregation(self) -> str: ...
 
+    @abstractmethod
+    def get_cluster_id_for_aggregation(self) -> str | None: ...
+
     @property
     @abstractmethod
     def query_file(self) -> QueryFileType: ...
 
 
 @dataclass(frozen=True)
-class ThermalClusterOutputIdentifier(OutputIdentifier):
+class ClusterOutputIdentifier(OutputIdentifier):
     area_id: str
     cluster_id: str
 
+    @override
+    def get_id_for_aggregation(self) -> str:
+        return self.area_id
+
+    @override
+    def get_cluster_id_for_aggregation(self) -> str | None:
+        return self.cluster_id
+
+
+@dataclass(frozen=True)
+class ThermalClusterOutputIdentifier(ClusterOutputIdentifier):
     query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS
 
-    @override
-    def get_id_for_aggregation(self) -> str:
-        return self.area_id
-
 
 @dataclass(frozen=True)
-class RenewableClusterOutputIdentifier(OutputIdentifier):
-    area_id: str
-    cluster_id: str
-
+class RenewableClusterOutputIdentifier(ClusterOutputIdentifier):
     query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS_RES
 
-    @override
-    def get_id_for_aggregation(self) -> str:
-        return self.area_id
-
 
 @dataclass(frozen=True)
-class ShortTermStorageOutputIdentifier(OutputIdentifier):
-    area_id: str
-    storage_id: str
-
+class ShortTermStorageOutputIdentifier(ClusterOutputIdentifier):
     query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS_ST_STORAGE
-
-    @override
-    def get_id_for_aggregation(self) -> str:
-        return self.area_id
 
 
 @dataclass(frozen=True)
@@ -230,6 +226,10 @@ class LinkOutputIdentifier(OutputIdentifier):
     def get_id_for_aggregation(self) -> str:
         return f"{self.area_from_id} - {self.area_to_id}"
 
+    @override
+    def get_cluster_id_for_aggregation(self) -> str | None:
+        return None
+
 
 @dataclass(frozen=True)
 class AreaOutputIdentifier(OutputIdentifier):
@@ -240,6 +240,10 @@ class AreaOutputIdentifier(OutputIdentifier):
     @override
     def get_id_for_aggregation(self) -> str:
         return self.area_id
+
+    @override
+    def get_cluster_id_for_aggregation(self) -> str | None:
+        return None
 
 
 def check_variables_view_coherence_and_return_aggregation_info(

@@ -34,7 +34,7 @@ from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import get_user_id
-from antarest.study.business.output.aggregator_management import MCYEAR_COL, AggregatorManager
+from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, MCYEAR_COL, AggregatorManager
 from antarest.study.business.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -669,7 +669,12 @@ class OutputService:
         download = self._file_transfer_manager.fetch_download(download_id)
 
         # Transform the dataframe to have the expected format
-        dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name])
+        if cluster_id := output_identifier.get_cluster_id_for_aggregation():
+            dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name, CLUSTER_ID_COL])
+            dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
+        else:
+            dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name])
+
         dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
         df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
         data = df_pivot.to_dict(orient="split")
