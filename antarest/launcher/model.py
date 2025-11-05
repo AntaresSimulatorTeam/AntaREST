@@ -358,6 +358,8 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
 class SolverPresets(AntaresBaseModel):
     class Config:
         extra = "forbid"
+        alias_generator = to_camel
+        populate_by_name = True
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -469,6 +471,8 @@ class SolverPresets(AntaresBaseModel):
 class SolverPresetsCreation(AntaresBaseModel):
     class Config:
         extra = "forbid"
+        alias_generator = to_camel
+        populate_by_name = True
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -498,6 +502,8 @@ class SolverPresetsCreation(AntaresBaseModel):
 class SolverPresetsUpdate(AntaresBaseModel):
     class Config:
         extra = "forbid"
+        alias_generator = to_camel
+        populate_by_name = True
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:

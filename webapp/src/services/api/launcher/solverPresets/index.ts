@@ -13,21 +13,17 @@
  */
 
 import client from "../../client";
-import { adaptSolverPresetsCreationToDto, adaptSolverPresetsDtoToSolverPresets } from "./adapters";
 import type { SolverPresetsCreation, SolverPresetsDTO } from "./types";
 
 const BASE_URL = "/v1/launcher/solver-presets";
 
 export async function getSolverPresets() {
   const { data } = await client.get<SolverPresetsDTO[]>(BASE_URL);
-  return data.map(adaptSolverPresetsDtoToSolverPresets);
+  return data;
 }
 
 export async function createSolverPresets(params: SolverPresetsCreation) {
-  const { data } = await client.post<SolverPresetsDTO>(
-    BASE_URL,
-    adaptSolverPresetsCreationToDto(params),
-  );
+  const { data } = await client.post<SolverPresetsDTO>(BASE_URL, params);
 
-  return adaptSolverPresetsDtoToSolverPresets(data);
+  return data;
 }
