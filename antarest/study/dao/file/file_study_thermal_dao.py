@@ -101,15 +101,15 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @override
     def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "series"])
+        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "series"])
 
     @override
     def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "fuelCost"])
+        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
 
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "CO2Cost"])
+        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
