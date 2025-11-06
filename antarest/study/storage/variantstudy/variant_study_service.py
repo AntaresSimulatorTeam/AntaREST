@@ -119,8 +119,6 @@ class VariantStudyService(AbstractStorageService):
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = self._get_current_user_name()
-        # study.additional_data = study.additional_data or StudyAdditionalData()
-        # study.additional_data.editor = user_name
         study.editor = user_name
         self.repository.save(study)
 
@@ -634,16 +632,6 @@ class VariantStudyService(AbstractStorageService):
         study_path = str(self.config.get_workspace_path() / new_id)
         user_name = self._get_current_user_name()
 
-        #
-        # if study.additional_data is None:
-        #     additional_data = StudyAdditionalData(editor=user_name)
-        # else:
-        #     additional_data = StudyAdditionalData(
-        #         horizon=study.additional_data.horizon,
-        #         author=study.additional_data.author,
-        #         editor=user_name,
-        #     )
-
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         variant_study = VariantStudy(
             id=new_id,
@@ -1011,27 +999,6 @@ class VariantStudyService(AbstractStorageService):
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
-
-    # @override
-    # def initialize_additional_data(self, variant_study: Study) -> bool:
-    #     try:
-    #         if self.exists(variant_study):
-    #             study = self.study_factory.create_from_fs(
-    #                 self.get_study_path(variant_study),
-    #                 is_managed(variant_study),
-    #                 study_id=variant_study.id,
-    #                 output_path=Path(variant_study.path) / OUTPUT_RELATIVE_PATH,
-    #             )
-    #             variant_study.additional_data = self._read_additional_data_from_files(study)
-    #         else:
-    #             variant_study.additional_data = StudyAdditionalData()
-    #         return True
-    #     except Exception as e:
-    #         logger.error(
-    #             f"Error while reading additional data for study {variant_study.id}",
-    #             exc_info=e,
-    #         )
-    #         return False
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """

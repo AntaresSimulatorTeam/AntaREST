@@ -120,11 +120,6 @@ class RawStudyService(AbstractStorageService):
         try:
             raw_meta = study.tree.get(["study", "antares"])
 
-            # à voir avec Sylvain
-            # if metadata.additional_data and metadata.additional_data.editor:
-            #     raw_meta["editor"] = metadata.additional_data.editor
-            #     study.tree.save(raw_meta, ["study", "antares"])
-
             if metadata.editor != "Unknown":
                 raw_meta["editor"] = metadata.editor
                 study.tree.save(raw_meta, ["study", "antares"])
@@ -134,7 +129,6 @@ class RawStudyService(AbstractStorageService):
             metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
             metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
 
-            # metadata.additional_data = self._read_additional_data_from_files(study)
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
@@ -147,11 +141,8 @@ class RawStudyService(AbstractStorageService):
                 metadata.created_at = metadata.created_at or datetime.now(timezone.utc).replace(tzinfo=None)
                 metadata.updated_at = metadata.updated_at or datetime.now(timezone.utc).replace(tzinfo=None)
 
-                # if metadata.additional_data is None:
-                #     metadata.additional_data = StudyAdditionalData()
-                #
-                # metadata.additional_data.author = metadata.additional_data.author or "Unknown"
-                # metadata.additional_data.editor = metadata.additional_data.editor or "Unknown"
+                metadata.author = metadata.author or "Unknown"
+                metadata.editor = metadata.editor or "Unknown"
 
             else:
                 raise e
@@ -301,15 +292,6 @@ class RawStudyService(AbstractStorageService):
     def build_raw_study(
         self, dest_study_name: str, groups: Sequence[str], src_study: Study, destination_folder: PurePosixPath
     ) -> RawStudy:
-        # if src_study.additional_data is None:
-        #     additional_data = StudyAdditionalData()
-        # else:
-        #     additional_data = StudyAdditionalData(
-        #         horizon=src_study.additional_data.horizon,
-        #         author=src_study.additional_data.author,
-        #         editor=self._get_current_user_name(),
-        #     )
-
         dest_id = str(uuid4())
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         dest_study = RawStudy(
@@ -323,7 +305,6 @@ class RawStudyService(AbstractStorageService):
             author=src_study.author,
             editor=src_study.editor,
             horizon=src_study.horizon,
-            # additional_data=additional_data,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             groups=groups,
             folder=str(destination_folder / dest_id),
@@ -485,23 +466,6 @@ class RawStudyService(AbstractStorageService):
         if metadata.archived:
             return self.find_archive_path(metadata)
         return Path(metadata.path)
-
-    # @override
-    # def initialize_additional_data(self, raw_study: Study) -> bool:
-    #     try:
-    #         study = self.study_factory.create_from_fs(
-    #             self.get_study_path(raw_study),
-    #             is_managed(raw_study),
-    #             study_id=raw_study.id,
-    #         )
-    #         raw_study.additional_data = self._read_additional_data_from_files(study)
-    #         return True
-    #     except Exception as e:
-    #         logger.error(
-    #             f"Error while reading additional data for study {raw_study.id}",
-    #             exc_info=e,
-    #         )
-    #         return False
 
     def check_and_update_study_version_in_database(self, study: RawStudy) -> None:
         try:

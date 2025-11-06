@@ -22,7 +22,6 @@ from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
-from antarest.study.model import StudyAdditionalData
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -101,7 +100,6 @@ class TestRawStudyService:
             owner=user,
             groups=[group],
             path=str(raw_study_path),
-            additional_data=StudyAdditionalData(author="John Smith"),
         )
         db.session.add(raw_study)
         db.session.commit()

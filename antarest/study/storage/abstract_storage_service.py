@@ -33,7 +33,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
     Study,
-    StudyAdditionalData,
     StudyMetadataDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
@@ -41,7 +40,7 @@ from antarest.study.model import (
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.study_storage import IStudyStorage
@@ -66,7 +65,6 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         self,
         study: Study,
     ) -> StudyMetadataDTO:
-        # additional_data = study.additional_data or StudyAdditionalData()
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         folder: Optional[str] = None
         if hasattr(study, "folder"):
@@ -75,7 +73,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         owner_info = (
             OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
-            else OwnerInfo(name=study.author)
+            else OwnerInfo(name=study.author or "Unknown")
             # remplacer add_data.author par juste study.author
             # additional_data.author or "Unknown"
         )
@@ -339,18 +337,6 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         if not path_output_zip.exists():
             archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
         stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {metadata.path} exported in {x}s"))
-
-    # def _read_additional_data_from_files(self, file_study: FileStudy) -> StudyAdditionalData:
-    #     logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
-    #     horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-    #     study_antares = file_study.tree.get(url=["study", "antares"])
-    #     author = study_antares.get("author")
-    #     editor = study_antares.get("editor", author)
-    #     assert isinstance(author, str)
-    #     assert isinstance(editor, str)
-    #     assert isinstance(horizon, (str, int))
-    #     study_additional_data = StudyAdditionalData(horizon=horizon, author=author, editor=editor)
-    #     return study_additional_data
 
     @override
     def archive_study_output(self, study: Study, output_id: str) -> bool:

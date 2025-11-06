@@ -57,7 +57,6 @@ from antarest.study.model import (
     OwnerInfo,
     RawStudy,
     Study,
-    StudyAdditionalData,
     StudyContentStatus,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
@@ -204,7 +203,6 @@ def test_study_listing(db_session: Session) -> None:
         updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
-        #additional_data=StudyAdditionalData(),
     )
     b = create_raw_study(
         id="B",
@@ -216,7 +214,6 @@ def test_study_listing(db_session: Session) -> None:
         updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace="other",
-        #additional_data=StudyAdditionalData(),
     )
     c = create_raw_study(
         id="C",
@@ -228,7 +225,6 @@ def test_study_listing(db_session: Session) -> None:
         updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace="other2",
-        #additional_data=StudyAdditionalData(),
     )
 
     # Add some studies in the database
@@ -1936,7 +1932,6 @@ def test_upgrade_study__raw_study__nominal(
         created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version=current_version,
-        #additional_data=StudyAdditionalData(),
         archived=False,
         owner=None,
         groups=[],
@@ -2025,7 +2020,6 @@ def test_upgrade_study__variant_study__nominal(
         created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version="720",
-        #additional_data=StudyAdditionalData(),
         archived=False,
         owner=None,
         groups=[],
@@ -2115,7 +2109,6 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
         created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version=old_version,
-        #additional_data=StudyAdditionalData(),
         archived=False,
         owner=None,
         groups=[],

@@ -26,7 +26,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, Tag
 
 
 def escape_like(string: str, escape_char: str = "\\") -> str:
@@ -232,9 +232,6 @@ class StudyMetadataRepository:
             raise NoResultFound(f"Study with ID {study_id} not found")
         return result
 
-    def get_additional_data(self, study_id: str) -> Optional[StudyAdditionalData]:
-        return self.session.get(StudyAdditionalData, study_id)
-
     def get_all(
         self,
         study_filter: StudyFilter = StudyFilter(),
@@ -333,7 +330,6 @@ class StudyMetadataRepository:
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.tags))
-        q = q.options(joinedload(entity.additional_data))
 
         if study_filter.managed is not None:
             if study_filter.managed:

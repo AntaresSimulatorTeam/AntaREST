@@ -34,7 +34,6 @@ from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
-from antarest.study.model import StudyAdditionalData
 from antarest.study.service import VariantStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -770,7 +769,7 @@ class TestSnapshotGenerator:
             version="860",
             created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            additional_data=StudyAdditionalData(author="john.doe"),
+            author="john.doe",
             owner_id=jwt_user.id,
         )
 
@@ -892,7 +891,7 @@ class TestSnapshotGenerator:
         # - 1 query to fetch raw study information,
         # - 1 query to update the variant study additional_data,
         # - 1 query to insert the variant study snapshot.
-        assert len(db_recorder.sql_statements) == 6, str(db_recorder)
+        assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
@@ -983,7 +982,7 @@ class TestSnapshotGenerator:
             assert study is not None
             assert study.snapshot is not None
             assert study.snapshot.last_executed_command == study.commands[-1].id
-            assert study.additional_data.author == "john.doe"
+            assert study.author == "john.doe"
 
         # Check: the cache is updated with the new variant configuration.
         # The cache is a mock created in the session's scope, so it is shared between all tests.

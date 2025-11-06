@@ -27,7 +27,7 @@ from antarest.core.interfaces.cache import (
 )
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
-from antarest.study.model import RawStudy, Study, StudyAdditionalData
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -202,16 +202,6 @@ class SnapshotGenerator:
                     raise NotImplementedError(f"Unexpected detail type: {type(detail)}")
             raise VariantGenerationError(message)
         return results
-
-    def _read_additional_data(self, file_study: FileStudy) -> StudyAdditionalData:
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        author = file_study.tree.get(url=["study", "antares", "author"])
-        editor = file_study.tree.get(url=["study", "antares", "editor"])
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, editor=editor)
-        return study_additional_data
 
 
 class RefStudySearchResult(NamedTuple):

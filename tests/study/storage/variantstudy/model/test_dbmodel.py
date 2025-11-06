@@ -23,7 +23,6 @@ from sqlalchemy.orm import Session
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.login.model import Group, Role, User
-from antarest.study.model import StudyAdditionalData
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from tests.helpers import create_raw_study, create_variant_study
 
@@ -54,7 +53,7 @@ def fixture_raw_study_id(tmp_path: Path, db_session: Session, user_id: int) -> s
             version="860",
             created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            additional_data=StudyAdditionalData(author="john.doe"),
+            author="john.doe",
             owner_id=user_id,
         )
         db_session.add(root_study)
@@ -227,7 +226,6 @@ class TestVariantStudy:
         assert obj.owner_id == user_id
         assert obj.archived is False
         assert obj.groups == []
-        assert obj.additional_data is None
 
         # check Variant-specific fields
         assert obj.generation_task is None

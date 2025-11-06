@@ -63,7 +63,7 @@ class AnyIsoDateTime:
 
     @override
     def __repr__(self) -> str:
-        return "<AnyDiskUsagePercent>"
+        return "<AnyISODateTime>"
 
 
 class IntegerRange:
@@ -252,6 +252,7 @@ class TestFilesystemEndpoints:
             assert res.status_code == 200, res.json()
             actual = res.json()
             # There is one external study in the "ext" workspace, which is "STA-mini"
+            # TODO : check what's wrong with the created / assessed / modified
             expected = [
                 {
                     "path": str(ext_workspace_path / "STA-mini" / "study.antares"),
