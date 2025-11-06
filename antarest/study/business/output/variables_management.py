@@ -179,7 +179,7 @@ class OutputIdentifier(ABC):
     def get_id_for_aggregation(self) -> str: ...
 
     @abstractmethod
-    def get_cluster_id_for_aggregation(self) -> str | None: ...
+    def get_sub_id_for_aggregation(self) -> str | None: ...
 
     @property
     @abstractmethod
@@ -187,32 +187,41 @@ class OutputIdentifier(ABC):
 
 
 @dataclass(frozen=True)
-class ClusterOutputIdentifier(OutputIdentifier):
+class SubAreaOutputIdentifier(OutputIdentifier, ABC):
     area_id: str
-    cluster_id: str
 
     @override
     def get_id_for_aggregation(self) -> str:
         return self.area_id
 
-    @override
-    def get_cluster_id_for_aggregation(self) -> str | None:
+
+@dataclass(frozen=True)
+class ClusterOutputIdentifier:
+    cluster_id: str
+
+    def get_sub_id_for_aggregation(self) -> str | None:
         return self.cluster_id
 
 
 @dataclass(frozen=True)
-class ThermalClusterOutputIdentifier(ClusterOutputIdentifier):
+class ThermalClusterOutputIdentifier(ClusterOutputIdentifier, SubAreaOutputIdentifier):
     query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS
 
 
 @dataclass(frozen=True)
-class RenewableClusterOutputIdentifier(ClusterOutputIdentifier):
+class RenewableClusterOutputIdentifier(ClusterOutputIdentifier, SubAreaOutputIdentifier):
     query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS_RES
 
 
 @dataclass(frozen=True)
-class ShortTermStorageOutputIdentifier(ClusterOutputIdentifier):
+class ShortTermStorageOutputIdentifier(SubAreaOutputIdentifier):
+    storage_id: str
+
     query_file: Final[QueryFileType] = MCIndAreasQueryFile.DETAILS_ST_STORAGE
+
+    @override
+    def get_sub_id_for_aggregation(self) -> str | None:
+        return self.storage_id
 
 
 @dataclass(frozen=True)
@@ -227,22 +236,16 @@ class LinkOutputIdentifier(OutputIdentifier):
         return f"{self.area_from_id} - {self.area_to_id}"
 
     @override
-    def get_cluster_id_for_aggregation(self) -> str | None:
+    def get_sub_id_for_aggregation(self) -> str | None:
         return None
 
 
 @dataclass(frozen=True)
-class AreaOutputIdentifier(OutputIdentifier):
-    area_id: str
-
+class AreaOutputIdentifier(SubAreaOutputIdentifier):
     query_file: Final[QueryFileType] = MCIndAreasQueryFile.VALUES
 
     @override
-    def get_id_for_aggregation(self) -> str:
-        return self.area_id
-
-    @override
-    def get_cluster_id_for_aggregation(self) -> str | None:
+    def get_sub_id_for_aggregation(self) -> str | None:
         return None
 
 
@@ -258,33 +261,28 @@ def check_variables_view_coherence_and_return_aggregation_info(
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
 ) -> OutputIdentifier:
-    _checks_variables_view_arguments_coherence(
+    output_identifier = _checks_variables_view_arguments_coherence(
         variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
     )
 
     if variable_type == OutputVariablesType.LINK:
-        assert area_from_id is not None
-        assert area_to_id is not None
-        _checks_links_variables_view_coherence(output_id, available_variables, variable_name, area_from_id, area_to_id)
-        return LinkOutputIdentifier(area_from_id, area_to_id)
+        assert isinstance(output_identifier, LinkOutputIdentifier)
+        _checks_links_variables_view_coherence(output_id, available_variables, variable_name, output_identifier)
 
     else:
-        assert area_id is not None
-        return _checks_areas_variables_view_coherence(
-            output_id,
-            available_variables,
-            variable_name,
-            variable_type,
-            area_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
-        )
+        _checks_areas_variables_view_coherence(output_id, available_variables, variable_name, output_identifier)
+
+    return output_identifier
 
 
 def _checks_links_variables_view_coherence(
-    output_id: str, available_variables: OutputVariablesList, variable_name: str, area_from_id: str, area_to_id: str
+    output_id: str,
+    available_variables: OutputVariablesList,
+    variable_name: str,
+    output_identifier: LinkOutputIdentifier,
 ) -> None:
+    area_from_id = output_identifier.area_from_id
+    area_to_id = output_identifier.area_to_id
     error_msg = f"The variable '{variable_name}' does not exist for link '{area_from_id} - {area_to_id}'"
     link_variables = available_variables.mc_ind.links
     for link_variable in link_variables:
@@ -300,41 +298,32 @@ def _checks_areas_variables_view_coherence(
     output_id: str,
     available_variables: OutputVariablesList,
     variable_name: str,
-    variable_type: OutputVariablesType,
-    area_id: str,
-    thermal_id: str | None = None,
-    renewable_id: str | None = None,
-    st_storage_id: str | None = None,
-) -> OutputIdentifier:
-    error_msg = f"The variable '{variable_name}' does not exist for area '{area_id}' and type '{variable_type.value}'"
+    output_identifier: OutputIdentifier,
+) -> None:
+    area_id = output_identifier.get_id_for_aggregation()
+    error_msg = f"The variable '{variable_name}' does not exist for area '{area_id}' and type '{output_identifier.query_file.value}'"
     area_variables = available_variables.mc_ind.areas
     for area_variable in area_variables:
         if area_variable.name == area_id:
-            if variable_type == OutputVariablesType.THERMAL:
-                for thermal_variable in area_variable.thermal_clusters:
-                    if thermal_variable.name == thermal_id:
-                        if variable_name in thermal_variable.variables:
-                            return ThermalClusterOutputIdentifier(area_id, thermal_id)
-                        raise OutputVariablesViewError(output_id, error_msg)
-
-            elif variable_type == OutputVariablesType.RENEWABLE:
-                for renewable_variable in area_variable.renewable_clusters:
-                    if renewable_variable.name == renewable_id:
-                        if variable_name in renewable_variable.variables:
-                            return RenewableClusterOutputIdentifier(area_id, renewable_id)
-                        raise OutputVariablesViewError(output_id, error_msg)
-
-            elif variable_type == OutputVariablesType.SHORT_TERM_STORAGE:
-                for sts_variable in area_variable.short_term_storages:
-                    if sts_variable.name == st_storage_id:
-                        if variable_name in sts_variable.variables:
-                            return ShortTermStorageOutputIdentifier(area_id, st_storage_id)
-                        raise OutputVariablesViewError(output_id, error_msg)
-
-            else:
-                if variable_name in area_variable.variables:
-                    return AreaOutputIdentifier(area_id)
-                raise OutputVariablesViewError(output_id, error_msg)
+            match output_identifier:
+                case AreaOutputIdentifier():
+                    if variable_name in area_variable.variables:
+                        return
+                    raise OutputVariablesViewError(output_id, error_msg)
+                case ThermalClusterOutputIdentifier():
+                    attr = "thermal_clusters"
+                case RenewableClusterOutputIdentifier():
+                    attr = "renewable_clusters"
+                case ShortTermStorageOutputIdentifier():
+                    attr = "short_term_storages"
+                case _:
+                    raise OutputVariablesViewError(output_id, error_msg)
+            sub_id = output_identifier.get_sub_id_for_aggregation()
+            for variable in getattr(area_variable, attr):
+                if variable.name == sub_id:
+                    if variable_name in variable.variables:
+                        return
+                    raise OutputVariablesViewError(output_id, error_msg)
 
     raise OutputVariablesViewError(output_id, error_msg)
 
@@ -348,7 +337,7 @@ def _checks_variables_view_arguments_coherence(
     thermal_id: str | None = None,
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
-) -> None:
+) -> OutputIdentifier:
     if variable_type == OutputVariablesType.LINK:
         if any([area_id, thermal_id, renewable_id, st_storage_id]):
             raise OutputVariablesViewError(output_id, "You provided an area related id for links")
@@ -356,7 +345,7 @@ def _checks_variables_view_arguments_coherence(
             raise OutputVariablesViewError(
                 output_id, "You should provide both `area_from_id` and `area_to_id` for links"
             )
-        return
+        return LinkOutputIdentifier(area_from_id, area_to_id)
 
     if any([area_from_id, area_to_id]):
         raise OutputVariablesViewError(output_id, "You provided an link related id for areas")
@@ -369,16 +358,20 @@ def _checks_variables_view_arguments_coherence(
             raise OutputVariablesViewError(output_id, "You should provide `thermal_id` for thermal clusters")
         if any([renewable_id, st_storage_id]):
             raise OutputVariablesViewError(output_id, "You provided an storage/renewable id for thermal clusters")
+        return ThermalClusterOutputIdentifier(area_id, thermal_id)
     elif variable_type == OutputVariablesType.RENEWABLE:
         if not renewable_id:
             raise OutputVariablesViewError(output_id, "You should provide `renewable_id` for renewable clusters")
         if any([thermal_id, st_storage_id]):
             raise OutputVariablesViewError(output_id, "You provided an storage/thermal id for renewable clusters")
+        return RenewableClusterOutputIdentifier(area_id, renewable_id)
     elif variable_type == OutputVariablesType.SHORT_TERM_STORAGE:
         if not st_storage_id:
             raise OutputVariablesViewError(output_id, "You should provide `st_storage_id` for short-term storages")
         if any([thermal_id, renewable_id]):
             raise OutputVariablesViewError(output_id, "You provided an renewable/thermal id for short-term storages")
+        return ShortTermStorageOutputIdentifier(area_id, st_storage_id)
     else:
         if any([thermal_id, renewable_id, st_storage_id]):
             raise OutputVariablesViewError(output_id, "You provided an renewable/thermal/storage id for areas")
+        return AreaOutputIdentifier(area_id)

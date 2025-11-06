@@ -669,7 +669,7 @@ class OutputService:
         download = self._file_transfer_manager.fetch_download(download_id)
 
         # Transform the dataframe to have the expected format
-        if cluster_id := output_identifier.get_cluster_id_for_aggregation():
+        if cluster_id := output_identifier.get_sub_id_for_aggregation():
             dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name, CLUSTER_ID_COL])
             dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
         else:
