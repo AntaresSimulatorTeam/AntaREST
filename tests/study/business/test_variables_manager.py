@@ -114,7 +114,7 @@ def test_get_variables_view_coherence_errors(
         pytest.param(OutputVariablesType.AREA, "AVL DTG", "fr", None, None, None, None, None, AreaOutputIdentifier(area_id="fr"), id="Area"),
         pytest.param(OutputVariablesType.THERMAL, "NODU", "fr", None, None, "01_solar", None, None, ThermalClusterOutputIdentifier(area_id="fr", cluster_id="01_solar"), id="Thermal"),
         pytest.param(OutputVariablesType.RENEWABLE, "MWh", "fr", None, None, None, "01_renew", None, RenewableClusterOutputIdentifier(area_id="fr", cluster_id="01_renew"), id="Renewable"),
-        pytest.param(OutputVariablesType.SHORT_TERM_STORAGE, "NP Cost - Euro", "fr", None, None, None, None, "01_sts", ShortTermStorageOutputIdentifier(area_id="fr", cluster_id="01_sts"), id="Short term storage"),
+        pytest.param(OutputVariablesType.SHORT_TERM_STORAGE, "NP Cost - Euro", "fr", None, None, None, None, "01_sts", ShortTermStorageOutputIdentifier(area_id="fr", storage_id="01_sts"), id="Short term storage"),
         pytest.param(OutputVariablesType.LINK, "LOOP FLOW", None, "de", "fr", None, None, None, LinkOutputIdentifier(area_from_id="de", area_to_id="fr"), id="Link"),
     ],
 )

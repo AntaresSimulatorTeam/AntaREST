@@ -270,7 +270,9 @@ def check_variables_view_coherence_and_return_aggregation_info(
         _checks_links_variables_view_coherence(output_id, available_variables, variable_name, output_identifier)
 
     else:
-        _checks_areas_variables_view_coherence(output_id, available_variables, variable_name, output_identifier)
+        _checks_areas_variables_view_coherence(
+            output_id, available_variables, variable_name, output_identifier, variable_type
+        )
 
     return output_identifier
 
@@ -299,9 +301,10 @@ def _checks_areas_variables_view_coherence(
     available_variables: OutputVariablesList,
     variable_name: str,
     output_identifier: OutputIdentifier,
+    variable_type: OutputVariablesType,
 ) -> None:
     area_id = output_identifier.get_id_for_aggregation()
-    error_msg = f"The variable '{variable_name}' does not exist for area '{area_id}' and type '{output_identifier.query_file.value}'"
+    error_msg = f"The variable '{variable_name}' does not exist for area '{area_id}' and type '{variable_type.value}'"
     area_variables = available_variables.mc_ind.areas
     for area_variable in area_variables:
         if area_variable.name == area_id:
