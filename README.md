@@ -68,7 +68,7 @@ Before you begin, ensure you have the following installed:
 Optional (for specific deployment modes):
 - **Docker**: For containerized deployment
 - **PostgreSQL**: For production database (SQLite used by default for development)
-- **Redis**: For production caching and task queuing
+- **Redis**: For production caching
 
 ---
 

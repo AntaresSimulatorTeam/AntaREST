@@ -12,15 +12,6 @@ Thank you for your interest in contributing to Antares Web! This document provid
 - [Submitting Changes](#submitting-changes)
 - [Reporting Issues](#reporting-issues)
 
-## Code of Conduct
-
-By participating in this project, you agree to maintain a respectful and collaborative environment. We expect all contributors to:
-
-- Be respectful and considerate in communication
-- Welcome newcomers and help them get started
-- Focus on what is best for the community
-- Show empathy towards other community members
-
 ## Getting Started
 
 ### Prerequisites
@@ -216,12 +207,6 @@ def test_function_name_should_do_something():
     assert len(result.warnings) == 0
 ```
 
-### Test Markers
-
-Tests are marked with pytest markers defined in `pyproject.toml`:
-- `@pytest.mark.unit_test`: Fast, isolated tests
-- `@pytest.mark.integration_test`: Tests that interact with external systems
-
 ## Submitting Changes
 
 ### Before Submitting
@@ -297,16 +282,6 @@ If you need help with contributing:
 - Ask in [GitHub Discussions](https://github.com/AntaresSimulatorTeam/AntaREST/discussions)
 - Open an issue with the `question` label
 - Contact the maintainers: andrea.sgattoni@rte-france.com
-
-## Recognition
-
-Contributors are recognized in several ways:
-
-- Your name in the git history
-- Mentioned in release notes
-- Listed in the AUTHORS.txt file
-
-Thank you for contributing to Antares Web!
 
 ---
 
