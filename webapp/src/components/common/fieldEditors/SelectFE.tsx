@@ -30,7 +30,6 @@ import {
 import type { SelectInputProps } from "@mui/material/Select/SelectInput";
 import type { TFunction } from "i18next";
 import startCase from "lodash/startCase";
-import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useMemo, useState } from "react";
 import type { FieldPath, FieldValues } from "react-hook-form";
@@ -96,7 +95,6 @@ export type SelectFEProps<
 function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
   options = [],
   emptyValue = false,
-  emptyValueLabel,
   startCaseLabel = false,
   multiple = false,
   helperText,
@@ -110,6 +108,8 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
 }: SelectFEProps<OptionValue>) {
   const { t } = useTranslation();
   const [currentValue, setCurrentValue] = useState(value ?? defaultValue);
+
+  const { emptyValueLabel = t("global.none") } = rest;
 
   const optionsFormatted = useMemo(
     () =>
@@ -203,6 +203,10 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
    * If the value is not found in the options, it returns a representation with an error color.
    */
   const renderValueAsText = (value: unknown) => {
+    if (value === "" && emptyValue) {
+      return <em>{emptyValueLabel}</em>;
+    }
+
     const option = getOptionByValue(value);
     return option ? option.label : <Typography color="error">{String(value)}</Typography>;
   };
@@ -223,6 +227,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
           onChange: handleChange,
           renderValue: multiple ? renderSelectedValueAsChip : renderValueAsText,
           multiple,
+          displayEmpty: true,
         },
       }}
       helperText={
@@ -249,7 +254,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
     >
       {emptyValue && !multiple && (
         <MenuItem value="">
-          <em>{emptyValueLabel ?? t("global.none")}</em>
+          <em>{emptyValueLabel}</em>
         </MenuItem>
       )}
       {invalidOptions.map(({ value, label, id }) => (
@@ -284,7 +289,7 @@ const SelectFEWithRHF = reactHookFormSupport<AllowedValue | AllowedValue[]>({
       return true;
     }
 
-    if (emptyValue && (value === "" || R.isNil(value))) {
+    if (emptyValue && (value === "" || value === undefined)) {
       return true;
     }
 
