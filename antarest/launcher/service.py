@@ -161,6 +161,7 @@ class LauncherService:
                         max=launcher_config.time_limit.max,
                         default=launcher_config.time_limit.default,
                     ),
+                    versions=self.get_solver_versions(launcher_config.id),
                 )
             )
         default_launcher = self.config.launcher.default
