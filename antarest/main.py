@@ -40,7 +40,6 @@ from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.metrics import add_metrics
 from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
-from antarest.core.tasks.model import cancel_orphan_tasks
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
@@ -303,7 +302,6 @@ def fastapi_app(
         def home(request: Request) -> Any:
             return ""
 
-    cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
     return application, services
 
 

@@ -13,11 +13,9 @@
 from http import HTTPStatus
 from pathlib import Path
 
-import pytest
 from starlette.testclient import TestClient
 
 
-@pytest.mark.unit_test
 class TestHydroCorrelation:
     """
     Test the end points related to hydraulic correlation.

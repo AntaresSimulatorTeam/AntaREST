@@ -16,7 +16,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-import pytest
 from pandas._testing import assert_frame_equal
 from starlette.testclient import TestClient
 
@@ -114,7 +113,6 @@ class PreparerProxy(Proxy):
         res.raise_for_status()
 
 
-@pytest.mark.integration_test
 class TestDownloadMatrices:
     """
     Checks the retrieval of matrices with the endpoint GET studies/uuid/raw/download

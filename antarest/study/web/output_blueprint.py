@@ -13,11 +13,13 @@ import collections
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, List, Sequence
+from typing import Annotated, Any, Sequence
 
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -37,6 +39,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
+download_expiration_time_query: Any = Query(
+    gt=0,
+    lt=1000,
+    description="Expiration time for the download file (in minutes)",
+)
 
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
@@ -60,17 +68,15 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         The FastAPI route for Study data management
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_outputs], dependencies=[auth.required()])
 
     # noinspection PyShadowingBuiltins
     @bp.post(
         "/studies/{uuid}/output",
         status_code=HTTPStatus.ACCEPTED,
-        tags=[APITag.study_outputs],
         summary="Import Output",
-        response_model=str,
     )
-    def import_output(uuid: str, output: UploadFile) -> Any:
+    def import_output(uuid: str, output: UploadFile) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
         output_id = output_service.import_output(uuid_sanitized, output.file)
@@ -78,7 +84,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/variables",
-        tags=[APITag.study_outputs],
         summary="Get outputs data variables",
     )
     def output_variables_information(study_id: str, output_id: str) -> OutputVariablesInformation:
@@ -89,10 +94,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/export",
-        tags=[APITag.study_outputs],
         summary="Get outputs data",
     )
-    def output_export(study_id: str, output_id: str) -> Any:
+    def output_export(study_id: str, output_id: str) -> FileDownloadTaskDTO:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
@@ -100,7 +104,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/time-index",
-        tags=[APITag.study_outputs],
         summary="Get time index for output matrices by frequency",
     )
     def get_output_time_index(
@@ -130,8 +133,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/download",
-        tags=[APITag.study_outputs],
         summary="Get outputs data",
+        response_model=None,  # only pydantic models are supported as response model
     )
     def output_download(
         study_id: str,
@@ -140,7 +143,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         request: Request,
         use_task: bool = False,
         tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
-    ) -> Any:
+    ) -> Response | FileDownloadTaskDTO | FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
@@ -159,7 +162,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Delete a simulation output",
     )
     def delete_output(study_id: str, output_id: str) -> None:
@@ -170,10 +172,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/_archive",
-        tags=[APITag.study_outputs],
         summary="Archive output",
     )
-    def archive_output(study_id: str, output_id: str) -> Any:
+    def archive_output(study_id: str, output_id: str) -> str | None:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
@@ -183,10 +184,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/_unarchive",
-        tags=[APITag.study_outputs],
         summary="Unarchive output",
     )
-    def unarchive_output(study_id: str, output_id: str) -> Any:
+    def unarchive_output(study_id: str, output_id: str) -> str | None:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
@@ -196,9 +196,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
-        tags=[APITag.study_outputs],
         summary="Display an output digest file for the front-end",
-        response_model=DigestUI,
     )
     def get_digest_file(study_id: str, output_id: str) -> DigestUI:
         study_id = sanitize_uuid(study_id)
@@ -209,10 +207,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     @bp.get(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
-        tags=[APITag.study_outputs],
-        response_model=List[StudySimResultDTO],
     )
-    def sim_result(study_id: str) -> Any:
+    def sim_result(study_id: str) -> list[StudySimResultDTO]:
         logger.info(f"Fetching output list for study {study_id}")
         study_id = sanitize_uuid(study_id)
         content = output_service.get_study_sim_result(study_id)
@@ -220,7 +216,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/aggregate/areas/mc-ind",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_areas_raw_data(
@@ -232,6 +227,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -246,6 +242,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
+        - `download_expiration_time`: Expiration time for the download file (in minutes).
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -273,12 +270,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             ids_to_consider=_split_comma_separated_values(areas_ids),
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             download_name=download_name,
+            download_expiration_time_in_minutes=download_expiration_time,
             download_log=download_log,
         )
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
         include_in_schema=False,
     )
@@ -298,7 +295,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/aggregate/links/mc-ind",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_links_raw_data(
@@ -310,6 +306,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
         Create an aggregation of links raw data
@@ -323,6 +320,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
+        - `download_expiration_time`: Expiration time for the download file (in minutes).
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -349,12 +347,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             ids_to_consider=_split_comma_separated_values(links_ids),
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
             download_name=download_name,
+            download_expiration_time_in_minutes=download_expiration_time,
             download_log=download_log,
         )
 
     @bp.get(
         "/studies/{uuid}/links/aggregate/mc-ind/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
         include_in_schema=False,
     )
@@ -374,7 +372,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/aggregate/areas/mc-all",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
     )
     def aggregate_areas_raw_data__all(
@@ -385,6 +382,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -398,6 +396,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
+        - `download_expiration_time`: Expiration time for the download file (in minutes).
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -424,12 +423,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             download_name=download_name,
+            download_expiration_time_in_minutes=download_expiration_time,
             download_log=download_log,
         )
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-all/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
         include_in_schema=False,
     )
@@ -448,7 +447,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/aggregate/links/mc-all",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
     )
     def aggregate_links_raw_data__all(
@@ -459,6 +457,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
         Create an aggregation of links in mc-all
@@ -471,6 +470,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
         - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
         - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
+        - `download_expiration_time`: Expiration time for the download file (in minutes).
         - `export_format`: Returned file format (csv by default).
 
         Returns:
@@ -499,12 +499,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
             download_name=download_name,
+            download_expiration_time_in_minutes=download_expiration_time,
             download_log=download_log,
         )
 
     @bp.get(
         "/studies/{uuid}/links/aggregate/mc-all/{output_id}",
-        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
         include_in_schema=False,
     )
@@ -523,7 +523,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/variables-list",
-        tags=[APITag.study_outputs],
         summary="Retrieves the list of variables for a given output",
     )
     def get_output_variables_list(uuid: str, output_id: str) -> OutputVariablesList:

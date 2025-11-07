@@ -44,7 +44,6 @@ def build_tree() -> INode[t.Any, t.Any, t.Any]:
     )
 
 
-@pytest.mark.unit_test
 def test_get() -> None:
     tree = build_tree()
 
@@ -55,7 +54,6 @@ def test_get() -> None:
     assert res == {"input": 100, "output": 200}
 
 
-@pytest.mark.unit_test
 def test_get_input_areas_sets(tmp_path: Path) -> None:
     """
     Read the content of the `sets.ini` file in the `input/areas` directory.
@@ -111,7 +109,6 @@ def test_get_input_areas_sets(tmp_path: Path) -> None:
     assert actual == expected
 
 
-@pytest.mark.unit_test
 def test_get_user_expansion_sensitivity_sensitivity_in(tmp_path: Path) -> None:
     """
     Read the content of the `sensitivity_in.json` file in the `user/expansion/sensitivity` directory.
@@ -156,7 +153,6 @@ def test_get_user_expansion_sensitivity_sensitivity_in(tmp_path: Path) -> None:
     assert actual_obj == sensitivity_obj
 
 
-@pytest.mark.unit_test
 def test_get_depth() -> None:
     config = Mock()
     config.path.exist.return_value = True
@@ -174,7 +170,6 @@ def test_get_depth() -> None:
     assert tree.get(depth=1) == expected
 
 
-@pytest.mark.unit_test
 def test_save() -> None:
     tree = build_tree()
 
@@ -185,7 +180,6 @@ def test_save() -> None:
     assert tree.get(["input"]) == 205
 
 
-@pytest.mark.unit_test
 def test_filter() -> None:
     tree = build_tree()
 

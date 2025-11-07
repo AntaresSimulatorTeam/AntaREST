@@ -10,14 +10,12 @@
 #
 # This file is part of the Antares project.
 
-import pytest
 
 from antarest.core.jwt import JWTUser
 from antarest.core.logging.utils import _task_id, task_context
 from antarest.login.utils import get_current_user
 
 
-@pytest.mark.unit_test
 def test_task_context() -> None:
     user = JWTUser(id=2, type="users", impersonator=2, groups=[])
     try:

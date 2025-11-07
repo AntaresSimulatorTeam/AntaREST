@@ -14,7 +14,6 @@ import http
 from unittest.mock import ANY
 
 import numpy as np
-import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -22,7 +21,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from tests.integration.utils import wait_task_completion
 
 
-@pytest.mark.integration_test
 class TestSTStorage:
     """
     This unit test is designed to demonstrate the creation, modification of properties and
@@ -76,6 +74,7 @@ class TestSTStorage:
             "horizon": "2030",
             "folder": "STA-mini",
             "tags": [],
+            "directory_id": None,
         }
 
         # Here is the list of available areas

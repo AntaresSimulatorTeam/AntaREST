@@ -16,6 +16,7 @@ from pathlib import Path
 import click
 
 from antarest.tools.admin_lib import clean_locks as do_clean_locks
+from antarest.tools.admin_lib import fix_interrupted_tasks_status
 from antarest.tools.admin_lib import reindex_table as do_reindex_table
 
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +40,22 @@ def commands() -> None:
 def clean_locks(config: str) -> None:
     """Clean app locks"""
     do_clean_locks(Path(config))
+
+
+@commands.command()
+@click.option(
+    "--config",
+    "-c",
+    nargs=1,
+    required=True,
+    type=click.Path(exists=True),
+    help="Application config",
+)
+def fix_tasks_status(config: str) -> None:
+    """
+    Set status of running or pending tasks to FAILED.
+    """
+    fix_interrupted_tasks_status(Path(config))
 
 
 @commands.command()
