@@ -46,6 +46,7 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
   const studies = studyIds.map((id) => studiesById[id]).filter(Boolean);
   // The version format of `study.version` is '[major][minor][patch]' as string
   const maxStudyVersion = Math.max(...studies.map((study) => Number(study.version)));
+  const defaultVersion = (maxStudyVersion / 100).toString();
 
   const getVersionOptionsForLauncher = (launcherId: Launcher["id"]) => {
     const versions = launchersById[launcherId].versions;
@@ -79,13 +80,12 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
   const isSingleStudy = studyIds.length === 1;
   const studyOutputs = isSingleStudy ? await getStudyOutputs(studyIds[0]) : [];
   const outputOptions = studyOutputs.map(({ name }) => name);
-  const version = (maxStudyVersion / 100).toString();
 
   return {
     name: "",
     autoUnzip: true,
-    version,
-    configuration: getConfigurationsOptionsForVersion(version)[0]?.value,
+    version: defaultVersion,
+    configuration: getConfigurationsOptionsForVersion(defaultVersion)[0]?.value,
     otherOptions: "",
     xpansion: false,
     adequacyCriterion: false,
