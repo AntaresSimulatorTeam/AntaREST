@@ -35,7 +35,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
 )
 
 
-class AreaUI(IniProperties):
+class AreaUIStyle(IniProperties):
+    """
+    Style properties for an area: position and color.
+    """
+
     x: int = Field(default=0, description="x coordinate of the area in the map")
     y: int = Field(default=0, description="y coordinate of the area in the map")
     color_r: int = Field(default=230, description="red component of the area color")
@@ -47,16 +51,21 @@ class AreaUI(IniProperties):
         return {"x": self.x, "y": self.y, "color_r": self.color_r, "color_g": self.color_g, "color_b": self.color_b}
 
 
-class UIProperties(IniProperties):
-    style: AreaUI = Field(
-        default_factory=AreaUI,
+class AreaUIFileData(IniProperties):
+    """
+    UI properties for an area, including layer-specific styles.
+    Handles serialization to/from INI file format.
+    """
+
+    style: AreaUIStyle = Field(
+        default_factory=AreaUIStyle,
         description="style of the area in the map: coordinates and color",
     )
     layers: Set[int] = Field(
         default_factory=lambda: {0},
         description="layers where the area is visible",
     )
-    layer_styles: Dict[int, AreaUI] = Field(
+    layer_styles: Dict[int, AreaUIStyle] = Field(
         default_factory=dict,
         description="style of the area in each layer",
         alias="layerStyles",
@@ -67,11 +76,11 @@ class UIProperties(IniProperties):
         """Defined the default style if missing."""
         style = values.get("style", None)
         if style is None:
-            values["style"] = AreaUI()
+            values["style"] = AreaUIStyle()
         elif isinstance(style, dict):
-            values["style"] = AreaUI(**style)
+            values["style"] = AreaUIStyle(**style)
         else:
-            values["style"] = AreaUI(**style.model_dump())
+            values["style"] = AreaUIStyle(**style.model_dump())
         return values
 
     @staticmethod
@@ -79,15 +88,15 @@ class UIProperties(IniProperties):
         """Define the default layer styles if missing."""
         layer_styles = values.get("layer_styles")
         if layer_styles is None:
-            values["layer_styles"] = {0: AreaUI()}
+            values["layer_styles"] = {0: AreaUIStyle()}
         elif isinstance(layer_styles, dict):
-            values["layer_styles"] = {0: AreaUI()}
+            values["layer_styles"] = {0: AreaUIStyle()}
             for key, style in layer_styles.items():
                 key = int(key)
                 if isinstance(style, dict):
-                    values["layer_styles"][key] = AreaUI(**style)
+                    values["layer_styles"][key] = AreaUIStyle(**style)
                 else:
-                    values["layer_styles"][key] = AreaUI(**style.model_dump())
+                    values["layer_styles"][key] = AreaUIStyle(**style.model_dump())
         else:
             raise TypeError(f"Invalid type for layer_styles: {type(layer_styles)}")
         return values
@@ -209,14 +218,14 @@ class AreaFileData(AntaresBaseModel):
         default_factory=AdequacyPatchFileData,
         description="adequacy patch configuration",
     )
-    ui: UIProperties = Field(
-        default_factory=UIProperties,
+    ui: AreaUIFileData = Field(
+        default_factory=AreaUIFileData,
         description="UI configuration",
     )
 
 
 # noinspection SpellCheckingInspection
-class ThermalAreasProperties(IniProperties):
+class ThermalAreasFileData(IniProperties):
     """
     Object linked to `/input/thermal/areas.ini` information.
     """
@@ -241,7 +250,7 @@ class ThermalAreasProperties(IniProperties):
 
 
 class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    thermal_properties: ThermalAreasProperties
+    thermal_properties: ThermalAreasFileData
     optimization_properties: OptimizationFileData
     adequacy_patch_properties: AdequacyPatchFileData
 

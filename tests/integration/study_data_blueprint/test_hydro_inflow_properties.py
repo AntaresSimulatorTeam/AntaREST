@@ -9,15 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import copy
 from http import HTTPStatus
 from unittest.mock import ANY
 
-import pytest
 from starlette.testclient import TestClient
 
 
-@pytest.mark.unit_test
 class TestHydroInflowProperties:
     """
     Test the end points related to hydraulic inflow-structure.
@@ -31,7 +28,7 @@ class TestHydroInflowProperties:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
 
@@ -100,7 +97,7 @@ class TestHydroInflowProperties:
         res = client.get(f"/v1/studies/{variant_id}/commands")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        assert len(actual) == 2
+        assert len(actual) == 1
         expected = {
             "id": ANY,
             "action": "update_inflow_structure",
@@ -109,14 +106,14 @@ class TestHydroInflowProperties:
             "updated_at": ANY,
             "user_name": ANY,
         }
-        assert actual[1] == expected
+        assert actual[0] == expected
 
     def test_update_inflow_structure__invalid_values(
         self,
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         area_id = "fr"
 
@@ -128,54 +125,3 @@ class TestHydroInflowProperties:
         obj = {"interMonthlyCorrelation": -0.1}
         res = client.put(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/inflow-structure", json=obj)
         assert res.status_code == HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
-
-    def test_get_all_hydro_properties_inside_study(self, client: TestClient, user_access_token: str):
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-        res = client.post("/v1/studies", params={"name": "test_study", "version": "8.8"})
-        study_id = res.json()
-        area_id = "fr"
-        client.post(f"/v1/studies/{study_id}/areas", json={"name": area_id, "type": "AREA"})
-        client.post(f"/v1/studies/{study_id}/areas", json={"name": "be", "type": "AREA"})
-
-        # Check default values
-        res = client.get(f"/v1/studies/{study_id}/hydro")
-        assert res.status_code == HTTPStatus.OK, res.json()
-        default_properties = {
-            "inflowStructure": {"interMonthlyCorrelation": 0.5},
-            "managementOptions": {
-                "followLoad": True,
-                "hardBounds": False,
-                "initializeReservoirDate": 0,
-                "interDailyBreakdown": 1.0,
-                "interMonthlyBreakdown": 1.0,
-                "intraDailyModulation": 24.0,
-                "leewayLow": 1.0,
-                "leewayUp": 1.0,
-                "powerToLevel": False,
-                "pumpingEfficiency": 1.0,
-                "reservoir": False,
-                "reservoirCapacity": 0.0,
-                "useHeuristic": True,
-                "useLeeway": False,
-                "useWater": False,
-            },
-        }
-        assert res.json() == {"be": default_properties, "fr": default_properties}
-
-        # Update inflow structure values
-        obj = {"interMonthlyCorrelation": 0.8}
-        res = client.put(f"/v1/studies/{study_id}/areas/{area_id}/hydro/inflow-structure", json=obj)
-        assert res.status_code == HTTPStatus.OK, res.json()
-
-        # Update hydro management properties
-        obj = {"reservoirCapacity": 15}
-        res = client.put(f"/v1/studies/{study_id}/areas/{area_id}/hydro/form", json=obj)
-        assert res.status_code == HTTPStatus.OK, res.json()
-
-        # Asserts properties were modified correctly
-        res = client.get(f"/v1/studies/{study_id}/hydro")
-        assert res.status_code == HTTPStatus.OK, res.json()
-        new_fr_properties = copy.deepcopy(default_properties)
-        new_fr_properties["managementOptions"]["reservoirCapacity"] = 15
-        new_fr_properties["inflowStructure"]["interMonthlyCorrelation"] = 0.8
-        assert res.json() == {"be": default_properties, "fr": new_fr_properties}

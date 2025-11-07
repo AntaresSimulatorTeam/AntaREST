@@ -12,11 +12,9 @@
 
 from http import HTTPStatus
 
-import pytest
 from starlette.testclient import TestClient
 
 
-@pytest.mark.unit_test
 class TestConfigGeneralForm:
     """
     Test the end points related to hydraulic correlation.
@@ -30,7 +28,7 @@ class TestConfigGeneralForm:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """Check `get_general_config` end point"""
         res = client.get(
             f"/v1/studies/{internal_study_id}/config/general/form",
@@ -62,7 +60,7 @@ class TestConfigGeneralForm:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-    ):
+    ) -> None:
         """Check `set_general_form_values` end point"""
         obj = {"horizon": "2020"}
         res = client.put(

@@ -11,8 +11,6 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
-import pytest
-
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -20,7 +18,6 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.mark.unit_test
 def test_get_additional_constraints(
     tmp_path: Path, empty_study_880: FileStudy, empty_study_920: FileStudy, command_context: CommandContext
 ) -> None:

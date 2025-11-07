@@ -46,7 +46,7 @@ def upgrade_db(config_file: Path) -> None:
         raise e
 
     alembic_cfg.stdout = StringIO()
-    command.heads(alembic_cfg)  # type: ignore
+    command.heads(alembic_cfg)
     head_output = alembic_cfg.stdout.getvalue()
     head = head_output.split(" ")[0].strip()
     if current_version != head:

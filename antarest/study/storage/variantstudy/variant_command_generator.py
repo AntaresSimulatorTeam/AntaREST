@@ -123,7 +123,14 @@ class VariantCommandGenerator:
         return VariantCommandGenerator._generate(
             commands,
             study,
-            lambda command, data, _listener: command.apply(FileStudyTreeDao(cast(FileStudy, data)), _listener),
+            lambda command, data, _listener: command.apply(
+                FileStudyTreeDao(
+                    cast(FileStudy, data),
+                    command.command_context.generator_matrix_constants,
+                    command.command_context.blob_service,
+                ),
+                _listener,
+            ),
             metadata,
             listener,
         )

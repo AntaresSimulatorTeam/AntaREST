@@ -12,11 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-grid";
+import * as R from "ramda";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type {
-  ScenarioDisplay,
+  Level1Display,
   ScenarioType,
 } from "@/services/api/studies/config/scenarioBuilder/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
@@ -24,10 +27,10 @@ import type { StudyMetadata } from "../../../../../../../../types/types";
 import { toError } from "../../../../../../../../utils/fnUtils";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import EmptyView from "../../../../../../../common/page/EmptyView";
-import TableForm from "../../../../../../../common/TableForm";
+import DataGridForm from "../../../../../../../common/DataGridForm";
 
 interface Props {
-  config: ScenarioDisplay;
+  config: Level1Display;
   type: ScenarioType;
   areaId?: string;
 }
@@ -37,9 +40,66 @@ function Table({ config, type, areaId }: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
+  const rowNames = useMemo(() => R.keys(config), [config]);
+
+  const columns = useMemo<Array<GridColumn & { id: string }>>(() => {
+    if (rowNames.length === 0) {
+      return [];
+    }
+
+    // Get the MC year indices from the first row
+    const firstRowName = rowNames[0];
+    const firstRowData = config[firstRowName];
+    const yearIndices = R.keys(firstRowData);
+
+    return yearIndices.map((yearIndex) => ({
+      id: yearIndex,
+      title: `${t("global.year")} ${Number(yearIndex) + 1}`,
+    }));
+  }, [config, rowNames, t]);
+
+  const defaultData = useMemo(() => {
+    return rowNames.reduce(
+      (acc, rowName) => {
+        acc[rowName] = config[rowName];
+        return acc;
+      },
+      {} as Record<string, Record<string, number | "">>,
+    );
+  }, [config, rowNames]);
+
+  const getCellContent = useCallback((_location: Item, cellData: number | "") => {
+    if (typeof cellData === "number") {
+      return {
+        kind: GridCellKind.Number,
+        data: cellData,
+        displayData: cellData.toString(),
+        allowOverlay: true,
+      } as const;
+    }
+
+    // Empty string should display "rand" but allow numeric input
+    return {
+      kind: GridCellKind.Number,
+      data: undefined,
+      displayData: "rand",
+      allowOverlay: true,
+    } as const;
+  }, []);
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
+
+  const transformCellValue = useCallback((_location: Item, newValue: unknown) => {
+    // Handle clearing a cell when user deletes content, return empty string to display "rand"
+    if (newValue === undefined) {
+      return ""; // Reset to "rand"
+    }
+
+    // Return undefined to let DataGridForm handle it normally
+    return undefined;
+  }, []);
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
     try {
@@ -68,18 +128,18 @@ function Table({ config, type, areaId }: Props) {
   }
 
   return (
-    <TableForm
+    <DataGridForm
       key={JSON.stringify(config)}
-      autoSubmit={false}
-      defaultValues={config}
-      tableProps={{
-        type: "numeric",
-        placeholder: "rand",
-        allowEmpty: true,
-        colHeaders: (index) => `${t("global.year")} ${index + 1}`,
-        className: "htCenter",
-      }}
+      defaultData={defaultData}
+      columns={columns}
+      getCellContent={getCellContent}
+      transformCellValue={transformCellValue}
       onSubmit={handleSubmit}
+      rowMarkers={{
+        kind: "clickable-string",
+        getTitle: (index) => rowNames[index],
+        width: 150,
+      }}
     />
   );
 }

@@ -16,7 +16,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateGeneralConfig:
-    def test_update_general_config(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_update_general_config(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
 
         default_values = study.tree.get(["settings", "generaldata", "general"])

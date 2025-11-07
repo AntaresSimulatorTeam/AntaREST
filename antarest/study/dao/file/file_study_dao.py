@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import typing as t
 from typing import Self
 
 from antares.study.version import StudyVersion
@@ -17,7 +18,10 @@ from typing_extensions import override
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
+from antarest.study.dao.file.file_study_area_dao import FileStudyAreaDao
+from antarest.study.dao.file.file_study_area_properties_dao import FileStudyAreaPropertiesDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
+from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
 from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
 from antarest.study.dao.file.file_study_layer_dao import FileStudyLayerDao
@@ -33,6 +37,10 @@ from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTim
 from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserResourceDao
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+if t.TYPE_CHECKING:
+    from antarest.blobstore.service import IBlobService
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class FileStudyTreeDao(
@@ -50,17 +58,27 @@ class FileStudyTreeDao(
     FileStudyThematicTrimmingDao,
     FileStudyAdequacyPatchParametersDao,
     FileStudyTimeSeriesConfigDao,
+    FileStudyDistrictDao,
     FileStudyLayerDao,
     FileStudyPlaylistConfigDao,
     FileStudyUserResourceDao,
+    FileStudyAreaPropertiesDao,
     FileStudyScenarioBuilderDao,
+    FileStudyAreaDao,
 ):
     """
     Implementation of study DAO over the simulator input format.
     """
 
-    def __init__(self, study: FileStudy) -> None:
+    def __init__(
+        self,
+        study: FileStudy,
+        generator_matrix_constants: t.Optional["GeneratorMatrixConstants"] = None,
+        blob_service: t.Optional["IBlobService"] = None,
+    ) -> None:
         self._file_study = study
+        self._generator_matrix_constants = generator_matrix_constants
+        self._blob_service = blob_service
 
     @override
     def get_file_study(self) -> FileStudy:

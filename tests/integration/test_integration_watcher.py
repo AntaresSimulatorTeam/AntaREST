@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 
-def test_integration_xpansion(app: FastAPI, tmp_path: str):
+def test_integration_xpansion(app: FastAPI, tmp_path: str) -> None:
     client = TestClient(app, raise_server_exceptions=False)
     res = client.post("/v1/login", json={"username": "admin", "password": "admin"})
     admin_credentials = res.json()

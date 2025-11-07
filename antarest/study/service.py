@@ -14,10 +14,11 @@ import base64
 import collections
 import contextlib
 import http
+import io
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
 from uuid import uuid4
@@ -54,6 +55,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
@@ -69,7 +71,6 @@ from antarest.study.business.advanced_parameters_management import AdvancedParam
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
-from antarest.study.business.areas.properties_management import AreaPropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
@@ -80,13 +81,17 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
+from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.link_model import Link, LinkUpdate
+from antarest.study.business.model.study_data_model import StudyDataDTO
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
+    XpansionResourceFileType,
     XpansionSettings,
     XpansionSettingsUpdate,
 )
@@ -102,6 +107,7 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -410,7 +416,11 @@ class RawStudyInterface(StudyInterface):
         file_study = self.get_files()
 
         for command in commands:
-            result = command.apply(FileStudyTreeDao(file_study), listener)
+            context = command.command_context
+            result = command.apply(
+                FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service),
+                listener,
+            )
             if result.should_invalidate_cache:
                 should_invalidate_cache = True
             if not result.status:
@@ -486,6 +496,7 @@ class StudyService:
         self,
         raw_study_service: RawStudyService,
         variant_study_service: VariantStudyService,
+        directory_service: DirectoryService,
         command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
@@ -498,6 +509,7 @@ class StudyService:
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
+        self.directory_service = directory_service
         self.repository = repository
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
@@ -514,7 +526,6 @@ class StudyService:
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
-        self.properties_manager = AreaPropertiesManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
         self.thermal_manager = ThermalManager(command_context)
         self.st_storage_manager = STStorageManager(command_context)
@@ -701,8 +712,19 @@ class StudyService:
             pagination=pagination,
         )
         logger.info("Studies retrieved")
+
+        # Bulk optimization: pre-calculate all directory paths in one query
+        directory_ids = [study.directory_id for study in matching_studies if study.directory_id is not None]
+        directory_paths = self.directory_service.get_directory_paths_bulk(directory_ids)
+
+        # Build study metadata with pre-calculated paths
         for study in matching_studies:
-            study_metadata = self._try_get_studies_information(study)
+            folder_path = None
+            if study.directory_id:
+                dir_path = directory_paths.get(study.directory_id, "")
+                folder_path = f"{dir_path}/{study.id}" if dir_path else study.id
+
+            study_metadata = self._try_get_studies_information(study, folder_path)
             if study_metadata is not None:
                 studies[study_metadata.id] = study_metadata
         return studies
@@ -723,9 +745,11 @@ class StudyService:
         )
         return total
 
-    def _try_get_studies_information(self, study: Study) -> Optional[StudyMetadataDTO]:
+    def _try_get_studies_information(
+        self, study: Study, folder_path: Optional[str] = None
+    ) -> Optional[StudyMetadataDTO]:
         try:
-            return self.storage_service.get_storage(study).get_study_information(study)
+            return self.storage_service.get_storage(study).get_study_information(study, folder_path)
         except Exception as e:
             logger.warning(
                 "Failed to build study %s (%s) metadata",
@@ -749,7 +773,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         logger.info("Study metadata requested for study %s by user %s", uuid, get_user_id())
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
-        study.last_access = datetime.utcnow()
+        study.last_access = datetime.now(timezone.utc).replace(tzinfo=None)
         self.repository.save(study)
         return self.storage_service.get_storage(study).get_study_information(study)
 
@@ -854,7 +878,9 @@ class StudyService:
         logger.info("study %s path asked by user %s", uuid, get_user_id())
         return self.storage_service.get_storage(study).get_study_path(study)
 
-    def create_study(self, study_name: str, version: Optional[StudyVersion], group_ids: List[str]) -> str:
+    def create_study(
+        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], directory: str = ""
+    ) -> str:
         """
         Creates a study with the specified study name, version, group IDs, and user parameters.
 
@@ -862,6 +888,7 @@ class StudyService:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
+            directory: Optional directory path where the study will be created (e.g., 'project/subfolder').
 
         Returns:
             str: The ID of the newly created study.
@@ -871,15 +898,19 @@ class StudyService:
 
         author = self.get_user_name()
 
+        directory_id = self.directory_service.get_directory_by_path(directory)
+
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         raw = RawStudy(
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(study_path),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author, editor=author),
+            directory_id=directory_id,
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -918,7 +949,7 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
-        study.last_access = datetime.utcnow()
+        study.last_access = datetime.now(timezone.utc).replace(tzinfo=None)
         self.repository.save(study)
         study_storage_service = self.storage_service.get_storage(study)
         return study_storage_service.get_synthesis(study)
@@ -965,7 +996,7 @@ class StudyService:
         Returns:
 
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
         if directory:
@@ -1204,12 +1235,17 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+
         if folder_dest:
             new_folder = folder_dest.rstrip("/") + f"/{study.id}"
+            directory_id = self.directory_service.get_directory_by_path(folder_dest)
+            study.directory_id = directory_id
         else:
             new_folder = None
+            study.directory_id = None
+
         study.folder = new_folder
-        self.repository.save(study, update_modification_date=False)
+        self.repository.save(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_EDITED,
@@ -1365,7 +1401,7 @@ class StudyService:
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
-        study.updated_at = datetime.utcnow()
+        study.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
         self._save_study(study, group_ids)
         self.normalize_study(study)
@@ -1457,7 +1493,10 @@ class StudyService:
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
             user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
-            args = {"path": user_path, "resource_type": ResourceType.FILE, "content": data or b""}
+            content = data or b""
+            assert isinstance(content, bytes)
+            blob_id = context.blob_service.save(content)
+            args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
             command_data = UserResourceDataCreation.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
             commands.append(cmd_1)
@@ -1663,19 +1702,19 @@ class StudyService:
             get_user_id(),
         )
 
-    def get_all_areas(
+    def get_all_areas_info(
         self,
         uuid: str,
-    ) -> List[Area]:
+    ) -> List[AreaInfo]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
-        return self.area_manager.get_all_areas(study_interface)
+        return self.area_manager.get_all_areas_info(study_interface)
 
     def get_all_areas_ui_info(
         self,
         uuid: str,
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, AreaUIData]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -1693,7 +1732,7 @@ class StudyService:
         self,
         uuid: str,
         area_creation_dto: AreaCreation,
-    ) -> Area:
+    ) -> AreaInfo:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -1751,7 +1790,7 @@ class StudyService:
         self,
         uuid: str,
         area_id: str,
-        area_ui: UpdateAreaUi,
+        area_ui: AreaUIUpdate,
         layer: str,
     ) -> None:
         study = self.get_study(uuid)
@@ -2224,11 +2263,12 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas: List[Area] = self.get_all_areas(study_id)
             if matrix_path.parts[-1] == "allocation":
-                hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
+                hydro_matrix: HydroCorrelationMatrix | HydroAllocationMatrix = (
+                    self.allocation_manager.get_allocation_matrix(study_interface)
+                )
             else:
-                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study_interface, [])  # type: ignore
+                hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         # Gets the data and checks given path existence
@@ -2317,7 +2357,6 @@ class StudyService:
         args = {
             "path": _get_path_inside_user_folder(path, ResourceCreationNotAllowed),
             "resource_type": ResourceType.FOLDER,
-            "content": None,
         }
         command_data = UserResourceDataCreation.model_validate(args)
         self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)
@@ -2388,8 +2427,131 @@ class StudyService:
         url = [item for item in path.split("/") if item]
         node, relative_url = file_study.tree.get_node_and_remainder(url)
 
-        # Return a datframe when possible instead of less memory & computation - efficient python objects
+        # Return a dataframe when possible instead of less memory & computation - efficient python objects
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
 
         return node.get(url=relative_url, depth=depth, formatted=formatted)
+
+    def get_study_data(self, uuid: str) -> StudyDataDTO:
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        study_interface = self.get_study_interface(study)
+
+        ##########################
+        # Study metadata
+        ##########################
+
+        obj: dict[str, Any] = {
+            "metadata": {"version": study_interface.version, "name": study.name, "folder": study.folder}
+        }
+
+        ##########################
+        # Areas
+        ##########################
+
+        area_properties = self.area_manager.get_all_area_properties(study_interface)
+        area_names = {a.id: a.name for a in self.area_manager.get_all_areas_info(study_interface)}
+        thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
+        st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
+        st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
+        hydro_properties = self.hydro_manager.get_all_hydro_properties(study_interface)
+
+        try:
+            renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
+        except ChildNotFoundError:  # Can happen, according to the enr-modeling
+            renewable_clusters = {}
+
+        areas = []
+        for area_id, properties in area_properties.items():
+            area: dict[str, Any] = {
+                "id": area_id,
+                "name": area_names[area_id],
+                "properties": properties,
+                "thermals": thermal_clusters.get(area_id, {}).values(),
+                "renewables": renewable_clusters.get(area_id, {}).values(),
+                "st_storages": [],
+                "ui": self.area_manager.get_area_ui(study_interface, area_id),
+            }
+
+            # Hydro
+            hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
+            area["hydro"] = {
+                "allocation": hydro_allocation,
+                "management_options": hydro_properties[area_id].management_options,
+                "inflow_structure": hydro_properties[area_id].inflow_structure,
+            }
+
+            # Short-term storages
+            storage_dict = st_storages.get(area_id, {})
+            for storage_id, storage in storage_dict.items():
+                sts_constraints = st_storages_constraints.get(area_id, {}).get(storage_id, [])
+                area["st_storages"].append({**storage.model_dump(), "constraints": sts_constraints})
+
+            areas.append(area)
+
+        obj["areas"] = areas
+
+        ##########################
+        # Links and BCs
+        ##########################
+
+        obj["links"] = self.links_manager.get_all_links(study_interface)
+        obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
+
+        ##########################
+        # Settings
+        ##########################
+
+        obj["settings"] = {
+            "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
+            "general": self.general_manager.get_general_config(study_interface),
+            "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
+            "playlist": self.playlist_manager.get_playlist(study_interface),
+            "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
+            "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
+            "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
+        }
+
+        ##########################
+        # Xpansion
+        ##########################
+
+        try:
+            xpansion_settings = self.get_xpansion_settings(uuid)
+            if xpansion_settings.additional_constraints:
+                xpansion_constraint = self.xpansion_manager.get_resource_content(
+                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                )
+                assert isinstance(xpansion_constraint, bytes)
+                constraint_as_dict = IniReader().read(io.StringIO(xpansion_constraint.decode("utf-8")))
+                constraints = []
+                for constraint in constraint_as_dict.values():
+                    constraint_model_args = {
+                        "name": constraint.pop("name"),
+                        "sign": constraint.pop("sign"),
+                        "right_hand_side": constraint.pop("rhs"),
+                        "candidates_coefficients": {},
+                    }
+                    for candidate, coefficient in constraint.items():
+                        constraint_model_args["candidates_coefficients"][candidate] = coefficient
+                    constraints.append(constraint_model_args)
+            else:
+                constraints = []
+
+            xpansion = {
+                "settings": xpansion_settings,
+                "candidates": self.xpansion_manager.get_candidates(study_interface),
+                "constraints": constraints,
+            }
+
+        except ChildNotFoundError:
+            xpansion = None
+
+        obj["xpansion"] = xpansion
+
+        ##########################
+        # Return the object
+        ##########################
+
+        return StudyDataDTO.model_validate(obj)

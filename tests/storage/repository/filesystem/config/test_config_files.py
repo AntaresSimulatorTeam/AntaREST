@@ -14,7 +14,7 @@ import logging
 import textwrap
 import typing as t
 from pathlib import Path
-from typing import Iterable, Mapping
+from typing import Any, Iterable, Mapping
 from zipfile import ZipFile
 
 import pytest
@@ -22,11 +22,13 @@ import pytest
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
+    BindingConstraintFrequency,
     ClusterTerm,
     ConstraintTerm,
     LinkTerm,
 )
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
@@ -38,7 +40,6 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
     _parse_links_filtering,
@@ -53,7 +54,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
-    DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
@@ -279,7 +279,38 @@ def test_parse_sets(study_path: Path) -> None:
     """
     (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
-    assert _parse_sets(study_path) == {"hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)}
+    assert _parse_sets(study_path) == {
+        "hello": District(id="hello", name="hello", add_areas=["a", "b"], output=True, apply_filter="remove-all")
+    }
+
+    content = """\
+    [hello]
+    output = true
+    apply-filter = add-all
+    - = a
+    - = b
+    """
+    (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
+
+    assert _parse_sets(study_path) == {
+        "hello": District(id="hello", name="hello", subtract_areas=["a", "b"], output=True, apply_filter="add-all")
+    }
+
+    content = """\
+    [hello]
+    output = false
+    apply-filter = add-all
+    - = a
+    - = b
+    + = c
+    """
+    (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
+
+    assert _parse_sets(study_path) == {
+        "hello": District(
+            id="hello", name="hello", subtract_areas=["a", "b"], add_areas=["c"], output=False, apply_filter="add-all"
+        )
+    }
 
 
 def test_parse_area(study_path: Path) -> None:
@@ -411,7 +442,7 @@ nh3 = 456
 
 
 @pytest.mark.parametrize("version", [850, 860, 870])
-def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
+def test_parse_thermal_860(study_path: Path, version: int, caplog: Any) -> None:
     study_path.joinpath("study.antares").write_text(f"[antares] \n version = {version}")
     ini_path = study_path.joinpath("input/thermal/clusters/fr/list.ini")
     ini_path.parent.mkdir(parents=True)
@@ -726,7 +757,7 @@ def _assert_mapping_equals(left: Mapping[str, Iterable[str]], right: Mapping[str
         assert k in left
 
 
-def test_config_to_study_index_8_8():
+def test_config_to_study_index_8_8() -> None:
     config = FileStudyTreeConfig(
         study_path=Path(),
         path=Path(),
@@ -767,7 +798,7 @@ def test_config_to_study_index_8_8():
     assert list(index.sts_constraint_ids) == []
 
 
-def test_config_to_study_index_9_2_additional_constraints():
+def test_config_to_study_index_9_2_additional_constraints() -> None:
     config = FileStudyTreeConfig(
         study_path=Path(),
         path=Path(),

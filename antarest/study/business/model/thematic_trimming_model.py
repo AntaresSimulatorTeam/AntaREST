@@ -17,9 +17,11 @@ List of fields of the Thematic Trimming panel
 from typing import Optional
 
 from antares.study.version import StudyVersion
+from pydantic import ConfigDict
+from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.study.business.utils import FormFieldsBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import (
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_3,
@@ -31,12 +33,14 @@ from antarest.study.model import (
 )
 
 
-class ThematicTrimming(FormFieldsBaseModel):
+class ThematicTrimming(AntaresBaseModel):
     """
     This class manages the configuration of result filtering in a simulation.
 
     This table allows the user to enable or disable specific variables before running a simulation.
     """
+
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     ov_cost: bool = True
     op_cost: bool = True
@@ -148,12 +152,14 @@ class ThematicTrimming(FormFieldsBaseModel):
     misc_dtg: Optional[bool] = None
 
 
-class ThematicTrimmingUpdate(FormFieldsBaseModel):
+class ThematicTrimmingUpdate(AntaresBaseModel):
     """
     Represents an update of the thematic trimming.
 
     Only not-None fields will be used to update the thematic trimming.
     """
+
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     ov_cost: Optional[bool] = None
     op_cost: Optional[bool] = None

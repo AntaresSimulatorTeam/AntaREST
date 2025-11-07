@@ -23,6 +23,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.study_index import StudyIndex
@@ -90,26 +91,6 @@ class AreaConfig(AntaresBaseModel, extra="forbid"):
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
 
 
-class DistrictSet(AntaresBaseModel):
-    """
-    Object linked to /inputs/sets.ini information
-    """
-
-    ALL: List[str] = ["hourly", "daily", "weekly", "monthly", "annual"]
-    name: Optional[str] = None
-    inverted_set: bool = False
-    areas: Optional[List[str]] = None
-    output: bool = True
-    filters_synthesis: List[str] = ALL
-    filters_year: List[str] = ALL
-
-    def get_areas(self, all_areas: List[str]) -> List[str]:
-        areas = self.areas or []
-        if self.inverted_set:
-            areas = list(set(all_areas).difference(set(areas)))
-        return sorted(areas)
-
-
 class Mode(EnumIgnoreCase):
     """
     Simulation mode of an Antares study.
@@ -174,8 +155,8 @@ class FileStudyTreeConfig(DTO):
         study_id: str,
         version: StudyVersion,
         output_path: Optional[Path] = None,
+        districts: Optional[Dict[str, District]] = None,
         areas: Optional[Dict[str, AreaConfig]] = None,
-        sets: Optional[Dict[str, DistrictSet]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[BindingConstraint]] = None,
         store_new_set: bool = False,
@@ -189,7 +170,7 @@ class FileStudyTreeConfig(DTO):
         self.version = version
         self.output_path = output_path
         self.areas = areas or {}
-        self.sets = sets or {}
+        self.districts = districts or {}
         self.outputs = outputs or {}
         self.bindings = bindings or []
         self.store_new_set = store_new_set
@@ -210,7 +191,7 @@ class FileStudyTreeConfig(DTO):
             study_id=self.study_id,
             version=self.version,
             areas=self.areas,
-            sets=self.sets,
+            districts=self.districts,
             outputs=self.outputs,
             bindings=self.bindings,
             store_new_set=self.store_new_set,
@@ -227,7 +208,7 @@ class FileStudyTreeConfig(DTO):
             study_id=self.study_id,
             version=self.version,
             areas=self.areas,
-            sets=self.sets,
+            districts=self.districts,
             outputs=self.outputs,
             bindings=self.bindings,
             store_new_set=self.store_new_set,
@@ -239,7 +220,7 @@ class FileStudyTreeConfig(DTO):
         return list(self.areas)
 
     def set_names(self, only_output: bool = True) -> List[str]:
-        return [k for k, v in self.sets.items() if v.output or not only_output]
+        return [k for k, v in self.districts.items() if v.output or not only_output]
 
     def get_thermal_ids(self, area: str) -> List[str]:
         """
@@ -301,8 +282,8 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_id: str
     version: StudyVersionInt
     output_path: Optional[Path] = None
+    districts: Dict[str, District] = dict()
     areas: Dict[str, AreaConfig] = dict()
-    sets: Dict[str, DistrictSet] = dict()
     outputs: Dict[str, Simulation] = dict()
     bindings: List[BindingConstraint] = list()
     store_new_set: bool = False
@@ -321,7 +302,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             version=config.version,
             output_path=config.output_path,
             areas=config.areas,
-            sets=config.sets,
+            districts=config.districts,
             outputs=config.outputs,
             bindings=config.bindings,
             store_new_set=config.store_new_set,
@@ -338,7 +319,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             version=self.version,
             output_path=self.output_path,
             areas=self.areas,
-            sets=self.sets,
+            districts=self.districts,
             outputs=self.outputs,
             bindings=self.bindings,
             store_new_set=self.store_new_set,

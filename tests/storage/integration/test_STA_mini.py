@@ -15,7 +15,7 @@ import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 from unittest.mock import Mock
 
 import numpy as np
@@ -25,17 +25,19 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
+from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from antarest.study.storage.output_model import OutputVariablesInformation
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.study_download_utils import BadOutputFormat
 from tests.helpers import assert_study, with_admin_user
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -69,12 +71,13 @@ def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
         file_transfer_manager=Mock(),
         study_service=storage_service,
         matrix_service=Mock(spec=MatrixService),
+        blob_service=Mock(spec=BlobService),
         config=storage_service.storage_service.raw_study_service.config,
     )
     return TestClient(build_ctxt.build())
 
 
-def assert_url_content(client: TestClient, url: str, expected_output: dict | str) -> None:
+def assert_url_content(client: TestClient, url: str, expected_output: dict[str, Any] | str) -> None:
     res = client.get(url)
     assert_study(res.json(), expected_output)
 
@@ -82,7 +85,7 @@ def assert_url_content(client: TestClient, url: str, expected_output: dict | str
 def assert_with_errors(
     storage_service: StudyService,
     url: str,
-    expected_output: Union[str, dict],
+    expected_output: Union[str, dict[str, Any]],
     formatted: bool = True,
 ) -> None:
     url = url[len("/v1/studies/") :]
@@ -95,7 +98,6 @@ def assert_with_errors(
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -106,7 +108,7 @@ def assert_with_errors(
         (f"/v1/studies/{UUID}/raw?path=settings/simulations", {}),
     ],
 )
-def test_sta_mini_settings(storage_service, url: str, expected_output: str):
+def test_sta_mini_settings(storage_service: StudyService, url: str, expected_output: str) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -115,7 +117,6 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -129,7 +130,7 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: str):
+def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: str) -> None:
     assert_url_content(
         client=client,
         url=url,
@@ -138,7 +139,6 @@ def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: s
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -153,7 +153,7 @@ def test_sta_mini_layers_layers(client: TestClient, url: str, expected_output: s
         (f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/iconindex", 0),
     ],
 )
-def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
+def test_sta_mini_desktop(storage_service: StudyService, url: str, expected_output: str) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -162,7 +162,6 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -176,7 +175,7 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
         ),
     ],
 )
-def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: str):
+def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: str) -> None:
     assert_url_content(
         client=client,
         url=url,
@@ -192,7 +191,6 @@ def expected_min_gen_response() -> bytes:
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output, formatted",
     [
@@ -320,12 +318,11 @@ def expected_min_gen_response() -> bytes:
         ),
     ],
 )
-def test_sta_mini_input(storage_service, url: str, expected_output: dict, formatted: bool):
+def test_sta_mini_input(storage_service: StudyService, url: str, expected_output: Any, formatted: bool) -> None:
     assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output, formatted=formatted)
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -449,7 +446,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict, format
         ),
     ],
 )
-def test_sta_mini_output(storage_service, url: str, expected_output: dict):
+def test_sta_mini_output(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -458,7 +455,6 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -489,7 +485,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
         ),
     ],
 )
-def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
+def test_sta_mini_expansion(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -498,7 +494,6 @@ def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
 
 
 @with_admin_user
-@pytest.mark.integration_test
 def test_sta_mini_copy(
     storage_service: StudyService, tmp_path: Path, matrix_service: ISimpleMatrixService, client: TestClient
 ) -> None:
@@ -539,7 +534,6 @@ def test_sta_mini_copy(
 
 
 @with_admin_user
-@pytest.mark.integration_test
 def test_sta_mini_list_studies(client: TestClient) -> None:
     expected_output = {
         UUID: {
@@ -560,6 +554,7 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
             "horizon": "2030",
             "folder": None,
             "tags": [],
+            "directory_id": None,
         }
     }
     url = "/v1/studies"
@@ -570,7 +565,6 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
     )
 
 
-@pytest.mark.integration_test
 def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_mini_path: Path) -> None:
     # TODO why a wrong test should success
     (sta_mini_path / "output" / "maps").mkdir()
@@ -586,10 +580,9 @@ def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_
 
 
 @with_admin_user
-@pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study = storage_service.get_study_path(UUID)
-    sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
+    sta_mini_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
@@ -599,10 +592,9 @@ def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: 
 
 
 @with_admin_user
-@pytest.mark.integration_test
 def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study_output = storage_service.get_study_path(UUID) / "output" / "20201014-1422eco-hello"
-    sta_mini_output_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study_output)
+    sta_mini_output_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study_output)
 
     shutil.rmtree(path_study_output)
 
@@ -618,7 +610,6 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
     [
@@ -640,7 +631,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
         ),
     ],
 )
-def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
+def test_sta_mini_filter(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -648,83 +639,97 @@ def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
     )
 
 
-@with_admin_user
-def test_sta_mini_output_variables_nominal_case(output_service):
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
-    assert variables["area"] == [
-        "OV. COST",
-        "OP. COST",
-        "MRG. PRICE",
-        "CO2 EMIS.",
-        "BALANCE",
-        "ROW BAL.",
-        "PSP",
-        "MISC. NDG",
-        "LOAD",
-        "H. ROR",
-        "WIND",
-        "SOLAR",
-        "NUCLEAR",
-        "LIGNITE",
-        "COAL",
-        "GAS",
-        "OIL",
-        "MIX. FUEL",
-        "MISC. DTG",
-        "H. STOR",
-        "H. PUMP",
-        "H. LEV",
-        "H. INFL",
-        "H. OVFL",
-        "H. VAL",
-        "H. COST",
-        "UNSP. ENRG",
-        "SPIL. ENRG",
-        "LOLD",
-        "LOLP",
-        "AVL DTG",
-        "DTG MRG",
-        "MAX MRG",
-        "NP COST",
-        "NODU",
-    ]
-    assert variables["link"] == [
-        "FLOW LIN.",
-        "UCAP LIN.",
-        "LOOP FLOW",
-        "FLOW QUAD.",
-        "CONG. FEE (ALG.)",
-        "CONG. FEE (ABS.)",
-        "MARG. COST",
-        "CONG. PROB +",
-        "CONG. PROB -",
-        "HURDLE COST",
-    ]
+def _add_study_in_db(output_service: OutputService) -> None:
+    """Adds the study UUID inside the DB to avoid ForeginKey issues"""
+    with db():
+        study = output_service._study_service.get_study(UUID)
+        db.session.add(study)
+        db.session.commit()
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_mc_ind(output_service):
-    with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
-        output_service.output_variables_information(UUID, "20201014-1427eco")
+def test_sta_mini_output_variables_nominal_case(output_service: OutputService) -> None:
+    _add_study_in_db(output_service)
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
+    assert variables.model_dump() == {
+        "area": [
+            "AVL DTG",
+            "BALANCE",
+            "CO2 EMIS.",
+            "COAL",
+            "DTG MRG",
+            "GAS",
+            "H. COST",
+            "H. INFL",
+            "H. LEV",
+            "H. OVFL",
+            "H. PUMP",
+            "H. ROR",
+            "H. STOR",
+            "H. VAL",
+            "LIGNITE",
+            "LOAD",
+            "LOLD",
+            "LOLP",
+            "MAX MRG",
+            "MISC. DTG",
+            "MISC. NDG",
+            "MIX. FUEL",
+            "MRG. PRICE",
+            "NODU",
+            "NP COST",
+            "NUCLEAR",
+            "OIL",
+            "OP. COST",
+            "OV. COST",
+            "PSP",
+            "ROW BAL.",
+            "SOLAR",
+            "SPIL. ENRG",
+            "UNSP. ENRG",
+            "WIND",
+        ],
+        "link": [
+            "CONG. FEE (ABS.)",
+            "CONG. FEE (ALG.)",
+            "CONG. PROB +",
+            "CONG. PROB -",
+            "FLOW LIN.",
+            "FLOW QUAD.",
+            "HURDLE COST",
+            "LOOP FLOW",
+            "MARG. COST",
+            "UCAP LIN.",
+        ],
+    }
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_links(output_service):
+def test_sta_mini_output_variables_no_mc_ind(output_service: OutputService) -> None:
+    _add_study_in_db(output_service)
+    res = output_service.get_output_variables_information(UUID, "20201014-1427eco")
+    assert res == OutputVariablesInformation(area=[], link=[])
+
+
+@with_admin_user
+def test_sta_mini_output_variables_no_links(output_service: OutputService) -> None:
+    _add_study_in_db(output_service)
     study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     # When there's no links folder, asserts the endpoint doesn't fail and simply return an empty list
-    assert variables["link"] == []
+    assert variables.link == []
 
 
 @with_admin_user
-def test_sta_mini_output_variables_no_areas(output_service):
+def test_sta_mini_output_variables_no_areas(output_service: OutputService) -> None:
+    _add_study_in_db(output_service)
     study_path = Path(output_service._study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)
     shutil.rmtree(areas_mc_all_folder)
-    variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
+    variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     # When there's no areas folder, asserts the endpoint doesn't fail and simply return an empty list
-    assert variables["area"] == []
+    assert variables.area == []

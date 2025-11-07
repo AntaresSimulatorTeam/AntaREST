@@ -10,12 +10,14 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Dict, Sequence
+from typing import Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -23,6 +25,9 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
@@ -47,7 +52,10 @@ from antarest.study.dao.api.adequacy_patch_parameters_dao import (
     ReadOnlyAdequacyPatchParametersDao,
 )
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
+from antarest.study.dao.api.area_dao import AreaDao, ReadOnlyAreaDao
+from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao, ReadOnlyAreaPropertiesDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
@@ -82,10 +90,13 @@ class ReadOnlyStudyDao(
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
     ReadOnlyTimeSeriesConfigDao,
+    ReadOnlyDistrictDao,
     ReadOnlyLayerDao,
     ReadOnlyPlaylistConfigDao,
     ReadOnlyUserResourcesDao,
+    ReadOnlyAreaPropertiesDao,
     ReadOnlyScenarioBuilderDao,
+    ReadOnlyAreaDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -111,10 +122,13 @@ class StudyDao(
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
+    DistrictDao,
     LayerDao,
     PlaylistConfigDao,
     UserResourcesDao,
     ScenarioBuilderDao,
+    AreaPropertiesDao,
+    AreaDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -305,7 +319,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
 
     @override
-    def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
+    def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
         return self._adaptee.get_all_hydro_properties()
 
     @override
@@ -315,6 +329,22 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
         return self._adaptee.get_inflow_structure(area_id)
+
+    @override
+    def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
+        return self._adaptee.get_hydro_allocation(area_id)
+
+    @override
+    def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
+        return self._adaptee.get_hydro_allocation_matrix()
+
+    @override
+    def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
+        return self._adaptee.get_hydro_correlation(area_id)
+
+    @override
+    def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
+        return self._adaptee.get_hydro_correlation_matrix()
 
     @override
     def get_general_config(self) -> GeneralConfig:
@@ -391,6 +421,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_timeseries_config()
 
     @override
+    def get_district(self, district_id: str) -> District:
+        return self._adaptee.get_district(district_id)
+
+    @override
+    def get_districts(self) -> Sequence[District]:
+        return self._adaptee.get_districts()
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return self._adaptee.district_exists(district_id)
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._adaptee.tmp_get_all_areas()
+
+    @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        return self._adaptee.get_invalid_areas_in_district(areas)
+
+    @override
     def get_layers(self) -> Sequence[Layer]:
         return self._adaptee.get_layers()
 
@@ -403,6 +453,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_playlist_config()
 
     @override
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        return self._adaptee.get_area_properties(area_id)
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._adaptee.get_all_area_properties()
+
+    @override
     def get_rulesets(self) -> Rulesets:
         return self._adaptee.get_rulesets()
 
@@ -413,3 +471,15 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         return self._adaptee.get_scenario_by_type(scenario_type)
+
+    @override
+    def get_all_areas_info(self) -> list[AreaInfo]:
+        return self._adaptee.get_all_areas_info()
+
+    @override
+    def get_all_areas_ui_info(self) -> dict[str, AreaUIData]:
+        return self._adaptee.get_all_areas_ui_info()
+
+    @override
+    def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
+        return self._adaptee.get_area_ui(area_id, layer)

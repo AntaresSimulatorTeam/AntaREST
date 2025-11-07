@@ -118,7 +118,7 @@ class TableModeManager:
 
     def _get_table_data_unsafe(self, study: StudyInterface, table_type: TableModeType) -> TableDataDTO:
         if table_type == TableModeType.AREA:
-            areas_map = self._area_manager.get_all_area_props(study)
+            areas_map = self._area_manager.get_all_area_properties(study)
             data = {}
             for area_id, area in areas_map.items():
                 area_dict = area.model_dump(by_alias=True, exclude_none=True)
@@ -224,7 +224,7 @@ class TableModeManager:
         """
         if table_type == TableModeType.AREA:
             area_props_by_ids = {key: _parse_area_properties_update(values) for key, values in data.items()}
-            areas_map = self._area_manager.update_areas_props(study, area_props_by_ids)
+            areas_map = self._area_manager.update_all_area_properties(study, area_props_by_ids)
             data = {}
             for area_id, area in areas_map.items():
                 area_dict = area.model_dump(by_alias=True, exclude_none=True)

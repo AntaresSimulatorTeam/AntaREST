@@ -33,7 +33,7 @@ def create_app(security_disabled: bool, identity_validator: IdentityValidator) -
     return app
 
 
-def test_disabled_auth_should_use_admin_user():
+def test_disabled_auth_should_use_admin_user() -> None:
     def _should_not_reach(jwt: AuthJWT) -> JWTUser:
         raise AssertionError("Should not reach")
 
@@ -47,7 +47,7 @@ def test_disabled_auth_should_use_admin_user():
     assert res.json() == DEFAULT_ADMIN_USER.id
 
 
-def test_auth_should_set_current_user():
+def test_auth_should_set_current_user() -> None:
     # create an identity validator which returns admin then another user
     user = JWTUser(id=12, type="user", impersonator=36, groups=[])
     identidy_validator = Mock()
@@ -62,7 +62,7 @@ def test_auth_should_set_current_user():
     assert res.json() == 12
 
 
-def test_auth_should_return_status_code_on_exception():
+def test_auth_should_return_status_code_on_exception() -> None:
     def _raise_401(jwt: AuthJWT) -> JWTUser:
         raise HTTPException(status_code=401)
 

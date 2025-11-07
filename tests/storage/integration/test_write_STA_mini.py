@@ -39,7 +39,6 @@ def assert_with_errors(
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -49,7 +48,7 @@ def assert_with_errors(
         ),
     ],
 )
-def test_sta_mini_settings(storage_service, url: str, new: SUB_JSON):
+def test_sta_mini_settings(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -58,7 +57,6 @@ def test_sta_mini_settings(storage_service, url: str, new: SUB_JSON):
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -68,7 +66,7 @@ def test_sta_mini_settings(storage_service, url: str, new: SUB_JSON):
         ),
     ],
 )
-def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
+def test_sta_mini_layers_layers(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -77,7 +75,6 @@ def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -95,7 +92,7 @@ def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
         ),
     ],
 )
-def test_sta_mini_desktop(storage_service, url: str, new: SUB_JSON):
+def test_sta_mini_desktop(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -104,7 +101,6 @@ def test_sta_mini_desktop(storage_service, url: str, new: SUB_JSON):
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -118,7 +114,7 @@ def test_sta_mini_desktop(storage_service, url: str, new: SUB_JSON):
         ),
     ],
 )
-def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
+def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -127,7 +123,6 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new, expected",
     [
@@ -395,7 +390,7 @@ def test_sta_mini_study_antares(storage_service, url: str, new: SUB_JSON):
         ),
     ],
 )
-def test_sta_mini_input(storage_service, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]):
+def test_sta_mini_input(storage_service: StudyService, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,
@@ -405,7 +400,6 @@ def test_sta_mini_input(storage_service, url: str, new: SUB_JSON, expected: Opti
 
 
 @with_admin_user
-@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, new",
     [
@@ -423,7 +417,7 @@ def test_sta_mini_input(storage_service, url: str, new: SUB_JSON, expected: Opti
         ),
     ],
 )
-def test_sta_mini_output(storage_service, url: str, new: SUB_JSON):
+def test_sta_mini_output(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
     assert_with_errors(
         storage_service=storage_service,
         url=url,

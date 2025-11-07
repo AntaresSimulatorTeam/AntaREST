@@ -98,8 +98,8 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
-    assert res.status_code == 417
-    assert res.json()["description"] == "Not a year by year simulation"
+    assert res.status_code == 200
+    assert res.json() == {"area": [], "link": []}
 
     # study synthesis
     res = client.get(
@@ -198,6 +198,22 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert copied.status_code == 201
+
+    # Create directory structure 'foo/bar' before moving the study
+    res = client.post(
+        "/v1/directories",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+        json={"name": "foo"},
+    )
+    assert res.status_code == 201, res.json()
+    foo_id = res.json()["id"]
+
+    res = client.post(
+        "/v1/directories",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+        json={"name": "bar", "parentId": foo_id},
+    )
+    assert res.status_code == 201, res.json()
 
     updated = client.put(
         f"/v1/studies/{copied.json()}/move?folder_dest=foo/bar",
@@ -588,7 +604,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res.json() == [Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json")]
 
     res = client.post(f"/v1/studies/{study_id}/layers?name=test")
-    assert res.json() == "test"
+    assert res.json() == "1"
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
@@ -620,7 +636,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Create the layer again without areas
     res = client.post(f"/v1/studies/{study_id}/layers?name=test2")
-    assert res.json() == "test2"
+    assert res.json() == "1"
 
     # Delete the layer with no areas
     res = client.delete(f"/v1/studies/{study_id}/layers/1")
@@ -663,7 +679,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     res = client.put(
         f"/v1/studies/{study_id}/districts/district%201",
         json={
-            "name": "District 1",
             "output": True,
             "comments": "Your District",
             "areas": [],
@@ -1495,7 +1510,7 @@ def test_copy_with_jobs(client: TestClient, admin_access_token: str, tmp_path: P
 
     client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"study_name": "copied", "use_task": False, "output_ids": ["output1"]},  # type: ignore
+        params={"study_name": "copied", "use_task": False, "output_ids": ["output1"]},
     )
     jobs_src_study = client.get(f"/v1/launcher/jobs?study={variant.json()}")
     assert jobs_src_study.status_code == 200
@@ -1594,7 +1609,7 @@ def test_copy_with_specific_output(client: TestClient, admin_access_token: str, 
     copy_with_output(client, tmp_path, variant.json())
 
 
-def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
+def copy_with_output(client: TestClient, tmp_path: Path, study_id: str) -> None:
     output_base_dir = tmp_path / "internal_workspace" / study_id / "output"
     output_base_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1893,7 +1908,7 @@ def test_links_deletion_with_binding_constraints(
     assert res.status_code == 200, res.json()
 
 
-def test_update_with_editor(client: TestClient, admin_access_token: str):
+def test_update_with_editor(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # 1. Create a group and two users
@@ -2032,7 +2047,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     # END DELETING AREA
 
 
-def test_update_variant_with_editor(client: TestClient, admin_access_token: str):
+def test_update_variant_with_editor(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # 1. Create a group and two users

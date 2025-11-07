@@ -45,6 +45,7 @@ class MustNotModifyOutputException(Exception):
 THERMAL_CLUSTER = "thermal cluster"
 RENEWABLE_CLUSTER = "renewable cluster"
 SHORT_TERM_STORAGE = "short-term storage"
+DISTRICT = "district"
 
 # ============================================================
 # NotFound (404)
@@ -98,6 +99,14 @@ class RenewableClusterConfigNotFound(ConfigFileNotFound):
     """Configuration for renewable cluster is not found (404 Not Found)"""
 
     object_name = RENEWABLE_CLUSTER
+
+
+class DistrictConfigNotFound(HTTPException):
+    """Configuration for district is not found (404 Not Found)"""
+
+    def __init__(self, path: str):
+        msg = f"District config path '{path}' not found"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
 class STStorageConfigNotFound(ConfigFileNotFound):
@@ -838,3 +847,9 @@ class OutputAggregationError(HTTPException):
     def __init__(self, output_id: str, message: str) -> None:
         msg = f"Could not aggregate output data for output '{output_id}' : {message}."
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, msg)
+
+
+class ConfigurationError(RuntimeError):
+    """
+    Raised when some configuration is invalid.
+    """

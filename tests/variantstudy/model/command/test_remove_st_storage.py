@@ -62,7 +62,7 @@ PARAMETERS = {
 
 class TestRemoveSTStorage:
     # noinspection SpellCheckingInspection
-    def test_init(self, command_context: CommandContext):
+    def test_init(self, command_context: CommandContext) -> None:
         cmd = RemoveSTStorage(
             command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
         )
@@ -74,7 +74,7 @@ class TestRemoveSTStorage:
         assert cmd.area_id == "area_fr"
         assert cmd.storage_id == "storage_1"
 
-    def test_init__invalid_storage_id(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_init__invalid_storage_id(self, recent_study: FileStudy, command_context: CommandContext) -> None:
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             RemoveSTStorage(
@@ -98,7 +98,7 @@ class TestRemoveSTStorage:
             }
         ]
 
-    def test_to_dto(self, command_context: CommandContext):
+    def test_to_dto(self, command_context: CommandContext) -> None:
         cmd = RemoveSTStorage(
             command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
         )
@@ -111,14 +111,14 @@ class TestRemoveSTStorage:
             study_version=STUDY_VERSION_8_8,
         )
 
-    def test_get_inner_matrices(self, command_context: CommandContext):
+    def test_get_inner_matrices(self, command_context: CommandContext) -> None:
         cmd = RemoveSTStorage(
             command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
         )
         actual = cmd.get_inner_matrices()
         assert actual == []
 
-    def test_error_cases(self, empty_study_920: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_920: FileStudy, command_context: CommandContext) -> None:
         # Create an area and a short-term storage inside it
         study = empty_study_920
         version = study.config.version
@@ -145,7 +145,7 @@ class TestRemoveSTStorage:
         assert not output.status
         assert output.message == "Short-term storage 'fake_storage' in area 'fr' does not exist"
 
-    def test_apply(self, empty_study_920: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study_920: FileStudy, command_context: CommandContext) -> None:
         # Create an area and a short-term storage inside it
         study = empty_study_920
         version = study.config.version

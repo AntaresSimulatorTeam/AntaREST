@@ -76,8 +76,8 @@ class TestVariantStudyService:
             workspace="default",
             path=str(study_dir),
             version="860",
-            created_at=datetime.datetime.utcnow(),
-            updated_at=datetime.datetime.utcnow(),
+            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             additional_data=StudyAdditionalData(author="john.doe"),
             owner_id=jwt_user.id,
             public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,
@@ -203,7 +203,7 @@ class TestVariantStudyService:
         jwt_user: JWTUser,
         variant_study_service: VariantStudyService,
         root_study_id: str,
-    ):
+    ) -> None:
         """
         Test two different users that are authors on two different commands of the same variant
         Set up:
@@ -268,7 +268,7 @@ class TestVariantStudyService:
         jwt_user: JWTUser,
         variant_study_service: VariantStudyService,
         root_study_id: str,
-    ):
+    ) -> None:
         """
         Test the case of multiple commands was created by the same user.
         Set up:
@@ -282,11 +282,13 @@ class TestVariantStudyService:
             the author of the currently retrieved command is not already known during
             the process
         """
+        from typing import Any
+
         nb_queries = 0  # Store number of orm queries to database
 
         # Watch orm events and update `nb_queries`
         @event.listens_for(db.session, "do_orm_execute")
-        def check_orm_operations(orm_execute_state):
+        def check_orm_operations(orm_execute_state: Any) -> None:
             if orm_execute_state.is_select:
                 nonlocal nb_queries
                 nb_queries += 1
@@ -322,7 +324,7 @@ class TestVariantStudyService:
         jwt_user: JWTUser,
         variant_study_service: VariantStudyService,
         root_study_id: str,
-    ):
+    ) -> None:
         """
         Test two different users, one that is the author and the other that is an editor on one study of the service
         Set up:

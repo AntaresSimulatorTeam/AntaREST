@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -17,7 +18,7 @@ from antarest.core.config import Config, InternalMatrixFormat, StorageConfig
 
 
 @pytest.fixture
-def storage_config_default():
+def storage_config_default() -> dict[str, Any]:
     return {
         "matrixstore": "./custom_matrixstore",
         "archive_dir": "./custom_archives",
@@ -31,13 +32,12 @@ def storage_config_default():
         "auto_archive_threshold_days": 120,
         "auto_archive_dry_run": True,
         "auto_archive_sleeping_time": 7200,
-        "auto_archive_max_parallel": 10,
         "snapshot_retention_days": 14,
         "matrixstore_format": "tsv",
     }
 
 
-def test_storage_config_from_dict(storage_config_default):
+def test_storage_config_from_dict(storage_config_default: dict[str, Any]) -> None:
     data = {
         **storage_config_default,
         "workspaces": {
@@ -66,7 +66,6 @@ def test_storage_config_from_dict(storage_config_default):
     assert config.auto_archive_threshold_days == 120
     assert config.auto_archive_dry_run is True
     assert config.auto_archive_sleeping_time == 7200
-    assert config.auto_archive_max_parallel == 10
     assert config.snapshot_retention_days == 14
     assert config.matrixstore_format == InternalMatrixFormat.TSV
 
@@ -123,7 +122,12 @@ def test_storage_config_from_dict(storage_config_default):
         ),
     ],
 )
-def test_storage_config_from_dict_validation_errors(storage_config_default, workspaces, desktop_mode, should_raise):
+def test_storage_config_from_dict_validation_errors(
+    storage_config_default: dict[str, Any],
+    workspaces: dict[str, Any],
+    desktop_mode: bool,
+    should_raise: bool,
+) -> None:
     data = {
         **storage_config_default,
         "workspaces": workspaces,
@@ -141,7 +145,7 @@ def test_storage_config_from_dict_validation_errors(storage_config_default, work
         Config.from_dict(config_data)
 
 
-def test_storage_config_from_dict_desktop_mode_true(storage_config_default):
+def test_storage_config_from_dict_desktop_mode_true(storage_config_default: dict[str, Any]) -> None:
     data = {
         **storage_config_default,
         "workspaces": {

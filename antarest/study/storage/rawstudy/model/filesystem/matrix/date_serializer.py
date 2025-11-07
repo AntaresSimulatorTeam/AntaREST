@@ -68,12 +68,11 @@ class IDateMatrixSerializer(ABC):
         raise NotImplementedError()
 
 
-def rename_unnamed(df: pd.DataFrame) -> pd.DataFrame:
+def rename_unnamed(df: pd.DataFrame) -> None:
     unnamed_cols: List[str] = []
     for i in range(0, df.columns.nlevels):
         unnamed_cols += [name for name in df.columns.get_level_values(i).values if "Unnamed:" in name]
     df.rename(columns={name: "" for name in unnamed_cols}, inplace=True)
-    return df
 
 
 class HourlyMatrixSerializer(IDateMatrixSerializer):
@@ -147,7 +146,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
         df_date = df.iloc[:, 2:4]
         df_date.columns = pd.Index(["day", "month"])
         df_date["month"] = df_date["month"].map(IDateMatrixSerializer._MONTHS)
-        date = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2)
+        date: pd.Series[str] = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2)
 
         # Extract right part with data
         to_remove = cast(Sequence[Hashable], df.columns[0:4])

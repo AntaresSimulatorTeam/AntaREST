@@ -10,19 +10,17 @@
 #
 # This file is part of the Antares project.
 
-import concurrent.futures
 import logging
 import re
 import shutil
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import reduce
 from pathlib import Path, PurePosixPath
 from typing import Callable, Dict, List, Optional, Sequence, cast
 from uuid import uuid4
 
 import humanize
-from fastapi import HTTPException
 from filelock import FileLock
 from typing_extensions import override
 
@@ -45,7 +43,7 @@ from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
@@ -71,6 +69,7 @@ from antarest.study.storage.utils import (
     update_antares_info,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
+from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -115,6 +114,7 @@ class VariantStudyService(AbstractStorageService):
         self.command_factory = command_factory
         self.generator = VariantCommandGenerator(self.study_factory)
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
+        CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = self._get_current_user_name()
@@ -183,7 +183,7 @@ class VariantStudyService(AbstractStorageService):
                 if not previous_task.status.is_final():
                     logger.error(f"{metadata.id} generation in progress")
                     raise CommandUpdateAuthorizationError(metadata.id)
-            except HTTPException as e:
+            except TaskNotFoundError as e:
                 logger.warning(
                     f"Failed to retrieve generation task for study {metadata.id}",
                     exc_info=e,
@@ -223,7 +223,7 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_impersonator(),
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -260,7 +260,7 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_id(),
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -640,14 +640,15 @@ class VariantStudyService(AbstractStorageService):
                 editor=user_name,
             )
 
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         variant_study = VariantStudy(
             id=new_id,
             name=name,
             parent_id=uuid,
             path=study_path,
             public_mode=study.public_mode,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_utc,
+            updated_at=now_utc,
             version=study.version,
             folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
@@ -687,7 +688,7 @@ class VariantStudyService(AbstractStorageService):
                     if not previous_task.status.is_final():
                         logger.info(f"Returning already existing variant study {study_id} generation")
                         return str(metadata.generation_task)
-                except HTTPException as e:
+                except TaskNotFoundError as e:
                     logger.warning(
                         f"Failed to retrieve generation task for study {study_id}",
                         exc_info=e,
@@ -855,10 +856,11 @@ class VariantStudyService(AbstractStorageService):
             stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {metadata.id}")
             raise ValueError(stripped_msg)
 
-        except concurrent.futures.TimeoutError as e:
+        except TimeoutError as e:
             # Raise a REQUEST_TIMEOUT error (408)
-            logger.error(f"⚡ Timeout while generating variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationTimeoutError(f"Timeout while generating variant {metadata.id}") from None
+            msg = f"⚡ Timeout while waiting for generation of variant study {metadata.id}"
+            logger.error(msg, exc_info=e)
+            raise VariantGenerationTimeoutError(msg) from None
 
         except Exception as e:
             # raise a EXPECTATION_FAILED error (417)
@@ -1078,8 +1080,9 @@ class SnapshotCleanerTask:
             )
             for variant in variant_list:
                 assert isinstance(variant, VariantStudy)
-                if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_time:
-                    if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
+                now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+                if variant.updated_at and variant.updated_at < now_utc - self._retention_time:
+                    if variant.last_access and variant.last_access < now_utc - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:

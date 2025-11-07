@@ -13,14 +13,11 @@ import shutil
 import textwrap
 from pathlib import Path
 
-import pytest
-
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLFileNode
 
 
-@pytest.mark.unit_test
 def test_get(tmp_path: Path) -> None:
     yaml_path = tmp_path / "file.yml"
 
@@ -64,7 +61,6 @@ stopping_threshold: 3.0
     assert node.get(depth=2) == expected_json
 
 
-@pytest.mark.unit_test
 def test_save(tmp_path: Path) -> None:
     yaml_path = tmp_path / "file.yml"
 

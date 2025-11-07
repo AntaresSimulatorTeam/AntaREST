@@ -164,9 +164,11 @@ class StorageConfig:
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
-    auto_archive_max_parallel: int = 5
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
+    blobstore: Path = Path("./blobstore")
+    blob_gc_sleeping_time: int = 86400
+    blob_gc_dry_run: bool = False
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
@@ -199,9 +201,11 @@ class StorageConfig:
             auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
             auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
-            auto_archive_max_parallel=data.get("auto_archive_max_parallel", defaults.auto_archive_max_parallel),
             snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
             matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
+            blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
+            blob_gc_sleeping_time=data.get("blob_gc_sleeping_time", defaults.blob_gc_sleeping_time),
+            blob_gc_dry_run=data.get("blob_gc_dry_run", defaults.blob_gc_dry_run),
         )
 
     @classmethod
@@ -599,6 +603,39 @@ class ServerConfig:
 
 
 @dataclass(frozen=True)
+class PrometheusConfig:
+    """
+    Sub config object dedicated to prometheus metrics
+
+    Attributes:
+        multiprocess: if True, metrics of workers will be aggregated before exposition.
+                      Environment variable `PROMETHEUS_MULTIPROC_DIR` must be set.
+    """
+
+    multiprocess: bool = False
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "PrometheusConfig":
+        return cls(multiprocess=bool(data["multiprocess"]))
+
+
+@dataclass(frozen=True)
+class MetricsConfig:
+    """
+    Sub config object dedicated to metrics
+
+    Attributes:
+        prometheus: if not None, metrics will be exposed in prometheus format
+    """
+
+    prometheus: PrometheusConfig | None = None
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "MetricsConfig":
+        return cls(prometheus=PrometheusConfig.from_dict(data["prometheus"]) if "prometheus" in data else None)
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
@@ -616,6 +653,7 @@ class Config:
     eventbus: EventBusConfig = EventBusConfig()
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
+    metrics: MetricsConfig = MetricsConfig()
     root_path: str = ""
     api_prefix: str = ""
     desktop_mode: bool = False
@@ -645,6 +683,7 @@ class Config:
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
             desktop_mode=desktop_mode,
+            metrics=MetricsConfig.from_dict(data["metrics"]) if "metrics" in data else MetricsConfig(),
         )
 
     @classmethod

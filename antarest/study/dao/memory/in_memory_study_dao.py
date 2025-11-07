@@ -12,21 +12,26 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound
+from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
+from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -56,6 +61,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -113,6 +119,8 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_co2_cost: Dict[ClusterKey, str] = {}
         # Hydro
         self._hydro_properties: Dict[str, HydroProperties] = {}
+        self._hydro_allocation: dict[str, HydroAllocation] = {}
+        self._hydro_correlation: dict[str, HydroCorrelation] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -155,14 +163,24 @@ class InMemoryStudyDao(StudyDao):
         self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
         # TimeSeries config
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
+        # Districts
+        self._districts: dict[str, District] = {}
         # Layer
         self._layers: list[Layer] = []
         # Comments
         self._comments = ""
+        # Area names
+        self._area_names: list[str] = []
         # Playlist config
         self._playlist_config = Playlist()
         # User resources
-        self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
+        self._user_resources: dict[PurePosixPath, Optional[str]] = {}
+        # Area Properties
+        self._area_properties: dict[str, AreaProperties] = {}
+        # Area UI
+        self._area_ui: dict[str, AreaUI] = {}
+        # Layer-Area associations (layer_id -> set of area_ids)
+        self._layer_areas: dict[str, set[str]] = {}
         # Scenario Builder
         self.rulesets: Rulesets = {}
         self.active_ruleset_name: Optional[str] = None
@@ -311,12 +329,36 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_properties[area_id].inflow_structure
 
     @override
+    def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
+        return self._hydro_allocation[area_id]
+
+    @override
+    def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
+        return self._hydro_allocation
+
+    @override
+    def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
+        return self._hydro_correlation[area_id]
+
+    @override
+    def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
+        return HydroCorrelationMatrix.from_hydro_correlations(self._hydro_correlation)
+
+    @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
         self._hydro_properties[area_id].management_options = hydro_management
 
     @override
     def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
         self._hydro_properties[area_id].inflow_structure = inflow_structure
+
+    @override
+    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
+        self._hydro_allocation[area_id] = allocation
+
+    @override
+    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+        self._hydro_correlation[area_id] = correlation
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
@@ -705,6 +747,35 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
+    def get_districts(self) -> Sequence[District]:
+        return list(self._districts.values())
+
+    @override
+    def get_district(self, district_id: str) -> District:
+        return self._districts[district_id]
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return district_id in self._districts
+
+    @override
+    def save_district(self, district: District) -> None:
+        self._districts[district.id] = district
+
+    @override
+    def remove_district(self, district_id: str) -> None:
+        del self._districts[district_id]
+
+    @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        # TODO make this actually work once we implement area DAO
+        return list(set(areas) - set(self._area_names))
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._area_names
+
+    @override
     def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
         self._xpansion_security_criterion = criterion
 
@@ -736,11 +807,23 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        self._user_resources[resource_data.path] = resource_data.content
+        self._user_resources[resource_data.path] = resource_data.blob_id
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
         del self._user_resources[resource_path]
+
+    @override
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        return self._area_properties[area_id]
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._area_properties
+
+    @override
+    def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
+        self._area_properties[area_id] = area_properties
 
     @override
     def get_rulesets(self) -> Rulesets:
@@ -757,3 +840,84 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
         self.rulesets = rulesets
+
+    @override
+    def get_all_areas_info(self) -> List[AreaInfo]:
+        return [AreaInfo(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
+
+    @override
+    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
+        result: Dict[str, AreaUIData] = {}
+        for area_id, area_ui in self._area_ui.items():
+            r, g, b = area_ui.color_rgb
+            result[area_id] = AreaUIData(
+                ui={
+                    "x": area_ui.x,
+                    "y": area_ui.y,
+                    "color_r": r,
+                    "color_g": g,
+                    "color_b": b,
+                    "layers": "0",
+                },
+                layerX={"0": area_ui.x},
+                layerY={"0": area_ui.y},
+                layerColor={"0": f"{r}, {g}, {b}"},
+            )
+        return result
+
+    @override
+    def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+        return self._area_ui.get(area_id, AreaUI())
+
+    @override
+    def save_area(self, area_name: str) -> None:
+        area_id = transform_name_to_id(area_name)
+        if area_id in self._area_names:
+            raise ValueError(f"Area '{area_name}' already exists and could not be created")
+        self._area_names.append(area_id)
+
+        # Initialize default UI for the new area
+        self._area_ui[area_id] = AreaUI()
+
+    @override
+    def delete_area(self, area_id: str) -> None:
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+        # Check that the area is not referenced in any binding constraint
+        referencing_binding_constraints = []
+        for bc in self._constraints.values():
+            for term in bc.terms:
+                data = term.data
+                if (isinstance(data, ClusterTerm) and data.area == area_id) or (
+                    isinstance(data, LinkTerm) and (data.area1 == area_id or data.area2 == area_id)
+                ):
+                    referencing_binding_constraints.append(bc)
+                    break
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+
+        self._area_names.remove(area_id)
+
+        # Clean up UI info
+        self._area_ui.pop(area_id, None)
+
+    @override
+    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
+        if area_id not in self._area_names:
+            raise AreaNotFound(area_id)
+
+        self._area_ui[area_id] = area_ui
+
+    @override
+    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+        # Verify that all areas exist
+        for area_id in area_ids:
+            if area_id not in self._area_names:
+                raise AreaNotFound(area_id)
+
+        self._layer_areas[layer_id] = set(area_ids)

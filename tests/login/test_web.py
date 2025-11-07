@@ -13,18 +13,20 @@
 import base64
 import json
 from datetime import timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Dict, Union
 from unittest.mock import Mock
 
-import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.roles import RoleType
 from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.login.auth import JwtSettings
 from antarest.login.main import build_login
 from antarest.login.model import (
     Bot,
@@ -36,19 +38,17 @@ from antarest.login.model import (
     Password,
     Role,
     RoleDetailDTO,
-    RoleType,
     User,
     UserCreateDTO,
     UserInfo,
 )
-from antarest.main import JwtSettings
 
 
-def create_app(service: Mock, auth_disabled=False) -> FastAPI:
+def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     app = FastAPI(title=__name__)
 
-    @AuthJWT.load_config
-    def get_config():
+    @AuthJWT.load_config  # type: ignore[misc]
+    def get_config() -> JwtSettings:
         return JwtSettings(
             authjwt_secret_key="super-secret",
             authjwt_token_location=("headers", "cookies"),
@@ -66,9 +66,9 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
     return app_ctxt.build()
 
 
-class TokenType:
-    REFRESH: str = "REFRESH"
-    ACCESS: str = "ACCESS"
+class TokenType(str, Enum):
+    REFRESH = "REFRESH"
+    ACCESS = "ACCESS"
 
 
 def create_auth_token(
@@ -91,7 +91,6 @@ def create_auth_token(
     return {"Authorization": f"Bearer {token if isinstance(token, str) else token.decode()}"}
 
 
-@pytest.mark.unit_test
 def test_auth_needed() -> None:
     service = Mock()
 
@@ -109,7 +108,6 @@ def test_auth_needed() -> None:
     assert res.status_code == 200
 
 
-@pytest.mark.unit_test
 def test_auth() -> None:
     service = Mock()
     service.authenticate.return_value = JWTUser(id=0, type="user", impersonator=0)
@@ -124,7 +122,6 @@ def test_auth() -> None:
     service.authenticate.assert_called_once_with("admin", "admin")
 
 
-@pytest.mark.unit_test
 def test_auth_fail() -> None:
     service = Mock()
     service.authenticate.return_value = None
@@ -136,7 +133,6 @@ def test_auth_fail() -> None:
     assert res.status_code == 401
 
 
-@pytest.mark.unit_test
 def test_expiration() -> None:
     service = Mock()
     service.get_user.return_value = JWTUser(id=0, type="user", impersonator=0)
@@ -153,7 +149,6 @@ def test_expiration() -> None:
     assert data["detail"] == "Signature has expired"
 
 
-@pytest.mark.unit_test
 def test_refresh() -> None:
     service = Mock()
     service.get_jwt.return_value = JWTUser(id=0, type="user", impersonator=0)
@@ -173,7 +168,6 @@ def test_refresh() -> None:
     json.loads(base64.b64decode(data))["sub"]
 
 
-@pytest.mark.unit_test
 def test_user() -> None:
     service = Mock()
     service.get_all_users.return_value = [UserInfo(id=1, name="user")]
@@ -185,7 +179,6 @@ def test_user() -> None:
     assert res.json() == [User(id=1, name="user").to_dto().model_dump()]
 
 
-@pytest.mark.unit_test
 def test_user_id() -> None:
     service = Mock()
     service.get_user.return_value = User(id=1, name="user")
@@ -197,7 +190,6 @@ def test_user_id() -> None:
     assert res.json() == User(id=1, name="user").to_dto().model_dump()
 
 
-@pytest.mark.unit_test
 def test_user_id_with_details() -> None:
     service = Mock()
     service.get_user_info.return_value = IdentityDTO(id=1, name="user", roles=[])
@@ -209,7 +201,6 @@ def test_user_id_with_details() -> None:
     assert res.json() == IdentityDTO(id=1, name="user", roles=[]).model_dump()
 
 
-@pytest.mark.unit_test
 def test_user_create() -> None:
     user = UserCreateDTO(name="a", password="b")
     user_id = User(id=0, name="a", password=Password("b"))
@@ -229,7 +220,6 @@ def test_user_create() -> None:
     assert res.json() == user_id.to_dto().model_dump()
 
 
-@pytest.mark.unit_test
 def test_user_save() -> None:
     user = User(id=0, name="a", password=Password("b"))
     service = Mock()
@@ -252,7 +242,6 @@ def test_user_save() -> None:
     assert call[0][0].to_dto().model_dump() == user_obj
 
 
-@pytest.mark.unit_test
 def test_user_delete() -> None:
     service = Mock()
 
@@ -264,7 +253,6 @@ def test_user_delete() -> None:
     service.delete_user.assert_called_once_with(0)
 
 
-@pytest.mark.unit_test
 def test_group() -> None:
     service = Mock()
     service.get_all_groups.return_value = [GroupDTO(id="my-group", name="group")]
@@ -276,7 +264,6 @@ def test_group() -> None:
     assert res.json() == [Group(id="my-group", name="group").to_dto().model_dump()]
 
 
-@pytest.mark.unit_test
 def test_group_id() -> None:
     service = Mock()
     service.get_group.return_value = Group(id="my-group", name="group")
@@ -288,7 +275,6 @@ def test_group_id() -> None:
     assert res.json() == Group(id="my-group", name="group").to_dto().model_dump()
 
 
-@pytest.mark.unit_test
 def test_group_create() -> None:
     group = Group(id="my-group", name="group")
     service = Mock()
@@ -306,7 +292,6 @@ def test_group_create() -> None:
     assert res.json() == group.to_dto().model_dump()
 
 
-@pytest.mark.unit_test
 def test_group_delete() -> None:
     service = Mock()
 
@@ -319,7 +304,6 @@ def test_group_delete() -> None:
     service.delete_group.assert_called_once_with("0")
 
 
-@pytest.mark.unit_test
 def test_role() -> None:
     role = Role(
         identity=User(id=0, name="n"),
@@ -336,7 +320,6 @@ def test_role() -> None:
     assert [RoleDetailDTO.model_validate(el) for el in res.json()] == [role.to_dto()]
 
 
-@pytest.mark.unit_test
 def test_role_create() -> None:
     role = Role(
         identity=User(id=0, name="n"),
@@ -358,7 +341,6 @@ def test_role_create() -> None:
     assert RoleDetailDTO.model_validate(res.json()) == role.to_dto()
 
 
-@pytest.mark.unit_test
 def test_role_delete() -> None:
     service = Mock()
 
@@ -370,7 +352,6 @@ def test_role_delete() -> None:
     service.delete_role.assert_called_once_with(0, "group")
 
 
-@pytest.mark.unit_test
 def test_roles_delete_by_user() -> None:
     service = Mock()
 
@@ -382,7 +363,6 @@ def test_roles_delete_by_user() -> None:
     service.delete_all_roles_from_user.assert_called_once_with(0)
 
 
-@pytest.mark.unit_test
 def test_bot_create() -> None:
     bot = Bot(id=2, owner=3, name="bot", is_author=False)
     create = BotCreateDTO(
@@ -404,7 +384,6 @@ def test_bot_create() -> None:
     assert len(res.json().split(".")) == 3
 
 
-@pytest.mark.unit_test
 def test_bot() -> None:
     bot = Bot(id=0, owner=4, is_author=False, name="foo")
     service = Mock()
@@ -417,7 +396,6 @@ def test_bot() -> None:
     assert res.json() == bot.to_dto().model_dump()
 
 
-@pytest.mark.unit_test
 def test_all_bots() -> None:
     bots = [Bot(id=0, owner=4, is_author=False, name="foo")]
     service = Mock()
@@ -438,7 +416,6 @@ def test_all_bots() -> None:
     service.get_all_bots_by_owner.assert_called_once()
 
 
-@pytest.mark.unit_test
 def test_bot_delete() -> None:
     service = Mock()
 

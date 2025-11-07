@@ -13,19 +13,15 @@
 from pathlib import Path
 from typing import Callable
 
-import pytest
-
 from antarest.core.serde.ini_common import any_section_option_matcher
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 
 
-@pytest.mark.unit_test
 def test_lower_case_serializer() -> None:
     assert LOWER_CASE_SERIALIZER("Hello") == "hello"
 
 
-@pytest.mark.unit_test
-def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
+def test_write(tmp_path: str, ini_cleaner: Callable[[str], str]) -> None:
     path = Path(tmp_path) / "test.ini"
 
     ini_content = """
@@ -67,8 +63,7 @@ def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
     assert ini_cleaner(ini_content) == ini_cleaner(path.read_text())
 
 
-@pytest.mark.unit_test
-def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable) -> None:
+def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable[[str], str]) -> None:
     path = Path(tmp_path) / "test.ini"
 
     def duplicate(value: str) -> str:

@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 from antares.study.version.create_app import CreateApp
 
+from antarest.blobstore.service import IBlobService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaManager
@@ -29,10 +30,12 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 @pytest.fixture
-def command_context(matrix_service: ISimpleMatrixService) -> CommandContext:
+def command_context(matrix_service: ISimpleMatrixService, blob_service: IBlobService) -> CommandContext:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     matrix_constants.init_constant_matrices()
-    return CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service)
+    return CommandContext(
+        generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
+    )
 
 
 @pytest.fixture

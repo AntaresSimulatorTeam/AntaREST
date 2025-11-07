@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import type { LauncherParamsDTO } from "@/services/api/launcher/types";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -24,8 +23,8 @@ export interface IdentityDTO<T extends IdType = string> {
 
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 
-export interface GenericInfo {
-  id: IdType;
+export interface GenericInfo<T extends IdType = IdType> {
+  id: T;
   name: string;
 }
 
@@ -133,38 +132,6 @@ export interface VariantTreeDTO {
 export interface VariantTree {
   node: StudyMetadata;
   children: VariantTree[];
-}
-
-export type JobStatus = "running" | "pending" | "success" | "failed";
-
-export interface LaunchJob {
-  id: string;
-  studyId: string;
-  status: JobStatus;
-  creationDate: string;
-  completionDate: string;
-  launcherParams?: LauncherParamsDTO;
-  msg: string;
-  outputId: string;
-  exitCode: number;
-  ownerId: number;
-  ownerName: string;
-}
-
-export interface LaunchJobDTO {
-  id: string;
-  study_id: string;
-  status: JobStatus;
-  creation_date: string;
-  completion_date: string;
-  launcher_params: string;
-  msg: string;
-  output_id: string;
-  exit_code: number;
-  owner: {
-    id: number;
-    name: string;
-  };
 }
 
 export interface LaunchJobProgressDTO {
@@ -339,13 +306,14 @@ export interface Area {
   filters_year: string[];
 }
 
-export interface Set {
+export interface District {
+  id: string;
   name?: string;
-  inverted_set: boolean;
-  areas?: string[];
+  addAreas?: string[];
+  subtractAreas?: string[];
+  applyFilter?: string;
+  comments?: string;
   output: boolean;
-  filters_synthesis: string[];
-  filters_year: string[];
 }
 
 export interface Simulation {
@@ -365,7 +333,7 @@ export interface FileStudyTreeConfigDTO {
   version: number;
   output_path?: string;
   areas: Record<string, Area>;
-  sets: Record<string, Set>;
+  districts: Record<string, District>;
   outputs: Record<string, Simulation>;
   bindings: string[];
   store_new_set: boolean;
@@ -533,6 +501,12 @@ export interface UpdateAreaUi {
   layerColor: AreaLayerColor;
 }
 
+export interface AreaUIUpdatePayload {
+  x: number;
+  y: number;
+  color_rgb: number[];
+}
+
 export interface AreaCreationDTO {
   name: string;
   type: object;
@@ -554,6 +528,7 @@ export interface TaskView {
   type: TaskTypeValue | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
   userName?: string;
+  launcher?: string;
 }
 
 export type ValidationReturn = string | true;

@@ -288,6 +288,14 @@ class TestStudiesListing:
         )
         assert res.status_code in CREATE_STATUS_CODES, res.json()
         folder1_study_id = res.json()
+
+        res = client.post(
+            "/v1/directories",
+            headers={"Authorization": f"Bearer {admin_access_token}"},
+            json={"name": "folder1"},
+        )
+        assert res.status_code == 201, res.json()
+
         res = client.put(
             f"{STUDIES_URL}/{folder1_study_id}/move",
             headers={"Authorization": f"Bearer {admin_access_token}"},
@@ -494,7 +502,7 @@ class TestStudiesListing:
         page_studies = res.json()
         assert len(page_studies) == max(0, min(len(study_map) - 2, 2))
         # test pagination concatenation
-        paginated_studies = {}
+        paginated_studies: dict[str, t.Any] = {}
         page_number = 0
         number_of_pages = 0
         while len(paginated_studies) < len(study_map):

@@ -16,7 +16,6 @@ from starlette.testclient import TestClient
 from tests.integration.prepare_proxy import PreparerProxy
 
 
-@pytest.mark.unit_test
 class TestArea:
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_area(self, client: TestClient, user_access_token: str, study_type: str) -> None:
@@ -53,10 +52,7 @@ class TestArea:
             json={
                 "x": 10,
                 "y": 10,
-                "layerColor": {"0": "100, 100, 100"},
-                "layerX": {"0": 10},
-                "layerY": {"0": 10},
-                "color_rgb": (100, 100, 100),
+                "colorRgb": [100, 100, 100],
             },
         )
 

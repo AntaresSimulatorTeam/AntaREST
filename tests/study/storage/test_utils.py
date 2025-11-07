@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -30,31 +30,31 @@ def workspace_config(tmp_path: Path) -> WorkspaceConfig:
     return WorkspaceConfig(path=tmp_path)
 
 
-def test_is_folder_safe_within_workspace(workspace_config: WorkspaceConfig):
+def test_is_folder_safe_within_workspace(workspace_config: WorkspaceConfig) -> None:
     # Test case: folder within the workspace
     folder = "project"
     assert is_folder_safe(workspace_config, folder) is True
 
 
-def test_is_folder_safe_outside_workspace(workspace_config: WorkspaceConfig):
+def test_is_folder_safe_outside_workspace(workspace_config: WorkspaceConfig) -> None:
     # Test case: folder outside the workspace
     folder = "../outside"
     assert is_folder_safe(workspace_config, folder) is False
 
 
-def test_is_folder_safe_home_directory(workspace_config: WorkspaceConfig):
+def test_is_folder_safe_home_directory(workspace_config: WorkspaceConfig) -> None:
     # Test case: folder outside the workspace
     folder = "/~/project"
     assert is_folder_safe(workspace_config, folder) is False
 
 
-def test_is_folder_safe_traversal_attack(workspace_config: WorkspaceConfig):
+def test_is_folder_safe_traversal_attack(workspace_config: WorkspaceConfig) -> None:
     # Test case: folder with traversal attack attempt
     folder = "../../etc/passwd"
     assert is_folder_safe(workspace_config, folder) is False
 
 
-def test_is_folder_safe_nested_folder(workspace_config: WorkspaceConfig):
+def test_is_folder_safe_nested_folder(workspace_config: WorkspaceConfig) -> None:
     # Test case: nested folder within the workspace
     folder = "project/subfolder"
     assert is_folder_safe(workspace_config, folder) is True
@@ -69,7 +69,7 @@ def test_is_folder_safe_nested_folder(workspace_config: WorkspaceConfig):
         ("920", "9.2"),
     ],
 )
-def test_update_antares_info_version(tmp_path: Path, version: str, expected_version: str):
+def test_update_antares_info_version(tmp_path: Path, version: str, expected_version: str) -> None:
     """
     Checks that version field is formatted correctly, depending on study version.
     """
@@ -81,7 +81,12 @@ def test_update_antares_info_version(tmp_path: Path, version: str, expected_vers
     antares_study_path = study_path / "study.antares"
     write_ini_file(antares_study_path, {"antares": {"version": "700"}})
 
-    metadata = create_study(name="my-study", version=version, created_at=datetime.now(), updated_at=datetime.now())
+    metadata = create_study(
+        name="my-study",
+        version=version,
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+    )
     update_antares_info(metadata, tree, update_author=False)
     updated = read_ini(antares_study_path)
     assert str(updated["antares"]["version"]) == expected_version

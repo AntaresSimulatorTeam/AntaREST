@@ -28,13 +28,17 @@ class LayerManager:
         return list(study.get_study_dao().get_layers())
 
     def create_layer(self, study: StudyInterface, layer_name: str) -> str:
+        current_layers = list(study.get_study_dao().get_layers())
+        layer_id = str(max((int(layer.id) for layer in current_layers if layer.id is not None), default=0) + 1)
+
         command = CreateLayer(
-            parameters=LayerCreation(name=layer_name),
+            parameters=LayerCreation(id=layer_id, name=layer_name),
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
-        return layer_name
+
+        return layer_id
 
     def update_layer_name(self, study: StudyInterface, layer_id: str, layer_name: str) -> None:
         command = UpdateLayer(

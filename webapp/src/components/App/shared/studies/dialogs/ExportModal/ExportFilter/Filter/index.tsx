@@ -15,7 +15,11 @@
 import { TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StudyOutputDownloadType, type Area, type Set } from "../../../../../../../../types/types";
+import {
+  StudyOutputDownloadType,
+  type Area,
+  type District,
+} from "../../../../../../../../types/types";
 import SelectMulti from "../../../../../../../common/SelectMulti";
 import MultipleLinkElement from "./MultipleLinkElement";
 import SingleLinkElement from "./SingleLinkElement";
@@ -24,7 +28,7 @@ import { Root } from "./style";
 interface PropTypes {
   type: StudyOutputDownloadType;
   areas: Record<string, Area>;
-  sets: Record<string, Set>;
+  districts: Record<string, District>;
   filterValue: string[];
   setFilterValue: (elm: string[]) => void;
   filterInValue: string;
@@ -38,7 +42,7 @@ function Filter(props: PropTypes) {
   const {
     type,
     areas,
-    sets,
+    districts,
     filterValue,
     filterInValue,
     filterOutValue,
@@ -57,7 +61,7 @@ function Filter(props: PropTypes) {
           break;
 
         case StudyOutputDownloadType.DISTRICT:
-          res = Object.keys(sets);
+          res = Object.keys(districts);
           break;
 
         default:
@@ -66,7 +70,7 @@ function Filter(props: PropTypes) {
       return res;
     };
     setAreasOrDistrictsList(getAreasOrDistrictsList());
-  }, [areas, sets, type]);
+  }, [areas, districts, type]);
 
   return type !== StudyOutputDownloadType.LINKS ? (
     <Root>

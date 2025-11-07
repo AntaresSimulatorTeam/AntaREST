@@ -26,7 +26,7 @@ from tests.helpers import create_raw_study, create_variant_study, with_db_contex
 
 
 @with_db_context
-def test_auto_archival(tmp_path: Path):
+def test_auto_archival(tmp_path: Path) -> None:
     workspace_path = tmp_path / "workspace_test"
     auto_archive_service = AutoArchiveService(
         Mock(spec=StudyService),
@@ -34,7 +34,7 @@ def test_auto_archival(tmp_path: Path):
         Config(storage=StorageConfig(workspaces={"test": WorkspaceConfig(path=workspace_path)})),
     )
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
 

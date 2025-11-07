@@ -3,6 +3,8 @@
 import multiprocessing
 import os
 
+from prometheus_client import multiprocess
+
 bind = "0.0.0.0:5000"
 
 """
@@ -28,3 +30,10 @@ loglevel = "info"
 errorlog = "-"
 accesslog = "-"
 preload_app = False
+
+
+def child_exit(server, worker):
+    """
+    Notify prometheus that this worker stops
+    """
+    multiprocess.mark_process_dead(worker.pid)

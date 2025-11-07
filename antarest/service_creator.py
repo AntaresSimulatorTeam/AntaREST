@@ -21,6 +21,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
 
+from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
+from antarest.blobstore.main import build_blob_service
+from antarest.blobstore.service import BlobService
 from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config, RedisConfig
@@ -30,6 +33,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.maintenance.service import MaintenanceService
+from antarest.core.metrics import add_db_metrics
 from antarest.core.persistence import upgrade_db
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
@@ -75,6 +79,7 @@ class Module(StrEnum):
     MATRIX_GC = "matrix_gc"
     ARCHIVE_WORKER = "archive_worker"
     AUTO_ARCHIVER = "auto_archiver"
+    BLOB_GC = "blob_gc"
 
 
 def init_db_engine(
@@ -106,6 +111,8 @@ def init_db_engine(
             extra["pool_use_lifo"] = config.db.pool_use_lifo
 
     engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
+
+    add_db_metrics(config)
 
     return engine
 
@@ -139,6 +146,7 @@ class CoreServices:
     matrix_service: MatrixService
     study_service: StudyService
     output_service: OutputService
+    blob_service: BlobService
 
 
 def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
@@ -155,6 +163,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         user_service=login_service,
         service=None,
     )
+    blob_service = build_blob_service(config=config, service=None)
     study_service = build_study_service(
         app_ctxt,
         config,
@@ -164,6 +173,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         task_service=task_service,
         user_service=login_service,
         event_bus=event_bus,
+        blob_service=blob_service,
     )
     storage_dispatcher = OutputStorageDispatcher(
         study_service.storage_service.raw_study_service, study_service.storage_service.variant_study_service
@@ -184,6 +194,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         matrix_service=matrix_service,
         study_service=study_service,
         output_service=output_service,
+        blob_service=blob_service,
     )
 
 
@@ -193,6 +204,14 @@ def create_matrix_gc(config: Config, matrix_service: MatrixService) -> MatrixGar
         sleeping_time=config.storage.matrix_gc_sleeping_time,
         dry_run=config.storage.matrix_gc_dry_run,
         retention_time=config.storage.matrix_gc_retention_time,
+    )
+
+
+def create_blob_gc(config: Config, blob_service: BlobService) -> BlobGarbageCollector:
+    return BlobGarbageCollector(
+        blob_service=blob_service,
+        sleeping_time=config.storage.blob_gc_sleeping_time,
+        dry_run=config.storage.blob_gc_dry_run,
     )
 
 
@@ -253,6 +272,7 @@ class Services:
     launcher: Optional[LauncherService] = None
     matrix_gc: Optional[MatrixGarbageCollector] = None
     auto_archiver: Optional[AutoArchiveService] = None
+    blob_gc: Optional[BlobGarbageCollector] = None
 
 
 def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Services:
@@ -281,6 +301,10 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
         matrix_garbage_collector = create_matrix_gc(config, core_services.matrix_service)
 
+    blob_garbage_collector = None
+    if config.server.services and Module.BLOB_GC.value in config.server.services or create_all:
+        blob_garbage_collector = create_blob_gc(config, core_services.blob_service)
+
     auto_archiver = None
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
         auto_archiver = AutoArchiveService(core_services.study_service, core_services.output_service, config)
@@ -297,4 +321,5 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         launcher=launcher,
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,
+        blob_gc=blob_garbage_collector,
     )

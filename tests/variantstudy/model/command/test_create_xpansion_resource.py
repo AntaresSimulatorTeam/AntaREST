@@ -23,12 +23,12 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 class TestCreateXpansionResource:
     @staticmethod
-    def set_up(empty_study: FileStudy):
+    def set_up(empty_study: FileStudy) -> None:
         empty_study.tree.save(
             {"user": {"expansion": {"capa": {}, "weights": {}, "constraints": {}, "settings": {}, "candidates": {}}}}
         )
 
-    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
 
@@ -81,7 +81,7 @@ class TestCreateXpansionResource:
             content = empty_study.tree.get(["user", "expansion", "capa", file_name])
             assert content == {"columns": [0, 1], "data": data, "index": [0, 1]}
 
-    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
         self.set_up(empty_study)
 

@@ -20,17 +20,18 @@ from pathlib import Path, PurePosixPath
 from unittest.mock import Mock, call
 
 import numpy as np
-import pytest
 from fastapi import FastAPI
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
+from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import UrlNotMatchJsonDataError
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
@@ -42,7 +43,6 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixIndex,
     OwnerInfo,
-    PublicMode,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudyDownloadType,
@@ -89,11 +89,11 @@ def create_test_client(
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
+        blob_service=Mock(spec=BlobService),
     )
     return TestClient(app_ctxt.build(), raise_server_exceptions=raise_server_exceptions)
 
 
-@pytest.mark.unit_test
 def test_server() -> None:
     mock_service = Mock()
     mock_service.get_raw_content.return_value = {}
@@ -104,7 +104,6 @@ def test_server() -> None:
     mock_service.get_raw_content.assert_called_once_with("study1", "settings/general/params", 3, True)
 
 
-@pytest.mark.unit_test
 def test_404() -> None:
     mock_storage_service = Mock()
     mock_storage_service.get_raw_content.side_effect = UrlNotMatchJsonDataError("Test")
@@ -117,7 +116,6 @@ def test_404() -> None:
     assert result.status_code == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.unit_test
 def test_server_with_parameters() -> None:
     mock_storage_service = Mock()
     mock_storage_service.get_raw_content.return_value = {}
@@ -137,8 +135,7 @@ def test_server_with_parameters() -> None:
     mock_storage_service.get_raw_content.assert_called_with("study2", "/", 3, True)
 
 
-@pytest.mark.unit_test
-def test_create_study(tmp_path: str, project_path) -> None:
+def test_create_study(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
     path_study = path_studies / "study1"
     path_study.mkdir()
@@ -153,24 +150,23 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", None, [])
+    storage_service.create_study.assert_called_once_with("study2", None, [], directory="")
     storage_service.create_study.reset_mock()
 
     result_right = client.post("/v1/studies?name=study2&version=8.8")
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [])
+    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], directory="")
     storage_service.create_study.reset_mock()
 
     result_right = client.post("/v1/studies?name=study2&version=880")
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [])
+    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], directory="")
     storage_service.create_study.reset_mock()
 
 
-@pytest.mark.unit_test
-def test_import_study_zipped(tmp_path: Path, project_path) -> None:
+def test_import_study_zipped(tmp_path: Path, project_path: Path) -> None:
     study_name = "study1"
     path_study = tmp_path / study_name
     path_study.mkdir()
@@ -199,7 +195,6 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_copy_study(tmp_path: Path) -> None:
     storage_service = Mock()
     storage_service.copy_study.return_value = "/studies/study-copied"
@@ -221,7 +216,6 @@ def test_copy_study(tmp_path: Path) -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_list_studies(tmp_path: str) -> None:
     studies = {
         "study1": StudyMetadataDTO(
@@ -287,7 +281,6 @@ def test_study_metadata(tmp_path: str) -> None:
     assert StudyMetadataDTO.model_validate(result.json()) == study
 
 
-@pytest.mark.unit_test
 def test_export_files(tmp_path: Path) -> None:
     mock_storage_service = Mock()
     expected = FileDownloadTaskDTO(
@@ -325,7 +318,6 @@ def test_export_files(tmp_path: Path) -> None:
     mock_storage_service.export_study.assert_called_once_with(UUID, True)
 
 
-@pytest.mark.unit_test
 def test_export_params(tmp_path: Path) -> None:
     mock_storage_service = Mock()
     expected = FileDownloadTaskDTO(
@@ -351,7 +343,6 @@ def test_export_params(tmp_path: Path) -> None:
     )
 
 
-@pytest.mark.unit_test
 def test_delete_study() -> None:
     mock_storage_service = Mock()
 
@@ -363,7 +354,6 @@ def test_delete_study() -> None:
     mock_storage_service.delete_study.assert_called_once_with(study_uuid, False)
 
 
-@pytest.mark.unit_test
 def test_edit_study() -> None:
     mock_storage_service = Mock()
     mock_storage_service.edit_study.return_value = {}
@@ -374,7 +364,6 @@ def test_edit_study() -> None:
     mock_storage_service.edit_study.assert_called_once_with("my-uuid", "url/to/change", {"Hello": "World"})
 
 
-@pytest.mark.unit_test
 def test_output_download(tmp_path: Path) -> None:
     mock_output_service = Mock(spec=OutputService)
 
@@ -420,7 +409,6 @@ def test_output_download(tmp_path: Path) -> None:
     assert res.json() == output_data.model_dump()
 
 
-@pytest.mark.unit_test
 def test_output_whole_download(tmp_path: Path) -> None:
     output_id = "my_output_id"
 
@@ -447,7 +435,6 @@ def test_output_whole_download(tmp_path: Path) -> None:
     assert res.status_code == HTTPStatus.OK
 
 
-@pytest.mark.unit_test
 def test_sim_result() -> None:
     study_id = str(uuid.uuid4())
     settings = StudySimSettingsDTO(
@@ -482,7 +469,6 @@ def test_sim_result() -> None:
     assert actual_object == result_data
 
 
-@pytest.mark.unit_test
 def test_study_permission_management(tmp_path: Path) -> None:
     storage_service = Mock()
     client = create_test_client(storage_service, raise_server_exceptions=False)
@@ -507,7 +493,6 @@ def test_study_permission_management(tmp_path: Path) -> None:
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-@pytest.mark.unit_test
 def test_get_study_versions(tmp_path: Path) -> None:
     client = create_test_client(Mock(), raise_server_exceptions=False)
 

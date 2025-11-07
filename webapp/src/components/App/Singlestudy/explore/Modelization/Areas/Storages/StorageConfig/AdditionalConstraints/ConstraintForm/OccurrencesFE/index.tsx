@@ -13,7 +13,6 @@
  */
 
 import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
-import type { ControlPlus } from "@/components/common/Form/types";
 import type {
   AdditionalConstraint,
   AdditionalConstraintOccurrences,
@@ -34,14 +33,14 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useController } from "react-hook-form";
+import { useController, type Control } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
 import OccurrencesTableDialog from "./OccurrencesTableDialog";
 import { validateOccurrences } from "./utils";
 
 interface Props {
-  control: ControlPlus<AdditionalConstraint>;
+  control: Control<AdditionalConstraint>;
   onChange: (occurrences: AdditionalConstraintOccurrences) => void;
 }
 

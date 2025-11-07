@@ -12,172 +12,50 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Skeleton } from "@mui/material";
-import { useOutletContext } from "react-router";
-import {
-  getBindingConstraint,
-  getBindingConstraintList,
-  updateBindingConstraint,
-} from "../../../../../../../services/api/studydata";
-import Form from "../../../../../../common/Form";
-import UsePromiseCond, { mergeResponses } from "../../../../../../common/utils/UsePromiseCond";
-import type { BindingConstraint } from "./utils";
-
-import Delete from "@mui/icons-material/Delete";
-import type { AxiosError } from "axios";
-import { useSnackbar } from "notistack";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromise from "../../../../../../../hooks/usePromise";
-import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
-import { getLinksAndClusters } from "../../../../../../../redux/selectors";
-import { appendCommands } from "../../../../../../../services/api/variant";
+import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
-import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import { CommandEnum } from "../../../../CommandsDrawer/EditionView/commandTypes";
-import BindingConstForm from "./BindingConstForm";
-import ConstraintFields from "./ConstraintFields";
+import TabsView from "../../../../../../common/TabsView";
+import ConstraintForm from "./ConstraintForm";
+import ConstraintMatrix from "./ConstraintMatrix";
 
 interface Props {
   constraintId: string;
+  reloadConstraintsList: VoidFunction;
 }
 
-// TODO rename Form (its the constraint form => properties form + terms form)
-function BindingConstView({ constraintId }: Props) {
+function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const dispatch = useAppDispatch();
-  const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const studyVersion = Number(study.version);
-  const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] = useState(false);
-
-  const constraint = usePromise(
-    () => getBindingConstraint(study.id, constraintId),
-    [study.id, constraintId],
-  );
-
-  const linksAndClusters = useStudySynthesis({
-    studyId: study.id,
-    selector: (state) => getLinksAndClusters(state, study.id),
-  });
-
-  ////////////////////////////////////////////////////////////////
-  // Event handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleSubmitConstraint = ({ values }: SubmitHandlerPlus<BindingConstraint>) => {
-    const { id, name, ...updatedConstraint } = values;
-
-    // Exclude filter fields for legacy versions support
-    if (studyVersion < 830) {
-      const { filterSynthesis, filterYearByYear, ...constraintWithoutFilters } = updatedConstraint;
-      return updateBindingConstraint(study.id, constraintId, constraintWithoutFilters);
-    }
-
-    return updateBindingConstraint(study.id, constraintId, updatedConstraint);
-  };
-
-  /**
-   * @deprecated
-   * We should use a dedicated DELETE endpoint for removing binding constraints. This endpoint is
-   * not currently exposed by the API, but it is recommended to transition to it once available.
-   *
-   * This function sends a commandto remove the binding constraint by its ID.
-   * After successful deletion, it triggers a UI update to reflect the removal.
-   */
-  const handleDeleteConstraint = async () => {
-    try {
-      await appendCommands(study.id, [
-        {
-          action: CommandEnum.REMOVE_BINDING_CONSTRAINT,
-          args: {
-            id: constraintId,
-          },
-        },
-      ]);
-
-      const updatedConstraints = await getBindingConstraintList(study.id);
-
-      if (updatedConstraints && updatedConstraints.length > 0) {
-        // Trigger a reload redirecting to the first constraint
-        dispatch(setCurrentBindingConst(updatedConstraints[0].id));
-      }
-
-      enqueueSnackbar(t("study.success.deleteConstraint"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("study.error.deleteConstraint"), e as AxiosError);
-    } finally {
-      setDeleteConstraintDialogOpen(false);
-    }
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <UsePromiseCond
-        response={mergeResponses(constraint, linksAndClusters)}
-        ifFulfilled={([defaultValues, linksAndClusters]) => (
-          <Box sx={{ display: "flex", flexDirection: "column" }}>
-            <Box sx={{ alignSelf: "flex-end" }}>
-              <Button
-                variant="outlined"
-                startIcon={<Delete />}
-                color="error"
-                onClick={() => setDeleteConstraintDialogOpen(true)}
-              >
-                {t("global.delete.all")}
-              </Button>
-            </Box>
-            {/* Constraint properties form */}
-            <Box sx={{ display: "flex", width: 1 }}>
-              <Form
-                autoSubmit
-                config={{ defaultValues }}
-                onSubmit={handleSubmitConstraint}
-                sx={{ flexGrow: 1 }}
-              >
-                <ConstraintFields study={study} constraintId={constraintId} />
-              </Form>
-            </Box>
-            {/* Constraint terms form */}
-            <Box sx={{ display: "flex", flexGrow: 1 }}>
-              <Form autoSubmit config={{ defaultValues }} sx={{ flexGrow: 1 }}>
-                <BindingConstForm
-                  study={study}
-                  constraintId={constraintId}
-                  options={linksAndClusters}
-                />
-              </Form>
-            </Box>
-          </Box>
-        )}
-        ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-      />
-
-      {deleteConstraintDialogOpen && (
-        <ConfirmationDialog
-          titleIcon={Delete}
-          onCancel={() => setDeleteConstraintDialogOpen(false)}
-          onConfirm={handleDeleteConstraint}
-          alert="warning"
-          open
-        >
-          {t("study.modelization.bindingConst.question.deleteBindingConstraint", {
-            constraintName: constraintId,
-          })}
-        </ConfirmationDialog>
-      )}
-    </>
+    <TabsView
+      divider
+      items={[
+        {
+          label: t("global.parameters"),
+          content: (
+            <ConstraintForm
+              study={study}
+              constraintId={constraintId}
+              reloadConstraintsList={reloadConstraintsList}
+            />
+          ),
+        },
+        {
+          label: t("global.timeSeries"),
+          content: (
+            // Force a remount of ConstraintMatrix when `constraintId` changes.
+            // This avoids stale data from `usePromise` that keep returning previous results.
+            <ConstraintMatrix key={constraintId} study={study} constraintId={constraintId} />
+          ),
+        },
+      ]}
+    />
   );
 }
 

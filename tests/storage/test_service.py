@@ -25,10 +25,12 @@ from unittest.mock import ANY, Mock, call, patch, seal
 import numpy as np
 import pandas as pd
 import pytest
+from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from starlette.responses import Response
 
+from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
@@ -45,6 +47,8 @@ from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.district_model import District
+from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
@@ -69,7 +73,6 @@ from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, Stud
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
-    DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
@@ -88,7 +91,6 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     is_output_archived,
-    study_matcher,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -137,6 +139,7 @@ def with_jwt_user(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
 
 def build_study_service(
     raw_study_service: RawStudyService,
+    directory_service: DirectoryService,
     repository: StudyMetadataRepository,
     config: Config,
     user_service: LoginService = Mock(spec=LoginService),
@@ -148,6 +151,7 @@ def build_study_service(
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        directory_service=directory_service,
         command_context=Mock(),
         user_service=user_service,
         repository=repository,
@@ -160,7 +164,7 @@ def build_study_service(
     )
 
 
-def study_to_dto(study: Study) -> StudyMetadataDTO:
+def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMetadataDTO:
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
@@ -182,11 +186,10 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
         scenario=None,
         status=None,
         doc=None,
-        folder=None,
+        folder=folder_path,
     )
 
 
-@pytest.mark.unit_test
 def test_study_listing(db_session: Session) -> None:
     bob = User(id=2, name="bob")
     alice = User(id=3, name="alice")
@@ -198,8 +201,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="A",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
         additional_data=StudyAdditionalData(),
@@ -210,8 +213,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="B",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace="other",
         additional_data=StudyAdditionalData(),
@@ -222,8 +225,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="C",
         version=study_version,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace="other2",
         additional_data=StudyAdditionalData(),
@@ -241,7 +244,9 @@ def test_study_listing(db_session: Session) -> None:
 
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
-    service = build_study_service(raw_study_service, repository, config, cache_service=cache)
+    service = build_study_service(
+        raw_study_service, Mock(spec=DirectoryService), repository, config, cache_service=cache
+    )
     user = JWTUser(id=2, impersonator=2, type="users")
 
     # retrieve studies that are not managed
@@ -302,9 +307,8 @@ def test_study_listing(db_session: Session) -> None:
     assert expected_result == studies
 
 
-@pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     # Studies in DB
     ma = create_raw_study(id="a", path="a", workspace="workspace1")
@@ -320,7 +324,7 @@ def test_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path="d",
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
         workspace="workspace1",
     )
     me = create_raw_study(
@@ -329,7 +333,7 @@ def test_sync_studies_from_disk() -> None:
         folder="e",
         name="e",
         created_at=now,
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
     )
     mg = create_raw_study(
@@ -361,8 +365,7 @@ def test_sync_studies_from_disk() -> None:
             }
         )
     )
-    raw_service = Mock(spec=RawStudyService)
-    service = build_study_service(raw_service, repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     # call function with scanned folders
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
@@ -403,8 +406,7 @@ def test_sync_studies_from_disk() -> None:
     assert study_f2.public_mode == PublicMode.FULL
 
 
-@pytest.mark.unit_test
-def test_sync_unsuppported_study_from_disk(caplog) -> None:
+def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
     folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
 
@@ -412,9 +414,9 @@ def test_sync_unsuppported_study_from_disk(caplog) -> None:
     repository.get_all_raw.side_effect = [[]]
     config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
     raw_service = Mock(spec=RawStudyService)
-    service = build_study_service(raw_service, repository, config)
+    service = build_study_service(raw_service, Mock(spec=DirectoryService), repository, config)
 
-    def fake_compatibility_check(study: Study):
+    def fake_compatibility_check(study: Study) -> None:
         if not hasattr(fake_compatibility_check, "call_count"):
             fake_compatibility_check.call_count = 0
 
@@ -447,9 +449,8 @@ def test_sync_unsuppported_study_from_disk(caplog) -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_partial_sync_studies_from_disk() -> None:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     ma = create_raw_study(id="a", path="a")
     mb = create_raw_study(id="b", path="b")
     mc = create_raw_study(
@@ -463,13 +464,13 @@ def test_partial_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path=f"directory{os.sep}d",
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = create_raw_study(
         id="e",
         path=f"directory{os.sep}e",
         created_at=now,
-        missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
     fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])
     fe = StudyFolder(path=Path("directory/e"), workspace="workspace1", groups=[])
@@ -478,7 +479,7 @@ def test_partial_sync_studies_from_disk() -> None:
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
     config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
 
@@ -497,7 +498,6 @@ def test_partial_sync_studies_from_disk() -> None:
     )
 
 
-@pytest.mark.unit_test
 def test_delete_missing_studies_desktop(study_tree: Path) -> None:
     ma = create_raw_study(id="a", folder="folder/studyA", workspace="workspace1")
     mb = create_raw_study(id="b", folder="folder/studyB", workspace="workspace1")
@@ -515,7 +515,7 @@ def test_delete_missing_studies_desktop(study_tree: Path) -> None:
             }
         )
     )
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     service.delete_missing_studies()
 
@@ -535,7 +535,7 @@ def test_remove_duplicate(db_session: Session) -> None:
     with db_session:
         repository = StudyMetadataRepository(Mock(), db_session)
         config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-        service = build_study_service(Mock(), repository, config)
+        service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
         service.remove_duplicates()
 
     # example with 1 duplicate with same path
@@ -549,7 +549,6 @@ def test_remove_duplicate(db_session: Session) -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_create_study() -> None:
     # Mock
     repository = Mock()
@@ -587,7 +586,9 @@ def test_create_study() -> None:
     }
     study_service.create.return_value = expected
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config, user_service=user_service)
+    service = build_study_service(
+        study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     jwt_user = JWT_USER
     with pytest.raises(UserHasNotPermissionError):
@@ -603,7 +604,6 @@ def test_create_study() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_save_metadata() -> None:
     # Mock
     repository = Mock()
@@ -636,7 +636,7 @@ def test_save_metadata() -> None:
         groups=[group],
     )
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config)
+    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
 
     service.user_service.get_user.return_value = user  # type: ignore
     with current_user_context(jwt):
@@ -645,7 +645,6 @@ def test_save_metadata() -> None:
 
 
 @with_jwt_user
-@pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
     repository = Mock(spec=StudyMetadataRepository)
@@ -698,7 +697,7 @@ def test_download_output() -> None:
         study_id=str(uuid.uuid4()),
         version=StudyVersion.parse(input_study.version),
         areas={"east": area},
-        sets={"north": DistrictSet()},
+        districts={"north": District(id="north", name="north")},
         outputs={"output-id": sim},
         store_new_set=False,
     )
@@ -706,7 +705,7 @@ def test_download_output() -> None:
 
     repository.get.return_value = input_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repository, config)
+    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
     storage = OutputStorageDispatcher(
         service.storage_service.raw_study_service, service.storage_service.variant_study_service
     )
@@ -789,7 +788,7 @@ def test_download_output() -> None:
         name="name",
         ready=False,
         path="path",
-        expiration_date=datetime.utcnow(),
+        expiration_date=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     service.file_transfer_manager.request_download.return_value = export_file_download  # type: ignore
     task_id = "task-id"
@@ -865,7 +864,6 @@ def test_download_output() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_change_owner() -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=2)
@@ -888,6 +886,7 @@ def test_change_owner() -> None:
     )
     service = build_study_service(
         study_service,
+        Mock(spec=DirectoryService),
         repository,
         config,
         user_service=user_service,
@@ -913,7 +912,6 @@ def test_change_owner() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_manage_group() -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=1)
@@ -925,7 +923,9 @@ def test_manage_group() -> None:
     repository = Mock()
     user_service = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config, user_service=user_service)
+    service = build_study_service(
+        Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     repository.get.return_value = create_study(id=study_id, owner=alice, groups=[group_a])
 
@@ -954,7 +954,6 @@ def test_manage_group() -> None:
 
 
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_set_public_mode() -> None:
     study_id = str(uuid.uuid4())
     group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -963,7 +962,9 @@ def test_set_public_mode() -> None:
     repository = Mock()
     user_service = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config, user_service=user_service)
+    service = build_study_service(
+        Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config, user_service=user_service
+    )
 
     repository.get.return_value = create_study(id=study_id)
 
@@ -977,30 +978,7 @@ def test_set_public_mode() -> None:
     repository.save.assert_called_with(create_study(id=study_id, public_mode=PublicMode.FULL))
 
 
-@pytest.mark.unit_test
-def test_study_match() -> None:
-    assert not study_matcher(name=None, folder="ab", workspace="hell")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name=None, folder="abd", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", workspace="hello")
-    )
-    assert study_matcher(name="f", folder=None, workspace="hello")(
-        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
-    )
-    assert not study_matcher(name="foob", folder=None, workspace="hell")(
-        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
-    )
-
-
 # noinspection PyArgumentList
-@pytest.mark.unit_test
 def test_assert_permission() -> None:
     study_id = str(uuid.uuid4())
     admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
@@ -1014,7 +992,7 @@ def test_assert_permission() -> None:
 
     repository = Mock()
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     # wrong owner
     repository.get.return_value = create_study(id=study_id, owner=wrong)
@@ -1166,7 +1144,6 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_delete_study_calls_callback(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
     repository_mock = Mock()
@@ -1183,7 +1160,7 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
     )
-    service = build_study_service(Mock(), repository_mock, Mock())
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository_mock, Mock())
     callback = Mock()
     service.add_on_deletion_callback(callback)
     service.storage_service.variant_study_service.has_children.return_value = False  # type: ignore
@@ -1194,7 +1171,6 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
 
 
 @with_admin_user
-@pytest.mark.unit_test
 def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
@@ -1214,6 +1190,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     # noinspection PyArgumentList
     service = build_study_service(
         raw_study_service,
+        Mock(spec=DirectoryService),
         study_metadata_repository,
         Mock(),
         variant_study_service=variant_study_service,
@@ -1231,7 +1208,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
     study_mock.to_enhanced_json_summary.return_value = {
@@ -1265,7 +1242,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
@@ -1302,6 +1279,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
     )
     service = build_study_service(
         raw_study_service,
+        Mock(spec=DirectoryService),
         study_metadata_repository,
         Mock(),
         variant_study_service=variant_study_service,
@@ -1327,7 +1305,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=datetime.utcnow(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     v1 = create_variant_study(id="variant_1", path=create_study_fs_mock(variant=True))
@@ -1346,7 +1324,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         raise ValueError(f"Unexpected study id: {study_id}")
 
     class ChildrenProvider:
-        def __init__(self):
+        def __init__(self) -> None:
             self.c0 = 0
             self.c1 = 0
 
@@ -1368,7 +1346,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
             raise ValueError(f"Unexpected study id: {parent_id}")
 
     class HasChildrenProvider:
-        def __init__(self):
+        def __init__(self) -> None:
             self.c1 = 0
             self.c2 = 0
 
@@ -1416,8 +1394,8 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
-    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
+    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})
+    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})
 
     variant_study = create_variant_study(
         id="variant-study",
@@ -1428,7 +1406,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         groups=[],
     )
     variant_study.generation_task = None
-    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})  # type: ignore[attr-defined]
+    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})
 
     def get_study_by_id(study_id: str) -> Study:
         if study_id == raw_study.id:
@@ -1444,12 +1422,16 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     raw_study_service.delete = Mock()
     raw_study_service.find_archive_path.return_value = str(tmp_path / "archive.zip")
 
+    from typing import Any, Callable
+
     variant_study_service = Mock(spec=VariantStudyService)
     variant_study_service.delete = Mock()
     variant_study_service.has_children.side_effect = lambda study: study.id == raw_study.id
     variant_study_service.get_children.return_value = [variant_study]
 
-    def walk_children(parent_id: str, fun, bottom_first: bool, include_parent: bool = True) -> None:
+    def walk_children(
+        parent_id: str, fun: Callable[[Any], None], bottom_first: bool, include_parent: bool = True
+    ) -> None:
         assert parent_id == raw_study.id
         assert bottom_first is True
         assert include_parent is False
@@ -1459,6 +1441,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=raw_study_service,
+        directory_service=Mock(spec=DirectoryService),
         repository=repository,
         config=config,
         variant_study_service=variant_study_service,
@@ -1475,7 +1458,6 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "tree_node,url,data,expected_name",
     [
@@ -1495,10 +1477,12 @@ def test_create_command(
     command_context = CommandContext(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService, create=Mock(return_value=matrix_id)),
+        blob_service=Mock(spec=BlobService),
     )
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository),
         config=Mock(spec=Config),
         variant_study_service=Mock(
@@ -1535,6 +1519,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1597,6 +1582,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1614,7 +1600,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Archive output {study_id}/{output_zipped}",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.ARCHIVE,
                 ref_id=study_id,
             )
@@ -1624,7 +1610,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1634,7 +1620,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Archive output {study_id}/{output_unzipped}",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.ARCHIVE,
                 ref_id=study_id,
             )
@@ -1644,7 +1630,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1721,6 +1707,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
         config=Mock(spec=Config),
     )
@@ -1787,7 +1774,8 @@ def test_get_save_logs(tmp_path: Path) -> None:
 @with_admin_user
 def test_task_upgrade_study(tmp_path: Path) -> None:
     service = build_study_service(
-        raw_study_service=Mock(),
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
         repository=Mock(),
         config=Mock(),
     )
@@ -1817,7 +1805,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.utcnow()),  # type: ignore
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1926,8 +1914,8 @@ def test_upgrade_study__raw_study__nominal(
         name=study_name,
         workspace=workspace,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version=current_version,
         additional_data=StudyAdditionalData(),
         archived=False,
@@ -2015,8 +2003,8 @@ def test_upgrade_study__variant_study__nominal(
         id=study_id,
         name=study_name,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version="720",
         additional_data=StudyAdditionalData(),
         archived=False,
@@ -2105,8 +2093,8 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
         name=study_name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version=old_version,
         additional_data=StudyAdditionalData(),
         archived=False,
@@ -2162,8 +2150,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     event_bus.push.assert_not_called()
 
 
-@pytest.mark.unit_test
-def test_is_output_archived(tmp_path) -> None:
+def test_is_output_archived(tmp_path: Path) -> None:
     assert not is_output_archived(path_output=Path("fake_path"))
     assert is_output_archived(path_output=Path("fake_path.zip"))
 

@@ -38,17 +38,18 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
+    const hasConfig = values.configuration !== "";
+
     const config: LauncherConfig = {
       outputSuffix: values.name,
-      otherOptions: values.otherOptions,
+      otherOptions: hasConfig ? undefined : values.otherOptions,
       autoUnzip: values.autoUnzip,
       // Note: fields can be set event if Xpansion is disabled.
-      // This can happen if the user enables Xpansion, fills these fields,
-      // and then disables Xpansion before submitting the form.
+      // This can happen with the default values.
       xpansion: values.xpansion
         ? {
             enabled: true,
-            adequacyCriterions: values.adequacyCriterions,
+            adequacyCriterion: values.adequacyCriterion,
             sensitivityMode: values.sensitivityMode,
             // `output_id` has to be provided only if `sensitivity_mode` is enabled.
             outputId: values.sensitivityMode ? values.output : undefined,
@@ -62,6 +63,7 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
         launchStudy({
           studyId: id,
           launcherId: values.launcher,
+          solverPresetsId: hasConfig ? values.configuration : undefined,
           config,
           version: values.version,
         }),
