@@ -115,5 +115,5 @@ export const otherOptionsToArray = (otherOptions: string): string[] => {
 };
 
 export const isXpressAvailableForVersion = (version: FormValues["version"]) => {
-  return Number(version) >= 830;
+  return formalizeVersion(version) >= 830;
 };
