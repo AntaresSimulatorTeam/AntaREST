@@ -38,9 +38,11 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
+    const hasConfig = values.configuration !== "";
+
     const config: LauncherConfig = {
       outputSuffix: values.name,
-      otherOptions: values.otherOptions,
+      otherOptions: hasConfig ? undefined : values.otherOptions,
       autoUnzip: values.autoUnzip,
       // Note: fields can be set event if Xpansion is disabled.
       // This can happen with the default values.
@@ -61,6 +63,7 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
         launchStudy({
           studyId: id,
           launcherId: values.launcher,
+          solverPresetsId: hasConfig ? values.configuration : undefined,
           config,
           version: values.version,
         }),

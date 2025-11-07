@@ -44,6 +44,7 @@ class TestLauncherConfiguration:
                     "max": local_config.time_limit.max,
                     "default": local_config.time_limit.default,
                 },
+                "versions": ["7.0", "8.8"],
             }
         ]
 

@@ -30,6 +30,7 @@ export interface SwitchFEProps
   labelPlacement?: FormControlLabelProps["labelPlacement"];
   error?: boolean;
   helperText?: React.ReactNode;
+  fullWidth?: boolean;
 }
 
 function SwitchFE(props: SwitchFEProps) {
@@ -42,13 +43,14 @@ function SwitchFE(props: SwitchFEProps) {
     error,
     className,
     sx,
+    fullWidth,
     ...switchProps
   } = props;
 
   const fieldEditor = <Switch {...switchProps} checked={value} defaultChecked={defaultValue} />;
 
   return (
-    <FormControl className={className} sx={sx} error={error}>
+    <FormControl className={className} sx={sx} error={error} fullWidth={fullWidth}>
       {label ? (
         <FormControlLabel control={fieldEditor} label={label} labelPlacement={labelPlacement} />
       ) : (
