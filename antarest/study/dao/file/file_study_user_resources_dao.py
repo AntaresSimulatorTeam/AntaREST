@@ -50,10 +50,9 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
             for file in all_files:
                 if file.is_file() and not file.is_relative_to(expansion_folder):
                     content = file.read_bytes()
-                    file.as_posix()
                     blob_id = blob_service.save(content)
                     yield UserResourceDataCreation(
-                        path=PurePosixPath(str(file)),
+                        path=PurePosixPath(file.relative_to(user_path).as_posix()),
                         resource_type=ResourceType.FILE,
                         blob_id=blob_id,
                     )

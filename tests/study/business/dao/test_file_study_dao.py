@@ -52,13 +52,12 @@ def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_cont
     assert dao.get_link_indirect_capacities("de", "fr").equals(matrix3)
 
     # Tests user resources
-    user_path = empty_study_930.config.study_path / "user"
     user_resources = sorted(dao.get_all_user_resources(), key=lambda res: res.path)
     assert len(user_resources) == 2
     res1 = user_resources[0]
-    assert res1.path.as_posix() == str(user_path / path1)
+    assert res1.path.as_posix() == str(path1)  # Ensures the path is relative to the `user` folder
     assert res1.blob_id == blob_id1
 
     res2 = user_resources[1]
-    assert res2.path.as_posix() == str(user_path / path2)
+    assert res2.path.as_posix() == str(path2)
     assert res2.blob_id == blob_id2
