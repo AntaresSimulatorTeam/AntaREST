@@ -12,37 +12,70 @@
  * This file is part of the Antares project.
  */
 
-import {
-  getLaunchersConfig,
-  getLauncherVersions,
-  getStudyOutputs,
-  type Launcher,
-} from "@/services/api/study";
-import { displayVersionName } from "@/services/utils";
+import { getStudiesById } from "@/redux/selectors";
+import store from "@/redux/store";
+import { getSolverPresets } from "@/services/api/launcher/solverPresets";
+import { getLaunchersConfig, getStudyOutputs, type Launcher } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import * as R from "ramda";
 
 export const XPRESS_OPTION = "xpress" as const;
 
-export const NULL_LAUNCHER: Readonly<Launcher> = {
-  id: "",
-  name: "",
-  nbCores: { min: 0, max: 0, default: 0 },
-  timeLimit: { min: 0, max: 0, default: 0 },
+// TODO: utils to formalize versions format from API
+// Convert version format from '[major].[minor]' to number '[major][minor][patch]'
+const formalizeVersion = (version: string): number => {
+  return Number(version.replace(".", "").padEnd(3, "0"));
 };
 
 export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => {
-  const config = await getLaunchersConfig();
-  const versions = await getLauncherVersions();
+  const { launchers, defaultLauncher: defaultLauncherId } = await getLaunchersConfig();
 
-  const launchersById = R.indexBy(R.prop("id"), config.launchers);
-  const launcherOptions = config.launchers.map(({ id, name }) => ({ value: id, label: name }));
-  const launcher = launchersById[config.defaultLauncher];
+  const launchersById = R.indexBy(R.prop("id"), launchers);
+  const defaultLauncher = launchersById[defaultLauncherId];
 
-  const versionOptions = versions.map((version) => ({
-    value: version,
-    label: displayVersionName(version),
+  // Launcher field
+
+  const launcherOptions = launchers.map(({ id, name }) => ({
+    value: id,
+    label: name,
   }));
+
+  // Version field
+
+  const studiesById = getStudiesById(store.getState());
+  const studies = studyIds.map((id) => studiesById[id]).filter(Boolean);
+  // The version format of `study.version` is '[major][minor][patch]' as string
+  const maxStudyVersion = Math.max(...studies.map((study) => Number(study.version)));
+  const defaultVersion = (maxStudyVersion / 100).toString();
+
+  const getVersionOptionsForLauncher = (launcherId: Launcher["id"]) => {
+    const versions = launchersById[launcherId].versions;
+    return versions.filter((version) => formalizeVersion(version) >= maxStudyVersion);
+  };
+
+  // Configuration field
+
+  const solverPresets = await getSolverPresets();
+  const solverPresetsById = R.indexBy(R.prop("id"), solverPresets);
+
+  const getConfigurationsOptionsForVersion = (version: string) => {
+    const formalizedVersion = formalizeVersion(version);
+
+    return solverPresets
+      .filter(({ minAntaresVersion, maxAntaresVersion }) => {
+        const formalizedMinVersion = minAntaresVersion ? formalizeVersion(minAntaresVersion) : 0;
+        const formalizedMaxVersion = maxAntaresVersion
+          ? formalizeVersion(maxAntaresVersion)
+          : Infinity;
+
+        return (
+          formalizedVersion >= formalizedMinVersion && formalizedVersion <= formalizedMaxVersion
+        );
+      })
+      .map(({ id, name }) => ({ value: id, label: name }));
+  };
+
+  // Output field
 
   const isSingleStudy = studyIds.length === 1;
   const studyOutputs = isSingleStudy ? await getStudyOutputs(studyIds[0]) : [];
@@ -50,23 +83,25 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
 
   return {
     name: "",
-    version: "",
-    otherOptions: "",
-    xpress: false,
     autoUnzip: true,
+    version: defaultVersion,
+    configuration: getConfigurationsOptionsForVersion(defaultVersion)[0]?.value,
+    otherOptions: "",
     xpansion: false,
     adequacyCriterion: false,
     sensitivityMode: false,
     output: "",
-    launcher: launcher.id,
-    nbCores: launcher.nbCores.default,
-    timeLimit: launcher.timeLimit.default,
+    launcher: defaultLauncher.id,
+    nbCores: defaultLauncher.nbCores.default,
+    timeLimit: defaultLauncher.timeLimit.default,
     // TODO: Replace by implementing metadata in `Form` if it's not implemented yet by react-hook-form
     // https://github.com/react-hook-form/react-hook-form/issues/13036
     _data: {
       launchersById,
+      solverPresetsById,
       launcherOptions,
-      versionOptions,
+      getVersionOptionsForLauncher,
+      getConfigurationsOptionsForVersion,
       outputOptions,
       isSingleStudy,
     },
