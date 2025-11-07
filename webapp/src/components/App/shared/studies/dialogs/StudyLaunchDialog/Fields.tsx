@@ -19,6 +19,8 @@ import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import { useFormContextPlus } from "@/components/common/Form";
 import { validateNumber } from "@/utils/validation/number";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { Box, IconButton, Tooltip } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -34,23 +36,40 @@ function Fields() {
 
   const {
     isSingleStudy,
-    configurationOptions,
     outputOptions,
     launcherOptions,
     getVersionOptionsForLauncher,
+    getConfigurationsOptionsForVersion,
+    solverPresetsById,
   } = getValues("_data") || {};
 
-  const [configuration, isXpansionEnabled, isSensitivityModeEnabled, launcherId] = watch([
+  const [configuration, isXpansionEnabled, isSensitivityModeEnabled, launcherId, version] = watch([
     "configuration",
     "xpansion",
     "sensitivityMode",
     "launcher",
+    "version",
   ]);
 
   const versionOptions = useMemo(
     () => getVersionOptionsForLauncher?.(launcherId) || [],
     [getVersionOptionsForLauncher, launcherId],
   );
+
+  const configurationOptions = useMemo(
+    () => getConfigurationsOptionsForVersion?.(version) || [],
+    [getConfigurationsOptionsForVersion, version],
+  );
+
+  const configurationTooltip = useMemo(() => {
+    if (!configuration || !solverPresetsById?.[configuration]) {
+      return null;
+    }
+
+    const { id, name, ...config } = solverPresetsById[configuration];
+
+    return <pre>{JSON.stringify(config, null, 1)}</pre>;
+  }, [configuration, solverPresetsById]);
 
   const isXpansionOutputEnabled = isXpansionEnabled && isSensitivityModeEnabled;
 
@@ -168,17 +187,26 @@ function Fields() {
           rules={{ deps: ["otherOptions"] }}
           sx={{ flex: 1 / 3 }}
         />
-        <SelectFE
-          label={t("launcher.field.configuration")}
-          name="configuration"
-          options={configurationOptions}
-          emptyValue
-          emptyValueLabel={t("launcher.field.otherOptions")}
-          control={control}
-          rules={{ deps: ["otherOptions"] }}
-          onChange={handleConfigurationChange}
-          sx={{ flex: 2 / 3 }}
-        />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flex: 2 / 3 }}>
+          <SelectFE
+            label={t("launcher.field.configuration")}
+            name="configuration"
+            options={configurationOptions}
+            emptyValue
+            emptyValueLabel={t("launcher.field.otherOptions")}
+            control={control}
+            rules={{ deps: ["otherOptions"] }}
+            onChange={handleConfigurationChange}
+            sx={{ flex: 1 }}
+          />
+          {configurationTooltip && (
+            <Tooltip title={configurationTooltip} placement="bottom-start">
+              <IconButton>
+                <InfoOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
         <StringFE
           label={t("launcher.field.otherOptions")}
           name="otherOptions"

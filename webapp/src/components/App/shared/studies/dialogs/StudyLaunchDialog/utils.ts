@@ -14,25 +14,21 @@
 
 import { getStudiesById } from "@/redux/selectors";
 import store from "@/redux/store";
-import { getLauncherVersions } from "@/services/api/launcher/index";
 import { getSolverPresets } from "@/services/api/launcher/solverPresets";
 import { getLaunchersConfig, getStudyOutputs, type Launcher } from "@/services/api/study";
-import { displayVersionName } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";
 import * as R from "ramda";
 
 export const XPRESS_OPTION = "xpress" as const;
 
-export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => {
-  const { launchers: _launchers, defaultLauncher: defaultLauncherId } = await getLaunchersConfig();
+// TODO: utils to formalize versions format from API
+// Convert version format from '[major].[minor]' to number '[major][minor][patch]'
+const formalizeVersion = (version: string): number => {
+  return Number(version.replace(".", "").padEnd(3, "0"));
+};
 
-  // TODO: Remove when API will provide versions with launchers
-  const launchers = await Promise.all(
-    _launchers.map(async (launcher) => {
-      const versions = await getLauncherVersions({ launcherId: launcher.id });
-      return { ...launcher, versions };
-    }),
-  );
+export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => {
+  const { launchers, defaultLauncher: defaultLauncherId } = await getLaunchersConfig();
 
   const launchersById = R.indexBy(R.prop("id"), launchers);
   const defaultLauncher = launchersById[defaultLauncherId];
@@ -48,35 +44,48 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
 
   const studiesById = getStudiesById(store.getState());
   const studies = studyIds.map((id) => studiesById[id]).filter(Boolean);
+  // The version format of `study.version` is '[major][minor][patch]' as string
   const maxStudyVersion = Math.max(...studies.map((study) => Number(study.version)));
 
   const getVersionOptionsForLauncher = (launcherId: Launcher["id"]) => {
     const versions = launchersById[launcherId].versions;
-
-    return versions
-      .filter((version) => Number(version) >= maxStudyVersion)
-      .map((version) => ({
-        value: version,
-        label: displayVersionName(version),
-      }));
+    return versions.filter((version) => formalizeVersion(version) >= maxStudyVersion);
   };
 
   // Configuration field
 
   const solverPresets = await getSolverPresets();
-  const configurationOptions = solverPresets.map(({ id, name }) => ({ value: id, label: name }));
+  const solverPresetsById = R.indexBy(R.prop("id"), solverPresets);
+
+  const getConfigurationsOptionsForVersion = (version: string) => {
+    const formalizedVersion = formalizeVersion(version);
+
+    return solverPresets
+      .filter(({ minAntaresVersion, maxAntaresVersion }) => {
+        const formalizedMinVersion = minAntaresVersion ? formalizeVersion(minAntaresVersion) : 0;
+        const formalizedMaxVersion = maxAntaresVersion
+          ? formalizeVersion(maxAntaresVersion)
+          : Infinity;
+
+        return (
+          formalizedVersion >= formalizedMinVersion && formalizedVersion <= formalizedMaxVersion
+        );
+      })
+      .map(({ id, name }) => ({ value: id, label: name }));
+  };
 
   // Output field
 
   const isSingleStudy = studyIds.length === 1;
   const studyOutputs = isSingleStudy ? await getStudyOutputs(studyIds[0]) : [];
   const outputOptions = studyOutputs.map(({ name }) => name);
+  const version = (maxStudyVersion / 100).toString();
 
   return {
     name: "",
     autoUnzip: true,
-    version: maxStudyVersion.toString(),
-    configuration: configurationOptions[0]?.value,
+    version,
+    configuration: getConfigurationsOptionsForVersion(version)[0]?.value,
     otherOptions: "",
     xpansion: false,
     adequacyCriterion: false,
@@ -89,9 +98,10 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
     // https://github.com/react-hook-form/react-hook-form/issues/13036
     _data: {
       launchersById,
+      solverPresetsById,
       launcherOptions,
       getVersionOptionsForLauncher,
-      configurationOptions,
+      getConfigurationsOptionsForVersion,
       outputOptions,
       isSingleStudy,
     },

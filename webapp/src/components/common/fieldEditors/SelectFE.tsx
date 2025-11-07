@@ -13,6 +13,7 @@
  */
 
 import reactHookFormSupport, { type ReactHookFormSupportProps } from "@/hoc/reactHookFormSupport";
+import i18n from "@/i18n";
 import type { SvgIconComponent } from "@mui/icons-material";
 import {
   Box,
@@ -29,6 +30,7 @@ import {
 import type { SelectInputProps } from "@mui/material/Select/SelectInput";
 import type { TFunction } from "i18next";
 import startCase from "lodash/startCase";
+import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useMemo, useState } from "react";
 import type { FieldPath, FieldValues } from "react-hook-form";
@@ -273,6 +275,25 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
 
 const SelectFEWithRHF = reactHookFormSupport<AllowedValue | AllowedValue[]>({
   defaultValue: (props: SelectFEProps) => (props.multiple ? [] : ""),
+  preValidate: (
+    value,
+    { options, emptyValue, disabled }: SelectFEProps<AllowedValue, AllowedValue, boolean>,
+  ) => {
+    // Remove when `disabled` will be used in Controller component (cf. reactHookFormSupport HOC)
+    if (disabled) {
+      return true;
+    }
+
+    if (emptyValue && (value === "" || R.isNil(value))) {
+      return true;
+    }
+
+    const optionValues = options
+      ? options.map((opt) => (RA.isPlainObj(opt) ? opt.value : opt))
+      : [];
+
+    return optionValues.includes(value) || i18n.t("form.field.invalidValue");
+  },
 })(SelectFE);
 
 // The HOC doesn't automatically forward component generics

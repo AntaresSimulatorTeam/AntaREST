@@ -253,6 +253,7 @@ export interface Launcher {
   name: string;
   nbCores: RangeWithDefault;
   timeLimit: RangeWithDefault;
+  versions: string[];
 }
 
 interface LaunchersConfig {
