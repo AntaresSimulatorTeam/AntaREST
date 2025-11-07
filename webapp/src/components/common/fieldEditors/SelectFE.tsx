@@ -282,10 +282,15 @@ const SelectFEWithRHF = reactHookFormSupport<AllowedValue | AllowedValue[]>({
   defaultValue: (props: SelectFEProps) => (props.multiple ? [] : ""),
   preValidate: (
     value,
-    { options, emptyValue, disabled }: SelectFEProps<AllowedValue, AllowedValue, boolean>,
+    { options, emptyValue, disabled, multiple }: SelectFEProps<AllowedValue, AllowedValue, boolean>,
   ) => {
     // Remove when `disabled` will be used in Controller component (cf. reactHookFormSupport HOC)
     if (disabled) {
+      return true;
+    }
+
+    // TODO: support multiple
+    if (multiple) {
       return true;
     }
 
