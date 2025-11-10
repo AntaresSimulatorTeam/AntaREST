@@ -568,7 +568,7 @@ class MatrixService(ISimpleMatrixService):
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
 
     def get_used_matrices(self) -> Iterable[MatrixReference]:
-        """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
+        """Return all matrices used in raw studies, variant studies, constants hashes, variables views and datasets"""
         for provider in self.usage_providers:
             yield from provider.get_matrix_usage()
 
