@@ -128,7 +128,7 @@ class OutputVariablesView(AntaresBaseModel, extra="forbid", arbitrary_types_allo
     columns: list[int]
 
 
-class OutputVariablesViews(Base):
+class OutputVariablesViewsModel(Base):
     __tablename__ = "output_variables_views"
 
     id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)

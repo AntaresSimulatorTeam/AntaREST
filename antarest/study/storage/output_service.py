@@ -45,6 +45,7 @@ from antarest.study.business.output.utils import (
 from antarest.study.business.output.variables_management import (
     check_variables_view_coherence_and_return_aggregation_info,
     extract_variables_list,
+    get_output_view_inside_db,
     get_view_from_dataframe,
 )
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
@@ -64,7 +65,6 @@ from antarest.study.storage.output_model import (
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesView,
-    OutputVariablesViews,
 )
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -657,15 +657,24 @@ class OutputService:
             st_storage_id,
         )
 
-        # Check if the view is already registerd inside DB
-        with db():
-            view = db.session.get(OutputVariablesViews, output_identifier)
-            # todo: Filter based on the other variables
-            if view is not None:
-                dataframe = self._matrix_service.get(view.matrix_id)
-                output_view = get_view_from_dataframe(dataframe, variable_name)
-                # todo: update last_read value in DB
-                return output_view
+        # Check if the view is already registered inside DB
+        output_view_db = get_output_view_inside_db(
+            study_id,
+            output_id,
+            variable_type,
+            variable_name,
+            area_id,
+            area_from_id,
+            area_to_id,
+            thermal_id,
+            renewable_id,
+            st_storage_id,
+        )
+        if output_view_db is not None:
+            dataframe = self._matrix_service.get(output_view_db.matrix_id)
+            output_view = get_view_from_dataframe(dataframe, variable_name)
+            # todo: update last_read value in DB
+            return output_view
 
         # Calls the aggregation with the right arguments
         export_format = TableExportFormat.PARQUET

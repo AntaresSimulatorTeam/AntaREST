@@ -18,6 +18,7 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import OutputVariablesViewError
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.business.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
@@ -29,7 +30,12 @@ from antarest.study.business.output.utils import (
     normalize_column_names,
     parse_output_file,
 )
-from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType, OutputVariablesView
+from antarest.study.storage.output_model import (
+    OutputVariablesList,
+    OutputVariablesType,
+    OutputVariablesView,
+    OutputVariablesViewsModel,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
@@ -388,3 +394,40 @@ def get_view_from_dataframe(dataframe: pd.DataFrame, variable_name: str) -> Outp
     data = df_pivot.to_dict(orient="split")
     del data["index"]
     return OutputVariablesView.model_validate(data)
+
+
+def get_output_view_inside_db(
+    study_id: str,
+    output_id: str,
+    variable_type: OutputVariablesType,
+    variable_name: str,
+    area_id: str | None = None,
+    area_from_id: str | None = None,
+    area_to_id: str | None = None,
+    thermal_id: str | None = None,
+    renewable_id: str | None = None,
+    st_storage_id: str | None = None,
+) -> OutputVariablesViewsModel | None:
+    with db():
+        q = db.session.query(OutputVariablesViewsModel)
+        q = q.filter(OutputVariablesViewsModel.study_id == study_id)
+        q = q.filter(OutputVariablesViewsModel.output_id == output_id)
+        q = q.filter(OutputVariablesViewsModel.type == variable_type)
+        q = q.filter(OutputVariablesViewsModel.variable_name == variable_name)
+
+        filters = [
+            (OutputVariablesViewsModel.area_id, area_id),
+            (OutputVariablesViewsModel.area_from_id, area_from_id),
+            (OutputVariablesViewsModel.area_to_id, area_to_id),
+            (OutputVariablesViewsModel.thermal_id, thermal_id),
+            (OutputVariablesViewsModel.renewable_id, renewable_id),
+            (OutputVariablesViewsModel.st_storage_id, st_storage_id),
+        ]
+
+        for column, value in filters:
+            if value is not None:
+                q = q.filter(column == value)
+            else:
+                q = q.filter(column.is_(None))
+
+        return q.one()
