@@ -677,7 +677,6 @@ class OutputService:
             output_view_db.last_read = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             with db():
                 db.session.merge(output_view_db)
-                db.session.add(output_view_db)
                 db.session.commit()
             # Return the view
             dataframe = self._matrix_service.get(output_view_db.matrix_id)
