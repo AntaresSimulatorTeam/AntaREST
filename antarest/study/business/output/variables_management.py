@@ -314,15 +314,15 @@ def _checks_areas_variables_view_coherence(
                         return
                     raise OutputVariablesViewError(output_id, error_msg)
                 case ThermalClusterOutputIdentifier():
-                    attr = "thermal_clusters"
+                    variables = area_variable.thermal_clusters
                 case RenewableClusterOutputIdentifier():
-                    attr = "renewable_clusters"
+                    variables = area_variable.renewable_clusters
                 case ShortTermStorageOutputIdentifier():
-                    attr = "short_term_storages"
+                    variables = area_variable.short_term_storages
                 case _:
                     raise OutputVariablesViewError(output_id, error_msg)
             sub_id = output_identifier.get_sub_id_for_aggregation()
-            for variable in getattr(area_variable, attr):
+            for variable in variables:
                 if variable.name == sub_id:
                     if variable_name in variable.variables:
                         return
