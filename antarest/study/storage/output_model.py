@@ -143,5 +143,5 @@ class OutputVariablesViews(Base):
     thermal_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     renewable_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     st_storage_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    matrix_id: Mapped[str] = mapped_column(String, nullable=False)
+    matrix_id: Mapped[str] = mapped_column(String, ForeignKey("matrix.id"), nullable=False)
     last_read: Mapped[datetime] = mapped_column(DateTime)
