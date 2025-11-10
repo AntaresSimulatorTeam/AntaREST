@@ -644,21 +644,6 @@ class OutputService:
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
 
-        # Checks the asked couple `variable name` / `object_id` exists for the output
-        available_variables = self.get_output_variables_list(study_id, output_id)
-        output_identifier = check_variables_view_coherence_and_return_aggregation_info(
-            output_id,
-            variable_type,
-            variable_name,
-            available_variables,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
-        )
-
         # Check if the view is already registered inside DB
         db_model = get_output_view_inside_db(
             study_id,
@@ -682,6 +667,21 @@ class OutputService:
             dataframe = self._matrix_service.get(db_model.matrix_id)
             output_view = get_view_from_dataframe(dataframe, variable_name)
             return output_view
+
+        # Checks the asked couple `variable name` / `object_id` exists for the output
+        available_variables = self.get_output_variables_list(study_id, output_id)
+        output_identifier = check_variables_view_coherence_and_return_aggregation_info(
+            output_id,
+            variable_type,
+            variable_name,
+            available_variables,
+            area_id,
+            area_from_id,
+            area_to_id,
+            thermal_id,
+            renewable_id,
+            st_storage_id,
+        )
 
         # Calls the aggregation with the right arguments
         export_format = TableExportFormat.PARQUET
