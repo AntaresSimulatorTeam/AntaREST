@@ -430,4 +430,4 @@ def get_output_view_inside_db(
             else:
                 q = q.filter(column.is_(None))
 
-        return q.one()
+        return q.scalar()  # type: ignore

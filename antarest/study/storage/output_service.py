@@ -709,6 +709,7 @@ class OutputService:
         else:
             dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name])
 
+        dataframe.index = pd.RangeIndex(len(dataframe))  # matrix-store does not support dataframes with specific index
         matrix_id = self._matrix_service.create(dataframe)
         with db():
             db_model = OutputVariablesViewsModel(
