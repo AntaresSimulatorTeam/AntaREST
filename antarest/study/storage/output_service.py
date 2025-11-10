@@ -45,6 +45,7 @@ from antarest.study.business.output.variables_management import (
     check_variables_view_coherence_and_return_aggregation_info,
     extract_variables_list,
 )
+from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
     ExportFormat,
     MatrixIndex,
@@ -90,6 +91,9 @@ class OutputService:
         self._task_service = task_service
         self._file_transfer_manager = file_transfer_manager
         self._event_bus = event_bus
+        OutputVariablesMatrixUsageProvider(
+            self._study_service.storage_service.variant_study_service.command_factory.command_context.matrix_service
+        )
 
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
         study = self._study_service.get_study(study_id)
