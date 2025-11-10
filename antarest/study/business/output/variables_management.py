@@ -14,10 +14,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Iterator
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.study.business.output.utils import (
+    MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -27,7 +29,7 @@ from antarest.study.business.output.utils import (
     normalize_column_names,
     parse_output_file,
 )
-from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType
+from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType, OutputVariablesView
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
@@ -378,3 +380,11 @@ def _checks_variables_view_arguments_coherence(
         if any([thermal_id, renewable_id, st_storage_id]):
             raise OutputVariablesViewError(output_id, "You provided an renewable/thermal/storage id for areas")
         return AreaOutputIdentifier(area_id)
+
+
+def get_view_from_dataframe(dataframe: pd.DataFrame, variable_name: str) -> OutputVariablesView:
+    dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
+    df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
+    data = df_pivot.to_dict(orient="split")
+    del data["index"]
+    return OutputVariablesView.model_validate(data)

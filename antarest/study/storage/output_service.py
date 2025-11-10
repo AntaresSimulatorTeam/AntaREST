@@ -34,8 +34,9 @@ from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import get_user_id
-from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, MCYEAR_COL, AggregatorManager
+from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, AggregatorManager
 from antarest.study.business.output.utils import (
+    MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -44,6 +45,7 @@ from antarest.study.business.output.utils import (
 from antarest.study.business.output.variables_management import (
     check_variables_view_coherence_and_return_aggregation_info,
     extract_variables_list,
+    get_view_from_dataframe,
 )
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
@@ -62,6 +64,7 @@ from antarest.study.storage.output_model import (
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesView,
+    OutputVariablesViews,
 )
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -91,9 +94,10 @@ class OutputService:
         self._task_service = task_service
         self._file_transfer_manager = file_transfer_manager
         self._event_bus = event_bus
-        OutputVariablesMatrixUsageProvider(
+        self._matrix_service = (
             self._study_service.storage_service.variant_study_service.command_factory.command_context.matrix_service
         )
+        OutputVariablesMatrixUsageProvider(self._matrix_service)
 
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
         study = self._study_service.get_study(study_id)
@@ -653,6 +657,16 @@ class OutputService:
             st_storage_id,
         )
 
+        # Check if the view is already registerd inside DB
+        with db():
+            view = db.session.get(OutputVariablesViews, output_identifier)
+            # todo: Filter based on the other variables
+            if view is not None:
+                dataframe = self._matrix_service.get(view.matrix_id)
+                output_view = get_view_from_dataframe(dataframe, variable_name)
+                # todo: update last_read value in DB
+                return output_view
+
         # Calls the aggregation with the right arguments
         export_format = TableExportFormat.PARQUET
         download_name = f"aggregated_output_{study_id}_{output_id}{export_format.suffix}"
@@ -679,8 +693,7 @@ class OutputService:
         else:
             dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name])
 
-        dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
-        df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
-        data = df_pivot.to_dict(orient="split")
-        del data["index"]
-        return OutputVariablesView.model_validate(data)
+        self._matrix_service.create(dataframe)
+        # todo: Save the matrix_id inside the DB output variables views
+        output_view = get_view_from_dataframe(dataframe, variable_name)
+        return output_view
