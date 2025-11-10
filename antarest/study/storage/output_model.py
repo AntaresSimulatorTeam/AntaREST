@@ -10,12 +10,15 @@
 #
 # This file is part of the Antares project.
 import gzip
+from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, TypeAlias
+from typing import Annotated, Optional, TypeAlias
 
 from pydantic import BeforeValidator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import (
+    DateTime,
+    Enum,
     ForeignKey,
     Integer,
     LargeBinary,
@@ -27,6 +30,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.np_array import NpArray
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 Variables: TypeAlias = Annotated[list[str], BeforeValidator(lambda x: sorted(x))]
 
@@ -122,3 +126,22 @@ class OutputVariablesType(StrEnum):
 class OutputVariablesView(AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
     data: NpArray
     columns: list[int]
+
+
+class OutputVariablesViews(Base):
+    __tablename__ = "output_variables_views"
+
+    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    study_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id"), nullable=False)
+    output_id: Mapped[str] = mapped_column(String, nullable=False)
+    type: Mapped[OutputVariablesType] = mapped_column(Enum(OutputVariablesType), nullable=False)
+    frequency: Mapped[MatrixFrequency] = mapped_column(Enum(MatrixFrequency), nullable=False)
+    variable_name: Mapped[str] = mapped_column(String, nullable=False)
+    area_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    area_from_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    area_to_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    thermal_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    renewable_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    st_storage_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    matrix_id: Mapped[str] = mapped_column(String, ForeignKey("matrix.id"), nullable=False)
+    last_read: Mapped[datetime] = mapped_column(DateTime)

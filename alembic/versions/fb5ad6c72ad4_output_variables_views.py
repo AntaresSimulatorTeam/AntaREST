@@ -41,6 +41,10 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
 
+    with op.batch_alter_table("output_variables_views", schema=None) as batch_op:
+        batch_op.create_index(batch_op.f("ix_output_variables_views_study_id"), ["study_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_output_variables_views_output_id"), ["output_id"], unique=False)
+
 
 def downgrade():
     op.drop_table('output_variables_views')
