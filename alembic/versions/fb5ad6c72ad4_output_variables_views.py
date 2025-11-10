@@ -37,7 +37,6 @@ def upgrade():
         sa.Column("last_read", sa.DateTime(), nullable=False),
 
         sa.ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["matrix_id"], ["matrix.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
 
