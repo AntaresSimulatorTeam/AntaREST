@@ -37,7 +37,7 @@ from antarest.study.storage.output_model import (
     OutputVariablesType,
     OutputVariablesView,
 )
-from antarest.study.storage.output_service import DEFAULT_DOWNLOAD_EXPIRATION_TIME, OutputService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
@@ -49,6 +49,7 @@ download_expiration_time_query: Any = Query(
     lt=1000,
     description="Expiration time for the download file (in minutes)",
 )
+DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
@@ -264,7 +265,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data(
+        return output_service.aggregate_output_data_with_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -341,7 +342,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data(
+        return output_service.aggregate_output_data_with_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -418,7 +419,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data(
+        return output_service.aggregate_output_data_with_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -494,7 +495,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             f"Aggregate output '{output_id}' data for study '{uuid}' and prepares the output in a {export_format} file."
         )
 
-        return output_service.aggregate_output_data(
+        return output_service.aggregate_output_data_with_download(
             uuid,
             output_id=output_id,
             query_file=query_file,

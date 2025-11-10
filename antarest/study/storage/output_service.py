@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import BinaryIO, Optional, Sequence
 
@@ -73,7 +75,6 @@ from antarest.study.storage.utils import assert_permission, get_start_date, is_o
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
-DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
 class OutputService:
@@ -485,7 +486,7 @@ class OutputService:
 
         return task_id
 
-    def aggregate_output_data(
+    def aggregate_output_data_with_download(
         self,
         uuid: str,
         output_id: str,
@@ -499,6 +500,46 @@ class OutputService:
         download_expiration_time_in_minutes: int,
         mc_years: Optional[Sequence[int]] = None,
     ) -> str:
+        study = self._study_service.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+
+        logger.info(download_log)
+        file_download = self._file_transfer_manager.request_download(
+            f"{study.name}-{uuid}-{output_id}{export_format.suffix}",
+            download_name,
+            expiration_time_in_minutes=download_expiration_time_in_minutes,
+        )
+        file_download_path = Path(file_download.path)
+        download_id: str = file_download.id
+
+        self.aggregate_output_data(
+            uuid,
+            output_id,
+            query_file,
+            frequency,
+            export_format,
+            columns_names,
+            ids_to_consider,
+            file_download_path,
+            download_id,
+            mc_years,
+        )
+
+        return download_id
+
+    def aggregate_output_data(
+        self,
+        uuid: str,
+        output_id: str,
+        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
+        frequency: MatrixFrequency,
+        export_format: TableExportFormat,
+        columns_names: Sequence[str],
+        ids_to_consider: Sequence[str],
+        file_path: Path,
+        download_id: Optional[str] = None,
+        mc_years: Optional[Sequence[int]] = None,
+    ) -> str:
         """
         Aggregates output data based on several filtering conditions
 
@@ -510,27 +551,16 @@ class OutputService:
             export_format: format of the export file
             columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
-            download_name: name of the aggregation outputs file,
-            download_log: log to display while launching aggregation output task,
-            download_expiration_time_in_minutes: expiration time in minutes for the download file,
+            file_path: path of the file where output aggregation data will be stored
+            download_id: optional id. If present, it will be used to set the download status in DB.
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
-        Returns: download id
+        Returns: Aggregation task id
 
         """
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         output_path = self._storage.get_output_path(study, output_id)
-
-        logger.info(download_log)
-        file_download = self._file_transfer_manager.request_download(
-            f"{study.name}-{uuid}-{output_id}{export_format.suffix}",
-            download_name,
-            expiration_time_in_minutes=download_expiration_time_in_minutes,
-        )
-        file_download_path = Path(file_download.path)
-        download_id: str = file_download.id
-
         aggregator_manager = AggregatorManager(
             output_path,
             query_file,
@@ -548,26 +578,28 @@ class OutputService:
                 )
 
                 results = aggregator_manager.aggregate_output_data()
-                export_df_chunks(self._study_service.config.storage.tmp_dir, file_download_path, results, export_format)
+                export_df_chunks(self._study_service.config.storage.tmp_dir, file_path, results, export_format)
 
-                stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_download_path}'."))
+                stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_path}'."))
 
-                self._file_transfer_manager.set_ready(download_id, use_notification=False)
+                if download_id:
+                    self._file_transfer_manager.set_ready(download_id, use_notification=False)
 
                 stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Aggregated output file '{file_download_path}' is ready for download.")
+                    lambda x: logger.info(f"Aggregated output file '{file_path}' is ready for download.")
                 )
                 return TaskResult(
                     success=True,
                     message=f"Successfully aggregated output data for study '{study.id}'."
-                    f" Results are stored in '{file_download_path}'.",
+                    f" Results are stored in '{file_path}'.",
                 )
 
             except Exception as e:
-                self._file_transfer_manager.fail(download_id, str(e))
+                if download_id:
+                    self._file_transfer_manager.fail(download_id, str(e))
                 raise e
 
-        self._task_service.add_task(
+        task_id = self._task_service.add_task(
             aggregate_output_task,
             f"Aggregate output {output_id} of study {study.id}.",
             task_type=TaskType.OUTPUT_AGGREGATION,
@@ -576,7 +608,7 @@ class OutputService:
             custom_event_messages=None,
         )
 
-        return download_id
+        return task_id
 
     def get_output_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
         """
@@ -649,11 +681,13 @@ class OutputService:
             st_storage_id,
         )
 
+        # Create a temporary file
+        fh, path = tempfile.mkstemp(dir=self._study_service.config.storage.tmp_dir)
+        os.close(fh)
+        tmp_path = Path(path)
+
         # Calls the aggregation with the right arguments
-        export_format = TableExportFormat.PARQUET
-        download_name = f"aggregated_output_{study_id}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{study_id}' as {export_format} file"
-        download_id = self.aggregate_output_data(
+        task_id = self.aggregate_output_data(
             study_id,
             output_id,
             output_identifier.query_file,
@@ -661,19 +695,18 @@ class OutputService:
             TableExportFormat.PARQUET,
             [variable_name],
             [output_identifier.get_id_for_aggregation()],
-            download_name,
-            download_log,
-            DEFAULT_DOWNLOAD_EXPIRATION_TIME,
+            tmp_path,
         )
-        self._file_transfer_manager.get_download_metadata(download_id, True)
-        download = self._file_transfer_manager.fetch_download(download_id)
+
+        # Wait for the aggregation to end
+        self._task_service.await_task(task_id)
 
         # Transform the dataframe to have the expected format
         if cluster_id := output_identifier.get_sub_id_for_aggregation():
-            dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name, CLUSTER_ID_COL])
+            dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name, CLUSTER_ID_COL])
             dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
         else:
-            dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name])
+            dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name])
 
         dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
         df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
