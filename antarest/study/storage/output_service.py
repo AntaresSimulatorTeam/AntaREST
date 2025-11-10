@@ -660,7 +660,7 @@ class OutputService:
         )
 
         # Check if the view is already registered inside DB
-        output_view_db = get_output_view_inside_db(
+        db_model = get_output_view_inside_db(
             study_id,
             output_id,
             variable_type,
@@ -672,14 +672,14 @@ class OutputService:
             renewable_id,
             st_storage_id,
         )
-        if output_view_db is not None:
+        if db_model is not None:
             # Update last_read value inside DB
-            output_view_db.last_read = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            db_model.last_read = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             with db():
-                db.session.merge(output_view_db)
+                db.session.merge(db_model)
                 db.session.commit()
             # Return the view
-            dataframe = self._matrix_service.get(output_view_db.matrix_id)
+            dataframe = self._matrix_service.get(db_model.matrix_id)
             output_view = get_view_from_dataframe(dataframe, variable_name)
             return output_view
 
