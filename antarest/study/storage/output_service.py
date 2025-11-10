@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import datetime
 import logging
 from pathlib import Path
 from typing import BinaryIO, Optional, Sequence
@@ -671,9 +672,15 @@ class OutputService:
             st_storage_id,
         )
         if output_view_db is not None:
+            # Update last_read value inside DB
+            output_view_db.last_read = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            with db():
+                db.session.merge(output_view_db)
+                db.session.add(output_view_db)
+                db.session.commit()
+            # Return the view
             dataframe = self._matrix_service.get(output_view_db.matrix_id)
             output_view = get_view_from_dataframe(dataframe, variable_name)
-            # todo: update last_read value in DB
             return output_view
 
         # Calls the aggregation with the right arguments

@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import gzip
+import uuid
 from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Optional, TypeAlias
@@ -131,7 +132,7 @@ class OutputVariablesView(AntaresBaseModel, extra="forbid", arbitrary_types_allo
 class OutputVariablesViewsModel(Base):
     __tablename__ = "output_variables_views"
 
-    id: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), unique=True)
     study_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id"), nullable=False)
     output_id: Mapped[str] = mapped_column(String, nullable=False)
     type: Mapped[OutputVariablesType] = mapped_column(Enum(OutputVariablesType), nullable=False)

@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
     op.create_table(
         "output_variables_views",
-        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.String(), nullable=False),
         sa.Column("study_id", sa.String(), nullable=False),
         sa.Column("output_id", sa.String(), nullable=False),
         sa.Column("type", sa.Enum('AREA', 'LINK', 'THERMAL', 'RENEWABLE', 'SHORT_TERM_STORAGE', name='outputvariablestype'), nullable=False),
