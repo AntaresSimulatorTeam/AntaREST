@@ -66,6 +66,7 @@ from antarest.study.storage.output_model import (
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesView,
+    OutputVariablesViewsModel,
 )
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -709,7 +710,24 @@ class OutputService:
         else:
             dataframe = pd.read_parquet(Path(download.path), columns=[MCYEAR_COL, variable_name])
 
-        self._matrix_service.create(dataframe)
-        # todo: Save the matrix_id inside the DB output variables views
+        matrix_id = self._matrix_service.create(dataframe)
+        with db():
+            db_model = OutputVariablesViewsModel(
+                study_id=study_id,
+                output_id=output_id,
+                type=variable_type,
+                frequency=frequency,
+                variable_name=variable_name,
+                area_id=area_id,
+                area_from_id=area_from_id,
+                area_to_id=area_to_id,
+                thermal_id=thermal_id,
+                renewable_id=renewable_id,
+                st_storage_id=st_storage_id,
+                matrix_id=matrix_id,
+                last_read=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            )
+            db.session.add(db_model)
+            db.session.commit()
         output_view = get_view_from_dataframe(dataframe, variable_name)
         return output_view
