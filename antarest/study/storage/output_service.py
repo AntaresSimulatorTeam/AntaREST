@@ -658,7 +658,7 @@ class OutputService:
             st_storage_id,
         )
         if db_model is not None:
-            # Update last_read value inside DB
+            # Update `last_read` value inside DB
             db_model.last_read = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
             with db():
                 db.session.merge(db_model)

@@ -389,6 +389,7 @@ def _checks_variables_view_arguments_coherence(
 
 
 def get_view_from_dataframe(dataframe: pd.DataFrame, variable_name: str) -> OutputVariablesView:
+    """Transform the given dataframe into a OutputVariablesView model"""
     dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
     df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
     data = df_pivot.to_dict(orient="split")
