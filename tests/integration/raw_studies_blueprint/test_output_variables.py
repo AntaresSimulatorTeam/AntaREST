@@ -15,7 +15,8 @@ from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.storage.output_model import OutputVariables
+from antarest.study.storage.output_model import OutputVariables, OutputVariablesViewsModel
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 
 ASSETS_DIR = assets_dir / "output_variables_list"
@@ -181,3 +182,32 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     }
     res = client.get(url, params=query_params)
     assert res.json() == {"data": 336 * [[0.0, 0.0]], "columns": [1, 2]}
+
+    # Ensures we saved the data inside the DB and that we're still able to read them
+    with db():
+        db_content: list[OutputVariablesViewsModel] = db.session.query(OutputVariablesViewsModel).all()
+        db_content.sort(key=lambda x: x.last_read)  # Sort for the test
+        assert len(db_content) == 3
+
+        first_view = db_content[0]
+        assert first_view.study_id == internal_study_id
+        assert first_view.output_id == output_id
+        assert first_view.area_id == "de"
+        assert first_view.frequency == MatrixFrequency.WEEKLY
+        assert first_view.variable_name == "OP. COST"
+
+        second_view = db_content[1]
+        assert first_view.study_id == internal_study_id
+        assert first_view.output_id == output_id
+        assert second_view.area_id == "de"
+        assert second_view.thermal_id == "01_solar"
+        assert second_view.frequency == MatrixFrequency.WEEKLY
+        assert second_view.variable_name == "NODU"
+
+        third_view = db_content[2]
+        assert first_view.study_id == internal_study_id
+        assert first_view.output_id == output_id
+        assert third_view.area_from_id == "de"
+        assert third_view.area_to_id == "fr"
+        assert third_view.frequency == MatrixFrequency.HOURLY
+        assert third_view.variable_name == "FLOW LIN."
