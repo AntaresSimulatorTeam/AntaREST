@@ -913,7 +913,7 @@ class StudyService:
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             directory_id=directory_id,
             owner=owner,
-            groups=groups
+            groups=groups,
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
