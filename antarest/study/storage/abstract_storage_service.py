@@ -74,8 +74,6 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
             else OwnerInfo(name=study.author or "Unknown")
-            # remplacer add_data.author par juste study.author
-            # additional_data.author or "Unknown"
         )
 
         # replaced mentions of additional data by study."author/editor/horizon"

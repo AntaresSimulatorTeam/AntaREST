@@ -125,7 +125,6 @@ class SnapshotGenerator:
 
             logger.info(f"Reading additional data from files for study {variant_study_id}")
             self._update_study_data(file_study, variant_study)
-            # variant_study.additional_data = self._read_additional_data(file_study)
             self.repository.save(variant_study)
 
             if results.should_invalidate_cache:
