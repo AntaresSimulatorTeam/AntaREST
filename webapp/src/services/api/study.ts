@@ -253,6 +253,7 @@ export interface Launcher {
   name: string;
   nbCores: RangeWithDefault;
   timeLimit: RangeWithDefault;
+  versions: string[];
 }
 
 interface LaunchersConfig {
@@ -262,11 +263,6 @@ interface LaunchersConfig {
 
 export const getLaunchersConfig = async () => {
   const res = await client.get<LaunchersConfig>("/v1/launcher/launchers");
-  return res.data;
-};
-
-export const getLauncherVersions = async (): Promise<string[]> => {
-  const res = await client.get("/v1/launcher/versions");
   return res.data;
 };
 

@@ -37,7 +37,6 @@ def build_config(study_path: Path) -> Config:
     return Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)}))
 
 
-@pytest.mark.unit_test
 def test_get(tmp_path: str, project_path: Path) -> None:
     """
     path_to_studies
@@ -115,7 +114,6 @@ def test_get(tmp_path: str, project_path: Path) -> None:
     study.get.assert_called_once_with(["settings"], depth=2, formatted=True)
 
 
-@pytest.mark.unit_test
 def test_get_cache(tmp_path: str) -> None:
     # Create folders
     path_to_studies = Path(tmp_path)
@@ -162,7 +160,6 @@ def test_get_cache(tmp_path: str) -> None:
     cache.get.assert_called_with(cache_id)
 
 
-@pytest.mark.unit_test
 def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -194,7 +191,6 @@ def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
     study_service._check_study_exists(metadata)
 
 
-@pytest.mark.unit_test
 def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
     # Create folders
     tmp = Path(tmp_path)
@@ -229,7 +225,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
         study_service._check_study_exists(metadata)
 
 
-@pytest.mark.unit_test
 def test_delete_study(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
@@ -261,7 +256,6 @@ def test_delete_study(tmp_path: Path) -> None:
     assert not study_path.exists()
 
 
-@pytest.mark.unit_test
 def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
     with db():
         user_me = User(id=2, name="me")

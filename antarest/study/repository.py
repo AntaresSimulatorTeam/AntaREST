@@ -15,7 +15,7 @@ import enum
 from typing import List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import and_, delete, exists, func, not_, or_, select, sql
+from sqlalchemy import TEXT, and_, delete, exists, func, literal, not_, or_, select, sql
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
@@ -105,6 +105,7 @@ class StudyFilter(AntaresBaseModel, frozen=True, extra="forbid"):
         exists: if raw study missing
         workspace: optional workspace of the study
         folder: optional folder prefix of the study
+        directory_id: optional directory ID to filter studies by
         access_permissions: query user ID, groups and admins status
     """
 
@@ -120,6 +121,7 @@ class StudyFilter(AntaresBaseModel, frozen=True, extra="forbid"):
     exists: Optional[bool] = None
     workspace: str = ""
     folder: str = ""
+    directory_id: str = ""
     access_permissions: AccessPermissions = AccessPermissions()
 
 
@@ -355,6 +357,8 @@ class StudyMetadataRepository:
         if study_filter.folder:
             regex = f"{escape_like(study_filter.folder, escape_char)}%"
             q = q.filter(entity.folder.ilike(regex, escape=escape_char))
+        if study_filter.directory_id:
+            q = q.filter(entity.directory_id == study_filter.directory_id)
         if study_filter.workspace:
             q = q.filter(RawStudy.workspace == study_filter.workspace)
         if study_filter.variant is not None:
@@ -457,3 +461,179 @@ class StudyMetadataRepository:
         stmt = select(exists(select(Study).where(Study.parent_id == uuid)))
         result = self.session.scalar(stmt)
         return bool(result) if result is not None else False
+
+
+class DirectoryRepository:
+    def __init__(self, session: Optional[Session] = None):
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        if self._session is None:
+            return db.session
+        return self._session
+
+    def save(self, directory: Directory) -> Directory:
+        session = self.session
+        session.add(directory)
+        session.commit()
+        return directory
+
+    def get_by_id(self, directory_id: str) -> Optional[Directory]:
+        return (
+            self.session.execute(
+                select(Directory).options(joinedload(Directory.parent)).where(Directory.id == directory_id)
+            )
+            .unique()
+            .scalar_one_or_none()
+        )
+
+    def get_by_name(self, directory_name: str, parent_id: Optional[str]) -> Optional[Directory]:
+        stmt = select(Directory).where(Directory.name == directory_name, Directory.parent_id == parent_id)
+        return self.session.scalar(stmt)
+
+    def get_all(self) -> Sequence[Directory]:
+        stmt = select(Directory).options(joinedload(Directory.parent))
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())
+
+    def delete(self, directory_id: str) -> None:
+        session = self.session
+        stmt = delete(Directory).where(Directory.id == directory_id)
+        session.execute(stmt)
+        session.commit()
+
+    def has_children_directories(self, directory_id: str) -> bool:
+        stmt = select(exists(select(Directory).where(Directory.parent_id == directory_id)))
+        return bool(self.session.scalar(stmt))
+
+    def count_studies(self, directory_id: str) -> int:
+        stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
+        return int(self.session.scalar(stmt))
+
+    def check_cycle(self, directory_id: str, new_parent_id: str) -> bool:
+        if directory_id == new_parent_id:
+            return True
+
+        current_id: str | None = new_parent_id
+        visited = {directory_id}
+
+        while current_id is not None:
+            if current_id in visited:
+                return True
+            visited.add(current_id)
+
+            stmt = select(Directory.parent_id).where(Directory.id == current_id)
+            current_id = self.session.scalar(stmt)
+
+        return False
+
+    def exists(self, name: str, parent_id: Optional[str]) -> bool:
+        stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
+        return bool(self.session.scalar(stmt))
+
+    def exists_by_id(self, directory_id: str) -> bool:
+        stmt = select(exists(select(Directory).where(Directory.id == directory_id)))
+        return bool(self.session.scalar(stmt))
+
+    def get_all_descendant_directories(self, directory_id: str) -> Sequence[Directory]:
+        """
+        Get all descendant directories using a recursive CTE query.
+
+        Args:
+            directory_id: The parent directory ID
+
+        Returns:
+            List of all descendant Directory objects
+        """
+        # Base case: start with the given directory's children
+        base = (
+            select(
+                Directory.id,
+                Directory.name,
+                Directory.parent_id,
+            )
+            .where(Directory.parent_id == directory_id)
+            .cte(name="descendant_hierarchy", recursive=True)
+        )
+
+        # Recursive case: get children of children
+        recursive = select(
+            Directory.id,
+            Directory.name,
+            Directory.parent_id,
+        ).join(base, Directory.parent_id == base.c.id)
+
+        cte = base.union_all(recursive)
+
+        # Query all descendants
+        stmt = select(Directory).where(Directory.id.in_(select(cte.c.id)))
+        result = self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    def get_all_studies_in_tree(self, directory_id: str) -> Sequence[Study]:
+        # Get all directory IDs (current + descendants)
+        all_directory_ids = [directory_id]
+        descendants = self.get_all_descendant_directories(directory_id)
+        all_directory_ids.extend([d.id for d in descendants])
+
+        # Query all studies in these directories
+        stmt = (
+            select(Study)
+            .options(joinedload(Study.owner))
+            .options(joinedload(Study.groups))
+            .where(Study.directory_id.in_(all_directory_ids))
+        )
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())
+
+    def count_studies_in_tree(self, directory_id: str) -> int:
+        all_directory_ids = [directory_id]
+        descendants = self.get_all_descendant_directories(directory_id)
+        all_directory_ids.extend([d.id for d in descendants])
+
+        stmt = select(func.count(Study.id)).where(Study.directory_id.in_(all_directory_ids))
+        return int(self.session.scalar(stmt))
+
+    def get_directory_paths_bulk(self, directory_ids: List[str]) -> dict[str, str]:
+        """
+        Get directory paths for multiple directories in bulk using a recursive CTE.
+
+        Args:
+            directory_ids: List of directory IDs to get paths for
+
+        Returns:
+            Dictionary mapping directory_id -> path (e.g., {"dir-123": "parent/child"})
+        """
+        if not directory_ids:
+            return {}
+
+        # Base case: get all directories with their names
+        base = (
+            select(
+                Directory.id.label("id"),
+                Directory.name.label("name"),
+                Directory.parent_id.label("parent_id"),
+                Directory.name.cast(TEXT).label("path"),
+                literal(0).label("depth"),
+            )
+            .where(Directory.parent_id.is_(None))
+            .cte(name="directory_hierarchy", recursive=True)
+        )
+
+        # Recursive case: join with parent and concatenate path
+        recursive = select(
+            Directory.id.label("id"),
+            Directory.name.label("name"),
+            Directory.parent_id.label("parent_id"),
+            (base.c.path + "/" + Directory.name).cast(TEXT).label("path"),
+            (base.c.depth + 1).label("depth"),
+        ).join(base, Directory.parent_id == base.c.id)
+
+        cte = base.union_all(recursive)
+
+        # Query the CTE for requested directory IDs
+        stmt = select(cte.c.id, cte.c.path).where(cte.c.id.in_(directory_ids))
+
+        result = self.session.execute(stmt)
+        return {row[0]: row[1] for row in result}

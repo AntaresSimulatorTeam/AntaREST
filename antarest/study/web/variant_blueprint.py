@@ -43,12 +43,11 @@ def create_study_variant_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_variant_management], dependencies=[auth.required()])
     variant_study_service = study_service.storage_service.variant_study_service
 
     @bp.post(
         "/studies/{uuid}/variants",
-        tags=[APITag.study_variant_management],
         summary="Create a study variant",
         responses={
             200: {
@@ -71,7 +70,6 @@ def create_study_variant_routes(
 
     @bp.get(
         "/studies/{uuid}/variants",
-        tags=[APITag.study_variant_management],
         summary="Get children variants",
         response_model=None,  # To cope with recursive models issues
     )
@@ -82,7 +80,6 @@ def create_study_variant_routes(
 
     @bp.get(
         "/studies/{uuid}/parents",
-        tags=[APITag.study_variant_management],
         summary="Get parents of variant",
         responses={
             200: {
@@ -104,7 +101,6 @@ def create_study_variant_routes(
 
     @bp.get(
         "/studies/{uuid}/commands",
-        tags=[APITag.study_variant_management],
         summary="List variant commands",
         responses={
             200: {
@@ -129,9 +125,7 @@ def create_study_variant_routes(
 
     @bp.get(
         "/studies/{uuid}/commands/_matrices",
-        tags=[APITag.study_variant_management],
         summary="Export a variant's commands matrices",
-        response_model=FileDownloadTaskDTO,
     )
     def export_matrices(
         uuid: str,
@@ -142,7 +136,6 @@ def create_study_variant_routes(
 
     @bp.post(
         "/studies/{uuid}/commands",
-        tags=[APITag.study_variant_management],
         summary="Append a command to variant",
         responses={
             200: {
@@ -168,7 +161,6 @@ def create_study_variant_routes(
 
     @bp.put(
         "/studies/{uuid}/commands",
-        tags=[APITag.study_variant_management],
         summary="Replace all commands from variant",
         responses={
             200: {
@@ -184,7 +176,6 @@ def create_study_variant_routes(
 
     @bp.post(
         "/studies/{uuid}/command",
-        tags=[APITag.study_variant_management],
         summary="Append a command to variant",
         responses={
             200: {
@@ -200,7 +191,6 @@ def create_study_variant_routes(
 
     @bp.get(
         "/studies/{uuid}/commands/{cid}",
-        tags=[APITag.study_variant_management],
         summary="Get a command detail",
         responses={
             200: {
@@ -217,7 +207,6 @@ def create_study_variant_routes(
 
     @bp.put(
         "/studies/{uuid}/commands/{cid}/move",
-        tags=[APITag.study_variant_management],
         summary="Move a command to an other index",
     )
     def move_command(uuid: str, cid: str, index: int) -> None:
@@ -228,7 +217,6 @@ def create_study_variant_routes(
 
     @bp.put(
         "/studies/{uuid}/commands/{cid}",
-        tags=[APITag.study_variant_management],
         summary="Move a command to an other index",
     )
     def update_command(uuid: str, cid: str, command: CommandDTOAPI) -> None:
@@ -240,7 +228,6 @@ def create_study_variant_routes(
 
     @bp.delete(
         "/studies/{uuid}/commands/{cid}",
-        tags=[APITag.study_variant_management],
         summary="Remove a command",
     )
     def remove_command(uuid: str, cid: str) -> None:
@@ -251,7 +238,6 @@ def create_study_variant_routes(
 
     @bp.delete(
         "/studies/{uuid}/commands",
-        tags=[APITag.study_variant_management],
         summary="Clear variant's commands",
     )
     def remove_all_commands(uuid: str) -> None:
@@ -261,9 +247,7 @@ def create_study_variant_routes(
 
     @bp.put(
         "/studies/{uuid}/generate",
-        tags=[APITag.study_variant_management],
         summary="Generate variant snapshot",
-        response_model=str,
     )
     def generate_variant(uuid: str, denormalize: bool = False, from_scratch: bool = False) -> str:
         logger.info(f"Generating snapshot for variant study {uuid}")
@@ -272,9 +256,7 @@ def create_study_variant_routes(
 
     @bp.get(
         "/studies/{uuid}/task",
-        tags=[APITag.study_variant_management],
         summary="Get study generation task",
-        response_model=TaskDTO,
     )
     def get_study_generation_task(uuid: str) -> TaskDTO:
         sanitized_uuid = sanitize_uuid(uuid)
@@ -282,7 +264,6 @@ def create_study_variant_routes(
 
     @bp.put(
         "/studies/variants/clear-snapshots",
-        tags=[APITag.study_variant_management],
         summary="Clear variant snapshots",
         responses={
             200: {

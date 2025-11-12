@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import gzip
+from enum import StrEnum
 from typing import Annotated, TypeAlias
 
 from pydantic import BeforeValidator
@@ -25,6 +26,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.np_array import NpArray
 
 Variables: TypeAlias = Annotated[list[str], BeforeValidator(lambda x: sorted(x))]
 
@@ -107,3 +109,16 @@ class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
         args["link"] = sorted(all_link_variables)
 
         return OutputVariablesInformation.model_validate(args)
+
+
+class OutputVariablesType(StrEnum):
+    AREA = "area"
+    LINK = "link"
+    THERMAL = "thermal"
+    RENEWABLE = "renewable"
+    SHORT_TERM_STORAGE = "st_storage"
+
+
+class OutputVariablesView(AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
+    data: NpArray
+    columns: list[int]

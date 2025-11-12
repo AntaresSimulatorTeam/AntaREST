@@ -22,8 +22,6 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import sessionmaker
-from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
@@ -38,7 +36,6 @@ from antarest.core.tasks.model import (
     TaskResult,
     TaskStatus,
     TaskType,
-    cancel_orphan_tasks,
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import ITaskNotifier, TaskJobService
@@ -48,13 +45,11 @@ from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
-from antarest.service_creator import SESSION_ARGS
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
 from tests.storage.test_service import build_study_service
 
@@ -77,30 +72,32 @@ def db_engine_fixture(tmp_path: Path) -> t.Generator[Engine, None, None]:
     engine.dispose()
 
 
+@pytest.fixture
+def task_repo() -> TaskJobRepository:
+    return TaskJobRepository()
+
+
+@pytest.fixture
+def task_service(core_config: Config, event_bus: IEventBus, task_repo: TaskJobRepository) -> TaskJobService:
+    return TaskJobService(config=core_config, repository=task_repo, event_bus=event_bus)
+
+
 @with_admin_user
 @with_db_context
-def test_service(core_config: Config, event_bus: IEventBus) -> None:
-    engine = db.session.bind
-
-    task_job_repo = TaskJobRepository()
+def test_service(task_repo: TaskJobRepository, task_service: TaskJobService) -> None:
+    service = task_service
 
     # Prepare a TaskJob in the database
     creation_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     running_task = TaskJob(id="a", name="b", status=TaskStatus.RUNNING.value, creation_date=creation_date)
-    task_job_repo.save(running_task)
-
-    # Create a TaskJobService
-    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
-
-    # Cancel pending and running tasks
-    cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
+    task_repo.save(running_task)
 
     # Test Case: list tasks
     # =====================
 
     tasks = service.list_tasks(TaskListFilter())
     assert len(tasks) == 1
-    assert tasks[0].status == TaskStatus.FAILED
+    assert tasks[0].status == TaskStatus.RUNNING
     assert tasks[0].creation_date_utc == str(creation_date.replace(tzinfo=None))
 
     # Test Case: get task status
@@ -116,12 +113,8 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
         "name": "b",
         "owner": None,
         "ref_id": None,
-        "result": {
-            "message": "Task was interrupted due to server restart",
-            "return_value": None,
-            "success": False,
-        },
-        "status": TaskStatus.FAILED,
+        "result": None,
+        "status": TaskStatus.RUNNING,
         "type": None,
         "progress": None,
     }
@@ -137,7 +130,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     failed_id = service.add_task(action_fail, "failed action", TaskType.COPY, None, None, None)
     service.await_task(failed_id, timeout_sec=2)
 
-    failed_task = task_job_repo.get(failed_id)
+    failed_task = task_repo.get(failed_id)
     assert failed_task is not None
     assert failed_task.status == TaskStatus.FAILED.value
     assert failed_task.result_status is False
@@ -155,7 +148,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     ok_id = service.add_task(action_ok, None, TaskType.COPY, None, None, None)
     service.await_task(ok_id, timeout_sec=2)
 
-    ok_task = task_job_repo.get(ok_id)
+    ok_task = task_repo.get(ok_id)
     assert ok_task is not None
     assert ok_task.status == TaskStatus.COMPLETED.value
     assert ok_task.result_status is True
@@ -164,20 +157,6 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     assert len(ok_task.logs) == 2
     assert ok_task.logs[0].message == "start"
     assert ok_task.logs[1].message == "end"
-
-
-class DummyWorker(AbstractWorker):
-    def __init__(self, event_bus: IEventBus, accept: t.List[str], tmp_path: Path):
-        super().__init__("test", event_bus, accept)
-        self.tmp_path = tmp_path
-
-    @override
-    def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
-        # simulate a "long" task ;-)
-        time.sleep(0.01)
-        relative_path = t.cast(str, task_info.task_args["file"])
-        (self.tmp_path / relative_path).touch()
-        return TaskResult(success=True, message="")
 
 
 @with_db_context
@@ -267,7 +246,7 @@ def test_repository() -> None:
 
 
 @with_db_context
-def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
+def test_cancel_dispatches_request_to_event_bus(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
     # Create a TaskJobService and add tasks
     task_job_repo = TaskJobRepository()
     task_job_repo.save(TaskJob(id="a", name="foo"))
@@ -282,13 +261,10 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
     # The event_bus fixture is actually a EventBusService with LocalEventBus backend
     backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
 
-    # Test Case: cancel a task that is not in the service tasks map
-    # =============================================================
-
     backend.clear_events()
 
     with current_user_context(admin_user):
-        service.cancel_task("b", dispatch=True)
+        service.cancel_task("b")
 
     collected_events = backend.get_events()
 
@@ -297,77 +273,59 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
     assert collected_events[0].payload == "b"
     assert collected_events[0].permissions == PermissionInfo(public_mode=PublicMode.NONE)
 
-    # Test Case: cancel a task that is in the service tasks map
-    # =========================================================
 
-    service.tasks["a"] = Mock(cancel=Mock(return_value=None))
+@with_db_context
+def test_cancel_started_task_should_not_update_status(
+    core_config: Config, event_bus: IEventBus, admin_user: JWTUser
+) -> None:
+    # Create a TaskJobService and add tasks
+    task_job_repo = TaskJobRepository()
+    task_job_repo.save(TaskJob(id="not-cancelled", name="not-cancelled", status=TaskStatus.RUNNING.value))
+
+    # Create a TaskJobService
+    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+
+    # The event_bus fixture is actually a EventBusService with LocalEventBus backend
+    backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
+
+    service.tasks["not-cancelled"] = Mock(cancel=Mock(return_value=False))
 
     backend.clear_events()
 
     with current_user_context(admin_user):
-        service.cancel_task("a", dispatch=True)
+        service.cancel_task("not-cancelled")
+
+    collected_events = backend.get_events()
+    assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
+    task_not_cancelled = task_job_repo.get("not-cancelled")
+    assert task_not_cancelled is not None
+    assert task_not_cancelled.status == TaskStatus.RUNNING.value
+
+
+@with_db_context
+def test_cancel_not_started_task_should_update_status(
+    core_config: Config, event_bus: IEventBus, admin_user: JWTUser
+) -> None:
+    # Create a TaskJobService and add tasks
+    task_job_repo = TaskJobRepository()
+    task_job_repo.save(TaskJob(id="a", name="foo"))
+
+    # Create a TaskJobService
+    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+    # The event_bus fixture is actually a EventBusService with LocalEventBus backend
+    backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
+
+    # mock successful cancel
+    service.tasks["a"] = Mock(cancel=Mock(return_value=True))
+
+    with current_user_context(admin_user):
+        service.cancel_task("a")
 
     collected_events = backend.get_events()
     assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
     task_a = task_job_repo.get("a")
     assert task_a is not None
     assert task_a.status == TaskStatus.CANCELLED.value
-
-
-@pytest.mark.parametrize(
-    ("status", "result_status", "result_msg"),
-    [
-        (TaskStatus.RUNNING.value, False, "task ongoing"),
-        (TaskStatus.PENDING.value, True, "task pending"),
-        (TaskStatus.FAILED.value, False, "task failed"),
-        (TaskStatus.COMPLETED.value, True, "task finished"),
-        (TaskStatus.TIMEOUT.value, False, "task timed out"),
-        (TaskStatus.CANCELLED.value, True, "task canceled"),
-    ],
-)
-def test_cancel_orphan_tasks(
-    db_engine: Engine,
-    status: int,
-    result_status: bool,
-    result_msg: str,
-) -> None:
-    max_diff_seconds: int = 1
-    test_id: str = "2ea94758-9ea5-4015-a45f-b245a6ffc147"
-
-    completion_date: datetime.datetime = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-    task_job = TaskJob(
-        id=test_id,
-        name="test",
-        status=status,
-        result_status=result_status,
-        result_msg=result_msg,
-        completion_date=completion_date,
-    )
-    make_session = sessionmaker(bind=db_engine, **SESSION_ARGS)
-    with make_session() as session:
-        session.add(task_job)
-        session.commit()
-    cancel_orphan_tasks(engine=db_engine, session_args=SESSION_ARGS)
-    with make_session() as session:
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-        if status in [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]:
-            update_tasks_count = (
-                session.query(TaskJob)
-                .filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value]))
-                .count()
-            )
-            assert not update_tasks_count
-            updated_task_job = session.query(TaskJob).get(test_id)
-            assert updated_task_job.status == TaskStatus.FAILED.value
-            assert not updated_task_job.result_status
-            assert updated_task_job.result_msg == "Task was interrupted due to server restart"
-            assert (now - updated_task_job.completion_date).seconds <= max_diff_seconds
-        else:
-            updated_task_job = session.query(TaskJob).get(test_id)
-            assert updated_task_job.status == status
-            assert updated_task_job.result_status == result_status
-            assert updated_task_job.result_msg == result_msg
-            assert (now - updated_task_job.completion_date).seconds <= max_diff_seconds
 
 
 @with_db_context
@@ -529,6 +487,7 @@ nominalcapacity = 14.0
     user_service.get_identity.return_value = regular_user
     study_service = build_study_service(
         raw_study_service,
+        Mock(),
         study_metadata_repository,
         config,
         user_service=user_service,
@@ -630,3 +589,117 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
     assert task_list[0].owner != DEFAULT_ADMIN_USER.id
     assert task_list[0].owner == jwt_user.id
     assert task_list[0].result.return_value == str(jwt_user.id)
+
+
+@with_db_context
+def test_get_tasks(core_config: Config, event_bus: IEventBus):
+    # Create a user who has no admin rights
+    regular_user = User(id=99, name="regular")
+    db.session.add(regular_user)
+
+    # Define its token
+    jwt_user = Mock(spec=JWTUser, id=regular_user.id, type="users", impersonator=regular_user.id)
+
+    task_job_repository = TaskJobRepository()
+    task_job_service = TaskJobService(config=core_config, event_bus=event_bus, repository=task_job_repository)
+
+    # Newly created user initialize a task
+    def action_task(notifier: ITaskNotifier) -> TaskResult:
+        notifier.notify_message("start")
+
+        # get current user
+        current_user = get_current_user()
+
+        notifier.notify_message("end")
+        # must set the task 'result' field at regular_user.id
+        return TaskResult(success=True, message="success", return_value=str(current_user.id))
+
+    with current_user_context(jwt_user):
+        task_1 = task_job_service.add_task(
+            action=action_task,
+            name="task_test_2",
+            task_type=TaskType.SCAN,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    task_job_service.await_task(task_1, 10)
+
+    with current_user_context(jwt_user):
+        task_2 = task_job_service.add_task(
+            action=action_task,
+            name="task_test_3",
+            task_type=TaskType.EXPORT,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    task_job_service.await_task(task_2, 10)
+
+    with current_user_context(jwt_user):
+        task_3 = task_job_service.add_task(
+            action=action_task,
+            name="task_test_4",
+            task_type=TaskType.COPY,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    task_job_service.await_task(task_3, 10)
+
+    with current_user_context(jwt_user):
+        task_list = task_job_service.list_tasks(TaskListFilter())
+
+    assert len(task_list) == 3
+    assert task_list[0] == task_job_repository.get(task_1).to_dto()
+    assert task_list[1] == task_job_repository.get(task_2).to_dto()
+    assert task_list[2] == task_job_repository.get(task_3).to_dto()
+
+
+def test_task_timeout_other_worker(task_repo: TaskJobRepository, task_service: TaskJobService) -> None:
+    with db():
+        running_task = TaskJob(id="a", name="b", status=TaskStatus.RUNNING.value, creation_date=datetime.datetime.now())
+        task_repo.save(running_task)
+
+    with pytest.raises(TimeoutError):
+        with db():
+            task_service.await_task("a", 1)
+
+            assert task_service.status_task("a").status == TaskStatus.RUNNING
+
+
+@with_admin_user
+def test_task_timeout_this_worker(task_service: TaskJobService) -> None:
+    with db():
+
+        def long_task(notifier: ITaskNotifier) -> TaskResult:
+            time.sleep(3)
+            return TaskResult(success=True, message="success")
+
+        task_id = task_service.add_task(long_task, "a", TaskType.SCAN, None, None, None)
+
+    with pytest.raises(TimeoutError):
+        with db():
+            task_service.await_task(task_id, 1)
+
+            assert task_service.status_task("a").status == TaskStatus.RUNNING
+
+
+@with_admin_user
+def test_memory_leak_fix(task_service: TaskJobService) -> None:
+    with db():
+
+        def dummy_task(notifier: ITaskNotifier) -> TaskResult:
+            return TaskResult(success=True, message="success")
+
+        task_id = task_service.add_task(dummy_task, "a", TaskType.SCAN, None, None, None)
+
+    with db():
+        task_service.await_task(task_id, 1)
+
+        # accessing an implementation detail, but no other way to check it
+        assert task_id not in task_service.tasks
+        assert task_service.status_task(task_id).status == TaskStatus.COMPLETED

@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import contextlib
+import logging
 import os
 import time
 from typing import Callable
@@ -18,6 +19,8 @@ from typing import Callable
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+
+logger = logging.getLogger(__name__)
 
 
 def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: float = 1) -> None:
@@ -31,7 +34,21 @@ def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: flo
 
 
 IS_WINDOWS = os.name == "nt"
-TIMEOUT_MULTIPLIER = 2 if IS_WINDOWS else 1
+
+
+def is_windows_ci() -> bool:
+    """
+    Check if running on Windows in GitHub Actions CI.
+    """
+    return IS_WINDOWS and os.getenv("GITHUB_ACTIONS") == "true"
+
+
+def duration_threshold(base_duration: float) -> float:
+    """
+    base_duration is multiplied by 2 on Windows CI to cope with slow CI runners
+    """
+    multiplier = 2 if is_windows_ci() else 1
+    return multiplier * base_duration
 
 
 def wait_task_completion(
@@ -42,9 +59,9 @@ def wait_task_completion(
     base_timeout: float = 10,
 ) -> TaskDTO:
     """
-    base_timeout is multiplied by 2 on windows to cope with slow CI
+    base_timeout is multiplied by 2 on Windows CI to cope with slow CI runners
     """
-    timeout = TIMEOUT_MULTIPLIER * base_timeout
+    timeout = duration_threshold(base_timeout)
     params = {"wait_for_completion": True, "timeout": timeout}
     res = client.request(
         "GET",

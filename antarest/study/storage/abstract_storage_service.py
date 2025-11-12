@@ -64,11 +64,9 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
     def get_study_information(
         self,
         study: Study,
+        folder_path: Optional[str] = None,
     ) -> StudyMetadataDTO:
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        folder: Optional[str] = None
-        if hasattr(study, "folder"):
-            folder = study.folder
 
         owner_info = (
             OwnerInfo(id=study.owner.id, name=study.owner.name)
@@ -97,6 +95,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             horizon=study.horizon,
             folder=folder,
             tags=[tag.label for tag in study.tags],
+            directory_id=study.directory_id,
         )
 
     def _update_study_data_from_files(self, file_study: FileStudy, metadata: Study) -> None:

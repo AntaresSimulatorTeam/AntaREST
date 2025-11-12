@@ -107,6 +107,7 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -492,6 +493,7 @@ class StudyService:
         self,
         raw_study_service: RawStudyService,
         variant_study_service: VariantStudyService,
+        directory_service: DirectoryService,
         command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
@@ -504,6 +506,7 @@ class StudyService:
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
+        self.directory_service = directory_service
         self.repository = repository
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
@@ -706,8 +709,19 @@ class StudyService:
             pagination=pagination,
         )
         logger.info("Studies retrieved")
+
+        # Bulk optimization: pre-calculate all directory paths in one query
+        directory_ids = [study.directory_id for study in matching_studies if study.directory_id is not None]
+        directory_paths = self.directory_service.get_directory_paths_bulk(directory_ids)
+
+        # Build study metadata with pre-calculated paths
         for study in matching_studies:
-            study_metadata = self._try_get_studies_information(study)
+            folder_path = None
+            if study.directory_id:
+                dir_path = directory_paths.get(study.directory_id, "")
+                folder_path = f"{dir_path}/{study.id}" if dir_path else study.id
+
+            study_metadata = self._try_get_studies_information(study, folder_path)
             if study_metadata is not None:
                 studies[study_metadata.id] = study_metadata
         return studies
@@ -728,9 +742,11 @@ class StudyService:
         )
         return total
 
-    def _try_get_studies_information(self, study: Study) -> Optional[StudyMetadataDTO]:
+    def _try_get_studies_information(
+        self, study: Study, folder_path: Optional[str] = None
+    ) -> Optional[StudyMetadataDTO]:
         try:
-            return self.storage_service.get_storage(study).get_study_information(study)
+            return self.storage_service.get_storage(study).get_study_information(study, folder_path)
         except Exception as e:
             logger.warning(
                 "Failed to build study %s (%s) metadata",
@@ -858,7 +874,9 @@ class StudyService:
         logger.info("study %s path asked by user %s", uuid, get_user_id())
         return self.storage_service.get_storage(study).get_study_path(study)
 
-    def create_study(self, study_name: str, version: Optional[StudyVersion], group_ids: List[str]) -> str:
+    def create_study(
+        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], directory: str = ""
+    ) -> str:
         """
         Creates a study with the specified study name, version, group IDs, and user parameters.
 
@@ -866,14 +884,22 @@ class StudyService:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
+            directory: Optional directory path where the study will be created (e.g., 'project/subfolder').
 
         Returns:
             str: The ID of the newly created study.
+
+        Raises:
+            UserHasNotPermissionError: If the user doesn't have permission for the specified groups.
         """
+        owner, groups = self._validate_and_prepare_permissions(group_ids)
+
         sid = str(uuid4())
         study_path = self.config.get_workspace_path() / sid
 
         author = self.get_user_name()
+
+        directory_id = self.directory_service.get_directory_by_path(directory)
 
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         raw = RawStudy(
@@ -889,7 +915,9 @@ class StudyService:
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
-        self._save_study(raw, group_ids)
+
+        self._save_study(raw)
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1148,6 +1176,8 @@ class StudyService:
         assert_permission(src_study, StudyPermissionType.READ)
         self.assert_study_unarchived(src_study)
 
+        owner, groups = self._validate_and_prepare_permissions(group_ids)
+
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
@@ -1159,7 +1189,10 @@ class StudyService:
                 with_outputs,
             )
 
-            self._save_study(study, group_ids)
+            study.owner = owner
+            study.groups = groups
+
+            self._save_study(study)
             self.normalize_study(study)
 
             # Copying all jobs associated with the study
@@ -1210,12 +1243,17 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+
         if folder_dest:
             new_folder = folder_dest.rstrip("/") + f"/{study.id}"
+            directory_id = self.directory_service.get_directory_by_path(folder_dest)
+            study.directory_id = directory_id
         else:
             new_folder = None
+            study.directory_id = None
+
         study.folder = new_folder
-        self.repository.save(study, update_modification_date=False)
+        self.repository.save(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_EDITED,
@@ -1359,7 +1397,10 @@ class StudyService:
 
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
+            UserHasNotPermissionError: If the user doesn't have permission for the specified groups.
         """
+        owner, groups = self._validate_and_prepare_permissions(group_ids)
+
         sid = str(uuid4())
         path = str(self.config.get_workspace_path() / sid)
         study = RawStudy(
@@ -1368,12 +1409,13 @@ class StudyService:
             path=path,
             editor=self.get_user_name(),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
-            groups=group_ids,
+            owner=owner,
+            groups=groups,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
-        self._save_study(study, group_ids)
+        self._save_study(study)
         self.normalize_study(study)
         self.event_bus.push(
             Event(
@@ -1932,41 +1974,54 @@ class StudyService:
             custom_event_messages=None,
         )
 
-    def _save_study(
-        self,
-        study: Study,
-        group_ids: Sequence[str] = (),
-    ) -> None:
+    def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, List[Group]]:
         """
-        Create or update a study with specified attributes.
-
-        This function is responsible for creating a new study or updating an existing one
-        with the provided information.
+        Validate that the current user has permissions for the specified groups.
 
         Args:
-            study: The study to be saved or updated.
-            group_ids: The list of group IDs to associate with the study.
+            group_ids: The list of group IDs to validate.
+
+        Returns:
+            A tuple containing:
+            - The owner (User) from the database
+            - The list of validated Group objects
 
         Raises:
             UserHasNotPermissionError:
-                If the owner or the group role is not specified.
+                If the owner is not specified, has invalid authentication,
+                or does not have permission for any of the specified group IDs.
         """
-        owner = get_current_user()
-        if not owner:
+        current_user = get_current_user()
+        if not current_user:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
-        if isinstance(study, RawStudy):
-            study.content_status = StudyContentStatus.VALID
+        owner = self.user_service.get_user(current_user.impersonator)
 
-        study.owner = self.user_service.get_user(owner.impersonator)
-
-        study.groups.clear()
+        groups: List[Group] = []
         for gid in group_ids:
-            owned_groups = (g for g in owner.groups if g.id == gid)
+            owned_groups = (g for g in current_user.groups if g.id == gid)
             jwt_group: Optional[JWTGroup] = next(owned_groups, None)
             if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
-            study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
+            groups.append(Group(id=jwt_group.id, name=jwt_group.name))
+
+        return owner, groups
+
+    def _save_study(
+        self,
+        study: Study,
+    ) -> None:
+        """
+        Save a study to the database.
+
+        This function is responsible for saving a study to the repository.
+        The study's owner and groups should already be set before calling this method.
+
+        Args:
+            study: The study to be saved.
+        """
+        if isinstance(study, RawStudy):
+            study.content_status = StudyContentStatus.VALID
 
         self.repository.save(study)
 

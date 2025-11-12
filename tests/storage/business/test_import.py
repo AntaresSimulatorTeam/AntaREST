@@ -27,7 +27,6 @@ from antarest.study.storage.utils import fix_study_root
 from tests.helpers import create_raw_study
 
 
-@pytest.mark.unit_test
 def test_import_study(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
@@ -103,7 +102,6 @@ def test_import_study(tmp_path: Path) -> None:
         study_service.import_study(md, io.BytesIO(b""))
 
 
-@pytest.mark.unit_test
 def test_fix_root(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
