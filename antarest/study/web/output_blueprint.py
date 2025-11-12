@@ -265,7 +265,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data_with_download(
+        return output_service.create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -342,7 +342,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data_with_download(
+        return output_service.create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -419,7 +419,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data_with_download(
+        return output_service.create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -495,7 +495,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             f"Aggregate output '{output_id}' data for study '{uuid}' and prepares the output in a {export_format} file."
         )
 
-        return output_service.aggregate_output_data_with_download(
+        return output_service.create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,

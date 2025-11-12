@@ -10,10 +10,8 @@
 #
 # This file is part of the Antares project.
 import logging
-import os
-import tempfile
 from pathlib import Path
-from typing import BinaryIO, Optional, Sequence
+from typing import BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
 from starlette.responses import FileResponse, Response
@@ -34,6 +32,7 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import get_user_id
 from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, MCYEAR_COL, AggregatorManager
@@ -486,7 +485,7 @@ class OutputService:
 
         return task_id
 
-    def aggregate_output_data_with_download(
+    def create_aggregated_output_data_download(
         self,
         uuid: str,
         output_id: str,
@@ -500,6 +499,12 @@ class OutputService:
         download_expiration_time_in_minutes: int,
         mc_years: Optional[Sequence[int]] = None,
     ) -> str:
+        """
+        Creates a download, and starts the task to fill it with aggregated output data.
+
+        Returns:
+            the ID of the download, which will be filled with output data.
+        """
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
@@ -512,7 +517,7 @@ class OutputService:
         file_download_path = Path(file_download.path)
         download_id: str = file_download.id
 
-        self.aggregate_output_data(
+        self.start_aggregate_output_data(
             uuid,
             output_id,
             query_file,
@@ -521,13 +526,14 @@ class OutputService:
             columns_names,
             ids_to_consider,
             file_download_path,
-            download_id,
             mc_years,
+            on_success=lambda: self._file_transfer_manager.set_ready(download_id, use_notification=False),
+            on_failure=lambda e: self._file_transfer_manager.fail(download_id, str(e)),
         )
 
         return download_id
 
-    def aggregate_output_data(
+    def start_aggregate_output_data(
         self,
         uuid: str,
         output_id: str,
@@ -537,11 +543,12 @@ class OutputService:
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
         file_path: Path,
-        download_id: Optional[str] = None,
         mc_years: Optional[Sequence[int]] = None,
+        on_success: Optional[Callable[[], None]] = None,
+        on_failure: Optional[Callable[[Exception], None]] = None,
     ) -> str:
         """
-        Aggregates output data based on several filtering conditions
+        Starts a task aggregating output data based on several filtering conditions.
 
         Args:
             uuid: study uuid
@@ -552,11 +559,12 @@ class OutputService:
             columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             file_path: path of the file where output aggregation data will be stored
-            download_id: optional id. If present, it will be used to set the download status in DB.
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
+            on_success: callback to be called when the task is completed successfully
+            on_failure: callback to be called when the task fails with an exception
 
-        Returns: Aggregation task id
-
+        Returns:
+            Aggregation task id
         """
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
@@ -582,8 +590,8 @@ class OutputService:
 
                 stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_path}'."))
 
-                if download_id:
-                    self._file_transfer_manager.set_ready(download_id, use_notification=False)
+                if on_success:
+                    on_success()
 
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Aggregated output file '{file_path}' is ready for download.")
@@ -595,8 +603,8 @@ class OutputService:
                 )
 
             except Exception as e:
-                if download_id:
-                    self._file_transfer_manager.fail(download_id, str(e))
+                if on_failure:
+                    on_failure(e)
                 raise e
 
         task_id = self._task_service.add_task(
@@ -681,32 +689,28 @@ class OutputService:
             st_storage_id,
         )
 
-        # Create a temporary file
-        fh, path = tempfile.mkstemp(dir=self._study_service.config.storage.tmp_dir)
-        os.close(fh)
-        tmp_path = Path(path)
+        with temp_file_path(dir=self._study_service.config.storage.tmp_dir) as tmp_path:
+            # Calls the aggregation with the right arguments
+            task_id = self.start_aggregate_output_data(
+                study_id,
+                output_id,
+                output_identifier.query_file,
+                frequency,
+                TableExportFormat.PARQUET,
+                [variable_name],
+                [output_identifier.get_id_for_aggregation()],
+                tmp_path,
+            )
 
-        # Calls the aggregation with the right arguments
-        task_id = self.aggregate_output_data(
-            study_id,
-            output_id,
-            output_identifier.query_file,
-            frequency,
-            TableExportFormat.PARQUET,
-            [variable_name],
-            [output_identifier.get_id_for_aggregation()],
-            tmp_path,
-        )
+            # Wait for the aggregation to end
+            self._task_service.await_task(task_id)
 
-        # Wait for the aggregation to end
-        self._task_service.await_task(task_id)
-
-        # Transform the dataframe to have the expected format
-        if cluster_id := output_identifier.get_sub_id_for_aggregation():
-            dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name, CLUSTER_ID_COL])
-            dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
-        else:
-            dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name])
+            # Transform the dataframe to have the expected format
+            if cluster_id := output_identifier.get_sub_id_for_aggregation():
+                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name, CLUSTER_ID_COL])
+                dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
+            else:
+                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name])
 
         dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
         df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
