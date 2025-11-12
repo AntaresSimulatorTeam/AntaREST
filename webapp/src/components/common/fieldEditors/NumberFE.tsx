@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import i18n from "@/i18n";
 import { setValueAsNumber } from "@/utils/reactHookFormUtils";
 import { TextField, type TextFieldProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
@@ -26,8 +27,12 @@ function NumberFE(props: NumberFEProps) {
   return <TextField {...props} type="number" />;
 }
 
-export default reactHookFormSupport({
+const NumberFEWithRHF = reactHookFormSupport({
   defaultValue: "" as unknown as number,
   setValueAs: setValueAsNumber,
-  preValidate: RA.isNumber,
+  preValidate: (value) => {
+    return RA.isNumber(value) && !Number.isNaN(value) ? true : i18n.t("form.field.invalidValue");
+  },
 })(NumberFE);
+
+export default NumberFEWithRHF;

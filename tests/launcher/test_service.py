@@ -41,6 +41,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
+from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -49,11 +50,20 @@ from antarest.launcher.model import (
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
+    SolverPresets,
+    SolverPresetsDB,
 )
-from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
+from antarest.launcher.service import (
+    EXECUTION_INFO_FILE,
+    LAUNCHER_PARAM_NAME_SUFFIX,
+    IncompatibleSolverPresets,
+    JobNotFound,
+    LauncherService,
+    SolverPresetsNotFound,
+)
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
-from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, Study, StudyMetadataDTO
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -62,7 +72,6 @@ from tests.helpers import with_admin_user
 
 class TestLauncherService:
     @with_admin_user
-    @pytest.mark.unit_test
     def test_service_run_study(self) -> None:
         storage_service_mock = Mock()
         # noinspection SpellCheckingInspection
@@ -99,12 +108,15 @@ class TestLauncherService:
         repository = Mock()
         repository.save.return_value = pending
 
+        config_repository = Mock()
+
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
             output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
             login_service=Mock(),
             job_result_repository=repository,
+            solver_presets_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),
@@ -137,7 +149,6 @@ class TestLauncherService:
         )
 
     @with_admin_user
-    @pytest.mark.unit_test
     def test_service_get_result_from_launcher(self) -> None:
         launcher_mock = Mock()
         fake_execution_result = JobResult(
@@ -155,6 +166,8 @@ class TestLauncherService:
         repository = Mock()
         repository.get.return_value = fake_execution_result
 
+        config_repository = Mock()
+
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
 
@@ -164,6 +177,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
+            solver_presets_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -175,7 +189,6 @@ class TestLauncherService:
         assert launcher_service.get_result(job_uuid=job_id) == fake_execution_result
 
     @with_admin_user
-    @pytest.mark.unit_test
     def test_service_get_result_from_database(self) -> None:
         launcher_mock = Mock()
         fake_execution_result = JobResult(
@@ -193,6 +206,8 @@ class TestLauncherService:
         repository = Mock()
         repository.get.return_value = fake_execution_result
 
+        config_repository = Mock()
+
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
 
@@ -202,6 +217,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
+            solver_presets_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -211,7 +227,6 @@ class TestLauncherService:
 
         assert launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
 
-    @pytest.mark.unit_test
     def test_service_get_jobs_from_database(self, db_session: DBSessionMiddleware) -> None:
         launcher_mock = Mock()
         now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -265,6 +280,8 @@ class TestLauncherService:
         repository.find_by_study.return_value = fake_execution_result
         repository.get_all.return_value = all_faked_execution_results
 
+        config_repository = Mock()
+
         study_service = Mock(spec=StudyService)
         study_service.repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
         db_session.add_all(fake_execution_result)
@@ -277,6 +294,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
+            solver_presets_repository=config_repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -303,7 +321,6 @@ class TestLauncherService:
             launcher_service.remove_job("some job")
         repository.delete.assert_called_with("some job")
 
-    @pytest.mark.unit_test
     @pytest.mark.parametrize(
         "config, solver, expected",
         [
@@ -526,6 +543,7 @@ class TestLauncherService:
             output_service=Mock(),
             login_service=Mock(),
             job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
             factory_launcher=mock_factory,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -537,7 +555,6 @@ class TestLauncherService:
         assert actual == expected
 
     @with_admin_user
-    @pytest.mark.unit_test
     def test_service_kill_job(self, tmp_path: Path) -> None:
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
@@ -548,6 +565,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -581,6 +599,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -619,6 +638,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -678,6 +698,7 @@ class TestLauncherService:
             output_service=output_service,
             login_service=Mock(),
             job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -796,6 +817,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -952,6 +974,7 @@ class TestLauncherService:
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=job_repository,
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=factory_launcher_mock,
             file_transfer_manager=Mock(),
@@ -1000,6 +1023,7 @@ class TestLauncherService:
             output_service=output_service,
             login_service=login_service,
             job_result_repository=job_repository,
+            solver_presets_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -1009,3 +1033,100 @@ class TestLauncherService:
 
         # Ensures the output_service.import_output method was called with the right user
         launcher_service._import_output("job_id", tmp_path, {})
+
+    @with_admin_user
+    def test_run_study_with_solver_presets(self) -> None:
+        # set up mocks
+        storage_service_mock = Mock()
+        storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
+            id="id",
+            name="name",
+            created="1",
+            updated="1",
+            type="rawstudy",
+            owner=OwnerInfo(id=0, name="author"),
+            groups=[],
+            public_mode=PublicMode.NONE,
+            version=STUDY_VERSION_9_2,
+            workspace="default",
+            managed=True,
+            archived=False,
+        )
+        storage_service_mock.get_study_path.return_value = Path("path/to/study")
+        launcher_mock = Mock()
+        factory_launcher_mock = Mock()
+        factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
+        event_bus = Mock()
+        repository = Mock()
+        solver_presets_repository = Mock()
+
+        def get_mock_solver_presets(solver_presets_id: str):
+            if solver_presets_id == "config-1":
+                return SolverPresetsDB.from_model(
+                    SolverPresets(
+                        id="config-1", name="Config 1", linear_solver="xpress", min_antares_version=SOLVER_VERSION_9_2
+                    )
+                )
+            return None
+
+        solver_presets_repository.get.side_effect = get_mock_solver_presets
+
+        # create the service
+        launcher_service = LauncherService(
+            config=Config(),
+            study_service=storage_service_mock,
+            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
+            login_service=Mock(),
+            job_result_repository=repository,
+            solver_presets_repository=solver_presets_repository,
+            factory_launcher=factory_launcher_mock,
+            event_bus=event_bus,
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        # run the method under test
+        params = LauncherParametersDTO()
+        launcher_service.run_study("study_uuid", "local", params, "config-1")
+
+        # Assert that repository.save was called with the correct JobResult
+        repository.save.assert_called_once()
+
+        # Get the actual JobResult that was saved
+        mock_call = repository.save.mock_calls[0]
+        actual_obj: JobResult = mock_call.args[0]
+        saved_launcher_params = json.loads(actual_obj.launcher_params)
+        saved_other_options = saved_launcher_params.get("other_options", "")
+        assert saved_other_options == "xpress", "The other_options was not set correctly"
+
+        # Test that non-existent config raises SolverPresetsNotFound
+        with pytest.raises(SolverPresetsNotFound):
+            launcher_service.run_study("study_uuid", "local", params, "config-2")
+
+        # Test that incompatible antares version raises IncompatibleSolverPresets
+        with pytest.raises(IncompatibleSolverPresets):
+            launcher_service.run_study("study_uuid", "local", params, "config-1", "8.0")
+
+        # Test that when solver version is not given, but study version is incompatible, it raises IncompatibleSolverPresets
+        with pytest.raises(IncompatibleSolverPresets):
+            storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
+                id="id",
+                name="name",
+                created="1",
+                updated="1",
+                type="rawstudy",
+                owner=OwnerInfo(id=0, name="author"),
+                groups=[],
+                public_mode=PublicMode.NONE,
+                version=STUDY_VERSION_8_8,
+                workspace="default",
+                managed=True,
+                archived=False,
+            )
+            launcher_service.run_study("study_uuid", "local", params, "config-1")
+
+        # Test that when other_options is set, it raises IncompatibleSolverPresets
+        params_with_other_options = LauncherParametersDTO(other_options="--some-option")
+        with pytest.raises(IncompatibleSolverPresets):
+            launcher_service.run_study("study_uuid", "local", params_with_other_options, "config-1", "8.0")

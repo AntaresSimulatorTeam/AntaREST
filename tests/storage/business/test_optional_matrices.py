@@ -23,7 +23,6 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.mark.unit_test
 def test_optional_matrices(empty_study_920: FileStudy, command_context: CommandContext) -> None:
     # Create an area containing 1 thermal cluster and 1 short-term storage
     study = empty_study_920

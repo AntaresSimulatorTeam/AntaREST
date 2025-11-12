@@ -42,7 +42,6 @@ def build_dataset(study_dir: Path) -> Path:
     return ini_path
 
 
-@pytest.mark.unit_test
 def test_get(tmp_path: Path) -> None:
     study_dir = tmp_path.joinpath("my_study")
     study_dir.mkdir()
@@ -91,7 +90,6 @@ def test_get(tmp_path: Path) -> None:
     assert zipped_node.get(["part2", "key_bool"])
 
 
-@pytest.mark.unit_test
 def test_get_depth(tmp_path: Path) -> None:
     study_dir = tmp_path.joinpath("my_study")
     study_dir.mkdir()
@@ -136,7 +134,6 @@ def test_get_depth(tmp_path: Path) -> None:
     assert zipped_node.get(depth=1) == expected_json
 
 
-@pytest.mark.unit_test
 def test_save(tmp_path: Path) -> None:
     ini_path = tmp_path.joinpath("test.ini")
 

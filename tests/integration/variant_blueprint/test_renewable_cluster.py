@@ -13,7 +13,6 @@
 import http
 
 import numpy as np
-import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -22,7 +21,6 @@ from tests.integration.utils import wait_task_completion
 
 
 # noinspection SpellCheckingInspection
-@pytest.mark.integration_test
 class TestRenewableCluster:
     """
     This unit test is designed to demonstrate the creation, modification of properties and

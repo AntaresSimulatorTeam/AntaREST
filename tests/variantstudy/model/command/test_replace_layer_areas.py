@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
 
 from antarest.study.business.model.layer_model import LayerCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -20,7 +19,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestReplaceLayerAreas:
-    @pytest.mark.unit_test
     def test_replace_layer_areas_add_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """Test adding areas to a layer."""
         empty_study = empty_study_880
@@ -73,7 +71,6 @@ class TestReplaceLayerAreas:
         assert "1" in area2_ui["layerY"]
         assert "1" in str(area2_ui["ui"]["layers"])
 
-    @pytest.mark.unit_test
     def test_replace_layer_areas_remove_success(
         self, empty_study_880: FileStudy, command_context: CommandContext
     ) -> None:
@@ -132,7 +129,6 @@ class TestReplaceLayerAreas:
         assert "1" not in area2_ui["layerY"]
         assert "1" not in str(area2_ui["ui"]["layers"])
 
-    @pytest.mark.unit_test
     def test_replace_layer_areas_layer_not_found(
         self, empty_study_880: FileStudy, command_context: CommandContext
     ) -> None:
@@ -160,7 +156,6 @@ class TestReplaceLayerAreas:
         assert not output.status
         assert "Layer not found" in output.message
 
-    @pytest.mark.unit_test
     def test_replace_layer_areas_empty_list(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """Test replacing layer with an empty list of areas (removes all areas)."""
         empty_study = empty_study_880

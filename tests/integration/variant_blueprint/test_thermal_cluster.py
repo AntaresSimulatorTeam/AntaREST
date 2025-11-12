@@ -16,7 +16,6 @@ import typing as t
 from unittest import mock
 
 import numpy as np
-import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
@@ -41,7 +40,6 @@ def _create_thermal_params(cluster_name: str) -> t.Mapping[str, t.Any]:
     }
 
 
-@pytest.mark.integration_test
 class TestThermalCluster:
     """
     The goal of this test is to check the performance of the update

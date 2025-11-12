@@ -23,7 +23,7 @@ from antares.study.version import SolverVersion
 from antarest.core.config import LocalConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
-from antarest.launcher.model import JobStatus, LauncherParametersDTO
+from antarest.launcher.model import JobStatus, LauncherParametersDTO, SolverPresets
 
 SOLVER_NAME = "solver.bat" if os.name == "nt" else "solver.sh"
 
@@ -45,7 +45,6 @@ def launcher_config(tmp_path: Path) -> LocalConfig:
     return LocalConfig.from_dict(data)
 
 
-@pytest.mark.unit_test
 def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
@@ -118,7 +117,6 @@ def xpress_env() -> Any:
     del os.environ["XPRESSDIR"]
 
 
-@pytest.mark.unit_test
 def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env: Any) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     solver_version_8_8 = SolverVersion.parse("8.8")
@@ -196,7 +194,6 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env: Any)
         ]
 
 
-@pytest.mark.unit_test
 @pytest.mark.parametrize(
     "solver_version,arguments",
     [
@@ -217,7 +214,6 @@ def test_unsupported_launcher_other_options_should_raise(
         local_launcher._parse_launcher_options(launcher_parameters, solver_version)
 
 
-@pytest.mark.unit_test
 def test_parse_xpress_dir(tmp_path: Path) -> None:
     data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
     launcher_config = LocalConfig.from_dict(data)
@@ -227,7 +223,36 @@ def test_parse_xpress_dir(tmp_path: Path) -> None:
     assert env_variables["XPRESSDIR"] == "fake_path_for_test"
 
 
-@pytest.mark.unit_test
+def test_parse_solver_presets(launcher_config: LocalConfig):
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    launch_parameters = LauncherParametersDTO()
+    solver_presets = SolverPresets.model_validate(
+        {
+            "id": "id-test-xpress-config",
+            "name": "test-xpress-config",
+            "linear_solver": "xpress",
+            "min_antares_version": "9.2",
+            "linear_solver_param_optim_1": {"THREADS": "4", "PRESOLVE": "1"},
+            "linear_solver_param_optim_2": {"MIPRELSTOP": "0.01"},
+            "linear_solver_param": {"DEFAULTALG": "4"},
+            "use_optim_1_basis_next_week": True,
+            "use_optim_1_basis_optim_2": False,
+        }
+    )
+    launch_parameters.other_options = solver_presets.to_cli_options()
+    args, _ = local_launcher._parse_launcher_options(launch_parameters, SolverVersion.parse("9.2"))
+    assert args == [
+        "--linear-solver",
+        "xpress",
+        "--use-optim-1-basis-optim-2",
+        "false",
+        "--lp-solver-param-optim-1",
+        "DEFAULTALG 4 THREADS 4 PRESOLVE 1",
+        "--lp-solver-param-optim-2",
+        "DEFAULTALG 4 MIPRELSTOP 0.01",
+    ]
+
+
 def test_select_best_binary() -> None:
     binaries = {
         "700": Path("700"),

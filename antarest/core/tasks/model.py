@@ -11,13 +11,13 @@
 # This file is part of the Antares project.
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum, StrEnum
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String, update
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
+from pydantic import field_validator
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -47,7 +47,7 @@ class TaskStatus(Enum):
     RUNNING = 2
     COMPLETED = 3
     FAILED = 4
-    TIMEOUT = 5
+    TIMEOUT = 5  # Not used anymore, kept for backward compat with tasks save in database.
     CANCELLED = 6
 
     def is_final(self) -> bool:
@@ -107,6 +107,20 @@ class TaskListFilter(AntaresBaseModel, extra="forbid"):
     to_creation_date_utc: Optional[float] = None
     from_completion_date_utc: Optional[float] = None
     to_completion_date_utc: Optional[float] = None
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def convert_status_strings_to_ints(cls, v: Any) -> Any:
+        """
+        Convert string values to integers for TaskStatus enum validation.
+
+        Query parameters are received as strings by FastAPI. While Pydantic normally
+        handles string-to-int conversion, it doesn't do this automatically for integer
+        enums within lists, requiring explicit pre-validation conversion.
+        """
+        if isinstance(v, list):
+            return [int(item) if isinstance(item, str) and item.isdigit() else item for item in v]
+        return v
 
 
 class TaskJobLog(Base):
@@ -238,30 +252,3 @@ class TaskJob(Base):
             f" result_msg={self.result_msg},"
             f" result_status={self.result_status}"
         )
-
-
-def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, Any]) -> None:
-    """
-    Cancel all tasks that are currently running or pending.
-
-    When the web application restarts, such as after a new deployment, any pending or running tasks may be lost.
-    To mitigate this, it is preferable to set these tasks to a "FAILED" status.
-    This ensures that users can easily identify the tasks that were affected by the restart and take appropriate
-    actions, such as restarting the tasks manually.
-
-    Args:
-        engine: The database engine (SQLAlchemy connection to SQLite or PostgreSQL).
-        session_args: The session arguments (SQLAlchemy session arguments).
-    """
-    updated_values = {
-        TaskJob.status: TaskStatus.FAILED.value,
-        TaskJob.result_status: False,
-        TaskJob.result_msg: "Task was interrupted due to server restart",
-        TaskJob.completion_date: datetime.now(timezone.utc).replace(tzinfo=None),
-    }
-    orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
-    make_session = sessionmaker(bind=engine, **session_args)
-    with make_session() as session:
-        stmt = update(TaskJob).where(TaskJob.status.in_(orphan_status)).values(updated_values)
-        session.execute(stmt)
-        session.commit()

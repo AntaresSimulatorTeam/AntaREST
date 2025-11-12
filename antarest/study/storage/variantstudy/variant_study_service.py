@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import concurrent.futures
 import logging
 import re
 import shutil
@@ -22,7 +21,6 @@ from typing import Callable, Dict, List, Optional, Sequence, cast
 from uuid import uuid4
 
 import humanize
-from fastapi import HTTPException
 from filelock import FileLock
 from typing_extensions import override
 
@@ -45,7 +43,7 @@ from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
@@ -183,7 +181,7 @@ class VariantStudyService(AbstractStorageService):
                 if not previous_task.status.is_final():
                     logger.error(f"{metadata.id} generation in progress")
                     raise CommandUpdateAuthorizationError(metadata.id)
-            except HTTPException as e:
+            except TaskNotFoundError as e:
                 logger.warning(
                     f"Failed to retrieve generation task for study {metadata.id}",
                     exc_info=e,
@@ -682,7 +680,7 @@ class VariantStudyService(AbstractStorageService):
                     if not previous_task.status.is_final():
                         logger.info(f"Returning already existing variant study {study_id} generation")
                         return str(metadata.generation_task)
-                except HTTPException as e:
+                except TaskNotFoundError as e:
                     logger.warning(
                         f"Failed to retrieve generation task for study {study_id}",
                         exc_info=e,
@@ -850,10 +848,11 @@ class VariantStudyService(AbstractStorageService):
             stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {metadata.id}")
             raise ValueError(stripped_msg)
 
-        except concurrent.futures.TimeoutError as e:
+        except TimeoutError as e:
             # Raise a REQUEST_TIMEOUT error (408)
-            logger.error(f"⚡ Timeout while generating variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationTimeoutError(f"Timeout while generating variant {metadata.id}") from None
+            msg = f"⚡ Timeout while waiting for generation of variant study {metadata.id}"
+            logger.error(msg, exc_info=e)
+            raise VariantGenerationTimeoutError(msg) from None
 
         except Exception as e:
             # raise a EXPECTATION_FAILED error (417)

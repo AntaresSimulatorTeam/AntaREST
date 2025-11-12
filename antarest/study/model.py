@@ -29,6 +29,7 @@ from pydantic import (
     computed_field,
     field_validator,
 )
+from pydantic.alias_generators import to_camel
 from sqlalchemy import (
     Boolean,
     DateTime,
@@ -160,6 +161,48 @@ class StudyTag(Base):
         return f"{cls_name}({study_id=}, {tag=})"
 
 
+class Directory(Base):
+    """
+    Represents a logical directory for organizing studies in the managed workspace.
+
+    Directories are stored in the database and provide a hierarchical organization
+    for studies, independent of the physical filesystem structure.
+
+    Attributes:
+        id: The unique identifier of the directory (UUID).
+        name: The non-qualified name of the directory (e.g., "project1").
+        parent_id: The ID of the parent directory, or None for root directories.
+    """
+
+    __tablename__ = "directory"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+        unique=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    parent_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("directory.id", name="fk_directory_parent_id"), nullable=True, index=True
+    )
+
+    # Relationships
+    parent = relationship("Directory", remote_side=[id], uselist=False)
+
+    @override
+    def __repr__(self) -> str:
+        return f'Directory(id="{self.id}", name="{self.name}", parent_id="{self.parent_id}")'
+
+    def to_metadata(self) -> "DirectoryMetadata":
+        """Convert this Directory entity to DirectoryMetadata DTO."""
+        return DirectoryMetadata(
+            id=self.id,
+            name=self.name,
+            parent_id=self.parent_id,
+        )
+
+
 class Tag(Base):
     """
     Represents a tag in the database.
@@ -220,6 +263,8 @@ class Study(Base):
         folder: Where the study is located in the workspace, from the user point of view.
                 Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
                 folder presented to the user, not the way we organize data internally.
+                This field is kept for backward compatibility but will be progressively replaced by directory_id.
+        directory_id: The ID of the directory containing this study. Only for managed studies.
         parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
         public_mode: Defines the actions any user logged in is allowed to take on the study.
         owner_id: The ID of the owner of the study.
@@ -247,6 +292,9 @@ class Study(Base):
     last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     path: Mapped[str] = mapped_column(String())
     folder: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    directory_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("directory.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     parent_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("study.id", name="fk_study_study_id"), nullable=True, index=True
     )
@@ -479,6 +527,7 @@ class StudyMetadataDTO(AntaresBaseModel):
     horizon: Optional[str] = None
     folder: Optional[str] = None
     tags: List[str] = []
+    directory_id: Optional[str] = None
 
     @field_validator("horizon", mode="before")
     def transform_horizon_to_str(cls, val: str | int | None) -> Optional[str]:
@@ -661,3 +710,63 @@ class MatrixAggregationResult(AntaresBaseModel):
 class ReferenceStudy(AntaresBaseModel):
     version: str
     template_name: str
+
+
+class DirectoryMetadata(AntaresBaseModel):
+    id: str
+    name: str
+    parent_id: Optional[str] = None
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+
+def _validate_directory_name(name: str) -> str:
+    """
+    Validate directory name format.
+
+    Args:
+        name: The directory name to validate.
+
+    Returns:
+        The validated and stripped directory name.
+
+    Raises:
+        ValueError: If the name is empty or contains path separators.
+    """
+    name = name.strip()
+    if not name:
+        raise ValueError("Directory name cannot be empty")
+    if "/" in name or "\\" in name:
+        raise ValueError("Directory name cannot contain path separators (/ or \\)")
+    return name
+
+
+class DirectoryCreation(AntaresBaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    parent_id: Optional[str] = None
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate directory name."""
+        return _validate_directory_name(v)
+
+
+class DirectoryUpdate(AntaresBaseModel):
+    """
+    - **name**: New name for the directory (optional)
+    - **parentId**: New parent directory ID (optional, empty string for root)
+    """
+
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    parent_id: Optional[str] = None
+
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        """Validate directory name."""
+        return _validate_directory_name(v) if v is not None else v
