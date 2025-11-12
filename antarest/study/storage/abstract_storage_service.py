@@ -91,7 +91,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
             public_mode=study.public_mode or PublicMode.NONE,
             horizon=study.horizon,
-            folder=folder,
+            folder=folder_path or study.folder,
             tags=[tag.label for tag in study.tags],
             directory_id=study.directory_id,
         )

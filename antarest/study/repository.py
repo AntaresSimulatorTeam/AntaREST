@@ -26,7 +26,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, Tag
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, Tag
 
 
 def escape_like(string: str, escape_char: str = "\\") -> str:
