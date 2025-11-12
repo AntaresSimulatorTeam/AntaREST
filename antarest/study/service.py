@@ -912,6 +912,8 @@ class StudyService:
             updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             directory_id=directory_id,
+            owner=owner,
+            groups=groups
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
