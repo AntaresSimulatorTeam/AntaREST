@@ -21,7 +21,7 @@ import { useFormContextPlus } from "@/components/common/Form";
 import { validateNumber } from "@/utils/validation/number";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Box, IconButton, Tooltip } from "@mui/material";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   isXpressAvailableForVersion,
@@ -39,7 +39,7 @@ function Fields() {
     outputOptions,
     launcherOptions,
     getVersionOptionsForLauncher,
-    getConfigurationsOptionsForVersion,
+    getConfigurationOptionsForVersion,
     solverPresetsById,
   } = getValues("_data") || {};
 
@@ -57,8 +57,8 @@ function Fields() {
   );
 
   const configurationOptions = useMemo(
-    () => getConfigurationsOptionsForVersion?.(version) || [],
-    [getConfigurationsOptionsForVersion, version],
+    () => getConfigurationOptionsForVersion?.(version) || [],
+    [getConfigurationOptionsForVersion, version],
   );
 
   const configurationTooltip = useMemo(() => {
@@ -72,6 +72,20 @@ function Fields() {
   }, [configuration, solverPresetsById]);
 
   const isXpansionOutputEnabled = isXpansionEnabled && isSensitivityModeEnabled;
+
+  // Ensure version is valid when launcher changes
+  useEffect(() => {
+    if (!versionOptions.includes(version)) {
+      setValue("version", versionOptions[0] || "");
+    }
+  }, [setValue, version, versionOptions]);
+
+  // Ensure configuration is valid when version changes
+  useEffect(() => {
+    if (configuration && !configurationOptions.find(({ value }) => value === configuration)) {
+      setValue("configuration", configurationOptions[0]?.value || "");
+    }
+  }, [setValue, configuration, configurationOptions]);
 
   ////////////////////////////////////////////////////////////////
   // Validations
@@ -271,7 +285,9 @@ function Fields() {
           control={control}
           sx={{ flex: 1 }}
           onChange={handleLauncherChange}
-          rules={{ deps: ["nbCores"] }}
+          // "version" in deps allows to display an error in the `version` field
+          // if there is no version options for the selected launcher
+          rules={{ deps: ["version", "nbCores"] }}
         />
         <NumberFE
           label={t("launcher.field.nbCores")}
