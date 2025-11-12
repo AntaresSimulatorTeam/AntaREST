@@ -124,6 +124,7 @@ class SnapshotGenerator:
             )
 
             logger.info(f"Reading additional data from files for study {variant_study_id}")
+            self._update_study_data(file_study, variant_study)
             # variant_study.additional_data = self._read_additional_data(file_study)
             self.repository.save(variant_study)
 
@@ -202,6 +203,17 @@ class SnapshotGenerator:
                     raise NotImplementedError(f"Unexpected detail type: {type(detail)}")
             raise VariantGenerationError(message)
         return results
+
+    def _update_study_data(self, file_study: FileStudy, metadata: Study) -> None:
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        author = file_study.tree.get(url=["study", "antares", "author"])
+        editor = file_study.tree.get(url=["study", "antares", "editor"])
+        assert isinstance(author, str)
+        assert isinstance(editor, str)
+        assert isinstance(horizon, (str, int))
+        metadata.horizon = horizon
+        metadata.author = author
+        metadata.editor = editor
 
 
 class RefStudySearchResult(NamedTuple):

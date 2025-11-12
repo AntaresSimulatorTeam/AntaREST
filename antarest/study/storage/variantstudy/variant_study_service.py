@@ -649,7 +649,6 @@ class VariantStudyService(AbstractStorageService):
             groups=study.groups,  # Create inherit_group boolean
             owner_id=require_current_user().impersonator,
             snapshot=None,
-            # additional_data=additional_data,
         )
         self.repository.save(variant_study)
         self.event_bus.push(

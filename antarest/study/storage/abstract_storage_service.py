@@ -40,7 +40,7 @@ from antarest.study.model import (
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
-from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.study_storage import IStudyStorage
@@ -98,6 +98,19 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             folder=folder,
             tags=[tag.label for tag in study.tags],
         )
+
+    def _update_study_data_from_files(self, file_study: FileStudy, metadata: Study) -> None:
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
+        assert isinstance(author, str)
+        assert isinstance(editor, str)
+        assert isinstance(horizon, (str, int))
+        metadata.horizon = horizon
+        metadata.author = author
+        metadata.editor = editor
 
     @override
     def get(

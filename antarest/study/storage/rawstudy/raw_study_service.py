@@ -120,7 +120,7 @@ class RawStudyService(AbstractStorageService):
         try:
             raw_meta = study.tree.get(["study", "antares"])
 
-            if metadata.editor != "Unknown":
+            if metadata.editor:
                 raw_meta["editor"] = metadata.editor
                 study.tree.save(raw_meta, ["study", "antares"])
 
@@ -128,6 +128,8 @@ class RawStudyService(AbstractStorageService):
             metadata.version = str(raw_meta["version"])
             metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
             metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
+
+            self._update_study_data_from_files(study, metadata)
 
         except Exception as e:
             logger.error(
@@ -303,7 +305,7 @@ class RawStudyService(AbstractStorageService):
             updated_at=now_utc,
             version=src_study.version,
             author=src_study.author,
-            editor=src_study.editor,
+            editor=self._get_current_user_name(),
             horizon=src_study.horizon,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             groups=groups,

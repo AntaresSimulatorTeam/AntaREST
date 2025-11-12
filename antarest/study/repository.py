@@ -191,6 +191,9 @@ class StudyMetadataRepository:
         # if metadata.additional_data:
         #     metadata.additional_data = session.merge(metadata.additional_data)
 
+        # metadata.editor = session.merge(metadata.editor)
+        # metadata.author = session.merge(metadata.author)
+
         session.add(metadata)
         session.commit()
 

@@ -85,11 +85,6 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     author = "Unknown"
     editor = "Unknown"
 
-    # à voir avec Sylvain
-    # if metadata.additional_data:
-    #     author = metadata.additional_data.author
-    #     editor = metadata.additional_data.editor
-
     if metadata.editor != "Unknown":
         editor = metadata.editor
 

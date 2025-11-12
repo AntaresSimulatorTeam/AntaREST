@@ -441,6 +441,7 @@ class RawStudyInterface(StudyInterface):
             study_antares = file_study.tree.get(["study", "antares"])
             study_antares["editor"] = user.name
             file_study.tree.save(study_antares, ["study", "antares"])
+            # self._study.author = user_name
             self._study.editor = user_name
             self._repository.save(self._study)
 
