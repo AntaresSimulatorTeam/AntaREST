@@ -83,7 +83,9 @@ function Fields() {
   // Ensure version is valid when launcher changes
   useEffect(() => {
     if (version && !versionOptions.includes(version)) {
-      setValue("version", versionOptions[0] || "");
+      // We can set the version value with `versionOptions[0] || ""`,
+      // but the user may not notice the change.
+      setValue("version", "");
     }
   }, [setValue, version, versionOptions]);
 
