@@ -31,14 +31,7 @@ import {
 } from "./utils";
 
 function Fields() {
-  const {
-    control,
-    setValue,
-    setValues,
-    getValues,
-    watch,
-    formState: { defaultValues },
-  } = useFormContextPlus<FormValues>();
+  const { control, setValue, setValues, getValues, watch } = useFormContextPlus<FormValues>();
   const { t } = useTranslation();
 
   const {
