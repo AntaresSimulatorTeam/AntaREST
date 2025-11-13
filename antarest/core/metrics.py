@@ -13,10 +13,12 @@
 import logging
 import os
 import time
+from http import HTTPStatus
 from typing import Any
 
 import prometheus_client
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from prometheus_client import (
     CollectorRegistry,
     Counter,
@@ -25,10 +27,12 @@ from prometheus_client import (
     make_asgi_app,
     multiprocess,
 )
+from pydantic import ValidationError
 from sqlalchemy import Engine, Pool, PoolProxiedConnection
 from sqlalchemy.event import listens_for
 from sqlalchemy.orm import Session, SessionTransaction, sessionmaker
 from sqlalchemy.pool import ConnectionPoolEntry
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from typing_extensions import override
 
@@ -196,7 +200,7 @@ def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessio
             del session.info["start_time"]
 
 
-def _add_metrics_middleware(application: FastAPI) -> None:
+def _add_metrics_middleware(registry: CollectorRegistry, application: FastAPI) -> None:
     """
     Registers an HTTP middleware to report metrics about requests count and duration
     """
@@ -205,20 +209,20 @@ def _add_metrics_middleware(application: FastAPI) -> None:
         "http_requests",
         "HTTP requests count",
         ["worker_id", "method", "endpoint", "http_status"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
     request_duration_histo = Histogram(
         "http_requests_duration_seconds",
         "HTTP requests duration",
         ["worker_id", "method", "endpoint", "http_status"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
     current_requests_gauge = Gauge(
         "http_requests_current",
         "Requests currently executing",
         ["worker_id", "method", "endpoint"],
         multiprocess_mode="liveall",
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
 
     @application.middleware("http")
@@ -231,15 +235,28 @@ def _add_metrics_middleware(application: FastAPI) -> None:
         current_requests_gauge.labels(WORKER_ID, request.method, request_path).inc()
 
         start_time = time.time()
-        response = await call_next(request)
-        process_time = time.time() - start_time
+        status_code = None
 
-        current_requests_gauge.labels(WORKER_ID, request.method, request_path).dec()
+        # In order to have the correct status code, we need to duplicate here the logic of exception handlers...
+        # Clearly this should be improved. However we have no reason to change that mapping soon.
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+        except HTTPException as exc:
+            status_code = exc.status_code
+            raise
+        except (ValidationError, RequestValidationError):
+            status_code = HTTPStatus.UNPROCESSABLE_ENTITY.value
+            raise
+        finally:
+            status_code = status_code or HTTPStatus.INTERNAL_SERVER_ERROR.value
 
-        request_counter.labels(WORKER_ID, request.method, request_path, response.status_code).inc()
-        request_duration_histo.labels(WORKER_ID, request.method, request_path, response.status_code).observe(
-            process_time
-        )
+            process_time = time.time() - start_time
+
+            current_requests_gauge.labels(WORKER_ID, request.method, request_path).dec()
+
+            request_counter.labels(WORKER_ID, request.method, request_path, status_code).inc()
+            request_duration_histo.labels(WORKER_ID, request.method, request_path, status_code).observe(process_time)
         return response
 
 
@@ -265,7 +282,7 @@ def add_metrics(application: FastAPI, config: Config) -> None:
     metrics_app = make_asgi_app(registry=global_registry)
     application.mount("/metrics", metrics_app)
 
-    _add_metrics_middleware(application)
+    _add_metrics_middleware(prometheus_client.REGISTRY, application)
 
 
 def _task_labels(task_type: TaskType, status: TaskStatus | None = None) -> list[str]:
