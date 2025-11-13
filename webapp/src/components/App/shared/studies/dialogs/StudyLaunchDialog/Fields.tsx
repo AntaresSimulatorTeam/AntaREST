@@ -31,7 +31,14 @@ import {
 } from "./utils";
 
 function Fields() {
-  const { control, setValue, setValues, getValues, watch } = useFormContextPlus<FormValues>();
+  const {
+    control,
+    setValue,
+    setValues,
+    getValues,
+    watch,
+    formState: { defaultValues },
+  } = useFormContextPlus<FormValues>();
   const { t } = useTranslation();
 
   const {
@@ -75,7 +82,7 @@ function Fields() {
 
   // Ensure version is valid when launcher changes
   useEffect(() => {
-    if (!versionOptions.includes(version)) {
+    if (version && !versionOptions.includes(version)) {
       setValue("version", versionOptions[0] || "");
     }
   }, [setValue, version, versionOptions]);
