@@ -213,17 +213,28 @@ def _add_metrics_middleware(application: FastAPI) -> None:
         ["worker_id", "method", "endpoint", "http_status"],
         registry=prometheus_client.REGISTRY,
     )
+    current_requests_gauge = Gauge(
+        "http_requests_current",
+        "Requests currently executing",
+        ["worker_id", "method", "endpoint"],
+        multiprocess_mode="liveall",
+        registry=prometheus_client.REGISTRY,
+    )
 
     @application.middleware("http")
     async def add_metrics(request: Request, call_next: Any) -> Any:
-        start_time = time.time()
-        response = await call_next(request)
-        process_time = time.time() - start_time
-
         if "route" in request.scope:
             request_path = request.scope["root_path"] + request.scope["route"].path
         else:
             request_path = request.url.path
+
+        current_requests_gauge.labels(WORKER_ID, request.method, request_path).inc()
+
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+
+        current_requests_gauge.labels(WORKER_ID, request.method, request_path).dec()
 
         request_counter.labels(WORKER_ID, request.method, request_path, response.status_code).inc()
         request_duration_histo.labels(WORKER_ID, request.method, request_path, response.status_code).observe(
