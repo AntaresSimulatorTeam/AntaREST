@@ -17,7 +17,7 @@ from threading import Thread
 from typing import Callable, Optional
 
 from fastapi import HTTPException
-from prometheus_client import CollectorRegistry, Gauge, REGISTRY
+from prometheus_client import REGISTRY, CollectorRegistry, Gauge
 
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
