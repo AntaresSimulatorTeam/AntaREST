@@ -341,8 +341,12 @@ class DatabaseAreaDao(AreaDao):
             stmt_areas = select(area.c.id, area.c.area_id).where(area.c.study_id == study_id)
             all_areas = {row.area_id: row.id for row in session.execute(stmt_areas).fetchall()}
 
-            # Get current areas that have this layer
-            stmt_existing = select(area_ui.c.area_id).where(area_ui.c.layer_id == layer_id)
+            # Get current areas in this study that have this layer
+            stmt_existing = (
+                select(area_ui.c.area_id)
+                .select_from(area_ui.join(area, area_ui.c.area_id == area.c.id))
+                .where((area_ui.c.layer_id == layer_id) & (area.c.study_id == study_id))
+            )
             existing_area_db_ids = {row.area_id for row in session.execute(stmt_existing).fetchall()}
 
             # Map area_ids to database IDs
@@ -351,8 +355,11 @@ class DatabaseAreaDao(AreaDao):
             # Remove layer from areas not in the target list
             to_remove = existing_area_db_ids - target_area_db_ids
             if to_remove:
+                study_scoped_area_ids = select(area.c.id).where(
+                    (area.c.study_id == study_id) & (area.c.id.in_(to_remove))
+                )
                 stmt_delete = delete(area_ui).where(
-                    (area_ui.c.area_id.in_(to_remove)) & (area_ui.c.layer_id == layer_id)
+                    (area_ui.c.area_id.in_(study_scoped_area_ids)) & (area_ui.c.layer_id == layer_id)
                 )
                 session.execute(stmt_delete)
 
