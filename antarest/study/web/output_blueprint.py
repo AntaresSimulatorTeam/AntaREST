@@ -31,7 +31,12 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
 )
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
-from antarest.study.storage.output_model import OutputVariablesInformation, OutputVariablesList
+from antarest.study.storage.output_model import (
+    OutputVariablesInformation,
+    OutputVariablesList,
+    OutputVariablesType,
+    OutputVariablesView,
+)
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -39,12 +44,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
-DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 download_expiration_time_query: Any = Query(
     gt=0,
     lt=1000,
     description="Expiration time for the download file (in minutes)",
 )
+DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
@@ -260,7 +265,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data(
+        return output_service.create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -337,7 +342,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data(
+        return output_service.create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -414,7 +419,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.aggregate_output_data(
+        return output_service.create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -490,7 +495,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             f"Aggregate output '{output_id}' data for study '{uuid}' and prepares the output in a {export_format} file."
         )
 
-        return output_service.aggregate_output_data(
+        return output_service.create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -529,5 +534,38 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         return output_service.get_output_variables_list(uuid, output_id)
+
+    @bp.get(
+        "/studies/{uuid}/output/{output_id}/variables-views/data",
+        summary="Fetches the variables view for a given output and a given configuration",
+    )
+    def get_output_variables_view(
+        uuid: str,
+        output_id: str,
+        type: OutputVariablesType,
+        variable_name: str,
+        frequency: MatrixFrequency,
+        area_id: str | None = None,
+        area_from_id: str | None = None,
+        area_to_id: str | None = None,
+        thermal_id: str | None = None,
+        renewable_id: str | None = None,
+        st_storage_id: str | None = None,
+    ) -> OutputVariablesView:
+        uuid = sanitize_uuid(uuid)
+        output_id = sanitize_string(output_id)
+        return output_service.get_output_variables_view(
+            uuid,
+            output_id,
+            type,
+            variable_name,
+            frequency,
+            area_id,
+            area_from_id,
+            area_to_id,
+            thermal_id,
+            renewable_id,
+            st_storage_id,
+        )
 
     return bp

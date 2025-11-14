@@ -46,19 +46,20 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
   const studies = studyIds.map((id) => studiesById[id]).filter(Boolean);
   // The version format of `study.version` is '[major][minor][patch]' as string
   const maxStudyVersion = Math.max(...studies.map((study) => Number(study.version)));
-  const defaultVersion = (maxStudyVersion / 100).toString();
 
   const getVersionOptionsForLauncher = (launcherId: Launcher["id"]) => {
     const versions = launchersById[launcherId].versions;
     return versions.filter((version) => formalizeVersion(version) >= maxStudyVersion);
   };
 
+  const defaultVersion = getVersionOptionsForLauncher(defaultLauncher.id)[0] || "";
+
   // Configuration field
 
   const solverPresets = await getSolverPresets();
   const solverPresetsById = R.indexBy(R.prop("id"), solverPresets);
 
-  const getConfigurationsOptionsForVersion = (version: string) => {
+  const getConfigurationOptionsForVersion = (version: string) => {
     const formalizedVersion = formalizeVersion(version);
 
     return solverPresets
@@ -75,6 +76,8 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
       .map(({ id, name }) => ({ value: id, label: name }));
   };
 
+  const defaultConfiguration = getConfigurationOptionsForVersion(defaultVersion)[0]?.value || "";
+
   // Output field
 
   const isSingleStudy = studyIds.length === 1;
@@ -85,7 +88,7 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
     name: "",
     autoUnzip: true,
     version: defaultVersion,
-    configuration: getConfigurationsOptionsForVersion(defaultVersion)[0]?.value,
+    configuration: defaultConfiguration,
     otherOptions: "",
     xpansion: false,
     adequacyCriterion: false,
@@ -101,7 +104,7 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
       solverPresetsById,
       launcherOptions,
       getVersionOptionsForLauncher,
-      getConfigurationsOptionsForVersion,
+      getConfigurationOptionsForVersion,
       outputOptions,
       isSingleStudy,
     },

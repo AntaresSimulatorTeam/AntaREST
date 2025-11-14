@@ -853,3 +853,9 @@ class ConfigurationError(RuntimeError):
     """
     Raised when some configuration is invalid.
     """
+
+
+class OutputVariablesViewError(HTTPException):
+    def __init__(self, output_id: str, message: str) -> None:
+        msg = f"Could not retrieve variables view for output '{output_id}' : {message}."
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, msg)
