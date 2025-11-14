@@ -13,6 +13,7 @@
  */
 
 import reactHookFormSupport, { type ReactHookFormSupportProps } from "@/hoc/reactHookFormSupport";
+import i18n from "@/i18n";
 import type { SvgIconComponent } from "@mui/icons-material";
 import {
   Box,
@@ -61,6 +62,7 @@ interface SingleSelect<OptionValue extends AllowedValue, EmptyValue extends bool
   value?: AllowedValue;
   defaultValue?: AllowedValue;
   emptyValue?: EmptyValue;
+  emptyValueLabel?: string;
   onChange?: (event: SelectFEChangeEvent<OptionValue, EmptyValue>) => void;
   onSelectAllOptions?: never;
   onDeselectAllOptions?: never;
@@ -71,6 +73,7 @@ interface MultipleSelect<OptionValue extends AllowedValue, Value extends Allowed
   value?: Value[];
   defaultValue?: Value[];
   emptyValue?: never;
+  emptyValueLabel?: never;
   onChange?: (event: SelectFEChangeEvent<Array<Value | OptionValue>>) => void;
   onSelectAllOptions?: (optionValues: OptionValue[]) => void;
   onDeselectAllOptions?: VoidFunction;
@@ -92,6 +95,7 @@ export type SelectFEProps<
 function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
   options = [],
   emptyValue = false,
+  emptyValueLabel: emptyValueLabelProp,
   startCaseLabel = false,
   multiple = false,
   helperText,
@@ -105,6 +109,8 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
 }: SelectFEProps<OptionValue>) {
   const { t } = useTranslation();
   const [currentValue, setCurrentValue] = useState(value ?? defaultValue);
+
+  const emptyValueLabel = emptyValueLabelProp ?? t("global.none");
 
   const optionsFormatted = useMemo(
     () =>
@@ -198,6 +204,10 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
    * If the value is not found in the options, it returns a representation with an error color.
    */
   const renderValueAsText = (value: unknown) => {
+    if (value === "" && emptyValue) {
+      return <em>{emptyValueLabel}</em>;
+    }
+
     const option = getOptionByValue(value);
     return option ? option.label : <Typography color="error">{String(value)}</Typography>;
   };
@@ -218,6 +228,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
           onChange: handleChange,
           renderValue: multiple ? renderSelectedValueAsChip : renderValueAsText,
           multiple,
+          displayEmpty: true,
         },
       }}
       helperText={
@@ -244,7 +255,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
     >
       {emptyValue && !multiple && (
         <MenuItem value="">
-          <em>{t("global.none")}</em>
+          <em>{emptyValueLabel}</em>
         </MenuItem>
       )}
       {invalidOptions.map(({ value, label, id }) => (
@@ -270,6 +281,30 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
 
 const SelectFEWithRHF = reactHookFormSupport<AllowedValue | AllowedValue[]>({
   defaultValue: (props: SelectFEProps) => (props.multiple ? [] : ""),
+  preValidate: (
+    value,
+    { options, emptyValue, disabled, multiple }: SelectFEProps<AllowedValue, AllowedValue, boolean>,
+  ) => {
+    // Remove when `disabled` will be used in Controller component (cf. reactHookFormSupport HOC)
+    if (disabled) {
+      return true;
+    }
+
+    // TODO: support multiple
+    if (multiple) {
+      return true;
+    }
+
+    if (emptyValue && (value === "" || value === undefined)) {
+      return true;
+    }
+
+    const optionValues = options
+      ? options.map((opt) => (RA.isPlainObj(opt) ? opt.value : opt))
+      : [];
+
+    return optionValues.includes(value) || i18n.t("form.field.invalidValue");
+  },
 })(SelectFE);
 
 // The HOC doesn't automatically forward component generics

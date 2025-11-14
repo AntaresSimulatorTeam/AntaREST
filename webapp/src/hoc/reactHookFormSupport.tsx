@@ -14,6 +14,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
@@ -35,7 +36,7 @@ import { composeRefs, getComponentDisplayName } from "../utils/reactUtils";
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
   setValueAs?: (value: any) => any;
-  preValidate?: (value: any, formValues: any) => ValidateResult;
+  preValidate?: (value: any, props: any) => ValidateResult;
 }
 
 // `...args: any` allows to be compatible with all field editors
@@ -161,11 +162,13 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
       // Utils
       ////////////////////////////////////////////////////////////////
 
+      const fePropsRef = useUpdatedRef(feProps);
+
       const validateWrapper = useMemo<RegisterOptions<TFieldValues, TFieldName>["validate"]>(() => {
         if (preValidate) {
           if (RA.isFunction(validate)) {
             return (value, formValues) => {
-              const result = preValidate?.(value, formValues);
+              const result = preValidate?.(value, fePropsRef.current);
 
               if (typeof result === "string" || result === false) {
                 return result;
@@ -179,7 +182,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
             return Object.keys(validate).reduce(
               (acc, key) => {
                 acc[key] = (value, formValues) => {
-                  const result = preValidate?.(value, formValues);
+                  const result = preValidate?.(value, fePropsRef.current);
 
                   if (typeof result === "string" || result === false) {
                     return result;
@@ -196,10 +199,13 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
             );
           }
 
-          return preValidate;
+          return (value) => {
+            return preValidate?.(value, fePropsRef.current);
+          };
         }
+
         return validate;
-      }, [validate]);
+      }, [fePropsRef, validate]);
 
       const getDefaultValueFromOptions = () => {
         const { defaultValue } = options;
