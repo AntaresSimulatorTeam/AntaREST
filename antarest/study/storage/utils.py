@@ -82,14 +82,8 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     study_data_info = study_tree.get(["study"])
     antares_info = study_data_info["antares"]
 
-    author = "Unknown"
-    editor = "Unknown"
-
-    if metadata.editor != "Unknown":
-        editor = metadata.editor
-
-    if metadata.author != "Unknown":
-        author = metadata.author
+    author = metadata.author
+    editor = metadata.editor
 
     # Update basic fields
     antares_info["caption"] = metadata.name

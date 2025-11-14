@@ -284,9 +284,9 @@ class Study(Base):
     name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     type: Mapped[str] = mapped_column(String(50), index=True)
     version: Mapped[str] = mapped_column(String(255), index=True)
-    author: Mapped[str] = mapped_column(String(255), nullable=True)
-    editor: Mapped[str] = mapped_column(String(255), nullable=True)
-    horizon: Mapped[Optional[str]] = mapped_column(String)
+    author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    editor: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    horizon: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
@@ -305,6 +305,7 @@ class Study(Base):
     tags: Mapped[List[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
+    directory = relationship("Directory", uselist=False)
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.

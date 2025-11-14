@@ -14,16 +14,11 @@ depends_on = None
 
 def upgrade():
     with op.batch_alter_table("study") as batch_op:
-        batch_op.add_column(sa.Column('editor', sa.String(length=255)))
+        batch_op.add_column(sa.Column('editor', sa.String(length=255), nullable=True))
         batch_op.add_column(sa.Column('horizon', sa.String(), nullable=True))
 
     bind = op.get_bind()
-    content = bind.execute(text("SELECT author, editor, horizon FROM study_additional_data"))
-    for row in content:
-        bind.execute(
-            "INSERT INTO study (author, editor, horizon) VALUES (?, ?, ?)",
-            (row[0], row[1], row[2])
-        )
+    bind.execute(text("UPDATE study s INNER JOIN study_additional_data sad ON s.id = sad.id SET s.editor = sad.editor, s.author = sad.author, s.horizon = sad.horizon;"))
 
 
 def downgrade():
