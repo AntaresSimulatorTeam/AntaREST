@@ -16,9 +16,8 @@ import time
 from threading import Thread
 from typing import Callable, Optional
 
-import prometheus_client
 from fastapi import HTTPException
-from prometheus_client import CollectorRegistry, Gauge
+from prometheus_client import CollectorRegistry, Gauge, REGISTRY
 
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
@@ -76,7 +75,7 @@ class MaintenanceService:
         self.repo = repository
         self.event_bus = event_bus
         self.cache = cache
-        self._metrics = WorkspaceDiskUsageMetrics(prometheus_client.REGISTRY) if config.metrics.prometheus else None
+        self._metrics = WorkspaceDiskUsageMetrics(REGISTRY) if config.metrics.prometheus else None
         self._init()
 
     def _init(self) -> None:
