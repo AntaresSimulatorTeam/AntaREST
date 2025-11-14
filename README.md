@@ -126,26 +126,6 @@ docker run -p 8080:5000 -e GUNICORN_WORKERS=1 antarest
 
 For production deployment with external database and Redis, see the [deployment documentation](https://antares-web.readthedocs.io/en/latest/developer-guide/install/2-DEPLOY.html).
 
-### Building a Desktop Application
-
-Build a standalone desktop application using PyInstaller:
-
-**Linux:**
-```bash
-git log -1 HEAD --format=%H > ./resources/commit_id
-pyinstaller AntaresWebLinux.spec
-dist/AntaresWeb/AntaresWebServer -v  # Verify build
-```
-
-**Windows:**
-```cmd
-git log -1 HEAD --format=%H > .\resources\commit_id
-pyinstaller AntaresWebWin.spec
-dist\AntaresWeb\AntaresWebServer.exe -v  # Verify build
-```
-
----
-
 ## Usage
 
 ### Running the Application
@@ -172,10 +152,7 @@ export GUNICORN_WORKERS=4
 gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 ```
 
-**Desktop mode:**
-```bash
-dist/AntaresWeb/AntaresWebServer -c /path/to/config.yaml
-```
+**Note**: In production, we now use an alternative deployment mode where Gunicorn is not used for load balancing. Instead, we start multiple independent workers on different ports, allowing upstream load balancing to be handled by tools like nginx.
 
 ### API Documentation
 

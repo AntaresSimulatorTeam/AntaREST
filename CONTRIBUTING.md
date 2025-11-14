@@ -61,6 +61,8 @@ Before contributing, make sure you have the following installed:
 
 ### Branching Strategy
 
+This project follows the **[git-flow](https://nvie.com/posts/a-successful-git-branching-model/)** branching model:
+
 - `dev`: Main development branch (default branch)
 - `master`: Stable release branch
 - Feature branches: `feat/your-feature-name`
@@ -84,16 +86,6 @@ git checkout -b feat/your-feature-name
 2. Write or update tests as needed
 3. Ensure all tests pass
 4. Ensure code quality checks pass
-
-### Keeping Your Branch Updated
-
-```bash
-# Fetch latest changes from upstream
-git fetch upstream
-
-# Rebase your branch on top of upstream/dev
-git rebase upstream/dev
-```
 
 ## Coding Standards
 
