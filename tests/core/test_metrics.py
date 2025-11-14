@@ -13,16 +13,22 @@ import time
 
 import prometheus_client
 import pytest
+from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Metric
+from pydantic import BaseModel
 from sqlalchemy import QueuePool, create_engine, text
 from sqlalchemy.orm import sessionmaker
+from starlette.exceptions import HTTPException
+from starlette.testclient import TestClient
 
 from antarest.core.metrics import (
     TasksMetricsRecorder,
     _add_db_connection_metrics,
     _add_db_session_metrics,
+    _add_metrics_middleware,
 )
 from antarest.core.tasks.model import TaskStatus, TaskType
+from antarest.main import add_exception_handlers
 
 
 def _is_subset(small_dict: dict[str, str], big_dict: dict[str, str]) -> bool:
@@ -334,3 +340,52 @@ def test_db_session_metrics():
         assert _get_value(registry, "db_session_events", labels={"event_type": "commit"}) == 1
         assert _get_value(registry, "db_transactions_current") == 0
         assert _get_histo_count(registry, "db_transactions_duration_seconds") == 2
+
+
+class TestModel(BaseModel):
+    value: int
+
+
+def test_http_request_metrics() -> None:
+    registry = CollectorRegistry()
+
+    app = FastAPI()
+
+    @app.get("/ok")
+    def ok() -> None:
+        pass
+
+    @app.get("/notfound")
+    def notfound() -> None:
+        raise HTTPException(status_code=404)
+
+    @app.get("/error")
+    def error() -> None:
+        raise Exception()
+
+    @app.post("/validation")
+    def validation(input: TestModel) -> int:
+        return input.value
+
+    add_exception_handlers(app)
+
+    _add_metrics_middleware(registry=registry, application=app)
+
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.get("/ok")
+    assert res.status_code == 200
+
+    assert _get_histo_count(registry, "http_requests_duration_seconds", labels={"http_status": "200"}) == 1
+
+    res = client.get("/error")
+    assert res.status_code == 500
+
+    assert _get_histo_count(registry, "http_requests_duration_seconds", labels={"http_status": "500"}) == 1
+
+    res = client.get("/notfound")
+    assert res.status_code == 404
+    assert _get_histo_count(registry, "http_requests_duration_seconds", labels={"http_status": "404"}) == 1
+
+    res = client.post("/validation", json={"value": "invalid"})
+    assert res.status_code == 422
+    assert _get_histo_count(registry, "http_requests_duration_seconds", labels={"http_status": "422"}) == 1
