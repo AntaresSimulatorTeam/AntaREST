@@ -151,7 +151,7 @@ class TestInputSeriesMatrix:
         assert actual == expected
 
     def test_reset_to_default(self, my_study_config: FileStudyTreeConfig) -> None:
-        """Test reseting the matix to default values."""
+        """Test reseting the matrix to default values."""
         default_matrix = np.array([[1.0, 2.0], [3.0, 4.0]])
         node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
 
