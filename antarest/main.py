@@ -23,9 +23,6 @@ import uvicorn.config
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from ratelimit import RateLimitMiddleware  # type: ignore
-from ratelimit.backends.redis import RedisBackend  # type: ignore
-from ratelimit.backends.simple import MemoryBackend  # type: ignore
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -38,9 +35,7 @@ from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filesystem_blueprint import create_file_system_blueprint
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.metrics import add_metrics
-from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
-from antarest.core.tasks.model import cancel_orphan_tasks
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
@@ -259,19 +254,6 @@ def fastapi_app(
             status_code=500,
         )
 
-    # rate limiter
-    auth_manager = Auth(config)
-    application.add_middleware(
-        RateLimitMiddleware,
-        authenticate=auth_manager.create_auth_function(),
-        backend=(
-            MemoryBackend()
-            if config.redis is None
-            else RedisBackend(config.redis.host, config.redis.port, 1, config.redis.password)
-        ),
-        config=RATE_LIMIT_CONFIG,
-    )
-
     init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
     services = create_services(config, app_ctxt)
 
@@ -303,7 +285,6 @@ def fastapi_app(
         def home(request: Request) -> Any:
             return ""
 
-    cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
     return application, services
 
 
