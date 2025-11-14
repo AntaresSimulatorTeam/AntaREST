@@ -95,6 +95,7 @@ export type SelectFEProps<
 function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
   options = [],
   emptyValue = false,
+  emptyValueLabel: emptyValueLabelProp,
   startCaseLabel = false,
   multiple = false,
   helperText,
@@ -109,7 +110,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
   const { t } = useTranslation();
   const [currentValue, setCurrentValue] = useState(value ?? defaultValue);
 
-  const { emptyValueLabel = t("global.none") } = rest;
+  const emptyValueLabel = emptyValueLabelProp ?? t("global.none");
 
   const optionsFormatted = useMemo(
     () =>
