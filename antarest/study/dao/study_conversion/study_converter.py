@@ -26,6 +26,7 @@ from antarest.study.business.model.xpansion_model import XpansionResourceFileTyp
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.model import (
     STUDY_VERSION_8_1,
+    STUDY_VERSION_8_2,
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
@@ -53,7 +54,6 @@ class StudyConverter:
 
         # Links
         self._convert_links()
-        # todo: Link Matrices GET are not in the DAO ...
 
         # Binding constraints
         self._convert_binding_constraints()
@@ -62,7 +62,8 @@ class StudyConverter:
         self._convert_xpansion()
 
         # User resources
-        # todo: this doesn't exist in the DAO
+        for user_resource in self._source_dao.get_all_user_resources():
+            self._new_dao.save_user_resource(user_resource)
 
         # Settings
         self._convert_settings()
@@ -135,6 +136,18 @@ class StudyConverter:
         links = self._source_dao.get_links()
         for link in links:
             self._new_dao.save_link(link)
+            # Link matrices
+            area_from, area_to = link.area1, link.area2
+            series_id = self._matrix_service.create(self._source_dao.get_link_series(area_from, area_to))
+            self._new_dao.save_link_series(area_from, area_to, series_id)
+            if self._source_dao.get_version() >= STUDY_VERSION_8_2:
+                direct_capacity = self._source_dao.get_link_direct_capacities(area_from, area_to)
+                direct_capacity_id = self._matrix_service.create(direct_capacity)
+                self._new_dao.save_link_direct_capacities(area_from, area_to, direct_capacity_id)
+
+                indirect_capacity = self._source_dao.get_link_indirect_capacities(area_from, area_to)
+                indirect_capacity_id = self._matrix_service.create(indirect_capacity)
+                self._new_dao.save_link_indirect_capacities(area_from, area_to, indirect_capacity_id)
 
     def _convert_areas(self) -> None:
         area_properties = self._source_dao.get_all_area_properties()
