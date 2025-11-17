@@ -21,8 +21,9 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path) -> None:
     """
     For the moment, it only ensures the method doesn't crash
     """
-    outputs_before = [f.name for f in (tmp_path / "studies" / UUID / "output").iterdir()]
-    new_study_path = tmp_path / "studies" / "new_study"
-    storage_service.write_study_as_file_study(UUID, new_study_path)
+    source_path = tmp_path / "studies" / UUID
+    new_path = tmp_path / "studies" / "new_study" / UUID
+    outputs_before = [f.name for f in (source_path / "output").iterdir()]
+    storage_service.write_study_as_file_study(UUID, new_path)
     # Checks the output folder was copied
-    assert [f.name for f in (tmp_path / "studies" / "new_study" / "output").iterdir()] == outputs_before
+    assert [f.name for f in (new_path / "output").iterdir()] == outputs_before
