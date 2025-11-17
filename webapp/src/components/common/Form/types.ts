@@ -13,10 +13,21 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { DeepPartial, FieldValues, SetValueConfig, UseFormReturn } from "react-hook-form";
+import type { PartialBy } from "@/utils/tsUtils";
+import type {
+  DeepPartial,
+  FieldPath,
+  FieldValues,
+  SetValueConfig,
+  UseFormReturn,
+} from "react-hook-form";
 
-export interface SubmitHandlerPlus<TFieldValues extends FieldValues = FieldValues> {
-  values: TFieldValues;
+export interface SubmitHandlerPlus<
+  TFieldValues extends FieldValues = FieldValues,
+  // Purpose of this parameter: https://github.com/react-hook-form/react-hook-form/issues/12447
+  PossibleDisabledField extends FieldPath<TFieldValues> = never,
+> {
+  values: PartialBy<TFieldValues, PossibleDisabledField>;
   dirtyValues: Partial<TFieldValues>;
 }
 

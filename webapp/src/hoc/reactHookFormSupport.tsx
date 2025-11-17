@@ -225,8 +225,9 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
             defaultValue={(feProps.defaultValue ?? getDefaultValueFromOptions()) as any}
             rules={{ ...restRules, validate: validateWrapper }}
             shouldUnregister={shouldUnregister}
+            disabled={feProps.disabled} // Value will be omitted from the submission data
             render={({
-              field: { ref, onChange, onBlur, ...fieldProps },
+              field: { ref, onChange, onBlur, disabled, ...fieldProps },
               fieldState: { invalid, error },
             }) => (
               <FieldEditor
@@ -237,9 +238,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
                 inputRef={composeRefs(ref, feProps.inputRef)}
                 error={invalid}
                 helperText={error?.message || feProps.helperText}
-                disabled={
-                  control._formState.isSubmitting || fieldProps.disabled || feProps.disabled
-                }
+                disabled={control._formState.isSubmitting || disabled}
               />
             )}
           />
