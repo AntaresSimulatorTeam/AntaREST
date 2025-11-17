@@ -258,7 +258,7 @@ class AreaOutputIdentifier(SubAreaOutputIdentifier):
         return None
 
 
-def check_variables_view_coherence_and_return_aggregation_info(
+def check_output_variable_exists(
     output_id: str,
     variable_type: OutputVariablesType,
     variable_name: str,
@@ -329,7 +329,7 @@ def _checks_areas_variables_view_coherence(
     raise OutputVariablesViewError(output_id, error_msg)
 
 
-def checks_variables_view_arguments_coherence(
+def check_arguments_coherence_and_return_identifier(
     variable_type: OutputVariablesType,
     output_id: str,
     area_id: str | None = None,

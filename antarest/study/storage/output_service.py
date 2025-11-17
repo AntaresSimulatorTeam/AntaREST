@@ -46,8 +46,8 @@ from antarest.study.business.output.utils import (
 )
 from antarest.study.business.output.variables_management import (
     OutputIdentifier,
-    check_variables_view_coherence_and_return_aggregation_info,
-    checks_variables_view_arguments_coherence,
+    check_arguments_coherence_and_return_identifier,
+    check_output_variable_exists,
     create_output_view_db_model,
     extract_variables_list,
     get_output_view_inside_db,
@@ -111,7 +111,7 @@ class OutputVariablesViewMaterializationTask:
         """Run the task"""
         # Checks the asked couple `variable name` / `object_id` exists for the output
         available_variables = self._output_service.get_output_variables_list(self._study_id, self._output_id)
-        check_variables_view_coherence_and_return_aggregation_info(
+        check_output_variable_exists(
             self._output_id, self._variable_type, self._variable_name, available_variables, self._output_identifier
         )
 
@@ -771,7 +771,7 @@ class OutputService:
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
 
-        output_identifier = checks_variables_view_arguments_coherence(
+        output_identifier = check_arguments_coherence_and_return_identifier(
             variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
         )
 
@@ -813,7 +813,7 @@ class OutputService:
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
 
-        output_identifier = checks_variables_view_arguments_coherence(
+        output_identifier = check_arguments_coherence_and_return_identifier(
             variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
         )
 
