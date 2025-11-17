@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
 from antarest.study.model import StudyAdditionalData
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
@@ -52,8 +53,8 @@ def fixture_raw_study_id(tmp_path: Path, db_session: Session, user_id: int) -> s
             workspace="default",
             path=str(tmp_path.joinpath("root_study")),
             version="860",
-            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            created_at=current_time(),
+            updated_at=current_time(),
             additional_data=StudyAdditionalData(author="john.doe"),
             owner_id=user_id,
         )
@@ -66,15 +67,16 @@ def fixture_raw_study_id(tmp_path: Path, db_session: Session, user_id: int) -> s
 def fixture_variant_study_id(tmp_path: Path, db_session: Session, raw_study_id: str, user_id: int) -> str:
     with db_session:
         variant_study_id = str(uuid.uuid4())
+        now = current_time()
         variant = create_variant_study(
             id=variant_study_id,
             name="Variant Study",
             version="860",
             author="John DOE",
             parent_id=raw_study_id,
-            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(days=1),
-            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            created_at=now - datetime.timedelta(days=1),
+            updated_at=now,
+            last_access=now,
             path=str(tmp_path.joinpath("variant_study")),
             owner_id=user_id,
         )
@@ -88,7 +90,7 @@ class TestVariantStudySnapshot:
         """
         Check the creation of an instance of VariantStudySnapshot
         """
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        now = current_time()
 
         with db_session:
             snap = VariantStudySnapshot(id=variant_study_id, created_at=now)
@@ -111,7 +113,7 @@ class TestVariantStudySnapshot:
         """
         Check the creation of an instance of VariantStudySnapshot
         """
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        now = current_time()
         command_id = str(uuid.uuid4())
 
         with db_session:
@@ -137,7 +139,7 @@ class TestCommandBlock:
         command = "dummy command"
         version = 42
         args = '{"foo": "bar"}'
-        updated_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        updated_at = current_time()
 
         with db_session:
             block = CommandBlock(
@@ -186,7 +188,7 @@ class TestVariantStudy:
         """
         Check the creation of an instance of variant study without snapshot
         """
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        now = current_time()
         variant_study_id = str(uuid.uuid4())
         variant_study_path = "path/to/variant"
 

@@ -14,7 +14,7 @@ import logging
 import re
 import shutil
 import typing as t
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from functools import reduce
 from pathlib import Path, PurePosixPath
 from typing import Callable, Dict, List, Optional, Sequence, cast
@@ -45,7 +45,7 @@ from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this, suppress_exception
+from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
@@ -223,7 +223,7 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_impersonator(),
-                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                updated_at=current_time(),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -260,7 +260,7 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_id(),
-                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                updated_at=current_time(),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -640,7 +640,7 @@ class VariantStudyService(AbstractStorageService):
                 editor=user_name,
             )
 
-        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        now_utc = current_time()
         variant_study = VariantStudy(
             id=new_id,
             name=name,
@@ -1080,7 +1080,7 @@ class SnapshotCleanerTask:
             )
             for variant in variant_list:
                 assert isinstance(variant, VariantStudy)
-                now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+                now_utc = current_time()
                 if variant.updated_at and variant.updated_at < now_utc - self._retention_time:
                     if variant.last_access and variant.last_access < now_utc - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)

@@ -150,6 +150,35 @@ class TestInputSeriesMatrix:
         )
         assert actual == expected
 
+    def test_reset_to_default(self, my_study_config: FileStudyTreeConfig) -> None:
+        """Test reseting the matrix to default values."""
+        default_matrix = np.array([[1.0, 2.0], [3.0, 4.0]])
+        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
+
+        # Save different data than default
+        node.dump({"columns": [0, 1], "data": [[5.0, 6.0], [7.0, 8.0]], "index": [0, 1]})
+
+        # The file should contain saved data
+        actual = my_study_config.path.read_text()
+        expected = textwrap.dedent(
+            """\
+            5\t6
+            7\t8
+            """
+        )
+        assert actual == expected
+
+        # Now reset to default
+        node.dump({"columns": [0, 1], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]})
+
+        # The file should be empty now
+        actual_text = my_study_config.path.read_text()
+        assert actual_text == ""
+
+        # Loading the matrix should return the default values
+        actual = node.load()
+        assert actual == {"columns": [0, 1], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]}
+
 
 class TestCopyAndRenameFile:
     node: InputSeriesMatrix

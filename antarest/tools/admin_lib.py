@@ -12,14 +12,13 @@
 
 import logging
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import Engine, create_engine, update
 
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskJob, TaskStatus
-from antarest.core.utils.utils import get_local_path
+from antarest.core.utils.utils import current_time, get_local_path
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import WORKSPACE_LOCK_FILE_NAME
 
 logger = logging.getLogger(__name__)
@@ -79,7 +78,7 @@ def _do_fix_interrupted_tasks_status(engine: Engine) -> None:
         TaskJob.status: TaskStatus.FAILED.value,
         TaskJob.result_status: False,
         TaskJob.result_msg: "Task was interrupted due to server restart",
-        TaskJob.completion_date: datetime.now(timezone.utc).replace(tzinfo=None),
+        TaskJob.completion_date: current_time(),
     }
     orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
     logger.info("Setting status of interrupted tasks to FAILED.")
