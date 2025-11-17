@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 import logging
 import time
-from datetime import datetime, timezone
 from typing import Set
 
 from typing_extensions import override
 
 from antarest.core.interfaces.service import IService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import StopWatch, current_time
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
@@ -53,9 +52,9 @@ class MatrixGarbageCollector(IService):
             # Compare for each matrix, its lifetime duration to the `retention_time` value.
             # If it's more, remove the matrix. Otherwise, pass.
             matrices_to_remove = set()
-            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+            now = current_time()
             for matrix in unused_matrices:
-                matrix_lifetime = (current_time - saved_matrices[matrix]).total_seconds()
+                matrix_lifetime = (now - saved_matrices[matrix]).total_seconds()
                 if matrix_lifetime >= self.retention_time:
                     matrices_to_remove.add(matrix)
 

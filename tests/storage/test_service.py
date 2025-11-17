@@ -17,7 +17,7 @@ import textwrap
 import typing as t
 import uuid
 from configparser import MissingSectionHeaderError
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
@@ -43,6 +43,7 @@ from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
@@ -201,8 +202,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="A",
         version=study_version,
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=current_time(),
+        updated_at=current_time(),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
         additional_data=StudyAdditionalData(),
@@ -213,8 +214,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="B",
         version=study_version,
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=current_time(),
+        updated_at=current_time(),
         path="",
         workspace="other",
         additional_data=StudyAdditionalData(),
@@ -225,8 +226,8 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="C",
         version=study_version,
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=current_time(),
+        updated_at=current_time(),
         path="",
         workspace="other2",
         additional_data=StudyAdditionalData(),
@@ -308,7 +309,7 @@ def test_study_listing(db_session: Session) -> None:
 
 
 def test_sync_studies_from_disk() -> None:
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = current_time()
 
     # Studies in DB
     ma = create_raw_study(id="a", path="a", workspace="workspace1")
@@ -324,7 +325,7 @@ def test_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path="d",
-        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        missing=current_time() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
         workspace="workspace1",
     )
     me = create_raw_study(
@@ -333,7 +334,7 @@ def test_sync_studies_from_disk() -> None:
         folder="e",
         name="e",
         created_at=now,
-        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        missing=current_time() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
     )
     mg = create_raw_study(
@@ -450,7 +451,7 @@ def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
 
 # noinspection PyArgumentList
 def test_partial_sync_studies_from_disk() -> None:
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = current_time()
     ma = create_raw_study(id="a", path="a")
     mb = create_raw_study(id="b", path="b")
     mc = create_raw_study(
@@ -464,13 +465,13 @@ def test_partial_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path=f"directory{os.sep}d",
-        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        missing=current_time() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = create_raw_study(
         id="e",
         path=f"directory{os.sep}e",
         created_at=now,
-        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        missing=current_time() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
     fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])
     fe = StudyFolder(path=Path("directory/e"), workspace="workspace1", groups=[])
@@ -792,7 +793,7 @@ def test_download_output() -> None:
         name="name",
         ready=False,
         path="path",
-        expiration_date=datetime.now(timezone.utc).replace(tzinfo=None),
+        expiration_date=current_time(),
     )
     service.file_transfer_manager.request_download.return_value = export_file_download  # type: ignore
     task_id = "task-id"
@@ -1212,7 +1213,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
+        last_access=current_time(),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
     study_mock.to_enhanced_json_summary.return_value = {
@@ -1246,7 +1247,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
-        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
+        last_access=current_time(),
     )
     study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
@@ -1309,7 +1310,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
+        last_access=current_time(),
     )
 
     v1 = create_variant_study(id="variant_1", path=create_study_fs_mock(variant=True))
@@ -1604,7 +1605,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Archive output {study_id}/{output_zipped}",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                creation_date_utc=str(current_time()),
                 type=TaskType.ARCHIVE,
                 ref_id=study_id,
             )
@@ -1614,7 +1615,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                creation_date_utc=str(current_time()),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1624,7 +1625,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Archive output {study_id}/{output_unzipped}",
                 status=TaskStatus.PENDING,
-                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                creation_date_utc=str(current_time()),
                 type=TaskType.ARCHIVE,
                 ref_id=study_id,
             )
@@ -1634,7 +1635,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
                 id="1",
                 name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                creation_date_utc=str(current_time()),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1809,7 +1810,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                creation_date_utc=str(current_time()),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1913,13 +1914,14 @@ def test_upgrade_study__raw_study__nominal(
 
     # Prepare a RAW study
     # noinspection PyArgumentList
+    now = current_time()
     raw_study = create_raw_study(
         id=study_id,
         name=study_name,
         workspace=workspace,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         version=current_version,
         additional_data=StudyAdditionalData(),
         archived=False,
@@ -2003,12 +2005,13 @@ def test_upgrade_study__variant_study__nominal(
 
     # Prepare a RAW study
     # noinspection PyArgumentList
+    now = current_time()
     variant_study = create_variant_study(
         id=study_id,
         name=study_name,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         version="720",
         additional_data=StudyAdditionalData(),
         archived=False,
@@ -2092,13 +2095,14 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
     # Prepare a RAW study
     # noinspection PyArgumentList
+    now = current_time()
     raw_study = create_raw_study(
         id=study_id,
         name=study_name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path),
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         version=old_version,
         additional_data=StudyAdditionalData(),
         archived=False,

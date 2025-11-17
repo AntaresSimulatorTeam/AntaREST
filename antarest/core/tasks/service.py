@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import datetime
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -41,7 +40,7 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import retry
+from antarest.core.utils.utils import current_time, retry
 from antarest.login.utils import get_current_user, require_current_user
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
@@ -508,9 +507,7 @@ class TaskJobService(ITaskService):
 
                 with db():
                     # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                    completion_date = (
-                        datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) if status.is_final() else None
-                    )
+                    completion_date = current_time() if status.is_final() else None
                     stmt = (
                         update(TaskJob)
                         .where(TaskJob.id == task_id)
@@ -557,7 +554,7 @@ class TaskJobService(ITaskService):
                             status=TaskStatus.FAILED.value,
                             result_msg=str(exc),
                             result_status=False,
-                            completion_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                            completion_date=current_time(),
                         )
                     )
                     db.session.execute(stmt)

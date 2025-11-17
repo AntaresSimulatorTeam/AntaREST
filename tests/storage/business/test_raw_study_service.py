@@ -25,6 +25,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
+from antarest.core.utils.utils import current_time
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -183,13 +184,14 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
         study_factory=study_factory,
     )
 
+    now = current_time()
     metadata = create_raw_study(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study1"),
         version="720",
-        created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         additional_data=StudyAdditionalData(author="john.doe"),
     )
     md = study_service.create(metadata)
