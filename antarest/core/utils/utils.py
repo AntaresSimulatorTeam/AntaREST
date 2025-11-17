@@ -179,4 +179,4 @@ def suppress_exception(
 
 
 def current_time() -> datetime.datetime:
-    return current_time()
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
