@@ -85,19 +85,19 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return _get_matrix(self.get_file_study(), constraint_id, "")
+        return self.get_impl().get_matrix(["input", "bindingconstraints", constraint_id])
 
     @override
     def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return _get_matrix(self.get_file_study(), constraint_id, "_lt")
+        return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_lt"])
 
     @override
     def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return _get_matrix(self.get_file_study(), constraint_id, "_gt")
+        return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_gt"])
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return _get_matrix(self.get_file_study(), constraint_id, "_eq")
+        return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_eq"])
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
@@ -217,12 +217,6 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         # Deleting the constraint in the configuration must be done AFTER deleting the files and folders.
         for constraint in constraints:
             study_data.config.bindings.remove(constraint)
-
-
-def _get_matrix(study_data: FileStudy, constraint_id: str, term: str) -> pd.DataFrame:
-    node = study_data.tree.get_node(["input", "bindingconstraints", f"{constraint_id}{term}"])
-    assert isinstance(node, InputSeriesMatrix)
-    return node.parse_as_dataframe()
 
 
 def _save_matrix(study_data: FileStudy, constraint_id: str, term: str, series_id: str) -> None:

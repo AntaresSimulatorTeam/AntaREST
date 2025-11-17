@@ -11,12 +11,12 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Iterator, cast
 
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ResourceCreationNotAllowed, ResourceDeletionNotAllowed
-from antarest.study.business.model.user_model import UserResourceDataCreation
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
@@ -37,6 +37,25 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
     @abstractmethod
     def get_impl(self) -> "FileStudyTreeDao":
         pass
+
+    @override
+    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+        blob_service = self.get_impl()._blob_service
+        assert blob_service is not None
+
+        user_path = self.get_file_study().config.study_path / "user"
+        if user_path.exists():
+            all_files = user_path.rglob("*")
+            expansion_folder = user_path / "expansion"
+            for file in all_files:
+                if file.is_file() and not file.is_relative_to(expansion_folder):
+                    content = file.read_bytes()
+                    blob_id = blob_service.save(content)
+                    yield UserResourceDataCreation(
+                        path=PurePosixPath(file.relative_to(user_path).as_posix()),
+                        resource_type=ResourceType.FILE,
+                        blob_id=blob_id,
+                    )
 
     @override
     def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:

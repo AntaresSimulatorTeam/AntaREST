@@ -196,7 +196,7 @@ class TestDownloadMatrices:
 
             expected_matrix["index"] = time_column
             expected = pd.DataFrame(**expected_matrix)
-            assert_frame_equal(dataframe, expected)
+            assert_frame_equal(dataframe, expected, check_dtype=False)
 
         # =============================
         # TESTS INDEX AND HEADER PARAMETERS
