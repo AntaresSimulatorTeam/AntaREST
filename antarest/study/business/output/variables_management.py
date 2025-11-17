@@ -155,7 +155,7 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
         if areas_folder.exists():
             for area in sorted(areas_folder.iterdir()):
                 areas_dict: dict[str, Any] = {"name": area.name}
-                parent_path = areas_folder / area
+                parent_path = areas_folder / area.name
 
                 for col_headers, file_type in _get_all_headers_and_file_type(mc_root, parent_path, file_type_class):
                     key = areas_mapping[file_type.value]

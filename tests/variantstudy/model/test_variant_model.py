@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import datetime
 import typing as t
 import uuid
 from pathlib import Path
@@ -23,6 +22,7 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
 from antarest.study.model import StudyAdditionalData
@@ -69,6 +69,7 @@ class TestVariantStudyService:
         public_mode = request.param
 
         # Prepare a RAW study in the temporary folder
+        now = current_time()
         study_dir = tmp_path / "my-study"
         root_study_id = str(uuid.uuid4())
         root_study = create_raw_study(
@@ -76,8 +77,8 @@ class TestVariantStudyService:
             workspace="default",
             path=str(study_dir),
             version="860",
-            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            created_at=now,
+            updated_at=now,
             additional_data=StudyAdditionalData(author="john.doe"),
             owner_id=jwt_user.id,
             public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,

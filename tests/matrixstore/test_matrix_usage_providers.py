@@ -21,6 +21,7 @@ from typing_extensions import override
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.repository import GroupRepository
 from antarest.login.service import LoginService
@@ -106,13 +107,14 @@ def test_raw_studies_matrix_usage_provider(
     matrix_name4 = "matrix_name4"
     matrices_name = ["matrix_name1", "matrix_name2", "matrix_name3"]
 
+    now = current_time()
     metadata_raw_study = create_raw_study(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path / "studies"),
         version="720",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
     )
 
     with db():

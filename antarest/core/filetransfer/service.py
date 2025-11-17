@@ -36,6 +36,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_current_user, require_current_user
 
 logger = logging.getLogger(__name__)
@@ -78,7 +79,7 @@ class FileTransferManager:
             ready=False,
             path=str(tmpfile),
             owner=owner.impersonator if owner is not None else None,
-            expiration_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            expiration_date=current_time()
             + datetime.timedelta(
                 minutes=expiration_time_in_minutes or self.download_default_expiration_timeout_minutes
             ),
@@ -174,7 +175,7 @@ class FileTransferManager:
         return [d.to_dto() for d in downloads]
 
     def _clean_up_expired_downloads(self, file_downloads: List[FileDownload]) -> None:
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        now = current_time()
         to_remove = []
         for file_download in file_downloads:
             if file_download.expiration_date is not None and file_download.expiration_date <= now:
