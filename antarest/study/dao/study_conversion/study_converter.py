@@ -50,7 +50,6 @@ class StudyConverter:
     def convert_study_inputs(self) -> None:
         # Areas
         self._convert_areas()
-        # todo: Hydro matrices are not in the DAO ...
 
         # Links
         self._convert_links()
@@ -184,6 +183,22 @@ class StudyConverter:
             # Hydro
             self._convert_hydro(area_id, hydro_properties[area_id])
 
+            # Various matrices
+            load = self._matrix_service.create(self._source_dao.get_load(area_id))
+            self._new_dao.save_load(area_id, load)
+
+            solar = self._matrix_service.create(self._source_dao.get_solar(area_id))
+            self._new_dao.save_solar(area_id, solar)
+
+            wind = self._matrix_service.create(self._source_dao.get_wind(area_id))
+            self._new_dao.save_wind(area_id, wind)
+
+            reserves = self._matrix_service.create(self._source_dao.get_reserves(area_id))
+            self._new_dao.save_reserves(area_id, reserves)
+
+            misc_gen = self._matrix_service.create(self._source_dao.get_misc_gen(area_id))
+            self._new_dao.save_misc_gen(area_id, misc_gen)
+
             # Thermals
             thermals = area_names_and_thermals[area_id].thermals or []
             self._convert_thermal_clusters(area_id, thermals)
@@ -273,3 +288,4 @@ class StudyConverter:
         self._new_dao.save_inflow_structure(properties.inflow_structure, area_id)
         self._new_dao.save_hydro_allocation(area_id, self._source_dao.get_hydro_allocation(area_id))
         self._new_dao.save_hydro_correlation(area_id, self._source_dao.get_hydro_correlation(area_id))
+        # todo: hydro matrices
