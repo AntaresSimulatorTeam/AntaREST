@@ -11,9 +11,11 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
+from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.storage.output_model import OutputVariables, OutputVariablesViewsModel
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -156,11 +158,30 @@ def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_t
 def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
-    url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views/data"
+    url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
+
     # Areas
     query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
-    res = client.get(url, params=query_params)
+    # Ensures asking for the data before it was materialized raises an exception
+    res = client.get(f"{url}/data", params=query_params)
+    assert res.json() == {
+        "description": "The output variables view is not materialized in DB yet",
+        "exception": "HTTPException",
+    }
+    # Materialize the data
+    task_id = client.post(f"{url}/materialize", params=query_params).json()
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+    # Asks for the data. This time, it should succeed.
+    res = client.get(f"{url}/data", params=query_params)
     assert res.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": [1, 2]}
+    # Try to materialize even if the view is already in the database. Should raise an exception
+    res = client.post(f"{url}/materialize", params=query_params)
+    assert res.json() == {
+        "description": "The output variables view is already materialized in DB",
+        "exception": "HTTPException",
+    }
+
     # Thermal clusters
     query_params = {
         "type": "thermal",
@@ -169,7 +190,10 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         "area_id": "de",
         "thermal_id": "01_solar",
     }
-    res = client.get(url, params=query_params)
+    task_id = client.post(f"{url}/materialize", params=query_params).json()
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+    res = client.get(f"{url}/data", params=query_params)
     assert res.json() == {"columns": [1, 2], "data": [[167.0, 167.0], [167.0, 167.0]]}
 
     # Links
@@ -180,7 +204,10 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         "area_from_id": "de",
         "area_to_id": "fr",
     }
-    res = client.get(url, params=query_params)
+    task_id = client.post(f"{url}/materialize", params=query_params).json()
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+    res = client.get(f"{url}/data", params=query_params)
     assert res.json() == {"data": 336 * [[0.0, 0.0]], "columns": [1, 2]}
 
     # Ensures we saved the data inside the DB and that we're still able to read them
