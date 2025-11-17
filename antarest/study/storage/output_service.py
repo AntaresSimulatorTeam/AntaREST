@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
+from fastapi import HTTPException
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
@@ -44,7 +45,10 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
 )
 from antarest.study.business.output.variables_management import (
+    OutputIdentifier,
     check_variables_view_coherence_and_return_aggregation_info,
+    checks_variables_view_arguments_coherence,
+    create_output_view_db_model,
     extract_variables_list,
     get_output_view_inside_db,
     get_view_from_dataframe,
@@ -66,7 +70,6 @@ from antarest.study.storage.output_model import (
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesView,
-    OutputVariablesViewsModel,
 )
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -79,6 +82,87 @@ from antarest.study.storage.utils import assert_permission, get_start_date, is_o
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
+
+
+class OutputVariablesViewMaterializationTask:
+    """
+    Task to materialize an output variables view
+    """
+
+    def __init__(
+        self,
+        study_id: str,
+        output_id: str,
+        output_service: "OutputService",
+        variable_type: OutputVariablesType,
+        variable_name: str,
+        frequency: MatrixFrequency,
+        output_identifier: OutputIdentifier,
+    ) -> None:
+        self._study_id = study_id
+        self._output_id = output_id
+        self._variable_type = variable_type
+        self._frequency = frequency
+        self._variable_name = variable_name
+        self._output_service = output_service
+        self._output_identifier = output_identifier
+
+    def _materialize_view(self) -> None:
+        """Run the task"""
+        # Checks the asked couple `variable name` / `object_id` exists for the output
+        available_variables = self._output_service.get_output_variables_list(self._study_id, self._output_id)
+        check_variables_view_coherence_and_return_aggregation_info(
+            self._output_id, self._variable_type, self._variable_name, available_variables, self._output_identifier
+        )
+
+        with temp_file_path(dir=self._output_service._study_service.config.storage.tmp_dir) as tmp_path:
+            # Calls the aggregation with the right arguments
+            task_id = self._output_service.start_aggregate_output_data(
+                self._study_id,
+                self._output_id,
+                self._output_identifier.query_file,
+                self._frequency,
+                TableExportFormat.PARQUET,
+                [self._variable_name],
+                [self._output_identifier.get_id_for_aggregation()],
+                tmp_path,
+            )
+
+            # Wait for the aggregation to end
+            self._output_service._task_service.await_task(task_id)
+
+            # Transform the dataframe to have the expected format
+            if cluster_id := self._output_identifier.get_sub_id_for_aggregation():
+                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, self._variable_name, CLUSTER_ID_COL])
+                dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
+            else:
+                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, self._variable_name])
+
+        dataframe.index = pd.RangeIndex(len(dataframe))  # matrix-store does not support dataframes with specific index
+        matrix_id = self._output_service._matrix_service.create(dataframe)
+        with db():
+            db_model = create_output_view_db_model(
+                self._study_id,
+                self._output_id,
+                self._variable_type,
+                self._variable_name,
+                self._frequency,
+                self._output_identifier,
+                matrix_id,
+            )
+            db.session.add(db_model)
+            db.session.commit()
+
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
+        msg = f"Materializing output variables view for study '{self._study_id}' and output '{self._output_id}'"
+        notifier.notify_message(msg)
+        self._materialize_view()
+        msg = f"Successfully materialized output variables view for study '{self._study_id}' and output '{self._output_id}'"
+        notifier.notify_message(msg)
+        return TaskResult(success=True, message=msg)
+
+    # Make `OutputVariablesViewMaterializationTask` object callable
+    __call__ = run_task
 
 
 class OutputService:
@@ -679,22 +763,20 @@ class OutputService:
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
     ) -> OutputVariablesView:
+        """
+        If the view is already registered in DB, updates its `last_read` value and returns it.
+        Else, raise an HTTP 404 error.
+        """
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
 
-        # Check if the view is already registered inside DB
+        output_identifier = checks_variables_view_arguments_coherence(
+            variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
+        )
+
         db_model = get_output_view_inside_db(
-            study_id,
-            output_id,
-            variable_type,
-            variable_name,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
+            study_id, output_id, variable_type, variable_name, frequency, output_identifier
         )
         if db_model is not None:
             # Update `last_read` value inside DB
@@ -707,63 +789,66 @@ class OutputService:
             output_view = get_view_from_dataframe(dataframe, variable_name)
             return output_view
 
-        # Checks the asked couple `variable name` / `object_id` exists for the output
-        available_variables = self.get_output_variables_list(study_id, output_id)
-        output_identifier = check_variables_view_coherence_and_return_aggregation_info(
-            output_id,
-            variable_type,
-            variable_name,
-            available_variables,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
+        raise HTTPException(status_code=404, detail="The output variables view is not materialized in DB yet")
+
+    def materialize_output_variables_view(
+        self,
+        study_id: str,
+        output_id: str,
+        variable_type: OutputVariablesType,
+        variable_name: str,
+        frequency: MatrixFrequency,
+        area_id: str | None = None,
+        area_from_id: str | None = None,
+        area_to_id: str | None = None,
+        thermal_id: str | None = None,
+        renewable_id: str | None = None,
+        st_storage_id: str | None = None,
+    ) -> str:
+        """
+        If the view is already registered in DB, raise an HTTP Conflict error.
+        Else, launch a task that fetches the required data and stores it inside the database.
+        """
+        study = self._study_service.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        self._study_service.assert_study_unarchived(study)
+
+        output_identifier = checks_variables_view_arguments_coherence(
+            variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
         )
 
-        with temp_file_path(dir=self._study_service.config.storage.tmp_dir) as tmp_path:
-            # Calls the aggregation with the right arguments
-            task_id = self.start_aggregate_output_data(
-                study_id,
-                output_id,
-                output_identifier.query_file,
-                frequency,
-                TableExportFormat.PARQUET,
-                [variable_name],
-                [output_identifier.get_id_for_aggregation()],
-                tmp_path,
+        db_model = get_output_view_inside_db(
+            study_id, output_id, variable_type, variable_name, frequency, output_identifier
+        )
+        if db_model is not None:
+            raise HTTPException(status_code=417, detail="The output variables view is already materialized in DB")
+
+        # If a task materializing the same view is already running, returns its id
+        task_name = f"Materializing output view for study `{study_id}`, output `{output_id}`, frequency `{frequency}`, id `{output_identifier.get_id_for_aggregation()}`"
+        if sub_id := output_identifier.get_sub_id_for_aggregation():
+            task_name += f" sub_id `{sub_id}`"
+
+        study_tasks = self._task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.OUTPUT_VARIABLES_VIEW_MATERIALIZATION],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+                name=task_name,
             )
+        )
+        if len(study_tasks) > 0:
+            return study_tasks[0].id
 
-            # Wait for the aggregation to end
-            self._task_service.await_task(task_id)
+        # Materialize the view
+        task = OutputVariablesViewMaterializationTask(
+            study_id, output_id, self, variable_type, variable_name, frequency, output_identifier
+        )
 
-            # Transform the dataframe to have the expected format
-            if cluster_id := output_identifier.get_sub_id_for_aggregation():
-                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name, CLUSTER_ID_COL])
-                dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
-            else:
-                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name])
-
-        dataframe.index = pd.RangeIndex(len(dataframe))  # matrix-store does not support dataframes with specific index
-        matrix_id = self._matrix_service.create(dataframe)
-        with db():
-            db_model = OutputVariablesViewsModel(
-                study_id=study_id,
-                output_id=output_id,
-                type=variable_type,
-                frequency=frequency,
-                variable_name=variable_name,
-                area_id=area_id,
-                area_from_id=area_from_id,
-                area_to_id=area_to_id,
-                thermal_id=thermal_id,
-                renewable_id=renewable_id,
-                st_storage_id=st_storage_id,
-                matrix_id=matrix_id,
-                last_read=current_time(),
-            )
-            db.session.add(db_model)
-            db.session.commit()
-        output_view = get_view_from_dataframe(dataframe, variable_name)
-        return output_view
+        return self._task_service.add_task(
+            task,
+            task_name,
+            task_type=TaskType.OUTPUT_VARIABLES_VIEW_MATERIALIZATION,
+            ref_id=study_id,
+            progress=0,
+            custom_event_messages=None,
+        )
