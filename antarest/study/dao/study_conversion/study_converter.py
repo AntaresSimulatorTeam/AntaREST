@@ -25,6 +25,7 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.model import (
+    STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_2,
     STUDY_VERSION_8_3,
@@ -139,7 +140,7 @@ class StudyConverter:
             area_from, area_to = link.area1, link.area2
             series_id = self._matrix_service.create(self._source_dao.get_link_series(area_from, area_to))
             self._new_dao.save_link_series(area_from, area_to, series_id)
-            if self._source_dao.get_version() >= STUDY_VERSION_8_2:
+            if self._study_version >= STUDY_VERSION_8_2:
                 direct_capacity = self._source_dao.get_link_direct_capacities(area_from, area_to)
                 direct_capacity_id = self._matrix_service.create(direct_capacity)
                 self._new_dao.save_link_direct_capacities(area_from, area_to, direct_capacity_id)
@@ -288,4 +289,33 @@ class StudyConverter:
         self._new_dao.save_inflow_structure(properties.inflow_structure, area_id)
         self._new_dao.save_hydro_allocation(area_id, self._source_dao.get_hydro_allocation(area_id))
         self._new_dao.save_hydro_correlation(area_id, self._source_dao.get_hydro_correlation(area_id))
-        # todo: hydro matrices
+
+        # Matrices
+        energy = self._matrix_service.create(self._source_dao.get_hydro_energy(area_id))
+        self._new_dao.save_hydro_energy(area_id, energy)
+
+        run_of_river = self._matrix_service.create(self._source_dao.get_hydro_run_of_river(area_id))
+        self._new_dao.save_hydro_run_of_river(area_id, run_of_river)
+
+        modulation = self._matrix_service.create(self._source_dao.get_hydro_modulation(area_id))
+        self._new_dao.save_hydro_modulation(area_id, modulation)
+
+        max_power = self._matrix_service.create(self._source_dao.get_hydro_maxpower(area_id))
+        self._new_dao.save_hydro_maxpower(area_id, max_power)
+
+        reservoir = self._matrix_service.create(self._source_dao.get_hydro_reservoir(area_id))
+        self._new_dao.save_hydro_reservoir(area_id, reservoir)
+
+        if self._study_version > STUDY_VERSION_6_5:
+            credit_modulations = self._matrix_service.create(self._source_dao.get_hydro_credit_modulations(area_id))
+            self._new_dao.save_hydro_credit_modulations(area_id, credit_modulations)
+
+            inflow_pattern = self._matrix_service.create(self._source_dao.get_hydro_inflow_pattern(area_id))
+            self._new_dao.save_hydro_inflow_pattern(area_id, inflow_pattern)
+
+            water_values = self._matrix_service.create(self._source_dao.get_hydro_water_values(area_id))
+            self._new_dao.save_hydro_water_values(area_id, water_values)
+
+        if self._study_version >= STUDY_VERSION_8_6:
+            mingen = self._matrix_service.create(self._source_dao.get_hydro_mingen(area_id))
+            self._new_dao.save_hydro_mingen(area_id, mingen)
