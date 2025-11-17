@@ -501,6 +501,12 @@ export interface UpdateAreaUi {
   layerColor: AreaLayerColor;
 }
 
+export interface AreaUIUpdatePayload {
+  x: number;
+  y: number;
+  color_rgb: number[];
+}
+
 export interface AreaCreationDTO {
   name: string;
   type: object;

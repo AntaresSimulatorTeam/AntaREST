@@ -46,7 +46,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from tests.integration.utils import wait_task_completion
+from tests.integration.utils import duration_threshold, wait_task_completion
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS: list[str] = []
@@ -580,7 +580,7 @@ class TestRenewable:
         end = time.time()
         assert res.status_code in {200, 201}
         duration = end - start
-        assert duration < 1
+        assert duration < duration_threshold(1)
 
         # Asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable")

@@ -12,6 +12,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
+import pandas as pd
+
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import (
@@ -50,6 +52,42 @@ class ReadOnlyHydroDao(ABC):
     def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
 
 class HydroDao(ReadOnlyHydroDao):
     @abstractmethod
@@ -66,4 +104,40 @@ class HydroDao(ReadOnlyHydroDao):
 
     @abstractmethod
     def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
         raise NotImplementedError()

@@ -1,6 +1,86 @@
 Antares Web Changelog
 =====================
 
+v2.26.0 (2025-11-07)
+--------------------
+
+### Features
+* **study_editor**: added study author and editor in study metadata dto [`2743`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2743)
+* **ui-matrices**: add new export formats with header [`2769`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2769)
+* **desktop**: allow to run without systray app [`2786`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2786)
+* **ui-bc**: add manual submit and constraint duplication [`2762`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2762)
+* **output**: add endpoint to retrieve time index for output matrices [`2782`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2782)
+* **output**: add endpoint to retrieve metadata on available columns [`2770`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2770)
+* **study**: add new endpoint for `antares-craft` to read a study [`2742`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2742) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **ui-studies**: add filters for unmanaged and unarchived studies [`2787`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2787)
+* **metrics**: introduce prometheus metrics [`2783`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2783)
+* **user**: create a blobstore for variant user resources [`2777`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2777)
+* **metrics**: add labels to task metrics [`2798`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2798)
+* **ui-scenario**: allow resetting cells to "rand" state [`2806`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2806)
+* **ui-tasks**: display all clusters metrics on `Tasks` view [`2793`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2793)
+* **task_list_get_to_post**: replacing post api method task_list by get [`2808`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2808)
+* **launcher**: add support for solver presets [`2763`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2763)
+* **directory**: implement directory management backend [`2774`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2774)
+* **aggregate**: add custom file download expiration time [`2797`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2797)
+* **ui-tasks**: add simulation tasks cluster display [`2813`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2813)
+* **launcher**: add versions in the /launchers endpoint [`2837`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2837)
+* **ui-launcher**: add solver configuration choice [`2826`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2826)
+
+### Bug Fixes
+* **scenario-builder**: validate data against study version [`2750`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2750)
+* **ui**: typescript issue [`2778`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2778)
+* **study**: remove output section and use camelCase inside `/data` endpoint [`2790`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2790)
+* **generaldata**: allow reading with missing sections [`2799`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2799)
+* **ui-tasks**: jobs without owner trigger an error [`2792`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2792)
+* **generaldata**: read sections with names not in lower case [`2803`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2803)
+* **auto-archiver**: fix bug `auto-archiver` [`2804`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2804)
+* **output**: fix issue inside links variables retrieval [`2810`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2810)
+* **tasks**: fix enum handling in API [`2814`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2814)
+* **migrations**: resolve alembic divergent heads [`2815`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2815)
+* **presets**: fix issue inside solver call [`2819`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2819)
+* **build**: add explicit type [`2822`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2822)
+* **launcher**: fix launcher argument naming in /versions endpoint [`2821`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2821)
+* **ui-maps**: view breaks when parent study gets a new area [`2817`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2817)
+* **tasks**: remove irrelevant status updates [`2802`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2802)
+* **tasks**: fix a memory leak [`2824`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2824)
+* **layer**: bug update layer [`2829`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2829)
+* **ui**: SelectFE prevalidation [`2839`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2839)
+* **ui-studies**: prevent study name truncation to avoid user errors [`2840`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2840)
+
+### Refactorings
+* **area-properties**: implement dao interface [`2740`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2740)
+* **districts**: introduce dao [`2686`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2686) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **area-ui**: adjust models and update logic for area UI properties [`2747`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2747) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **hydro**: introduce DAO for allocation [`2753`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2753)
+* **hydro**: introduce DAO for hydro correlation [`2759`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2759) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **ui-launcher**: update adequacyCriterion field [`2766`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2766)
+* **area**: implement dao [`2756`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2756)
+* **ui**: update RHF version and use the new feature to get dirty values [`2768`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2768)
+* **ui**: migrate `Layers` and `Districts` to glide data grid [`2788`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2788)
+* **ui**: migrate scenariobuilder from handsontable to glide [`2789`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2789)
+* **ui**: remove auto submit feature from Form [`2794`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2794)
+* **output**: adapt `/variables` endpoint to use new code [`2791`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2791)
+* **launcher**: add integration test solver presets [`2820`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2820)
+
+###  Miscellaneous
+* **deps**: upgrade dependencies and refactor optional field handling [`2754`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2754)
+* **version**: bump default study version to 9.3 inside back-end [`2758`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2758)
+* **sts**: remove unused endpoints [`2771`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2771) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **dao**: move some methods inside the filestudy implem [`2775`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2775)
+* **launcher**: remove dead code [`2776`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2776)
+* **datetime**: clean deprecated method `utc_now` [`2773`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2773)
+* **variants**: remove useless `UpdateConfig` command at variant creation [`2779`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2779)
+* **pydantic**: remove legacy models [`2781`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2781)
+* **test**: clean mypy issues [`2785`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2785)
+* **blobstore**: initialize blobstore in test path [`2795`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2795)
+* **binding-constraints**: deprecate term-related endpoints [`2812`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2812)
+* **test**: remove useless markers in pyproject and tests [`2811`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2811)
+* **desktop**: remove desktop related resources [`2807`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2807)
+* **api**: misc cleanups [`2818`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2818)
+* **ci**: add more time for windows ci [`2816`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2816)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.25.0...v2.26.0
+
 v2.25.0 (2025-10-14)
 --------------------
 
