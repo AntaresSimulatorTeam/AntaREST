@@ -24,7 +24,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import sanitize_uuid
+from antarest.core.utils.utils import current_time, sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
@@ -156,7 +156,7 @@ class TestVariantStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            last_access=current_time(),
             public_mode=PublicMode.FULL,
             owner=user,
             groups=[group],
@@ -301,7 +301,7 @@ class TestVariantStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            last_access=current_time(),
             public_mode=PublicMode.FULL,
             owner=admin_user,
             groups=[group],

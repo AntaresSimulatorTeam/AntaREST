@@ -21,6 +21,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.core.utils.utils import current_time
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_task_completion
 
@@ -82,15 +83,10 @@ def generate_snapshot_fixture(
 
     with caplog.at_level(level=logging.WARNING):
         # Generate three different timestamp
-        older_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
-            hours=25
-        )  # older than the default value which is 24
-        old_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
-            hours=8
-        )  # older than 6 hours
-        recent_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
-            hours=2
-        )  # older than 0 hours
+        now = current_time()
+        older_time = now - datetime.timedelta(hours=25)  # older than the default value which is 24
+        old_time = now - datetime.timedelta(hours=8)  # older than 6 hours
+        recent_time = now - datetime.timedelta(hours=2)  # older than 0 hours
 
         with monkeypatch.context() as m:
             # Patch the datetime import instance of the variant_study_service package to hack

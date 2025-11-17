@@ -14,7 +14,6 @@
 This module dedicated to variant snapshot generation.
 """
 
-import datetime
 import logging
 import shutil
 from pathlib import Path
@@ -27,6 +26,7 @@ from antarest.core.interfaces.cache import (
 )
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
+from antarest.core.utils.utils import current_time
 from antarest.study.model import RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -119,7 +119,7 @@ class SnapshotGenerator:
             logger.info(f"Saving new snapshot for study {variant_study_id}")
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=current_time(),
                 last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
             )
 
