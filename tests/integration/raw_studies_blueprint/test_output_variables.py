@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
-from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -20,6 +19,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.storage.output_model import OutputVariables, OutputVariablesViewsModel
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
+from tests.integration.utils import wait_task_completion
 
 ASSETS_DIR = assets_dir / "output_variables_list"
 
