@@ -14,7 +14,7 @@ import json
 import math
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Union
 from unittest.mock import Mock, call
@@ -40,6 +40,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
 from antarest.launcher.model import (
@@ -229,7 +230,7 @@ class TestLauncherService:
 
     def test_service_get_jobs_from_database(self, db_session: DBSessionMiddleware) -> None:
         launcher_mock = Mock()
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = current_time()
         identity_instance = Identity(id=1)
         fake_execution_result = [
             JobResult(
