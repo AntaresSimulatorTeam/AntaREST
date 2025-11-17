@@ -20,6 +20,7 @@ from antarest.study.business.output.variables_management import (
     ShortTermStorageOutputIdentifier,
     ThermalClusterOutputIdentifier,
     check_variables_view_coherence_and_return_aggregation_info,
+    checks_variables_view_arguments_coherence,
 )
 from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType
 
@@ -130,11 +131,9 @@ def test_get_variables_view_coherence_success(
     st_storage_id: str | None,
 expected_result: OutputIdentifier
 ) -> None:
-    output_identifier = check_variables_view_coherence_and_return_aggregation_info(
-        "",
+    output_identifier = checks_variables_view_arguments_coherence(
         variable_type,
-        variable_name,
-        AVAILABLE_VARIABLES,
+        "",
         area_id,
         area_from_id,
         area_to_id,
@@ -143,3 +142,6 @@ expected_result: OutputIdentifier
         st_storage_id
     )
     assert expected_result == output_identifier
+
+    # Ensures the method doesn't crash
+    check_variables_view_coherence_and_return_aggregation_info("",variable_type,variable_name, AVAILABLE_VARIABLES, output_identifier)
