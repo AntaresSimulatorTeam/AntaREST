@@ -18,6 +18,7 @@ import { includes } from "@/utils/tsUtils";
 import debug from "debug";
 import { enqueueSnackbar, type VariantType } from "notistack";
 import * as R from "ramda";
+import debounce from "lodash/debounce";
 import * as RA from "ramda-adjunct";
 import { refresh as refreshUser } from "../../redux/ducks/auth";
 import { deleteStudy, setStudy } from "../../redux/ducks/studies";
@@ -236,10 +237,15 @@ function makeStudyJobStatusListener(dispatch: AppDispatch): WsEventListener {
 }
 
 function makeStudyDataListener(dispatch: AppDispatch): WsEventListener {
+  const threeSeconds = 3000;
+  const debouncedDispatch = debounce((payload) => {
+    dispatch(refreshStudySynthesis(payload));
+  }, threeSeconds);
+
   return function listener(e: WsEvent) {
     switch (e.type) {
       case WsEventType.StudyDataEdited:
-        dispatch(refreshStudySynthesis(e.payload));
+        debouncedDispatch(e.payload);
         break;
     }
   };
