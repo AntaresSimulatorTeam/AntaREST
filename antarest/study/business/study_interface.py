@@ -138,4 +138,4 @@ class FileStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.file_study).read_only()
+        raise NotImplementedError()
