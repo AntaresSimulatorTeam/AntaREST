@@ -26,6 +26,8 @@ from antarest.study.business.model.config.general_model import BuildingMode, Gen
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
 )
+from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.business.model.district_model import District, DistrictApplyFilter
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -121,6 +123,9 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     assert file_study_dao.get_advanced_parameters() == AdvancedParameters(
         initial_reservoir_levels=InitialReservoirLevel.COLD_START, number_of_cores_mode=SimulationCore.MAXIMUM
     )
+    assert file_study_dao.get_playlist_config() == Playlist(years={1: PlaylistValues(status=True, weight=1)})
+    assert file_study_dao.get_timeseries_config() == TimeSeriesConfiguration(thermal=TimeSeriesType(number=1))
+    # assert file_study_dao.get_thematic_trimming() == Playlist(years={1: PlaylistValues(status=True, weight=1)})
 
     # todo
 
