@@ -90,7 +90,14 @@ class StudyConverter:
             self._new_dao.save_adequacy_patch_parameters(self._source_dao.get_adequacy_patch_parameters())
 
     def _convert_xpansion(self) -> None:
-        self._new_dao.save_xpansion_settings(self._source_dao.get_xpansion_settings())
+        try:
+            settings = self._source_dao.get_xpansion_settings()
+        except ChildNotFoundError:
+            # The source study does not contain an Xpansion configuration. We should return immediately
+            return
+
+        self._new_dao.create_xpansion_configuration()
+        self._new_dao.save_xpansion_settings(settings)
         # Candidates
         for candidate in self._source_dao.get_all_xpansion_candidates():
             self._new_dao.save_xpansion_candidate(candidate)
