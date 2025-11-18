@@ -19,6 +19,7 @@ from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import AssetType, Link, LinkStyle, TransmissionCapacity
+from antarest.study.business.model.scenario_builder_model import Ruleset
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterGroup,
@@ -129,9 +130,62 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     # todo
 
     # Scenario builder
-    # todo
+    assert file_study_dao.get_rulesets() == {
+        "Default Ruleset": Ruleset(
+            load={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
+            thermal={
+                "de": {
+                    "01_solar": {"0": 1},
+                    "02_wind_on": {"0": 1},
+                    "03_wind_off": {"0": 1},
+                    "04_res": {"0": 1},
+                    "05_nuclear": {"0": 1},
+                    "06_coal": {"0": 1},
+                    "07_gas": {"0": 1},
+                    "08_non-res": {"0": 1},
+                    "09_hydro_pump": {"0": 1},
+                },
+                "es": {
+                    "01_solar": {"0": 1},
+                    "02_wind_on": {"0": 1},
+                    "03_wind_off": {"0": 1},
+                    "04_res": {"0": 1},
+                    "05_nuclear": {"0": 1},
+                    "06_coal": {"0": 1},
+                    "07_gas": {"0": 1},
+                    "08_non-res": {"0": 1},
+                    "09_hydro_pump": {"0": 1},
+                },
+                "fr": {
+                    "01_solar": {"0": 1},
+                    "02_wind_on": {"0": 1},
+                    "03_wind_off": {"0": 1},
+                    "04_res": {"0": 1},
+                    "05_nuclear": {"0": 1},
+                    "06_coal": {"0": 1},
+                    "07_gas": {"0": 1},
+                    "08_non-res": {"0": 1},
+                    "09_hydro_pump": {"0": 1},
+                },
+                "it": {
+                    "01_solar": {"0": 1},
+                    "02_wind_on": {"0": 1},
+                    "03_wind_off": {"0": 1},
+                    "04_res": {"0": 1},
+                    "05_nuclear": {"0": 1},
+                    "06_coal": {"0": 1},
+                    "07_gas": {"0": 1},
+                    "08_non-res": {"0": 1},
+                    "09_hydro_pump": {"0": 1},
+                },
+            },
+            hydro={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
+            wind={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
+            solar={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
+        )
+    }
 
-    # Area properites
+    # Area properties
     assert file_study_dao.get_all_area_properties() == {
         "de": AreaProperties(
             energy_cost_unsupplied=3000.0,
@@ -242,25 +296,7 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
 
     # Hydro
     expected_properties = HydroProperties(
-        management_options=HydroManagement(
-            inter_daily_breakdown=1.0,
-            intra_daily_modulation=2.0,
-            inter_monthly_breakdown=1.0,
-            reservoir=False,
-            reservoir_capacity=0.0,
-            follow_load=True,
-            use_water=False,
-            hard_bounds=False,
-            initialize_reservoir_date=0,
-            use_heuristic=True,
-            power_to_level=False,
-            use_leeway=False,
-            leeway_low=1.0,
-            leeway_up=1.0,
-            pumping_efficiency=1.0,
-            overflow_spilled_cost_difference=None,
-        ),
-        inflow_structure=InflowStructure(inter_monthly_correlation=0.5),
+        management_options=HydroManagement(intra_daily_modulation=2.0), inflow_structure=InflowStructure()
     )
     assert file_study_dao.get_all_hydro_properties() == {
         "de": expected_properties,
