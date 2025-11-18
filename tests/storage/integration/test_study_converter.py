@@ -15,6 +15,10 @@ from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import AssetType, Link, LinkStyle, TransmissionCapacity
+from antarest.study.business.model.thermal_cluster_model import (
+    ThermalCluster,
+    ThermalClusterGroup,
+)
 from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
@@ -113,10 +117,77 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     # Settings
 
     # Thermal clusters
-
-    # Renewable clusters
-
-    # Short-term storages
+    expected_clusters = {
+        "01_solar": ThermalCluster(
+            name="01_solar",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=10.0,
+            market_bid_cost=10.0,
+        ),
+        "02_wind_on": ThermalCluster(
+            name="02_wind_on",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=20.0,
+            market_bid_cost=20.0,
+        ),
+        "03_wind_off": ThermalCluster(
+            name="03_wind_off",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=30.0,
+            market_bid_cost=30.0,
+        ),
+        "04_res": ThermalCluster(
+            name="04_res",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=40.0,
+            market_bid_cost=40.0,
+        ),
+        "05_nuclear": ThermalCluster(
+            name="05_nuclear",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=50.0,
+            market_bid_cost=50.0,
+        ),
+        "06_coal": ThermalCluster(
+            name="06_coal",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=60.0,
+            market_bid_cost=60.0,
+        ),
+        "07_gas": ThermalCluster(
+            name="07_gas",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=70.0,
+            market_bid_cost=70.0,
+        ),
+        "08_non-res": ThermalCluster(
+            name="08_non-res",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=80.0,
+            market_bid_cost=80.0,
+        ),
+        "09_hydro_pump": ThermalCluster(
+            name="09_hydro_pump",
+            nominal_capacity=1000000.0,
+            group=ThermalClusterGroup.OTHER1,
+            marginal_cost=90.0,
+            market_bid_cost=90.0,
+        ),
+    }
+    assert file_study_dao.get_all_thermals() == {
+        "de": expected_clusters,
+        "es": expected_clusters,
+        "fr": expected_clusters,
+        "it": expected_clusters,
+    }
 
     # Hydro
     expected_properties = HydroProperties(
