@@ -58,7 +58,7 @@ from tests.storage.integration.conftest import UUID
 @with_admin_user
 def test_convert_study(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
     """
-    For the moment, it only ensures the method doesn't crash
+    Ensures we can represent a study as a filesystem one.
     """
     source_path = tmp_path / "studies" / UUID
     new_path = tmp_path / "studies" / "new_study" / UUID
