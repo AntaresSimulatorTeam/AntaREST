@@ -218,7 +218,9 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     ]
 
     # Load
-    # todo
+    load = file_study_dao.get_load("fr")
+    expected_load = pd.DataFrame((53 * list(range(0, 168 * 100, 100)))[:8760], dtype=np.float64)
+    assert load.equals(expected_load)
 
     # Thermal series
     # todo
