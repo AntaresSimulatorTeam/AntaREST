@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 def test_manage_district(empty_study_810: FileStudy, command_context: CommandContext) -> None:
     empty_study = empty_study_810
-    study_dao = FileStudyTreeDao(empty_study)
+    study_dao = FileStudyTreeDao(empty_study, command_context.generator_matrix_constants, command_context.blob_service)
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
 
