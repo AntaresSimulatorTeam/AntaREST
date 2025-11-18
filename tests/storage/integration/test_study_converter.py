@@ -17,6 +17,15 @@ import pandas as pd
 from antarest.study.business.model.area_model import AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.config.advanced_parameters_model import (
+    AdvancedParameters,
+    InitialReservoirLevel,
+    SimulationCore,
+)
+from antarest.study.business.model.config.general_model import BuildingMode, GeneralConfig
+from antarest.study.business.model.config.optimization_config_model import (
+    OptimizationPreferences,
+)
 from antarest.study.business.model.district_model import District, DistrictApplyFilter
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -37,6 +46,7 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
@@ -96,6 +106,22 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     assert file_study_dao.get_all_constraints() == {}
 
     # Settings
+    assert file_study_dao.get_general_config() == GeneralConfig(
+        mode=Mode.ADEQUACY,
+        first_day=1,
+        last_day=7,
+        leap_year=False,
+        horizon="2030",
+        building_mode=BuildingMode.CUSTOM,
+        selection_mode=True,
+        mc_scenario=True,
+        filtering=True,
+    )
+    assert file_study_dao.get_optimization_preferences() == OptimizationPreferences()
+    assert file_study_dao.get_advanced_parameters() == AdvancedParameters(
+        initial_reservoir_levels=InitialReservoirLevel.COLD_START, number_of_cores_mode=SimulationCore.MAXIMUM
+    )
+
     # todo
 
     # Scenario builder
