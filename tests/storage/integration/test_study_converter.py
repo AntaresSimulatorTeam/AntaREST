@@ -24,6 +24,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettings,
 )
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import with_admin_user
@@ -44,6 +45,9 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     file_study = factory.create_from_fs(new_path, with_matrix_normalization=False, study_id="", use_cache=False)
     context = command_context
     file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+
+    # Version
+    assert file_study_dao.get_version() == STUDY_VERSION_7_0
 
     # Links
     assert file_study_dao.get_links() == [
