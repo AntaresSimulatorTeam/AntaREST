@@ -20,14 +20,15 @@ import {
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import * as R from "ramda";
 import type { O } from "ts-toolbelt";
+import { getStudyVersions as getStudyVersionsApi } from "../../services/api/studies";
 import * as api from "../../services/api/study";
 import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../types/types";
-import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
+import { getFavoriteStudyIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
+import { toNumberVersion } from "@/utils/versionUtils";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -61,7 +62,7 @@ export interface StudiesState extends AsyncEntityState<StudyMetadata> {
 
 interface StudyCreator {
   name: string;
-  version?: string;
+  version: string;
   groups?: string[];
   publicMode?: StudyPublicMode;
   tags?: string[];
@@ -147,7 +148,7 @@ export const updateStudy = createAction<{
 
 export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAsyncThunkConfig>(
   n("CREATE_STUDY"),
-  async (arg, { getState, rejectWithValue }) => {
+  async (arg, { rejectWithValue }) => {
     // StudyMetadata
     if ("id" in arg) {
       return arg;
@@ -163,11 +164,8 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
 
       // StudyCreator
       const { name, version, groups, publicMode, tags } = arg;
-      const state = getState();
-      const versionList = getStudyVersions(state) || [];
-      const studyVersion = Number(version || R.last(versionList));
       // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-      const studyId = await api.createStudy(name, studyVersion, groups);
+      const studyId = await api.createStudy(name, toNumberVersion(version), groups);
       if (publicMode) {
         await api.changePublicMode(studyId, publicMode);
       }
@@ -221,7 +219,7 @@ export const deleteStudy = createAsyncThunk<
 export const fetchStudyVersions = createAsyncThunk(
   n("FETCH_VERSIONS"),
   (_, { rejectWithValue }) => {
-    return api.getStudyVersions().catch(rejectWithValue);
+    return getStudyVersionsApi().catch(rejectWithValue);
   },
 );
 
