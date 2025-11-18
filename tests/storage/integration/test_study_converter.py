@@ -33,6 +33,7 @@ from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.scenario_builder_model import Ruleset
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterGroup,
@@ -125,9 +126,9 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     )
     assert file_study_dao.get_playlist_config() == Playlist(years={1: PlaylistValues(status=True, weight=1)})
     assert file_study_dao.get_timeseries_config() == TimeSeriesConfiguration(thermal=TimeSeriesType(number=1))
-    # assert file_study_dao.get_thematic_trimming() == Playlist(years={1: PlaylistValues(status=True, weight=1)})
-
-    # todo
+    assert file_study_dao.get_thematic_trimming() == ThematicTrimming(
+        solar=True, nuclear=True, lignite=True, coal=True, gas=True, oil=True, mix_fuel=True, misc_dtg=True
+    )
 
     # Scenario builder
     assert file_study_dao.get_rulesets() == {
