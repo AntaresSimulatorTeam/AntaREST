@@ -14,8 +14,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from antarest.study.business.model.area_model import AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.district_model import District, DistrictApplyFilter
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
@@ -177,10 +179,43 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     }
 
     # Area ui
-    # todo
+    assert file_study_dao.get_all_areas_ui_info() == {
+        "de": AreaUIData(
+            ui={"x": 1, "y": 135, "color_r": 0, "color_g": 128, "color_b": 255, "layers": "0"},
+            layer_x={"0": 1},
+            layer_y={"0": 135},
+            layer_color={"0": "0, 128, 255"},
+        ),
+        "es": AreaUIData(
+            ui={"x": -369, "y": -74, "color_r": 0, "color_g": 128, "color_b": 255, "layers": "0"},
+            layer_x={"0": -369},
+            layer_y={"0": -74},
+            layer_color={"0": "0, 128, 255"},
+        ),
+        "fr": AreaUIData(
+            ui={"x": -309, "y": -1, "color_r": 0, "color_g": 128, "color_b": 255, "layers": "0"},
+            layer_x={"0": -309},
+            layer_y={"0": -1},
+            layer_color={"0": "0, 128, 255"},
+        ),
+        "it": AreaUIData(
+            ui={"x": -99, "y": -55, "color_r": 0, "color_g": 128, "color_b": 255, "layers": "0"},
+            layer_x={"0": -99},
+            layer_y={"0": -55},
+            layer_color={"0": "0, 128, 255"},
+        ),
+    }
 
     # Districts
-    # todo
+    assert file_study_dao.get_districts() == [
+        District(
+            id="all areas",
+            output=False,
+            comments="Spatial aggregates on all areas",
+            name="All areas",
+            apply_filter=DistrictApplyFilter.add_all,
+        )
+    ]
 
     # Load
     # todo
