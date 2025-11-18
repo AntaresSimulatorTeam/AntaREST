@@ -12,6 +12,7 @@
 from pathlib import Path
 
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import AssetType, Link, LinkStyle, TransmissionCapacity
 from antarest.study.business.model.xpansion_model import (
     Master,
@@ -103,13 +104,43 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
 
     # Binding constraints
     assert file_study_dao.get_all_constraints() == {}
+
     # Settings
 
     # Thermal clusters
 
     # Renewable clusters
+
     # Short-term storages
+
     # Hydro
+    expected_properties = HydroProperties(
+        management_options=HydroManagement(
+            inter_daily_breakdown=1.0,
+            intra_daily_modulation=2.0,
+            inter_monthly_breakdown=1.0,
+            reservoir=False,
+            reservoir_capacity=0.0,
+            follow_load=True,
+            use_water=False,
+            hard_bounds=False,
+            initialize_reservoir_date=0,
+            use_heuristic=True,
+            power_to_level=False,
+            use_leeway=False,
+            leeway_low=1.0,
+            leeway_up=1.0,
+            pumping_efficiency=1.0,
+            overflow_spilled_cost_difference=None,
+        ),
+        inflow_structure=InflowStructure(inter_monthly_correlation=0.5),
+    )
+    assert file_study_dao.get_all_hydro_properties() == {
+        "de": expected_properties,
+        "es": expected_properties,
+        "fr": expected_properties,
+        "it": expected_properties,
+    }
 
     # User folder
     assert list(file_study_dao.get_all_user_resources()) == []
