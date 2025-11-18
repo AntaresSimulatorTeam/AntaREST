@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -125,6 +126,46 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     assert file_study_dao.get_all_constraints() == {}
 
     # Settings
+    # todo
+
+    # Scenario builder
+    # todo
+
+    # Area properites
+    assert file_study_dao.get_all_area_properties() == {
+        "de": AreaProperties(
+            energy_cost_unsupplied=3000.0,
+            filter_synthesis={"monthly", "daily"},
+            filter_by_year={"hourly", "annual", "weekly"},
+        ),
+        "es": AreaProperties(
+            energy_cost_unsupplied=3000.0,
+            filter_synthesis={"monthly", "daily"},
+            filter_by_year={"hourly", "annual", "weekly"},
+        ),
+        "fr": AreaProperties(
+            energy_cost_unsupplied=3000.0,
+            filter_synthesis=set(),
+            filter_by_year={"hourly"},
+        ),
+        "it": AreaProperties(
+            energy_cost_unsupplied=3000.0,
+            filter_synthesis=set(),
+            filter_by_year={"hourly"},
+        ),
+    }
+
+    # Area ui
+    # todo
+
+    # Districts
+    # todo
+
+    # Load
+    # todo
+
+    # Thermal series
+    # todo
 
     # Thermal clusters
     expected_clusters = {
