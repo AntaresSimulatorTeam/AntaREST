@@ -11,6 +11,9 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -110,6 +113,13 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
             filter_year_by_year=[FilterOption.HOURLY],
         ),
     ]
+    series = file_study_dao.get_link_series("fr", "it")
+    expected_series = pd.DataFrame(data=np.zeros((8760, 8)))
+    expected_series[0] = 100000.0
+    expected_series[1] = 100000.0
+    expected_series[2] = 0.01
+    expected_series[3] = 0.01
+    assert series.equals(expected_series)
 
     # Binding constraints
     assert file_study_dao.get_all_constraints() == {}
