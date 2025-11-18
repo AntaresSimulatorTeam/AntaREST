@@ -825,18 +825,6 @@ class DuplicateSTStorageConstraintName(HTTPException):
         super().__init__(HTTPStatus.CONFLICT, f"The constraint '{constraint_id}' already exists in area '{area_id}'")
 
 
-class AreaReferencedInsideSTStorageAdditionalConstraints(HTTPException):
-    """
-    Exception raised when an area is not allowed to be deleted because it has inside some st-storage additional constraints.
-    """
-
-    def __init__(self, area_id: str) -> None:
-        super().__init__(
-            HTTPStatus.CONFLICT,
-            f"The Area '{area_id}' is not allowed to be deleted as it contains some short-term storage additional-constraints.",
-        )
-
-
 class STStorageAdditionalConstraintNotFound(HTTPException):
     def __init__(self, area_id: str, constraint_id: str) -> None:
         msg = f"The constraint '{constraint_id}' inside area {area_id} was not found."

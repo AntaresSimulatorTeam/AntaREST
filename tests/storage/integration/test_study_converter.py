@@ -12,6 +12,7 @@
 from pathlib import Path
 
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import AssetType, Link, LinkStyle, TransmissionCapacity
 from antarest.study.business.model.xpansion_model import (
@@ -141,6 +142,19 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
         "fr": expected_properties,
         "it": expected_properties,
     }
+    correlation_matrix = file_study_dao.get_hydro_correlation_matrix()
+    assert correlation_matrix.index == correlation_matrix.columns == ["de", "es", "fr", "it"]
+    assert correlation_matrix.data.tolist() == [
+        [1.0, 0.0, 0.25, 0.0],
+        [0.0, 1.0, 0.75, 0.12],
+        [0.25, 0.75, 1.0, 0.75],
+        [0.0, 0.12, 0.75, 1.0],
+    ]
+
+    for area_id in ["de", "es", "fr", "it"]:
+        assert file_study_dao.get_hydro_allocation(area_id) == HydroAllocation(
+            allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)]
+        )
 
     # User folder
     assert list(file_study_dao.get_all_user_resources()) == []
