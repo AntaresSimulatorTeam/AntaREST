@@ -223,7 +223,8 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     assert load.equals(expected_load)
 
     # Thermal series
-    # todo
+    thermal_series = file_study_dao.get_thermal_series("fr", "01_solar")
+    assert thermal_series.equals(pd.DataFrame(8760 * [2000.0]))
 
     # Thermal clusters
     expected_clusters = {
