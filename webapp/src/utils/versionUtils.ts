@@ -12,8 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import debug from "debug";
 import semver from "semver";
 import { isNumericValue } from "./numberUtils";
+
+const log = debug("antares:utils:versionUtils");
 
 export const ZERO_SEMVER = "0.0.0" as const;
 
@@ -42,8 +45,15 @@ export function toSemanticVersion(version: number | string) {
     return `${numberVerStr[0]}.${numberVerStr[1]}.${numberVerStr[2]}`;
   }
 
+  const semVer = semver.valid(semver.coerce(version));
+
   // e.g., "9.3" -> "9.3.0" or "9" -> "9.0.0"
-  return semver.valid(semver.coerce(version)) || ZERO_SEMVER;
+  if (semVer === null) {
+    log("toSemanticVersion(): invalid version value", version);
+    return ZERO_SEMVER;
+  }
+
+  return semVer;
 }
 
 /**
@@ -58,6 +68,7 @@ export function toNumberVersion(version: string) {
   const parsed = semver.parse(version);
 
   if (!parsed) {
+    log("toNumberVersion(): invalid semantic version", version);
     return NaN;
   }
 
@@ -79,7 +90,9 @@ export function toNumberVersion(version: string) {
  */
 export function compactSemanticVersion(version: string) {
   const parsed = semver.parse(version);
+
   if (!parsed) {
+    log("compactSemanticVersion(): invalid semantic version", version);
     return version;
   }
 
