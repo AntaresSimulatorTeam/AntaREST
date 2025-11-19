@@ -61,7 +61,6 @@ export function toNumberVersion(version: string) {
     return NaN;
   }
 
-  //
   return parsed.major * 100 + parsed.minor * 10 + parsed.patch;
 }
 
