@@ -18,7 +18,6 @@ from typing import Any
 
 import prometheus_client
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 from prometheus_client import (
     CollectorRegistry,
     Counter,
@@ -27,12 +26,10 @@ from prometheus_client import (
     make_asgi_app,
     multiprocess,
 )
-from pydantic import ValidationError
 from sqlalchemy import Engine, Pool, PoolProxiedConnection
 from sqlalchemy.event import listens_for
 from sqlalchemy.orm import Session, SessionTransaction, sessionmaker
 from sqlalchemy.pool import ConnectionPoolEntry
-from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from typing_extensions import override
 
@@ -237,18 +234,12 @@ def _add_metrics_middleware(registry: CollectorRegistry, application: FastAPI) -
         start_time = time.time()
         status_code = None
 
-        # In order to have the correct status code, we need to duplicate here the logic of exception handlers...
-        # Clearly this should be improved. However we have no reason to change that mapping soon.
         try:
             response = await call_next(request)
             status_code = response.status_code
-        except HTTPException as exc:
-            status_code = exc.status_code
-            raise
-        except (ValidationError, RequestValidationError):
-            status_code = HTTPStatus.UNPROCESSABLE_ENTITY.value
-            raise
         finally:
+            # starlette/fastapi handles exception first, so we should already get a proper response with a status here,
+            # except for "unhandled" exceptions, which are handled at the outermost level and translated to 500
             status_code = status_code or HTTPStatus.INTERNAL_SERVER_ERROR.value
 
             process_time = time.time() - start_time
