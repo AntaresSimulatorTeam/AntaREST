@@ -22,10 +22,10 @@ import {
 import * as api from "../../services/api/study";
 import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../../types/types";
 import {
-  getVariantsIdsByParent,
   getStudyMapsIds,
   getStudySynthesis,
   getStudySynthesisIds,
+  getDeepVariantsIds,
 } from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
@@ -159,8 +159,7 @@ export const refreshStudySynthesis =
 
     // Cleanup study synthesis and maps of descendants studies
     // when a parent study synthesis is refreshed the synthesis and maps of its descendants may be outdated
-    const variantsIdsByParent = getVariantsIdsByParent(state);
-    const variantsIds = getDeepVariantsIds(variantsIdsByParent, id);
+    const variantsIds = getDeepVariantsIds(state, id);
     const studySynthesisIds = getStudySynthesisIds(state);
     const studyMapsIds = getStudyMapsIds(state);
     variantsIds.forEach((id) => {
@@ -172,28 +171,6 @@ export const refreshStudySynthesis =
       }
     });
   };
-
-function getDeepVariantsIds(
-  variantsIdsByParent: Record<string, string[]>,
-  parentId: string,
-): string[] {
-  const result: string[] = [];
-  const stack: string[] = [...(variantsIdsByParent[parentId] ?? [])];
-
-  while (stack.length) {
-    const child = stack.pop();
-    if (child === undefined) {
-      continue;
-    }
-    result.push(child);
-
-    if (variantsIdsByParent[child]) {
-      stack.push(...variantsIdsByParent[child]);
-    }
-  }
-
-  return result;
-}
 
 ////////////////////////////////////////////////////////////////
 // Reducer

@@ -154,9 +154,7 @@ export const getVariantsIdsByParent = createSelector(getStudies, (studies) => {
       if (!parentId) {
         return acc;
       }
-      if (!acc[parentId]) {
-        acc[parentId] = [];
-      }
+      acc[parentId] ??= [];
       acc[parentId].push(id);
       return acc;
     },
@@ -164,6 +162,19 @@ export const getVariantsIdsByParent = createSelector(getStudies, (studies) => {
   );
 });
 
+export const getDeepVariantsIds = createSelector(
+  getVariantsIdsByParent,
+  (state: AppState, parentId: string) => parentId,
+  (variantsIdsByParent, parentId) => getDeepVariantsIdsRec(variantsIdsByParent, parentId),
+);
+
+function getDeepVariantsIdsRec(
+  variantsIdsByParent: Record<string, string[]>,
+  parentId: string,
+): string[] {
+  const children = variantsIdsByParent[parentId] ?? [];
+  return children.flatMap((child) => [child, ...getDeepVariantsIdsRec(variantsIdsByParent, child)]);
+}
 ////////////////////////////////////////////////////////////////
 // Users
 ////////////////////////////////////////////////////////////////
