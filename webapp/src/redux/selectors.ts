@@ -142,6 +142,28 @@ export const getCurrentStudy = createSelector(
   (studies, current) => studies[current],
 );
 
+/**
+ * Returns a mapping of study IDs to their children study IDs.
+ *
+ * @param state The application state.
+ * @returns Example: { "parentStudyId": ["childStudyId1", "childStudyId2"], ... }
+ */
+export const getStudyIdToChildrenIds = createSelector(getStudies, (studies) => {
+  return studies.reduce(
+    (acc, { id, parentId }) => {
+      if (!parentId) {
+        return acc;
+      }
+      if (!acc[parentId]) {
+        acc[parentId] = [];
+      }
+      acc[parentId].push(id);
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
+});
+
 ////////////////////////////////////////////////////////////////
 // Users
 ////////////////////////////////////////////////////////////////

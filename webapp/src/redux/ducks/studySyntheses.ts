@@ -22,7 +22,12 @@ import {
 } from "@reduxjs/toolkit";
 import * as api from "../../services/api/study";
 import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../../types/types";
-import { getStudyMapsIds, getStudySynthesis, getStudySynthesisIds } from "../selectors";
+import {
+  getStudyIdToChildrenIds,
+  getStudyMapsIds,
+  getStudySynthesis,
+  getStudySynthesisIds,
+} from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
 import { deleteStudyMap, setStudyMap } from "./studyMaps";
@@ -144,6 +149,7 @@ export const refreshStudySynthesis =
     const state = getState();
     const id = "studyId" in payload ? payload.studyId : payload.id;
 
+    // Refresh study synthesis if already loaded
     if (getStudySynthesisIds(state).includes(id)) {
       dispatch(setStudySynthesis(id));
 
@@ -152,18 +158,43 @@ export const refreshStudySynthesis =
       }
     }
 
-    const variants = await getVariants(id);
-
-    variants.forEach(({ id }) => {
-      if (getStudySynthesisIds(state).includes(id)) {
+    // Cleanup study synthesis and maps of descendants studies
+    // when a parent study synthesis is refreshed the synthesis and maps of its descendants may be outdated
+    const studyIdToChildrenIds = getStudyIdToChildrenIds(state);
+    const descendantsIds = getDescendantsIds(studyIdToChildrenIds, id);
+    const studySynthesisIds = getStudySynthesisIds(state);
+    const studyMapsIds = getStudyMapsIds(state);
+    descendantsIds.forEach((id) => {
+      if (studySynthesisIds.includes(id)) {
         dispatch(deleteStudySynthesis(id));
-
-        if (getStudyMapsIds(state).includes(id)) {
+        if (studyMapsIds.includes(id)) {
           dispatch(deleteStudyMap(id));
         }
       }
     });
   };
+
+function getDescendantsIds(
+  studyIdToChildrenIds: Record<string, string[]>,
+  parentId: string,
+): string[] {
+  const result: string[] = [];
+  const stack: string[] = [...(studyIdToChildrenIds[parentId] ?? [])];
+
+  while (stack.length) {
+    const child = stack.pop();
+    if (child === undefined) {
+      continue;
+    }
+    result.push(child);
+
+    if (studyIdToChildrenIds[child]) {
+      stack.push(...studyIdToChildrenIds[child]);
+    }
+  }
+
+  return result;
+}
 
 ////////////////////////////////////////////////////////////////
 // Reducer

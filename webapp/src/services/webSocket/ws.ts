@@ -237,15 +237,10 @@ function makeStudyJobStatusListener(dispatch: AppDispatch): WsEventListener {
 }
 
 function makeStudyDataListener(dispatch: AppDispatch): WsEventListener {
-  const threeSeconds = 3000;
-  const debouncedDispatch = debounce((payload) => {
-    dispatch(refreshStudySynthesis(payload));
-  }, threeSeconds);
-
   return function listener(e: WsEvent) {
     switch (e.type) {
       case WsEventType.StudyDataEdited:
-        debouncedDispatch(e.payload);
+        dispatch(refreshStudySynthesis(e.payload));
         break;
     }
   };
