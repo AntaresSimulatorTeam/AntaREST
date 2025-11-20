@@ -22,7 +22,7 @@ import {
 import * as api from "../../services/api/study";
 import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../../types/types";
 import {
-  getStudyIdToChildrenIds as getVariantsIdsByParent,
+  getVariantsIdsByParent,
   getStudyMapsIds,
   getStudySynthesis,
   getStudySynthesisIds,
@@ -160,10 +160,10 @@ export const refreshStudySynthesis =
     // Cleanup study synthesis and maps of descendants studies
     // when a parent study synthesis is refreshed the synthesis and maps of its descendants may be outdated
     const variantsIdsByParent = getVariantsIdsByParent(state);
-    const descendantsIds = getDeepVariantsIds(variantsIdsByParent, id);
+    const variantsIds = getDeepVariantsIds(variantsIdsByParent, id);
     const studySynthesisIds = getStudySynthesisIds(state);
     const studyMapsIds = getStudyMapsIds(state);
-    descendantsIds.forEach((id) => {
+    variantsIds.forEach((id) => {
       if (studySynthesisIds.includes(id)) {
         dispatch(deleteStudySynthesis(id));
         if (studyMapsIds.includes(id)) {

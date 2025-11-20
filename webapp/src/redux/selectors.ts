@@ -148,7 +148,7 @@ export const getCurrentStudy = createSelector(
  * @param state The application state.
  * @returns Example: { "parentStudyId": ["childStudyId1", "childStudyId2"], ... }
  */
-export const getStudyIdToChildrenIds = createSelector(getStudies, (studies) => {
+export const getVariantsIdsByParent = createSelector(getStudies, (studies) => {
   return studies.reduce(
     (acc, { id, parentId }) => {
       if (!parentId) {
