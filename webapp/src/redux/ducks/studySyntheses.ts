@@ -22,7 +22,7 @@ import {
 import * as api from "../../services/api/study";
 import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../../types/types";
 import {
-  getStudyIdToChildrenIds,
+  getStudyIdToChildrenIds as getVariantsIdsByParent,
   getStudyMapsIds,
   getStudySynthesis,
   getStudySynthesisIds,
@@ -159,8 +159,8 @@ export const refreshStudySynthesis =
 
     // Cleanup study synthesis and maps of descendants studies
     // when a parent study synthesis is refreshed the synthesis and maps of its descendants may be outdated
-    const studyIdToChildrenIds = getStudyIdToChildrenIds(state);
-    const descendantsIds = getDescendantsIds(studyIdToChildrenIds, id);
+    const variantsIdsByParent = getVariantsIdsByParent(state);
+    const descendantsIds = getDeepVariantsIds(variantsIdsByParent, id);
     const studySynthesisIds = getStudySynthesisIds(state);
     const studyMapsIds = getStudyMapsIds(state);
     descendantsIds.forEach((id) => {
@@ -173,12 +173,12 @@ export const refreshStudySynthesis =
     });
   };
 
-function getDescendantsIds(
-  studyIdToChildrenIds: Record<string, string[]>,
+function getDeepVariantsIds(
+  variantsIdsByParent: Record<string, string[]>,
   parentId: string,
 ): string[] {
   const result: string[] = [];
-  const stack: string[] = [...(studyIdToChildrenIds[parentId] ?? [])];
+  const stack: string[] = [...(variantsIdsByParent[parentId] ?? [])];
 
   while (stack.length) {
     const child = stack.pop();
@@ -187,8 +187,8 @@ function getDescendantsIds(
     }
     result.push(child);
 
-    if (studyIdToChildrenIds[child]) {
-      stack.push(...studyIdToChildrenIds[child]);
+    if (variantsIdsByParent[child]) {
+      stack.push(...variantsIdsByParent[child]);
     }
   }
 
