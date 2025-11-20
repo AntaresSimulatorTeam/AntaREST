@@ -180,7 +180,9 @@ def add_exception_handlers(application: FastAPI) -> None:
         Returns:
             The JSON response containing error details.
         """
-        logger.error("Unexpected Exception", exc_info=exc)
+
+        # Note: we don't log here, because the exception is supposed to be already logged by the logging
+        # middleware, with more context
         return JSONResponse(
             content={
                 "description": f"Unexpected server error: {exc}",
