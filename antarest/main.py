@@ -235,8 +235,6 @@ def fastapi_app(
     # So we manually instantiate it here.
     DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
 
-    application.add_middleware(LoggingMiddleware)
-
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
     def get_config() -> JwtSettings:
@@ -290,6 +288,10 @@ def fastapi_app(
         @application.get("/", include_in_schema=False)
         def home(request: Request) -> Any:
             return ""
+
+    # It's important to add the logging middleware last, so that any log written or exception thrown
+    # by inner middlewares are correctly logged with the context of the request.
+    application.add_middleware(LoggingMiddleware)
 
     return application, services
 
