@@ -13,7 +13,6 @@
  */
 
 import type { Job } from "@/services/api/launcher/jobs/types";
-import { getVariants } from "@/services/api/variant";
 import {
   createAction,
   createAsyncThunk,

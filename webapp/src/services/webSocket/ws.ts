@@ -18,7 +18,6 @@ import { includes } from "@/utils/tsUtils";
 import debug from "debug";
 import { enqueueSnackbar, type VariantType } from "notistack";
 import * as R from "ramda";
-import debounce from "lodash/debounce";
 import * as RA from "ramda-adjunct";
 import { refresh as refreshUser } from "../../redux/ducks/auth";
 import { deleteStudy, setStudy } from "../../redux/ducks/studies";
