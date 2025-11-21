@@ -18,6 +18,7 @@ import pandas as pd
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.study.business.output.utils import (
+    MCYEAR_COL,
     MCAllAreasQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
@@ -29,8 +30,6 @@ from antarest.study.business.output.utils import (
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 # noinspection SpellCheckingInspection
-MCYEAR_COL = "mcYear"
-"""Column name for the Monte Carlo year."""
 AREA_COL = "area"
 """Column name for the area."""
 LINK_COL = "link"

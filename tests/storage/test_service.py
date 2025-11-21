@@ -94,6 +94,7 @@ from antarest.study.storage.utils import (
     is_output_archived,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -189,6 +190,13 @@ def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMeta
         doc=None,
         folder=folder_path,
     )
+
+
+def fill_study_service_with_command_context(study_service: StudyService, command_context: CommandContext) -> None:
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.command_factory = Mock(spec=CommandFactory)
+    variant_study_service.command_factory.command_context = command_context
+    study_service.storage_service.variant_study_service = variant_study_service
 
 
 def test_study_listing(db_session: Session) -> None:
@@ -650,7 +658,7 @@ def test_save_metadata() -> None:
 
 
 @with_jwt_user
-def test_download_output() -> None:
+def test_download_output(command_context: CommandContext) -> None:
     study_service = Mock()
     repository = Mock(spec=StudyMetadataRepository)
 
@@ -714,6 +722,7 @@ def test_download_output() -> None:
     storage = OutputStorageDispatcher(
         service.storage_service.raw_study_service, service.storage_service.variant_study_service
     )
+    fill_study_service_with_command_context(service, command_context)
     output_service = OutputService(
         service,
         storage,
@@ -1504,7 +1513,7 @@ def test_create_command(
 
 
 @with_admin_user
-def test_unarchive_output(tmp_path: Path) -> None:
+def test_unarchive_output(tmp_path: Path, command_context: CommandContext) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
     study_mock = Mock(
@@ -1538,6 +1547,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
     storage = OutputStorageDispatcher(
         service.storage_service.raw_study_service, service.storage_service.variant_study_service
     )
+    fill_study_service_with_command_context(service, command_context)
     output_service = OutputService(
         service,
         storage,
@@ -1567,7 +1577,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
 
 
 @with_admin_user
-def test_archive_output_locks(tmp_path: Path) -> None:
+def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
     study_mock = Mock(
@@ -1645,6 +1655,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
     storage = OutputStorageDispatcher(
         service.storage_service.raw_study_service, service.storage_service.variant_study_service
     )
+    fill_study_service_with_command_context(service, command_context)
     output_service = OutputService(
         service,
         storage,
