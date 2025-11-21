@@ -168,6 +168,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         "description": "The output variables view is not materialized in DB yet",
         "exception": "HTTPException",
     }
+    assert res.status_code == 404
     # Materialize the data
     task_id = client.post(f"{url}/materialize", params=query_params).json()
     task = wait_task_completion(client, user_access_token, task_id)

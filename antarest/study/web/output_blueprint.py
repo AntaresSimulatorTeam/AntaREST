@@ -552,6 +552,11 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
     ) -> OutputVariablesView:
+        """
+        Fetches the variables view for a given output and a given configuration.
+        If the view does not exist in DB yet, raises an HTTP 404 error.
+        The user will have to use the endpoint `POST /variables-views/materialize` with the same configuration first.
+        """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         return output_service.get_output_variables_view(
@@ -585,6 +590,11 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
     ) -> str:
+        """
+        Materializes a variables view for a given output and a given configuration.
+        If the view is already registered in DB, raise an HTTP Conflict error.
+        The user should use the endpoint `GET /variables-views/data` with the same configuration.
+        """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         return output_service.materialize_output_variables_view(
