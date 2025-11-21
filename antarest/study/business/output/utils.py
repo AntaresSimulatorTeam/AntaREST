@@ -20,6 +20,9 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
+"""Column name for the Monte Carlo year."""
+MCYEAR_COL = "mcYear"
+
 
 class MCRoot(Enum):
     MC_IND = "mc-ind"
