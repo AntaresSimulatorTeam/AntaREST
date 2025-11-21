@@ -218,13 +218,13 @@ class StudyConverter:
 
             # Short-term storages
             if self._study_version >= STUDY_VERSION_8_6:
-                storages = list(st_storages[area_id].values())
+                storages = list(st_storages.get(area_id, {}).values())
                 self._convert_short_term_storages(area_id, storages, st_storages_constraints.get(area_id, {}))
 
     def _convert_thermal_clusters(self, area_id: str, thermals: list[ThermalCluster]) -> None:
         self._new_dao.save_thermals(area_id, thermals)
         for thermal in thermals:
-            thermal_id = thermal.id
+            thermal_id = thermal.id.lower()
             prepro_id = self._matrix_service.create(self._source_dao.get_thermal_prepro(area_id, thermal_id))
             self._new_dao.save_thermal_prepro(area_id, thermal_id, prepro_id)
 
@@ -244,8 +244,9 @@ class StudyConverter:
     def _convert_renewable_clusters(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
         self._new_dao.save_renewables(area_id, renewables)
         for renewable in renewables:
-            series_id = self._matrix_service.create(self._source_dao.get_renewable_series(area_id, renewable.id))
-            self._new_dao.save_renewable_series(area_id, renewable.id, series_id)
+            renewable_id = renewable.id.lower()
+            series_id = self._matrix_service.create(self._source_dao.get_renewable_series(area_id, renewable_id))
+            self._new_dao.save_renewable_series(area_id, renewable_id, series_id)
 
     def _convert_short_term_storages(
         self, area_id: str, storages: list[STStorage], constraints: dict[str, list[STStorageAdditionalConstraint]]

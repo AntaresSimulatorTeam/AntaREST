@@ -2596,7 +2596,7 @@ class StudyService:
 
         return StudyDataDTO.model_validate(obj)
 
-    def write_study_as_file_study(self, study_id: str, path: Path) -> None:
+    def write_study_as_file_study(self, study_id: str, path: Path, with_outputs: bool = False) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         source_dao = self.get_study_interface(study).get_study_dao()
@@ -2616,7 +2616,7 @@ class StudyService:
         converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
         converter.convert_study_inputs()
 
-        # Copy the `output` folder
+        # Copy the `output` folder if asked
         output_src_path = Path(study.path) / "output"
-        if output_src_path.exists():
+        if with_outputs and output_src_path.exists():
             shutil.copytree(output_src_path, path / "output", dirs_exist_ok=True)

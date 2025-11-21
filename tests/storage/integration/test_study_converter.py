@@ -62,7 +62,7 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     """
     source_path = tmp_path / "studies" / UUID
     new_path = tmp_path / "studies" / "new_study" / UUID
-    storage_service.write_study_as_file_study(UUID, new_path)
+    storage_service.write_study_as_file_study(UUID, new_path, with_outputs=True)
 
     # Create DAO based on new study to test the study content.
     factory = storage_service.storage_service.raw_study_service.study_factory
@@ -384,3 +384,8 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     # Outputs
     outputs_before = [f.name for f in (source_path / "output").iterdir()]
     assert [f.name for f in (new_path / "output").iterdir()] == outputs_before
+
+    # Ensures the outputs aren't copied when didn't asked to
+    new_path = tmp_path / "studies" / "new_study2" / UUID
+    storage_service.write_study_as_file_study(UUID, new_path, with_outputs=False)
+    assert not list((new_path / "output").iterdir())
