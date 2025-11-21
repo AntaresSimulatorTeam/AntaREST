@@ -27,7 +27,7 @@ export interface SolverPresetsDTO {
   useOptim1BasisOptim2?: boolean;
 }
 
-// This type use semantic versioning (see `adaptSolverPresetsDtoToSolverPresets()` function)
+// This type uses semantic versioning (see `adaptSolverPresetsDtoToSolverPresets()` function)
 export type SolverPresets = SolverPresetsDTO;
 
 export type SolverPresetsCreationDTO = Omit<SolverPresetsDTO, "id">;

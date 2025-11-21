@@ -164,14 +164,24 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
 
       // StudyCreator
       const { name, version, groups, publicMode, tags } = arg;
+
+      const numVer = toNumberVersion(version);
+
+      if (Number.isNaN(numVer)) {
+        throw new Error(`Invalid version '${version}'`);
+      }
+
       // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-      const studyId = await api.createStudy(name, toNumberVersion(version), groups);
+      const studyId = await api.createStudy(name, numVer, groups);
+
       if (publicMode) {
         await api.changePublicMode(studyId, publicMode);
       }
+
       if (tags && tags.length > 0) {
         await api.updateStudyMetadata(studyId, { tags });
       }
+
       return api.getStudyMetadata(studyId);
     } catch (err) {
       return rejectWithValue(err);
