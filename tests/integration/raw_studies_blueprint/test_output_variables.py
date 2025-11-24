@@ -175,7 +175,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     assert task.status == TaskStatus.COMPLETED
     # Asks for the data. This time, it should succeed.
     res = client.get(f"{url}/data", params=query_params)
-    assert res.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": [1, 2]}
+    assert res.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": [0, 1]}
     # Try to materialize even if the view is already in the database. Should raise an exception
     res = client.post(f"{url}/materialize", params=query_params)
     assert res.json() == {
@@ -195,7 +195,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
     res = client.get(f"{url}/data", params=query_params)
-    assert res.json() == {"columns": [1, 2], "data": [[167.0, 167.0], [167.0, 167.0]]}
+    assert res.json() == {"columns": [0, 1], "data": [[167.0, 167.0], [167.0, 167.0]]}
 
     # Links
     query_params = {
@@ -209,7 +209,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
     res = client.get(f"{url}/data", params=query_params)
-    assert res.json() == {"data": 336 * [[0.0, 0.0]], "columns": [1, 2]}
+    assert res.json() == {"data": 336 * [[0.0, 0.0]], "columns": [0, 1]}
 
     # Ensures we saved the data inside the DB and that we're still able to read them
     with db():

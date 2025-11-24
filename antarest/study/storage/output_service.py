@@ -139,7 +139,6 @@ class OutputVariablesViewMaterializationTask:
         # Transform the dataframe to save only what's needed inside DB
         dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
         df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=self._variable_name)
-        df_pivot.index = pd.RangeIndex(len(df_pivot))  # matrix-store does not support dataframes with specific index
         matrix_id = self._output_service._matrix_service.create(df_pivot)
 
         # Save the model inside DB
@@ -785,7 +784,9 @@ class OutputService:
             db.session.commit()
 
             # Return the dataframe
-            return self._matrix_service.get(db_model.matrix_id)
+            dataframe = self._matrix_service.get(db_model.matrix_id)
+            dataframe.columns = pd.RangeIndex(len(dataframe.columns))  # type: ignore
+            return dataframe
 
         raise HTTPException(status_code=404, detail="The output variables view is not materialized in DB yet")
 
