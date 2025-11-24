@@ -30,7 +30,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.np_array import NpArray
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 Variables: TypeAlias = Annotated[list[str], BeforeValidator(lambda x: sorted(x))]
@@ -122,11 +121,6 @@ class OutputVariablesType(StrEnum):
     THERMAL = "thermal"
     RENEWABLE = "renewable"
     SHORT_TERM_STORAGE = "st_storage"
-
-
-class OutputVariablesView(AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
-    data: NpArray
-    columns: list[int]
 
 
 class OutputVariablesViewsModel(Base):
