@@ -28,7 +28,7 @@ from prometheus_client import (
 )
 from sqlalchemy import Engine, Pool, PoolProxiedConnection
 from sqlalchemy.event import listens_for
-from sqlalchemy.orm import Session, SessionTransaction, sessionmaker
+from sqlalchemy.orm import ORMExecuteState, Session, SessionTransaction, sessionmaker
 from sqlalchemy.pool import ConnectionPoolEntry
 from starlette.requests import Request
 from typing_extensions import override
@@ -195,6 +195,11 @@ def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessio
         if "start_time" in session.info:
             transaction_duration_histo.labels(WORKER_ID).observe(time.time() - session.info["start_time"])
             del session.info["start_time"]
+
+    @listens_for(target, "do_orm_execute")
+    def on_select(orm_execute_state: ORMExecuteState) -> None:
+        if orm_execute_state.is_select:
+            events_counter.labels(WORKER_ID, "select").inc()
 
 
 def _add_metrics_middleware(registry: CollectorRegistry, application: FastAPI) -> None:
