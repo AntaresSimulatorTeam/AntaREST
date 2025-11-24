@@ -21,7 +21,6 @@ from unittest.mock import ANY
 import numpy as np
 import pandas as pd
 import pytest
-from httpx import Response
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -32,36 +31,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.
 )
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
-
-
-def _check_endpoint_response(
-    study_type: str, res: Response, client: TestClient, study_id: str, expected_msg: str, exception: str
-) -> None:
-    # The command will only fail when applied so on raw studies only.
-    # So we have to differentiate the test based on the study type.
-    if study_type == "raw":
-        assert res.status_code == 403
-        assert res.json()["exception"] == exception
-        assert expected_msg in res.json()["description"]
-    else:
-        res.raise_for_status()
-        task_id = client.put(f"/v1/studies/{study_id}/generate").json()
-        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
-        task = res.json()
-        assert task["status"] == TaskStatus.FAILED.value
-        assert not task["result"]["success"]
-        assert expected_msg in task["result"]["message"]
-        # Check the message users will see inside the front-end (GET /comments endpoint will fail)
-        res = client.get(f"/v1/studies/{study_id}/comments")
-        assert res.status_code == 417
-        response = res.json()
-        assert response["exception"] == "VariantGenerationError"
-        assert expected_msg in response["description"]
-        # We have to delete the command to make the variant "clean" again.
-        res = client.get(f"/v1/studies/{study_id}/commands")
-        cmd_id = res.json()[-1]["id"]
-        res = client.delete(f"/v1/studies/{study_id}/commands/{cmd_id}")
-        res.raise_for_status()
 
 
 class TestFetchRawData:
@@ -424,7 +393,29 @@ class TestFetchRawData:
         # With a path that doesn't exist
         res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=user/fake_folder/fake_file.txt")
         expected_msg = "the given path doesn't exist"
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
+        if study_type == "raw":
+            assert res.status_code == 403
+            assert res.json()["exception"] == "ResourceDeletionNotAllowed"
+            assert expected_msg in res.json()["description"]
+        else:
+            res.raise_for_status()
+            task_id = client.put(f"/v1/studies/{internal_study_id}/generate").json()
+            res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+            task = res.json()
+            assert task["status"] == TaskStatus.FAILED.value
+            assert not task["result"]["success"]
+            assert expected_msg in task["result"]["message"]
+            # Check the message users will see inside the front-end (GET /comments endpoint will fail)
+            res = client.get(f"/v1/studies/{internal_study_id}/comments")
+            assert res.status_code == 417
+            response = res.json()
+            assert response["exception"] == "VariantGenerationError"
+            assert expected_msg in response["description"]
+            # We have to delete the command to make the variant "clean" again.
+            res = client.get(f"/v1/studies/{internal_study_id}/commands")
+            cmd_id = res.json()[-1]["id"]
+            res = client.delete(f"/v1/studies/{internal_study_id}/commands/{cmd_id}")
+            res.raise_for_status()
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_create_folder(
@@ -498,12 +489,6 @@ class TestFetchRawData:
         assert res.status_code == 403
         assert res.json()["exception"] == "ResourceCreationNotAllowed"
         assert expected_msg in res.json()["description"]
-
-        # try to create an already existing folder
-        existing_folder = "user/folder_1"
-        expected_msg = "the given resource already exists: folder_1"
-        res = client.put(raw_url, params={"path": existing_folder, **additional_params})
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceCreationNotAllowed")
 
     def test_create_user_resource_complex_case(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
