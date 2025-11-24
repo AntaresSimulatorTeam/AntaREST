@@ -101,6 +101,7 @@ function CreateCandidateDialog(props: PropType) {
               name="link"
               control={control}
               rules={{ required: t("form.field.required") }}
+              variant="outlined"
               fullWidth
             />
             <NumberFE
@@ -125,11 +126,19 @@ function CreateCandidateDialog(props: PropType) {
                 : t("xpansion.maxInvestments")
             }
           >
-            <ButtonGroup disableElevation color="info" sx={{ py: 2 }}>
-              <Button onClick={handleToggle} variant={!isToggled ? "outlined" : "contained"}>
+            <ButtonGroup disableElevation color="info" sx={{ py: 1, width: 1 }}>
+              <Button
+                onClick={handleToggle}
+                variant={!isToggled ? "outlined" : "contained"}
+                sx={{ flex: 1 }}
+              >
                 {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
               </Button>
-              <Button onClick={handleToggle} variant={isToggled ? "outlined" : "contained"}>
+              <Button
+                onClick={handleToggle}
+                variant={isToggled ? "outlined" : "contained"}
+                sx={{ flex: 1 }}
+              >
                 {t("xpansion.maxInvestments")}
               </Button>
             </ButtonGroup>
