@@ -13,7 +13,7 @@
 import logging
 import shutil
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence

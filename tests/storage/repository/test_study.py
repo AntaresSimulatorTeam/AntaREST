@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 

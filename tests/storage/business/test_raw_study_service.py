@@ -183,7 +183,6 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
         study_factory=study_factory,
     )
 
-    now = current_time()
     metadata = create_raw_study(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,

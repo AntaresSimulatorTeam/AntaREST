@@ -32,7 +32,6 @@ from antarest.core.roles import RoleType
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
 from antarest.study.service import VariantStudyInterface
@@ -763,7 +762,6 @@ class TestSnapshotGenerator:
         # Prepare a RAW study in the temporary folder
         study_dir = tmp_path / "my-study"
         root_study_id = str(uuid.uuid4())
-        now = current_time()
         root_study = create_raw_study(
             id=root_study_id,
             workspace="default",
