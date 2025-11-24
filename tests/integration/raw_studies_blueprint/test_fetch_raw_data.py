@@ -516,6 +516,49 @@ class TestFetchRawData:
         res = client.put(raw_url, params={"path": existing_folder, **additional_params})
         _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceCreationNotAllowed")
 
+    def test_create_user_resource_complex_case(self, client: TestClient, user_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # create a Raw study
+        res = client.post("/v1/studies?name=MyStudy")
+        assert res.status_code == 201
+        raw_study_id = res.json()
+
+        # Create a variant from it
+        res = client.post(f"/v1/studies/{raw_study_id}/variants?name=Variant")
+        assert res.status_code == 200
+        variant_study_id = res.json()
+
+        # Create a user resource inside the variant
+        content = b"OKC"
+        res = client.put(
+            f"/v1/studies/{variant_study_id}/raw",
+            params={"path": "user/test.txt", "create_missing": True},
+            files={"file": io.BytesIO(content)},
+        )
+        assert res.status_code == 204
+
+        # Ensures the variant generation succeeds.
+        task_id = client.put(f"/v1/studies/{variant_study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        task = res.json()
+        assert task["status"] == TaskStatus.COMPLETED.value
+
+        # Creates another user resource at the same path inside the parent study
+        content = b"GSW"
+        res = client.put(
+            f"/v1/studies/{raw_study_id}/raw",
+            params={"path": "user/test.txt", "create_missing": True},
+            files={"file": io.BytesIO(content)},
+        )
+        assert res.status_code == 204
+
+        # Ensures the variant generation still succeeds.
+        task_id = client.put(f"/v1/studies/{variant_study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        task = res.json()
+        assert task["status"] == TaskStatus.COMPLETED.value
+
     def test_retrieve_from_archive(self, client: TestClient, user_access_token: str) -> None:
         # client headers
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
