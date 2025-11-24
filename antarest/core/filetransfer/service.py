@@ -35,7 +35,6 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_current_user, require_current_user
 
@@ -230,9 +229,8 @@ class FileTransferManager:
 
             # disable download variable typing since it will always be defined
             while time.time() < end and not download.ready and not download.failed:
-                with db():  # needs db context to refresh download
-                    download = self.repository.get(download_id)
-                    assert download is not None
+                download = self.repository.get(download_id)
+                assert download is not None
                 time.sleep(2)
 
         if download.failed:
