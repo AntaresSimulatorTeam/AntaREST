@@ -13,9 +13,9 @@
 import uuid
 from datetime import datetime
 from enum import Enum, StrEnum
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Annotated, Any, List, Optional, TypeAlias
 
-from pydantic import field_validator
+from pydantic import BeforeValidator, PlainSerializer, field_validator
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
@@ -59,6 +59,26 @@ class TaskStatus(Enum):
             TaskStatus.TIMEOUT,
         ]
 
+    @classmethod
+    def parse(cls, other: object) -> "TaskStatus":
+        if isinstance(other, TaskStatus):
+            return TaskStatus(other)
+        if isinstance(other, str) or isinstance(other, int):
+            if other in TaskStatus:
+                return TaskStatus[other]
+            raise ValueError(f"Invalid status value : {other}")
+        else:
+            raise TypeError(f"Invalid status type: {type(other)!r}")
+
+
+def _format_task_status(s: TaskStatus) -> str:
+    return f"{s.value} : {s.name}"
+
+
+TaskStatusStr: TypeAlias = Annotated[
+    TaskStatus, BeforeValidator(TaskStatus.parse), PlainSerializer(_format_task_status, return_type=str)
+]
+
 
 class TaskResult(AntaresBaseModel, extra="forbid"):
     success: bool
@@ -100,7 +120,7 @@ class TaskDTO(AntaresBaseModel, extra="forbid"):
 
 
 class TaskListFilter(AntaresBaseModel, extra="forbid"):
-    status: List[TaskStatus] = []
+    status: List[TaskStatusStr] = []
     name: Optional[str] = None
     type: List[TaskType] = []
     ref_id: Optional[str] = None
