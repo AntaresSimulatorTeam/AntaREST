@@ -28,6 +28,7 @@ from antarest.core.metrics import (
     _add_metrics_middleware,
 )
 from antarest.core.tasks.model import TaskStatus, TaskType
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.main import add_exception_handlers
 
 
@@ -288,6 +289,29 @@ def test_db_connection_metrics_preping():
 
     assert _get_value(registry, "db_connections_used") == 0
     assert _get_value(registry, "db_connections_idle") == 1
+
+
+@pytest.mark.skip(reason="to be run manually with a local postgres server in debug mode")
+def test_db_transaction_is_closed_on_server_disconnect():
+    engine = create_engine("postgresql+psycopg2://postgres:somepass@127.0.0.1:5432/postgres", pool_pre_ping=True)
+
+    session_factory = sessionmaker(bind=engine)
+
+    registry = CollectorRegistry()
+    _add_db_session_metrics(registry, session_factory)
+
+    try:
+        with db(session_factory):
+            db.session.execute(text("DROP TABLE IF EXISTS test"))
+            db.session.execute(text("CREATE TABLE test (id INTEGER PRIMARY KEY)"))
+
+            # Put a breakpoint here and restart postgres server before continuing
+            assert _get_value(registry, "db_transactions_current") == 1
+    except Exception:
+        pass
+
+    # check that the DB transaction count is correctly decreased
+    assert _get_value(registry, "db_transactions_current") == 0
 
 
 def test_db_session_metrics():
