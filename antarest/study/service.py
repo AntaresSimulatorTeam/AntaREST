@@ -1567,12 +1567,7 @@ class StudyService:
                 permissions=PermissionInfo.from_study(study),
             )
         )
-        logger.info(
-            "data %s on study %s updated by user %s",
-            url,
-            uuid,
-            get_user_id(),
-        )
+        logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
         return cast(JSON, new)
 
     def change_owner(self, study_id: str, owner_id: int) -> None:

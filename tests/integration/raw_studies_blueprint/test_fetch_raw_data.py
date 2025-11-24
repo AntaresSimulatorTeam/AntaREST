@@ -530,11 +530,11 @@ class TestFetchRawData:
         variant_study_id = res.json()
 
         # Create a user resource inside the variant
-        content = b"OKC"
+        variant_content = b"OKC"
         res = client.put(
             f"/v1/studies/{variant_study_id}/raw",
             params={"path": "user/test.txt", "create_missing": True},
-            files={"file": io.BytesIO(content)},
+            files={"file": io.BytesIO(variant_content)},
         )
         assert res.status_code == 204
 
@@ -545,11 +545,11 @@ class TestFetchRawData:
         assert task["status"] == TaskStatus.COMPLETED.value
 
         # Creates another user resource at the same path inside the parent study
-        content = b"GSW"
+        parent_content = b"GSW"
         res = client.put(
             f"/v1/studies/{raw_study_id}/raw",
             params={"path": "user/test.txt", "create_missing": True},
-            files={"file": io.BytesIO(content)},
+            files={"file": io.BytesIO(parent_content)},
         )
         assert res.status_code == 204
 
@@ -558,6 +558,10 @@ class TestFetchRawData:
         res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
         task = res.json()
         assert task["status"] == TaskStatus.COMPLETED.value
+
+        # Checks the file content. It should be `variant_content` and not `parent_content`
+        res = client.get(f"/v1/studies/{variant_study_id}/raw?path=user/test.txt")
+        assert res.content == variant_content
 
     def test_retrieve_from_archive(self, client: TestClient, user_access_token: str) -> None:
         # client headers
