@@ -780,7 +780,6 @@ class OutputService:
             db_model.last_read = current_time()
             db.session.merge(db_model)
             db.session.commit()
-            db.session.refresh(db_model)
 
             # Return the view
             dataframe = self._matrix_service.get(db_model.matrix_id)
