@@ -395,43 +395,42 @@ def get_output_view_inside_db(
     frequency: MatrixFrequency,
     output_identifier: OutputIdentifier,
 ) -> OutputVariablesViewsModel | None:
-    with db():
-        q = db.session.query(OutputVariablesViewsModel)
-        q = q.filter(OutputVariablesViewsModel.study_id == study_id)
-        q = q.filter(OutputVariablesViewsModel.output_id == output_id)
-        q = q.filter(OutputVariablesViewsModel.type == variable_type)
-        q = q.filter(OutputVariablesViewsModel.frequency == frequency)
-        q = q.filter(OutputVariablesViewsModel.variable_name == variable_name)
+    q = db.session.query(OutputVariablesViewsModel)
+    q = q.filter(OutputVariablesViewsModel.study_id == study_id)
+    q = q.filter(OutputVariablesViewsModel.output_id == output_id)
+    q = q.filter(OutputVariablesViewsModel.type == variable_type)
+    q = q.filter(OutputVariablesViewsModel.frequency == frequency)
+    q = q.filter(OutputVariablesViewsModel.variable_name == variable_name)
 
-        match output_identifier:
-            case AreaOutputIdentifier():
-                filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
-            case ThermalClusterOutputIdentifier():
-                filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
-                sub_id = output_identifier.get_sub_id_for_aggregation()
-                assert sub_id is not None
-                filters.append((OutputVariablesViewsModel.thermal_id, sub_id))
-            case RenewableClusterOutputIdentifier():
-                filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
-                sub_id = output_identifier.get_sub_id_for_aggregation()
-                assert sub_id is not None
-                filters.append((OutputVariablesViewsModel.renewable_id, sub_id))
-            case ShortTermStorageOutputIdentifier():
-                filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
-                sub_id = output_identifier.get_sub_id_for_aggregation()
-                assert sub_id is not None
-                filters.append((OutputVariablesViewsModel.st_storage_id, sub_id))
-            case LinkOutputIdentifier():
-                area_from_id, area_to_id = output_identifier.get_id_for_aggregation().split(" - ")
-                filters = [(OutputVariablesViewsModel.area_from_id, area_from_id)]
-                filters.append((OutputVariablesViewsModel.area_to_id, area_to_id))
-            case _:
-                raise NotImplementedError(f"output identifier `{output_identifier.__class__}` is not implemented")
+    match output_identifier:
+        case AreaOutputIdentifier():
+            filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
+        case ThermalClusterOutputIdentifier():
+            filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
+            sub_id = output_identifier.get_sub_id_for_aggregation()
+            assert sub_id is not None
+            filters.append((OutputVariablesViewsModel.thermal_id, sub_id))
+        case RenewableClusterOutputIdentifier():
+            filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
+            sub_id = output_identifier.get_sub_id_for_aggregation()
+            assert sub_id is not None
+            filters.append((OutputVariablesViewsModel.renewable_id, sub_id))
+        case ShortTermStorageOutputIdentifier():
+            filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
+            sub_id = output_identifier.get_sub_id_for_aggregation()
+            assert sub_id is not None
+            filters.append((OutputVariablesViewsModel.st_storage_id, sub_id))
+        case LinkOutputIdentifier():
+            area_from_id, area_to_id = output_identifier.get_id_for_aggregation().split(" - ")
+            filters = [(OutputVariablesViewsModel.area_from_id, area_from_id)]
+            filters.append((OutputVariablesViewsModel.area_to_id, area_to_id))
+        case _:
+            raise NotImplementedError(f"output identifier `{output_identifier.__class__}` is not implemented")
 
-        for column, value in filters:
-            q = q.filter(column == value)
+    for column, value in filters:
+        q = q.filter(column == value)
 
-        return q.scalar()  # type: ignore
+    return q.scalar()  # type: ignore
 
 
 def create_output_view_db_model(
