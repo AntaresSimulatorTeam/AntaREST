@@ -22,7 +22,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from fastapi import FastAPI
-from helpers import with_db_context
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
@@ -39,7 +38,7 @@ from antarest.study.storage.output_model import OutputVariablesInformation
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from tests.helpers import assert_study, with_admin_user
+from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
