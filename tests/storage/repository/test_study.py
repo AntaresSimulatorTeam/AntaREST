@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.model import PublicMode
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyContentStatus
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
@@ -27,13 +28,13 @@ def test_lifecycle(db_session: Session) -> None:
 
     user = User(id=1, name="admin")
     group = Group(id="my-group", name="group")
-
+    now = current_time()
     a = create_study(
         name="a",
         version="820",
         author="John Smith",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -42,8 +43,8 @@ def test_lifecycle(db_session: Session) -> None:
         name="b",
         version="830",
         author="Morpheus",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -52,19 +53,19 @@ def test_lifecycle(db_session: Session) -> None:
         name="c",
         version="830",
         author="Trinity",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
-        missing=datetime.now(timezone.utc).replace(tzinfo=None),
+        missing=now,
     )
     d = create_variant_study(
         name="d",
         version="830",
         author="Mr. Anderson",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -94,12 +95,13 @@ def test_study_inheritance(db_session: Session) -> None:
 
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
+    now = current_time()
     a = create_raw_study(
         name="a",
         version="820",
         author="John Smith",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],

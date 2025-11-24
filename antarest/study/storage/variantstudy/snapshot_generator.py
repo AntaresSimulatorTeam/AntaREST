@@ -14,7 +14,6 @@
 This module dedicated to variant snapshot generation.
 """
 
-import datetime
 import logging
 import shutil
 from pathlib import Path
@@ -119,7 +118,7 @@ class SnapshotGenerator:
             logger.info(f"Saving new snapshot for study {variant_study_id}")
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=current_time(),
                 last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
             )
 

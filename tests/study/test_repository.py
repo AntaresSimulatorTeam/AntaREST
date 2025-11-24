@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import datetime
 import typing as t
 from unittest.mock import Mock
 
@@ -19,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Tag
 from antarest.study.repository import (
@@ -68,18 +68,13 @@ def test_get_all__general_case(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
+    now = current_time()
     study_1 = create_variant_study(name="s1")
     study_2 = create_variant_study(name="s2")
     study_3 = create_variant_study(name="s3")
     study_4 = create_variant_study(name="s4")
-    study_5 = create_raw_study(
-        name="s5",
-        missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-        workspace=DEFAULT_WORKSPACE_NAME,
-    )
-    study_6 = create_raw_study(
-        name="s6", missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), workspace=test_workspace
-    )
+    study_5 = create_raw_study(name="s5", missing=now, workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(name="s6", missing=now, workspace=test_workspace)
     study_7 = create_raw_study(name="s7", missing=None, workspace=test_workspace)
     study_8 = create_raw_study(name="s8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
@@ -145,22 +140,13 @@ def test_get_all__incompatible_case(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
+    now = current_time()
     study_1 = create_variant_study(id=1, name="study-1")
     study_2 = create_variant_study(id=2, name="study-2")
     study_3 = create_variant_study(id=3, name="study-3")
     study_4 = create_variant_study(id=4, name="study-4")
-    study_5 = create_raw_study(
-        id=5,
-        name="study-5",
-        missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-        workspace=DEFAULT_WORKSPACE_NAME,
-    )
-    study_6 = create_raw_study(
-        id=6,
-        name="study-6",
-        missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-        workspace=test_workspace,
-    )
+    study_5 = create_raw_study(id=5, name="study-5", missing=now, workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(id=6, name="study-6", missing=now, workspace=test_workspace)
     study_7 = create_raw_study(id=7, name="study-7", missing=None, workspace=test_workspace)
     study_8 = create_raw_study(id=8, name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
@@ -661,9 +647,7 @@ def test_get_all__study_existence_filter(
 
     study_1 = create_variant_study(id=1, name="study-1")
     study_2 = create_variant_study(id=2, name="study-2")
-    study_3 = create_raw_study(
-        id=3, name="study-3", missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-    )
+    study_3 = create_raw_study(id=3, name="study-3", missing=current_time())
     study_4 = create_raw_study(id=4, name="study-4")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
@@ -1220,12 +1204,13 @@ def test_count_studies__general_case(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
+    now = current_time()
     study_1 = create_variant_study(id="1", name="study-1")
     study_2 = create_variant_study(id="2", name="study-2")
     study_3 = create_variant_study(id="3", name="study-3")
     study_4 = create_variant_study(id="4", name="study-4")
-    study_5 = create_raw_study(id="5", name="study-5", missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = create_raw_study(id="6", name="study-6", missing=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None), workspace=test_workspace)
+    study_5 = create_raw_study(id="5", name="study-5", missing=now, workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(id="6", name="study-6", missing=now, workspace=test_workspace)
     study_7 = create_raw_study(id="7", name="study-7", missing=None, workspace=test_workspace)
     study_8 = create_raw_study(id="8", name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 

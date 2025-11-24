@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import datetime
 import enum
 from typing import List, Optional, Sequence, Tuple, cast
 
@@ -24,6 +23,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, Tag
@@ -183,7 +183,7 @@ class StudyMetadataRepository:
         update_modification_date: bool = False,
     ) -> Study:
         if update_modification_date:
-            metadata.updated_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            metadata.updated_at = current_time()
 
         session = self.session
         metadata.groups = [session.merge(g) for g in metadata.groups]

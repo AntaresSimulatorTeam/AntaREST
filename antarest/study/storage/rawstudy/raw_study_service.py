@@ -13,7 +13,7 @@
 import logging
 import shutil
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence
@@ -28,6 +28,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
+from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
@@ -295,7 +296,7 @@ class RawStudyService(AbstractStorageService):
         self, dest_study_name: str, groups: Sequence[str], src_study: Study, destination_folder: PurePosixPath
     ) -> RawStudy:
         dest_id = str(uuid4())
-        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        now_utc = current_time()
         dest_study = RawStudy(
             id=dest_id,
             name=dest_study_name,
@@ -501,7 +502,7 @@ class RawStudyService(AbstractStorageService):
             LazyNode.ZIP_FILELIST_CACHE = {
                 key: LazyNode.ZIP_FILELIST_CACHE[key]
                 for key in LazyNode.ZIP_FILELIST_CACHE
-                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.now(timezone.utc).replace(tzinfo=None)
+                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < current_time()
             }
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)
