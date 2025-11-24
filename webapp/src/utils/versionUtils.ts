@@ -49,7 +49,7 @@ export function toSemanticVersion(version: number | string) {
 
   // e.g., "9.3" -> "9.3.0" or "9" -> "9.0.0"
   if (semVer === null) {
-    log("toSemanticVersion(): invalid version value", version);
+    log("toSemanticVersion(): invalid version value '%s'", version);
     return ZERO_SEMVER;
   }
 
@@ -68,7 +68,7 @@ export function toNumberVersion(version: string) {
   const parsed = semver.parse(version);
 
   if (!parsed) {
-    log("toNumberVersion(): invalid semantic version", version);
+    log("toNumberVersion(): invalid semantic version '%s'", version);
     return NaN;
   }
 
@@ -92,7 +92,7 @@ export function compactSemanticVersion(version: string) {
   const parsed = semver.parse(version);
 
   if (!parsed) {
-    log("compactSemanticVersion(): invalid semantic version", version);
+    log("compactSemanticVersion(): invalid semantic version '%s'", version);
     return version;
   }
 
