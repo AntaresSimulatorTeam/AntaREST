@@ -162,22 +162,11 @@ class TestFetchRawData:
         }
 
         # If you want to update an existing resource, you can use PUT method.
-        # But, if the resource doesn't exist, you should have a 404 Not Found error.
-        res = client.put(
-            raw_url, params={"path": "user/somewhere/something.txt"}, files={"file": io.BytesIO(b"Goodbye World!")}
-        )
-        assert res.status_code == 404, res.json()
-        assert res.json() == {
-            "description": "'somewhere' not a child of User",
-            "exception": "ChildNotFoundError",
-        }
-
-        # To create a resource, you can use PUT method and the `create_missing` flag.
         # The expected status code should be 204 No Content.
         file_to_create = "user/somewhere/something.txt"
         res = client.put(
             raw_url,
-            params={"path": file_to_create, "create_missing": True},
+            params={"path": file_to_create},
             files={"file": io.BytesIO(b"Goodbye Cruel World!")},
         )
         assert res.status_code == 204, res.json()
@@ -201,11 +190,11 @@ class TestFetchRawData:
                 }
             }
 
-        # To update a resource, you can use PUT method, with or without the `create_missing` flag.
+        # To update a resource, you can use PUT method
         # The expected status code should be 204 No Content.
         res = client.put(
             raw_url,
-            params={"path": file_to_create, "create_missing": True},
+            params={"path": file_to_create},
             files={"file": io.BytesIO(b"This is the end!")},
         )
         assert res.status_code == 204, res.json()
@@ -385,7 +374,7 @@ class TestFetchRawData:
             # Creates a file / folder inside user folder.
             res = client.put(
                 f"/v1/studies/{internal_study_id}/raw",
-                params={"path": f, "create_missing": True},
+                params={"path": f},
                 files={"file": content},
             )
             assert res.status_code == 204, res.json()
@@ -460,7 +449,7 @@ class TestFetchRawData:
         # =============================
         # NOMINAL CASES
         # =============================
-        additional_params = {"resource_type": "folder", "create_missing": True}
+        additional_params = {"resource_type": "folder"}
 
         res = client.put(raw_url, params={"path": "user/folder_1", **additional_params})
         assert res.status_code == 204
@@ -533,7 +522,7 @@ class TestFetchRawData:
         variant_content = b"OKC"
         res = client.put(
             f"/v1/studies/{variant_study_id}/raw",
-            params={"path": "user/test.txt", "create_missing": True},
+            params={"path": "user/test.txt"},
             files={"file": io.BytesIO(variant_content)},
         )
         assert res.status_code == 204
@@ -548,7 +537,7 @@ class TestFetchRawData:
         parent_content = b"GSW"
         res = client.put(
             f"/v1/studies/{raw_study_id}/raw",
-            params={"path": "user/test.txt", "create_missing": True},
+            params={"path": "user/test.txt"},
             files={"file": io.BytesIO(parent_content)},
         )
         assert res.status_code == 204
