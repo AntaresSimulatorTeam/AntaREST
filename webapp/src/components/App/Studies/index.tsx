@@ -14,7 +14,7 @@
 
 import SplitView from "@/components/common/SplitView";
 import ViewWrapper from "@/components/common/page/ViewWrapper";
-import { getStudyIdsFilteredAndSorted } from "@/redux/selectors";
+import { getStudiesStatus, getStudyIdsFilteredAndSorted } from "@/redux/selectors";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,16 +24,39 @@ import HeaderActions from "./HeaderActions";
 import SideNav from "./SideNav";
 import StudiesList from "./StudiesList";
 import useAppSelector from "@/redux/hooks/useAppSelector";
+import { FetchStatus } from "@/redux/utils";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import RefreshButton from "./RefreshButton";
+import { Box } from "@mui/material";
 
 function Studies() {
   const [openFilter, setOpenFilter] = useState(false);
   const { t } = useTranslation();
-
+  const studiesStatus = useAppSelector(getStudiesStatus);
   const studyIds = useAppSelector(getStudyIdsFilteredAndSorted);
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  let wrapped;
+  if (studiesStatus === FetchStatus.Loading) {
+    wrapped = <SimpleLoader />;
+  } else if (studiesStatus === FetchStatus.Failed) {
+    wrapped = (
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <RefreshButton />
+      </Box>
+    );
+  } else {
+    wrapped = <StudiesList studyIds={studyIds} />;
+  }
   return (
     <RootPage
       title={t("global.studies")}
@@ -45,7 +68,7 @@ function Studies() {
         <SideNav />
         {/* Right */}
         <ViewWrapper flex disablePadding>
-          <StudiesList studyIds={studyIds} />
+          {wrapped}
         </ViewWrapper>
       </SplitView>
       <FiltersDrawer open={openFilter} onClose={() => setOpenFilter(false)} />
