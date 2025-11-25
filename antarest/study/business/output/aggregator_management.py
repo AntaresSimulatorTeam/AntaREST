@@ -295,8 +295,10 @@ class AggregatorManager:
 
             # add a column for the time id
             df[TIME_ID_COL] = _infer_time_id(df, is_details)
-            # Reorganize the columns
-            df = df.reindex(columns=pd.Index(new_column_order))
+
+            if self.transform_columns_headers:
+                # Reorganize the columns
+                df = df.reindex(columns=pd.Index(new_column_order))
 
             yield df
 
