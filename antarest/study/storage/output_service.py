@@ -80,8 +80,6 @@ from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
-
 
 class OutputVariablesViewMaterializationTask:
     """
@@ -398,10 +396,6 @@ class OutputService:
         self._study_service.assert_study_unarchived(study)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
-        export_format = TableExportFormat.PARQUET
-        download_name = f"aggregated_output_{study_id}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{study_id}' as {export_format} file"
-
         if data.type == StudyDownloadType.LINK:
             query_files = [MCIndLinksQueryFile.VALUES]
         else:
@@ -411,23 +405,23 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
         for query_file in query_files:
-            download_id = self.aggregate_output_data(
-                study_id,
-                output_id,
-                query_file,
-                MatrixFrequency(data.level.value),
-                TableExportFormat.PARQUET,
-                data.columns,
-                data.filter,
-                download_name,
-                download_log,
-                DEFAULT_DOWNLOAD_EXPIRATION_TIME,
-                data.years,
-            )
-            self._file_transfer_manager.get_download_metadata(download_id, True)
-            download = self._file_transfer_manager.fetch_download(download_id)
-            dataframe = pd.read_parquet(Path(download.path))
-            print(dataframe.head())
+            with temp_file_path(dir=self._study_service.config.storage.tmp_dir) as tmp_path:
+                task_id = self.start_aggregate_output_data(
+                    study_id,
+                    output_id,
+                    query_file,
+                    MatrixFrequency(data.level.value),
+                    TableExportFormat.PARQUET,
+                    data.columns,
+                    data.filter,
+                    tmp_path,
+                    data.years,
+                )
+                # Wait for the aggregation to end
+                self._task_service.await_task(task_id)
+
+                dataframe = pd.read_parquet(tmp_path)
+                print(dataframe.head())
             # todo: convert this inside the expected Imagrid Response
             """
             Old part of the code that used to fill the data;

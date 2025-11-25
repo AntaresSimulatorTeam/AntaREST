@@ -35,7 +35,7 @@ from antarest.study.storage.output_model import (
     OutputVariablesList,
     OutputVariablesType,
 )
-from antarest.study.storage.output_service import DEFAULT_DOWNLOAD_EXPIRATION_TIME, OutputService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
@@ -48,6 +48,8 @@ download_expiration_time_query: Any = Query(
     lt=1000,
     description="Expiration time for the download file (in minutes)",
 )
+
+DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
