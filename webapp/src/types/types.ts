@@ -58,6 +58,7 @@ export interface StudyMetadataDTO extends IdentityDTO {
   folder?: string;
   horizon?: string;
   tags?: string[];
+  parent_id?: string;
 }
 
 export interface StudyMetadata {
@@ -78,6 +79,7 @@ export interface StudyMetadata {
   folder?: string;
   horizon?: string;
   tags?: string[];
+  parentId?: string;
 }
 
 export interface StudyMetadataPatchDTO {

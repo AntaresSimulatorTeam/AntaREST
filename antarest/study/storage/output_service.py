@@ -51,7 +51,6 @@ from antarest.study.business.output.variables_management import (
     create_output_view_db_model,
     extract_variables_list,
     get_output_view_inside_db,
-    get_view_from_dataframe,
 )
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
@@ -69,7 +68,6 @@ from antarest.study.storage.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
-    OutputVariablesView,
 )
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -138,8 +136,12 @@ class OutputVariablesViewMaterializationTask:
             else:
                 dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, self._variable_name])
 
-        dataframe.index = pd.RangeIndex(len(dataframe))  # matrix-store does not support dataframes with specific index
-        matrix_id = self._output_service._matrix_service.create(dataframe)
+        # Transform the dataframe to save only what's needed inside DB
+        dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
+        df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=self._variable_name)
+        matrix_id = self._output_service._matrix_service.create(df_pivot)
+
+        # Save the model inside DB
         db_model = create_output_view_db_model(
             self._study_id,
             self._output_id,
@@ -759,7 +761,7 @@ class OutputService:
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
-    ) -> OutputVariablesView:
+    ) -> pd.DataFrame:
         """
         If the view is already registered in DB, updates its `last_read` value and returns it.
         Else, raise an HTTP 404 error.
@@ -781,10 +783,10 @@ class OutputService:
             db.session.merge(db_model)
             db.session.commit()
 
-            # Return the view
+            # Return the dataframe
             dataframe = self._matrix_service.get(db_model.matrix_id)
-            output_view = get_view_from_dataframe(dataframe, variable_name)
-            return output_view
+            dataframe.columns = pd.RangeIndex(len(dataframe.columns))  # type: ignore
+            return dataframe
 
         raise HTTPException(status_code=404, detail="The output variables view is not materialized in DB yet")
 

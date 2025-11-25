@@ -101,7 +101,6 @@ def test_get_all__general_case(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -160,7 +159,6 @@ def test_get_all__incompatible_case(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
     assert not {s.id for s in all_studies}
@@ -173,7 +171,6 @@ def test_get_all__incompatible_case(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
     assert not {s.id for s in all_studies}
@@ -184,7 +181,6 @@ def test_get_all__incompatible_case(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
     assert not {s.id for s in all_studies}
@@ -238,7 +234,6 @@ def test_get_all__study_name_filter(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -296,7 +291,6 @@ def test_get_all__managed_study_filter(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -347,7 +341,6 @@ def test_get_all__archived_study_filter(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -397,7 +390,6 @@ def test_get_all__variant_study_filter(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -449,7 +441,6 @@ def test_get_all__study_version_filter(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -508,7 +499,6 @@ def test_get_all__study_users_filter(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -568,7 +558,6 @@ def test_get_all__study_groups_filter(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -623,7 +612,6 @@ def test_get_all__study_ids_filter(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -675,7 +663,6 @@ def test_get_all__study_existence_filter(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -728,7 +715,6 @@ def test_get_all__study_workspace_filter(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -782,7 +768,6 @@ def test_get_all__study_folder_filter(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
 
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
@@ -844,7 +829,6 @@ def test_get_all__study_tags_filter(
         )
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
 
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
@@ -1007,7 +991,6 @@ def test_get_all__non_admin_permissions_filter(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -1138,7 +1121,6 @@ def test_get_all__admin_permissions_filter(
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
-        _ = [s.additional_data for s in all_studies]
         _ = [s.tags for s in all_studies]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
