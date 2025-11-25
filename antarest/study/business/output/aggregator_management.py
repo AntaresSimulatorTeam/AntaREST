@@ -95,6 +95,7 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
+        transform_columns_headers: bool,  # False when used by the Imagrid `/download` endpoint.
         mc_years: Optional[Sequence[int]] = None,
     ):
         self.output_path = output_path
@@ -116,6 +117,7 @@ class AggregatorManager:
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
             else MCRoot.MC_ALL
         )
+        self.transform_columns_headers = transform_columns_headers
 
     def _parse_output_file(self, file_path: Path, normalize_column_name: bool = True) -> pd.DataFrame:
         body = parse_output_file(file_path, self.frequency)
@@ -194,16 +196,15 @@ class AggregatorManager:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
+            df_columns = [col[0] for col in df.columns] if not self.transform_columns_headers else df.columns.to_list()
             if is_details:
                 filtered_columns = [CLUSTER_ID_COL, TIME_ID_COL] + [
-                    c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
+                    c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)
                 ]
             elif self.mc_root == MCRoot.MC_ALL:
-                filtered_columns = [
-                    c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
-                ]
+                filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
             else:
-                filtered_columns = [c for c in df.columns.tolist() if c.lower() in lower_case_columns]
+                filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
             df = df.loc[:, filtered_columns]
         return df
 
@@ -223,6 +224,9 @@ class AggregatorManager:
         Returns:
             the DataFrame with the correct columns and values
         """
+        if not self.transform_columns_headers:
+            dataframe = self._parse_output_file(file_path, normalize_column_name=False)
+            return dataframe
 
         if is_details:
             # extract the data frame from the file without processing the columns

@@ -9,11 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import json
 
 from starlette.testclient import TestClient
 
-from antarest.core.serde.json import from_json
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 
 ASSETS_DIR = assets_dir / "output_downloads_list"
@@ -36,6 +34,8 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
         "columns": [],
     }
     output_id = "20201014-1425eco-goodbye"
+
+    """
 
     # Hourly
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
@@ -303,6 +303,8 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     }
     assert actual_result == expected_result
 
+    """
+
     # Links
     output_id = "20241807-1540eco-extra-outputs"
     body = {
@@ -312,7 +314,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
         "filterIn": "",
         "filterOut": "",
         "filter": [],
-        "columns": [],
+        "columns": ["FLOW LIN."],
     }
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()

@@ -614,6 +614,7 @@ class OutputService:
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
         file_path: Path,
+        transform_columns_headers: bool = True,
         mc_years: Optional[Sequence[int]] = None,
         on_success: Optional[Callable[[], None]] = None,
         on_failure: Optional[Callable[[Exception], None]] = None,
@@ -630,6 +631,7 @@ class OutputService:
             columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             file_path: path of the file where output aggregation data will be stored
+            transform_columns_headers: If False, keeps the output columns as written by the Simulator
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
             on_success: callback to be called when the task is completed successfully
             on_failure: callback to be called when the task fails with an exception
@@ -646,6 +648,7 @@ class OutputService:
             frequency,
             ids_to_consider,
             columns_names,
+            transform_columns_headers,
             mc_years,
         )
 
