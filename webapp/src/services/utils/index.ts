@@ -48,6 +48,7 @@ export const convertStudyDtoToMetadata = (
   folder: metadata.folder,
   horizon: metadata.horizon,
   tags: metadata.tags,
+  parentId: metadata.parent_id,
 });
 
 export const convertVariantTreeDTO = (variantTree: VariantTreeDTO): VariantTree => ({
