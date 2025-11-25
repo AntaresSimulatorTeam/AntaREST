@@ -14,32 +14,22 @@
 
 import SplitView from "@/components/common/SplitView";
 import ViewWrapper from "@/components/common/page/ViewWrapper";
-import { fetchStudies } from "@/redux/ducks/studies";
-import { getStudiesState, getStudyIdsFilteredAndSorted } from "@/redux/selectors";
+import { getStudyIdsFilteredAndSorted } from "@/redux/selectors";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import { Box } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import UseAsyncAppSelectorCond from "../../../redux/components/UseAsyncAppSelectorCond";
-import useAsyncAppSelector from "../../../redux/hooks/useAsyncAppSelector";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
 import RootPage from "../../common/page/RootPage";
 import FiltersDrawer from "./FiltersDrawer";
 import HeaderActions from "./HeaderActions";
-import RefreshButton from "./RefreshButton";
 import SideNav from "./SideNav";
 import StudiesList from "./StudiesList";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 
 function Studies() {
-  const res = useAsyncAppSelector({
-    entityStateSelector: getStudiesState,
-    fetchAction: fetchStudies,
-    valueSelector: getStudyIdsFilteredAndSorted,
-  });
-
   const [openFilter, setOpenFilter] = useState(false);
   const { t } = useTranslation();
 
+  const studyIds = useAppSelector(getStudyIdsFilteredAndSorted);
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -55,23 +45,7 @@ function Studies() {
         <SideNav />
         {/* Right */}
         <ViewWrapper flex disablePadding>
-          <UseAsyncAppSelectorCond
-            response={res}
-            ifLoading={() => <SimpleLoader />}
-            ifSucceeded={(studyIds) => <StudiesList studyIds={studyIds} />}
-            ifFailed={() => (
-              <Box
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <RefreshButton />
-              </Box>
-            )}
-          />
+          <StudiesList studyIds={studyIds} />
         </ViewWrapper>
       </SplitView>
       <FiltersDrawer open={openFilter} onClose={() => setOpenFilter(false)} />
