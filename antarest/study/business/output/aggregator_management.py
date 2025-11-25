@@ -293,10 +293,10 @@ class AggregatorManager:
                 relative_path_parts = file_path.relative_to(self.mc_all_path).parts
                 df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
 
-            # add a column for the time id
-            df[TIME_ID_COL] = _infer_time_id(df, is_details)
-
             if self.transform_columns_headers:
+                # add a column for the time id
+                df[TIME_ID_COL] = _infer_time_id(df, is_details)
+
                 # Reorganize the columns
                 df = df.reindex(columns=pd.Index(new_column_order))
 

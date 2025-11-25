@@ -314,7 +314,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
         "filterIn": "",
         "filterOut": "",
         "filter": [],
-        "columns": ["FLOW LIN."],
+        "columns": ["FLOW LIN.", "UCAP LIN."],
     }
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
@@ -329,14 +329,6 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
                     "1": [
                         {"name": "FLOW LIN.", "unit": "MWh", "data": [0.0]},
                         {"name": "UCAP LIN.", "unit": "MWh", "data": [0.0]},
-                        {"name": "LOOP FLOW", "unit": "MWh", "data": [0.0]},
-                        {"name": "FLOW QUAD.", "unit": "MWh", "data": [0.0]},
-                        {"name": "CONG. FEE (ALG.)", "unit": "Euro", "data": [0.0]},
-                        {"name": "CONG. FEE (ABS.)", "unit": "Euro", "data": [0.0]},
-                        {"name": "MARG. COST", "unit": "Euro/MW", "data": [0.0]},
-                        {"name": "CONG. PROB +", "unit": "%", "data": [0.0]},
-                        {"name": "CONG. PROB -", "unit": "%", "data": [0.0]},
-                        {"name": "HURDLE COST", "unit": "Euro", "data": [0.0]},
                     ]
                 },
             }

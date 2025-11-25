@@ -36,7 +36,10 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
-from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, AggregatorManager
+from antarest.study.business.output.aggregator_management import (
+    CLUSTER_ID_COL,
+    AggregatorManager,
+)
 from antarest.study.business.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
@@ -417,49 +420,38 @@ class OutputService:
                     data.columns,
                     data.filter,
                     tmp_path,
+                    transform_columns_headers=False,
                     mc_years=data.years,
                 )
                 # Wait for the aggregation to end
                 self._task_service.await_task(task_id)
 
                 dataframe = pd.read_parquet(tmp_path)
-                print(dataframe.head())
+
                 # todo: convert this inside the expected Imagrid Response
+                # column_name = LINK_COL if self.output_type == "areas" else AREA_COL
+                dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
+                df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL)
+                print(df_pivot.head())
+
         """
-                    Old part of the code that used to fill the data;
-                                df = cast(OutputSeriesMatrix, elm).parse_dataframe()
-                    columns = df.columns
 
-                    for index, column in enumerate(columns):
-                        if len(column) > 0:
-                            column_name = column[0]
-                            if data.columns and len(data.columns) > 0 and column_name not in data.columns:
-                                continue
-
-                            if target not in matrix.data:
-                                matrix.data[target] = dict()
-
-                            year_str = str(year)
-                            if year_str not in matrix.data[target]:
-                                matrix.data[target][year_str] = []
-
-                            matrix.data[target][year_str].append(
-                                TimeSerie.model_construct(
-                                    name=column_name,
-                                    unit=column[1] if len(column) > 1 else "",
-                                    data=df[column].to_numpy(),
-                                )
-                            )
-
-                    """
-        # We should just return the Model it would be easier IMO.
-        # The model is MatrixAggregationResultDTO.
-
-        # Old Code equivalent
-        # tmp_export_file = self._file_transfer_manager.request_tmp_file()
-        # with open(tmp_export_file, "w", encoding="utf-8") as fh:
-        #                 fh.write(matrix.model_dump_json())
-        # return FileResponse(tmp_export_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
+        {
+        "index": {"start_date": "2018-01-01 00:00:00", "steps": 1, "first_week_size": 7, "level": "annual"},
+        "data": [
+            {
+                "type": "LINK",
+                "name": "de^fr",
+                "data": {
+                    "1": [
+                        {"name": "FLOW LIN.", "unit": "MWh", "data": [0.0]},
+                        {"name": "UCAP LIN.", "unit": "MWh", "data": [0.0]},
+                    ]
+                },
+            }
+        ],
+    }
+        """
         raise NotImplementedError
 
     def delete_output(self, uuid: str, output_name: str) -> None:
