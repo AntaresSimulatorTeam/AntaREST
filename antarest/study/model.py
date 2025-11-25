@@ -614,12 +614,12 @@ class StudyDownloadDTO(AntaresBaseModel):
     """
 
     type: StudyDownloadType
-    years: Optional[List[int]]
+    years: list[int] = []
     level: StudyDownloadLevelDTO
     filterIn: Optional[str]  # deprecated, we don't consider it
     filterOut: Optional[str]  # deprecated, we don't consider it
-    filter: Optional[List[str]]
-    columns: Optional[List[str]]
+    filter: list[str] = []
+    columns: list[str] = []
     synthesis: bool = False  # deprecated, we always consider it's False
     includeClusters: bool = False
 

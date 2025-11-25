@@ -43,6 +43,7 @@ from antarest.study.business.output.utils import (
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
+    QueryFileType,
 )
 from antarest.study.business.output.variables_management import (
     OutputIdentifier,
@@ -396,6 +397,7 @@ class OutputService:
         self._study_service.assert_study_unarchived(study)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
+        query_files: list[QueryFileType]
         if data.type == StudyDownloadType.LINK:
             query_files = [MCIndLinksQueryFile.VALUES]
         else:
@@ -415,49 +417,50 @@ class OutputService:
                     data.columns,
                     data.filter,
                     tmp_path,
-                    data.years,
+                    mc_years=data.years,
                 )
                 # Wait for the aggregation to end
                 self._task_service.await_task(task_id)
 
                 dataframe = pd.read_parquet(tmp_path)
                 print(dataframe.head())
-            # todo: convert this inside the expected Imagrid Response
-            """
-            Old part of the code that used to fill the data;
-                        df = cast(OutputSeriesMatrix, elm).parse_dataframe()
-            columns = df.columns
+                # todo: convert this inside the expected Imagrid Response
+        """
+                    Old part of the code that used to fill the data;
+                                df = cast(OutputSeriesMatrix, elm).parse_dataframe()
+                    columns = df.columns
 
-            for index, column in enumerate(columns):
-                if len(column) > 0:
-                    column_name = column[0]
-                    if data.columns and len(data.columns) > 0 and column_name not in data.columns:
-                        continue
+                    for index, column in enumerate(columns):
+                        if len(column) > 0:
+                            column_name = column[0]
+                            if data.columns and len(data.columns) > 0 and column_name not in data.columns:
+                                continue
 
-                    if target not in matrix.data:
-                        matrix.data[target] = dict()
+                            if target not in matrix.data:
+                                matrix.data[target] = dict()
 
-                    year_str = str(year)
-                    if year_str not in matrix.data[target]:
-                        matrix.data[target][year_str] = []
+                            year_str = str(year)
+                            if year_str not in matrix.data[target]:
+                                matrix.data[target][year_str] = []
 
-                    matrix.data[target][year_str].append(
-                        TimeSerie.model_construct(
-                            name=column_name,
-                            unit=column[1] if len(column) > 1 else "",
-                            data=df[column].to_numpy(),
-                        )
-                    )
-            
-            """
-            # We should just return the Model it would be easier IMO.
-            # The model is MatrixAggregationResultDTO.
+                            matrix.data[target][year_str].append(
+                                TimeSerie.model_construct(
+                                    name=column_name,
+                                    unit=column[1] if len(column) > 1 else "",
+                                    data=df[column].to_numpy(),
+                                )
+                            )
 
-            # Old Code equivalent
-            # tmp_export_file = self._file_transfer_manager.request_tmp_file()
-            # with open(tmp_export_file, "w", encoding="utf-8") as fh:
-            #                 fh.write(matrix.model_dump_json())
-            # return FileResponse(tmp_export_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
+                    """
+        # We should just return the Model it would be easier IMO.
+        # The model is MatrixAggregationResultDTO.
+
+        # Old Code equivalent
+        # tmp_export_file = self._file_transfer_manager.request_tmp_file()
+        # with open(tmp_export_file, "w", encoding="utf-8") as fh:
+        #                 fh.write(matrix.model_dump_json())
+        # return FileResponse(tmp_export_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
+        raise NotImplementedError
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """
@@ -597,7 +600,7 @@ class OutputService:
             columns_names,
             ids_to_consider,
             file_download_path,
-            mc_years,
+            mc_years=mc_years,
             on_success=lambda: self._file_transfer_manager.set_ready(download_id, use_notification=False),
             on_failure=lambda e: self._file_transfer_manager.fail(download_id, str(e)),
         )
