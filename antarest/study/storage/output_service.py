@@ -140,18 +140,17 @@ class OutputVariablesViewMaterializationTask:
 
         dataframe.index = pd.RangeIndex(len(dataframe))  # matrix-store does not support dataframes with specific index
         matrix_id = self._output_service._matrix_service.create(dataframe)
-        with db():
-            db_model = create_output_view_db_model(
-                self._study_id,
-                self._output_id,
-                self._variable_type,
-                self._variable_name,
-                self._frequency,
-                self._output_identifier,
-                matrix_id,
-            )
-            db.session.add(db_model)
-            db.session.commit()
+        db_model = create_output_view_db_model(
+            self._study_id,
+            self._output_id,
+            self._variable_type,
+            self._variable_name,
+            self._frequency,
+            self._output_identifier,
+            matrix_id,
+        )
+        db.session.add(db_model)
+        db.session.commit()
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Materializing output variables view for study '{self._study_id}' and output '{self._output_id}'"
@@ -721,20 +720,18 @@ class OutputService:
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
 
-        with db():
-            output_variables: OutputVariables | None = db.session.get(OutputVariables, (study_id, output_id))
-            if output_variables:
-                return output_variables.to_model()
+        output_variables: OutputVariables | None = db.session.get(OutputVariables, (study_id, output_id))
+        if output_variables:
+            return output_variables.to_model()
 
         # Fetches the data inside the FS
         output_path = self._storage.get_output_path(study, output_id)
         model = extract_variables_list(output_path)
 
         # Save the model inside DB for next calls
-        with db():
-            db_model = OutputVariables.from_model(study_id, output_id, model)
-            db.session.add(db_model)
-            db.session.commit()
+        db_model = OutputVariables.from_model(study_id, output_id, model)
+        db.session.add(db_model)
+        db.session.commit()
 
         # Returns it
         return model
@@ -781,9 +778,9 @@ class OutputService:
         if db_model is not None:
             # Update `last_read` value inside DB
             db_model.last_read = current_time()
-            with db():
-                db.session.merge(db_model)
-                db.session.commit()
+            db.session.merge(db_model)
+            db.session.commit()
+
             # Return the view
             dataframe = self._matrix_service.get(db_model.matrix_id)
             output_view = get_view_from_dataframe(dataframe, variable_name)

@@ -38,7 +38,7 @@ from antarest.study.storage.output_model import OutputVariablesInformation
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from tests.helpers import assert_study, with_admin_user
+from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
@@ -649,6 +649,7 @@ def _add_study_in_db(output_service: OutputService) -> None:
 
 
 @with_admin_user
+@with_db_context
 def test_sta_mini_output_variables_nominal_case(output_service: OutputService) -> None:
     _add_study_in_db(output_service)
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
@@ -706,6 +707,7 @@ def test_sta_mini_output_variables_nominal_case(output_service: OutputService) -
 
 
 @with_admin_user
+@with_db_context
 def test_sta_mini_output_variables_no_mc_ind(output_service: OutputService) -> None:
     _add_study_in_db(output_service)
     res = output_service.get_output_variables_information(UUID, "20201014-1427eco")
@@ -713,6 +715,7 @@ def test_sta_mini_output_variables_no_mc_ind(output_service: OutputService) -> N
 
 
 @with_admin_user
+@with_db_context
 def test_sta_mini_output_variables_no_links(output_service: OutputService) -> None:
     _add_study_in_db(output_service)
     study_path = Path(output_service._study_service.get_study(UUID).path)
@@ -724,6 +727,7 @@ def test_sta_mini_output_variables_no_links(output_service: OutputService) -> No
 
 
 @with_admin_user
+@with_db_context
 def test_sta_mini_output_variables_no_areas(output_service: OutputService) -> None:
     _add_study_in_db(output_service)
     study_path = Path(output_service._study_service.get_study(UUID).path)

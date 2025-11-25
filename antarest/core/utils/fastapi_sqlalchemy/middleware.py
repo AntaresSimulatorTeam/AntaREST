@@ -1,5 +1,5 @@
 from contextvars import ContextVar, Token
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Callable, Dict, Optional, Type, Union
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -10,7 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
-from typing_extensions import override
+from typing_extensions import TypeAlias, override
 
 from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionError, SessionNotInitialisedError
 
@@ -85,32 +85,45 @@ class DBSessionMeta(type):
         return session
 
 
+SessionFactory: TypeAlias = Callable[[], Session]
+
+
+def _default_create_session() -> Session:
+    if isinstance(_Session, sessionmaker):
+        return _Session()
+    raise SessionNotInitialisedError()
+
+
 class DBSession(metaclass=DBSessionMeta):
     def __init__(
         self,
-        session_args: Optional[Dict[str, Any]] = None,
+        session_factory: SessionFactory = _default_create_session,
         commit_on_exit: bool = False,
     ) -> None:
         self.token: Optional[Token[Optional[Any]]] = None
-        self.session_args = session_args or {}
+        self.session_factory = session_factory
         self.commit_on_exit = commit_on_exit
 
     def __enter__(self) -> Type["DBSession"]:
-        if not isinstance(_Session, sessionmaker):
-            raise SessionNotInitialisedError
-        self.token = _session.set(_Session(**self.session_args))
+        self.token = _session.set(self.session_factory())
         return type(self)
 
     def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
-        sess: Optional[Session] = _session.get()
+        sess = _session.get()
         if sess is not None:
-            if exc_type is not None:
-                sess.rollback()
+            try:
+                # it's important to either commit or rollback in all cases.
+                # this correctly closes the ongoing transaction. Otherwise,
+                # closing the session may raise an error (for example on server disconnect)
+                # without correctly closing the transaction. It can result in particular
+                # in wrong metrics.
+                if self.commit_on_exit and exc_value is None:
+                    sess.commit()
+                else:
+                    sess.rollback()
+            finally:
+                sess.close()
 
-            if self.commit_on_exit:
-                sess.commit()
-
-            sess.close()
         if self.token is not None:
             _session.reset(self.token)
 

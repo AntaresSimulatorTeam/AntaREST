@@ -24,8 +24,9 @@ class FileDownloadRepository:
         db.session.commit()
 
     def get(self, download_id: str) -> Optional[FileDownload]:
-        file_download: Optional[FileDownload] = db.session.get(FileDownload, download_id)
-        return file_download
+        download = db.session.get(FileDownload, download_id)
+        db.session.refresh(download)
+        return download
 
     def save(self, download: FileDownload) -> None:
         db.session.merge(download)
