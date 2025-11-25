@@ -32,10 +32,8 @@ from antarest.core.roles import RoleType
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
-from antarest.study.model import StudyAdditionalData
 from antarest.study.service import VariantStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -764,15 +762,14 @@ class TestSnapshotGenerator:
         # Prepare a RAW study in the temporary folder
         study_dir = tmp_path / "my-study"
         root_study_id = str(uuid.uuid4())
-        now = current_time()
         root_study = create_raw_study(
             id=root_study_id,
             workspace="default",
             path=str(study_dir),
             version="860",
-            created_at=now,
-            updated_at=now,
-            additional_data=StudyAdditionalData(author="john.doe"),
+            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            author="john.doe",
             owner_id=jwt_user.id,
         )
 
@@ -894,7 +891,7 @@ class TestSnapshotGenerator:
         # - 1 query to fetch the root study (with owner and groups for permission check),
         # - 1 query to fetch the list of variants with snapshot, commands, etc.,
         # - 1 query to fetch raw study information,
-        # - 1 query to update the variant study additional_data,
+        # - 1 query to update the variant study author, editor and horizon,
         # - 1 query to insert the variant study snapshot.
         assert len(db_recorder.sql_statements) == 6, str(db_recorder)
 
@@ -984,10 +981,12 @@ class TestSnapshotGenerator:
         assert (snapshot_dir / "input/thermal/series/south/gas_cluster/series.txt.link").exists()
 
         # Check: the variant is updated in the database (snapshot and additional_data).
-        assert variant_study is not None
-        assert variant_study.snapshot is not None
-        assert variant_study.snapshot.last_executed_command == variant_study.commands[-1].id
-        assert variant_study.additional_data.author == "john.doe"
+        with db():
+            study = variant_study_service.repository.get(variant_study.id)
+            assert study is not None
+            assert study.snapshot is not None
+            assert study.snapshot.last_executed_command == study.commands[-1].id
+            assert study.author == "john.doe"
 
         # Check: the cache is updated with the new variant configuration.
         # The cache is a mock created in the session's scope, so it is shared between all tests.

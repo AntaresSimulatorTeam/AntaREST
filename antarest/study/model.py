@@ -243,31 +243,6 @@ class CommentsDto(AntaresBaseModel):
     comments: str
 
 
-class StudyAdditionalData(Base):
-    """
-    Study additional data
-    """
-
-    __tablename__ = "study_additional_data"
-
-    study_id: Mapped[str] = mapped_column(
-        String(36),
-        ForeignKey("study.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    author: Mapped[str] = mapped_column(String(255), default="Unknown")
-    editor: Mapped[str] = mapped_column(String(255), default="Unknown")
-    horizon: Mapped[Optional[str]] = mapped_column(String)
-
-    @override
-    def __eq__(self, other: Any) -> bool:
-        if not super().__eq__(other):
-            return False
-        if not isinstance(other, StudyAdditionalData):
-            return False
-        return bool(other.author == self.author and other.horizon == self.horizon)
-
-
 class Study(Base):
     """
     Base study entity to save main metadata, common for any type of study (raw, variant, managed or not)
@@ -310,6 +285,8 @@ class Study(Base):
     type: Mapped[str] = mapped_column(String(50), index=True)
     version: Mapped[str] = mapped_column(String(255), index=True)
     author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    editor: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    horizon: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
@@ -329,11 +306,6 @@ class Study(Base):
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
     directory = relationship("Directory", uselist=False)
-    additional_data: Mapped[StudyAdditionalData | None] = relationship(
-        StudyAdditionalData,
-        uselist=False,
-        cascade="all, delete, delete-orphan",
-    )
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.

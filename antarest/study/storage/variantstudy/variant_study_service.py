@@ -51,7 +51,6 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     RawStudy,
     Study,
-    StudyAdditionalData,
     StudyMetadataDTO,
     StudySimResultDTO,
 )
@@ -118,8 +117,7 @@ class VariantStudyService(AbstractStorageService):
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = self._get_current_user_name()
-        study.additional_data = study.additional_data or StudyAdditionalData()
-        study.additional_data.editor = user_name
+        study.editor = user_name
         self.repository.save(study)
 
     def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
@@ -631,14 +629,6 @@ class VariantStudyService(AbstractStorageService):
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
         user_name = self._get_current_user_name()
-        if study.additional_data is None:
-            additional_data = StudyAdditionalData(editor=user_name)
-        else:
-            additional_data = StudyAdditionalData(
-                horizon=study.additional_data.horizon,
-                author=study.additional_data.author,
-                editor=user_name,
-            )
 
         now_utc = current_time()
         variant_study = VariantStudy(
@@ -650,11 +640,13 @@ class VariantStudyService(AbstractStorageService):
             created_at=now_utc,
             updated_at=now_utc,
             version=study.version,
+            author=study.author,
+            editor=user_name,
+            horizon=study.horizon,
             folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
             owner_id=require_current_user().impersonator,
             snapshot=None,
-            additional_data=additional_data,
         )
         self.repository.save(variant_study)
         self.event_bus.push(
@@ -1005,27 +997,6 @@ class VariantStudyService(AbstractStorageService):
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
-
-    @override
-    def initialize_additional_data(self, variant_study: Study) -> bool:
-        try:
-            if self.exists(variant_study):
-                study = self.study_factory.create_from_fs(
-                    self.get_study_path(variant_study),
-                    is_managed(variant_study),
-                    study_id=variant_study.id,
-                    output_path=Path(variant_study.path) / OUTPUT_RELATIVE_PATH,
-                )
-                variant_study.additional_data = self._read_additional_data_from_files(study)
-            else:
-                variant_study.additional_data = StudyAdditionalData()
-            return True
-        except Exception as e:
-            logger.error(
-                f"Error while reading additional data for study {variant_study.id}",
-                exc_info=e,
-            )
-            return False
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """
