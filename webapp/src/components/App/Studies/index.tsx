@@ -34,29 +34,11 @@ function Studies() {
   const { t } = useTranslation();
   const studiesStatus = useAppSelector(getStudiesStatus);
   const studyIds = useAppSelector(getStudyIdsFilteredAndSorted);
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  let wrapped;
-  if (studiesStatus === FetchStatus.Loading) {
-    wrapped = <SimpleLoader />;
-  } else if (studiesStatus === FetchStatus.Failed) {
-    wrapped = (
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <RefreshButton />
-      </Box>
-    );
-  } else {
-    wrapped = <StudiesList studyIds={studyIds} />;
-  }
   return (
     <RootPage
       title={t("global.studies")}
@@ -68,7 +50,22 @@ function Studies() {
         <SideNav />
         {/* Right */}
         <ViewWrapper flex disablePadding>
-          {wrapped}
+          {(studiesStatus === FetchStatus.Loading || studiesStatus === FetchStatus.Idle) && (
+            <SimpleLoader />
+          )}
+          {studiesStatus === FetchStatus.Failed && (
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <RefreshButton />
+            </Box>
+          )}
+          {studiesStatus === FetchStatus.Succeeded && <StudiesList studyIds={studyIds} />}
         </ViewWrapper>
       </SplitView>
       <FiltersDrawer open={openFilter} onClose={() => setOpenFilter(false)} />
