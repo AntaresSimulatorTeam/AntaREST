@@ -29,23 +29,6 @@ export const getVariantTree = async (id: string): Promise<VariantTree> => {
   return convertVariantTreeDTO(res.data);
 };
 
-export const getVariants = async (id: string): Promise<StudyMetadata[]> => {
-  const variantTree = await getVariantTree(id);
-
-  const variants: StudyMetadata[] = [];
-
-  const traverse = (tree: VariantTree) => {
-    if (tree.node.id !== id) {
-      variants.push(tree.node);
-    }
-    tree.children.forEach(traverse);
-  };
-
-  traverse(variantTree);
-
-  return variants;
-};
-
 export const getVariantParents = async (id: string): Promise<StudyMetadata[]> => {
   const res = await client.get(`/v1/studies/${id}/parents`);
   return res.data.map((elm: StudyMetadataDTO) => convertStudyDtoToMetadata(elm.id, elm));
