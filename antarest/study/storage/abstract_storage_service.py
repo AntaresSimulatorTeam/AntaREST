@@ -95,6 +95,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             folder=folder_path or study.folder,
             tags=[tag.label for tag in study.tags],
             directory_id=study.directory_id,
+            parent_id=study.parent_id,
         )
 
     @override
