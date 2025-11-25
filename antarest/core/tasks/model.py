@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum, StrEnum
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from pydantic import field_validator
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String, update
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -41,6 +40,7 @@ class TaskType(StrEnum):
     THERMAL_CLUSTER_SERIES_GENERATION = "THERMAL_CLUSTER_SERIES_GENERATION"
     SNAPSHOT_CLEARING = "SNAPSHOT_CLEARING"
     OUTPUT_AGGREGATION = "OUTPUT_AGGREGATION"
+    OUTPUT_VARIABLES_VIEW_MATERIALIZATION = "OUTPUT_VARIABLES_VIEW_MATERIALIZATION"
 
 
 class TaskStatus(Enum):
@@ -253,30 +253,3 @@ class TaskJob(Base):
             f" result_msg={self.result_msg},"
             f" result_status={self.result_status}"
         )
-
-
-def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, Any]) -> None:
-    """
-    Cancel all tasks that are currently running or pending.
-
-    When the web application restarts, such as after a new deployment, any pending or running tasks may be lost.
-    To mitigate this, it is preferable to set these tasks to a "FAILED" status.
-    This ensures that users can easily identify the tasks that were affected by the restart and take appropriate
-    actions, such as restarting the tasks manually.
-
-    Args:
-        engine: The database engine (SQLAlchemy connection to SQLite or PostgreSQL).
-        session_args: The session arguments (SQLAlchemy session arguments).
-    """
-    updated_values = {
-        TaskJob.status: TaskStatus.FAILED.value,
-        TaskJob.result_status: False,
-        TaskJob.result_msg: "Task was interrupted due to server restart",
-        TaskJob.completion_date: datetime.now(timezone.utc).replace(tzinfo=None),
-    }
-    orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
-    make_session = sessionmaker(bind=engine, **session_args)
-    with make_session() as session:
-        stmt = update(TaskJob).where(TaskJob.status.in_(orphan_status)).values(updated_values)
-        session.execute(stmt)
-        session.commit()

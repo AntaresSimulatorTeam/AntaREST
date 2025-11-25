@@ -22,7 +22,6 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import sessionmaker
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
@@ -37,17 +36,16 @@ from antarest.core.tasks.model import (
     TaskResult,
     TaskStatus,
     TaskType,
-    cancel_orphan_tasks,
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import ITaskNotifier, TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
-from antarest.service_creator import SESSION_ARGS
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -88,23 +86,19 @@ def task_service(core_config: Config, event_bus: IEventBus, task_repo: TaskJobRe
 @with_admin_user
 @with_db_context
 def test_service(task_repo: TaskJobRepository, task_service: TaskJobService) -> None:
-    engine = db.session.bind
     service = task_service
 
     # Prepare a TaskJob in the database
-    creation_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    creation_date = current_time()
     running_task = TaskJob(id="a", name="b", status=TaskStatus.RUNNING.value, creation_date=creation_date)
     task_repo.save(running_task)
-
-    # Cancel pending and running tasks
-    cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
 
     # Test Case: list tasks
     # =====================
 
     tasks = service.list_tasks(TaskListFilter())
     assert len(tasks) == 1
-    assert tasks[0].status == TaskStatus.FAILED
+    assert tasks[0].status == TaskStatus.RUNNING
     assert tasks[0].creation_date_utc == str(creation_date.replace(tzinfo=None))
 
     # Test Case: get task status
@@ -120,12 +114,8 @@ def test_service(task_repo: TaskJobRepository, task_service: TaskJobService) -> 
         "name": "b",
         "owner": None,
         "ref_id": None,
-        "result": {
-            "message": "Task was interrupted due to server restart",
-            "return_value": None,
-            "success": False,
-        },
-        "status": TaskStatus.FAILED,
+        "result": None,
+        "status": TaskStatus.RUNNING,
         "type": None,
         "progress": None,
     }
@@ -189,7 +179,7 @@ def test_repository() -> None:
 
     new_task = TaskJob(name="foo", owner_id=user1_id, type=TaskType.COPY)
 
-    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    now = current_time()
     new_task = task_job_repo.save(new_task)
     assert task_job_repo.get(new_task.id) == new_task
     assert new_task.status == TaskStatus.PENDING.value
@@ -224,7 +214,7 @@ def test_repository() -> None:
     result = task_job_repo.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
     assert len(result) == 1
 
-    new_task.completion_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    new_task.completion_date = current_time()
     task_job_repo.save(new_task)
     result = task_job_repo.list(
         TaskListFilter(
@@ -339,62 +329,6 @@ def test_cancel_not_started_task_should_update_status(
     assert task_a.status == TaskStatus.CANCELLED.value
 
 
-@pytest.mark.parametrize(
-    ("status", "result_status", "result_msg"),
-    [
-        (TaskStatus.RUNNING.value, False, "task ongoing"),
-        (TaskStatus.PENDING.value, True, "task pending"),
-        (TaskStatus.FAILED.value, False, "task failed"),
-        (TaskStatus.COMPLETED.value, True, "task finished"),
-        (TaskStatus.TIMEOUT.value, False, "task timed out"),
-        (TaskStatus.CANCELLED.value, True, "task canceled"),
-    ],
-)
-def test_cancel_orphan_tasks(
-    db_engine: Engine,
-    status: int,
-    result_status: bool,
-    result_msg: str,
-) -> None:
-    max_diff_seconds: int = 1
-    test_id: str = "2ea94758-9ea5-4015-a45f-b245a6ffc147"
-
-    completion_date: datetime.datetime = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-    task_job = TaskJob(
-        id=test_id,
-        name="test",
-        status=status,
-        result_status=result_status,
-        result_msg=result_msg,
-        completion_date=completion_date,
-    )
-    make_session = sessionmaker(bind=db_engine, **SESSION_ARGS)
-    with make_session() as session:
-        session.add(task_job)
-        session.commit()
-    cancel_orphan_tasks(engine=db_engine, session_args=SESSION_ARGS)
-    with make_session() as session:
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-        if status in [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]:
-            update_tasks_count = (
-                session.query(TaskJob)
-                .filter(TaskJob.status.in_([TaskStatus.RUNNING.value, TaskStatus.PENDING.value]))
-                .count()
-            )
-            assert not update_tasks_count
-            updated_task_job = session.query(TaskJob).get(test_id)
-            assert updated_task_job.status == TaskStatus.FAILED.value
-            assert not updated_task_job.result_status
-            assert updated_task_job.result_msg == "Task was interrupted due to server restart"
-            assert (now - updated_task_job.completion_date).seconds <= max_diff_seconds
-        else:
-            updated_task_job = session.query(TaskJob).get(test_id)
-            assert updated_task_job.status == status
-            assert updated_task_job.result_status == result_status
-            assert updated_task_job.result_msg == result_msg
-            assert (now - updated_task_job.completion_date).seconds <= max_diff_seconds
-
-
 @with_db_context
 def test_get_progress(admin_user: JWTUser, core_config: Config, event_bus: IEventBus) -> None:
     # Prepare two users in the database
@@ -493,7 +427,7 @@ def test_ts_generation_task(
         author="John Smith",
         created_at=datetime.datetime(2023, 7, 15, 16, 45),
         updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-        last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        last_access=current_time(),
         public_mode=PublicMode.FULL,
         owner=regular_user,
         path=str(raw_study_path),

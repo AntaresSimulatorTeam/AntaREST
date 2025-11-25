@@ -19,6 +19,12 @@ import { useLayoutEffect, useRef, useState } from "react";
 interface BreadcrumbLinkProps {
   folderName: string;
   isFirstSegment: boolean;
+  /**
+   * Indicates if this is the study name (last segment).
+   * Study names are never truncated to prevent users from accidentally
+   * working with the wrong study due to similar truncated names.
+   */
+  isLastSegment?: boolean;
   onClick: () => void;
 }
 
@@ -39,16 +45,28 @@ const linkStyle = {
   },
 } as const;
 
-function BreadcrumbLink({ folderName, isFirstSegment, onClick }: BreadcrumbLinkProps) {
+function BreadcrumbLink({
+  folderName,
+  isFirstSegment,
+  isLastSegment,
+  onClick,
+}: BreadcrumbLinkProps) {
   const textRef = useRef<HTMLSpanElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
+  // Study names (last segment) are never truncated to avoid user confusion
+  const shouldTruncate = !isLastSegment;
+
   useLayoutEffect(() => {
+    if (!shouldTruncate) {
+      return;
+    }
+
     const element = textRef.current;
     if (element) {
       setIsTruncated(element.scrollWidth > element.clientWidth);
     }
-  }, []);
+  }, [shouldTruncate]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -57,7 +75,7 @@ function BreadcrumbLink({ folderName, isFirstSegment, onClick }: BreadcrumbLinkP
   const linkContent = (
     <Link underline="hover" color="inherit" onClick={onClick} sx={linkStyle}>
       {isFirstSegment && <HomeIcon fontSize="inherit" sx={{ mr: 1 }} />}
-      <span ref={textRef} style={truncatedTextStyle}>
+      <span ref={textRef} style={shouldTruncate ? truncatedTextStyle : undefined}>
         {folderName}
       </span>
     </Link>

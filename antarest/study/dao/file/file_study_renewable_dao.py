@@ -24,7 +24,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     serialize_renewable_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -94,10 +93,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(["input", "renewables", "series", area_id, renewable_id, "series"])
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
+        return self.get_impl().get_matrix(["input", "renewables", "series", area_id, renewable_id, "series"])
 
     @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:

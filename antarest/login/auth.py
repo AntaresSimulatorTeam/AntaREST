@@ -12,11 +12,9 @@
 
 import logging
 from datetime import timedelta
-from typing import Annotated, Any, AsyncGenerator, Callable, Coroutine, Optional, Tuple, TypeAlias, Union
+from typing import Annotated, Any, AsyncGenerator, Callable, Optional, Tuple, TypeAlias, Union
 
 from fastapi import Depends
-from ratelimit.types import Scope  # type: ignore
-from starlette.requests import Request
 
 from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
@@ -51,16 +49,6 @@ class Auth:
     ):
         self.disabled = config.security.disabled
         self.validate_identity = validate_identity
-
-    def create_auth_function(
-        self,
-    ) -> Callable[[Scope], Coroutine[Any, Any, Tuple[str, str]]]:
-        async def auth(scope: Scope) -> Tuple[str, str]:
-            auth_jwt = AuthJWT(Request(scope))
-            user = self._get_current_user(auth_jwt)
-            return str(user.id), "admin" if user.is_site_admin() else "default"
-
-        return auth
 
     def _get_current_user(self, auth_jwt: AuthJWT) -> JWTUser:
         """

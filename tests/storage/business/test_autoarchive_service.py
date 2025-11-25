@@ -17,6 +17,7 @@ from unittest.mock import Mock
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.cache import ICache
+from antarest.core.utils.utils import current_time
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -34,7 +35,7 @@ def test_auto_archival(tmp_path: Path) -> None:
         Config(storage=StorageConfig(workspaces={"test": WorkspaceConfig(path=workspace_path)})),
     )
 
-    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    now = current_time()
 
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
 

@@ -853,3 +853,14 @@ class ConfigurationError(RuntimeError):
     """
     Raised when some configuration is invalid.
     """
+
+
+class NotAMatrixError(ValueError):
+    def __init__(self, url: list[str]) -> None:
+        super().__init__(f"The given url `{url}` does not reference an input matrix")
+
+
+class OutputVariablesViewError(HTTPException):
+    def __init__(self, output_id: str, message: str) -> None:
+        msg = f"Could not retrieve variables view for output '{output_id}' : {message}."
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, msg)

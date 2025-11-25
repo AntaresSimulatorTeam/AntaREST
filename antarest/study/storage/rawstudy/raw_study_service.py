@@ -28,8 +28,9 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
+from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
@@ -119,8 +120,9 @@ class RawStudyService(AbstractStorageService):
         study = self.study_factory.create_from_fs(path, is_managed(metadata), study_id="")
         try:
             raw_meta = study.tree.get(["study", "antares"])
-            if metadata.additional_data and metadata.additional_data.editor:
-                raw_meta["editor"] = metadata.additional_data.editor
+
+            if metadata.editor:
+                raw_meta["editor"] = metadata.editor
                 study.tree.save(raw_meta, ["study", "antares"])
 
             metadata.name = raw_meta["caption"]
@@ -128,7 +130,8 @@ class RawStudyService(AbstractStorageService):
             metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
             metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
 
-            metadata.additional_data = self._read_additional_data_from_files(study)
+            self._update_study_data_from_files(study, metadata)
+
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
@@ -140,10 +143,9 @@ class RawStudyService(AbstractStorageService):
                 metadata.version = metadata.version or "0.0"
                 metadata.created_at = metadata.created_at or datetime.now(timezone.utc).replace(tzinfo=None)
                 metadata.updated_at = metadata.updated_at or datetime.now(timezone.utc).replace(tzinfo=None)
-                if metadata.additional_data is None:
-                    metadata.additional_data = StudyAdditionalData()
-                metadata.additional_data.author = metadata.additional_data.author or "Unknown"
-                metadata.additional_data.editor = metadata.additional_data.editor or "Unknown"
+
+                metadata.author = metadata.author or "Unknown"
+                metadata.editor = metadata.editor or "Unknown"
 
             else:
                 raise e
@@ -293,16 +295,8 @@ class RawStudyService(AbstractStorageService):
     def build_raw_study(
         self, dest_study_name: str, groups: Sequence[str], src_study: Study, destination_folder: PurePosixPath
     ) -> RawStudy:
-        if src_study.additional_data is None:
-            additional_data = StudyAdditionalData()
-        else:
-            additional_data = StudyAdditionalData(
-                horizon=src_study.additional_data.horizon,
-                author=src_study.additional_data.author,
-                editor=self._get_current_user_name(),
-            )
         dest_id = str(uuid4())
-        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        now_utc = current_time()
         dest_study = RawStudy(
             id=dest_id,
             name=dest_study_name,
@@ -311,7 +305,9 @@ class RawStudyService(AbstractStorageService):
             created_at=now_utc,
             updated_at=now_utc,
             version=src_study.version,
-            additional_data=additional_data,
+            author=src_study.author,
+            editor=self._get_current_user_name(),
+            horizon=src_study.horizon,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             groups=groups,
             folder=str(destination_folder / dest_id),
@@ -474,23 +470,6 @@ class RawStudyService(AbstractStorageService):
             return self.find_archive_path(metadata)
         return Path(metadata.path)
 
-    @override
-    def initialize_additional_data(self, raw_study: Study) -> bool:
-        try:
-            study = self.study_factory.create_from_fs(
-                self.get_study_path(raw_study),
-                is_managed(raw_study),
-                study_id=raw_study.id,
-            )
-            raw_study.additional_data = self._read_additional_data_from_files(study)
-            return True
-        except Exception as e:
-            logger.error(
-                f"Error while reading additional data for study {raw_study.id}",
-                exc_info=e,
-            )
-            return False
-
     def check_and_update_study_version_in_database(self, study: RawStudy) -> None:
         try:
             study_path = self.get_study_path(study)
@@ -523,7 +502,7 @@ class RawStudyService(AbstractStorageService):
             LazyNode.ZIP_FILELIST_CACHE = {
                 key: LazyNode.ZIP_FILELIST_CACHE[key]
                 for key in LazyNode.ZIP_FILELIST_CACHE
-                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < datetime.now(timezone.utc).replace(tzinfo=None)
+                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < current_time()
             }
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)
