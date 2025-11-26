@@ -437,7 +437,7 @@ class OutputService:
                 column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
                 final_data = []
                 for object_name, object_group in dataframe.groupby(column_type_name):
-                    area_dict = {}
+                    year_dict = {}
                     for year, year_group in object_group.groupby(MCYEAR_COL):
                         variables_list = []
                         for col in dataframe.columns:
@@ -447,13 +447,13 @@ class OutputService:
                                 name, unit = splitted_col[0], splitted_col[1]
                                 variables_list.append({"name": name, "unit": unit or " ", "data": output_data})
 
-                        area_dict[str(year)] = variables_list
+                        year_dict[str(year)] = variables_list
 
                     assert isinstance(object_name, str)
                     element_name = object_name
                     if data.type == StudyDownloadType.LINK:
                         element_name = "^".join(element_name.split(" - "))
-                    element = {"type": data.type.value, "data": area_dict, "name": element_name}
+                    element = {"type": data.type.value, "data": year_dict, "name": element_name}
                     final_data.append(element)
 
                 response = {"index": time_index, "data": final_data}
