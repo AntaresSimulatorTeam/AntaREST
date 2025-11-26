@@ -414,7 +414,7 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS)
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
-        responses = {}
+        responses: dict[str, Any] = {}
         for query_file in query_files:
             with temp_file_path(dir=self._study_service.config.storage.tmp_dir) as tmp_path:
                 task_id = self.start_aggregate_output_data(
@@ -463,7 +463,7 @@ class OutputService:
                     element = {"type": data.type.value, "data": year_dict, "name": element_name}
                     final_data.append(element)
 
-                response = {"index": time_index, "data": final_data}
+                response: dict[str, Any] = {"index": time_index, "data": final_data}
                 if responses:
                     # Fill the existing response
                     for content in response["data"]:
