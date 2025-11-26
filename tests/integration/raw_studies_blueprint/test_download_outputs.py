@@ -40,7 +40,6 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     # Hourly
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
-    del actual_result["warnings"]
     actual_result = json.loads(json.dumps(actual_result), parse_constant=_convert_nan_to_none)
     expected_content = from_json((ASSETS_DIR / "res1.json").read_bytes())
     assert expected_content == actual_result
@@ -50,7 +49,6 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     body["level"] = "annual"
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
-    del actual_result["warnings"]
     actual_result = json.loads(json.dumps(actual_result), parse_constant=_convert_nan_to_none)
     annual_result = {
         "index": {"start_date": "2018-01-01 00:00:00", "steps": 1, "first_week_size": 7, "level": "annual"},
@@ -225,7 +223,6 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     body["filter"] = ["de"]
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
-    del actual_result["warnings"]
     actual_result = json.loads(json.dumps(actual_result), parse_constant=_convert_nan_to_none)
     expected_result = {
         "index": {"start_date": "2018-01-01 00:00:00", "steps": 1, "first_week_size": 7, "level": "annual"},
@@ -317,7 +314,6 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     }
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
-    del actual_result["warnings"]
     link_result = {
         "index": {"start_date": "2018-01-01 00:00:00", "steps": 1, "first_week_size": 7, "level": "annual"},
         "data": [
