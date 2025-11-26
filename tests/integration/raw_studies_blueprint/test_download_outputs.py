@@ -298,9 +298,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
             }
         ],
     }
-    """
     assert actual_result == expected_result
-    """
 
     # Links
     output_id = "20241807-1540eco-extra-outputs"
