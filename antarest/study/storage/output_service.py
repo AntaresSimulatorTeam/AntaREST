@@ -431,6 +431,12 @@ class OutputService:
                 # Wait for the aggregation to end
                 self._task_service.await_task(task_id)
 
+                # Aggregation can fail (for instance, when asking renewables values and no cluster exists)
+                # If so, we shouldn't raise to keep backward compatibility
+                task = self._task_service.status_task(task_id)
+                if task.status != TaskStatus.COMPLETED:
+                    continue
+
                 dataframe = pd.read_parquet(tmp_path)
 
                 # Convert the dataframe in the right response
