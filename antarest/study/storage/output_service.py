@@ -414,6 +414,7 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS)
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
+        responses = {}
         for query_file in query_files:
             with temp_file_path(dir=self._study_service.config.storage.tmp_dir) as tmp_path:
                 task_id = self.start_aggregate_output_data(
@@ -463,7 +464,17 @@ class OutputService:
                     final_data.append(element)
 
                 response = {"index": time_index, "data": final_data}
-        return response
+                if responses:
+                    # Fill the existing response
+                    for content in response["data"]:
+                        object_name = content["name"]
+                        for k, existing_content in enumerate(responses["data"]):
+                            if existing_content["name"] == object_name:
+                                for year, content_data in content["data"].items():
+                                    responses["data"][k]["data"][year].extend(content_data)
+                else:
+                    responses = response
+        return responses
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """
