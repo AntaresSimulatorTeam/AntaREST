@@ -11,11 +11,10 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO, Callable, Optional, Sequence
+from typing import Any, BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
 from fastapi import HTTPException
-from starlette.responses import FileResponse
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
@@ -386,7 +385,7 @@ class OutputService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def download_outputs(self, study_id: str, output_id: str, data: StudyDownloadDTO) -> FileResponse:
+    def download_outputs(self, study_id: str, output_id: str, data: StudyDownloadDTO) -> dict[str, Any]:
         """
         Download outputs
         Args:
