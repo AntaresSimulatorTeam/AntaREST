@@ -180,7 +180,9 @@ def add_exception_handlers(application: FastAPI) -> None:
         Returns:
             The JSON response containing error details.
         """
-        logger.error("Unexpected Exception", exc_info=exc)
+
+        # Note: we don't log here, because the exception is supposed to be already logged by the logging
+        # middleware, with more context
         return JSONResponse(
             content={
                 "description": f"Unexpected server error: {exc}",
@@ -232,8 +234,6 @@ def fastapi_app(
     # But we need to instantiate this middleware as it's needed for the study service.
     # So we manually instantiate it here.
     DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
-
-    application.add_middleware(LoggingMiddleware)
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
@@ -288,6 +288,10 @@ def fastapi_app(
         @application.get("/", include_in_schema=False)
         def home(request: Request) -> Any:
             return ""
+
+    # It's important to add the logging middleware last, so that any log written or exception thrown
+    # by inner middlewares are correctly logged with the context of the request.
+    application.add_middleware(LoggingMiddleware)
 
     return application, services
 
