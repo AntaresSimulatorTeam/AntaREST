@@ -15,6 +15,7 @@ from typing import Any, BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
 from fastapi import HTTPException
+from pyarrow.parquet import ParquetFile
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
@@ -438,30 +439,39 @@ class OutputService:
                 if task.status != TaskStatus.COMPLETED:
                     continue
 
-                dataframe = pd.read_parquet(tmp_path)
+                intermediary_dict: dict[str, Any] = {}
+                parquet_file = ParquetFile(tmp_path)
+                # We're opening the parquet file chunk by chunk to avoid flooding memory
+                for i in range(parquet_file.num_row_groups):
+                    table = parquet_file.read_row_group(i)
+                    dataframe = table.to_pandas()
 
-                # Convert the dataframe in the right response
-                column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
-                final_data = []
-                for object_name, object_group in dataframe.groupby(column_type_name):
-                    year_dict = {}
-                    for year, year_group in object_group.groupby(MCYEAR_COL):
-                        variables_list = []
-                        for col in dataframe.columns:
-                            if col not in [column_type_name, MCYEAR_COL]:
-                                output_data = list(year_group[col])
-                                splitted_col = col.split(" % ")
-                                name, unit = splitted_col[0], splitted_col[1]
-                                variables_list.append({"name": name, "unit": unit or " ", "data": output_data})
+                    # Convert the dataframe in the right response
+                    column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
+                    for object_name, object_group in dataframe.groupby(column_type_name):
+                        assert isinstance(object_name, str)
+                        element_name = object_name
+                        if data.type == StudyDownloadType.LINK:
+                            element_name = "^".join(element_name.split(" - "))
 
-                        year_dict[str(year)] = variables_list
+                        for year, year_group in object_group.groupby(MCYEAR_COL):
+                            variables_list = []
+                            for col in dataframe.columns:
+                                if col not in [column_type_name, MCYEAR_COL]:
+                                    # We're using arrays to avoid flooding memory
+                                    output_data = year_group[col].to_numpy()
+                                    splitted_col = col.split(" % ")
+                                    name, unit = splitted_col[0], splitted_col[1]
+                                    variables_list.append({"name": name, "unit": unit or " ", "data": output_data})
 
-                    assert isinstance(object_name, str)
-                    element_name = object_name
-                    if data.type == StudyDownloadType.LINK:
-                        element_name = "^".join(element_name.split(" - "))
-                    element = {"type": data.type.value, "data": year_dict, "name": element_name}
-                    final_data.append(element)
+                            intermediary_dict.setdefault(element_name, {}).setdefault(str(year), []).extend(
+                                variables_list
+                            )
+
+                final_data = [
+                    {"type": data.type.value, "name": name, "data": values}
+                    for name, values in intermediary_dict.items()
+                ]
 
                 response: dict[str, Any] = {"index": time_index, "data": final_data}
                 if responses:
@@ -474,6 +484,16 @@ class OutputService:
                                     responses["data"][k]["data"][year].extend(content_data)
                 else:
                     responses = response
+
+        # todo: The data is in array format. We should convert it to list otherwise the endpoint fails.
+        # The problem is that we reach 100% RAM anyway ...
+        # I don't see a solution. Use a StreamingResponse works ? Doesn't seem like it as it expects bytes
+        # How the fuck that the current endpoint works ????
+        for element in responses.get("data", []):
+            for value in element["data"].values():
+                for content in value:
+                    content["data"] = content["data"].tolist()
+
         return responses
 
     def delete_output(self, uuid: str, output_name: str) -> None:
