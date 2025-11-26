@@ -37,7 +37,9 @@ from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
 from antarest.study.business.output.aggregator_management import (
+    AREA_COL,
     CLUSTER_ID_COL,
+    LINK_COL,
     AggregatorManager,
 )
 from antarest.study.business.output.utils import (
@@ -400,6 +402,10 @@ class OutputService:
         self._study_service.assert_study_unarchived(study)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
+        # Fetches time_index
+        time_index = self.get_output_time_index(study_id, output_id, data.level)
+
+        # Fetches the data
         query_files: list[QueryFileType]
         if data.type == StudyDownloadType.LINK:
             query_files = [MCIndLinksQueryFile.VALUES]
@@ -428,31 +434,29 @@ class OutputService:
 
                 dataframe = pd.read_parquet(tmp_path)
 
-                # todo: convert this inside the expected Imagrid Response
-                # column_name = LINK_COL if self.output_type == "areas" else AREA_COL
-                dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
-                df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL)
-                print(df_pivot.head())
+                # Convert the dataframe in the right response
+                column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
+                final_data = []
+                for object_name, object_group in dataframe.groupby(column_type_name):
+                    area_dict = {}
+                    for year, year_group in object_group.groupby(MCYEAR_COL):
+                        variables_list = []
+                        for col in dataframe.columns:
+                            if col not in [column_type_name, MCYEAR_COL]:
+                                output_data = list(year_group[col])
+                                splitted_col = col.split(" % ")
+                                name, unit = splitted_col[0], splitted_col[1]
+                                variables_list.append({"name": name, "unit": unit or " ", "data": output_data})
 
-        """
+                        area_dict[str(year)] = variables_list
 
-        {
-        "index": {"start_date": "2018-01-01 00:00:00", "steps": 1, "first_week_size": 7, "level": "annual"},
-        "data": [
-            {
-                "type": "LINK",
-                "name": "de^fr",
-                "data": {
-                    "1": [
-                        {"name": "FLOW LIN.", "unit": "MWh", "data": [0.0]},
-                        {"name": "UCAP LIN.", "unit": "MWh", "data": [0.0]},
-                    ]
-                },
-            }
-        ],
-    }
-        """
-        raise NotImplementedError
+                    elt_name = object_name if data.type == StudyDownloadType.LINK else object_name
+                    # todo: change element name in case of a link
+                    element = {"type": data.type.value, "data": area_dict, "name": elt_name}
+                    final_data.append(element)
+
+                response = {"index": time_index, "data": final_data}
+        return response
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """

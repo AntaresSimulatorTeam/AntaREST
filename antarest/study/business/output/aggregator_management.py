@@ -279,6 +279,10 @@ class AggregatorManager:
             # columns filtering
             df = self.columns_filtering(df, is_details)
 
+            if not self.transform_columns_headers:
+                # Flatten the multi-index columns as they are not processable by pyarrow
+                df.columns = pd.Index([" % ".join(col) for col in df.columns])
+
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(df.columns.tolist(), column_name, is_details, self.mc_root)
 
