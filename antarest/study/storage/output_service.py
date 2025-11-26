@@ -449,9 +449,11 @@ class OutputService:
 
                         area_dict[str(year)] = variables_list
 
-                    elt_name = object_name if data.type == StudyDownloadType.LINK else object_name
-                    # todo: change element name in case of a link
-                    element = {"type": data.type.value, "data": area_dict, "name": elt_name}
+                    assert isinstance(object_name, str)
+                    element_name = object_name
+                    if data.type == StudyDownloadType.LINK:
+                        element_name = "^".join(element_name.split(" - "))
+                    element = {"type": data.type.value, "data": area_dict, "name": element_name}
                     final_data.append(element)
 
                 response = {"index": time_index, "data": final_data}
