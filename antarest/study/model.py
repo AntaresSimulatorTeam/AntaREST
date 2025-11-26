@@ -28,6 +28,7 @@ from pydantic import (
     alias_generators,
     computed_field,
     field_validator,
+    model_validator,
 )
 from pydantic.alias_generators import to_camel
 from sqlalchemy import (
@@ -622,6 +623,12 @@ class StudyDownloadDTO(AntaresBaseModel):
     columns: list[str] = []
     synthesis: bool = False  # deprecated, we always consider it's False
     includeClusters: bool = False
+
+    @model_validator(mode="after")
+    def check_coherence(self) -> "StudyDownloadDTO":
+        if self.includeClusters and self.type == StudyDownloadType.LINK:
+            raise ValueError("Cannot ask for cluster values for type link")
+        return self
 
 
 class MatrixIndex(AntaresBaseModel):
