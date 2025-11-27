@@ -29,7 +29,7 @@ from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
-from antarest.study.model import Study, StudyAdditionalData
+from antarest.study.model import Study
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -161,7 +161,6 @@ class TestVariantStudyService:
             owner=user,
             groups=[group],
             path=str(raw_study_path),
-            additional_data=StudyAdditionalData(author="John Smith"),
         )
         db.session.add(raw_study)
         db.session.commit()
@@ -283,7 +282,6 @@ class TestVariantStudyService:
             owner=admin_user,
             groups=[group],
             path=str(raw_study_path),
-            additional_data=StudyAdditionalData(author="John Smith"),
         )
 
         db.session.add(raw_study)

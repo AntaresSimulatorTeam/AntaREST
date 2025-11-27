@@ -82,11 +82,11 @@ class TestMatrixService:
         # A matrix object is stored in the database
         with db():
             obj = matrix_service.repo.get(matrix_id)
-        assert obj is not None, f"Missing Matrix object {matrix_id}"
-        assert obj.width == len(data[0])
-        assert obj.height == len(data)
-        now = current_time()
-        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+            assert obj is not None, f"Missing Matrix object {matrix_id}"
+            assert obj.width == len(data[0])
+            assert obj.height == len(data)
+            now = current_time()
+            assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
     def test_create__side_effect(self, matrix_service: MatrixService) -> None:
         """Creates a new matrix object with the specified data, but fail during saving."""
@@ -336,11 +336,11 @@ class TestMatrixService:
         # A matrix object is stored in the database
         with db():
             obj = matrix_service.repo.get(info.id)
-        assert obj is not None, f"Missing Matrix object {info.id}"
-        assert obj.width == matrix.shape[1]
-        assert obj.height == matrix.shape[0]
-        now = current_time()
-        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+            assert obj is not None, f"Missing Matrix object {info.id}"
+            assert obj.width == matrix.shape[1]
+            assert obj.height == matrix.shape[0]
+            now = current_time()
+            assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
     @pytest.mark.parametrize("content_type", ["application/json", "text/plain"])
     def test_create_by_importation__zip_file(self, matrix_service: MatrixService, content_type: str) -> None:
@@ -405,11 +405,11 @@ class TestMatrixService:
             # A matrix object is stored in the database
             with db():
                 obj = matrix_service.repo.get(info.id)
-            assert obj is not None, f"Missing Matrix object {info.id}"
-            assert obj.width == (matrix.shape[1] if matrix.size else 0)
-            assert obj.height == matrix.shape[0]
-            now = current_time()
-            assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+                assert obj is not None, f"Missing Matrix object {info.id}"
+                assert obj.width == (matrix.shape[1] if matrix.size else 0)
+                assert obj.height == matrix.shape[0]
+                now = current_time()
+                assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
 
 def test_dataset_lifecycle() -> None:

@@ -179,7 +179,13 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         with RequestContext(request):
-            response = await call_next(request)
+            try:
+                response = await call_next(request)
+            except Exception as exc:
+                # Logging here and not in outer exception handler, so that we get the request context
+                # into the logs. Otherwise, the log will not get the proper trace_id, in particular.
+                logger.error("Unexpected Exception", exc_info=exc)
+                raise
         return response
 
 
