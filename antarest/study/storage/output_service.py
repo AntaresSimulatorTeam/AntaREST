@@ -10,12 +10,12 @@
 #
 # This file is part of the Antares project.
 import logging
+import uuid
 from pathlib import Path
 from typing import Any, BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
 from fastapi import HTTPException
-from pyarrow.parquet import ParquetFile
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
@@ -29,6 +29,9 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.serde.parquet_writer import (
+    yield_dataframes_from_parquet,
+)
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
@@ -415,9 +418,13 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS)
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
-        responses: dict[str, Any] = {}
-        for query_file in query_files:
-            with temp_file_path(dir=self._study_service.config.storage.tmp_dir) as tmp_path:
+        file_paths = []
+        tmp_dir = self._study_service.config.storage.tmp_dir
+        try:
+            # Launch all aggregation tasks
+            for query_file in query_files:
+                file_name = str(uuid.uuid4())
+                file_path = tmp_dir / file_name
                 task_id = self.start_aggregate_output_data(
                     study_id,
                     output_id,
@@ -426,7 +433,7 @@ class OutputService:
                     TableExportFormat.PARQUET,
                     data.columns,
                     data.filter,
-                    tmp_path,
+                    file_path,
                     transform_columns_headers=False,
                     mc_years=data.years,
                 )
@@ -437,15 +444,16 @@ class OutputService:
                 # If so, we shouldn't raise to keep backward compatibility
                 task = self._task_service.status_task(task_id)
                 if task.status != TaskStatus.COMPLETED:
+                    file_path.unlink(missing_ok=True)
                     continue
 
-                intermediary_dict: dict[str, Any] = {}
-                parquet_file = ParquetFile(tmp_path)
-                # We're opening the parquet file chunk by chunk to avoid flooding memory
-                for i in range(parquet_file.num_row_groups):
-                    table = parquet_file.read_row_group(i)
-                    dataframe = table.to_pandas()
+                file_paths.append(file_path)
 
+            # Once they all ended, build the final response
+            intermediary_dict: dict[str, Any] = {}
+            for file_path in file_paths:
+                # We're opening the parquet file chunk by chunk to avoid flooding memory
+                for dataframe in yield_dataframes_from_parquet([file_path], []):
                     # Convert the dataframe in the right response
                     column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
                     for object_name, object_group in dataframe.groupby(column_type_name):
@@ -468,33 +476,28 @@ class OutputService:
                                 variables_list
                             )
 
-                final_data = [
-                    {"type": data.type.value, "name": name, "data": values}
-                    for name, values in intermediary_dict.items()
-                ]
+            final_data = [
+                {"type": data.type.value, "name": name, "data": values} for name, values in intermediary_dict.items()
+            ]
+            response: dict[str, Any] = {"index": time_index, "data": final_data}
 
-                response: dict[str, Any] = {"index": time_index, "data": final_data}
-                if responses:
-                    # Fill the existing response
-                    for content in response["data"]:
-                        object_name = content["name"]
-                        for k, existing_content in enumerate(responses["data"]):
-                            if existing_content["name"] == object_name:
-                                for year, content_data in content["data"].items():
-                                    responses["data"][k]["data"][year].extend(content_data)
-                else:
-                    responses = response
+            # todo: The data is in array format. We should convert it to list otherwise the endpoint fails.
+            # The problem is that we reach 100% RAM anyway ...
+            # I don't see a solution. Use a StreamingResponse works ? Doesn't seem like it as it expects bytes
+            # How the fuck that the current endpoint works ????
+            for element in response.get("data", []):
+                for value in element["data"].values():
+                    for content in value:
+                        if isinstance(content["data"], list):
+                            print(response)
+                            print("///////")
+                        content["data"] = content["data"].tolist()
 
-        # todo: The data is in array format. We should convert it to list otherwise the endpoint fails.
-        # The problem is that we reach 100% RAM anyway ...
-        # I don't see a solution. Use a StreamingResponse works ? Doesn't seem like it as it expects bytes
-        # How the fuck that the current endpoint works ????
-        for element in responses.get("data", []):
-            for value in element["data"].values():
-                for content in value:
-                    content["data"] = content["data"].tolist()
+            return response
 
-        return responses
+        finally:
+            for file_path in file_paths:
+                file_path.unlink(missing_ok=True)
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """
