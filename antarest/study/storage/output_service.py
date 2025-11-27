@@ -488,9 +488,6 @@ class OutputService:
             for element in response.get("data", []):
                 for value in element["data"].values():
                     for content in value:
-                        if isinstance(content["data"], list):
-                            print(response)
-                            print("///////")
                         content["data"] = content["data"].tolist()
 
             return response
