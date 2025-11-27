@@ -60,3 +60,10 @@ debug: False
 #redis:
 #  host: localhost
 #  port: 6379
+
+# Celery configuration for maintenance tasks (optional, defaults to env vars)
+# celery:
+#   broker_url: "redis://localhost:6379/1"
+#   result_backend: "redis://localhost:6379/1"
+#   timezone: "UTC"
+#   result_expires: 86400  # 24 hours

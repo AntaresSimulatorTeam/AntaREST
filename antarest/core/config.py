@@ -636,6 +636,33 @@ class MetricsConfig:
 
 
 @dataclass(frozen=True)
+class CeleryConfig:
+    """
+    Sub config object dedicated to Celery (maintenance tasks scheduling)
+
+    Attributes:
+        broker_url: URL of the message broker (Redis)
+        result_backend: URL of the result backend (Redis or DB)
+        timezone: Timezone for scheduled tasks
+    """
+
+    broker_url: str = "redis://localhost:6379/1"
+    result_backend: str = "redis://localhost:6379/1"
+    timezone: str = "UTC"
+    result_expires: int = 86400  # 24 hours
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "CeleryConfig":
+        defaults = cls()
+        return cls(
+            broker_url=data.get("broker_url", defaults.broker_url),
+            result_backend=data.get("result_backend", defaults.result_backend),
+            timezone=data.get("timezone", defaults.timezone),
+            result_expires=data.get("result_expires", defaults.result_expires),
+        )
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
@@ -654,6 +681,7 @@ class Config:
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
     metrics: MetricsConfig = MetricsConfig()
+    celery: CeleryConfig = CeleryConfig()
     root_path: str = ""
     api_prefix: str = ""
     desktop_mode: bool = False
@@ -680,6 +708,7 @@ class Config:
             eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
             cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
+            celery=CeleryConfig.from_dict(data["celery"]) if "celery" in data else defaults.celery,
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
             desktop_mode=desktop_mode,
