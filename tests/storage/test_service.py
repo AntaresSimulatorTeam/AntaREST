@@ -30,13 +30,14 @@ from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from starlette.responses import Response
 
+from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
@@ -46,6 +47,7 @@ from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
+from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.district_model import District
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
@@ -78,7 +80,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
@@ -1461,6 +1466,46 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     assert kwargs.get("include_parent") is False
 
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
+
+
+@pytest.mark.parametrize(
+    "tree_node,url,data,expected_name",
+    [
+        (Mock(spec=IniFileNode), "url", 0, "update_config"),
+        (Mock(spec=InputSeriesMatrix), "url", [[0]], "replace_matrix"),
+        (Mock(spec=RawFileNode), "comments", "0", "replace_comments"),
+    ],
+)
+def test_create_command(
+    tree_node: INode[JSON, t.Union[str, int, bool, float, bytes, JSON], JSON],
+    url: str,
+    data: SUB_JSON,
+    expected_name: str,
+) -> None:
+    matrix_id = "matrix_id"
+
+    command_context = CommandContext(
+        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
+        matrix_service=Mock(spec=MatrixService, create=Mock(return_value=matrix_id)),
+        blob_service=Mock(spec=BlobService),
+    )
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=Mock(spec=StudyMetadataRepository),
+        config=Mock(spec=Config),
+        variant_study_service=Mock(
+            spec=VariantStudyService,
+            command_factory=Mock(spec=GeneratorMatrixConstants, command_context=command_context),
+        ),
+    )
+
+    command = service._create_edit_study_command(
+        tree_node=tree_node, url=url, data=data, study_version=StudyVersion.parse("880")
+    )
+
+    assert command.command_name.value == expected_name
 
 
 @with_admin_user
