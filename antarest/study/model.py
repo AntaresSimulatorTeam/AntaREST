@@ -47,7 +47,7 @@ from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.np_array import NpArray
+from antarest.core.serde.np_array import NpArrayLowMemory
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 
@@ -643,7 +643,7 @@ class TimeSerie(AntaresBaseModel):
 
     name: str
     unit: str
-    data: NpArray = np.zeros(shape=(0,))
+    data: NpArrayLowMemory = np.zeros(shape=(0,))
 
 
 class TimeSeriesData(AntaresBaseModel):
@@ -655,7 +655,6 @@ class TimeSeriesData(AntaresBaseModel):
 class MatrixAggregationResultDTO(AntaresBaseModel):
     index: MatrixIndex
     data: list[TimeSeriesData]
-    warnings: list[str]
 
 
 class DirectoryMetadata(AntaresBaseModel):

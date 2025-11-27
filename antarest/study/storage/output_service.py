@@ -16,6 +16,7 @@ from typing import Any, BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
 from fastapi import HTTPException
+from starlette.responses import FileResponse
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
@@ -63,6 +64,7 @@ from antarest.study.business.output.variables_management import (
 )
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
+    MatrixAggregationResultDTO,
     MatrixIndex,
     Study,
     StudyDownloadDTO,
@@ -389,7 +391,7 @@ class OutputService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def download_outputs(self, study_id: str, output_id: str, data: StudyDownloadDTO) -> dict[str, Any]:
+    def download_outputs(self, study_id: str, output_id: str, data: StudyDownloadDTO) -> FileResponse:
         """
         Download outputs
         Args:
@@ -419,7 +421,6 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
         file_paths = []
-        response: dict[str, Any] = {}
         tmp_dir = self._study_service.config.storage.tmp_dir
         try:
             # Launch all aggregation tasks
@@ -477,24 +478,25 @@ class OutputService:
                                 variables_list
                             )
 
-            final_data = [
-                {"type": data.type.value, "name": name, "data": values} for name, values in intermediary_dict.items()
-            ]
-            response = {"index": time_index, "data": final_data}
+            response = MatrixAggregationResultDTO.model_validate(
+                {
+                    "index": time_index,
+                    "data": [
+                        {"type": data.type, "name": name, "data": values} for name, values in intermediary_dict.items()
+                    ],
+                }
+            )
 
-            # todo: The data is in array format. We should convert it to list otherwise the endpoint fails.
-            # The problem is that we reach 100% RAM anyway ...
-            # I don't see a solution. Use a StreamingResponse works ? Doesn't seem like it as it expects bytes
-            # How the fuck that the current endpoint works ????
-            for element in response.get("data", []):
-                for value in element["data"].values():
-                    for content in value:
-                        content["data"] = content["data"].tolist()
+            final_name = str(uuid.uuid4())
+            final_path = tmp_dir / final_name
+            with open(final_path, "w", encoding="utf-8") as fh:
+                fh.write(response.model_dump_json())
 
         finally:
             for file_path in file_paths:
                 file_path.unlink(missing_ok=True)
-            return response
+
+        return FileResponse(final_path, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """

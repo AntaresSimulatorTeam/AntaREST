@@ -15,7 +15,7 @@ from http import HTTPStatus
 from typing import Annotated, Any, Sequence
 
 from fastapi import APIRouter, Query, Request, UploadFile
-from starlette.responses import Response
+from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -143,13 +143,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         data: StudyDownloadDTO,
         request: Request,  # deprecated, we always return a JSON response
         use_task: bool = False,  # deprecated, we always consider it's False
-    ) -> dict[str, Any]:
+    ) -> FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
 
-        content = output_service.download_outputs(study_id, output_id, data)
-        return content
+        return output_service.download_outputs(study_id, output_id, data)
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",
