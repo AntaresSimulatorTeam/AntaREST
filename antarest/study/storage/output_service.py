@@ -453,30 +453,29 @@ class OutputService:
 
             # Once they all ended, build the final response
             intermediary_dict: dict[str, Any] = {}
-            for file_path in file_paths:
-                # We're opening the parquet file chunk by chunk to avoid flooding memory
-                for dataframe in yield_dataframes_from_parquet([file_path], []):
-                    # Convert the dataframe in the right response
-                    column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
-                    for object_name, object_group in dataframe.groupby(column_type_name):
-                        assert isinstance(object_name, str)
-                        element_name = object_name
-                        if data.type == StudyDownloadType.LINK:
-                            element_name = "^".join(element_name.split(" - "))
+            # We're opening the parquet files chunk by chunk to avoid flooding memory
+            for dataframe in yield_dataframes_from_parquet(file_paths, []):
+                # Convert the dataframe in the right response
+                column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
+                df_columns = dataframe.columns.tolist()
+                df_columns.remove(column_type_name)
+                df_columns.remove(MCYEAR_COL)
+                for object_name, object_group in dataframe.groupby(column_type_name):
+                    assert isinstance(object_name, str)
+                    element_name = object_name
+                    if data.type == StudyDownloadType.LINK:
+                        element_name = "^".join(element_name.split(" - "))
 
-                        for year, year_group in object_group.groupby(MCYEAR_COL):
-                            variables_list = []
-                            for col in dataframe.columns:
-                                if col not in [column_type_name, MCYEAR_COL]:
-                                    # We're using arrays to avoid flooding memory
-                                    output_data = year_group[col].to_numpy()
-                                    splitted_col = col.split(" % ")
-                                    name, unit = splitted_col[0], splitted_col[1]
-                                    variables_list.append({"name": name, "unit": unit or " ", "data": output_data})
+                    for year, year_group in object_group.groupby(MCYEAR_COL):
+                        variables_list = []
+                        for col in df_columns:
+                            # We're using arrays to avoid flooding memory
+                            output_data = year_group[col].to_numpy()
+                            splitted_col = col.split(" % ")
+                            name, unit = splitted_col[0], splitted_col[1]
+                            variables_list.append({"name": name, "unit": unit or " ", "data": output_data})
 
-                            intermediary_dict.setdefault(element_name, {}).setdefault(str(year), []).extend(
-                                variables_list
-                            )
+                        intermediary_dict.setdefault(element_name, {}).setdefault(str(year), []).extend(variables_list)
 
             response = MatrixAggregationResultDTO.model_validate(
                 {
