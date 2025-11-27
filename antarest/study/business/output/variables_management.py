@@ -14,14 +14,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Iterator
 
-import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.study.business.output.utils import (
-    MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -31,12 +29,7 @@ from antarest.study.business.output.utils import (
     normalize_column_names,
     parse_output_file,
 )
-from antarest.study.storage.output_model import (
-    OutputVariablesList,
-    OutputVariablesType,
-    OutputVariablesView,
-    OutputVariablesViewsModel,
-)
+from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
@@ -378,15 +371,6 @@ def check_arguments_coherence_and_return_identifier(
         return AreaOutputIdentifier(area_id)
 
 
-def get_view_from_dataframe(dataframe: pd.DataFrame, variable_name: str) -> OutputVariablesView:
-    """Transform the given dataframe into a OutputVariablesView model"""
-    dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
-    df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
-    data = df_pivot.to_dict(orient="split")
-    del data["index"]
-    return OutputVariablesView.model_validate(data)
-
-
 def get_output_view_inside_db(
     study_id: str,
     output_id: str,
@@ -395,43 +379,42 @@ def get_output_view_inside_db(
     frequency: MatrixFrequency,
     output_identifier: OutputIdentifier,
 ) -> OutputVariablesViewsModel | None:
-    with db():
-        q = db.session.query(OutputVariablesViewsModel)
-        q = q.filter(OutputVariablesViewsModel.study_id == study_id)
-        q = q.filter(OutputVariablesViewsModel.output_id == output_id)
-        q = q.filter(OutputVariablesViewsModel.type == variable_type)
-        q = q.filter(OutputVariablesViewsModel.frequency == frequency)
-        q = q.filter(OutputVariablesViewsModel.variable_name == variable_name)
+    q = db.session.query(OutputVariablesViewsModel)
+    q = q.filter(OutputVariablesViewsModel.study_id == study_id)
+    q = q.filter(OutputVariablesViewsModel.output_id == output_id)
+    q = q.filter(OutputVariablesViewsModel.type == variable_type)
+    q = q.filter(OutputVariablesViewsModel.frequency == frequency)
+    q = q.filter(OutputVariablesViewsModel.variable_name == variable_name)
 
-        match output_identifier:
-            case AreaOutputIdentifier():
-                filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
-            case ThermalClusterOutputIdentifier():
-                filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
-                sub_id = output_identifier.get_sub_id_for_aggregation()
-                assert sub_id is not None
-                filters.append((OutputVariablesViewsModel.thermal_id, sub_id))
-            case RenewableClusterOutputIdentifier():
-                filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
-                sub_id = output_identifier.get_sub_id_for_aggregation()
-                assert sub_id is not None
-                filters.append((OutputVariablesViewsModel.renewable_id, sub_id))
-            case ShortTermStorageOutputIdentifier():
-                filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
-                sub_id = output_identifier.get_sub_id_for_aggregation()
-                assert sub_id is not None
-                filters.append((OutputVariablesViewsModel.st_storage_id, sub_id))
-            case LinkOutputIdentifier():
-                area_from_id, area_to_id = output_identifier.get_id_for_aggregation().split(" - ")
-                filters = [(OutputVariablesViewsModel.area_from_id, area_from_id)]
-                filters.append((OutputVariablesViewsModel.area_to_id, area_to_id))
-            case _:
-                raise NotImplementedError(f"output identifier `{output_identifier.__class__}` is not implemented")
+    match output_identifier:
+        case AreaOutputIdentifier():
+            filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
+        case ThermalClusterOutputIdentifier():
+            filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
+            sub_id = output_identifier.get_sub_id_for_aggregation()
+            assert sub_id is not None
+            filters.append((OutputVariablesViewsModel.thermal_id, sub_id))
+        case RenewableClusterOutputIdentifier():
+            filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
+            sub_id = output_identifier.get_sub_id_for_aggregation()
+            assert sub_id is not None
+            filters.append((OutputVariablesViewsModel.renewable_id, sub_id))
+        case ShortTermStorageOutputIdentifier():
+            filters = [(OutputVariablesViewsModel.area_id, output_identifier.get_id_for_aggregation())]
+            sub_id = output_identifier.get_sub_id_for_aggregation()
+            assert sub_id is not None
+            filters.append((OutputVariablesViewsModel.st_storage_id, sub_id))
+        case LinkOutputIdentifier():
+            area_from_id, area_to_id = output_identifier.get_id_for_aggregation().split(" - ")
+            filters = [(OutputVariablesViewsModel.area_from_id, area_from_id)]
+            filters.append((OutputVariablesViewsModel.area_to_id, area_to_id))
+        case _:
+            raise NotImplementedError(f"output identifier `{output_identifier.__class__}` is not implemented")
 
-        for column, value in filters:
-            q = q.filter(column == value)
+    for column, value in filters:
+        q = q.filter(column == value)
 
-        return q.scalar()  # type: ignore
+    return q.scalar()  # type: ignore
 
 
 def create_output_view_db_model(

@@ -142,6 +142,39 @@ export const getCurrentStudy = createSelector(
   (studies, current) => studies[current],
 );
 
+/**
+ * Returns a mapping of study IDs to their children study IDs.
+ *
+ * @param state The application state.
+ * @returns Example: { "parentStudyId": ["childStudyId1", "childStudyId2"], ... }
+ */
+export const getVariantsIdsByParent = createSelector(getStudies, (studies) => {
+  return studies.reduce(
+    (acc, { id, parentId }) => {
+      if (!parentId) {
+        return acc;
+      }
+      acc[parentId] ??= [];
+      acc[parentId].push(id);
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
+});
+
+export const getDeepVariantsIds = createSelector(
+  getVariantsIdsByParent,
+  (state: AppState, parentId: string) => parentId,
+  (variantsIdsByParent, parentId) => getDeepVariantsIdsRec(variantsIdsByParent, parentId),
+);
+
+function getDeepVariantsIdsRec(
+  variantsIdsByParent: Record<string, string[]>,
+  parentId: string,
+): string[] {
+  const children = variantsIdsByParent[parentId] ?? [];
+  return children.flatMap((child) => [child, ...getDeepVariantsIdsRec(variantsIdsByParent, child)]);
+}
 ////////////////////////////////////////////////////////////////
 // Users
 ////////////////////////////////////////////////////////////////

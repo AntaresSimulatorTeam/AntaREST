@@ -529,6 +529,7 @@ class StudyMetadataDTO(AntaresBaseModel):
     folder: Optional[str] = None
     tags: List[str] = []
     directory_id: Optional[str] = None
+    parent_id: Optional[str] = None
 
     @field_validator("horizon", mode="before")
     def transform_horizon_to_str(cls, val: str | int | None) -> Optional[str]:
