@@ -143,9 +143,6 @@ from antarest.study.storage.utils import (
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.create_user_resource import (
-    CreateUserResource,
-)
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -154,6 +151,9 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
     RemoveUserResource,
 )
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
+from antarest.study.storage.variantstudy.model.command.replace_user_resource import (
+    ReplaceUserResource,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -1451,7 +1451,7 @@ class StudyService:
         blob_id = context.blob_service.save(content)
         args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
         command_data = UserResourceDataCreation.model_validate(args)
-        command = CreateUserResource(data=command_data, command_context=context, study_version=version)
+        command = ReplaceUserResource(data=command_data, command_context=context, study_version=version)
         commands: list[ICommand] = [command]
 
         self.get_study_interface(study).add_commands(commands)
@@ -2302,13 +2302,13 @@ class StudyService:
             "resource_type": ResourceType.FOLDER,
         }
         command_data = UserResourceDataCreation.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)
+        self._alter_user_folder(study_id, command_data, ReplaceUserResource, ResourceCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
         command_data: UserResourceDataCreation | UserResourceDataRemoval,
-        command_class: Type[CreateUserResource | RemoveUserResource],
+        command_class: Type[ReplaceUserResource | RemoveUserResource],
         exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:
         study = self.get_study(study_id)

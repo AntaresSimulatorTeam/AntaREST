@@ -150,7 +150,7 @@ class TestFetchRawData:
             res = client.get(f"/v1/studies/{internal_study_id}/commands")
             commands = res.json()
             assert len(commands) == 1
-            assert commands[0]["action"] == "create_user_resource"
+            assert commands[0]["action"] == "replace_user_resource"
             assert commands[0]["args"] == {
                 "data": {
                     "path": "somewhere/something.txt",

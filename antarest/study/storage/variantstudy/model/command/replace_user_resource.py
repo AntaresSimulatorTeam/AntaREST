@@ -28,15 +28,15 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class CreateUserResource(ICommand):
+class ReplaceUserResource(ICommand):
     """
-    Command used to create a resource inside the `user` folder.
+    Command used to save a resource inside the `user` folder.
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.CREATE_USER_RESOURCE
+    command_name: CommandName = CommandName.REPLACE_USER_RESOURCE
 
     # Command parameters
     # ==================
