@@ -10,28 +10,19 @@
 #
 # This file is part of the Antares project.
 
-import logging
-import os
-from io import StringIO
 from pathlib import Path
 
-from sqlalchemy.orm import DeclarativeBase
-
-from alembic import command
-from alembic.config import Config
-from alembic.util import CommandError
-
 from antarest.core.persistence import upgrade_db
-from antarest.core.utils.utils import get_local_path
 
 
 def test_alembic_migration(tmp_path: Path) -> None:
     # Create a fake config file pointing towards the DB in memory
     config_file = tmp_path / "config.yaml"
     config_file.write_text(
-"""db:
+        """db:
   url: "sqlite:///memory"
-""")
+"""
+    )
     try:
         # This will fail if there's an issue inside our alembic migrations
         upgrade_db(config_file)
