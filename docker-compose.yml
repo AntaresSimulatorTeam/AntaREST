@@ -59,7 +59,6 @@ services:
       interval: 60s
       timeout: 10s
       retries: 3
-      start_period: 10s
     restart: unless-stopped
   antarest-maintenance-worker:
     image: antarest:latest
@@ -88,7 +87,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
     restart: unless-stopped
   celery-exporter:
     image: danihodovic/celery-exporter:latest
