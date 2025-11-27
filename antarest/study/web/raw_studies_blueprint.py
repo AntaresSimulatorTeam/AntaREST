@@ -282,7 +282,7 @@ def create_raw_study_routes(
         uuid: str,
         path: PATH_TYPE = "/",
         file: bytes = File(default=None),
-        create_missing: bool = True,  # Deprecated, always considered as True
+        create_missing: bool = Query(default=True, deprecated=True),  # Deprecated, always considered as True
         resource_type: ResourceType = ResourceType.FILE,
     ) -> None:
         """
