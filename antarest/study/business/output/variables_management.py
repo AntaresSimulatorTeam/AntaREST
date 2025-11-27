@@ -14,14 +14,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Iterator
 
-import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.study.business.output.utils import (
-    MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -31,12 +29,7 @@ from antarest.study.business.output.utils import (
     normalize_column_names,
     parse_output_file,
 )
-from antarest.study.storage.output_model import (
-    OutputVariablesList,
-    OutputVariablesType,
-    OutputVariablesView,
-    OutputVariablesViewsModel,
-)
+from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
@@ -376,15 +369,6 @@ def check_arguments_coherence_and_return_identifier(
         if any([thermal_id, renewable_id, st_storage_id]):
             raise OutputVariablesViewError(output_id, "You provided an renewable/thermal/storage id for areas")
         return AreaOutputIdentifier(area_id)
-
-
-def get_view_from_dataframe(dataframe: pd.DataFrame, variable_name: str) -> OutputVariablesView:
-    """Transform the given dataframe into a OutputVariablesView model"""
-    dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
-    df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
-    data = df_pivot.to_dict(orient="split")
-    del data["index"]
-    return OutputVariablesView.model_validate(data)
 
 
 def get_output_view_inside_db(

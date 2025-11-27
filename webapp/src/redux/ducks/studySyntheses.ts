@@ -13,7 +13,6 @@
  */
 
 import type { Job } from "@/services/api/launcher/jobs/types";
-import { getVariants } from "@/services/api/variant";
 import {
   createAction,
   createAsyncThunk,
@@ -22,7 +21,12 @@ import {
 } from "@reduxjs/toolkit";
 import * as api from "../../services/api/study";
 import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../../types/types";
-import { getStudyMapsIds, getStudySynthesis, getStudySynthesisIds } from "../selectors";
+import {
+  getStudyMapsIds,
+  getStudySynthesis,
+  getStudySynthesisIds,
+  getDeepVariantsIds,
+} from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
 import { deleteStudyMap, setStudyMap } from "./studyMaps";
@@ -144,6 +148,7 @@ export const refreshStudySynthesis =
     const state = getState();
     const id = "studyId" in payload ? payload.studyId : payload.id;
 
+    // Refresh study synthesis if already loaded
     if (getStudySynthesisIds(state).includes(id)) {
       dispatch(setStudySynthesis(id));
 
@@ -152,13 +157,15 @@ export const refreshStudySynthesis =
       }
     }
 
-    const variants = await getVariants(id);
-
-    variants.forEach(({ id }) => {
-      if (getStudySynthesisIds(state).includes(id)) {
+    // Cleanup study synthesis and maps of descendants studies
+    // when a parent study synthesis is refreshed the synthesis and maps of its descendants may be outdated
+    const variantsIds = getDeepVariantsIds(state, id);
+    const studySynthesisIds = getStudySynthesisIds(state);
+    const studyMapsIds = getStudyMapsIds(state);
+    variantsIds.forEach((id) => {
+      if (studySynthesisIds.includes(id)) {
         dispatch(deleteStudySynthesis(id));
-
-        if (getStudyMapsIds(state).includes(id)) {
+        if (studyMapsIds.includes(id)) {
           dispatch(deleteStudyMap(id));
         }
       }

@@ -112,7 +112,6 @@ from antarest.study.model import (
     MatrixIndex,
     RawStudy,
     Study,
-    StudyAdditionalData,
     StudyContentStatus,
     StudyDownloadLevelDTO,
     StudyFolder,
@@ -436,10 +435,7 @@ class RawStudyInterface(StudyInterface):
             study_antares["editor"] = user_name
             study_antares["lastsave"] = current_time()
             file_study.tree.save(study_antares, ["study", "antares"])
-            if not self._study.additional_data:
-                self._study.additional_data = StudyAdditionalData(author=user_name, editor=user_name)
-            else:
-                self._study.additional_data.editor = user_name
+            self._study.editor = user_name
             self._repository.save(self._study)
 
 
@@ -806,13 +802,12 @@ class StudyService:
 
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
 
-        study.additional_data = study.additional_data or StudyAdditionalData()
         if metadata_patch.name:
             study.name = metadata_patch.name
         if metadata_patch.author:
-            study.additional_data.author = metadata_patch.author
+            study.author = metadata_patch.author
         if metadata_patch.horizon:
-            study.additional_data.horizon = metadata_patch.horizon
+            study.horizon = metadata_patch.horizon
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
@@ -904,10 +899,11 @@ class StudyService:
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(study_path),
+            author=author,
+            editor=author,
             created_at=now_utc,
             updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
-            additional_data=StudyAdditionalData(author=author, editor=author),
             directory_id=directory_id,
             owner=owner,
             groups=groups,
@@ -1406,7 +1402,7 @@ class StudyService:
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
-            additional_data=StudyAdditionalData(editor=self.get_user_name()),
+            editor=self.get_user_name(),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             owner=owner,
             groups=groups,

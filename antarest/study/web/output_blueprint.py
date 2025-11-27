@@ -35,7 +35,6 @@ from antarest.study.storage.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
-    OutputVariablesView,
 )
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -551,7 +550,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
-    ) -> OutputVariablesView:
+    ) -> Response:
         """
         Fetches the variables view for a given output and a given configuration.
         If the view does not exist in DB yet, raises an HTTP 404 error.
@@ -559,7 +558,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        return output_service.get_output_variables_view(
+        dataframe = output_service.get_output_variables_view(
             uuid,
             output_id,
             type,
@@ -572,6 +571,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             renewable_id,
             st_storage_id,
         )
+        content = dataframe.to_json(orient="split", index=False)
+        return Response(content=content, media_type="application/json")
 
     @bp.post(
         "/studies/{uuid}/output/{output_id}/variables-views/materialize",

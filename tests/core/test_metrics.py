@@ -16,7 +16,7 @@ import pytest
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Metric
 from pydantic import BaseModel
-from sqlalchemy import QueuePool, create_engine, text
+from sqlalchemy import Column, Integer, MetaData, QueuePool, Table, create_engine, text
 from sqlalchemy.orm import sessionmaker
 from starlette.exceptions import HTTPException
 from starlette.testclient import TestClient
@@ -315,6 +315,8 @@ def test_db_transaction_is_closed_on_server_disconnect():
 
 
 def test_db_session_metrics():
+    metadata = MetaData()
+
     prometheus_client.disable_created_metrics()
     engine = create_engine("sqlite:///:memory:")
     session_factory = sessionmaker(bind=engine)
@@ -335,13 +337,19 @@ def test_db_session_metrics():
     assert _get_value(registry, "db_session_events", labels={"event_type": "rollback"}) is None
     assert _get_value(registry, "db_session_events", labels={"event_type": "commit"}) is None
 
+    table = Table("test", metadata, Column("id", Integer, primary_key=True))
+
     with session_factory() as session:
         session.execute(text("CREATE TABLE test (id INTEGER PRIMARY KEY)"))
         assert _get_value(registry, "db_session_events", labels={"event_type": "begin"}) == 1
         assert _get_value(registry, "db_session_events", labels={"event_type": "rollback"}) is None
         assert _get_value(registry, "db_session_events", labels={"event_type": "commit"}) is None
+        assert _get_value(registry, "db_session_events", labels={"event_type": "select"}) is None
         assert _get_value(registry, "db_transactions_current") == 1
         assert _get_histo_count(registry, "db_transactions_duration_seconds") is None
+
+        session.execute(table.select())
+        assert _get_value(registry, "db_session_events", labels={"event_type": "select"}) == 1
 
         session.rollback()
         assert _get_value(registry, "db_session_events", labels={"event_type": "begin"}) == 1

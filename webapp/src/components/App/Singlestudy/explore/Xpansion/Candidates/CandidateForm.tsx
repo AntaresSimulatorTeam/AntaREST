@@ -90,7 +90,7 @@ function CandidateForm(props: PropType) {
           <Title>{t("global.general")}</Title>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Button
-              variant="outlined"
+              variant="contained"
               color="primary"
               sx={{
                 display: "flex",
