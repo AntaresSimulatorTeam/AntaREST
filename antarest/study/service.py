@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import base64
 import collections
 import contextlib
 import http
@@ -35,7 +34,6 @@ from antarest.core.exceptions import (
     CommandApplicationError,
     IncorrectArgumentsForCopy,
     IncorrectPathError,
-    MatrixImportFailed,
     NotAManagedStudyException,
     ReferencedObjectDeletionNotAllowed,
     ResourceCreationNotAllowed,
@@ -130,12 +128,10 @@ from antarest.study.repository import (
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
@@ -158,9 +154,6 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
     RemoveUserResource,
 )
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -1434,52 +1427,6 @@ class StudyService:
         logger.info("study %s imported by user %s", study.id, get_user_id())
         return study.id
 
-    def _create_edit_study_command(
-        self, tree_node: INode[JSON, SUB_JSON, JSON], url: str, data: SUB_JSON, study_version: StudyVersion
-    ) -> ICommand:
-        """
-        Create correct command to edit study
-        Args:
-            tree_node: target node of the command
-            url: data path to reach
-            data: new data to replace
-
-        Returns: ICommand that replaces the data
-
-        """
-
-        context = self.storage_service.variant_study_service.command_factory.command_context
-
-        if isinstance(tree_node, IniFileNode):
-            assert not isinstance(data, (bytes, list))
-            return UpdateConfig(target=url, data=data, command_context=context, study_version=study_version)
-        elif isinstance(tree_node, InputSeriesMatrix):
-            if isinstance(data, bytes):
-                # noinspection PyTypeChecker
-                matrix = imports_matrix_from_bytes(data)
-                if matrix is None:
-                    raise MatrixImportFailed("Could not parse the given matrix")
-                matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-                return ReplaceMatrix(
-                    target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
-                )
-            assert isinstance(data, (list, str))
-            return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
-        elif isinstance(tree_node, RawFileNode):
-            if url.split("/")[-1] == "comments":
-                if isinstance(data, bytes):
-                    data = data.decode("utf-8")
-                assert isinstance(data, str)
-                return ReplaceComments(comments=data, command_context=context, study_version=study_version)
-            elif isinstance(data, bytes):
-                return UpdateRawFile(
-                    target=url,
-                    b64Data=base64.b64encode(data).decode("utf-8"),
-                    command_context=context,
-                    study_version=study_version,
-                )
-        raise NotImplementedError()
-
     def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> List[ICommand]:
         """
         Replace data on disk with new, using variant commands.
@@ -1492,27 +1439,20 @@ class StudyService:
             url: data path to reach
             data: new data to replace
         """
-        study_service = self.storage_service.get_storage(study)
-        file_study = study_service.get_raw(metadata=study)
-        version = file_study.config.version
-        commands: List[ICommand] = []
+        version = StudyVersion.parse(study.version)
 
         file_relpath = PurePosixPath(url.strip().strip("/"))
-        try:
-            tree_node = file_study.tree.get_node(list(file_relpath.parts))
-            commands.append(self._create_edit_study_command(tree_node, url, data, version))
-        except ChildNotFoundError:  # The file doesn't exist, we have to create it.
-            # We make sure the path is located inside the user folder. Otherwise, we raise an Exception
-            user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
-            # Save the content inside the blob service and create the command.
-            content = data or b""
-            assert isinstance(content, bytes)
-            context = self.storage_service.variant_study_service.command_factory.command_context
-            blob_id = context.blob_service.save(content)
-            args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
-            command_data = UserResourceDataCreation.model_validate(args)
-            command = CreateUserResource(data=command_data, command_context=context, study_version=version)
-            commands.append(command)
+        # We make sure the path is located inside the user folder. Otherwise, we raise an Exception
+        user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
+        # Save the content inside the blob service and create the command.
+        content = data or b""
+        assert isinstance(content, bytes)
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        blob_id = context.blob_service.save(content)
+        args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
+        command_data = UserResourceDataCreation.model_validate(args)
+        command = CreateUserResource(data=command_data, command_context=context, study_version=version)
+        commands: list[ICommand] = [command]
 
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
