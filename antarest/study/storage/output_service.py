@@ -419,6 +419,7 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
         file_paths = []
+        response: dict[str, Any] = {}
         tmp_dir = self._study_service.config.storage.tmp_dir
         try:
             # Launch all aggregation tasks
@@ -479,7 +480,7 @@ class OutputService:
             final_data = [
                 {"type": data.type.value, "name": name, "data": values} for name, values in intermediary_dict.items()
             ]
-            response: dict[str, Any] = {"index": time_index, "data": final_data}
+            response = {"index": time_index, "data": final_data}
 
             # todo: The data is in array format. We should convert it to list otherwise the endpoint fails.
             # The problem is that we reach 100% RAM anyway ...
@@ -490,11 +491,10 @@ class OutputService:
                     for content in value:
                         content["data"] = content["data"].tolist()
 
-            return response
-
         finally:
             for file_path in file_paths:
                 file_path.unlink(missing_ok=True)
+            return response
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """
