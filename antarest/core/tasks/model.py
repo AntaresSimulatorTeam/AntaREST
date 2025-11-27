@@ -59,6 +59,29 @@ class TaskStatus(Enum):
             TaskStatus.TIMEOUT,
         ]
 
+    @classmethod
+    def parse(cls, other: object) -> "TaskStatus":
+        if isinstance(other, TaskStatus):
+            return cls(other)
+        if isinstance(other, str):
+            return cls(other)
+        if isinstance(other, int):
+            return cls(other)
+        else:
+            raise TypeError(f"Invalid status type: {type(other)!r}")
+
+
+def _format_task_status(s: TaskStatus) -> str:
+    return f"{s.value}"
+
+
+TaskStatusStr: TypeAlias = Annotated[
+    TaskStatus,
+    Field(json_schema_extra={"enum": [ts.name for ts in TaskStatus]}),
+    BeforeValidator(TaskStatus.parse),
+    PlainSerializer(_format_task_status, return_type=str),
+]
+
 
 class TaskResult(AntaresBaseModel, extra="forbid"):
     success: bool
