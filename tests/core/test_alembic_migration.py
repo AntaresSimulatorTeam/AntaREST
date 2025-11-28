@@ -12,16 +12,30 @@
 
 from pathlib import Path
 
+from sqlalchemy import create_engine, text
+
 from antarest.core.persistence import upgrade_db
 
 
 def test_alembic_migration(tmp_path: Path) -> None:
     # Create a fake config file pointing towards the DB in memory
+
+    db_file = tmp_path / "db.sqlite"
+    db_url = f"sqlite:///{db_file.absolute()}"
+
     config_file = tmp_path / "config.yaml"
     config_file.write_text(
-        """db:
-  url: "sqlite:///:memory:"
+        f"""db:
+  url: "{db_url}"
 """
     )
-    # This will fail if there's an issue inside our alembic migrations
-    upgrade_db(config_file)
+    try:
+        # This will fail if there's an issue inside our alembic migrations
+        upgrade_db(config_file)
+
+        engine = create_engine(db_url)
+        with engine.connect() as connection:
+            # this would throw if the migration is not executed
+            connection.execute(text("SELECT * FROM study"))
+    finally:
+        db_file.unlink(missing_ok=True)
