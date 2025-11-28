@@ -91,9 +91,10 @@ def init_worker(**kwargs: object) -> None:
     from antarest.core.config import Config
 
     # Get config file path from environment
-    config_path_str = os.environ.get("ANTAREST_CONFIG")
+    # ANTAREST_CONF is the standard env var used by Dockerfile and other services
+    config_path_str = os.environ.get("ANTAREST_CONF")
     if not config_path_str:
-        logger.warning("ANTAREST_CONFIG not set, worker will use env vars only. Services may not be available.")
+        logger.warning("ANTAREST_CONF not set, worker will use env vars only. Services may not be available.")
         return
 
     config_path = Path(config_path_str)
