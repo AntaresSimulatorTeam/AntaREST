@@ -21,7 +21,7 @@ def test_alembic_migration(tmp_path: Path) -> None:
     # Create a fake config file pointing towards the DB in memory
 
     db_file = tmp_path / "db.sqlite"
-    db_url = f"sqlite:///{db_file.absolute()}"
+    db_url = f"sqlite:///{db_file}"
 
     config_file = tmp_path / "config.yaml"
     config_file.write_text(
