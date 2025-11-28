@@ -12,6 +12,7 @@
 import contextlib
 import logging
 import logging.config
+import re
 import uuid
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Iterator, Optional, Type
@@ -23,13 +24,44 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.login.utils import current_user_context
+from antarest.login.utils import current_user_context, get_current_user
 
 _request: ContextVar[Optional[Request]] = ContextVar("_request", default=None)
 _request_id: ContextVar[Optional[str]] = ContextVar("_request_id", default=None)
 _task_id: ContextVar[Optional[str]] = ContextVar("_task_id", default=None)
 
 logger = logging.getLogger(__name__)
+
+
+class CustomDefaultFormatter(logging.Formatter):
+    """
+    A custom logging formatter that ensures all fields specified
+    in the format string are available in the log record.
+
+    This formatter uses a regular expression pattern to extract
+    field names from the format string, and adds any missing
+    fields to the log record with a value of `None`.
+    """
+
+    @override
+    def format(self, record: logging.LogRecord) -> str:
+        """
+        Formats the specified log record using the custom formatter,
+        ensuring all fields specified in the format string are available
+        in the record. Returns the formatted string.
+
+        Args:
+            record: The logging record to format.
+
+        Returns:
+            The formatted message.
+        """
+        arg_pattern = re.compile(r"%\((\w+)\)")
+        arg_names = [x.group(1) for x in arg_pattern.finditer(self._fmt or "")]
+        for field in arg_names:
+            if field not in record.__dict__:
+                record.__dict__[field] = None
+        return super().format(record)
 
 
 def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -> None:
@@ -141,6 +173,20 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
         logging_config["handlers"]["default"]["formatter"] = "json"
 
     logging.config.dictConfig(logging_config)
+
+
+class ContextFilter(logging.Filter):
+    @override
+    def filter(self, record: logging.LogRecord) -> bool:
+        if request := _request.get():
+            record.ip = request.scope.get("client", "undefined")[0]
+        if request_id := _request_id.get():
+            record.trace_id = request_id
+        if task_id := _task_id.get():
+            record.task_id = task_id
+        if current_user := get_current_user():
+            record.user = current_user.id
+        return True
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
