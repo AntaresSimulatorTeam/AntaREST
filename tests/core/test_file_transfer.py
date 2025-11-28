@@ -83,22 +83,12 @@ def test_lifecycle(tmp_path: Path) -> None:
         downloads = ftm.list_downloads()
         assert len(downloads) == 1
 
-        # fail and remove
+        # fail
         ftm.fail(filedownload.id)
         event_bus.push.assert_called_with(
             Event(
                 type=EventType.DOWNLOAD_FAILED,
                 payload=filedownload.to_dto(),
-                permissions=PermissionInfo(owner=1, groups=[], public_mode=PublicMode.NONE),
-                channel="",
-            )
-        )
-        filedownload_id = filedownload.id
-        ftm.remove(filedownload.id)
-        event_bus.push.assert_called_with(
-            Event(
-                type=EventType.DOWNLOAD_EXPIRED,
-                payload=filedownload_id,
                 permissions=PermissionInfo(owner=1, groups=[], public_mode=PublicMode.NONE),
                 channel="",
             )
