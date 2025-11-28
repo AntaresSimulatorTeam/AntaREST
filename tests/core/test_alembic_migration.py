@@ -12,6 +12,7 @@
 
 from pathlib import Path
 
+import yaml
 from sqlalchemy import create_engine, text
 
 from antarest.core.persistence import upgrade_db
@@ -24,11 +25,8 @@ def test_alembic_migration(tmp_path: Path) -> None:
     db_url = f"sqlite:///{db_file}"
 
     config_file = tmp_path / "config.yaml"
-    config_file.write_text(
-        f"""db:
-  url: "{db_url}"
-"""
-    )
+    with open(config_file, "w") as f:
+        yaml.safe_dump({"db": {"url": db_url}}, f)
 
     # This will fail if there's an issue inside our alembic migrations
     upgrade_db(config_file)
