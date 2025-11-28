@@ -175,20 +175,6 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
     logging.config.dictConfig(logging_config)
 
 
-class ContextFilter(logging.Filter):
-    @override
-    def filter(self, record: logging.LogRecord) -> bool:
-        if request := _request.get():
-            record.ip = request.scope.get("client", "undefined")[0]
-        if request_id := _request_id.get():
-            record.trace_id = request_id
-        if task_id := _task_id.get():
-            record.task_id = task_id
-        if current_user := get_current_user():
-            record.user = current_user.id
-        return True
-
-
 class LoggingMiddleware(BaseHTTPMiddleware):
     @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
@@ -201,6 +187,20 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 logger.error("Unexpected Exception", exc_info=exc)
                 raise
         return response
+
+
+class ContextFilter(logging.Filter):
+    @override
+    def filter(self, record: logging.LogRecord) -> bool:
+        if request := _request.get():
+            record.ip = request.scope.get("client", "undefined")[0]
+        if request_id := _request_id.get():
+            record.trace_id = request_id
+        if task_id := _task_id.get():
+            record.task_id = task_id
+        if current_user := get_current_user():
+            record.user = current_user.id
+        return True
 
 
 class RequestContext:
