@@ -20,13 +20,8 @@ def test_alembic_migration(tmp_path: Path) -> None:
     config_file = tmp_path / "config.yaml"
     config_file.write_text(
         """db:
-  url: "sqlite:///memory"
+  url: "sqlite:///:memory:"
 """
     )
-    try:
-        # This will fail if there's an issue inside our alembic migrations
-        upgrade_db(config_file)
-    finally:
-        # Remove the created DB
-        db_path = Path(__file__).parent.parent.parent / "memory"
-        db_path.unlink(missing_ok=True)
+    # This will fail if there's an issue inside our alembic migrations
+    upgrade_db(config_file)
