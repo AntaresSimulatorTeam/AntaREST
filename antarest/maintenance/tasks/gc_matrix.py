@@ -21,6 +21,8 @@ import logging
 import time
 from typing import Any, Dict, Set
 
+from sqlalchemy import text
+
 from antarest.celery.app import celery_app
 from antarest.celery.context import MaintenanceContext
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -73,13 +75,11 @@ def clean_matrices_task(self: Any) -> Dict[str, Any]:
     logger.info(f"Configuration: dry_run={dry_run}, retention_time={retention_time}s")
 
     try:
-        with db() as session:
+        with db():
             # Acquire PostgreSQL advisory lock (session-level, auto-released on commit/rollback)
             # This prevents multiple workers from running GC simultaneously
             logger.info(f"Attempting to acquire advisory lock {MATRIX_GC_LOCK_ID}")
-            result = session.execute(  # type: ignore[attr-defined]
-                "SELECT pg_try_advisory_lock(:lock_id)", {"lock_id": MATRIX_GC_LOCK_ID}
-            )
+            result = db.session.execute(text("SELECT pg_try_advisory_lock(:lock_id)"), {"lock_id": MATRIX_GC_LOCK_ID})
             lock_acquired = result.scalar()
 
             if not lock_acquired:
