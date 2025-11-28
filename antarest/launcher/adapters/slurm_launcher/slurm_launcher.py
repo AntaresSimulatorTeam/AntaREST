@@ -60,10 +60,6 @@ class VersionNotSupportedError(Exception):
     pass
 
 
-class JobIdNotFound(Exception):
-    pass
-
-
 class LauncherArgs(argparse.Namespace):
     """
     Launcher arguments to be passed to `antareslauncher.main.run_with`.
