@@ -14,7 +14,6 @@
 
 import debug from "debug";
 import semver from "semver";
-import { isNumericValue } from "./numberUtils";
 
 const log = debug("antares:utils:versionUtils");
 
@@ -28,8 +27,8 @@ export const MAX_SEMVER =
  * Normalizes a version value from the API into a full semantic version string (MAJOR.MINOR.PATCH).
  *
  * Supported input formats:
- * - 3-digit numeric (e.g. 930 or "930")  -> "9.3.0"
- * - Partial string (e.g. "9.3" -> "9.3.0", "9" -> "9.0.0")
+ * - Number, e.g. 9 -> "9.0.0", 930 -> "9.3.0", 1011 -> "10.1.1"
+ * - Partial string, e.g. "9.3" -> "9.3.0", "9" -> "9.0.0")
  * - Any string accepted by `semver.coerce()`
  *
  * This normalization ensures the result can be safely used with semver library.
@@ -38,47 +37,49 @@ export const MAX_SEMVER =
  * @returns A semantic version string, or "0.0.0" on failure.
  */
 export function toSemanticVersion(version: number | string) {
-  const numberVerStr = version.toString();
+  if (typeof version === "number") {
+    // Uses the same algorithm as `_TripletVersion.parse(int)` in `study_version.py`.
+    if (Number.isInteger(version)) {
+      if (version >= 0 && version < 100) {
+        return `${version}.0.0`;
+      }
 
-  // e.g., 930 or "930" -> "9.3.0"
-  if (numberVerStr.length === 3 && numberVerStr.split("").every(isNumericValue)) {
-    return `${numberVerStr[0]}.${numberVerStr[1]}.${numberVerStr[2]}`;
-  }
+      if (version >= 100) {
+        const major = Math.floor(version / 100);
+        const remainderAfterMajor = version % 100;
+        const minor = Math.floor(remainderAfterMajor / 10);
+        const patch = remainderAfterMajor % 10;
 
-  const semVer = semver.valid(semver.coerce(version));
+        const ver = `${major}.${minor}.${patch}`;
 
-  // e.g., "9.3" -> "9.3.0" or "9" -> "9.0.0"
-  if (semVer === null) {
-    log("toSemanticVersion(): invalid version value '%s'", version);
+        // Check if the maximum semver component value is not exceeded
+        if (semver.valid(ver)) {
+          return ver;
+        }
+      }
+    }
+
+    log("toSemanticVersion(): invalid number version value '%d'", version);
     return ZERO_SEMVER;
   }
 
-  return semVer;
-}
+  const ver = semver.valid(semver.coerce(version));
 
-/**
- * Converts a semantic version string into a numeric representation used by certain API endpoints.
- *
- * Uses the same algorithm as `_TripletVersion.__int__()` in `study_version.py`.
- *
- * @param version - Semantic version string.
- * @returns A numeric representation of the version, or `NaN` if invalid.
- */
-export function toNumberVersion(version: string) {
-  const parsed = semver.parse(version);
-
-  if (!parsed) {
-    log("toNumberVersion(): invalid semantic version '%s'", version);
-    return NaN;
+  // e.g., "9.3" -> "9.3.0" or "9" -> "9.0.0"
+  if (ver === null) {
+    log("toSemanticVersion(): invalid string version value '%s'", version);
+    return ZERO_SEMVER;
   }
 
-  return parsed.major * 100 + parsed.minor * 10 + parsed.patch;
+  return ver;
 }
 
 /**
  * Compacts a semantic version string by removing trailing zeros.
  *
  * The API represents versions in a compact form, omitting unnecessary ".0" components.
+ *
+ * If the input is an invalid semantic version, the original input is returned.
  *
  * Examples:
  * - "1.0.0" -> "1"
@@ -115,30 +116,40 @@ export function compactSemanticVersion(version: string) {
 /**
  * Gets the highest semantic version from a list of version strings.
  *
+ * If the list is empty or contains invalid semantic version(s), returns `null`.
+ *
  * @param versions - Array of semantic version strings.
- * @returns The highest version string, or `null` if the list is empty.
+ * @returns The highest version string, or `null` if input is invalid.
  */
 export function getHighestVersion(versions: string[]) {
   if (versions.length === 0) {
     return null;
   }
 
-  // `semver.rsort()` mutates the input array, so we create a copy
-  const sortedVersions = semver.rsort([...versions]);
-
-  return sortedVersions[0];
+  try {
+    // `semver.rsort()` mutates the input array, so we create a copy
+    const sortedVersions = semver.rsort([...versions]);
+    return sortedVersions[0];
+  } catch {
+    log("getHighestVersion(): invalid semantic version in list %o", versions);
+    return null;
+  }
 }
 
 /**
  * Generates version options suitable for UI components from a list of semantic version strings.
  * Each option includes the original version string as `value` and a compacted version as `label`.
  *
+ * Filters out any occurrence of `ZERO_SEMVER` and invalid semantic versions.
+ *
  * @param versions - Array of semantic version strings.
  * @returns Array of version options with `value` and `label`.
  */
 export function getSemanticVersionOptions(versions: string[]) {
-  return versions.map((version) => ({
-    value: version,
-    label: compactSemanticVersion(version),
-  }));
+  return versions
+    .filter((v) => v !== ZERO_SEMVER && semver.valid(v))
+    .map((version) => ({
+      value: version,
+      label: compactSemanticVersion(version),
+    }));
 }

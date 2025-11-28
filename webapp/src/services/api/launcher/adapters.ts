@@ -13,7 +13,12 @@
  */
 
 import { toSemanticVersion } from "@/utils/versionUtils";
-import type { LauncherParams, LauncherParamsDTO, LaunchersData, LaunchersDataDTO } from "./types";
+import type {
+  LauncherParams,
+  LauncherParamsDTO,
+  LaunchersConfig,
+  LaunchersConfigDTO,
+} from "./types";
 
 export function adaptLauncherParamsToDto(params: LauncherParams): LauncherParamsDTO {
   return {
@@ -30,7 +35,7 @@ export function adaptLauncherParamsToDto(params: LauncherParams): LauncherParams
   };
 }
 
-export function adaptLaunchersDataDtoToLaunchersData(dto: LaunchersDataDTO): LaunchersData {
+export function adaptLaunchersConfigDtoToLaunchersConfig(dto: LaunchersConfigDTO): LaunchersConfig {
   return {
     ...dto,
     launchers: dto.launchers.map((launcher) => ({

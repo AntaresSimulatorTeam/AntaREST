@@ -15,7 +15,7 @@
 import CustomScrollbar from "@/components/common/CustomScrollbar";
 import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import { getLaunchersData } from "@/services/api/launcher/index";
+import { getLaunchersConfig } from "@/services/api/launcher/index";
 import { toError } from "@/utils/fnUtils";
 import { Box, Skeleton, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -24,7 +24,7 @@ import ClustersMetricsBlock from "./ClustersMetricsBlock";
 function ClustersMetrics() {
   const { t } = useTranslation();
 
-  const launchersDataRes = usePromiseWithSnackbarError(getLaunchersData, {
+  const launchersConfigRes = usePromiseWithSnackbarError(getLaunchersConfig, {
     errorMessage: t("study.error.launchLoad"),
     deps: [],
   });
@@ -42,7 +42,7 @@ function ClustersMetrics() {
         }}
       >
         <UsePromiseCond
-          response={launchersDataRes}
+          response={launchersConfigRes}
           ifPending={() => (
             <>
               <Skeleton variant="rectangular" width={180} height={60} sx={{ borderRadius: 1 }} />

@@ -14,7 +14,7 @@
 
 import { getStudiesById } from "@/redux/selectors";
 import store from "@/redux/store";
-import { getLaunchersData } from "@/services/api/launcher/index";
+import { getLaunchersConfig } from "@/services/api/launcher/index";
 import { getSolverPresets } from "@/services/api/launcher/solverPresets";
 import type { LauncherDTO } from "@/services/api/launcher/types";
 import { getStudyOutputs } from "@/services/api/study";
@@ -31,7 +31,7 @@ import semver from "semver";
 export const XPRESS_OPTION = "xpress" as const;
 
 export async function getDefaultValues(studyIds: Array<StudyMetadata["id"]>) {
-  const { launchers, defaultLauncher: defaultLauncherId } = await getLaunchersData();
+  const { launchers, defaultLauncher: defaultLauncherId } = await getLaunchersConfig();
 
   const launchersById = R.indexBy(R.prop("id"), launchers);
   const defaultLauncher = launchersById[defaultLauncherId];

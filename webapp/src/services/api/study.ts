@@ -13,6 +13,7 @@
  */
 
 import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
@@ -31,7 +32,6 @@ import type {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import { compactSemanticVersion } from "@/utils/versionUtils";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -140,12 +140,12 @@ export const downloadOutput = async (
 
 export const createStudy = async (
   name: string,
-  version: number,
+  version: string,
   groups?: string[],
 ): Promise<string> => {
   const groupIds = groups && groups.length > 0 ? `&groups=${groups.join(",")}` : "";
   const res = await client.post(
-    `/v1/studies?name=${encodeURIComponent(name)}&version=${version}${groupIds}`,
+    `/v1/studies?name=${encodeURIComponent(name)}&version=${compactSemanticVersion(version)}${groupIds}`,
   );
   return res.data;
 };

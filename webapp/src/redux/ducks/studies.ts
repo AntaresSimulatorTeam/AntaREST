@@ -28,7 +28,6 @@ import { getFavoriteStudyIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
-import { toNumberVersion } from "@/utils/versionUtils";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -165,14 +164,8 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
       // StudyCreator
       const { name, version, groups, publicMode, tags } = arg;
 
-      const numVer = toNumberVersion(version);
-
-      if (Number.isNaN(numVer)) {
-        throw new Error(`Invalid version '${version}'`);
-      }
-
       // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-      const studyId = await api.createStudy(name, numVer, groups);
+      const studyId = await api.createStudy(name, version, groups);
 
       if (publicMode) {
         await api.changePublicMode(studyId, publicMode);

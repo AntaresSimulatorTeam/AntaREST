@@ -63,15 +63,15 @@ export interface LauncherDTO {
   versions: string[];
 }
 
-// This type uses semantic versioning (see `adaptLaunchersDataDtoToLaunchersData()` function)
+// This type uses semantic versioning (see `adaptLaunchersConfigDtoToLaunchersConfig()` function)
 export type Launcher = LauncherDTO;
 
-export interface LaunchersDataDTO {
+export interface LaunchersConfigDTO {
   launchers: LauncherDTO[];
   defaultLauncher: string;
 }
 
-export interface LaunchersData extends LaunchersDataDTO {
+export interface LaunchersConfig extends LaunchersConfigDTO {
   launchers: Launcher[];
 }
 

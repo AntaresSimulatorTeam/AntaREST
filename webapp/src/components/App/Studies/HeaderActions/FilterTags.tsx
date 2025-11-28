@@ -70,15 +70,15 @@ function FilterTags() {
             onDelete={() => setFilterValue("type", "all")}
           />
         )}
-        {filters.versions.map((ver) => (
+        {filters.versions.map((version) => (
           <Chip
-            key={ver}
-            label={compactSemanticVersion(ver)}
+            key={version}
+            label={compactSemanticVersion(version)}
             color="primary"
             onDelete={() => {
               setFilterValue(
                 "versions",
-                filters.versions.filter((v) => v !== ver),
+                filters.versions.filter((v) => v !== version),
               );
             }}
           />

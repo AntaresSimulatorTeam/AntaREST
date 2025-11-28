@@ -14,11 +14,11 @@
 
 import { compactSemanticVersion } from "@/utils/versionUtils";
 import client from "../client";
-import { adaptLauncherParamsToDto, adaptLaunchersDataDtoToLaunchersData } from "./adapters";
+import { adaptLauncherParamsToDto, adaptLaunchersConfigDtoToLaunchersConfig } from "./adapters";
 import type {
   GetLauncherVersionsParams,
   JobCreationDTO,
-  LaunchersDataDTO,
+  LaunchersConfigDTO,
   LaunchStudyParams,
 } from "./types";
 
@@ -54,7 +54,7 @@ export async function getLauncherVersions({ launcherId }: GetLauncherVersionsPar
   return data;
 }
 
-export async function getLaunchersData() {
-  const res = await client.get<LaunchersDataDTO>("/v1/launcher/launchers");
-  return adaptLaunchersDataDtoToLaunchersData(res.data);
+export async function getLaunchersConfig() {
+  const res = await client.get<LaunchersConfigDTO>("/v1/launcher/launchers");
+  return adaptLaunchersConfigDtoToLaunchersConfig(res.data);
 }
