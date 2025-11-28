@@ -383,8 +383,8 @@ def test_http_request_metrics() -> None:
 
     app = FastAPI()
 
-    @app.get("/ok")
-    def ok() -> None:
+    @app.get("/ok/{value}")
+    def ok(value: str) -> None:
         pass
 
     @app.get("/notfound")
@@ -404,10 +404,15 @@ def test_http_request_metrics() -> None:
     _add_metrics_middleware(registry=registry, application=app)
 
     client = TestClient(app, raise_server_exceptions=False)
-    res = client.get("/ok")
+    res = client.get("/ok/test")
     assert res.status_code == 200
 
-    assert _get_histo_count(registry, "http_requests_duration_seconds", labels={"http_status": "200"}) == 1
+    assert (
+        _get_histo_count(
+            registry, "http_requests_duration_seconds", labels={"http_status": "200", "endpoint": "/ok/{value}"}
+        )
+        == 1
+    )
 
     res = client.get("/error")
     assert res.status_code == 500
@@ -421,3 +426,14 @@ def test_http_request_metrics() -> None:
     res = client.post("/validation", json={"value": "invalid"})
     assert res.status_code == 422
     assert _get_histo_count(registry, "http_requests_duration_seconds", labels={"http_status": "422"}) == 1
+
+    res = client.get("/doesnotexist")
+    assert res.status_code == 404
+    assert (
+        _get_histo_count(
+            registry,
+            "http_requests_duration_seconds",
+            labels={"method": "GET", "endpoint": "others", "http_status": "404"},
+        )
+        == 1
+    )
