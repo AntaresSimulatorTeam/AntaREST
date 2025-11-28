@@ -56,7 +56,7 @@ from tests.storage.integration.conftest import UUID
 
 
 @with_admin_user
-def test_convert_study(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
+def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
     """
     Ensures we can represent a study as a filesystem one.
     """
@@ -385,7 +385,27 @@ def test_convert_study(storage_service: StudyService, tmp_path: Path, command_co
     outputs_before = [f.name for f in (source_path / "output").iterdir()]
     assert [f.name for f in (new_path / "output").iterdir()] == outputs_before
 
-    # Ensures the outputs aren't copied when didn't asked to
-    new_path = tmp_path / "studies" / "new_study2" / UUID
+    # Ensures the matrices are not normalized
+    assert (new_path / "input" / "load" / "series" / "load_de.txt").exists()
+    assert not (new_path / "input" / "load" / "series" / "load_de.txt.link").exists()
+
+
+@with_admin_user
+def test_no_outputs(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
+    """
+    Ensures the outputs aren't copied when didn't asked to
+    """
+    new_path = tmp_path / "studies" / "new_study" / UUID
     storage_service.write_study_as_file_study(UUID, new_path, with_outputs=False)
     assert not list((new_path / "output").iterdir())
+
+
+@with_admin_user
+def test_matrices_normalized(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
+    """
+    Ensures the matrices are normalized when asked to.
+    """
+    new_path = tmp_path / "studies" / "new_study" / UUID
+    storage_service.write_study_as_file_study(UUID, new_path, with_outputs=False, normalize_matrices=True)
+    assert not (new_path / "input" / "load" / "series" / "load_de.txt").exists()
+    assert (new_path / "input" / "load" / "series" / "load_de.txt.link").exists()

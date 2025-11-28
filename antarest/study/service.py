@@ -2579,7 +2579,9 @@ class StudyService:
 
         return StudyDataDTO.model_validate(obj)
 
-    def write_study_as_file_study(self, study_id: str, path: Path, with_outputs: bool = False) -> None:
+    def write_study_as_file_study(
+        self, study_id: str, path: Path, with_outputs: bool = False, normalize_matrices: bool = False
+    ) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         source_dao = self.get_study_interface(study).get_study_dao()
@@ -2591,7 +2593,7 @@ class StudyService:
 
         # Create the FileStudyDAO
         file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(
-            path, with_matrix_normalization=False, study_id="", use_cache=False
+            path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
         )
         context = self.storage_service.variant_study_service.command_factory.command_context
         file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
