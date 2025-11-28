@@ -62,21 +62,17 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         user_node = cast(User, study_tree.get_node(["user"]))
         if not is_url_writeable(user_node, url):
             raise ResourceCreationNotAllowed(f"you are not allowed to create a resource here: {resource_data.path}")
-        try:
-            study_tree.get_node(["user"] + url)
-        except ChildNotFoundError:
-            content: bytes | dict[str, str] = {}
-            if resource_data.blob_id:
-                # We need to fetch the actual content inside the blob store
-                content = self.get_impl()._blob_service.get(resource_data.blob_id)
 
-            # Creates the tree recursively to be able to create a resource inside a non-existing folder.
-            nested_dict: dict[str, Any] = {url[-1]: content}
-            for key in reversed(url[:-1]):
-                nested_dict = {key: nested_dict}
-            study_tree.save({"user": nested_dict})
-        else:
-            raise ResourceCreationNotAllowed(f"the given resource already exists: {resource_data.path}")
+        content: bytes | dict[str, str] = {}
+        if resource_data.blob_id:
+            # We need to fetch the actual content inside the blob store
+            content = self.get_impl()._blob_service.get(resource_data.blob_id)
+
+        # Creates the tree recursively to be able to create a resource inside a non-existing folder.
+        nested_dict: dict[str, Any] = {url[-1]: content}
+        for key in reversed(url[:-1]):
+            nested_dict = {key: nested_dict}
+        study_tree.save({"user": nested_dict})
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:

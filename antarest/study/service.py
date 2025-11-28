@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import base64
 import collections
 import contextlib
@@ -18,7 +17,6 @@ import io
 import logging
 import os
 import shutil
-import time
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
@@ -150,9 +148,6 @@ from antarest.study.storage.utils import (
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.create_user_resource import (
-    CreateUserResource,
-)
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -162,6 +157,9 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
 )
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_user_resource import (
+    ReplaceUserResource,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -439,14 +437,15 @@ class RawStudyInterface(StudyInterface):
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
-        self._update_editor(file_study)
+        self._update_editor_and_lastsave(file_study)
 
-    def _update_editor(self, file_study: FileStudy) -> None:
+    def _update_editor_and_lastsave(self, file_study: FileStudy) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
         if user:
             user_name = user.name or ""
             study_antares = file_study.tree.get(["study", "antares"])
-            study_antares["editor"] = user.name
+            study_antares["editor"] = user_name
+            study_antares["lastsave"] = current_time()
             file_study.tree.save(study_antares, ["study", "antares"])
             self._study.editor = user_name
             self._repository.save(self._study)
@@ -1485,14 +1484,21 @@ class StudyService:
                 )
         raise NotImplementedError()
 
-    def _edit_study_using_command(
-        self,
-        study: Study,
-        url: str,
-        data: SUB_JSON,
-        *,
-        create_missing: bool = False,
-    ) -> List[ICommand]:
+    def _create_replace_user_resource_command(
+        self, version: StudyVersion, data: SUB_JSON, file_relpath: PurePosixPath
+    ) -> ICommand:
+        # We should make sure the path is located inside the user folder. Otherwise, we raise an Exception
+        user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
+        # Save the content inside the blob service and create the command.
+        content = data or b""
+        assert isinstance(content, bytes)
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        blob_id = context.blob_service.save(content)
+        args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
+        command_data = UserResourceDataCreation.model_validate(args)
+        return ReplaceUserResource(data=command_data, command_context=context, study_version=version)
+
+    def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> List[ICommand]:
         """
         Replace data on disk with new, using variant commands.
 
@@ -1503,37 +1509,31 @@ class StudyService:
             study: study
             url: data path to reach
             data: new data to replace
-            create_missing: Flag to indicate whether to create file or parent directories if missing.
         """
         study_service = self.storage_service.get_storage(study)
         file_study = study_service.get_raw(metadata=study)
         version = file_study.config.version
-        commands: List[ICommand] = []
 
+        command: ICommand
         file_relpath = PurePosixPath(url.strip().strip("/"))
-        file_path = study_service.get_study_path(study).joinpath(file_relpath)
-        create_missing &= not file_path.exists()
-        if create_missing:
-            context = self.storage_service.variant_study_service.command_factory.command_context
-            user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
-            content = data or b""
-            assert isinstance(content, bytes)
-            blob_id = context.blob_service.save(content)
-            args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
-            command_data = UserResourceDataCreation.model_validate(args)
-            cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
-            commands.append(cmd_1)
-        else:
-            # A 404 Not Found error is raised if the file does not exist.
-            tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
-            commands.append(self._create_edit_study_command(tree_node, url, data, version))
 
-        if isinstance(study_service, RawStudyService):
-            url = "study/antares/lastsave"
-            last_save_node = file_study.tree.get_node(url.split("/"))
-            cmd = self._create_edit_study_command(last_save_node, url, int(time.time()), version)
-            commands.append(cmd)
+        try:
+            # A ChildNotFoundError is raised if the file does not exist.
+            tree_node = file_study.tree.get_node(list(file_relpath.parts))
+            # A ResourceCreationNotAllowed is raised if the path isn't located inside the user folder
+            _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
+            # We're modifying an existing resource inside the user folder.
+            command = self._create_replace_user_resource_command(version, data, file_relpath)
 
+        except ChildNotFoundError:
+            # We're creating a resource
+            command = self._create_replace_user_resource_command(version, data, file_relpath)
+
+        except ResourceCreationNotAllowed:
+            # We're modifying an existing resource outside the user folder
+            command = self._create_edit_study_command(tree_node, url, data, version)
+
+        commands = [command]
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
@@ -1563,14 +1563,7 @@ class StudyService:
         )
         return None
 
-    def edit_study(
-        self,
-        uuid: str,
-        url: str,
-        new: SUB_JSON,
-        *,
-        create_missing: bool = False,
-    ) -> JSON:
+    def edit_study(self, uuid: str, url: str, new: SUB_JSON) -> JSON:
         """
         Replace data inside study.
 
@@ -1578,7 +1571,6 @@ class StudyService:
             uuid: study id
             url: path data target in study
             new: new data to replace
-            create_missing: Flag to indicate whether to create file or parent directories if missing.
 
         Returns: new data replaced
         """
@@ -1586,7 +1578,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new, create_missing=create_missing)
+        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
         self.event_bus.push(
             Event(
@@ -1595,12 +1587,7 @@ class StudyService:
                 permissions=PermissionInfo.from_study(study),
             )
         )
-        logger.info(
-            "data %s on study %s updated by user %s",
-            url,
-            uuid,
-            get_user_id(),
-        )
+        logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
         return cast(JSON, new)
 
     def change_owner(self, study_id: str, owner_id: int) -> None:
@@ -2395,13 +2382,13 @@ class StudyService:
             "resource_type": ResourceType.FOLDER,
         }
         command_data = UserResourceDataCreation.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)
+        self._alter_user_folder(study_id, command_data, ReplaceUserResource, ResourceCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
         command_data: UserResourceDataCreation | UserResourceDataRemoval,
-        command_class: Type[CreateUserResource | RemoveUserResource],
+        command_class: Type[ReplaceUserResource | RemoveUserResource],
         exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:
         study = self.get_study(study_id)
