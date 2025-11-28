@@ -27,10 +27,11 @@ export interface SplitViewProps {
   gutterSize?: SplitProps["gutterSize"];
 }
 
-function isValidSizes(sizes: unknown): sizes is number[] {
+function isValidSizes(sizes: unknown, expectedLength: number): sizes is number[] {
   return (
     Array.isArray(sizes) &&
-    sizes.every((size) => typeof size === "number") &&
+    sizes.length === expectedLength &&
+    sizes.every((size) => typeof size === "number" && size > 0) &&
     sizes.reduce((sum, size) => sum + size, 0) === 100
   );
 }
@@ -68,7 +69,7 @@ function SplitView({
 
   const [activeSizes, setActiveSizes] = useState<SplitProps["sizes"]>(() => {
     const savedSizes = storage.getItem(localStorageKey);
-    return isValidSizes(savedSizes) ? savedSizes : sizes || defaultSizes;
+    return isValidSizes(savedSizes, numberOfChildren) ? savedSizes : sizes || defaultSizes;
   });
 
   // Update localStorage whenever `activeSizes` change.
