@@ -29,13 +29,11 @@ def test_alembic_migration(tmp_path: Path) -> None:
   url: "{db_url}"
 """
     )
-    try:
-        # This will fail if there's an issue inside our alembic migrations
-        upgrade_db(config_file)
 
-        engine = create_engine(db_url)
-        with engine.connect() as connection:
-            # this would throw if the migration is not executed
-            connection.execute(text("SELECT * FROM study"))
-    finally:
-        db_file.unlink(missing_ok=True)
+    # This will fail if there's an issue inside our alembic migrations
+    upgrade_db(config_file)
+
+    engine = create_engine(db_url)
+    with engine.connect() as connection:
+        # this would throw if the migration is not executed
+        connection.execute(text("SELECT * FROM study"))
