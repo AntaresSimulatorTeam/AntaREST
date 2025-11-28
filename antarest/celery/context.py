@@ -87,11 +87,20 @@ class MaintenanceContext:
             logger.info(f"Initializing MaintenanceContext from {config_path}")
 
             # Import here to avoid circular dependencies
+            from typing import Dict, cast
+
             from antarest.core.config import Config
-            from antarest.service_creator import create_core_services
+            from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+            from antarest.core.utils.utils import get_local_path
+            from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
 
             # Load config
-            self.config = Config.from_yaml_file(Path(config_path))
+            res = get_local_path() / "resources"
+            self.config = Config.from_yaml_file(res=res, file=Path(config_path))
+
+            # Initialize database session middleware (required for db() context manager)
+            engine = init_db_engine(Path(config_path), self.config, auto_upgrade_db=False)
+            DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
 
             # Create services using existing factories
             # app_ctxt=None because we're not in a FastAPI context
