@@ -86,6 +86,21 @@ def _filtered_files_listing(
     return filtered_files
 
 
+def _get_start_column(frequency: MatrixFrequency) -> int:
+    if frequency == MatrixFrequency.ANNUAL:
+        return 2
+    elif frequency == MatrixFrequency.MONTHLY:
+        return 3
+    elif frequency == MatrixFrequency.WEEKLY:
+        return 2
+    elif frequency == MatrixFrequency.DAILY:
+        return 4
+    elif frequency == MatrixFrequency.HOURLY:
+        return 5
+    else:
+        raise NotImplementedError(f"Unknown frequency {frequency.value}")
+
+
 def _parse_headers(content: str, start_col: int) -> list[list[str]]:
     lines = content.splitlines()
     header_lines = []
@@ -132,7 +147,7 @@ class AggregatorManager:
 
     def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
         content = file_path.read_text(encoding="utf-8")
-        start_col = 4 if self.mc_root == MCRoot.MC_ALL else 5
+        start_col = _get_start_column(self.frequency)
         output_headers = _parse_headers(content, start_col)
         polars_df = pl.read_csv(io.StringIO(content), skip_lines=7, separator="\t", has_header=False)
         df = polars_df[polars_df.columns[start_col:]].to_pandas()
