@@ -54,6 +54,7 @@ from antarest.study.model import (
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
+from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
@@ -74,6 +75,7 @@ CONFIG = Config(
 
 def create_test_client(
     service: StudyService,
+    output_service: OutputService = Mock(),
     file_transfer_manager: FileTransferManager = Mock(),
     raise_server_exceptions: bool = True,
 ) -> TestClient:
@@ -89,6 +91,7 @@ def create_test_client(
         matrix_service=Mock(spec=MatrixService),
         blob_service=Mock(spec=BlobService),
     )
+    app_ctxt.api_root.include_router(create_output_routes(output_service=output_service, config=CONFIG))
     return TestClient(app_ctxt.build(), raise_server_exceptions=raise_server_exceptions)
 
 

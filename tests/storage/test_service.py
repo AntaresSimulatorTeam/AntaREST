@@ -1,4 +1,4 @@
-# Copyright (c) 2026, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,19 +17,23 @@ import textwrap
 import typing as t
 import uuid
 from configparser import MissingSectionHeaderError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
+import numpy as np
+import pandas as pd
 import pytest
 from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
+from starlette.responses import Response
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
+from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup, JWTUser
@@ -39,43 +43,59 @@ from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
+from antarest.service_creator import build_output_service
+from antarest.study.business.model.district_model import District
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
+    ExportFormat,
+    MatrixAggregationResultDTO,
+    MatrixIndex,
     OwnerInfo,
     RawStudy,
     Study,
+    StudyAdditionalData,
     StudyContentStatus,
+    StudyDownloadDTO,
+    StudyDownloadLevelDTO,
+    StudyDownloadType,
     StudyFolder,
     StudyMetadataDTO,
+    TimeSerie,
+    TimeSeriesData,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    AreaConfig,
     FileStudyTreeConfig,
+    LinkConfig,
+    Mode,
+    Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
+    is_output_archived,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import create_raw_study, create_study, create_variant_study, with_admin_user, with_db_context
 
@@ -161,19 +181,12 @@ def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMeta
         ),
         groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
         public_mode=study.public_mode or PublicMode.NONE,
-        horizon=study.horizon,
+        horizon=study.additional_data.horizon,
         scenario=None,
         status=None,
         doc=None,
         folder=folder_path,
     )
-
-
-def fill_study_service_with_command_context(study_service: StudyService, command_context: CommandContext) -> None:
-    variant_study_service = Mock(spec=VariantStudyService)
-    variant_study_service.command_factory = Mock(spec=CommandFactory)
-    variant_study_service.command_factory.command_context = command_context
-    study_service.storage_service.variant_study_service = variant_study_service
 
 
 def test_study_listing(db_session: Session) -> None:
@@ -187,10 +200,11 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="A",
         version=study_version,
-        created_at=current_time(),
-        updated_at=current_time(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace=DEFAULT_WORKSPACE_NAME,
+        additional_data=StudyAdditionalData(),
     )
     b = create_raw_study(
         id="B",
@@ -198,10 +212,11 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="B",
         version=study_version,
-        created_at=current_time(),
-        updated_at=current_time(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace="other",
+        additional_data=StudyAdditionalData(),
     )
     c = create_raw_study(
         id="C",
@@ -209,10 +224,11 @@ def test_study_listing(db_session: Session) -> None:
         type="rawstudy",
         name="C",
         version=study_version,
-        created_at=current_time(),
-        updated_at=current_time(),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         path="",
         workspace="other2",
+        additional_data=StudyAdditionalData(),
     )
 
     # Add some studies in the database
@@ -291,7 +307,7 @@ def test_study_listing(db_session: Session) -> None:
 
 
 def test_sync_studies_from_disk() -> None:
-    now = current_time()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     # Studies in DB
     ma = create_raw_study(id="a", path="a", workspace="workspace1")
@@ -307,7 +323,7 @@ def test_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path="d",
-        missing=current_time() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
         workspace="workspace1",
     )
     me = create_raw_study(
@@ -316,7 +332,7 @@ def test_sync_studies_from_disk() -> None:
         folder="e",
         name="e",
         created_at=now,
-        missing=current_time() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
     )
     mg = create_raw_study(
@@ -433,7 +449,7 @@ def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
 
 # noinspection PyArgumentList
 def test_partial_sync_studies_from_disk() -> None:
-    now = current_time()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     ma = create_raw_study(id="a", path="a")
     mb = create_raw_study(id="b", path="b")
     mc = create_raw_study(
@@ -447,13 +463,13 @@ def test_partial_sync_studies_from_disk() -> None:
     md = create_raw_study(
         id="d",
         path=f"directory{os.sep}d",
-        missing=current_time() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = create_raw_study(
         id="e",
         path=f"directory{os.sep}e",
         created_at=now,
-        missing=current_time() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        missing=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
     fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])
     fe = StudyFolder(path=Path("directory/e"), workspace="workspace1", groups=[])
@@ -629,6 +645,225 @@ def test_save_metadata() -> None:
     )
     service._save_study(study_to_save)
     repository.save.assert_called_once_with(study)
+
+
+@with_jwt_user
+def test_download_output() -> None:
+    study_service = Mock()
+    repository = Mock(spec=StudyMetadataRepository)
+
+    study_version = 870
+    input_study = create_raw_study(
+        id="c",
+        path="c",
+        name="c",
+        version=str(study_version),
+        content_status=StudyContentStatus.WARNING,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=0),
+    )
+    input_data = StudyDownloadDTO(
+        type="AREA",
+        years=[],
+        level="annual",
+        filterIn="",
+        filterOut="",
+        filter=[],
+        columns=[],
+        synthesis=False,
+        includeClusters=True,
+    )
+
+    area = AreaConfig(
+        name="area",
+        links={"west": LinkConfig(filters_synthesis=[], filters_year=[])},
+        thermals=[],
+        renewables=[],
+        filters_synthesis=[],
+        filters_year=[],
+    )
+
+    sim = Simulation(
+        name="",
+        date="",
+        mode=Mode.ECONOMY,
+        nbyears=1,
+        synthesis=True,
+        by_year=True,
+        error=False,
+        playlist=[0],
+        xpansion="",
+    )
+    file_study_tree_config = FileStudyTreeConfig(
+        study_path=Path(input_study.path),
+        path=Path(input_study.path),
+        study_id=str(uuid.uuid4()),
+        version=StudyVersion.parse(input_study.version),
+        areas={"east": area},
+        districts={"north": District(id="north", name="north")},
+        outputs={"output-id": sim},
+        store_new_set=False,
+    )
+    file_study_tree = Mock(spec=FileStudyTree, config=file_study_tree_config)
+
+    repository.get.return_value = input_study
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
+
+    output_service = build_output_service(
+        app_ctxt=None,
+        study_service=service,
+        task_service=service.task_service,
+        filetransfer_service=service.file_transfer_manager,
+        event_bus=service.event_bus,
+        cache=service.cache_service,
+        config=config,
+    )
+
+    study_service.get_raw.return_value = FileStudy(config=file_study_tree_config, tree=file_study_tree)
+    output_config = {
+        "general": {
+            "first-month-in-year": "january",
+            "january.1st": "Monday",
+            "leapyear": False,
+            "first.weekday": "Monday",
+            "simulation.start": 1,
+            "simulation.end": 354,
+        }
+    }
+    file_study_tree.get.side_effect = [
+        output_config,
+        output_config,
+        output_config,
+    ]
+
+    res_study = Mock(spec=OutputSeriesMatrix)
+    res_study.parse_dataframe.return_value = pd.DataFrame(columns=[("H. VAL", "Euro/MWh")], data=[[0.5]])
+    res_study_details = Mock(spec=OutputSeriesMatrix)
+    res_study_details.parse_dataframe.return_value = pd.DataFrame(columns=[("some cluster", "Euro/MWh")], data=[[0.8]])
+
+    file_study_tree.get_node.side_effect = [
+        res_study,
+        res_study_details,
+        res_study,
+        res_study,
+        res_study_details,
+    ]
+
+    # AREA TYPE
+    res_matrix = MatrixAggregationResultDTO(
+        index=MatrixIndex(
+            start_date="2018-01-01 00:00:00",
+            steps=1,
+            first_week_size=7,
+            level=StudyDownloadLevelDTO.ANNUAL,
+        ),
+        data=[
+            TimeSeriesData(
+                name="east",
+                type=StudyDownloadType.AREA,
+                data={
+                    "1": [
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5])),
+                        TimeSerie(name="some cluster", unit="Euro/MWh", data=np.array([0.8])),
+                    ]
+                },
+            )
+        ],
+        warnings=[],
+    )
+    res = t.cast(
+        Response,
+        output_service.download_outputs(
+            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
+        ),
+    )
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
+    # Ensures it was called with economy in lower case
+    file_study_tree.get_node.assert_called_with(
+        ["output", "output-id", "economy", "mc-ind", "00001", "areas", "east", "details-annual"]
+    )
+
+    # AREA TYPE - ZIP & TASK
+    export_file_download = FileDownload(
+        id="download-id",
+        filename="filename",
+        name="name",
+        ready=False,
+        path="path",
+        expiration_date=datetime.now(timezone.utc).replace(tzinfo=None),
+    )
+    service.file_transfer_manager.request_download.return_value = export_file_download  # type: ignore
+    task_id = "task-id"
+    service.task_service.add_task.return_value = task_id  # type: ignore
+
+    result = t.cast(
+        FileDownloadTaskDTO,
+        output_service.download_outputs("study-id", "output-id", input_data, use_task=True, filetype=ExportFormat.ZIP),
+    )
+
+    res_file_download = FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
+    assert result == res_file_download
+
+    # LINK TYPE
+    input_data.type = StudyDownloadType.LINK
+    input_data.filter = ["east>west"]
+    res_matrix = MatrixAggregationResultDTO(
+        index=MatrixIndex(
+            start_date="2018-01-01 00:00:00",
+            steps=1,
+            first_week_size=7,
+            level=StudyDownloadLevelDTO.ANNUAL,
+        ),
+        data=[
+            TimeSeriesData(
+                name="east^west",
+                type=StudyDownloadType.LINK,
+                data={"1": [TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5]))]},
+            )
+        ],
+        warnings=[],
+    )
+    res = t.cast(
+        Response,
+        output_service.download_outputs(
+            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
+        ),
+    )
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
+
+    # CLUSTER TYPE
+    input_data.type = StudyDownloadType.DISTRICT
+    input_data.filter = []
+    input_data.filterIn = "n"
+    res_matrix = MatrixAggregationResultDTO(
+        index=MatrixIndex(
+            start_date="2018-01-01 00:00:00",
+            steps=1,
+            first_week_size=7,
+            level=StudyDownloadLevelDTO.ANNUAL,
+        ),
+        data=[
+            TimeSeriesData(
+                name="north",
+                type=StudyDownloadType.DISTRICT,
+                data={
+                    "1": [
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5])),
+                        TimeSerie(name="some cluster", unit="Euro/MWh", data=np.array([0.8])),
+                    ]
+                },
+            )
+        ],
+        warnings=[],
+    )
+    res = t.cast(
+        Response,
+        output_service.download_outputs(
+            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
+        ),
+    )
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
 
 # noinspection PyArgumentList
@@ -943,10 +1178,17 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
-        Mock(), Mock(), raw_study_service, Mock(), Mock(), variant_study_repository, Mock(), Mock(), Mock()
+        Mock(),
+        Mock(),
+        raw_study_service,
+        Mock(),
+        Mock(),
+        variant_study_repository,
+        Mock(),
+        Mock(),
     )
     # noinspection PyArgumentList
     service = build_study_service(
@@ -969,7 +1211,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=current_time(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
     study_mock.to_enhanced_json_summary.return_value = {
@@ -1003,7 +1245,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
-        last_access=current_time(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
     study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
@@ -1026,10 +1268,17 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
 @with_admin_user
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
-        Mock(), Mock(), raw_study_service, Mock(), Mock(), variant_study_repository, Mock(), Mock(), Mock()
+        Mock(),
+        Mock(),
+        raw_study_service,
+        Mock(),
+        Mock(),
+        variant_study_repository,
+        Mock(),
+        Mock(),
     )
     service = build_study_service(
         raw_study_service,
@@ -1059,7 +1308,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
-        last_access=current_time(),
+        last_access=datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
     v1 = create_variant_study(id="variant_1", path=create_study_fs_mock(variant=True))
@@ -1253,6 +1502,193 @@ def test_create_command(
 
 
 @with_admin_user
+def test_unarchive_output(tmp_path: Path) -> None:
+    study_id = str(uuid.uuid4())
+    study_name = "My Study"
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id=study_id,
+        path=tmp_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
+    )
+    # The `name` attribute cannot be mocked during creation of the mock object
+    # https://stackoverflow.com/a/62552149/1513933
+    study_mock.name = study_name
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
+        config=Mock(spec=Config),
+    )
+
+    service.task_service.reset_mock()
+
+    output_id = "some-output"
+    service.task_service.add_worker_task.return_value = None  # type: ignore
+    service.task_service.list_tasks.return_value = []  # type: ignore
+    (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
+
+    output_service = build_output_service(
+        app_ctxt=None,
+        study_service=service,
+        task_service=service.task_service,
+        filetransfer_service=service.file_transfer_manager,
+        event_bus=service.event_bus,
+        cache=service.cache_service,
+        config=Mock(spec=Config),
+    )
+    output_service.unarchive_output(study_id, output_id)
+
+    service.task_service.add_worker_task.assert_called_once_with(
+        TaskType.UNARCHIVE,
+        "unarchive_other_workspace",
+        ArchiveTaskArgs(
+            src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
+        ).model_dump(),
+        name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+        ref_id=study_id,
+    )
+    service.task_service.add_task.assert_called_once_with(
+        ANY,
+        f"Unarchive output {study_name}/{output_id} ({study_id})",
+        task_type=TaskType.UNARCHIVE,
+        ref_id=study_id,
+        progress=None,
+        custom_event_messages=None,
+    )
+
+
+@with_admin_user
+def test_archive_output_locks(tmp_path: Path) -> None:
+    study_id = str(uuid.uuid4())
+    study_name = "My Study"
+    study_mock = Mock(
+        spec=RawStudy,
+        archived=False,
+        id=study_id,
+        path=tmp_path,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+        workspace="other_workspace",
+        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
+    )
+    # The `name` attribute cannot be mocked during creation of the mock object
+    # https://stackoverflow.com/a/62552149/1513933
+    study_mock.name = study_name
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
+        config=Mock(spec=Config),
+    )
+
+    service.task_service.reset_mock()
+
+    output_zipped = "some-output_zipped"
+    output_unzipped = "some-output_unzipped"
+    service.task_service.add_worker_task.return_value = None  # type: ignore
+    (tmp_path / "output" / output_unzipped).mkdir(parents=True)
+    (tmp_path / "output" / f"{output_zipped}.zip").touch()
+    service.task_service.list_tasks.side_effect = [
+        [
+            TaskDTO(
+                id="1",
+                name=f"Archive output {study_id}/{output_zipped}",
+                status=TaskStatus.PENDING,
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                type=TaskType.ARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [
+            TaskDTO(
+                id="1",
+                name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
+                status=TaskStatus.PENDING,
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                type=TaskType.UNARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [
+            TaskDTO(
+                id="1",
+                name=f"Archive output {study_id}/{output_unzipped}",
+                status=TaskStatus.PENDING,
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                type=TaskType.ARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [
+            TaskDTO(
+                id="1",
+                name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
+                status=TaskStatus.RUNNING,
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
+                type=TaskType.UNARCHIVE,
+                ref_id=study_id,
+            )
+        ],
+        [],
+    ]
+    output_service = build_output_service(
+        app_ctxt=None,
+        study_service=service,
+        task_service=service.task_service,
+        filetransfer_service=service.file_transfer_manager,
+        event_bus=service.event_bus,
+        cache=service.cache_service,
+        config=Mock(spec=Config),
+    )
+    with pytest.raises(TaskAlreadyRunning):
+        output_service.unarchive_output(study_id, output_zipped)
+
+    with pytest.raises(TaskAlreadyRunning):
+        output_service.unarchive_output(study_id, output_zipped)
+
+    with pytest.raises(TaskAlreadyRunning):
+        output_service.archive_output(
+            study_id,
+            output_unzipped,
+        )
+
+    with pytest.raises(TaskAlreadyRunning):
+        output_service.archive_output(
+            study_id,
+            output_unzipped,
+        )
+
+    output_service.unarchive_output(study_id, output_zipped)
+
+    service.task_service.add_worker_task.assert_called_once_with(
+        TaskType.UNARCHIVE,
+        "unarchive_other_workspace",
+        ArchiveTaskArgs(
+            src=str(tmp_path / "output" / f"{output_zipped}.zip"), dest=str(tmp_path / "output" / output_zipped)
+        ).model_dump(),
+        name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
+        ref_id=study_id,
+    )
+    service.task_service.add_task.assert_called_once_with(
+        ANY,
+        f"Unarchive output {study_name}/{output_zipped} ({study_id})",
+        task_type=TaskType.UNARCHIVE,
+        ref_id=study_id,
+        progress=None,
+        custom_event_messages=None,
+    )
+
+
+@with_admin_user
 def test_get_save_logs(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -1371,7 +1807,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
                 id="1",
                 name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
-                creation_date_utc=str(current_time()),
+                creation_date_utc=str(datetime.now(timezone.utc).replace(tzinfo=None)),
                 type=TaskType.UNARCHIVE,
                 ref_id=study_id,
             )
@@ -1475,15 +1911,15 @@ def test_upgrade_study__raw_study__nominal(
 
     # Prepare a RAW study
     # noinspection PyArgumentList
-    now = current_time()
     raw_study = create_raw_study(
         id=study_id,
         name=study_name,
         workspace=workspace,
         path=str(tmp_path),
-        created_at=now,
-        updated_at=now,
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version=current_version,
+        additional_data=StudyAdditionalData(),
         archived=False,
         owner=None,
         groups=[],
@@ -1531,9 +1967,98 @@ def test_upgrade_study__raw_study__nominal(
     upgrade_study_mock.assert_called_once_with()
 
     # The study must be updated in the database
-    actual_study: RawStudy = db.session.get(Study, study_id)
+    actual_study: RawStudy = db.session.query(Study).get(study_id)
     assert actual_study is not None, "Not in database"
     assert actual_study.version == f"{parsed_target_version:2d}"
+
+    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
+    event = Event(
+        type=EventType.STUDY_EDITED,
+        payload={"id": study_id, "name": study_name},
+        permissions=PermissionInfo(
+            owner=None,
+            groups=[],
+            public_mode=PublicMode.NONE,
+        ),
+    )
+    event_bus.push.assert_called_once_with(event)
+
+    # The function must return a successful result
+    assert actual.success
+    assert study_id in actual.message, f"{actual.message=}"
+    assert actual.message == f"Successfully upgraded study '{study_id}' to version 8"
+
+
+@with_db_context
+@patch("antarest.study.storage.study_upgrader.StudyUpgrader.upgrade")
+def test_upgrade_study__variant_study__nominal(
+    upgrade_study_mock: Mock,
+    tmp_path: Path,
+) -> None:
+    study_id = str(uuid.uuid4())
+    study_name = "my_study"
+    target_version = "800"
+
+    # Prepare a RAW study
+    # noinspection PyArgumentList
+    variant_study = create_variant_study(
+        id=study_id,
+        name=study_name,
+        path=str(tmp_path),
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        version="720",
+        additional_data=StudyAdditionalData(),
+        archived=False,
+        owner=None,
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    # Make sure the session is closed to avoid reusing DB objects
+    with contextlib.closing(db.session):
+        db.session.add(variant_study)
+        db.session.commit()
+
+    # The `ICache` is used to invalidate the cache of the study with `invalidate_all`
+    cache_service = Mock()
+
+    # The `StudyMetadataRepository` is used to store the study in database.
+    repository = StudyMetadataRepository(cache_service)
+
+    # The `StudyStorageService` is used to retrieve:
+    # - the `RawStudyService` of a RAW study, or
+    # - the `VariantStudyService` of a variant study.
+    # It is used to `denormalize`/`normalize` the study.
+    # For a variant study, the  `clear_snapshot` is also called
+    storage_service = Mock()
+
+    # The `IEventBus` service is used to send event notifications.
+    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
+    event_bus = Mock()
+
+    # Prepare the task for an upgrade
+    task = StudyUpgraderTask(
+        study_id,
+        StudyVersion.parse(target_version),
+        repository=repository,
+        storage_service=storage_service,
+        cache_service=cache_service,
+        event_bus=event_bus,
+    )
+
+    # The task is called with a `TaskUpdateNotifier` a parameter.
+    # Some messages could be emitted using the notifier (not a requirement).
+    notifier = Mock()
+    actual = task(notifier)
+
+    # The `upgrade_study()` function is not called for a variant study.
+    upgrade_study_mock.assert_not_called()
+
+    # The study must be updated in the database
+    actual_study: RawStudy = db.session.query(Study).get(study_id)
+    assert actual_study is not None, "Not in database"
+    assert actual_study.version == "8.0"
 
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
@@ -1565,15 +2090,15 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
     # Prepare a RAW study
     # noinspection PyArgumentList
-    now = current_time()
     raw_study = create_raw_study(
         id=study_id,
         name=study_name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path),
-        created_at=now,
-        updated_at=now,
+        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
         version=old_version,
+        additional_data=StudyAdditionalData(),
         archived=False,
         owner=None,
         groups=[],
@@ -1619,9 +2144,24 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
         task(notifier)
 
     # The study must not be updated in the database
-    actual_study: RawStudy = db.session.get(Study, study_id)
+    actual_study: RawStudy = db.session.query(Study).get(study_id)
     assert actual_study is not None, "Not in database"
     assert actual_study.version == old_version
 
     # No event must be emitted
     event_bus.push.assert_not_called()
+
+
+def test_is_output_archived(tmp_path: Path) -> None:
+    assert not is_output_archived(path_output=Path("fake_path"))
+    assert is_output_archived(path_output=Path("fake_path.zip"))
+
+    zipped_output_path = tmp_path / "output.zip"
+    zipped_output_path.mkdir(parents=True)
+    assert is_output_archived(path_output=zipped_output_path)
+    assert is_output_archived(path_output=tmp_path / "output")
+
+    zipped_with_suffix = tmp_path / "output_1.4.3.zip"
+    zipped_with_suffix.mkdir(parents=True)
+    assert is_output_archived(path_output=zipped_with_suffix)
+    assert is_output_archived(path_output=tmp_path / "output_1.4.3")
