@@ -74,7 +74,6 @@ CONFIG = Config(
 
 def create_test_client(
     service: StudyService,
-    output_service: OutputService | None = None,
     file_transfer_manager: FileTransferManager = Mock(),
     raise_server_exceptions: bool = True,
 ) -> TestClient:
@@ -85,7 +84,6 @@ def create_test_client(
         task_service=Mock(),
         file_transfer_manager=file_transfer_manager,
         study_service=service,
-        output_service=output_service,
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
@@ -400,7 +398,6 @@ def test_output_download(tmp_path: Path) -> None:
         includeClusters=True,
     )
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
-    mock_output_service._file_transfer_manager = ftm
     client = create_test_client(Mock(), mock_output_service, ftm, raise_server_exceptions=False)
     res = client.post(
         f"/v1/studies/{UUID}/outputs/my-output-id/download",

@@ -108,6 +108,7 @@ class OutputStorageImpl(IOutputStorage):
             output_full_name = extract_output_name(path_output, output_name)
             extension = f"{ArchiveFormat.ZIP}" if is_zipped else ""
             path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
+            remove_from_cache(self._cache, study_id)
 
             study_data = study_outputs.get_file_study()
             data = study_data.tree.get(["output", output_full_name], depth=1)
@@ -185,11 +186,11 @@ class OutputStorageImpl(IOutputStorage):
         Returns:
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        output_path = study_outputs.outputs_path
+        output_path = study_outputs.outputs_path / output_id
         if output_path.exists() and output_path.is_dir():
             shutil.rmtree(output_path, ignore_errors=True)
         else:
-            output_path = output_path.parent / f"{output_id}.zip"
+            output_path = study_outputs.outputs_path / f"{output_id}.zip"
             output_path.unlink(missing_ok=True)
         remove_from_cache(self._cache, study_id)
 
@@ -268,4 +269,4 @@ class OutputStorageImpl(IOutputStorage):
     def get_output_path(self, study_id: str, output_id: str) -> Path:
         """Returns the output path for the given output_id"""
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        return study_outputs.outputs_path
+        return study_outputs.outputs_path / output_id
