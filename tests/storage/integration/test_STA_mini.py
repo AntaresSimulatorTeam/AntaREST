@@ -25,19 +25,20 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
-from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
+from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.study.main import build_study_service
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.main import add_study_routes
 from antarest.study.service import StudyService
 from antarest.study.storage.output_model import OutputVariablesInformation
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import assert_study, with_admin_user
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -55,7 +56,9 @@ ADMIN = JWTUser(
 
 
 @pytest.fixture
-def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
+def client(
+    storage_service: StudyService, output_service: OutputService, db_engine: Engine, config: Config
+) -> TestClient:
     app = FastAPI(title=__name__)
     app.add_middleware(
         DBSessionMiddleware,
@@ -63,17 +66,9 @@ def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
         session_args={"autocommit": False, "autoflush": False},
     )
     build_ctxt = create_app_ctxt(app)
-    build_study_service(
-        build_ctxt,
-        cache=Mock(),
-        user_service=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        matrix_service=Mock(spec=MatrixService),
-        blob_service=Mock(spec=BlobService),
-        config=storage_service.storage_service.raw_study_service.config,
-    )
+    add_study_routes(build_ctxt, storage_service, Mock(), config)
+    build_ctxt.api_root.include_router(create_output_routes(output_service, config))
+
     return TestClient(build_ctxt.build())
 
 

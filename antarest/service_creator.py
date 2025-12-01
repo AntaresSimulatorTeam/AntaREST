@@ -20,6 +20,7 @@ import redis
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
+from typing_extensions import override
 
 from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
 from antarest.blobstore.main import build_blob_service
@@ -46,13 +47,15 @@ from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
+from antarest.study.output.output_storage_impl import FileStudyOutputs, IFileOutputsProvider, OutputStorageImpl
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.output_service import OutputService
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.watcher import Watcher
-from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
+from antarest.study.web.output_blueprint import create_output_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
@@ -149,6 +152,56 @@ class CoreServices:
     blob_service: BlobService
 
 
+def _create_file_outputs(study_service: StudyService, study_id: str) -> FileStudyOutputs:
+    metadata = study_service.get_study(study_id)
+
+    class FileOutputsImpl(FileStudyOutputs):
+        @override
+        def get_file_study(self) -> FileStudy:
+            return study_service.get_file_study(metadata)
+
+        @override
+        @property
+        def outputs_path(self) -> Path:
+            return Path(metadata.path) / "output"
+
+    return FileOutputsImpl()
+
+
+def _file_outputs_provider(study_service: StudyService) -> IFileOutputsProvider:
+    class Impl(IFileOutputsProvider):
+        @override
+        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            return _create_file_outputs(study_service, study_id)
+
+    return Impl()
+
+
+def build_output_service(
+    app_ctxt: Optional[AppBuildContext],
+    study_service: StudyService,
+    cache: ICache,
+    task_service: ITaskService,
+    filetransfer_service: FileTransferManager,
+    event_bus: IEventBus,
+    config: Config,
+) -> OutputService:
+    output_storage = OutputStorageImpl(outputs_provider=_file_outputs_provider(study_service), cache=cache)
+
+    output_service = OutputService(
+        study_service=study_service,
+        storage=output_storage,
+        task_service=task_service,
+        file_transfer_manager=filetransfer_service,
+        event_bus=event_bus,
+    )
+
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_output_routes(output_service, config))
+
+    return output_service
+
+
 def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
@@ -175,16 +228,20 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         event_bus=event_bus,
         blob_service=blob_service,
     )
-    storage_dispatcher = OutputStorageDispatcher(
-        study_service.storage_service.raw_study_service, study_service.storage_service.variant_study_service
-    )
-    output_service = OutputService(
+
+    output_service = build_output_service(
+        app_ctxt=app_ctxt,
+        cache=cache,
         study_service=study_service,
-        storage=storage_dispatcher,
         task_service=task_service,
-        file_transfer_manager=filetransfer_service,
+        filetransfer_service=filetransfer_service,
         event_bus=event_bus,
+        config=config,
     )
+
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_output_routes(output_service, config))
+
     return CoreServices(
         cache=cache,
         event_bus=event_bus,

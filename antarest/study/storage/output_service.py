@@ -132,9 +132,8 @@ class OutputService:
 
         def unarchive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
-                study = self._study_service.get_study(study_id)
                 stopwatch = StopWatch()
-                self._storage.unarchive_study_output(study, output_id)
+                self._storage.unarchive_study_output(study_id, output_id)
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
                 )
@@ -191,7 +190,7 @@ class OutputService:
             get_user_id(),
         )
 
-        return self._storage.get_study_sim_result(study)
+        return self._storage.get_study_sim_result(study_id)
 
     def import_output(
         self,
@@ -216,7 +215,7 @@ class OutputService:
         assert_permission(study, StudyPermissionType.RUN)
         self._study_service.assert_study_unarchived(study)
 
-        output_id = self._storage.import_output(study, output, output_name_suffix)
+        output_id = self._storage.import_output(uuid, output, output_name_suffix)
         remove_from_cache(cache=self._study_service.cache_service, root_id=study.id)
         logger.info("output added to study %s by user %s", uuid, get_user_id())
 
@@ -261,9 +260,8 @@ class OutputService:
 
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
-                target_study = self._study_service.get_study(study_uuid)
                 self._storage.export_output(
-                    metadata=target_study,
+                    study_id=study_uuid,
                     output_id=output_uuid,
                     target=export_path,
                 )
@@ -401,7 +399,7 @@ class OutputService:
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self._study_service.assert_study_unarchived(study)
-        self._storage.delete_output(study, output_name)
+        self._storage.delete_output(uuid, output_name)
         self._event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -459,9 +457,8 @@ class OutputService:
 
         def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
-                study = self._study_service.get_study(study_id)
                 stopwatch = StopWatch()
-                self._storage.archive_study_output(study, output_id)
+                self._storage.archive_study_output(study_id, output_id)
                 stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s"))
                 return TaskResult(
                     success=True,
@@ -568,7 +565,7 @@ class OutputService:
         """
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
-        output_path = self._storage.get_output_path(study, output_id)
+        output_path = self._storage.get_output_path(uuid, output_id)
         aggregator_manager = AggregatorManager(
             output_path,
             query_file,
@@ -634,7 +631,7 @@ class OutputService:
                 return output_variables.to_model()
 
         # Fetches the data inside the FS
-        output_path = self._storage.get_output_path(study, output_id)
+        output_path = self._storage.get_output_path(study_id, output_id)
         model = extract_variables_list(output_path)
 
         # Save the model inside DB for next calls

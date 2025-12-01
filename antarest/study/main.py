@@ -26,16 +26,13 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.study.web.directory_blueprint import create_directory_routes
-from antarest.study.web.output_blueprint import create_output_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
 from antarest.study.web.study_data_blueprint import create_study_data_routes
@@ -56,7 +53,6 @@ def build_study_service(
     variant_repository: Optional[VariantStudyRepository] = None,
     job_result_repository: Optional[JobResultRepository] = None,
     study_service: Optional[StudyService] = None,
-    output_service: Optional[OutputService] = None,
     generator_matrix_constants: Optional[GeneratorMatrixConstants] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> StudyService:
@@ -64,7 +60,7 @@ def build_study_service(
     Storage module linking dependencies.
 
     Args:
-        application: fastAPI application
+        app_ctxt: fastAPI application
         config: server config
         user_service: user service facade
         matrix_service: matrix store service
@@ -75,7 +71,6 @@ def build_study_service(
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
         variant_repository: used by testing to inject mock. Let None to use true instantiation
         study_service: used by testing to inject mock. Let None to use true instantiation
-        output_service: used by testing to inject mock. Let None to use true instantiation
         generator_matrix_constants: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
 
@@ -132,27 +127,24 @@ def build_study_service(
         config=config,
     )
 
-    output_service = output_service or OutputService(
-        study_service=study_service,
-        storage=OutputStorageDispatcher(raw_study_service, variant_study_service),
-        task_service=task_service,
-        file_transfer_manager=file_transfer_manager,
-        event_bus=event_bus,
-    )
-
     if app_ctxt:
-        api_root = app_ctxt.api_root
-        api_root.include_router(create_study_routes(study_service, config))
-        api_root.include_router(create_raw_study_routes(study_service, config))
-        api_root.include_router(create_study_data_routes(study_service, config))
-        api_root.include_router(
-            create_study_variant_routes(
-                study_service=study_service,
-                config=config,
-            )
-        )
-        api_root.include_router(create_xpansion_routes(study_service, config))
-        api_root.include_router(create_output_routes(output_service, config))
-        api_root.include_router(create_directory_routes(directory_service, config))
+        add_study_routes(app_ctxt, study_service, directory_service, config)
 
     return study_service
+
+
+def add_study_routes(
+    app_ctxt: AppBuildContext, study_service: StudyService, directory_service: DirectoryService, config: Config
+) -> None:
+    api_root = app_ctxt.api_root
+    api_root.include_router(create_study_routes(study_service, config))
+    api_root.include_router(create_raw_study_routes(study_service, config))
+    api_root.include_router(create_study_data_routes(study_service, config))
+    api_root.include_router(
+        create_study_variant_routes(
+            study_service=study_service,
+            config=config,
+        )
+    )
+    api_root.include_router(create_xpansion_routes(study_service, config))
+    api_root.include_router(create_directory_routes(directory_service, config))

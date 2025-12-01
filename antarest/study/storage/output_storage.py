@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import BinaryIO, List, Optional
 
-from antarest.study.model import Study, StudySimResultDTO
+from antarest.study.model import StudySimResultDTO
 
 logger = logging.getLogger(__name__)
 
@@ -23,21 +23,21 @@ class IOutputStorage(ABC):
     @abstractmethod
     def import_output(
         self,
-        study: Study,
+        study_outputs: str,
         output: BinaryIO | Path,
         output_name: Optional[str] = None,
     ) -> Optional[str]:
         """
         Import an output
         Args:
-            study: the study
+            study_id: the study id
             output: Path of the output or raw data
             output_name: Optional name suffix to append to the output name
         Returns: None
         """
 
     @abstractmethod
-    def get_study_sim_result(self, metadata: Study) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, study_id: str) -> List[StudySimResultDTO]:
         """
         Get global result information
 
@@ -49,7 +49,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def delete_output(self, metadata: Study, output_id: str) -> None:
+    def delete_output(self, study_id: str, output_id: str) -> None:
         """
         Delete a simulation output
         Args:
@@ -61,7 +61,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def export_output(self, metadata: Study, output_id: str, target: Path) -> None:
+    def export_output(self, study_id: str, output_id: str, target: Path) -> None:
         """
         Export and compresses study inside zip
         Args:
@@ -74,14 +74,14 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def archive_study_output(self, study: Study, output_id: str) -> bool:
+    def archive_study_output(self, study_id: str, output_id: str) -> bool:
         """Archive a study output."""
 
     # noinspection SpellCheckingInspection
     @abstractmethod
-    def unarchive_study_output(self, study: Study, output_id: str) -> bool:
+    def unarchive_study_output(self, study_id: str, output_id: str) -> bool:
         """Un-archive a study output."""
 
     @abstractmethod
-    def get_output_path(self, study: Study, output_id: str) -> Path:
+    def get_output_path(self, study_id: str, output_id: str) -> Path:
         """Returns the output path for the given output_id"""

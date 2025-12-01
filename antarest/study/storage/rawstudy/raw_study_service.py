@@ -336,26 +336,6 @@ class RawStudyService(AbstractStorageService):
         else:
             raise StudyDeletionNotAllowed(metadata.id)
 
-    @override
-    def delete_output(self, metadata: Study, output_name: str) -> None:
-        """
-        Delete output folder
-        Args:
-            metadata: study
-            output_name: output simulation
-
-        Returns:
-
-        """
-        study_path = self.get_study_path(metadata)
-        output_path = study_path / "output" / output_name
-        if output_path.exists() and output_path.is_dir():
-            shutil.rmtree(output_path, ignore_errors=True)
-        else:
-            output_path = output_path.parent / f"{output_name}.zip"
-            output_path.unlink(missing_ok=True)
-        remove_from_cache(self.cache, metadata.id)
-
     def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
         """
         Import study in the directory of the study.
@@ -527,10 +507,6 @@ class RawStudyService(AbstractStorageService):
             }
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)
-
-    @override
-    def get_output_path(self, study: Study, output_id: str) -> Path:
-        return self.get_study_path(study) / "output" / output_id
 
     @staticmethod
     def checks_antares_web_compatibility(study: Study) -> None:
