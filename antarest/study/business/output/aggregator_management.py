@@ -92,10 +92,10 @@ def _parse_headers(content: str, start_col: int) -> list[list[str]]:
     for idx, line in enumerate(lines[4:7]):
         cols = line.split("\t")[start_col:]
         if idx == 0:
-            header_lines = [[col.upper().strip()] for col in cols]
+            header_lines = [[col] for col in cols]
         else:
             for k, col in enumerate(cols):
-                header_lines[k].append(col.upper().strip())
+                header_lines[k].append(col)
 
     return header_lines
 
@@ -130,18 +130,20 @@ class AggregatorManager:
             else MCRoot.MC_ALL
         )
 
-    def _parse_output_file(self, file_path: Path) -> pd.DataFrame:
+    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
         content = file_path.read_text(encoding="utf-8")
         start_col = 4 if self.mc_root == MCRoot.MC_ALL else 5
         output_headers = _parse_headers(content, start_col)
         polars_df = pl.read_csv(io.StringIO(content), skip_lines=7, separator="\t", has_header=False)
-        polars_df = polars_df[polars_df.columns[start_col:]]
-        df = polars_df.to_pandas()
+        df = polars_df[polars_df.columns[start_col:]].to_pandas()
 
-        if self.mc_root == MCRoot.MC_IND:
-            df.columns = pd.Index([col[0] for col in output_headers])
-        else:
-            df.columns = pd.Index([" ".join([col[0], col[2]]) for col in output_headers])
+        df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
+
+        if normalize_column_names:
+            if self.mc_root == MCRoot.MC_IND:
+                df.columns = pd.Index([col[0] for col in output_headers])
+            else:
+                df.columns = pd.Index([" ".join([col[0], col[2]]).upper().strip() for col in output_headers])
 
         return df
 
@@ -238,7 +240,7 @@ class AggregatorManager:
             the DataFrame with the correct columns and values
         """
 
-        df = self._parse_output_file(file_path)
+        df = self._parse_output_file(file_path, normalize_column_names=not is_details)
         if not is_details:
             return df
 
