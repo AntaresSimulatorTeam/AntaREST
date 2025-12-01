@@ -18,7 +18,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import polars as pl
-from polars._plr import NoDataError
+from polars._plr import ComputeError, NoDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -71,6 +71,14 @@ class InputSeriesMatrix(MatrixNode):
             else:
                 try:
                     matrix = pl.read_csv(file_path, n_threads=1, separator="\t", has_header=False).to_pandas()
+                except ComputeError:
+                    # Happens for file `conversion.txt` as polars infer the data as int64, but the value is too big.
+                    # In such cases, we'll read the data as a string and convert it in float64 afterward
+                    matrix = (
+                        pl.read_csv(file_path, n_threads=1, separator="\t", has_header=False, infer_schema=False)
+                        .with_columns(pl.all().cast(pl.Float64))
+                        .to_pandas()
+                    )
                 except FileNotFoundError as e:
                     # Some matrices are optional and not required by the Simulator
                     # If so, we shouldn't raise but just return the `default_empty` value
