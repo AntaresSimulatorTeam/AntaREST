@@ -24,7 +24,7 @@ from antarest.celery.app import celery_app
 logger = logging.getLogger(__name__)
 
 
-@celery_app.on_after_configure.connect  # type: ignore[misc]
+@celery_app.on_after_configure.connect
 def setup_periodic_tasks(sender: object, **kwargs: object) -> None:
     """
     Configure periodic tasks.
@@ -39,7 +39,7 @@ def setup_periodic_tasks(sender: object, **kwargs: object) -> None:
 
     # Matrix Garbage Collector - every 3600 seconds (1 hour)
     sender.add_periodic_task(  # type: ignore[attr-defined]
-        3600.0,  # Every hour
+        3600,
         clean_matrices_task.s(),
         name="matrix-gc",
     )

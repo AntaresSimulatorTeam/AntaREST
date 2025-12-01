@@ -16,7 +16,3 @@ Celery application for maintenance tasks.
 This module provides a Celery application for scheduling and executing
 periodic maintenance tasks (garbage collection, archiving, etc.).
 """
-
-from antarest.celery.app import celery_app
-
-__all__ = ["celery_app"]

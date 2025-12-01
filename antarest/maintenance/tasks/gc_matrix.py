@@ -45,8 +45,8 @@ def _delete_unused_saved_matrices(matrix_service: MatrixService, unused_matrices
             matrix_service.delete(unused_matrix_id)
 
 
-@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task", bind=True)  # type: ignore[misc]
-def clean_matrices_task(self: Any) -> Dict[str, Any]:
+@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task", bind=True)
+def clean_matrices_task() -> Dict[str, Any]:
     """
     Delete all matrices that are not used anymore.
 
@@ -76,8 +76,6 @@ def clean_matrices_task(self: Any) -> Dict[str, Any]:
 
     try:
         with db():
-            # Acquire PostgreSQL advisory lock (session-level, auto-released on commit/rollback)
-            # This prevents multiple workers from running GC simultaneously
             logger.info(f"Attempting to acquire advisory lock {MATRIX_GC_LOCK_ID}")
             result = db.session.execute(text("SELECT pg_try_advisory_lock(:lock_id)"), {"lock_id": MATRIX_GC_LOCK_ID})
             lock_acquired = result.scalar()

@@ -28,11 +28,8 @@ if TYPE_CHECKING:
     from antarest.blobstore.service import BlobService
     from antarest.core.config import Config
     from antarest.core.interfaces.eventbus import IEventBus
-    from antarest.core.tasks.service import ITaskService
     from antarest.matrixstore.service import MatrixService
     from antarest.service_creator import CoreServices
-    from antarest.study.service import StudyService
-    from antarest.study.storage.output_service import OutputService
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +41,6 @@ class MaintenanceContext:
     Provides access to all services needed by maintenance tasks:
     - MatrixService
     - BlobService
-    - TaskService
     - ...
 
     The context is initialized once per worker process in the worker_init signal.
@@ -110,13 +106,6 @@ class MaintenanceContext:
             logger.info("MaintenanceContext initialized successfully")
 
     @property
-    def event_bus(self) -> "IEventBus":
-        """Get EventBus service."""
-        if not self._initialized or self.core_services is None:
-            raise RuntimeError("MaintenanceContext not initialized")
-        return self.core_services.event_bus
-
-    @property
     def matrix_service(self) -> "MatrixService":
         """Get MatrixService."""
         if not self._initialized or self.core_services is None:
@@ -129,24 +118,3 @@ class MaintenanceContext:
         if not self._initialized or self.core_services is None:
             raise RuntimeError("MaintenanceContext not initialized")
         return self.core_services.blob_service
-
-    @property
-    def study_service(self) -> "StudyService":
-        """Get StudyService."""
-        if not self._initialized or self.core_services is None:
-            raise RuntimeError("MaintenanceContext not initialized")
-        return self.core_services.study_service
-
-    @property
-    def output_service(self) -> "OutputService":
-        """Get OutputService."""
-        if not self._initialized or self.core_services is None:
-            raise RuntimeError("MaintenanceContext not initialized")
-        return self.core_services.output_service
-
-    @property
-    def task_service(self) -> "ITaskService":
-        """Get TaskService."""
-        if not self._initialized or self.core_services is None:
-            raise RuntimeError("MaintenanceContext not initialized")
-        return self.core_services.task_service

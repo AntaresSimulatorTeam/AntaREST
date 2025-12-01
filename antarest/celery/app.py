@@ -20,9 +20,13 @@ overridden from YAML config file (for Worker in worker_init signal).
 
 import logging
 import os
+from pathlib import Path
 
-from celery import Celery  # type: ignore[import-untyped]
-from celery.signals import worker_init  # type: ignore[import-untyped]
+from celery import Celery
+from celery.signals import worker_init
+
+from antarest.celery.context import MaintenanceContext
+from antarest.core.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +69,7 @@ celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
 
 # Import beat_schedule to register periodic tasks
 # This must be imported AFTER celery_app is created
-from antarest.maintenance import beat_schedule  # noqa: E402, F401
+import antarest.maintenance.beat_schedule  # noqa: E402, F401
 
 logger.info(
     "Celery app created",
@@ -76,7 +80,7 @@ logger.info(
 )
 
 
-@worker_init.connect  # type: ignore[misc]
+@worker_init.connect
 def init_worker(**kwargs: object) -> None:
     """
     Initialize worker context on startup.
@@ -85,13 +89,8 @@ def init_worker(**kwargs: object) -> None:
     It loads the full configuration from YAML file and initializes
     the MaintenanceContext with all required services.
     """
-    from pathlib import Path
-
-    from antarest.celery.context import MaintenanceContext
-    from antarest.core.config import Config
 
     # Get config file path from environment
-    # ANTAREST_CONF is the standard env var used by Dockerfile and other services
     config_path_str = os.environ.get("ANTAREST_CONF")
     if not config_path_str:
         logger.warning("ANTAREST_CONF not set, worker will use env vars only. Services may not be available.")
@@ -113,7 +112,6 @@ def init_worker(**kwargs: object) -> None:
             broker_url=config.celery.broker_url,
             result_backend=config.celery.result_backend,
             timezone=config.celery.timezone,
-            # Add other overrides as needed
         )
 
     # Initialize MaintenanceContext with services
