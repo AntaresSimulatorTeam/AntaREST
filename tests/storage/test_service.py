@@ -47,6 +47,7 @@ from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
+from antarest.service_creator import build_output_service
 from antarest.study.business.model.district_model import District
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
@@ -70,7 +71,6 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     FileStudyTreeConfig,
@@ -86,7 +86,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
@@ -710,15 +709,15 @@ def test_download_output() -> None:
     repository.get.return_value = input_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
-    storage = OutputStorageDispatcher(
-        service.storage_service.raw_study_service, service.storage_service.variant_study_service
-    )
-    output_service = OutputService(
-        service,
-        storage,
-        service.task_service,
-        service.file_transfer_manager,
-        service.event_bus,
+
+    output_service = build_output_service(
+        app_ctxt=None,
+        study_service=service,
+        task_service=service.task_service,
+        filetransfer_service=service.file_transfer_manager,
+        event_bus=service.event_bus,
+        cache=service.cache_service,
+        config=config,
     )
 
     study_service.get_raw.return_value = FileStudy(config=file_study_tree_config, tree=file_study_tree)
@@ -1534,15 +1533,15 @@ def test_unarchive_output(tmp_path: Path) -> None:
     service.task_service.add_worker_task.return_value = None  # type: ignore
     service.task_service.list_tasks.return_value = []  # type: ignore
     (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
-    storage = OutputStorageDispatcher(
-        service.storage_service.raw_study_service, service.storage_service.variant_study_service
-    )
-    output_service = OutputService(
-        service,
-        storage,
-        service.task_service,
-        Mock(),
-        Mock(),
+
+    output_service = build_output_service(
+        app_ctxt=None,
+        study_service=service,
+        task_service=service.task_service,
+        filetransfer_service=service.file_transfer_manager,
+        event_bus=service.event_bus,
+        cache=service.cache_service,
+        config=Mock(spec=Config),
     )
     output_service.unarchive_output(study_id, output_id)
 
@@ -1641,15 +1640,14 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         ],
         [],
     ]
-    storage = OutputStorageDispatcher(
-        service.storage_service.raw_study_service, service.storage_service.variant_study_service
-    )
-    output_service = OutputService(
-        service,
-        storage,
-        service.task_service,
-        Mock(),
-        Mock(),
+    output_service = build_output_service(
+        app_ctxt=None,
+        study_service=service,
+        task_service=service.task_service,
+        filetransfer_service=service.file_transfer_manager,
+        event_bus=service.event_bus,
+        cache=service.cache_service,
+        config=Mock(spec=Config),
     )
     with pytest.raises(TaskAlreadyRunning):
         output_service.unarchive_output(study_id, output_zipped)

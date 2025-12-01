@@ -26,6 +26,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
+from antarest.study.output.output_storage_impl import FileStudyOutputs, IFileOutputsProvider, OutputStorageImpl
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
@@ -439,23 +440,37 @@ timestamp = 1599488150
         """,
         )
 
+    class FileOutputsImpl(FileStudyOutputs):
+        def get_file_study(self) -> FileStudy:
+            return study_service.get_raw(md)
+
+        @property
+        def outputs_path(self) -> Path:
+            return study_path / "output"
+
+    class OutputsProvider(IFileOutputsProvider):
+        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            return FileOutputsImpl()
+
+    output_storage = OutputStorageImpl(OutputsProvider(), cache=Mock())
+
     expected_output_name = "20200907-1615eco-11mc"
-    output_name = study_service.import_output(md, zipped_output)
+    output_name = output_storage.import_output(name, zipped_output)
     if output_name != expected_output_name:
         # because windows sucks...
         expected_output_name = "20200907-1415eco-11mc"
     assert output_name == expected_output_name
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
 
-    study_service.unarchive_study_output(md, expected_output_name)
+    output_storage.unarchive_study_output(name, expected_output_name)
     assert (study_path / "output" / expected_output_name).exists()
     assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
-    study_service.delete_output(md, output_name)
+    output_storage.delete_output(name, output_name)
 
-    study_service.archive_study_output(md, expected_output_name)
+    output_storage.archive_study_output(name, expected_output_name)
     assert not (study_path / "output" / expected_output_name).exists()
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
-    study_service.delete_output(md, output_name)
+    output_storage.delete_output(name, output_name)
     assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
 
 
