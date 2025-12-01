@@ -18,6 +18,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from pandas.errors import EmptyDataError
+from polars._plr import NoDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -29,6 +30,7 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode, dump_dataframe
+import polars as pl
 
 logger = logging.getLogger(__name__)
 
@@ -69,13 +71,7 @@ class InputSeriesMatrix(MatrixNode):
                 matrix = self.matrix_mapper.get_matrix(link_content)
             else:
                 try:
-                    matrix = pd.read_csv(
-                        file_path,
-                        sep="\t",
-                        dtype=float,
-                        header=None,
-                        float_precision="legacy",
-                    )
+                    matrix = pl.read_csv(file_path, n_threads=1, separator="\t", has_header=False).to_pandas()
                 except FileNotFoundError as e:
                     # Some matrices are optional and not required by the Simulator
                     # If so, we shouldn't raise but just return the `default_empty` value
@@ -87,11 +83,10 @@ class InputSeriesMatrix(MatrixNode):
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
             stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
-            final_matrix = matrix.dropna(how="any", axis=1)
-            if final_matrix.empty:
-                raise EmptyDataError
-            return final_matrix
-        except EmptyDataError:
+            if matrix.empty:
+                raise NoDataError
+            return matrix
+        except NoDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
             final_matrix = pd.DataFrame()
             if self.default_empty is not None:
