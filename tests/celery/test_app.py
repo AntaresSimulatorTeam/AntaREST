@@ -18,6 +18,37 @@ from unittest.mock import Mock, patch
 import pytest
 
 
+class TestMaskUrlCredentials:
+    def test_masks_password_in_url(self):
+        """Test that password is masked in URL."""
+        from antarest.celery.app import _mask_url_credentials
+
+        url = "redis://user:secret_password@localhost:6379/0"
+        masked = _mask_url_credentials(url)
+
+        assert masked == "redis://user:***@localhost:6379/0"
+        assert "secret_password" not in masked
+
+    def test_preserves_url_without_credentials(self):
+        """Test that URL without credentials is unchanged."""
+        from antarest.celery.app import _mask_url_credentials
+
+        url = "redis://localhost:6379/0"
+        masked = _mask_url_credentials(url)
+
+        assert masked == url
+
+    def test_masks_password_with_special_chars(self):
+        """Test that passwords with special chars (except @) are masked."""
+        from antarest.celery.app import _mask_url_credentials
+
+        url = "redis://admin:p4ss!w0rd#123@host:6379/1"
+        masked = _mask_url_credentials(url)
+
+        assert "p4ss!w0rd#123" not in masked
+        assert "***@host" in masked
+
+
 class TestCeleryAppConfiguration:
     def test_celery_app_has_correct_name(self):
         """Test that the Celery app is created with the correct name."""
@@ -153,6 +184,7 @@ class TestInitWorker:
         mock_celery_config.broker_url = "redis://yaml-broker:6379/0"
         mock_celery_config.result_backend = "redis://yaml-backend:6379/0"
         mock_celery_config.timezone = "Europe/Paris"
+        mock_celery_config.result_expires = 43200
 
         mock_config = Mock()
         mock_config.celery = mock_celery_config
@@ -169,12 +201,13 @@ class TestInitWorker:
             broker_url="redis://yaml-broker:6379/0",
             result_backend="redis://yaml-backend:6379/0",
             timezone="Europe/Paris",
+            result_expires=43200,
         )
 
 
 class TestSetupPeriodicTasks:
-    def test_setup_periodic_tasks_adds_matrix_gc(self):
-        """Test that setup_periodic_tasks registers the matrix GC task."""
+    def test_setup_periodic_tasks_adds_matrix_gc_with_default_interval(self):
+        """Test that setup_periodic_tasks registers the matrix GC task with default interval."""
         from antarest.celery.app import setup_periodic_tasks
 
         mock_sender = Mock()
@@ -184,5 +217,20 @@ class TestSetupPeriodicTasks:
         # Verify add_periodic_task was called with correct arguments
         mock_sender.add_periodic_task.assert_called_once()
         call_args = mock_sender.add_periodic_task.call_args
-        assert call_args[0][0] == 3600  # interval
+        assert call_args[0][0] == 3600  # default interval
+        assert call_args[1]["name"] == "matrix-gc"
+
+    @patch.dict(os.environ, {"CELERY_MATRIX_GC_INTERVAL": "7200"})
+    def test_setup_periodic_tasks_uses_custom_interval_from_env(self):
+        """Test that setup_periodic_tasks uses custom interval from environment variable."""
+        from antarest.celery.app import setup_periodic_tasks
+
+        mock_sender = Mock()
+
+        setup_periodic_tasks(mock_sender)
+
+        # Verify add_periodic_task was called with custom interval
+        mock_sender.add_periodic_task.assert_called_once()
+        call_args = mock_sender.add_periodic_task.call_args
+        assert call_args[0][0] == 7200  # custom interval from env
         assert call_args[1]["name"] == "matrix-gc"

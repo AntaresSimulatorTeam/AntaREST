@@ -46,7 +46,6 @@ server:
   worker_threadpool_size: 12
   services:
     - watcher
-    - matrix_gc
 
 logging:
   level: INFO
@@ -67,3 +66,4 @@ debug: False
 #   result_backend: "redis://localhost:6379/1"
 #   timezone: "UTC"
 #   result_expires: 86400  # 24 hours
+#   matrix_gc_interval: 3600  # 1 hour (also configurable via CELERY_MATRIX_GC_INTERVAL env var)

@@ -20,6 +20,7 @@ overridden from YAML config file (for Worker in worker_init signal).
 
 import logging
 import os
+import re
 from pathlib import Path
 
 from celery import Celery
@@ -29,6 +30,13 @@ from antarest.celery.context import MaintenanceContext
 from antarest.core.config import Config
 
 logger = logging.getLogger(__name__)
+
+
+def _mask_url_credentials(url: str) -> str:
+    """Mask password in URL for safe logging."""
+    # Matches ://user:password@ and replaces password with ***
+    return re.sub(r"(://[^:]+:)[^@]+(@)", r"\1***\2", url)
+
 
 # Create Celery app instance
 celery_app = Celery("antarest-maintenance")
@@ -81,21 +89,23 @@ def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None:
     # Import here to avoid circular imports and get the task signature
     from antarest.maintenance.tasks.gc_matrix import clean_matrices_task
 
-    # Matrix Garbage Collector - every 3600 seconds (1 hour)
+    # Matrix Garbage Collector interval (default: 3600 seconds = 1 hour)
+    matrix_gc_interval = int(os.getenv("CELERY_MATRIX_GC_INTERVAL", "3600"))
+
     sender.add_periodic_task(
-        3600,
+        matrix_gc_interval,
         clean_matrices_task.s(),
         name="matrix-gc",
     )
 
-    logger.info("Periodic tasks configured successfully")
+    logger.info(f"Periodic tasks configured successfully (matrix_gc_interval={matrix_gc_interval}s)")
 
 
 logger.info(
     "Celery app created",
     extra={
-        "broker": celery_app.conf.broker_url,
-        "backend": celery_app.conf.result_backend,
+        "broker": _mask_url_credentials(celery_app.conf.broker_url),
+        "backend": _mask_url_credentials(celery_app.conf.result_backend),
     },
 )
 
@@ -132,6 +142,7 @@ def init_worker(**kwargs: object) -> None:
             broker_url=config.celery.broker_url,
             result_backend=config.celery.result_backend,
             timezone=config.celery.timezone,
+            result_expires=config.celery.result_expires,
         )
 
     # Initialize MaintenanceContext with services

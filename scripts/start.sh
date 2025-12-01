@@ -92,7 +92,7 @@ else
         --max-tasks-per-child=100
       ;;
     *)
-      # Default: run antarest module (watcher, matrix_gc, etc.)
+      # Default: run antarest module (watcher, auto_archiver, etc.)
       python3 $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
       ;;
   esac
