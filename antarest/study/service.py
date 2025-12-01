@@ -1267,12 +1267,14 @@ class StudyService:
         self,
         uuid: str,
         outputs: bool = True,
+        compression: ArchiveFormat = ArchiveFormat.ZIP,
     ) -> FileDownloadTaskDTO:
         """
         Export study to a zip file.
         Args:
             uuid: study id
             outputs: integrate output folder in zip file
+            compression: allow to choose between compression format
 
         """
         study = self.get_study(uuid)
@@ -1281,8 +1283,14 @@ class StudyService:
 
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
+
+        archive_format = ArchiveFormat.ZIP
+
+        if compression in list(map(lambda arch_format: arch_format, ArchiveFormat)):
+            archive_format = compression
+
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}{ArchiveFormat.ZIP}", export_name
+            f"{study.name}-{uuid}{archive_format}", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
