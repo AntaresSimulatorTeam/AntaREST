@@ -144,13 +144,27 @@ class AggregatorManager:
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
             else MCRoot.MC_ALL
         )
+        self._output_first_column = self.get_start_column()
+
+    def get_start_column(self) -> int:
+        if self.frequency == MatrixFrequency.ANNUAL:
+            return 2
+        elif self.frequency == MatrixFrequency.MONTHLY:
+            return 3
+        elif self.frequency == MatrixFrequency.WEEKLY:
+            return 2
+        elif self.frequency == MatrixFrequency.DAILY:
+            return 4
+        elif self.frequency == MatrixFrequency.HOURLY:
+            return 5
+        else:
+            raise NotImplementedError(f"Unknown frequency {self.frequency.value}")
 
     def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
         content = file_path.read_text(encoding="utf-8")
-        start_col = _get_start_column(self.frequency)
-        output_headers = _parse_headers(content, start_col)
+        output_headers = _parse_headers(content, self._output_first_column)
         polars_df = pl.read_csv(io.StringIO(content), skip_lines=7, separator="\t", has_header=False)
-        df = polars_df[polars_df.columns[start_col:]].to_pandas()
+        df = polars_df[polars_df.columns[self._output_first_column :]].to_pandas()
 
         df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
 
