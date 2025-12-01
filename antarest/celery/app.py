@@ -67,9 +67,29 @@ celery_app.conf.update(
 # Auto-discover tasks
 celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
 
-# Import beat_schedule to register periodic tasks
-# This must be imported AFTER celery_app is created
-import antarest.maintenance.beat_schedule  # noqa: E402, F401
+
+@celery_app.on_after_configure.connect
+def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None:
+    """
+    Configure periodic tasks.
+
+    This function is called automatically when Beat scheduler starts.
+    It registers all periodic maintenance tasks.
+    """
+    logger.info("Setting up periodic tasks")
+
+    # Import here to avoid circular imports and get the task signature
+    from antarest.maintenance.tasks.gc_matrix import clean_matrices_task
+
+    # Matrix Garbage Collector - every 3600 seconds (1 hour)
+    sender.add_periodic_task(
+        3600,
+        clean_matrices_task.s(),
+        name="matrix-gc",
+    )
+
+    logger.info("Periodic tasks configured successfully")
+
 
 logger.info(
     "Celery app created",

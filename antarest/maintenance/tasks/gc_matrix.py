@@ -14,7 +14,6 @@
 Matrix garbage collection task for Celery.
 
 This task deletes unused matrices from the matrix store based on retention time.
-It replaces the legacy MatrixGarbageCollector service.
 """
 
 import logging
@@ -45,7 +44,7 @@ def _delete_unused_saved_matrices(matrix_service: MatrixService, unused_matrices
             matrix_service.delete(unused_matrix_id)
 
 
-@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task", bind=True)
+@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task")
 def clean_matrices_task() -> Dict[str, Any]:
     """
     Delete all matrices that are not used anymore.

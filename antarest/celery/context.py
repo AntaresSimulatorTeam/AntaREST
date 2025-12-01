@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from antarest.blobstore.service import BlobService
     from antarest.core.config import Config
-    from antarest.core.interfaces.eventbus import IEventBus
     from antarest.matrixstore.service import MatrixService
     from antarest.service_creator import CoreServices
 
