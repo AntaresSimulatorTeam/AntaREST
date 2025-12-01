@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import io
 import logging
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
 
 import pandas as pd
+import polars as pl
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.study.business.output.utils import (
@@ -24,8 +25,6 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
-    normalize_column_names,
-    parse_output_file,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
@@ -87,6 +86,20 @@ def _filtered_files_listing(
     return filtered_files
 
 
+def _parse_headers(content: str) -> list[list[str]]:
+    lines = content.splitlines()
+    header_lines = []
+    for idx, line in enumerate(lines[4:7]):
+        cols = line.split("\t")[5:]
+        if idx == 0:
+            header_lines = [[col] for col in cols]
+        else:
+            for k, col in enumerate(cols):
+                header_lines[k].append(col)
+
+    return header_lines
+
+
 class AggregatorManager:
     def __init__(
         self,
@@ -118,17 +131,17 @@ class AggregatorManager:
         )
 
     def _parse_output_file(self, file_path: Path, normalize_column_name: bool = True) -> pd.DataFrame:
-        body = parse_output_file(file_path, self.frequency)
+        content = file_path.read_text(encoding="utf-8")
+        output_headers = _parse_headers(content)
+        polars_df = pl.read_csv(io.StringIO(content), skip_lines=7, separator="\t", has_header=False)
+        polars_df = polars_df[polars_df.columns[5:]]
+        df = polars_df.to_pandas()
 
-        df = body.astype(float)
+        if normalize_column_name:
+            df.columns = pd.Index([col[0] for col in output_headers])
+        else:
+            df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
 
-        if not normalize_column_name:
-            return df
-
-        # normalize columns names
-        new_cols = normalize_column_names(body, self.mc_root)
-
-        df.columns = pd.Index(new_cols)
         return df
 
     def _filter_ids(self, folder_path: Path) -> List[str]:
