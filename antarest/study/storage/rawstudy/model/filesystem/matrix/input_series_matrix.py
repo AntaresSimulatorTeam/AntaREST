@@ -17,7 +17,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from pandas.errors import EmptyDataError
+import polars as pl
 from polars._plr import NoDataError
 from typing_extensions import override
 
@@ -30,7 +30,6 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode, dump_dataframe
-import polars as pl
 
 logger = logging.getLogger(__name__)
 
