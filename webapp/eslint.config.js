@@ -26,7 +26,7 @@ export default [
   // Must be defined here to be applied to all configurations.
   // cf. https://github.com/eslint/eslint/discussions/18304
   {
-    ignores: ["dist/*", "license-header.js"],
+    ignores: ["dist/*", "license-header.js", "**/routeTree.gen.ts"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
