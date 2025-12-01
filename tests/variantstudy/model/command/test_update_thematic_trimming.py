@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,7 +14,6 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimmingUpdate
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.model import (
     STUDY_VERSION_8,
@@ -25,6 +24,7 @@ from antarest.study.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_thematic_trimming import UpdateThematicTrimming
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 class TestUpdateThematicTrimming:
@@ -77,7 +77,7 @@ class TestUpdateThematicTrimming:
         assert actual_content["variables selection"] == {"selected_vars_reset": False}
 
         manager = ThematicTrimmingManager(command_context)
-        study_interface = FileStudyInterface(study)
+        study_interface = file_study_interface(study)
         trimming = manager.get_thematic_trimming(study_interface)
         assert trimming.model_dump(exclude_none=True) == args
 

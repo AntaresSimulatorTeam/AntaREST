@@ -40,6 +40,6 @@ def clean_variable_views_task(self: Task) -> GCTaskResult:  # type: ignore[type-
 
     return clean_variable_views(
         matrix_service=ctx.matrix_service,
-        dry_run=ctx.config.storage.vbv_output_gc_dry_run,
-        retention_time=ctx.config.storage.vbv_output_gc_retention_time,
+        dry_run=ctx.config.storage.variable_view_gc_dry_run,
+        retention_time=ctx.config.storage.variable_view_gc_retention_time,
     )

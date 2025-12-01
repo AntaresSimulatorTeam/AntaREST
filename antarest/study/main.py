@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -85,9 +85,7 @@ def build_study_service(
     job_result_repository = job_result_repository or JobResultRepository()
 
     raw_study_service = RawStudyService(
-        config=config,
-        study_factory=study_factory,
-        cache=cache,
+        config=config, study_factory=study_factory, cache=cache, matrix_service=matrix_service
     )
 
     if not generator_matrix_constants:
@@ -105,12 +103,10 @@ def build_study_service(
         repository=variant_repository,
         event_bus=event_bus,
         config=config,
+        matrix_service=matrix_service,
     )
 
-    directory_repository = DirectoryRepository()
-    directory_service = DirectoryService(
-        directory_repository=directory_repository,
-    )
+    directory_service = DirectoryService(directory_repository=DirectoryRepository())
 
     study_service = study_service or StudyService(
         raw_study_service=raw_study_service,

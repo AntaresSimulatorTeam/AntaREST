@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -437,18 +437,17 @@ def test_sta_mini_output(storage_service: StudyService, url: str, expected_outpu
         (
             f"/v1/studies/{UUID}/raw?path=user/expansion/settings",
             {
-                "optimality_gap": 1,
-                "max_iteration": "+Inf",
-                "uc_type": '"expansion_fast"',
-                "master": '"integer"',
-                "yearly-weights": "None",
-                "additional-constraints": "None",
-                "relaxed_optimality_gap": 0.00001,
-                # legacy attributes from version < 800
-                "cut-type": '"average"',
-                "ampl.solver": '"cbc"',
-                "ampl.presolve": 0,
-                "ampl.solve_bounds_frequency": 1000000,
+                "master": "relaxed",
+                "uc_type": "expansion_fast",
+                "optimality_gap": 1000000,
+                "relative_gap": 1e-06,
+                "relaxed_optimality_gap": 1e-05,
+                "max_iteration": 200,
+                "solver": "Xpress",
+                "log_level": 1,
+                "separation_parameter": 0.5,
+                "batch_size": 96,
+                "timelimit": 10000,
             },
         ),
         (
@@ -491,7 +490,7 @@ def test_sta_mini_copy(
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
     # The study is copied; therefore, it was normalized
-    assert "matrix://ef73d0226d966d7c085e03bf37f26986fb7bfaba0977f8f60acfa9109ded8c1f" == link_url_destination
+    assert "ef73d0226d966d7c085e03bf37f26986fb7bfaba0977f8f60acfa9109ded8c1f" == link_url_destination
 
     # We should first denormalize the copied study to ensure it's the same exact study.
     denormalized_path = tmp_path / "denormalized_study"

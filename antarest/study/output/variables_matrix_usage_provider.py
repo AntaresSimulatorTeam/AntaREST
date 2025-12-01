@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -22,6 +22,7 @@
 # This file is part of the Antares project.
 import logging
 
+from sqlalchemy import select
 from typing_extensions import Iterable, override
 
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -41,6 +42,7 @@ class OutputVariablesMatrixUsageProvider(IMatrixUsageProvider):
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in output variables views")
         with db():
-            all_views = db.session.query(OutputVariablesViewsModel).all()
+            stmt = select(OutputVariablesViewsModel)
+            all_views = db.session.execute(stmt).scalars().all()
             for view in all_views:
                 yield MatrixReference(matrix_id=view.matrix_id, use_description="Matrix used inside variables views")

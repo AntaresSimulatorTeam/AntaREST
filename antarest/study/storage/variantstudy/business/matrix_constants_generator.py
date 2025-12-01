@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,13 +10,10 @@
 #
 # This file is part of the Antares project.
 
-import tempfile
-from pathlib import Path
 from typing import Dict
 
 import pandas as pd
 from antares.study.version import StudyVersion
-from filelock import FileLock
 
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
@@ -66,60 +63,54 @@ ST_STORAGE_LOWER_RULE_CURVE = EMPTY_SCENARIO_MATRIX
 ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
 ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 
-_LOCK_FILE_NAME = "matrix_constant_init.lock"
-
 
 # noinspection SpellCheckingInspection
 class GeneratorMatrixConstants:
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self.hashes: Dict[str, str] = {}
         self.matrix_service: ISimpleMatrixService = matrix_service
-        self._lock_dir = tempfile.gettempdir()
         ConstantsMatrixUsageProvider(self, self.matrix_service)
 
     def init_constant_matrices(
         self,
     ) -> None:
-        with FileLock(str(Path(self._lock_dir) / _LOCK_FILE_NAME)):
-            self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.hydro.v7.max_power
-            )
-            self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.hydro.v7.reservoir
-            )
-            self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.hydro.v6.reservoir
-            )
-            self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.hydro.v7.inflow_pattern
-            )
-            self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.hydro.v7.credit_modulations
-            )
-            self.hashes[PREPRO_CONVERSION] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.prepro.conversion
-            )
-            self.hashes[PREPRO_DATA] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.prepro.data)
-            self.hashes[THERMAL_PREPRO_DATA] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.thermals.prepro.data
-            )
+        self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.hydro.v7.max_power
+        )
+        self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.hydro.v7.reservoir
+        )
+        self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.hydro.v6.reservoir
+        )
+        self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.hydro.v7.inflow_pattern
+        )
+        self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.hydro.v7.credit_modulations
+        )
+        self.hashes[PREPRO_CONVERSION] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.prepro.conversion
+        )
+        self.hashes[PREPRO_DATA] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.prepro.data)
+        self.hashes[THERMAL_PREPRO_DATA] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.thermals.prepro.data
+        )
 
-            self.hashes[THERMAL_PREPRO_MODULATION] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.thermals.prepro.modulation
-            )
-            self.hashes[LINK_V7] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.link.v7.link)
-            self.hashes[LINK_V8] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.link.v8.link)
-            self.hashes[LINK_DIRECT] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.link.v8.direct
-            )
-            self.hashes[LINK_INDIRECT] = self.matrix_service.add_predefined_matrix(
-                lambda: matrix_constants.link.v8.indirect
-            )
+        self.hashes[THERMAL_PREPRO_MODULATION] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.thermals.prepro.modulation
+        )
+        self.hashes[LINK_V7] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.link.v7.link)
+        self.hashes[LINK_V8] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.link.v8.link)
+        self.hashes[LINK_DIRECT] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.link.v8.direct)
+        self.hashes[LINK_INDIRECT] = self.matrix_service.add_predefined_matrix(
+            lambda: matrix_constants.link.v8.indirect
+        )
 
-            self.hashes[NULL_MATRIX_NAME] = self.matrix_service.add_predefined_matrix(lambda: NULL_MATRIX)
-            self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(lambda: NULL_SCENARIO_MATRIX)
-            self.hashes[RESERVES_TS] = self.matrix_service.add_predefined_matrix(lambda: FIXED_4_COLUMNS)
-            self.hashes[MISCGEN_TS] = self.matrix_service.add_predefined_matrix(lambda: FIXED_8_COLUMNS)
+        self.hashes[NULL_MATRIX_NAME] = self.matrix_service.add_predefined_matrix(lambda: NULL_MATRIX)
+        self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(lambda: NULL_SCENARIO_MATRIX)
+        self.hashes[RESERVES_TS] = self.matrix_service.add_predefined_matrix(lambda: FIXED_4_COLUMNS)
+        self.hashes[MISCGEN_TS] = self.matrix_service.add_predefined_matrix(lambda: FIXED_8_COLUMNS)
 
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87

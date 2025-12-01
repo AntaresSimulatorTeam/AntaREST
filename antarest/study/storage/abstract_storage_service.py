@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -32,7 +32,7 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.study_storage import IStudyStorage
 
@@ -40,14 +40,8 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractStorageService(IStudyStorage, ABC):
-    def __init__(
-        self,
-        config: Config,
-        study_factory: StudyFactory,
-        cache: ICache,
-    ):
+    def __init__(self, config: Config, cache: ICache):
         self.config: Config = config
-        self.study_factory: StudyFactory = study_factory
         self.cache = cache
 
     @override

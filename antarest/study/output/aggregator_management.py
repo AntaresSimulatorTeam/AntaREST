@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,7 +20,8 @@ import polars as pl
 from polars.exceptions import ComputeError
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.study.business.output.utils import (
+from antarest.study.model import MatrixFrequency
+from antarest.study.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
     MCIndAreasQueryFile,
@@ -32,7 +33,6 @@ from antarest.study.business.output.utils import (
     normalize_df_column_names,
     parse_headers,
 )
-from antarest.study.model import MatrixFrequency
 
 # We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
 # But it logs a FutureWarning every time so we silence it here.
@@ -253,6 +253,7 @@ class AggregatorManager:
 
         # First perform the stack / unstack operation to have the final shape
         final_df = df.stack(level=[CLUSTER_ID_COMPONENT, ACTUAL_COLUMN_COMPONENT]).unstack()
+        assert isinstance(final_df, pd.DataFrame)
 
         # Reset the index, drop the first column and rename the columns accordingly
         final_df.reset_index(inplace=True)
@@ -261,7 +262,7 @@ class AggregatorManager:
 
         # Add the TIME_ID column and reindex to have the columns in the right order
         final_df[TIME_ID_COL] = (final_df.index // nb_clusters) + 1
-        return final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))  # type: ignore
+        return final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))
 
     def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:

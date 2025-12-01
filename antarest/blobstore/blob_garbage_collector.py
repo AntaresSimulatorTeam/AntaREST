@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,16 +9,21 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
+"""
+Blob garbage collector service for non-Celery environments (e.g., desktop version).
+
+This service runs as a background thread and periodically cleans unused blobs.
+"""
+
 import logging
 import time
-from typing import Set
 
 from typing_extensions import override
 
 from antarest.blobstore.service import BlobService
 from antarest.core.interfaces.service import IService
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch
+from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 logger = logging.getLogger(__name__)
 
@@ -29,34 +34,11 @@ class BlobGarbageCollector(IService):
         self.sleeping_time = sleeping_time
         self.dry_run = dry_run
 
-    def _delete_unused_saved_blobs(self, unused_blobs: Set[str]) -> None:
-        """Delete all files with the name in unused_blobs"""
-        logger.info("Deleting unused saved blobs:")
-        for unused_blob_id in unused_blobs:
-            logger.info(f"Blob {unused_blob_id} is set to be deleted")
-            if not self.dry_run:
-                logger.info(f"Deleting {unused_blob_id}")
-                self.blob_service.delete(unused_blob_id)
-
-    def clean_blobs(self) -> None:
-        """Delete all blobs that are not used anymore"""
-        stopwatch = StopWatch()
-        logger.info("Beginning of the cleaning process")
-        used_blobs = {blob.blob_id for blob in self.blob_service.get_used_blobs()}
-        saved_blobs = self.blob_service.get_saved_blobs()
-        unused_blobs = set(saved_blobs) - used_blobs
-
-        if unused_blobs:
-            self._delete_unused_saved_blobs(unused_blobs=unused_blobs)
-
-        stopwatch.log_elapsed(lambda x: logger.info(f"Finished cleaning blobs in {x}s"))
-
     @override
     def _loop(self) -> None:
         while True:
             try:
-                with db():
-                    self.clean_blobs()
+                clean_blobs(self.blob_service, self.dry_run)
             except Exception as e:
                 logger.error("Error while cleaning blobs", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")

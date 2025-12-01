@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,7 +19,7 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, Norma
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.xpansion_management import XpansionManager
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -27,6 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 @pytest.fixture
@@ -63,4 +64,4 @@ def study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> StudyInterfac
     mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
     matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
     empty_study_810 = FileStudy(config, FileStudyTree(matrix_mapper, config))
-    return FileStudyInterface(empty_study_810)
+    return file_study_interface(empty_study_810)

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -169,9 +169,9 @@ class StorageConfig:
     blobstore: Path = Path("./blobstore")
     blob_gc_sleeping_time: int = 86400
     blob_gc_dry_run: bool = False
-    vbv_output_gc_sleeping_time: int = 3600
-    vbv_output_gc_dry_run: bool = False
-    vbv_output_gc_retention_time: int = 2592000  # 30 days in seconds
+    variable_view_gc_sleeping_time: int = 3600
+    variable_view_gc_dry_run: bool = False
+    variable_view_gc_retention_time: int = 2592000  # 30 days in seconds
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
@@ -209,10 +209,12 @@ class StorageConfig:
             blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
             blob_gc_sleeping_time=data.get("blob_gc_sleeping_time", defaults.blob_gc_sleeping_time),
             blob_gc_dry_run=data.get("blob_gc_dry_run", defaults.blob_gc_dry_run),
-            vbv_output_gc_sleeping_time=data.get("vbv_output_gc_sleeping_time", defaults.vbv_output_gc_sleeping_time),
-            vbv_output_gc_dry_run=data.get("vbv_output_gc_dry_run", defaults.vbv_output_gc_dry_run),
-            vbv_output_gc_retention_time=data.get(
-                "vbv_output_gc_retention_time", defaults.vbv_output_gc_retention_time
+            variable_view_gc_sleeping_time=data.get(
+                "variable_view_gc_sleeping_time", defaults.variable_view_gc_sleeping_time
+            ),
+            variable_view_gc_dry_run=data.get("variable_view_gc_dry_run", defaults.variable_view_gc_dry_run),
+            variable_view_gc_retention_time=data.get(
+                "variable_view_gc_retention_time", defaults.variable_view_gc_retention_time
             ),
         )
 

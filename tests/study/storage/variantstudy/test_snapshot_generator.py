@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -1293,7 +1293,7 @@ class TestSnapshotGenerator:
         )
 
         # Fill the cache for the test.
-        study = db.session.query(VariantStudy).get(variant_study_id)  #  `variant_study` isn't bound to the session yet.
+        study = db.session.get(VariantStudy, variant_study_id)  #  `variant_study` isn't bound to the session yet.
         study_interface = VariantStudyInterface(variant_study_service, study)
         file_study = study_interface.get_files()
         data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()

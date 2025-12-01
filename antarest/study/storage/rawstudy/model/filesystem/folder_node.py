@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -21,6 +21,7 @@ from antarest.core.model import JSON, SUB_JSON
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode, OriginalFile
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 
 class FilterError(Exception):
@@ -146,14 +147,20 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             shutil.rmtree(self.config.path)
 
     @override
-    def normalize(self) -> None:
+    def get_matrix_nodes_to_normalize(self) -> list[MatrixNode]:
+        nodes: list[MatrixNode] = []
         for child in self.build().values():
-            child.normalize()
+            node = child.get_matrix_nodes_to_normalize()
+            nodes.extend(node)
+        return nodes
 
     @override
-    def denormalize(self) -> None:
+    def get_matrix_nodes_to_denormalize(self) -> list[MatrixNode]:
+        nodes: list[MatrixNode] = []
         for child in self.build().values():
-            child.denormalize()
+            node = child.get_matrix_nodes_to_denormalize()
+            nodes.extend(node)
+        return nodes
 
     def _extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
         names, sub_url = url[0].split(","), url[1:]

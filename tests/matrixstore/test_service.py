@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -63,6 +63,7 @@ AGGREGATION_DF = pd.read_csv(resource_path, sep="\t")
 
 
 class TestMatrixService:
+    @with_db_context
     def test_create__nominal_case(self, matrix_service: MatrixService) -> None:
         """Creates a new matrix object with the specified data."""
         # when a matrix is created (inserted) in the service
@@ -105,6 +106,7 @@ class TestMatrixService:
         with db():
             assert not db.session.query(Matrix).count()
 
+    @with_db_context
     def test_get(self, matrix_service: MatrixService) -> None:
         """Get a matrix object from the database and the matrix content repository."""
         # when a matrix is created (inserted) in the service
@@ -206,6 +208,7 @@ class TestMatrixService:
                 assert actual_matrices[i].height == expected_matrices[i].height
                 assert actual_matrices[i].width == expected_matrices[i].width
 
+    @with_db_context
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""
         # when a matrix is created (inserted) in the service
@@ -218,6 +221,7 @@ class TestMatrixService:
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
             assert not matrix_service.exists(missing_hash)
 
+    @with_db_context
     def test_same_hash_with_int_and_float_matrices(self, matrix_service: MatrixService) -> None:
         data = TEST_MATRIX
         matrix_id = matrix_service.create(pd.DataFrame(data))
@@ -225,12 +229,14 @@ class TestMatrixService:
         matrix_id_as_float = matrix_service.create(pd.DataFrame(data_as_float))
         assert matrix_id == matrix_id_as_float
 
+    @with_db_context
     def test_different_hash_with_same_matrices_with_different_headers(self, matrix_service: MatrixService) -> None:
         data = TEST_MATRIX
         matrix_id = matrix_service.create(pd.DataFrame(data))
         other_matrix_id = matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"]))
         assert matrix_id != other_matrix_id
 
+    @with_db_context
     def test_ability_to_save_matrices_with_strings(self, matrix_service: MatrixService) -> None:
         data = [["area_1", "area_2", "area_3"], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
         matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"], dtype=pd.StringDtype()))
@@ -243,6 +249,7 @@ class TestMatrixService:
         content = matrix_service.get(matrix_id)
         assert content.equals(AGGREGATION_DF)
 
+    @with_db_context
     def test_delete__nominal_case(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
         # when a matrix is created (inserted) in the service
@@ -278,6 +285,7 @@ class TestMatrixService:
         with db():
             assert not db.session.query(Matrix).count()
 
+    @with_db_context
     @pytest.mark.parametrize(
         "data",
         [
@@ -342,6 +350,7 @@ class TestMatrixService:
             now = current_time()
             assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
+    @with_db_context
     @pytest.mark.parametrize("content_type", ["application/json", "text/plain"])
     def test_create_by_importation__zip_file(self, matrix_service: MatrixService, content_type: str) -> None:
         """

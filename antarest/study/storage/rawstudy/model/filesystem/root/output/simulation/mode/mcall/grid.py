@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,19 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, cast
 
-import pandas as pd
 from typing_extensions import override
 
-from antarest.core.exceptions import MustNotModifyOutputException
-from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestSynthesis
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 
 
 class OutputSimulationModeMcAllGrid(FolderNode):
@@ -34,36 +28,3 @@ class OutputSimulationModeMcAllGrid(FolderNode):
             synthesis_class = DigestSynthesis if file == "digest" else OutputSynthesis
             children[file] = synthesis_class(self.matrix_mapper, self.config.next_file(f"{file}.txt"))
         return children
-
-
-class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(matrix_mapper, config)
-
-    @override
-    def get_lazy_content(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> str:
-        return f"matrix://{self.config.path.name}"  # prefix used by the front to parse the back-end response
-
-    @override
-    def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-    ) -> JSON:
-        file_path = self.config.path
-        df = pd.read_csv(file_path, sep="\t")
-        df.fillna("", inplace=True)  # replace NaN values for the front-end
-        output = df.to_dict(orient="split")
-        del output["index"]
-        return cast(JSON, output)
-
-    @override
-    def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
-        raise MustNotModifyOutputException(self.config.path.name)

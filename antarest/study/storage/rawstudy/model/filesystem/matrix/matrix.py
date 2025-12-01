@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,7 +14,7 @@ import io
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, TypeAlias, cast
+from typing import List, Optional, Self, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
@@ -81,28 +81,18 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         return f"matrixfile://{self.config.path.name}"
 
     @override
-    def normalize(self) -> None:
-        # noinspection SpellCheckingInspection
+    def get_matrix_nodes_to_normalize(self) -> list[Self]:
         """
-        Normalize the matrix by creating a link to the normalized version.
-        The original matrix is then deleted.
-
-        Skips the normalization process if the link path already exists
-        or the matrix is zipped.
-
-        Raises:
-            DenormalizationException: if the original matrix retrieval fails.
+        Return a list of itself if the node is not in the matrix-store. Else, return an empty list.
         """
-        self.matrix_mapper.normalize(self)
+        return [] if self.matrix_mapper.has_link(self) else [self]
 
     @override
-    def denormalize(self) -> None:
+    def get_matrix_nodes_to_denormalize(self) -> list[Self]:
         """
-        Read the matrix ID from the matrix link, retrieve the original matrix
-        and write the matrix data to the file specified by `self.config.path`
-        before removing the link file.
+        Return a list of itself if the node is in the matrix-store. Else, return an empty list.
         """
-        self.matrix_mapper.denormalize(self)
+        return [self] if self.matrix_mapper.has_link(self) else []
 
     @override
     def load(

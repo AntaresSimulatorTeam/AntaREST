@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,7 @@
 import contextlib
 import logging
 import os
+import sys
 import time
 from typing import Callable
 
@@ -33,7 +34,7 @@ def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: flo
     raise TimeoutError(f"task is still in progress after {timeout} seconds")
 
 
-IS_WINDOWS = os.name == "nt"
+IS_WINDOWS = sys.platform == "win32"
 
 
 def is_windows_ci() -> bool:

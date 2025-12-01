@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,6 @@
 
 import ctypes
 import logging
-import os
 import re
 import sys
 from pathlib import PurePosixPath
@@ -92,7 +91,7 @@ class Explorer:
             if workspace_name == DEFAULT_WORKSPACE_NAME:
                 continue
 
-            if os.name == "nt":
+            if sys.platform == "win32":
                 # On Windows, we use Windows-specific APIs (via `get_volume_label`) to retrieve the disk name
                 # for each workspace.
                 disk_name = get_volume_label(workspace_name)

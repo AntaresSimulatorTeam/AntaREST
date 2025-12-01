@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -196,8 +196,6 @@ class FileStudyAreaDao(AreaDao):
 
     def _build_area_data_structure(self, area_id: str, config: FileStudyTreeConfig) -> JSON:
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
-        if generator_matrix_constants is None:
-            raise ValueError("Generator matrix constants not available in DAO")
         null_matrix = generator_matrix_constants.get_null_matrix()
         prepro_data = {
             area_id: {
