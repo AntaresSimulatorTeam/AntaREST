@@ -222,19 +222,16 @@ def _add_metrics_middleware(registry: CollectorRegistry, application: FastAPI) -
     current_requests_gauge = Gauge(
         "http_requests_current",
         "Requests currently executing",
-        ["worker_id", "method", "endpoint"],
+        ["worker_id", "method"],
         multiprocess_mode="liveall",
         registry=registry,
     )
 
     @application.middleware("http")
     async def add_metrics(request: Request, call_next: Any) -> Any:
-        if "route" in request.scope:
-            request_path = request.scope["root_path"] + request.scope["route"].path
-        else:
-            request_path = request.url.path
-
-        current_requests_gauge.labels(WORKER_ID, request.method, request_path).inc()
+        # Unfortunately we cannot get the route here because it has not yet been determined by fastapi,
+        # so we only have a global gauge for all endpoints.
+        current_requests_gauge.labels(WORKER_ID, request.method).inc()
 
         start_time = time.time()
         status_code = None
@@ -247,12 +244,18 @@ def _add_metrics_middleware(registry: CollectorRegistry, application: FastAPI) -
             # except for "unhandled" exceptions, which are handled at the outermost level and translated to 500
             status_code = status_code or HTTPStatus.INTERNAL_SERVER_ERROR.value
 
+            if "route" in request.scope:
+                endpoint = request.scope["root_path"] + request.scope["route"].path
+            else:
+                # We avoid to create an arbitrary number of metrics, by using for example the request path
+                endpoint = "others"
+
             process_time = time.time() - start_time
 
-            current_requests_gauge.labels(WORKER_ID, request.method, request_path).dec()
+            current_requests_gauge.labels(WORKER_ID, request.method).dec()
 
-            request_counter.labels(WORKER_ID, request.method, request_path, status_code).inc()
-            request_duration_histo.labels(WORKER_ID, request.method, request_path, status_code).observe(process_time)
+            request_counter.labels(WORKER_ID, request.method, endpoint, status_code).inc()
+            request_duration_histo.labels(WORKER_ID, request.method, endpoint, status_code).observe(process_time)
         return response
 
 

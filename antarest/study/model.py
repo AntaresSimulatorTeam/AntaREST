@@ -358,26 +358,6 @@ class Study(Base):
         """
         return normalize_path(folder)
 
-    def get_created_at(self) -> datetime:
-        """Get the creation date, raising an error if not set."""
-        if self.created_at is None:
-            raise ValueError(f"Study {self.id} has no creation date")
-        return self.created_at
-
-    def get_updated_at(self) -> datetime:
-        """Get the last update date, raising an error if not set."""
-        if self.updated_at is None:
-            raise ValueError(f"Study {self.id} has no update date")
-        return self.updated_at
-
-    def get_created_at_timestamp(self) -> float:
-        """Get the creation timestamp, raising an error if not set."""
-        return self.get_created_at().timestamp()
-
-    def get_updated_at_timestamp(self) -> float:
-        """Get the last update timestamp, raising an error if not set."""
-        return self.get_updated_at().timestamp()
-
 
 def normalize_path(path: Optional[str]) -> Optional[str]:
     """
@@ -707,11 +687,6 @@ class MatrixAggregationResult(AntaresBaseModel):
             ],
             warnings=self.warnings,
         )
-
-
-class ReferenceStudy(AntaresBaseModel):
-    version: str
-    template_name: str
 
 
 class DirectoryMetadata(AntaresBaseModel):

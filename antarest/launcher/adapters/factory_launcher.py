@@ -31,7 +31,7 @@ class FactoryLauncher:
         event_bus: IEventBus,
         cache: ICache,
     ) -> Dict[str, AbstractLauncher]:
-        dict_launchers: Dict[str, AbstractLauncher] = dict()
+        dict_launchers: Dict[str, AbstractLauncher] = {}
         for cfg in config.launcher.configs or []:
             if isinstance(cfg, SlurmConfig):
                 dict_launchers[cfg.id] = SlurmLauncher(

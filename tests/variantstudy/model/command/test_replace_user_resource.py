@@ -15,7 +15,7 @@ import pytest
 
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
+from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -31,7 +31,7 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
     study = empty_study_930
     blob_ids = _set_up(command_context)
 
-    cmd = CreateUserResource(
+    cmd = ReplaceUserResource(
         data=UserResourceDataCreation(
             path=PurePosixPath("new_file.txt"),
             resource_type=ResourceType.FILE,
@@ -47,7 +47,7 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
     content = study.tree.get(["user", "new_file.txt"])
     assert content == b"Hello World !"
 
-    cmd = CreateUserResource(
+    cmd = ReplaceUserResource(
         data=UserResourceDataCreation(
             path=PurePosixPath("new_folder/second_folder"),
             resource_type=ResourceType.FOLDER,
@@ -69,7 +69,7 @@ def test_error_case(empty_study_930: FileStudy, command_context: CommandContext)
 
     # Unexisting blob_id
 
-    cmd = CreateUserResource(
+    cmd = ReplaceUserResource(
         data=UserResourceDataCreation(
             path=PurePosixPath("new_file.txt"),
             resource_type=ResourceType.FILE,
