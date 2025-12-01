@@ -130,7 +130,7 @@ class AggregatorManager:
             else MCRoot.MC_ALL
         )
 
-    def _parse_output_file(self, file_path: Path, normalize_column_name: bool = True) -> pd.DataFrame:
+    def _parse_output_file(self, file_path: Path) -> pd.DataFrame:
         content = file_path.read_text(encoding="utf-8")
         start_col = 4 if self.mc_root == MCRoot.MC_ALL else 5
         output_headers = _parse_headers(content, start_col)
@@ -138,7 +138,7 @@ class AggregatorManager:
         polars_df = polars_df[polars_df.columns[start_col:]]
         df = polars_df.to_pandas()
 
-        if normalize_column_name or self.mc_root == MCRoot.MC_IND:
+        if self.mc_root == MCRoot.MC_IND:
             df.columns = pd.Index([col[0] for col in output_headers])
         else:
             df.columns = pd.Index([" ".join([col[0], col[2]]) for col in output_headers])
