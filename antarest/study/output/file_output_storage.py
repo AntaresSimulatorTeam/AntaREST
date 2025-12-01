@@ -1,4 +1,4 @@
-# Copyright (c) 2026, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,65 +12,46 @@
 import logging
 import shutil
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO, Callable, Iterator, Optional, Sequence
+from typing import BinaryIO, Optional
 from uuid import uuid4
 
-import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache
-from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    MatrixFrequency,
-    MatrixIndex,
-    StudySimResultDTO,
-    StudySimSettingsDTO,
-)
-from antarest.study.output.aggregator_management import AggregatorManager
-from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.output_storage import IOutputStorage
-from antarest.study.output.utils import QueryFileType
-from antarest.study.output.variables_management import extract_variables_list
+from antarest.study.model import StudySimResultDTO, StudySimSettingsDTO
+from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
-    DigestSynthesis,
-    DigestUI,
-)
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.utils import (
-    extract_output_name,
-    fix_study_root,
-    get_start_date,
-    is_output_archived,
-    remove_from_cache,
-)
-from antarest.worker.archive_worker import ArchiveTaskArgs
+from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class FileStudyOutputs:
+class FileStudyOutputs(ABC):
     """
-    The implementation based on outputs stored as files requires the following information to work with a study.
+    The implementation based on outputs stored as files requireds the following information.
 
-    Attributes:
-        get_file_study: allows to load the underlying file study as needed.
-        outputs_path: path to the study outputs directory.
-        study_workspace: name of the study workspace.
+    The wiring of the application is responsible for providing a mapping from study ID to that information.
     """
 
-    get_file_study: Callable[[], FileStudy]
-    outputs_path: Path
-    study_workspace: str
+    @abstractmethod
+    def get_file_study(self) -> FileStudy:
+        """
+        Provides the "file study" form of that study.
+        """
+
+    @property
+    @abstractmethod
+    def outputs_path(self) -> Path:
+        """
+        Provides path where outputs of that file study are stored.
+        """
 
 
 class IFileOutputsProvider(ABC):
@@ -82,15 +63,10 @@ class IFileOutputsProvider(ABC):
     def get_outputs(self, study_id: str) -> FileStudyOutputs: ...
 
 
-class FileOutputStorage(IOutputStorage):
-    """
-    Implementation based on outputs stored in antares-solver file format.
-    """
-
-    def __init__(self, outputs_provider: IFileOutputsProvider, cache: ICache, remote_executor: IRemoteExecutor) -> None:
+class OutputStorageImpl(IOutputStorage):
+    def __init__(self, outputs_provider: IFileOutputsProvider, cache: ICache) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
-        self._remote_executor = remote_executor
 
     @override
     def import_output(
@@ -99,6 +75,14 @@ class FileOutputStorage(IOutputStorage):
         output: BinaryIO | Path,
         output_name: Optional[str] = None,
     ) -> Optional[str]:
+        """
+        Import an output
+        Args:
+            study_id: the study id
+            output: Path of the output or raw data
+            output_name: Optional name suffix to append to the output name
+        Returns: None
+        """
         study_outputs = self._outputs_provider.get_outputs(study_id)
 
         path_output = study_outputs.outputs_path / f"imported_output_{str(uuid4())}"
@@ -145,6 +129,16 @@ class FileOutputStorage(IOutputStorage):
 
     @override
     def get_study_sim_result(self, study_id: str) -> list[StudySimResultDTO]:
+        """
+        Get global result information
+
+        Args:
+            metadata: study
+
+        Returns:
+            study output data
+        """
+
         study_outputs = self._outputs_provider.get_outputs(study_id)
         study_data = study_outputs.get_file_study()
 
@@ -185,6 +179,11 @@ class FileOutputStorage(IOutputStorage):
     def delete_output(self, study_id: str, output_id: str) -> None:
         """
         Delete a simulation output
+        Args:
+            metadata: study
+            output_id: output simulation
+
+        Returns:
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
         output_path = study_outputs.outputs_path / output_id
@@ -225,25 +224,7 @@ class FileOutputStorage(IOutputStorage):
         stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {study_id} exported in {x}s"))
 
     @override
-    def output_exists(self, study_id: str, output_id: str) -> bool:
-        """Check if a study output exists."""
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        if self.is_output_archived(study_id, output_id):
-            output_path = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
-            return output_path.exists()
-        else:
-            output_path = study_outputs.outputs_path / output_id
-            return output_path.is_dir()
-
-    @override
-    def is_output_archived(self, study_id: str, output_id: str) -> bool:
-        """Check if a study output is archived."""
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        output_path = study_outputs.outputs_path / output_id
-        return is_output_archived(output_path)
-
-    @override
-    def archive_study_output(self, study_id: str, output_id: str) -> None:
+    def archive_study_output(self, study_id: str, output_id: str) -> bool:
         """Archive a study output."""
         try:
             study_outputs = self._outputs_provider.get_outputs(study_id)
@@ -254,100 +235,38 @@ class FileOutputStorage(IOutputStorage):
                 archive_format=ArchiveFormat.ZIP,
             )
             remove_from_cache(self._cache, study_id)
+            return True
         except Exception as e:
-            # TODO: we should probably raise here
             logger.warning(
                 f"Failed to archive study {study_id} output {output_id}",
                 exc_info=e,
             )
-
-    def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
-        dest = study_outputs.outputs_path / output_id
-        src = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
-        self._remote_executor.execute_remote_task(
-            f"unarchive_{study_outputs.study_workspace}",
-            ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
-        )
+            return False
 
     # noinspection SpellCheckingInspection
     @override
-    def unarchive_study_output(self, study_id: str, output_id: str) -> None:
+    def unarchive_study_output(self, study_id: str, output_id: str) -> bool:
         """Un-archive a study output."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
-
-        # Specific logic for "external" workspaces: we ask for unarchiving to the remote executor ...
-        workspace = study_outputs.study_workspace
-        if workspace != DEFAULT_WORKSPACE_NAME:
-            self._remote_unarchive(output_id, study_outputs)
-        else:
-            study_outputs = self._outputs_provider.get_outputs(study_id)
-            outputs_path = study_outputs.outputs_path
-            if not (outputs_path / f"{output_id}{ArchiveFormat.ZIP}").exists():
-                logger.warning(
-                    f"Failed to archive study {study_id} output {output_id}. Maybe it's already unarchived",
-                )
-                return
-            try:
-                unzip(outputs_path / output_id, outputs_path / f"{output_id}{ArchiveFormat.ZIP}")
-                remove_from_cache(self._cache, study_id)
-            except Exception as e:
-                # TODO: we should probably raise here and remove partially unzipped files
-                logger.warning(
-                    f"Failed to unarchive study {study_id} output {output_id}",
-                    exc_info=e,
-                )
+        outputs_path = study_outputs.outputs_path
+        if not (outputs_path / f"{output_id}{ArchiveFormat.ZIP}").exists():
+            logger.warning(
+                f"Failed to archive study {study_id} output {output_id}. Maybe it's already unarchived",
+            )
+            return False
+        try:
+            unzip(outputs_path / output_id, outputs_path / f"{output_id}{ArchiveFormat.ZIP}")
+            remove_from_cache(self._cache, study_id)
+            return True
+        except Exception as e:
+            logger.warning(
+                f"Failed to unarchive study {study_id} output {output_id}",
+                exc_info=e,
+            )
+            return False
 
     @override
-    def get_digest(self, study_id: str, output_id: str) -> DigestUI:
-        """
-        Digest of the output.
-        """
+    def get_output_path(self, study_id: str, output_id: str) -> Path:
+        """Returns the output path for the given output_id"""
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
-        digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
-        assert isinstance(digest_node, DigestSynthesis)
-        return digest_node.get_ui()
-
-    @override
-    def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
-        """
-        Get the time index (start date and step count) for output matrices with a given frequency.
-        Args:
-            study_id: ID of the study
-            output_id: ID of the output
-            frequency: temporal frequency (hourly, daily, weekly, monthly, annually)
-        Returns:
-            MatrixIndex with start_date, steps, first_week_size and level
-        """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
-        return get_start_date(file_study, output_id, frequency)
-
-    @override
-    def aggregate_output_data(
-        self,
-        study_id: str,
-        output_id: str,
-        query_file: QueryFileType,
-        frequency: MatrixFrequency,
-        ids_to_consider: Sequence[str],
-        columns_names: Sequence[str],
-        transform_columns_headers: bool,
-        mc_years: Optional[Sequence[int]] = None,
-    ) -> Iterator[pd.DataFrame]:
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        aggregator_manager = AggregatorManager(
-            study_outputs.outputs_path / output_id,
-            query_file,
-            frequency,
-            ids_to_consider,
-            columns_names,
-            transform_columns_headers,
-            mc_years,
-        )
-        return aggregator_manager.aggregate_output_data()
-
-    @override
-    def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        return extract_variables_list(study_outputs.outputs_path / output_id)
+        return study_outputs.outputs_path / output_id

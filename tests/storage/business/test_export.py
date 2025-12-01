@@ -1,4 +1,4 @@
-# Copyright (c) 2026, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,88 +16,81 @@ from zipfile import ZipFile
 
 import pytest
 from checksumdir import dirhash
-from py7zr import SevenZipFile, py7zr
+from py7zr import SevenZipFile
 
-from antarest.blobstore.service import BlobService
-from antarest.core.config import InternalMatrixFormat
+from antarest.core.config import Config, StorageConfig
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
-from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepository
-from antarest.matrixstore.service import MatrixService
-from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
-from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.study.output.output_storage_impl import FileStudyOutputs, IFileOutputsProvider, OutputStorageImpl
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.conftest import empty_study_fixture
-from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import create_raw_study, with_db_context
+from tests.helpers import create_raw_study
 
 
-def test_export(
-    empty_study_930: FileStudy, raw_study_service: RawStudyService, command_context: CommandContext
-) -> None:
-    # Use the in memory command context inside the raw study_service
-    raw_study_service.study_factory = StudyFactory(
-        matrix_mapper_factory=MatrixUriMapperFactory(command_context.matrix_service), cache=Mock()
+def test_export_file(tmp_path: Path) -> None:
+    name = "my-study"
+    study_path = tmp_path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    study_service = RawStudyService(
+        config=Config(),
+        study_factory=Mock(),
+        cache=Mock(),
     )
-    raw_study_service._matrix_service = command_context.matrix_service
-    # Create an area to ensure the matrices are denormalized afterward
-    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=empty_study_930.config.version)
-    output = cmd.apply(empty_study_930)
-    assert output.status
-    # Export the study
-    study_id = empty_study_930.config.study_id
-    study_path = empty_study_930.config.study_path
-    study = create_raw_study(id=study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
-    export_path = study_path.parent / "export.7z"
-    assert not export_path.exists()
-    raw_study_service.export_study(study, export_path, archive_format=ArchiveFormat.SEVEN_ZIP)
-    # Ensures the .7z file exists
-    assert export_path.exists()
-    # Unarchive it to check if the matrix was denormalized well
-    extracted_dir_path = export_path.parent / "unarchived_study"
-    with py7zr.SevenZipFile(export_path, "r") as szf:
-        szf.extractall(path=extracted_dir_path)
-    export_path.unlink()
-    assert (extracted_dir_path / "input" / "load" / "series" / "load_fr.txt").exists()
-    assert not (extracted_dir_path / "input" / "load" / "series" / "load_fr.txt.link").exists()
+    study_service.check_study_exist = Mock()
+    study_service.check_study_exist.return_value = None
+    study_service.export_file = Mock()
+    study_service.export_file.return_value = b"Hello"
+
+    # Test good study
+    md = create_raw_study(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=study_path)
+    export_path = tmp_path / "export.7z"
+    study_service.export_study(md, export_path)
 
 
 @pytest.mark.parametrize("outputs", [True, False])
-def test_export_archived_study(empty_study_930: FileStudy, raw_study_service: RawStudyService, outputs: bool) -> None:
-    study_path = empty_study_930.config.study_path
-    (study_path / "output/results1").mkdir(parents=True)
-    (study_path / "output/results1/file.txt").write_text("42")
+def test_export_archived_study(tmp_path: Path, outputs: bool) -> None:
+    root = tmp_path / "folder"
+    root.mkdir()
+    (root / "test").mkdir()
+    (root / "test/file.txt").write_text("Bonjour")
+    (root / "file.txt").write_text("Hello, World")
+    (root / "output/results1").mkdir(parents=True)
+    (root / "output/results1/file.txt").write_text("42")
 
-    export_path = study_path.parent / "study.7z"
+    export_path = tmp_path / "study.7z"
 
-    study = create_raw_study(id=empty_study_930.config.study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
+    study_factory = Mock()
+    study_service = RawStudyService(
+        config=Config(),
+        study_factory=study_factory,
+        cache=Mock(),
+    )
 
-    raw_study_service.export_study(study, export_path, outputs=outputs, archive_format=ArchiveFormat.SEVEN_ZIP)
+    study = create_raw_study(id="Yo", path=root)
+    study_tree = Mock()
+    study_factory.create_from_fs.return_value = study_tree
+
+    study_service.export_study(study, export_path, outputs=outputs)
     with SevenZipFile(export_path) as szf:
         szf_files = set(szf.getnames())
+        assert "file.txt" in szf_files
+        assert "test/file.txt" in szf_files
         assert ("output/results1/file.txt" in szf_files) == outputs
 
 
-def test_export_flat(empty_study_930: FileStudy, raw_study_service: RawStudyService) -> None:
-    study_path = empty_study_930.config.study_path
-    tmp_path = study_path.parent
+def test_export_flat(tmp_path: Path) -> None:
+    root = tmp_path / "folder-with-output"
+    root.mkdir()
+    (root / "test").mkdir()
+    (root / "test/file.txt").write_text("Bonjour")
+    (root / "test/output").mkdir()
+    (root / "test/output/file.txt").write_text("Test")
+    (root / "file.txt").write_text("Hello, World")
+    (root / "output/result1").mkdir(parents=True)
+    (root / "output/result1/file.txt").write_text("42")
 
-    root_hash = dirhash(study_path, "md5")
-
-    # Export without outputs should be the exact same folder as the one we had
-    study = create_raw_study(id=empty_study_930.config.study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
-    raw_study_service.export_study_flat(study, tmp_path / "copy_with_output", outputs=True)
-    copy_with_output_hash = dirhash(tmp_path / "copy_with_output", "md5")
-    assert root_hash == copy_with_output_hash
-
-    # Build a fake study with a non-empty output folder
     root_without_output = tmp_path / "folder-without-output"
     root_without_output.mkdir()
     (root_without_output / "test").mkdir()
@@ -105,92 +98,33 @@ def test_export_flat(empty_study_930: FileStudy, raw_study_service: RawStudyServ
     (root_without_output / "test/output").mkdir()
     (root_without_output / "test/output/file.txt").write_text("Test")
     (root_without_output / "file.txt").write_text("Hello, World")
+
+    root_hash = dirhash(root, "md5")
     root_without_output_hash = dirhash(root_without_output, "md5")
-    study = create_raw_study(id="2", workspace=DEFAULT_WORKSPACE_NAME, path=str(root_without_output))
 
-    # The output folder should also be the same as it was previously
-    raw_study_service.export_study_flat(study, tmp_path / "copy_without_output", outputs=False)
+    study_factory = Mock()
+
+    study_service = RawStudyService(
+        config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
+        study_factory=study_factory,
+        cache=Mock(),
+    )
+    study_tree = Mock()
+    study_factory.create_from_fs.return_value = study_tree
+
+    study = create_raw_study(id="id", path=root)
+
+    study_service.export_study_flat(study, tmp_path / "copy_with_output", outputs=True)
+
+    copy_with_output_hash = dirhash(tmp_path / "copy_with_output", "md5")
+
+    assert root_hash == copy_with_output_hash
+
+    study_service.export_study_flat(study, tmp_path / "copy_without_output", outputs=False)
+
     copy_without_output_hash = dirhash(tmp_path / "copy_without_output", "md5")
+
     assert root_without_output_hash == copy_without_output_hash
-
-
-@with_db_context
-def test_normalize_denormalized_methods(tmp_path: Path) -> None:
-    # Create a real matrix_service with a db connection to test DB queries
-    db_session = db.session
-    buket_dir = tmp_path / "matrixstore_bucket"
-    repo = MatrixRepository(db_session)
-    content_repo = MatrixContentRepository(buket_dir, InternalMatrixFormat.FEATHER)
-    matrix_service = MatrixService(repo, Mock(), content_repo, Mock(), Mock(), Mock(), Mock())
-
-    # Create a study with this matrix_service
-    study = empty_study_fixture(STUDY_VERSION_8_8, matrix_service, tmp_path)
-
-    # Use this matrix_service in the raw_study_service and in the command_context
-    matrix_constants = GeneratorMatrixConstants(matrix_service)
-    matrix_constants.init_constant_matrices()
-    blob_service = Mock(spec=BlobService)
-    command_context = CommandContext(
-        generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
-    )
-    raw_study_service = RawStudyService(Mock(), Mock(), Mock(), matrix_service)
-
-    # Create an area and a thermal with specific matrices to have real DB matrices in our study
-    version = study.config.version
-    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
-    output = cmd.apply(study)
-    assert output.status
-    cmd = CreateCluster(
-        area_id="fr",
-        parameters=ThermalClusterCreation(name="th1"),
-        prepro=8760 * [[2]],
-        command_context=command_context,
-        study_version=version,
-    )
-    output = cmd.apply(study)
-    assert output.status
-
-    # Ensures the matrix is normalized for now
-    study_path = study.config.study_path
-    normalized_path = study_path / "input" / "load" / "series" / "load_fr.txt.link"
-    denormalized_path = study_path / "input" / "load" / "series" / "load_fr.txt"
-    assert normalized_path.exists()
-    content = normalized_path.read_text()
-    assert not denormalized_path.exists()
-
-    # Normalize the study
-    with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_study(study)
-        assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
-
-    assert normalized_path.read_text() == content
-    assert not denormalized_path.exists()
-
-    # Denormalize the study
-    with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(study)
-        assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
-
-    assert not normalized_path.exists()
-    assert denormalized_path.exists()
-    dataframe = denormalized_path.read_bytes()
-
-    # Denormalize again
-    with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(study)
-        assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
-
-    assert not normalized_path.exists()
-    assert denormalized_path.exists()
-    assert denormalized_path.read_bytes() == dataframe
-
-    # Normalize the study to come back to the initial point
-    with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_study(study)
-        assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
-
-    assert normalized_path.exists()
-    assert not denormalized_path.exists()
 
 
 def test_export_output(tmp_path: Path) -> None:
@@ -211,15 +145,19 @@ def test_export_output(tmp_path: Path) -> None:
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 
+    class FileOutputsImpl(FileStudyOutputs):
+        def get_file_study(self) -> FileStudy:
+            return FileStudy(Mock(), study_tree)
+
+        @property
+        def outputs_path(self) -> Path:
+            return root / "output"
+
     class OutputsProvider(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
-            return FileStudyOutputs(
-                get_file_study=lambda: FileStudy(Mock(), study_tree),
-                outputs_path=root / "output",
-                study_workspace=DEFAULT_WORKSPACE_NAME,
-            )
+            return FileOutputsImpl()
 
-    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+    output_storage = OutputStorageImpl(OutputsProvider(), cache=Mock())
 
     output_storage.export_output(study.id, output_id, export_path)
     zipf = ZipFile(export_path)
