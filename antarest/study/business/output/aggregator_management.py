@@ -144,9 +144,9 @@ class AggregatorManager:
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
             else MCRoot.MC_ALL
         )
-        self._output_first_column = self.get_start_column()
+        self._output_first_column = self._get_start_column()
 
-    def get_start_column(self) -> int:
+    def _get_start_column(self) -> int:
         if self.frequency == MatrixFrequency.ANNUAL:
             return 2
         elif self.frequency == MatrixFrequency.MONTHLY:
