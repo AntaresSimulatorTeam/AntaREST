@@ -42,3 +42,20 @@ def test_list_tasks(client: TestClient, user_access_token: str, internal_study_i
 
     assert len(res_task_list) == 2
     assert actual_task_list == expected_task_list
+
+    # pour les status, faire des GET récupérant les COMPLETED et les RUNNING (confirmer qu'il n'y en a pas)
+
+    # Getting all COMPLETED tasks and ensuring there's 2 of them
+    res_tasks = client.get("/v1/tasks?status=COMPLETED", params={})
+    res_task_completed_list = res_tasks.json()
+    assert len(res_task_completed_list) == 2
+    for task_status in res_task_completed_list:
+        assert task_status["status"] == TaskStatus.COMPLETED.value, task_status
+
+    # Getting all RUNNING tasks and making sure there's none
+    res_tasks_running = client.get("/v1/tasks?status=RUNNING", params={}).json()
+    assert len(res_tasks_running) == 0
+
+    # Putting a non-existent status in the GET to have an error
+    res_tasks_non_existent = client.get("/v1/tasks?status=NON_EXISTENT", params={})
+    assert res_tasks_non_existent.status_code == 422, res_tasks_non_existent
