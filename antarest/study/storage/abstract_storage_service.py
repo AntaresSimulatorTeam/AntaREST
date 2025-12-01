@@ -331,6 +331,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
 
         if not path_output.exists() and not path_output_zip.exists():
             raise StudyOutputNotFoundError()
+
         stopwatch = StopWatch()
         if not path_output_zip.exists():
             archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
