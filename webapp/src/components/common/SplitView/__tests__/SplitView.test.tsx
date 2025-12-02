@@ -15,7 +15,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import SplitView from "./index";
+import SplitView from "..";
 
 describe("SplitView", () => {
   beforeEach(() => {
@@ -104,7 +104,7 @@ describe("SplitView", () => {
       expect(screen.queryByTestId("alternate")).not.toBeInTheDocument();
     });
 
-    it("should handle rapid toggling without errors", async () => {
+    test("should handle rapid toggling without errors", async () => {
       const user = userEvent.setup();
 
       function TestComponent() {
@@ -155,7 +155,7 @@ describe("SplitView", () => {
      * - Verify split pane sizes are preserved after toggle
      */
 
-    it("should generate composite key that includes children identities", () => {
+    test("should generate composite key that includes children identities", () => {
       function ComponentA() {
         return <div data-testid="comp-a">Component A</div>;
       }
@@ -186,7 +186,7 @@ describe("SplitView", () => {
       expect(screen.queryByTestId("comp-a")).not.toBeInTheDocument();
     });
 
-    it("simulates ResultDetails scenario (SynthesisViewer vs ResultMatrixViewer toggle)", async () => {
+    test("simulates ResultDetails scenario (SynthesisViewer vs ResultMatrixViewer toggle)", async () => {
       const user = userEvent.setup();
 
       // Simulate the actual components from ResultDetails
@@ -237,7 +237,7 @@ describe("SplitView", () => {
       }
     });
 
-    it("should preserve existing keys if provided by parent", () => {
+    test("should preserve existing keys if provided by parent", () => {
       function TestComponent() {
         return (
           <SplitView splitId="custom-keys" minSize={[150, 400]}>
