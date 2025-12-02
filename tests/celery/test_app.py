@@ -144,9 +144,10 @@ class TestInitWorker:
         ctx = MaintenanceContext.get_instance()
         assert ctx._initialized is False
 
+    @patch("antarest.celery.app.get_local_path")
     @patch("antarest.celery.app.MaintenanceContext")
     @patch("antarest.celery.app.Config")
-    def test_init_worker_initializes_context(self, mock_config_class, mock_ctx_class, tmp_path):
+    def test_init_worker_initializes_context(self, mock_config_class, mock_ctx_class, mock_get_local_path, tmp_path):
         """Test that init_worker properly initializes the MaintenanceContext."""
         from antarest.celery.app import init_worker
 
@@ -155,6 +156,7 @@ class TestInitWorker:
         config_file.write_text("debug: false\n")
 
         # Setup mocks
+        mock_get_local_path.return_value = tmp_path
         mock_config = Mock()
         mock_config.celery = None  # No celery config in YAML
         mock_config_class.from_yaml_file.return_value = mock_config
@@ -165,19 +167,23 @@ class TestInitWorker:
         with patch.dict(os.environ, {"ANTAREST_CONF": str(config_file)}):
             init_worker()
 
-        mock_ctx.initialize.assert_called_once_with(str(config_file))
+        mock_ctx.initialize.assert_called_once_with(mock_config, config_file)
 
+    @patch("antarest.celery.app.get_local_path")
     @patch("antarest.celery.app.celery_app")
     @patch("antarest.celery.app.MaintenanceContext")
     @patch("antarest.celery.app.Config")
     def test_init_worker_overrides_celery_config_from_yaml(
-        self, mock_config_class, mock_ctx_class, mock_celery_app, tmp_path
+        self, mock_config_class, mock_ctx_class, mock_celery_app, mock_get_local_path, tmp_path
     ):
         """Test that init_worker overrides Celery config from YAML if present."""
         from antarest.celery.app import init_worker
 
         config_file = tmp_path / "application.yaml"
         config_file.write_text("debug: false\n")
+
+        # Setup mocks
+        mock_get_local_path.return_value = tmp_path
 
         # Setup mock config with celery section
         mock_celery_config = Mock()

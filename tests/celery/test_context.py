@@ -110,34 +110,31 @@ class TestMaintenanceContext:
 
     def test_initialize_skips_if_already_initialized(self):
         """Test that initialize() does nothing if already initialized."""
+        from pathlib import Path
+
         ctx = MaintenanceContext.get_instance()
         ctx._initialized = True
 
+        mock_config = Mock()
         # This should not raise any error and should return early
-        ctx.initialize("/fake/path")
+        ctx.initialize(mock_config, Path("/fake/path"))
 
         # Config should still be None since initialize returned early
         assert ctx.config is None
 
-    @patch("antarest.core.config.Config")
     @patch("antarest.service_creator.init_db_engine")
     @patch("antarest.core.utils.fastapi_sqlalchemy.DBSessionMiddleware")
     @patch("antarest.service_creator.create_core_services")
-    @patch("antarest.core.utils.utils.get_local_path")
     def test_initialize_creates_services(
         self,
-        mock_get_local_path,
         mock_create_core_services,
         mock_db_middleware,
         mock_init_db_engine,
-        mock_config_class,
         tmp_path,
     ):
         """Test that initialize() properly creates config and services."""
         # Setup mocks
-        mock_get_local_path.return_value = tmp_path
         mock_config = Mock()
-        mock_config_class.from_yaml_file.return_value = mock_config
         mock_core_services = Mock()
         mock_create_core_services.return_value = mock_core_services
 
@@ -146,31 +143,25 @@ class TestMaintenanceContext:
         config_path.touch()
 
         ctx = MaintenanceContext.get_instance()
-        ctx.initialize(str(config_path))
+        ctx.initialize(mock_config, config_path)
 
         assert ctx._initialized is True
         assert ctx.config is mock_config
         assert ctx.core_services is mock_core_services
         mock_create_core_services.assert_called_once_with(app_ctxt=None, config=mock_config)
 
-    @patch("antarest.core.config.Config")
     @patch("antarest.service_creator.init_db_engine")
     @patch("antarest.core.utils.fastapi_sqlalchemy.DBSessionMiddleware")
     @patch("antarest.service_creator.create_core_services")
-    @patch("antarest.core.utils.utils.get_local_path")
     def test_initialize_is_idempotent(
         self,
-        mock_get_local_path,
         mock_create_core_services,
         mock_db_middleware,
         mock_init_db_engine,
-        mock_config_class,
         tmp_path,
     ):
         """Test that calling initialize() multiple times only initializes once."""
-        mock_get_local_path.return_value = tmp_path
         mock_config = Mock()
-        mock_config_class.from_yaml_file.return_value = mock_config
         mock_core_services = Mock()
         mock_create_core_services.return_value = mock_core_services
 
@@ -178,9 +169,9 @@ class TestMaintenanceContext:
         config_path.touch()
 
         ctx = MaintenanceContext.get_instance()
-        ctx.initialize(str(config_path))
-        ctx.initialize(str(config_path))
-        ctx.initialize(str(config_path))
+        ctx.initialize(mock_config, config_path)
+        ctx.initialize(mock_config, config_path)
+        ctx.initialize(mock_config, config_path)
 
         # Should only be called once
         assert mock_create_core_services.call_count == 1

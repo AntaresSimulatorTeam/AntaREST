@@ -61,7 +61,8 @@ def clean_matrices_task() -> Dict[str, Any]:
     ctx = MaintenanceContext.get_instance()
     matrix_service = ctx.matrix_service
     config = ctx.config
-    assert config is not None, "Config must be initialized"
+    if config is None:
+        raise RuntimeError("MaintenanceContext config is not initialized. Ensure worker was properly started.")
 
     # Get configuration
     dry_run = config.storage.matrix_gc_dry_run

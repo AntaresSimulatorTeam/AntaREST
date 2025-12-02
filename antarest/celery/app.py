@@ -28,6 +28,7 @@ from celery.signals import worker_init
 
 from antarest.celery.context import MaintenanceContext
 from antarest.core.config import Config
+from antarest.core.utils.utils import get_local_path
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +120,6 @@ def init_worker(**kwargs: object) -> None:
     It loads the full configuration from YAML file and initializes
     the MaintenanceContext with all required services.
     """
-
     # Get config file path from environment
     config_path_str = os.environ.get("ANTAREST_CONF")
     if not config_path_str:
@@ -131,12 +131,13 @@ def init_worker(**kwargs: object) -> None:
         logger.error(f"Config file not found: {config_path}")
         return
 
-    # Load config from YAML
+    # Load config from YAML (only once, then pass to MaintenanceContext)
     logger.info(f"Loading worker config from {config_path}")
-    config = Config.from_yaml_file(config_path)
+    res = get_local_path() / "resources"
+    config = Config.from_yaml_file(res=res, file=config_path)
 
     # Override Celery config from YAML if present (YAML > env vars)
-    if hasattr(config, "celery") and config.celery:
+    if config.celery:
         logger.info("Overriding Celery config from YAML file")
         celery_app.conf.update(
             broker_url=config.celery.broker_url,
@@ -145,9 +146,9 @@ def init_worker(**kwargs: object) -> None:
             result_expires=config.celery.result_expires,
         )
 
-    # Initialize MaintenanceContext with services
+    # Initialize MaintenanceContext with already loaded config
     logger.info("Initializing MaintenanceContext")
     ctx = MaintenanceContext.get_instance()
-    ctx.initialize(str(config_path))
+    ctx.initialize(config, config_path)
 
     logger.info("Worker initialization complete")

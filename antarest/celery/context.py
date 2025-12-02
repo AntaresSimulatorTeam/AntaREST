@@ -62,14 +62,15 @@ class MaintenanceContext:
                     cls._instance = MaintenanceContext()
         return cls._instance
 
-    def initialize(self, config_path: str) -> None:
+    def initialize(self, config: "Config", config_path: Path) -> None:
         """
         Initialize the context with config and services.
 
         This is called automatically by worker_init signal.
 
         Args:
-            config_path: Path to application.yaml
+            config: Already loaded Config object
+            config_path: Path to application.yaml (needed for DB engine initialization)
         """
         if self._initialized:
             logger.debug("MaintenanceContext already initialized")
@@ -84,17 +85,13 @@ class MaintenanceContext:
             # Import here to avoid circular dependencies
             from typing import Dict, cast
 
-            from antarest.core.config import Config
             from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-            from antarest.core.utils.utils import get_local_path
             from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
 
-            # Load config
-            res = get_local_path() / "resources"
-            self.config = Config.from_yaml_file(res=res, file=Path(config_path))
+            self.config = config
 
             # Initialize database session middleware (required for db() context manager)
-            engine = init_db_engine(Path(config_path), self.config, auto_upgrade_db=False)
+            engine = init_db_engine(config_path, self.config, auto_upgrade_db=False)
             DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
 
             # Create services using existing factories
