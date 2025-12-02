@@ -61,9 +61,14 @@ export interface LinkVariablesDTO {
   variables: string[];
 }
 
-export interface VariablesListDTO {
+export interface VariablesListDataDTO {
   areas: AreaVariablesDTO[];
   links: LinkVariablesDTO[];
+}
+
+export interface VariablesListDTO {
+  mcInd: VariablesListDataDTO;
+  mcAll: VariablesListDataDTO;
 }
 
 export interface TimeIndexDTO {

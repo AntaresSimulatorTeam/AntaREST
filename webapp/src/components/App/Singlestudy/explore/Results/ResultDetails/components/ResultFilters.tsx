@@ -12,11 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import { useDebouncedField } from "@/hooks/useDebouncedField";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { Box, IconButton, Tooltip } from "@mui/material";
@@ -24,11 +19,23 @@ import startCase from "lodash/startCase";
 import * as R from "ramda";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import { useDebouncedField } from "@/hooks/useDebouncedField";
+import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
 import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatrixButton";
-import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import { matchesSearchTerm, type DataType, type MonteCarloMode, type Timestep } from "../utils";
+import {
+  type DataType,
+  type MonteCarloMode,
+  matchesSearchTerm,
+  type Timestep,
+  type OutputItemType,
+} from "../utils";
 import MonteCarloModeSelector from "./MonteCarloModeSelector";
+import VariableSelector from "./VariableSelector";
 
 interface ColumnHeader {
   variable: string;
@@ -70,6 +77,11 @@ interface Props {
   colHeaders: string[][];
   onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
   onToggleFilter: () => void;
+  variablesMetadata: VariablesListDTO | null;
+  itemType: OutputItemType;
+  selectedItemId: string;
+  selectedVariable: string;
+  onVariableSelect: (variable: string) => void;
 }
 
 function ResultFilters({
@@ -87,6 +99,11 @@ function ResultFilters({
   colHeaders,
   onColHeadersChange,
   onToggleFilter,
+  variablesMetadata,
+  itemType,
+  selectedItemId,
+  selectedVariable,
+  onVariableSelect,
 }: Props) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -245,41 +262,42 @@ function ResultFilters({
       field: <MonteCarloModeSelector value={mcMode} onChange={setMcMode} />,
     },
     {
-      id: "mc",
-      field: !isVariablePerVariable ? (
-        <>
-          <BooleanFE
-            label={t("study.results.mc")}
-            value={year <= 0}
-            trueText="Synthesis"
-            falseText="Year by year"
-            size="extra-small"
-            margin="dense"
-            onChange={(event) => setYear(event.target.value ? -1 : 1)}
-            sx={{ minWidth: 94 }}
-          />
-          {localYear > 0 && (
-            <NumberFE
-              label={t("global.year")}
-              size="extra-small"
-              value={localYear}
-              slotProps={{
-                htmlInput: {
-                  min: 1,
-                  max: maxYear,
-                },
-              }}
-              onChange={handleYearChange}
-              margin="dense"
-              sx={{ minWidth: 65 }}
-            />
-          )}
-        </>
+      id: "variable",
+      field: isVariablePerVariable ? (
+        <VariableSelector
+          variablesMetadata={variablesMetadata}
+          mcMode={mcMode}
+          dataType={dataType}
+          itemType={itemType}
+          selectedItemId={selectedItemId}
+          selectedVariable={selectedVariable}
+          onVariableSelect={onVariableSelect}
+        />
       ) : null,
     },
     {
+      id: "year",
+      field:
+        mcMode === "mc-ind" ? (
+          <NumberFE
+            label={t("global.year")}
+            size="extra-small"
+            value={localYear}
+            slotProps={{
+              htmlInput: {
+                min: 1,
+                max: maxYear,
+              },
+            }}
+            onChange={handleYearChange}
+            margin="dense"
+            sx={{ minWidth: 65 }}
+          />
+        ) : null,
+    },
+    {
       id: "display",
-      field: !isVariablePerVariable ? (
+      field: (
         <SelectFE
           label={t("study.results.display")}
           value={dataType}
@@ -294,7 +312,7 @@ function ResultFilters({
           onChange={(event) => setDataType(event?.target.value as DataType)}
           margin="dense"
         />
-      ) : null,
+      ),
     },
     {
       id: "temporality",

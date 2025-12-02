@@ -31,8 +31,15 @@ import EmptyView from "../../../../../../common/page/EmptyView";
 import ViewWrapper from "../../../../../../common/page/ViewWrapper";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
-import { type DataType, MAX_YEAR, type MonteCarloMode, type Timestep } from "../utils";
+import {
+  type DataType,
+  MAX_YEAR,
+  type MonteCarloMode,
+  type OutputItemType,
+  type Timestep,
+} from "../utils";
 import ResultFilters from "./ResultFilters";
+import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
 
 interface ResultMatrixViewerProps {
   matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
@@ -55,6 +62,11 @@ interface ResultMatrixViewerProps {
   path: string;
   onColHeadersChange: (headers: string[][], indices: number[]) => void;
   onToggleFilter: () => void;
+  variablesMetadata: VariablesListDTO | null;
+  itemType: OutputItemType;
+  selectedItemId: string;
+  selectedVariable: string;
+  onVariableSelect: (variable: string) => void;
 }
 
 function ResultMatrixViewer({
@@ -78,6 +90,11 @@ function ResultMatrixViewer({
   path,
   onColHeadersChange,
   onToggleFilter,
+  variablesMetadata,
+  itemType,
+  selectedItemId,
+  selectedVariable,
+  onVariableSelect,
 }: ResultMatrixViewerProps) {
   const { t } = useTranslation();
 
@@ -100,6 +117,11 @@ function ResultMatrixViewer({
             colHeaders={matrixRes.data?.columns ?? resultColHeaders}
             onColHeadersChange={onColHeadersChange}
             onToggleFilter={onToggleFilter}
+            variablesMetadata={variablesMetadata}
+            itemType={itemType}
+            selectedItemId={selectedItemId}
+            selectedVariable={selectedVariable}
+            onVariableSelect={onVariableSelect}
           />
         </Box>
         <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>

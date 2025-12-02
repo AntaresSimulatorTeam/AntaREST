@@ -30,8 +30,8 @@ function MonteCarloModeSelector({ value, onChange, disabled }: MonteCarloModeSel
       label={t("study.results.monteCarlo")}
       value={value}
       options={[
-        { value: "mc-ind", label: t("study.results.mcIndividual") },
-        { value: "mc-all", label: t("study.results.mcAll") },
+        { value: "mc-all", label: "Synthesis" },
+        { value: "mc-ind", label: "Year by year" },
         { value: "variable-per-variable", label: t("study.results.variablePerVariable") },
       ]}
       size="extra-small"

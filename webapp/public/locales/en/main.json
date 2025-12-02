@@ -708,6 +708,8 @@
   "study.results.mcIndividual": "MC Individual",
   "study.results.mcAll": "MC All",
   "study.results.variablePerVariable": "Variable per Variable",
+  "study.results.variable": "Variable",
+  "study.results.noVariables": "No variables available",
   "study.results.display": "Display",
   "study.results.temporality": "Temporality",
   "study.results.noData": "No data available",

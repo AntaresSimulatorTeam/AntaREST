@@ -70,7 +70,6 @@ function ResultDetails() {
   const [selectedVariableObject, setSelectedVariableObject] =
     useState<SelectedVariableObject | null>(null);
   const [selectedVariable, setSelectedVariable] = useState("");
-  const [variablesMetadata, setVariablesMetadata] = useState<VariablesListDTO | null>(null);
   const [isViewMaterialized, setIsViewMaterialized] = useState(false);
   const [materializationTaskId, setMaterializationTaskId] = useState<string | null>(null);
 
@@ -86,19 +85,31 @@ function ResultDetails() {
   });
 
   useEffect(() => {
-    if (output && outputId && isVariablePerVariable) {
-      getVariablesList(study.id, outputId)
-        .then(setVariablesMetadata)
-        .catch((error) => {
-          console.error("Failed to load variables list:", error);
-          setVariablesMetadata(null);
-        });
-    } else {
-      setVariablesMetadata(null);
+    if (mcMode === "mc-all") {
+      setYear(-1);
+    } else if (mcMode === "mc-ind" && year <= 0) {
+      setYear(1);
+    }
+  }, [mcMode, year]);
+
+  const { data: variablesMetadata } = usePromise(
+    () => {
+      if (output && outputId && isVariablePerVariable) {
+        return getVariablesList(study.id, outputId);
+      }
+      return Promise.resolve(null);
+    },
+    {
+      deps: [study.id, outputId, output, isVariablePerVariable],
+    },
+  );
+
+  useEffect(() => {
+    if (!isVariablePerVariable) {
       setSelectedVariableObject(null);
       setSelectedVariable("");
     }
-  }, [study.id, outputId, output, isVariablePerVariable]);
+  }, [isVariablePerVariable]);
 
   const items = useMemo(() => {
     const currentItems = (itemType === "areas" ? areas : links) as Array<{
@@ -312,6 +323,11 @@ function ResultDetails() {
           path={path}
           onColHeadersChange={handleColHeadersChange}
           onToggleFilter={handleToggleFilter}
+          variablesMetadata={variablesMetadata}
+          itemType={itemType}
+          selectedItemId={selectedItemId}
+          selectedVariable={selectedVariable}
+          onVariableSelect={setSelectedVariable}
         />
       )}
     </SplitView>
