@@ -251,6 +251,17 @@ class OutputStorageImpl(IOutputStorage):
         stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s"))
 
     @override
+    def output_exists(self, study_id: str, output_id: str) -> bool:
+        """Check if a study output exists."""
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        if self.is_output_archived(study_id, output_id):
+            output_path = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
+            return output_path.exists()
+        else:
+            output_path = study_outputs.outputs_path / output_id
+            return output_path.is_dir()
+
+    @override
     def is_output_archived(self, study_id: str, output_id: str) -> bool:
         """Check if a study output is archived."""
         study_outputs = self._outputs_provider.get_outputs(study_id)

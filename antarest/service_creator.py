@@ -52,7 +52,7 @@ from antarest.study.output.output_storage_impl import IFileOutputsProvider, IFil
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
-from antarest.study.storage.output_service import OutputService
+from antarest.study.storage.output_service import OutputService, StudyServiceStudiesRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
@@ -199,12 +199,13 @@ def build_output_service(
     )
 
     output_service = OutputService(
-        study_service=study_service,
+        studies_repository=StudyServiceStudiesRepository(study_service),
         storage=output_storage,
         task_service=task_service,
         file_transfer_manager=filetransfer_service,
         matrix_service=matrix_service,
         tmp_dir=config.storage.tmp_dir,
+        cache=cache,
     )
 
     if app_ctxt:

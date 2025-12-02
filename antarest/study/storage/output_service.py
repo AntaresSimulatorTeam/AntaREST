@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, Callable, Optional, Sequence
 
@@ -22,10 +23,12 @@ from typing_extensions import override
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
+    OutputNotFound,
     TaskAlreadyRunning,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.interfaces.cache import ICache
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
@@ -78,9 +81,23 @@ from antarest.study.storage.utils import assert_permission, remove_from_cache
 logger = logging.getLogger(__name__)
 
 
-class IStudyPermissionsChecker(ABC):
+@dataclass(frozen=True)
+class StudyMetadata:
+    id: str
+    name: str
+
+
+class IStudiesRepository(ABC):
+    """
+    Provides a lightweigth, read only, access to studies metadata.
+    """
+
     @abstractmethod
-    def check_permission(self, study_id: str, permission: StudyPermissionType) -> None:
+    def get_study_metadata(self, study_id: str) -> StudyMetadata:
+        pass
+
+    @abstractmethod
+    def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
         """
         Check if the user has the given permission on the study
 
@@ -90,12 +107,17 @@ class IStudyPermissionsChecker(ABC):
         """
 
 
-class StudyServicePermissionsChecker(IStudyPermissionsChecker):
+class StudyServiceStudiesRepository(IStudiesRepository):
     def __init__(self, study_service: StudyService) -> None:
         self._study_service = study_service
 
     @override
-    def check_permission(self, study_id: str, permission: StudyPermissionType) -> None:
+    def get_study_metadata(self, study_id: str) -> StudyMetadata:
+        study = self._study_service.get_study(study_id)
+        return StudyMetadata(id=study.id, name=study.name or "<Unnamed study>")
+
+    @override
+    def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
@@ -188,26 +210,26 @@ class OutputVariablesViewMaterializationTask:
 class OutputService:
     def __init__(
         self,
-        study_service: StudyService,
         storage: IOutputStorage,
         task_service: ITaskService,
         file_transfer_manager: FileTransferManager,
         matrix_service: ISimpleMatrixService,
         tmp_dir: Path,
-        permission_checker: IStudyPermissionsChecker,
+        studies_repository: IStudiesRepository,
+        cache: ICache,
     ) -> None:
-        self._study_service = study_service
         self._storage = storage
         self._task_service = task_service
         self._file_transfer_manager = file_transfer_manager
         self._matrix_service = matrix_service
         self._tmp_dir = tmp_dir
-        self._permission_checker = permission_checker
+        self._studies_repository = studies_repository
+        self._cache = cache
 
         OutputVariablesMatrixUsageProvider(self._matrix_service)
 
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         return self._storage.get_digest(study_id, output_id)
 
     @staticmethod
@@ -218,11 +240,12 @@ class OutputService:
         )
 
     def unarchive_output(self, study_id: str, output_id: str) -> Optional[str]:
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
+        if not self._storage.output_exists(study_id, output_id):
+            raise OutputNotFound(output_id)
         if not self._storage.is_output_archived(study_id, output_id):
             raise OutputAlreadyUnarchived(output_id)
-        # TODO SL: restore check about existence of the output ? Add it for all methods ?
 
         archive_task_names = OutputService._get_output_archive_task_names(study_id, output_id)
         task_name = archive_task_names[1]
@@ -275,7 +298,7 @@ class OutputService:
         Returns: an object containing all needed information
 
         """
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         logger.info(
             "study %s output listing asked by user %s",
             study_id,
@@ -303,10 +326,10 @@ class OutputService:
 
         """
         logger.info(f"Importing new output for study {uuid}")
-        self._permission_checker.check_permission(uuid, StudyPermissionType.RUN)
+        self._studies_repository.assert_permission(uuid, StudyPermissionType.RUN)
 
         output_id = self._storage.import_output(uuid, output, output_name_suffix)
-        remove_from_cache(cache=self._study_service.cache_service, root_id=uuid)
+        remove_from_cache(cache=self._cache, root_id=uuid)
         logger.info("output added to study %s by user %s", uuid, get_user_id())
 
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
@@ -324,7 +347,7 @@ class OutputService:
         Returns:
             MatrixIndex with start_date, steps, first_week_size and level
         """
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         return self._storage.get_output_time_index(study_id, output_id, frequency)
 
     def export_output(self, study_uuid: str, output_uuid: str) -> FileDownloadTaskDTO:
@@ -334,12 +357,13 @@ class OutputService:
             study_uuid: study id
             output_uuid: output id
         """
-        self._permission_checker.check_permission(study_uuid, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_uuid, StudyPermissionType.READ)
+        metadata = self._studies_repository.get_study_metadata(study_uuid)
 
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
-        export_name = f"Study output {study_uuid}/{output_uuid} export"
+        export_name = f"Study output {metadata.name}/{output_uuid} export"
         export_file_download = self._file_transfer_manager.request_download(
-            f"{study.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}", export_name
+            f"{metadata.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -354,7 +378,7 @@ class OutputService:
                 self._file_transfer_manager.set_ready(export_id)
                 return TaskResult(
                     success=True,
-                    message=f"Study output {study_uuid}/{output_uuid} successfully exported",
+                    message=f"Study output {metadata.name}/{output_uuid} successfully exported",
                 )
             except Exception as e:
                 self._file_transfer_manager.fail(export_id, str(e))
@@ -393,15 +417,16 @@ class OutputService:
         Returns: CSV content file
 
         """
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        metadata = self._studies_repository.get_study_metadata(study_id)
 
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
         if use_task:
             logger.info(f"Exporting {output_id} from study {study_id}")
-            export_name = f"Study filtered output {study.name}/{output_id} export"
+            export_name = f"Study filtered output {metadata.name}/{output_id} export"
             export_file_download = self._file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}", export_name
+                f"{metadata.name}-{study_id}-{output_id}_filtered{filetype.suffix}", export_name
             )
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
@@ -412,7 +437,7 @@ class OutputService:
                     self._file_transfer_manager.set_ready(export_id)
                     return TaskResult(
                         success=True,
-                        message=f"Study filtered output {study_id}/{output_id} successfully exported",
+                        message=f"Study filtered output {metadata.name}/{output_id} successfully exported",
                     )
                 except Exception as e:
                     self._file_transfer_manager.fail(export_id, str(e))
@@ -452,7 +477,7 @@ class OutputService:
         Returns:
 
         """
-        self._permission_checker.check_permission(uuid, StudyPermissionType.WRITE)
+        self._studies_repository.assert_permission(uuid, StudyPermissionType.WRITE)
 
         self._storage.delete_output(uuid, output_name)
 
@@ -460,7 +485,7 @@ class OutputService:
 
     def archive_outputs(self, study_id: str) -> list[str]:
         logger.info(f"Archiving all outputs for study {study_id}")
-        self._permission_checker.check_permission(study_id, StudyPermissionType.WRITE)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
 
         outputs = self._storage.get_study_sim_result(study_id)
         task_ids = []
@@ -477,13 +502,12 @@ class OutputService:
         output_id: str,
         force: bool = False,
     ) -> Optional[str]:
-        self._permission_checker.check_permission(study_id, StudyPermissionType.WRITE)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
 
+        if not self._storage.output_exists(study_id, output_id):
+            raise OutputNotFound(output_id)
         if self._storage.is_output_archived(study_id, output_id):
             raise OutputAlreadyArchived(output_id)
-        # TODO: restore that check ? same in unarchive ?
-        # if not output_path.exists():
-        #    raise OutputNotFound(output_id)
 
         archive_task_names = self._get_output_archive_task_names(study_id, output_id)
         task_name = archive_task_names[0]
@@ -547,11 +571,11 @@ class OutputService:
         Returns:
             the ID of the download, which will be filled with output data.
         """
-        self._permission_checker.check_permission(uuid, StudyPermissionType.READ)
-
+        self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
+        study_name = self._studies_repository.get_study_metadata(uuid).name
         logger.info(download_log)
         file_download = self._file_transfer_manager.request_download(
-            f"{study.name}-{uuid}-{output_id}{export_format.suffix}",
+            f"{study_name}-{uuid}-{output_id}{export_format.suffix}",
             download_name,
             expiration_time_in_minutes=download_expiration_time_in_minutes,
         )
@@ -607,7 +631,7 @@ class OutputService:
         Returns:
             Aggregation task id
         """
-        self._permission_checker.check_permission(uuid, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
 
         output_path = self._storage.get_output_path(uuid, output_id)
         aggregator_manager = AggregatorManager(
@@ -666,7 +690,7 @@ class OutputService:
         If present, return the data.
         If not, parse the output headers to build the object. Before returning it, save it inside DB for next calls.
         """
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
         output_variables: OutputVariables | None = db.session.get(OutputVariables, (study_id, output_id))
         if output_variables:
@@ -688,7 +712,7 @@ class OutputService:
         """
         Endpoint used by ImaGrid
         """
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
         variables_list = self.get_output_variables_list(study_id, output_id)
         return OutputVariablesInformation.from_variables_list(variables_list)
@@ -711,7 +735,7 @@ class OutputService:
         If the view is already registered in DB, updates its `last_read` value and returns it.
         Else, raise an HTTP 404 error.
         """
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
         output_identifier = check_arguments_coherence_and_return_identifier(
             variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
@@ -751,7 +775,7 @@ class OutputService:
         If the view is already registered in DB, raise an HTTP Conflict error.
         Else, launch a task that fetches the required data and stores it inside the database.
         """
-        self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
         output_identifier = check_arguments_coherence_and_return_identifier(
             variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id

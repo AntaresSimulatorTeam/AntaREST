@@ -64,6 +64,10 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
+    def output_exists(self, study_id: str, output_id: str) -> bool:
+        """Check if a study output exists."""
+
+    @abstractmethod
     def is_output_archived(self, study_id: str, output_id: str) -> bool:
         """Check if a study output is archived."""
 
