@@ -124,9 +124,10 @@ class AggregatorManager:
     def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
         content = file_path.read_text(encoding="utf-8")
         output_headers = parse_headers(content, self._output_first_column)
-        polars_df = pl.read_csv(io.StringIO(content), skip_lines=7, separator="\t", has_header=False, null_values="N/A")
-        df = polars_df[polars_df.columns[self._output_first_column :]].to_pandas()
-        df = df.replace({None: np.nan}).astype(np.float64)
+        polars_df = pl.read_csv(
+            io.StringIO(content), skip_lines=7, separator="\t", has_header=False, null_values="N/A", infer_schema=False
+        )
+        df = polars_df[polars_df.columns[self._output_first_column :]].to_pandas().astype(np.float64)
 
         df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
 
