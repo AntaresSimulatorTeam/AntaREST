@@ -14,6 +14,7 @@ from typing import Iterator, Protocol
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.serde.parquet_writer import write_dataframes_stream_parquet
@@ -43,7 +44,7 @@ def simplify_dataframe(dataframe: pd.DataFrame, np_type: type[np.int32] | type[n
 
 def write_dataframe_in_tsv_format(df: pd.DataFrame, path: Path, headers: bool = False) -> None:
     df = simplify_dataframe(df)
-    df.to_csv(path, sep="\t", header=headers, index=False)
+    pl.from_pandas(df).write_csv(path, separator="\t", include_header=headers)
 
 
 class DataframeStreamWriter(Protocol):
