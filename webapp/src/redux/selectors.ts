@@ -22,6 +22,7 @@ import type {
   AllClustersAndLinks,
   Area,
   Cluster,
+  FileStudyTreeConfigDTO,
   GroupDetailsDTO,
   LinkElement,
   StudyMetadata,
@@ -32,13 +33,8 @@ import type { AppState } from "./ducks";
 import type { AuthState } from "./ducks/auth";
 import type { GroupsState } from "./ducks/groups";
 import type { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
-import {
-  type StudyMapLink,
-  type StudyMapNode,
-  studyMapsAdapter,
-  type StudyMapsState,
-} from "./ducks/studyMaps";
-import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
+import type { StudyMap, StudyMapLink, StudyMapNode, StudyMapsState } from "./ducks/studyMaps";
+import type { StudySynthesesState } from "./ducks/studySyntheses";
 import type { UIState } from "./ducks/ui";
 import type { UsersState } from "./ducks/users";
 
@@ -220,7 +216,9 @@ export const getGroup = groupsSelectors.selectById;
 export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
-const studySynthesesSelectors = studySynthesesAdapter.getSelectors(getStudySynthesesState);
+const studySynthesesSelectors = createEntityAdapter<FileStudyTreeConfigDTO>({
+  selectId: (studyData) => studyData.study_id,
+}).getSelectors(getStudySynthesesState);
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
 
@@ -387,7 +385,9 @@ export const getStudyOutput = createSelector(
 
 export const getStudyMapsState = (state: AppState): StudyMapsState => state.studyMaps;
 
-const studyMapsSelectors = studyMapsAdapter.getSelectors(getStudyMapsState);
+const studyMapsSelectors = createEntityAdapter<StudyMap>({
+  selectId: (studyMap) => studyMap.studyId,
+}).getSelectors(getStudyMapsState);
 
 export const getStudyMapsById = studyMapsSelectors.selectEntities;
 

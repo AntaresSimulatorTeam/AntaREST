@@ -17,8 +17,19 @@ import {
   NODE_COLOR,
   NODE_HEIGHT,
 } from "@/routes/App/Singlestudy/explore/Modelization/Map/utils";
+import * as linksApi from "@/services/api/studies/links";
 import type { LinkStyleValue } from "@/services/api/studies/links/types";
 import { createLinkId, parseLinkId } from "@/services/api/studies/links/utils";
+import * as studyApi from "@/services/api/study";
+import * as studyDataApi from "@/services/api/studydata";
+import type {
+  AreaLayerColor,
+  AreaLayerPosition,
+  LinkElement,
+  StudyLayer,
+  StudyMetadata,
+  UpdateAreaUi,
+} from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
@@ -29,17 +40,6 @@ import {
 import * as R from "ramda";
 import tinycolor from "tinycolor2";
 import type { AppState } from ".";
-import * as linksApi from "../../services/api/studies/links";
-import * as studyApi from "../../services/api/study";
-import * as studyDataApi from "../../services/api/studydata";
-import type {
-  AreaLayerColor,
-  AreaLayerPosition,
-  LinkElement,
-  StudyLayer,
-  StudyMetadata,
-  UpdateAreaUi,
-} from "../../types/types";
 import {
   getArea,
   getCurrentLayer,
@@ -92,7 +92,7 @@ export interface StudyMap {
   currentLayer?: StudyLayer["id"];
 }
 
-export const studyMapsAdapter = createEntityAdapter<StudyMap>({
+const studyMapsAdapter = createEntityAdapter<StudyMap>({
   selectId: (studyMap) => studyMap.studyId,
 });
 
