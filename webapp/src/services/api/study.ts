@@ -13,6 +13,7 @@
  */
 
 import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
@@ -64,11 +65,6 @@ export const getFolders = async (workspace: string, folderPath: string) => {
       timeout: 1000 * 300, // Wait for 5 minutes
     },
   );
-  return res.data;
-};
-
-export const getStudyVersions = async (): Promise<string[]> => {
-  const res = await client.get("/v1/studies/_versions");
   return res.data;
 };
 
@@ -144,12 +140,12 @@ export const downloadOutput = async (
 
 export const createStudy = async (
   name: string,
-  version: number,
+  version: string,
   groups?: string[],
 ): Promise<string> => {
   const groupIds = groups && groups.length > 0 ? `&groups=${groups.join(",")}` : "";
   const res = await client.post(
-    `/v1/studies?name=${encodeURIComponent(name)}&version=${version}${groupIds}`,
+    `/v1/studies?name=${encodeURIComponent(name)}&version=${compactSemanticVersion(version)}${groupIds}`,
   );
   return res.data;
 };
@@ -191,9 +187,9 @@ export const unarchiveStudy = async (sid: string): Promise<void> => {
 };
 
 export const upgradeStudy = async (studyId: string, targetVersion: string): Promise<void> => {
-  await client.put(
-    `/v1/studies/${studyId}/upgrade?target_version=${encodeURIComponent(targetVersion)}`,
-  );
+  await client.put(`/v1/studies/${studyId}/upgrade`, {
+    target_version: compactSemanticVersion(targetVersion),
+  });
 };
 
 export const deleteStudy = async (sid: string, deleteAllChildren?: boolean): Promise<void> => {
@@ -239,30 +235,6 @@ export const importStudy = async (
     },
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
-  return res.data;
-};
-
-interface RangeWithDefault {
-  min: number;
-  max: number;
-  default: number;
-}
-
-export interface Launcher {
-  id: string;
-  name: string;
-  nbCores: RangeWithDefault;
-  timeLimit: RangeWithDefault;
-  versions: string[];
-}
-
-interface LaunchersConfig {
-  launchers: Launcher[];
-  defaultLauncher: string;
-}
-
-export const getLaunchersConfig = async () => {
-  const res = await client.get<LaunchersConfig>("/v1/launcher/launchers");
   return res.data;
 };
 

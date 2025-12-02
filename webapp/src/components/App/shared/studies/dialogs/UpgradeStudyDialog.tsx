@@ -13,11 +13,13 @@
  */
 
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import { getSemanticVersionOptions } from "@/utils/versionUtils";
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { getStudyVersionsFormatted } from "../../../../../redux/selectors";
+import { getStudyVersions } from "../../../../../redux/selectors";
 import { upgradeStudy } from "../../../../../services/api/study";
 import type { StudyMetadata } from "../../../../../types/types";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
@@ -35,17 +37,12 @@ const defaultValues = {
 
 function UpgradeStudyDialog({ study, onClose, open }: Props) {
   const { t } = useTranslation();
-  const versions = useAppSelector(getStudyVersionsFormatted);
+  const versions = useAppSelector(getStudyVersions);
 
-  const versionOptions = useMemo(() => {
-    return versions
-      .filter((version) => version.id > study.version)
-      .sort((a, b) => b.name.localeCompare(a.name))
-      .map(({ id, name }) => ({
-        value: id,
-        label: name,
-      }));
-  }, [versions, study.version]);
+  const versionOptions = useMemo(
+    () => getSemanticVersionOptions(versions.filter((ver) => semver.gt(ver, study.version))),
+    [versions, study.version],
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event handlers

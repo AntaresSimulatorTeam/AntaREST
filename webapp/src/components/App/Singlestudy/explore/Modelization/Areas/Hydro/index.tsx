@@ -14,6 +14,7 @@
 
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
+import semver from "semver";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../../types/types";
@@ -22,7 +23,6 @@ import TabWrapper from "../../../TabWrapper";
 function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
-  const studyVersion = Number(study.version);
 
   const tabList = useMemo(() => {
     const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;
@@ -40,9 +40,9 @@ function Hydro() {
       { label: "Water values", path: `${basePath}/watervalues` },
       { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
       { label: "Run of river", path: `${basePath}/ror` },
-      studyVersion >= 860 && { label: "Min Gen", path: `${basePath}/mingen` },
+      semver.gte(study.version, "8.6.0") && { label: "Min Gen", path: `${basePath}/mingen` },
     ].filter(Boolean);
-  }, [areaId, study?.id, studyVersion]);
+  }, [areaId, study?.id, study.version]);
 
   ////////////////////////////////////////////////////////////////
   // JSX

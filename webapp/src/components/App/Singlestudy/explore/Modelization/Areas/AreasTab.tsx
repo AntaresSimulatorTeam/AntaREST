@@ -15,6 +15,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
+import semver from "semver";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../types/types";
@@ -39,7 +40,7 @@ function AreasTab({ renewablesClustering }: Props) {
       {
         label: "study.modelization.storages",
         pathSuffix: "storages",
-        condition: Number.parseInt(study.version, 10) >= 860,
+        condition: semver.gte(study.version, "8.6.0"),
       },
       {
         label: "study.modelization.renewables",

@@ -12,20 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import EditorIcon from "@/components/common/icons/EditorIcon";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
-import EditorIcon from "@/components/common/icons/EditorIcon";
 import { Box, Divider, Tooltip, Typography, styled } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import {
-  buildModificationDate,
-  convertUTCToLocalTime,
-  displayVersionName,
-} from "../../../../services/utils";
+import { buildModificationDate, convertUTCToLocalTime } from "../../../../services/utils";
 import type { StudyMetadata } from "../../../../types/types";
 import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
 
@@ -83,7 +80,7 @@ function Details({ study, parentStudy, variantNb }: Props) {
         <TinyText>{buildModificationDate(study.modificationDate, t, i18n.language)}</TinyText>
       </Item>
       <StyledDivider />
-      <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
+      <TinyText>{`v${compactSemanticVersion(study.version)}`}</TinyText>
       <StyledDivider />
       {parentStudy && (
         <Item>
