@@ -42,7 +42,6 @@ from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time, retry
 from antarest.login.utils import get_current_user, require_current_user
-from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
 
@@ -69,17 +68,6 @@ Task: TypeAlias = Callable[[ITaskNotifier], TaskResult]
 
 
 class ITaskService(ABC):
-    @abstractmethod
-    def add_worker_task(
-        self,
-        task_type: TaskType,
-        task_queue: str,
-        task_args: Dict[str, int | float | bool | str],
-        name: Optional[str],
-        ref_id: Optional[str],
-    ) -> Optional[str]:
-        raise NotImplementedError()
-
     @abstractmethod
     def add_task(
         self,
@@ -228,73 +216,7 @@ class TaskJobService(ITaskService):
         self.tasks: Dict[str, Future[None]] = {}
         self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
         self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
-        self.remote_workers = config.tasks.remote_workers
         self._listeners = list(listeners) if listeners else []
-
-    def _create_worker_task(
-        self,
-        task_id: str,
-        task_type: str,
-        task_args: Dict[str, int | float | bool | str],
-    ) -> Task:
-        task_result_wrapper: List[TaskResult] = []
-
-        def _create_awaiter(
-            res_wrapper: List[TaskResult],
-        ) -> Callable[[Event], Awaitable[None]]:
-            async def _await_task_end(event: Event) -> None:
-                task_event = WorkerTaskResult.model_validate(event.payload)
-                if task_event.task_id == task_id:
-                    res_wrapper.append(task_event.task_result)
-
-            return _await_task_end
-
-        # noinspection PyUnusedLocal
-        def _send_worker_task(logger_: ITaskNotifier) -> TaskResult:
-            listener_id = self.event_bus.add_listener(
-                _create_awaiter(task_result_wrapper),
-                [EventType.WORKER_TASK_ENDED],
-            )
-            self.event_bus.queue(
-                Event(
-                    type=EventType.WORKER_TASK,
-                    payload=WorkerTaskCommand(
-                        task_id=task_id,
-                        task_type=task_type,
-                        task_args=task_args,
-                    ),
-                    # Use `NONE` for internal events
-                    permissions=PermissionInfo(public_mode=PublicMode.NONE),
-                ),
-                task_type,
-            )
-            while not task_result_wrapper:
-                logger.info("💤 Sleeping 1 second...")
-                time.sleep(1)
-            self.event_bus.remove_listener(listener_id)
-            return task_result_wrapper[0]
-
-        return _send_worker_task
-
-    def check_remote_worker_for_queue(self, task_queue: str) -> bool:
-        return any(task_queue in rw.queues for rw in self.remote_workers)
-
-    @override
-    def add_worker_task(
-        self,
-        task_type: TaskType,
-        task_queue: str,
-        task_args: Dict[str, int | float | bool | str],
-        name: Optional[str],
-        ref_id: Optional[str],
-    ) -> Optional[str]:
-        if not self.check_remote_worker_for_queue(task_queue):
-            logger.warning(f"Failed to find configured remote worker for task queue {task_queue}")
-            return None
-
-        task = self._create_task(name, task_type, ref_id, None)
-        self._launch_task(self._create_worker_task(str(task.id), task_queue, task_args), task, None)
-        return str(task.id)
 
     @override
     def add_task(

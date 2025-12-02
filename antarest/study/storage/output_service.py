@@ -19,7 +19,6 @@ from fastapi import HTTPException
 from starlette.responses import FileResponse, Response
 from typing_extensions import override
 
-from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
@@ -78,7 +77,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import assert_permission, is_output_archived, remove_from_cache
-from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -262,28 +260,14 @@ class OutputService:
                 )
                 raise e
 
-        task_id: Optional[str] = None
-        workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        if workspace != DEFAULT_WORKSPACE_NAME:
-            dest = Path(study.path) / "output" / output_id
-            src = Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}"
-            task_id = self._task_service.add_worker_task(
-                TaskType.UNARCHIVE,
-                f"unarchive_{workspace}",
-                ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
-                name=task_name,
-                ref_id=study.id,
-            )
-
-        if not task_id:
-            task_id = self._task_service.add_task(
-                unarchive_output_task,
-                task_name,
-                task_type=TaskType.UNARCHIVE,
-                ref_id=study.id,
-                progress=None,
-                custom_event_messages=None,
-            )
+        task_id = self._task_service.add_task(
+            unarchive_output_task,
+            task_name,
+            task_type=TaskType.UNARCHIVE,
+            ref_id=study_id,
+            progress=None,
+            custom_event_messages=None,
+        )
 
         return task_id
 

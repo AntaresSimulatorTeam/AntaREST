@@ -20,9 +20,17 @@ from typing_extensions import override
 
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache
+from antarest.core.remote.remote_executor import IRemoteExecutor
+from antarest.core.tasks.model import TaskType
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
-from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO, StudySimResultDTO, StudySimSettingsDTO
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    MatrixIndex,
+    StudyDownloadLevelDTO,
+    StudySimResultDTO,
+    StudySimSettingsDTO,
+)
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
@@ -33,6 +41,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, get_start_date, remove_from_cache
+from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +66,10 @@ class IFileStudyOutputs(ABC):
         Provides path where outputs of that file study are stored.
         """
 
+    @property
+    @abstractmethod
+    def study_workspace(self) -> str: ...
+
 
 class IFileOutputsProvider(ABC):
     """
@@ -68,9 +81,10 @@ class IFileOutputsProvider(ABC):
 
 
 class OutputStorageImpl(IOutputStorage):
-    def __init__(self, outputs_provider: IFileOutputsProvider, cache: ICache) -> None:
+    def __init__(self, outputs_provider: IFileOutputsProvider, cache: ICache, remote_executor: IRemoteExecutor) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
+        self._remote_executor = remote_executor
 
     @override
     def import_output(
@@ -79,14 +93,6 @@ class OutputStorageImpl(IOutputStorage):
         output: BinaryIO | Path,
         output_name: Optional[str] = None,
     ) -> Optional[str]:
-        """
-        Import an output
-        Args:
-            study_id: the study id
-            output: Path of the output or raw data
-            output_name: Optional name suffix to append to the output name
-        Returns: None
-        """
         study_outputs = self._outputs_provider.get_outputs(study_id)
 
         path_output = study_outputs.outputs_path / f"imported_output_{str(uuid4())}"
@@ -133,16 +139,6 @@ class OutputStorageImpl(IOutputStorage):
 
     @override
     def get_study_sim_result(self, study_id: str) -> list[StudySimResultDTO]:
-        """
-        Get global result information
-
-        Args:
-            metadata: study
-
-        Returns:
-            study output data
-        """
-
         study_outputs = self._outputs_provider.get_outputs(study_id)
         study_data = study_outputs.get_file_study()
 
@@ -247,27 +243,42 @@ class OutputStorageImpl(IOutputStorage):
             )
             return False
 
+    def _remote_unarchive(self, output_id: str, study_outputs: IFileStudyOutputs) -> None:
+        dest = study_outputs.outputs_path / output_id
+        src = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
+        self._remote_executor.execute_remote_task(
+            TaskType.UNARCHIVE,
+            f"unarchive_{study_outputs.study_workspace}",
+            ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
+        )
+
     # noinspection SpellCheckingInspection
     @override
-    def unarchive_study_output(self, study_id: str, output_id: str) -> bool:
+    def unarchive_study_output(self, study_id: str, output_id: str) -> None:
         """Un-archive a study output."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        outputs_path = study_outputs.outputs_path
-        if not (outputs_path / f"{output_id}{ArchiveFormat.ZIP}").exists():
-            logger.warning(
-                f"Failed to archive study {study_id} output {output_id}. Maybe it's already unarchived",
-            )
-            return False
-        try:
-            unzip(outputs_path / output_id, outputs_path / f"{output_id}{ArchiveFormat.ZIP}")
-            remove_from_cache(self._cache, study_id)
-            return True
-        except Exception as e:
-            logger.warning(
-                f"Failed to unarchive study {study_id} output {output_id}",
-                exc_info=e,
-            )
-            return False
+
+        # Specific logic for "external" workspaces: we ask for unarchiving to the remote executor ...
+        workspace = study_outputs.study_workspace
+        if workspace != DEFAULT_WORKSPACE_NAME:
+            self._remote_unarchive(output_id, study_outputs)
+        else:
+            study_outputs = self._outputs_provider.get_outputs(study_id)
+            outputs_path = study_outputs.outputs_path
+            if not (outputs_path / f"{output_id}{ArchiveFormat.ZIP}").exists():
+                logger.warning(
+                    f"Failed to archive study {study_id} output {output_id}. Maybe it's already unarchived",
+                )
+                return
+            try:
+                unzip(outputs_path / output_id, outputs_path / f"{output_id}{ArchiveFormat.ZIP}")
+                remove_from_cache(self._cache, study_id)
+            except Exception as e:
+                # TODO: we don't raise here ??
+                logger.warning(
+                    f"Failed to unarchive study {study_id} output {output_id}",
+                    exc_info=e,
+                )
 
     @override
     def get_output_path(self, study_id: str, output_id: str) -> Path:

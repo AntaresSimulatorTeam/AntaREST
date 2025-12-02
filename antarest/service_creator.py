@@ -27,7 +27,7 @@ from antarest.blobstore.main import build_blob_service
 from antarest.blobstore.service import BlobService
 from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
-from antarest.core.config import Config, RedisConfig
+from antarest.core.config import DEFAULT_WORKSPACE_NAME, Config, RedisConfig
 from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
@@ -36,6 +36,7 @@ from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.metrics import add_db_metrics
 from antarest.core.persistence import upgrade_db
+from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
@@ -165,6 +166,11 @@ def _create_file_outputs(study_service: StudyService, study_id: str) -> IFileStu
         def outputs_path(self) -> Path:
             return Path(metadata.path) / "output"
 
+        @override
+        @property
+        def study_workspace(self) -> str:
+            return getattr(metadata, "workspace", DEFAULT_WORKSPACE_NAME)
+
     return FileOutputsImpl()
 
 
@@ -187,14 +193,16 @@ def build_output_service(
     config: Config,
     matrix_service: ISimpleMatrixService,
 ) -> OutputService:
-    output_storage = OutputStorageImpl(outputs_provider=_file_outputs_provider(study_service), cache=cache)
+    remote_executor = RemoteWorkerExecutor(event_bus, config)
+    output_storage = OutputStorageImpl(
+        outputs_provider=_file_outputs_provider(study_service), cache=cache, remote_executor=remote_executor
+    )
 
     output_service = OutputService(
         study_service=study_service,
         storage=output_storage,
         task_service=task_service,
         file_transfer_manager=filetransfer_service,
-        event_bus=event_bus,
         matrix_service=matrix_service,
         tmp_dir=config.storage.tmp_dir,
     )
