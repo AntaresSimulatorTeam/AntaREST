@@ -12,6 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useOperationInProgressCount from "@/hooks/useOperationInProgressCount";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
+import { toError } from "@/utils/fnUtils";
+import { appendColon } from "@/utils/i18nUtils";
+import type { PromiseAny } from "@/utils/tsUtils";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,12 +34,6 @@ import {
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import useOperationInProgressCount from "../../../hooks/useOperationInProgressCount";
-import useUpdatedRef from "../../../hooks/useUpdatedRef";
-import { toError } from "../../../utils/fnUtils";
-import { appendColon } from "../../../utils/i18nUtils";
-import type { PromiseAny } from "../../../utils/tsUtils";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import CreateDialog from "./CreateDialog";
 import DuplicateDialog from "./DuplicateDialog";

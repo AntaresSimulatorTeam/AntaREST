@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import type { StudiesSortConf, StudiesState, StudyFilters } from "@/redux/ducks/studies";
+import type { UIState } from "@/redux/ducks/ui";
+import type { TableTemplate } from "@/routes/App/Singlestudy/explore/TableModeList/utils";
+import type { FolderDTO } from "@/routes/App/Studies/StudyTree/types";
+import type { UserInfo } from "@/types/types";
 import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
-import type { UserInfo } from "../../types/types";
-import type { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
-import type { StudiesSortConf, StudiesState, StudyFilters } from "../../redux/ducks/studies";
-import type { UIState } from "../../redux/ducks/ui";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
-import type { FolderDTO } from "@/components/App/Studies/StudyTree/types";
 
 export const StorageKey = {
   Version: "version",

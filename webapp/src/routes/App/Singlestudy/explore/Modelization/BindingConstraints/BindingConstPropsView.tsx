@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useMemo, useState } from "react";
-import PropertiesView from "../../../../../common/PropertiesView";
 import ListElement from "../../common/ListElement";
 import AddDialog from "./AddDialog";
 import type { BindingConstraint } from "./BindingConstView/utils";

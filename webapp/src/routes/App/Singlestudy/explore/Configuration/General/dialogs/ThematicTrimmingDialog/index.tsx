@@ -12,7 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/common/Form/types";
+import FormDialog from "@/components/dialogs/FormDialog";
+import SearchFE from "@/components/fieldEditors/SearchFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/Form/types";
 import {
   getThematicTrimmingConfig,
   setThematicTrimmingConfig,
@@ -34,9 +37,6 @@ import * as R from "ramda";
 import type * as RA from "ramda-adjunct";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import FormDialog from "../../../../../../../common/dialogs/FormDialog";
-import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
   THEMATIC_TRIMMING_GROUPS,
   getFieldLabelsForGroup,

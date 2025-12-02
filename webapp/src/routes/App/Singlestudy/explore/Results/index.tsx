@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import DigestDialog from "@/components/common/dialogs/DigestDialog";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import DigestDialog from "@/components/dialogs/DigestDialog";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { getJobs } from "@/services/api/launcher/jobs";
 import type { Job } from "@/services/api/launcher/jobs/types";
 import { toError } from "@/utils/fnUtils";
@@ -55,7 +56,6 @@ import {
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import type { StudyMetadata, StudyOutput } from "../../../../../types/types";
 import type { EmptyObject } from "../../../../../utils/tsUtils";
-import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
 
 interface OutputDetail {

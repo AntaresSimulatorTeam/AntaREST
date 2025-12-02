@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import FieldEditorButtonGroup from "@/components/common/FieldEditorButtonGroup";
-import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import FieldEditorButtonGroup from "@/components/FieldEditorButtonGroup";
+import NumberFE from "@/components/fieldEditors/NumberFE";
 import TransformIcon from "@mui/icons-material/Transform";
 import { Button } from "@mui/material";
 import * as R from "ramda";

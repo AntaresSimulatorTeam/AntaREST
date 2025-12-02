@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import EditIcon from "@mui/icons-material/Edit";
+import { useTranslation } from "react-i18next";
+import type { TableTemplate } from "../utils";
 import TableTemplateFormDialog, {
   type TableTemplateFormDialogProps,
 } from "./TableTemplateFormDialog";
-import type { TableTemplate } from "../utils";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
 interface Props extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {
   defaultValues: TableTemplate;

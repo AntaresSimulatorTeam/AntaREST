@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import type { SxProps, Theme } from "@mui/material";
 import type {
   AggregateConfig,
   MatrixDataDTO,
   RowCountSource,
-} from "../../../../../../common/Matrix/shared/types";
-import type { SplitViewProps } from "../../../../../../common/SplitView";
+} from "@/components/Matrix/shared/types";
+import type { SplitViewProps } from "@/components/SplitView";
+import type { SxProps, Theme } from "@mui/material";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
 import InflowStructure from "./InflowStructure";

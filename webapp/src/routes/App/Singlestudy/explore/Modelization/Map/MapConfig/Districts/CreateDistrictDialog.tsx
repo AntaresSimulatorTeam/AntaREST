@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
+import FormDialog from "@/components/dialogs/FormDialog";
+import StringFE from "@/components/fieldEditors/StringFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { useOutletContext } from "react-router";
 import { useMemo } from "react";
-import FormDialog from "../../../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import type { StudyMetadata } from "../../../../../../../../types/types";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import Fieldset from "../../../../../../../common/Fieldset";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
 import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
-import { validateString } from "@/utils/validation/string";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 
 interface Props {
   open: boolean;

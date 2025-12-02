@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { uploadFile } from "@/services/api/studies/raw";
+import type { StudyMetadata } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../utils/fnUtils";
-import { useDropzone, type Accept } from "react-dropzone";
-import type { StudyMetadata } from "../../../types/types";
-import { useSnackbar } from "notistack";
-import { uploadFile } from "../../../services/api/studies/raw";
 import { Button } from "@mui/material";
+import { useSnackbar } from "notistack";
+import { useEffect, useState } from "react";
+import { useDropzone, type Accept } from "react-dropzone";
+import { useTranslation } from "react-i18next";
 
 type ValidateResult = boolean | null | undefined;
 type Validate = (file: File) => ValidateResult | Promise<ValidateResult>;

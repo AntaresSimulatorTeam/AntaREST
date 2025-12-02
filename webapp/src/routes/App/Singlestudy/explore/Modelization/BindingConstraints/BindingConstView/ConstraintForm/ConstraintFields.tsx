@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import { useFormContextPlus } from "@/components/Form";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import { validateString } from "@/utils/validation/string";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import { validateString } from "@/utils/validation/string";
 import type { StudyMetadata } from "../../../../../../../../types/types";
-import { useFormContextPlus } from "../../../../../../../common/Form";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
   type BindingConstraint,
   OPERATOR_OPTIONS,

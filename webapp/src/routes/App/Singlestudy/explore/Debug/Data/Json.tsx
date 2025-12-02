@@ -12,6 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import DownloadButton from "@/components/buttons/DownloadButton";
+import UploadFileButton from "@/components/buttons/UploadFileButton";
+import JSONEditor, {
+  type JSONApi,
+  type JSONEditorProps,
+  type JSONState,
+} from "@/components/JSONEditor";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { getRawFile } from "@/services/api/studies/raw";
 import SaveIcon from "@mui/icons-material/Save";
 import { Button, Divider } from "@mui/material";
@@ -22,14 +30,6 @@ import { useUpdateEffect } from "react-use";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import { editStudy, getStudyData } from "../../../../../../services/api/study";
 import { downloadFile } from "../../../../../../utils/fileUtils";
-import DownloadButton from "../../../../../common/buttons/DownloadButton";
-import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
-import JSONEditor, {
-  type JSONApi,
-  type JSONEditorProps,
-  type JSONState,
-} from "../../../../../common/JSONEditor";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import type { DataCompProps } from "../utils";
 import { Filename, Menubar } from "./styles";
 

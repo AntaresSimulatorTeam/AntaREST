@@ -12,29 +12,29 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import DataViewerDialog from "@/components/dialogs/DataViewerDialog";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import type { AxiosError } from "axios";
-import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router-dom";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import {
+  getAllCandidates,
+  getAllConstraints,
+  getAllWeights,
+  getConstraint,
+  getWeight,
+  getXpansionSettings,
+  updateXpansionSettings,
+} from "../../../../../../services/api/xpansion";
+import { removeEmptyFields } from "../../../../../../services/utils/index";
 import type { StudyMetadata } from "../../../../../../types/types";
 import { XpansionResourceType, type XpansionSettings } from "../types";
-import {
-  getXpansionSettings,
-  getAllConstraints,
-  getConstraint,
-  updateXpansionSettings,
-  getAllWeights,
-  getWeight,
-  getAllCandidates,
-} from "../../../../../../services/api/xpansion";
 import SettingsForm from "./SettingsForm";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { removeEmptyFields } from "../../../../../../services/utils/index";
-import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
-import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 
 const resourceContentFetcher = (
   resourceType: string,

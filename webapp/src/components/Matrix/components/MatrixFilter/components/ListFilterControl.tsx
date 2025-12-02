@@ -12,6 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import {
+  compactSelections,
+  type NumberOrRange,
+  selectionsToNumbers,
+  selectionToNumbers,
+  selectionToString,
+  stringToSelections,
+} from "@/utils/numberSelectionsUtils";
+import { buildKey } from "@/utils/reactUtils";
 import ClearIcon from "@mui/icons-material/Clear";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
@@ -31,15 +40,6 @@ import {
 } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { buildKey } from "@/utils/reactUtils";
-import {
-  compactSelections,
-  type NumberOrRange,
-  selectionsToNumbers,
-  selectionToString,
-  stringToSelections,
-  selectionToNumbers,
-} from "../../../../../../utils/numberSelectionsUtils";
 import { FILTER_OPERATORS } from "../constants";
 import {
   CHIP_SELECTOR_STYLES,

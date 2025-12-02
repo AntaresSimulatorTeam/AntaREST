@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import { getStudyData } from "@/services/api/study";
 import type { SvgIconComponent } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";

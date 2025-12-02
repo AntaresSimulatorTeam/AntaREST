@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { GenericInfo } from "@/types/types";
+import { mergeSxProp } from "@/utils/muiUtils";
 import {
   Box,
   Checkbox,
@@ -25,8 +27,6 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
-import type { GenericInfo } from "../../types/types";
-import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
   name: string;

@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import FormDialog from "@/components/dialogs/FormDialog";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import { type DialogProps } from "@mui/material";
 import { useSnackbar } from "notistack";
@@ -19,8 +21,6 @@ import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { moveStudy } from "../../../../../services/api/study";
 import type { StudyMetadata } from "../../../../../types/types";
-import FormDialog from "../../../../common/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 import StudyPathFE from "../StudyPathFE";
 
 function formalizePath(path: string | undefined, studyId?: StudyMetadata["id"]) {

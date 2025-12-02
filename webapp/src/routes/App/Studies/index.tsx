@@ -12,22 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import SplitView from "@/components/common/SplitView";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
+import SplitView from "@/components/SplitView";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import RootPage from "@/components/page/RootPage";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesStatus, getStudyIdsFilteredAndSorted } from "@/redux/selectors";
+import { FetchStatus } from "@/redux/utils";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
+import { Box } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import RootPage from "../../common/page/RootPage";
 import FiltersDrawer from "./FiltersDrawer";
 import HeaderActions from "./HeaderActions";
+import RefreshButton from "./RefreshButton";
 import SideNav from "./SideNav";
 import StudiesList from "./StudiesList";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { FetchStatus } from "@/redux/utils";
-import SimpleLoader from "@/components/common/loaders/SimpleLoader";
-import RefreshButton from "./RefreshButton";
-import { Box } from "@mui/material";
 
 function Studies() {
   const [openFilter, setOpenFilter] = useState(false);

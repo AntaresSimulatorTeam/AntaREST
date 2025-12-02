@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import FormDialog from "@/components/common/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import FormDialog from "@/components/dialogs/FormDialog";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { launchStudy } from "@/services/api/launcher/index";
 import type { LauncherConfig } from "@/services/api/launcher/types";
 import type { StudyMetadata } from "@/types/types";

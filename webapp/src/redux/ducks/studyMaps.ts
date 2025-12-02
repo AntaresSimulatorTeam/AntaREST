@@ -12,6 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import {
+  getNodeWidth,
+  NODE_COLOR,
+  NODE_HEIGHT,
+} from "@/routes/App/Singlestudy/explore/Modelization/Map/utils";
 import type { LinkStyleValue } from "@/services/api/studies/links/types";
 import { createLinkId, parseLinkId } from "@/services/api/studies/links/utils";
 import {
@@ -24,11 +29,6 @@ import {
 import * as R from "ramda";
 import tinycolor from "tinycolor2";
 import type { AppState } from ".";
-import {
-  getNodeWidth,
-  NODE_COLOR,
-  NODE_HEIGHT,
-} from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
 import * as linksApi from "../../services/api/studies/links";
 import * as studyApi from "../../services/api/study";
 import * as studyDataApi from "../../services/api/studydata";

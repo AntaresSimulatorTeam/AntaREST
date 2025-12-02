@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import TreeItemEnhanced from "@/components/TreeItemEnhanced";
 import { Box, Tooltip } from "@mui/material";
 import { useContext } from "react";
-import TreeItemEnhanced from "../../../../../common/TreeItemEnhanced";
 import DebugContext from "../DebugContext";
 import { getFileIcon, getFileType, isFolder, type TreeData } from "../utils";
 

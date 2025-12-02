@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import TableMode from "@/components/TableMode";
+import TabsView from "@/components/TabsView";
 import type { StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import Form from "../../../../../common/Form";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import TableMode from "../../../../../common/TableMode";
-import TabsView from "../../../../../common/TabsView";
 import Fields from "./Fields";
 import {
   getAdequacyPatchFormFields,

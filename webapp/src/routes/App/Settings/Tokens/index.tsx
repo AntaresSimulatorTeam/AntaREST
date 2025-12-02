@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import type { BotDetailsDTO } from "@/types/types";
 import { Box, List, ListItem, Skeleton } from "@mui/material";
 import { useEffect, useState } from "react";

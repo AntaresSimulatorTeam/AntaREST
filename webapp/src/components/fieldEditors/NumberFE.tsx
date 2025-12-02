@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import i18n from "@/i18n";
 import { setValueAsNumber } from "@/utils/reactHookFormUtils";
 import { TextField, type TextFieldProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 export interface NumberFEProps extends Omit<TextFieldProps, "type" | "value" | "defaultValue"> {
   value?: number;

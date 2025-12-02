@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import SearchFE from "@/components/fieldEditors/SearchFE";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import { Box, Button } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { UserDetailsDTO } from "../../../../types/types";
-import SearchFE from "../../../common/fieldEditors/SearchFE";
 import CreateUserDialog from "./dialog/CreateUserDialog";
 
 interface Props {

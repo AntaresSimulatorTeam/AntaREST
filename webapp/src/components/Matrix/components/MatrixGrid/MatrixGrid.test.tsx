@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { render } from "@testing-library/react";
+import { mockGetBoundingClientRect } from "@/tests/mocks/mockGetBoundingClientRect";
+import { mockHTMLCanvasElement } from "@/tests/mocks/mockHTMLCanvasElement";
 import { Box } from "@mui/material";
+import { render } from "@testing-library/react";
 import MatrixGrid from ".";
-import { isNonEmptyMatrix, type EnhancedGridColumn, type NonEmptyMatrix } from "../../shared/types";
-import { mockGetBoundingClientRect } from "../../../../../tests/mocks/mockGetBoundingClientRect";
-import { mockHTMLCanvasElement } from "../../../../../tests/mocks/mockHTMLCanvasElement";
 import { Column } from "../../shared/constants";
+import { isNonEmptyMatrix, type EnhancedGridColumn, type NonEmptyMatrix } from "../../shared/types";
 
 interface RenderMatrixOptions {
   width?: string;

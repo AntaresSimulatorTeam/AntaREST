@@ -12,7 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import FormDialog from "@/components/dialogs/FormDialog";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { validateString } from "@/utils/validation/string";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -21,10 +25,6 @@ import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySynth
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../types/types";
-import FormDialog from "../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import {
   BindingConstraintOperator,
   TimeStep,

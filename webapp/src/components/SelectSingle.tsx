@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { GenericInfo } from "@/types/types";
+import { mergeSxProp } from "@/utils/muiUtils";
 import {
   FormControl,
   InputLabel,
@@ -23,8 +25,6 @@ import {
   type Theme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { GenericInfo } from "../../types/types";
-import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
   name: string;

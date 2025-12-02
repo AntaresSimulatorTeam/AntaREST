@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
+import { useFormContextPlus } from "@/components/Form";
 import type { StudyMetadata } from "@/types/types";
 import { useOutletContext } from "react-router-dom";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import Fieldset from "../../../../../../../common/Fieldset";
-import { useFormContextPlus } from "../../../../../../../common/Form";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";
 
 function Fields() {

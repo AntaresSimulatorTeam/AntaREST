@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
+import FormDialog, { type FormDialogProps } from "@/components/dialogs/FormDialog";
 import { USER_FORM_DEFAULT_VALUES, type UserFormDefaultValues } from "../utils";
 import UserForm from "./UserForm";
 

@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useEffect, forwardRef } from "react";
-import { Box, TextField, Typography, Button, Checkbox, Chip, Tooltip } from "@mui/material";
-import { useSnackbar } from "notistack";
-import { useTranslation } from "react-i18next";
-import axios, { type AxiosError } from "axios";
+import BasicDialog from "@/components/dialogs/BasicDialog";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
 import HelpIcon from "@mui/icons-material/Help";
+import { Box, Button, Checkbox, Chip, TextField, Tooltip, Typography } from "@mui/material";
+import axios, { type AxiosError } from "axios";
+import { useSnackbar } from "notistack";
+import { forwardRef, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { getGroups } from "../../../services/api/user";
 import type { GroupDTO, MatrixDataSetDTO } from "../../../types/types";
+import { BoxParam, BoxParamHeader, ParamTitle } from "./styles";
 import { saveMatrix } from "./utils";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
-import BasicDialog from "../../common/dialogs/BasicDialog";
-import { BoxParamHeader, BoxParam, ParamTitle } from "./styles";
 
 interface PropTypes {
   open: boolean;

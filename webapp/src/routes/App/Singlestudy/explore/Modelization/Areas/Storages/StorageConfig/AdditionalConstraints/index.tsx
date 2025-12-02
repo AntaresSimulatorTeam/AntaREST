@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import SimpleLoader from "@/components/common/loaders/SimpleLoader";
-import EmptyView from "@/components/common/page/EmptyView";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
-import PropertiesView from "@/components/common/PropertiesView";
-import SplitView from "@/components/common/SplitView";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import EmptyView from "@/components/page/EmptyView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import PropertiesView from "@/components/PropertiesView";
+import SplitView from "@/components/SplitView";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";

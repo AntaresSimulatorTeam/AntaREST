@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { useCallback, useEffect, useState, useRef } from "react";
-import { Box, Button, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import DownloadIcon from "@mui/icons-material/Download";
-import { exportText } from "../../services/utils/index";
-import SimpleLoader from "./loaders/SimpleLoader";
-import BasicDialog from "./dialogs/BasicDialog";
-import { addWsEventListener, subscribeWsChannels } from "../../services/webSocket/ws";
-import type { WsEvent } from "@/services/webSocket/types";
+import { exportText } from "@/services/utils/index";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import type { WsEvent } from "@/services/webSocket/types";
+import { addWsEventListener, subscribeWsChannels } from "@/services/webSocket/ws";
+import DownloadIcon from "@mui/icons-material/Download";
+import { Box, Button, Typography } from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import BasicDialog from "./dialogs/BasicDialog";
+import SimpleLoader from "./loaders/SimpleLoader";
 
 interface Props {
   isOpen: boolean;

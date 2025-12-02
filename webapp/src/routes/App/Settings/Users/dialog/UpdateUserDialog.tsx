@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import EditIcon from "@mui/icons-material/Edit";
 import { useSnackbar } from "notistack";
 import { useMemo } from "react";
@@ -21,7 +22,6 @@ import type { UserEdit } from "..";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createRole, deleteUserRoles } from "../../../../../services/api/user";
 import type { GroupDTO, RoleType, UserDetailsDTO } from "../../../../../types/types";
-import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 import UserFormDialog from "./UserFormDialog";
 import type { UserFormDefaultValues } from "./utils";
 

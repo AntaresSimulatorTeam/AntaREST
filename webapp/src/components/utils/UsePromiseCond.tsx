@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import { PromiseStatus, type UsePromiseResponse } from "@/hooks/usePromise";
 import debug from "debug";
-import { PromiseStatus, type UsePromiseResponse } from "../../../hooks/usePromise";
 import SimpleLoader from "../loaders/SimpleLoader";
 import EmptyView from "../page/EmptyView";
 

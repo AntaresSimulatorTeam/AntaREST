@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
+import type { PromiseAny } from "@/utils/tsUtils";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import SplitButton, { type Options } from "./SplitButton";
-import { useState } from "react";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { useTranslation } from "react-i18next";
-import type { PromiseAny } from "../../../utils/tsUtils";
-import { toError } from "../../../utils/fnUtils";
 import { Button } from "@mui/material";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import SplitButton, { type Options } from "./SplitButton";
 
 export type DownloadButtonProps<OptionValue extends string> = {
   children?: React.ReactNode;

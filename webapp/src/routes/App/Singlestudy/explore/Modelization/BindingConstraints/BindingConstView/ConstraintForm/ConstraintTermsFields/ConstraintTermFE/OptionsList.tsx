@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import SelectSingle from "@/components/SelectSingle";
 import { Box } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { AllClustersAndLinks } from "../../../../../../../../../../types/types";
-import SelectSingle from "../../../../../../../../../common/SelectSingle";
 import { generateTermId, isTermExist, type ConstraintTerm } from "../../../utils";
 
 interface Option {

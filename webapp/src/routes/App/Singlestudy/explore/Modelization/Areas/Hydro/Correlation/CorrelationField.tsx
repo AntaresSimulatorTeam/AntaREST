@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import { useFormContextPlus } from "@/components/Form";
 import { validateNumber } from "@/utils/validation/number";
 import { Grid, Typography } from "@mui/material";
 import type { FieldArrayWithId } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentArea } from "../../../../../../../../redux/selectors";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import { useFormContextPlus } from "../../../../../../../common/Form";
 import type { CorrelationFormFields } from "./utils";
 
 interface Props {

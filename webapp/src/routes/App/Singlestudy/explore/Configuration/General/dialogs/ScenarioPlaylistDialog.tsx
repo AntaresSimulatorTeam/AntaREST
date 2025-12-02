@@ -12,14 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
+import CustomScrollbar from "@/components/CustomScrollbar";
 import DataGridForm, {
   type DataGridFormApi,
   type DataGridFormProps,
   type DataGridFormState,
-} from "@/components/common/DataGridForm";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import NumberSelectionsFE from "@/components/common/fieldEditors/NumberSelectionsFE";
+} from "@/components/DataGridForm";
+import BasicDialog from "@/components/dialogs/BasicDialog";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import NumberSelectionsFE from "@/components/fieldEditors/NumberSelectionsFE";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useConfirm from "@/hooks/useConfirm";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
@@ -34,9 +37,6 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePromise from "../../../../../../../hooks/usePromise";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
-import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 interface Props {
   study: StudyMetadata;

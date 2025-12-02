@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { Options } from "@/components/common/fieldEditors/SelectFE";
+import type { Options } from "@/components/fieldEditors/SelectFE";
 
 ////////////////////////////////////////////////////////////////
 // Constants

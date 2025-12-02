@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useState } from "react";
-import PropertiesView from "../../../../../common/PropertiesView";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLinkId, getLinks } from "../../../../../../redux/selectors";
-import ListElement from "../../common/ListElement";
 import type { LinkElement } from "../../../../../../types/types";
+import ListElement from "../../common/ListElement";
 
 interface PropsType {
   studyId: string;

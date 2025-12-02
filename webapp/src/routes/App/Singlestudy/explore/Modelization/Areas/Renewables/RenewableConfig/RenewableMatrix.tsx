@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import Matrix from "@/components/Matrix";
 import type { Cluster } from "@/types/types";
-import Matrix from "../../../../../../../common/Matrix";
 
 interface Props {
   areaId: string;

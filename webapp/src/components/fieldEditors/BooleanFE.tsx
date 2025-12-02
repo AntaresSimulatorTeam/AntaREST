@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import { MenuItem, TextField, type TextFieldProps } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 interface BooleanFEChangeEvent {
   target: { value: boolean; name: string | undefined };

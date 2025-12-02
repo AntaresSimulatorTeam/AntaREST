@@ -12,7 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import ViewWrapper from "@/components/common/page/ViewWrapper";
+import EmptyView from "@/components/page/EmptyView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import SplitView from "@/components/SplitView";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { getLinks } from "@/services/api/studies/links";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,9 +26,6 @@ import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLink } from "../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../types/types";
-import EmptyView from "../../../../../common/page/EmptyView";
-import SplitView from "../../../../../common/SplitView";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import LinkConfig from "./LinkConfig";
 import LinkPropsView from "./LinkPropsView";
 

@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Skeleton, Typography } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import CustomScrollbar from "@/components/CustomScrollbar";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getLaunchersConfig } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";
+import { Box, Skeleton, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import ClustersMetricsBlock from "./ClustersMetricsBlock";
 
 function ClustersMetrics() {

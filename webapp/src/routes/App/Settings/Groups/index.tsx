@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import { toError } from "@/utils/fnUtils";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -43,7 +44,6 @@ import { deleteGroup, getGroups } from "../../../../services/api/user";
 import { sortByName } from "../../../../services/utils";
 import type { GroupDetailsDTO } from "../../../../types/types";
 import { isSearchMatching } from "../../../../utils/stringUtils";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import { RESERVED_GROUP_NAMES } from "../utils";
 import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";

@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import { mergeSxProp } from "@/utils/muiUtils";
 import {
   Checkbox,
@@ -21,7 +22,6 @@ import {
   type CheckboxProps,
   type FormControlLabelProps,
 } from "@mui/material";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 export interface CheckBoxFEProps
   extends Omit<CheckboxProps, "checked" | "defaultChecked" | "defaultValue"> {

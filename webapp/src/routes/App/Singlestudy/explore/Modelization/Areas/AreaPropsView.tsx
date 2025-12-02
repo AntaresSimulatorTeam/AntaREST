@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useState } from "react";
-import type { Area } from "../../../../../../types/types";
-import PropertiesView from "../../../../../common/PropertiesView";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../redux/selectors";
-import ListElement from "../../common/ListElement";
 import { nameToId } from "../../../../../../services/utils";
+import type { Area } from "../../../../../../types/types";
+import ListElement from "../../common/ListElement";
 
 interface PropsType {
   studyId: string;

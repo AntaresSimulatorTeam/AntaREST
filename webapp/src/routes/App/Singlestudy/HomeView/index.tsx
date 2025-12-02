@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import SplitView from "@/components/SplitView";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import SplitView from "@/components/common/SplitView";
 import type { StudyMetadata, VariantTree } from "../../../../types/types";
 import InformationView from "./InformationView";
 import StudyTreeView from "./StudyTreeView";

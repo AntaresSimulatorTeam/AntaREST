@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { mergeSxProp } from "@/utils/muiUtils";
 import { Box, CircularProgress, Tooltip } from "@mui/material";
 import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
 import * as R from "ramda";
 import { Children } from "react";
-import { mergeSxProp } from "../../utils/muiUtils";
 
 export interface TreeItemEnhancedProps extends TreeItemProps {
   loading?: boolean;

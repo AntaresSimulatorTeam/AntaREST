@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import FormDialog, { type FormDialogProps } from "@/components/dialogs/FormDialog";
 import TokenIcon from "@mui/icons-material/Token";
-import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
 import { TOKEN_FORM_DEFAULT_VALUES, type TokenFormDefaultValues } from "../utils";
 import TokenForm from "./TokenForm";
 

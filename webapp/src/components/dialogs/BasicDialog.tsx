@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { mergeSxProp } from "@/utils/muiUtils";
 import type { SvgIconComponent } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -29,7 +30,6 @@ import {
 } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import React from "react";
-import { mergeSxProp } from "../../../utils/muiUtils";
 type AlertValue = "success" | "error" | "info" | "warning";
 
 export interface BasicDialogProps extends Omit<DialogProps, "title"> {

@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import Fieldset from "@/components/Fieldset";
+import { useFormContextPlus } from "@/components/Form";
+import TextSeparator from "@/components/TextSeparator";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import { Box, Button } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { AllClustersAndLinks, StudyMetadata } from "../../../../../../../../../types/types";
-import Fieldset from "../../../../../../../../common/Fieldset";
-import { useFormContextPlus } from "../../../../../../../../common/Form";
-import TextSeparator from "../../../../../../../../common/TextSeparator";
 import { type BindingConstraint, type ConstraintTerm, generateTermId } from "../../utils";
 import ConstraintTermItem from "./ConstraintTermFE";
 import AddConstraintTermDialog from "./ConstraintTermFE/AddConstraintTermDialog";

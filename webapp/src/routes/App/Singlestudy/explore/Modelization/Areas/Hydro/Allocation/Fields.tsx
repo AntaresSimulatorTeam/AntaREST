@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
+import DynamicList from "@/components/DynamicList";
+import { useFormContextPlus } from "@/components/Form";
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
-import { useFormContextPlus } from "../../../../../../../common/Form";
-import type { AllocationFormFields } from "./utils";
-import AllocationField from "./AllocationField";
-import DynamicList from "../../../../../../../common/DynamicList";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreasById } from "../../../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { useAreasOptions } from "../hooks/useAreasOptions";
+import AllocationField from "./AllocationField";
+import type { AllocationFormFields } from "./utils";
 
 function Fields() {
   const {

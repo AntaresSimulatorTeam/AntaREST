@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
+import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
 import useUpdatedRef from "@/hooks/useUpdatedRef";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";

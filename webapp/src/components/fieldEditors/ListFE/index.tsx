@@ -12,6 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import reactHookFormSupport, { type ReactHookFormSupportProps } from "@/hoc/reactHookFormSupport";
+import {
+  createFakeBlurEventHandler,
+  createFakeChangeEventHandler,
+  createFakeInputElement,
+  type FakeBlurEventHandler,
+  type FakeChangeEventHandler,
+  type InputObject,
+} from "@/utils/feUtils";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import {
@@ -36,17 +45,6 @@ import { DragDropContext, Draggable, Droppable, type DropResult } from "react-be
 import type { FieldPath, FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
-import reactHookFormSupport, {
-  type ReactHookFormSupportProps,
-} from "../../../../hoc/reactHookFormSupport";
-import {
-  createFakeBlurEventHandler,
-  createFakeChangeEventHandler,
-  createFakeInputElement,
-  type FakeBlurEventHandler,
-  type FakeChangeEventHandler,
-  type InputObject,
-} from "../../../../utils/feUtils";
 import StringFE from "../StringFE";
 import { makeLabel, makeListItems } from "./utils";
 

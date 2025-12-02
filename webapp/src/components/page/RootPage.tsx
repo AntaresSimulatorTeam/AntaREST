@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/CustomScrollbar";
 import type { SvgIconComponent } from "@mui/icons-material";
-import { Box, Typography, Toolbar, Divider } from "@mui/material";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
+import { Box, Divider, Toolbar, Typography } from "@mui/material";
 
 interface Props {
   title: string;

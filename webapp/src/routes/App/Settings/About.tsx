@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import CopyButton from "@/components/buttons/CopyButton";
+import { GITHUB_URL } from "@/routes/App/shared/constants";
 import { getConfig } from "@/services/config";
-import { IconButton, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import LaunchIcon from "@mui/icons-material/Launch";
-import CopyButton from "@/components/common/buttons/CopyButton";
-import { GITHUB_URL } from "@/components/App/shared/constants";
+import { IconButton, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 
 function About() {
   const { version, gitcommit } = getConfig().versionInfo;

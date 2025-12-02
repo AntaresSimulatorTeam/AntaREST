@@ -12,18 +12,18 @@
  * This file is part of the Antares project.
  */
 
+import ButtonBack from "@/components/ButtonBack";
+import MatrixGrid from "@/components/Matrix/components/MatrixGrid";
+import { isNonEmptyMatrix } from "@/components/Matrix/shared/types";
+import { generateDataColumns } from "@/components/Matrix/shared/utils";
+import EmptyView from "@/components/page/EmptyView";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { getMatrix } from "@/services/api/matrix";
+import type { MatrixDTO, MatrixInfoDTO } from "@/types/types";
+import GridOffIcon from "@mui/icons-material/GridOff";
+import { Box, Divider, Typography } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Divider, Typography } from "@mui/material";
-import type { MatrixInfoDTO, MatrixDTO } from "@/types/types";
-import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
-import ButtonBack from "@/components/common/ButtonBack";
-import { getMatrix } from "@/services/api/matrix";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
-import EmptyView from "@/components/common/page/EmptyView";
-import GridOffIcon from "@mui/icons-material/GridOff";
-import { isNonEmptyMatrix } from "@/components/common/Matrix/shared/types";
 
 interface MatrixContentProps {
   matrixInfo: MatrixInfoDTO;

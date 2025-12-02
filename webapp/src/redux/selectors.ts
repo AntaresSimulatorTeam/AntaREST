@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { buildStudyTree } from "@/routes/App/Studies/StudyTree/utils";
 import { createLinkId } from "@/services/api/studies/links/utils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import * as R from "ramda";
 import { F } from "ts-toolbelt";
-import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
 import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import type {
   AllClustersAndLinks,
@@ -145,7 +145,7 @@ export const getCurrentStudy = createSelector(
 /**
  * Returns a mapping of study IDs to their children study IDs.
  *
- * @param state The application state.
+ * @param state - The application state.
  * @returns Example: { "parentStudyId": ["childStudyId1", "childStudyId2"], ... }
  */
 export const getVariantsIdsByParent = createSelector(getStudies, (studies) => {

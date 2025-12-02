@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import reactHookFormSupport, { type ReactHookFormSupportProps } from "@/hoc/reactHookFormSupport";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import {
@@ -22,9 +23,6 @@ import {
   type AutocompleteValue,
 } from "@mui/material";
 import type { FieldPath, FieldValues } from "react-hook-form";
-import reactHookFormSupport, {
-  type ReactHookFormSupportProps,
-} from "../../../hoc/reactHookFormSupport";
 
 interface CheckboxesTagsFEProps<
   T,

@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { IconButton, InputAdornment, TextField, type TextFieldProps } from "@mui/material";
 import { useState } from "react";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 export interface PasswordFEProps extends Omit<TextFieldProps, "type" | "value" | "defaultValue"> {
   value?: string;

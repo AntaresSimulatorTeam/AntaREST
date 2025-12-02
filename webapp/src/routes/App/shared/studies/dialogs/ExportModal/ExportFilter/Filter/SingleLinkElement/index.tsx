@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import TextSeparator from "@/components/TextSeparator";
 import { Box, TextField } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import TextSeparator from "../../../../../../../../common/TextSeparator";
 import { Root } from "./style";
 
 interface FilterLink {

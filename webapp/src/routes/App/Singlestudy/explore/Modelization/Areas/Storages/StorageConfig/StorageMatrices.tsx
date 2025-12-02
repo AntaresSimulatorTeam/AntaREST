@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import TabsView from "@/components/common/TabsView";
+import Matrix from "@/components/Matrix";
+import SplitView from "@/components/SplitView";
+import TabsView from "@/components/TabsView";
 import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import Matrix from "../../../../../../../common/Matrix";
-import SplitView from "../../../../../../../common/SplitView";
 import type { Storage } from "../utils";
 
 interface Props {

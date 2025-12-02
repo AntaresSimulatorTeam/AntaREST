@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import SelectSingle from "@/components/SelectSingle";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import type { Link } from "@/services/api/studies/links/types";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, ButtonGroup, Divider, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import SelectSingle from "../../../../../common/SelectSingle";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
   ActiveButton,
   Fields,

@@ -13,7 +13,11 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
+import { toError } from "@/utils/fnUtils";
 import { mergeSxProp } from "@/utils/muiUtils";
+import type { PromiseAny } from "@/utils/tsUtils";
 import { Box, setRef, type SxProps, type Theme } from "@mui/material";
 import JSONEditorClass, { type HistoryItem, type JSONEditorOptions } from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.min.css";
@@ -21,10 +25,6 @@ import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDeepCompareEffect, useMount, useUpdateEffect } from "react-use";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import useUpdatedRef from "../../../hooks/useUpdatedRef";
-import { toError } from "../../../utils/fnUtils";
-import type { PromiseAny } from "../../../utils/tsUtils";
 import BackdropLoading from "../loaders/BackdropLoading";
 import "./dark-theme.css";
 import { createSaveButton } from "./utils";

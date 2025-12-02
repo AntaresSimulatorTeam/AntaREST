@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import { useFormContextPlus } from "@/components/Form";
 import { Grid, Typography } from "@mui/material";
 import type { FieldArrayWithId } from "react-hook-form";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import { useFormContextPlus } from "../../../../../../../common/Form";
 import type { AllocationFormFields } from "./utils";
 
 interface Props {

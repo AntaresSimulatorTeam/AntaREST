@@ -12,10 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import DownloadMatrixButton from "@/components/buttons/DownloadMatrixButton";
+import CustomScrollbar from "@/components/CustomScrollbar";
+import BooleanFE from "@/components/fieldEditors/BooleanFE";
+import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import SearchFE from "@/components/fieldEditors/SearchFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
@@ -24,9 +27,6 @@ import startCase from "lodash/startCase";
 import * as R from "ramda";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatrixButton";
-import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
-import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import { DataType, matchesSearchTerm, Timestep } from "../utils";
 
 interface ColumnHeader {

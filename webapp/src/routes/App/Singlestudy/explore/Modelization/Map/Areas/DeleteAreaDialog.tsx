@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import { Box, Button, Typography } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   deleteStudyMapLink,
@@ -27,7 +27,7 @@ import {
 } from "../../../../../../../redux/ducks/studyMaps";
 import { setCurrentArea, setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import { AreaDeleteIcon } from "./style";
 
 interface Props {

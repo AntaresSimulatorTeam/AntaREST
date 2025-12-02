@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import storage from "@/services/utils/localStorage";
 import { Children, useState } from "react";
 import Split, { type SplitProps } from "react-split";
 import { useUpdateEffect } from "react-use";
-import storage from "../../../services/utils/localStorage";
 import "./style.css";
 
 export interface SplitViewProps {

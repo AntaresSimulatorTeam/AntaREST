@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { deleteBot } from "@/services/api/user";

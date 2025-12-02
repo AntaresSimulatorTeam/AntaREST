@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import PasswordFE from "@/components/common/fieldEditors/PasswordFE";
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import Fieldset from "@/components/common/Fieldset";
-import { useFormContextPlus } from "@/components/common/Form";
+import PasswordFE from "@/components/fieldEditors/PasswordFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import Fieldset from "@/components/Fieldset";
+import { useFormContextPlus } from "@/components/Form";
 import { validatePassword, validateString } from "@/utils/validation/string";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";

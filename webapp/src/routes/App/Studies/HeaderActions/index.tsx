@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import FilterTags from "@/components/App/Studies/HeaderActions/FliterTags";
+import UploadDialog, { type UploadDialogProps } from "@/components/dialogs/UploadDialog";
 import { createStudy } from "@/redux/ducks/studies";
+import FilterTags from "@/routes/App/Studies/HeaderActions/FliterTags";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
@@ -21,7 +22,6 @@ import { Button, Divider } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import UploadDialog, { type UploadDialogProps } from "../../../common/dialogs/UploadDialog";
 import CreateStudyDialog from "../CreateStudyDialog";
 import SearchStudies from "./SearchStudies";
 

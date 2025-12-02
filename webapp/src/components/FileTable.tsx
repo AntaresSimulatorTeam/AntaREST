@@ -12,31 +12,31 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
+import type { GenericInfo } from "@/types/types";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Box,
+  Button,
   Divider,
-  TableContainer,
+  IconButton,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
   Tooltip,
-  IconButton,
   Typography,
-  Button,
 } from "@mui/material";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DownloadIcon from "@mui/icons-material/Download";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import ConfirmationDialog from "./dialogs/ConfirmationDialog";
-import type { GenericInfo } from "../../types/types";
 import DownloadLink from "./DownloadLink";
+import ConfirmationDialog from "./dialogs/ConfirmationDialog";
 import UploadDialog from "./dialogs/UploadDialog";
 
 interface PropType {

@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Box, TextField, InputAdornment, type TextFieldProps } from "@mui/material";
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
+import { mergeSxProp } from "@/utils/muiUtils";
+import { composeRefs } from "@/utils/reactUtils";
+import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
+import { Box, InputAdornment, TextField, type TextFieldProps } from "@mui/material";
 import { useRef, useState } from "react";
 import { SketchPicker, type ColorResult } from "react-color";
-import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
 import { useClickAway, useKey, useUpdateEffect } from "react-use";
 import { rgbToString, stringToRGB } from "./utils";
-import { mergeSxProp } from "../../../../utils/muiUtils";
-import { composeRefs } from "../../../../utils/reactUtils";
-import reactHookFormSupport from "../../../../hoc/reactHookFormSupport";
 
 export type ColorPickerFEProps = Omit<TextFieldProps, "type" | "defaultChecked"> & {
   value?: string; // Format: R,G,B - ex: "255,255,255"

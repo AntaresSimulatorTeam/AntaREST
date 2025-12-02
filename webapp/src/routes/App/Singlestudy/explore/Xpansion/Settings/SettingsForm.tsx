@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import SelectSingle from "@/components/SelectSingle";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, Divider, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import SelectSingle from "../../../../../common/SelectSingle";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import { Fields, SelectFields, StyledVisibilityIcon, Title } from "../share/styles";
 import { XpansionResourceType, type XpansionSettings } from "../types";
 

@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import Fieldset from "@/components/common/Fieldset";
-import Form from "@/components/common/Form";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import Fieldset from "@/components/Fieldset";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { changeLanguage, getCurrentLanguage } from "@/utils/i18nUtils";
 import { useColorScheme } from "@mui/material";

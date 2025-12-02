@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import Matrix from "@/components/Matrix";
+import { Box } from "@mui/material";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import { MATRICES, type HydroMatrixType } from "./utils";
-import Matrix from "../../../../../../common/Matrix";
-import { Box } from "@mui/material";
 
 interface Props {
   type: HydroMatrixType;

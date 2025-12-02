@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SearchFE from "@/components/fieldEditors/SearchFE";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { Box, Button } from "@mui/material";
 import { useState } from "react";
@@ -19,7 +20,6 @@ import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { isAuthUserAdmin } from "../../../../redux/selectors";
 import type { GroupDetailsDTO } from "../../../../types/types";
-import SearchFE from "../../../common/fieldEditors/SearchFE";
 import CreateGroupDialog from "./dialog/CreateGroupDialog";
 
 interface Props {

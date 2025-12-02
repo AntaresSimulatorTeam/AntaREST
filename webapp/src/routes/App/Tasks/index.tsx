@@ -12,7 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import ViewWrapper from "@/components/common/page/ViewWrapper";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import DownloadLink from "@/components/DownloadLink";
+import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import LogModal from "@/components/LogModal";
+import RootPage from "@/components/page/RootPage";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { resetTaskNotifications } from "@/redux/ducks/ui";
 import { getJobs } from "@/services/api/launcher/jobs";
 import type { Job } from "@/services/api/launcher/jobs/types";
@@ -61,12 +67,6 @@ import type { TaskDTO } from "../../../services/api/tasks/types";
 import { convertUTCToLocalTime } from "../../../services/utils/index";
 import { addWsEventListener, subscribeWsChannels } from "../../../services/webSocket/ws";
 import type { LaunchJobsProgress, TaskView } from "../../../types/types";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import DownloadLink from "../../common/DownloadLink";
-import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
-import LogModal from "../../common/LogModal";
-import RootPage from "../../common/page/RootPage";
 import JobTableView from "./JobTableView";
 import LaunchJobLogView from "./LaunchJobLogView";
 import { TASK_TYPES_MANAGED } from "./utils";

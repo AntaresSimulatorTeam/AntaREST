@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import BackButton from "@/components/common/buttons/BackButton";
+import BackButton from "@/components/buttons/BackButton";
 import { getCurrentAreaId } from "@/redux/selectors";
 import { nameToId } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";

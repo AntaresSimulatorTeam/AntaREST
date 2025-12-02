@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import { Autocomplete, TextField, type TextFieldProps } from "@mui/material";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 // Used when a value is selected from the datalist
 interface DatalistChangeEvent {

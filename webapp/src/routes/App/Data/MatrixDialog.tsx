@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import BasicDialog from "@/components/dialogs/BasicDialog";
+import MatrixContent from "@/components/dialogs/DatabaseUploadDialog/components/MatrixContent";
+import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { MatrixInfoDTO } from "../../../types/types";
-import BasicDialog from "@/components/common/dialogs/BasicDialog";
-import MatrixContent from "@/components/common/dialogs/DatabaseUploadDialog/components/MatrixContent";
-import { Button } from "@mui/material";
 
 interface PropTypes {
   matrix: MatrixInfoDTO;

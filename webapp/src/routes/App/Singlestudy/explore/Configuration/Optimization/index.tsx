@@ -12,9 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
-import Fieldset from "@/components/common/Fieldset";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import {
   getOptimizationForm,
   setOptimizationForm,
@@ -23,8 +25,6 @@ import type { OptimizationForm } from "@/services/api/studies/config/optimizatio
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../types/types";
-import Form from "../../../../../common/Form";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import {
   EXPORT_MPS_OPTIONS,
   LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,

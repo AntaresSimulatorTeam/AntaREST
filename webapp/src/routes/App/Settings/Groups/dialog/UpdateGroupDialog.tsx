@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import EditIcon from "@mui/icons-material/Edit";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
@@ -27,7 +28,6 @@ import {
   updateGroup,
 } from "../../../../../services/api/user";
 import type { GroupDetailsDTO } from "../../../../../types/types";
-import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 import GroupFormDialog from "./GroupFormDialog";
 import type { GroupFormDefaultValues } from "./utils";
 

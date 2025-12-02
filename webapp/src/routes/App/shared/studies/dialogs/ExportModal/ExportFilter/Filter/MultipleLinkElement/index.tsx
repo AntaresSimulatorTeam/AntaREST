@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import SelectSingle from "@/components/SelectSingle";
+import TextSeparator from "@/components/TextSeparator";
 import { Box, Chip, ListItem } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import SelectSingle from "../../../../../../../../common/SelectSingle";
-import TextSeparator from "../../../../../../../../common/TextSeparator";
 import { AddIcon } from "../../TagSelect/style";
 import { Container, FilterLinkContainer, Root } from "./style";
 

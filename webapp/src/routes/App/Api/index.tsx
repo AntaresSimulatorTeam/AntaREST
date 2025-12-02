@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import RootPage from "@/components/page/RootPage";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import { getConfig } from "@/services/config";
+import ApiIcon from "@mui/icons-material/Api";
+import { useTranslation } from "react-i18next";
 import SwaggerUI from "swagger-ui-react";
 import "swagger-ui-react/swagger-ui.css";
-import { getConfig } from "@/services/config";
-import RootPage from "@/components/common/page/RootPage";
-import { useTranslation } from "react-i18next";
-import ApiIcon from "@mui/icons-material/Api";
-import ViewWrapper from "../../common/page/ViewWrapper";
 import "./styles.css";
 
 function Api() {

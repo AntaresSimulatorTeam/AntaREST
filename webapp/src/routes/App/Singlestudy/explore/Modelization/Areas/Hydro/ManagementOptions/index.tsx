@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import Form from "../../../../../../../common/Form";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import Fields from "./Fields";
 import {
   getManagementOptionsFormFields,

@@ -12,22 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import { useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-grid";
-import * as R from "ramda";
+import DataGridForm from "@/components/DataGridForm";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import EmptyView from "@/components/page/EmptyView";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type {
   Level1Display,
   ScenarioType,
 } from "@/services/api/studies/config/scenarioBuilder/types";
+import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-grid";
+import * as R from "ramda";
+import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { toError } from "../../../../../../../../utils/fnUtils";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import EmptyView from "../../../../../../../common/page/EmptyView";
-import DataGridForm from "../../../../../../../common/DataGridForm";
 
 interface Props {
   config: Level1Display;

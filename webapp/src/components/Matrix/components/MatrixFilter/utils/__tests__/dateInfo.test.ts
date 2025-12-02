@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { UTCDate } from "@date-fns/utc";
+import { TIME_INDEXING } from "@/components/Matrix/components/MatrixFilter/constants";
+import type { TimeIndexingType } from "@/components/Matrix/components/MatrixFilter/types";
 import {
   extractDateInfo,
   getTemporalValue,
-} from "@/components/common/Matrix/components/MatrixFilter/utils";
-import type { TimeIndexingType } from "@/components/common/Matrix/components/MatrixFilter/types";
-import { getDefaultRangeForIndexType } from "@/components/common/Matrix/components/MatrixFilter/utils/dateUtils";
-import { TIME_INDEXING } from "@/components/common/Matrix/components/MatrixFilter/constants";
+} from "@/components/Matrix/components/MatrixFilter/utils";
+import { getDefaultRangeForIndexType } from "@/components/Matrix/components/MatrixFilter/utils/dateUtils";
+import { UTCDate } from "@date-fns/utc";
 import { expect } from "vitest";
 
 function extractValueFromDate(date: Date, indexing: TimeIndexingType): number {

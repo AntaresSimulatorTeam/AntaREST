@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
+import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/utils/constants";
+import RadarIcon from "@mui/icons-material/Radar";
+import { Tooltip } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyTreeNodeProps, StudyTreeNodeMetadata } from "./types";
-import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
-import RadarIcon from "@mui/icons-material/Radar";
-import { Tooltip } from "@mui/material";
+import type { StudyTreeNodeMetadata, StudyTreeNodeProps } from "./types";
 
 function prioritizeDefault(folderA: StudyTreeNodeMetadata, folderB: StudyTreeNodeMetadata): number {
   if (folderA.name === DEFAULT_WORKSPACE_NAME) {

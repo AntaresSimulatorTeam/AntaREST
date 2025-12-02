@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import GroupedDataTable from "@/components/GroupedDataTable";
+import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
+import type { TRow } from "@/components/GroupedDataTable/types";
 import { Box } from "@mui/material";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
@@ -21,9 +24,6 @@ import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWi
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import GroupedDataTable from "../../../../../../common/GroupedDataTable";
-import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
-import type { TRow } from "../../../../../../common/GroupedDataTable/types";
 import {
   addClusterCapacity,
   capacityAggregationFn,

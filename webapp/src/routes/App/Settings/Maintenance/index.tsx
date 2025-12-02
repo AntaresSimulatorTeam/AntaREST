@@ -12,18 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
+import StringFE from "@/components/fieldEditors/StringFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import {
   getMaintenanceMode,
   getMessageInfo,
   updateMaintenanceMode,
   updateMessageInfo,
 } from "@/services/api/maintenance";
-import Form from "@/components/common/Form";
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import Fieldset from "@/components/common/Fieldset";
+import { useTranslation } from "react-i18next";
 
 const getDefaultValues = async () => ({
   mode: await getMaintenanceMode(),

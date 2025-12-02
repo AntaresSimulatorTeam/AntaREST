@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
+import FieldSkeleton from "@/components/fieldEditors/FieldSkeleton";
 import type {
   AdditionalConstraint,
   AdditionalConstraintOccurrences,

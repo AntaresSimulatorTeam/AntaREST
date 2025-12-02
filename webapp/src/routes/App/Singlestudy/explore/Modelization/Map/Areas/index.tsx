@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
+import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import type { StudyMetadata, UpdateAreaUi } from "../../../../../../../types/types";
-import PropertiesView from "../../../../../../common/PropertiesView";
-import ListElement from "../../../common/ListElement";
-import { AreasContainer } from "./style";
+import type { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
+import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLink, getCurrentStudyMapNode } from "../../../../../../../redux/selectors";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import AreaConfig from "./AreaConfig";
+import type { StudyMetadata, UpdateAreaUi } from "../../../../../../../types/types";
 import { isSearchMatching } from "../../../../../../../utils/stringUtils";
-import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
-import type { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
+import ListElement from "../../../common/ListElement";
+import AreaConfig from "./AreaConfig";
+import { AreasContainer } from "./style";
 
 interface Props {
   onAdd: () => void;

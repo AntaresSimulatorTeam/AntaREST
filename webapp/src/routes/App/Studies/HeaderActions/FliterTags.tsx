@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
+import CustomScrollbar from "@/components/CustomScrollbar";
 import { type StudyFilters, updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";

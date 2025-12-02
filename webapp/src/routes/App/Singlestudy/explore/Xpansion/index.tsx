@@ -13,6 +13,7 @@
  */
 
 /* eslint-disable react-hooks/exhaustive-deps */
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import AddIcon from "@mui/icons-material/Add";
 import { Box, Button } from "@mui/material";
 import type { AxiosError } from "axios";
@@ -26,7 +27,6 @@ import {
   xpansionConfigurationExist,
 } from "../../../../../services/api/xpansion";
 import type { StudyMetadata } from "../../../../../types/types";
-import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import TabWrapper from "../TabWrapper";
 
 function Xpansion() {

@@ -12,38 +12,38 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useState } from "react";
-import { useOutletContext, useNavigate } from "react-router-dom";
-import type { AxiosError } from "axios";
-import { useTranslation } from "react-i18next";
+import DataViewerDialog from "@/components/dialogs/DataViewerDialog";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
+import EmptyView from "@/components/page/EmptyView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import SplitView from "@/components/SplitView";
+import { getLinks } from "@/services/api/studies/links";
 import { Backdrop, Box, CircularProgress } from "@mui/material";
-import { usePromise as usePromiseWrapper } from "react-use";
+import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
-import type { StudyMetadata } from "../../../../../../types/types";
-import type { XpansionCandidate } from "../types";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { usePromise as usePromiseWrapper } from "react-use";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import {
-  getAllCandidates,
-  getAllCapacities,
-  deleteXpansionConfiguration,
   addCandidate,
   deleteCandidate,
-  updateCandidate,
+  deleteXpansionConfiguration,
+  getAllCandidates,
+  getAllCapacities,
   getCapacity,
+  updateCandidate,
   xpansionConfigurationExist,
 } from "../../../../../../services/api/xpansion";
 import { nameToId, removeEmptyFields } from "../../../../../../services/utils/index";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import XpansionPropsView from "./XpansionPropsView";
-import CreateCandidateDialog from "./CreateCandidateDialog";
+import type { StudyMetadata } from "../../../../../../types/types";
+import type { XpansionCandidate } from "../types";
 import CandidateForm from "./CandidateForm";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import EmptyView from "../../../../../common/page/EmptyView";
-import SplitView from "../../../../../common/SplitView";
-import { getLinks } from "@/services/api/studies/links";
-import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
-import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import CreateCandidateDialog from "./CreateCandidateDialog";
+import XpansionPropsView from "./XpansionPropsView";
 
 function Candidates() {
   const [t] = useTranslation();

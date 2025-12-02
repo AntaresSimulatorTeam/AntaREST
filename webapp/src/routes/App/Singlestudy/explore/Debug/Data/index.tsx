@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import BackdropLoading from "@/components/common/loaders/BackdropLoading";
+import BackdropLoading from "@/components/loaders/BackdropLoading";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { useContext } from "react";
 import type { StudyMetadata } from "../../../../../../types/types";
-import ViewWrapper from "../../../../../common/page/ViewWrapper";
 import DebugContext from "../DebugContext";
 import {
   canEditFile,

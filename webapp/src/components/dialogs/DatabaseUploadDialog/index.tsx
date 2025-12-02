@@ -12,23 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import { Box, Button } from "@mui/material";
-import type { StudyMetadata } from "@/types/types";
-import { CommandEnum } from "@/components/App/Singlestudy/CommandsDrawer/EditionView/commandTypes";
-import BasicDialog from "@/components/common/dialogs/BasicDialog";
-import DataPropsView from "@/components/App/Data/DataPropsView";
-import FileTable from "@/components/common/FileTable";
-import SplitView from "@/components/common/SplitView";
+import BasicDialog from "@/components/dialogs/BasicDialog";
+import FileTable from "@/components/FileTable";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import SplitView from "@/components/SplitView";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import DataPropsView from "@/routes/App/Data/DataPropsView";
+import { CommandEnum } from "@/routes/App/Singlestudy/CommandsDrawer/EditionView/commandTypes";
 import { getMatrixList } from "@/services/api/matrix";
 import { appendCommands } from "@/services/api/variant";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import MatrixContent from "./components/MatrixContent";
+import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
-import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import { Box, Button } from "@mui/material";
+import { useSnackbar } from "notistack";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import MatrixContent from "./components/MatrixContent";
 
 interface DatabaseUploadDialogProps {
   studyId: StudyMetadata["id"];

@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
+import MatrixGrid from "@/components/Matrix/components/MatrixGrid";
+import { isNonEmptyMatrix, type MatrixDataDTO } from "@/components/Matrix/shared/types";
+import { generateDataColumns } from "@/components/Matrix/shared/utils";
 import { Box, Typography } from "@mui/material";
-import { Code } from "./styles";
-import OkDialog from "../OkDialog";
+import { useTranslation } from "react-i18next";
 import SimpleLoader from "../../loaders/SimpleLoader";
-import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
-import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
-import { isNonEmptyMatrix, type MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import OkDialog from "../OkDialog";
+import { Code } from "./styles";
 
 interface Props {
   filename: string;

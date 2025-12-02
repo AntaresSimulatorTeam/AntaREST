@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import FieldEditorButtonGroup from "@/components/common/FieldEditorButtonGroup";
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import Form from "@/components/common/Form";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import FieldEditorButtonGroup from "@/components/FieldEditorButtonGroup";
+import StringFE from "@/components/fieldEditors/StringFE";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";

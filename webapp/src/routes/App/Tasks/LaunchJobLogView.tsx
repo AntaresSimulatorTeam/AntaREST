@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import LogModal from "@/components/LogModal";
 import type { Job } from "@/services/api/launcher/jobs/types";
 import ErrorIcon from "@mui/icons-material/Error";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -21,7 +22,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { getStudyJobLog } from "../../../services/api/study";
-import LogModal from "../../common/LogModal";
 
 interface PropsType {
   job: Job;

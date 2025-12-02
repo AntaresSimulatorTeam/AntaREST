@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import SearchFE from "@/components/fieldEditors/SearchFE";
 import TokenIcon from "@mui/icons-material/Token";
 import { Box, Button } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import SearchFE from "../../../common/fieldEditors/SearchFE";
 import CreateTokenDialog from "./dialog/CreateTokenDialog";
 
 interface Props {

@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import UploadFileButton from "@/components/common/buttons/UploadFileButton";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import EmptyView from "@/components/common/page/EmptyView";
+import UploadFileButton from "@/components/buttons/UploadFileButton";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import EmptyView from "@/components/page/EmptyView";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { deleteFile } from "@/services/api/studies/raw";

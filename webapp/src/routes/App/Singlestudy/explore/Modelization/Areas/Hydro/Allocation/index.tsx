@@ -12,24 +12,24 @@
  * This file is part of the Antares project.
  */
 
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { Grid } from "@mui/material";
-import { useOutletContext } from "react-router";
 import { useState } from "react";
-import Form from "../../../../../../../common/Form";
-import Fields from "./Fields";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../types/types";
+import HydroMatrixDialog from "../HydroMatrixDialog";
+import { FormBox, FormPaper } from "../style";
+import { HydroMatrix } from "../utils";
+import ViewMatrixButton from "../ViewMatrixButton";
+import Fields from "./Fields";
 import {
   getAllocationFormFields,
   setAllocationFormFields,
   type AllocationFormFields,
 } from "./utils";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import HydroMatrixDialog from "../HydroMatrixDialog";
-import { HydroMatrix } from "../utils";
-import { FormBox, FormPaper } from "../style";
-import ViewMatrixButton from "../ViewMatrixButton";
 
 function Allocation() {
   const {

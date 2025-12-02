@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import CopyButton from "@/components/common/buttons/CopyButton";
+import CopyButton from "@/components/buttons/CopyButton";
+import EditorIcon from "@/components/icons/EditorIcon";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import { toError } from "@/utils/fnUtils";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
@@ -20,7 +21,6 @@ import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
-import EditorIcon from "@/components/common/icons/EditorIcon";
 import {
   Box,
   Button,

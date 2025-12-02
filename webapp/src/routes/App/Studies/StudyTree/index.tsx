@@ -12,8 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
+import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
+import { useAppMode } from "@/hooks/useAppMode";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import * as R from "ramda";
@@ -26,11 +29,8 @@ import { getStudies, getStudiesTree, getStudyFilters } from "../../../../redux/s
 import * as api from "../../../../services/api/study";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNode from "./StudyTreeNode";
-import { insertIfNotExist } from "./utils";
-import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { FolderDTO, WorkspaceDTO } from "./types";
-import type { StudyMetadata } from "@/types/types";
-import { useAppMode } from "@/hooks/useAppMode";
+import { insertIfNotExist } from "./utils";
 
 function StudyTree() {
   const studies = useAppSelector(getStudies);

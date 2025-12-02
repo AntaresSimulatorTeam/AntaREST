@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
-import { useMemo, useState } from "react";
-import { useOutletContext } from "react-router";
+import DataGridForm from "@/components/DataGridForm";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import type { GridColumn } from "@glideapps/glide-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
+import { Box, Button } from "@mui/material";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { GridColumn } from "@glideapps/glide-data-grid";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import { useOutletContext } from "react-router";
+import { updateStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import DataGridForm from "../../../../../../../common/DataGridForm";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import CreateDistrictDialog from "./CreateDistrictDialog";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import { updateStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
 import UpdateDistrictDialog from "./UpdateDistrictDialog";
 
 function Districts() {

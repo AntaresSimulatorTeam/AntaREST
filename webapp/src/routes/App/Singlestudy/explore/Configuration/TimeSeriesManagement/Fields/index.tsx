@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { useFormContextPlus } from "@/components/common/Form";
-import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
+import { useFormContextPlus } from "@/components/Form";
+import BooleanFE from "@/components/fieldEditors/BooleanFE";
 import { TimeSeriesType } from "@/services/api/studies/timeseries/constants";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { useTranslation } from "react-i18next";

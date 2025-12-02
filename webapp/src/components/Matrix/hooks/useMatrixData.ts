@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import type { fetchMatrixFn } from "@/components/App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
+import { TimeFrequency } from "@/components/Matrix/shared/constants";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import type { fetchMatrixFn } from "@/routes/App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import { getStudyMatrixIndex } from "@/services/api/matrix";
 import { getStudyData } from "@/services/api/study";
 import type { MatrixIndex } from "@/types/types";

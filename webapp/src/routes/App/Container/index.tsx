@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import Logo from "@/components/common/Logo";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import Logo from "@/components/Logo";
 import { useAppMode } from "@/hooks/useAppMode";
 import { setFormCloseDialogStatus, setMenuOpen } from "@/redux/ducks/ui";
 import {
@@ -42,7 +43,6 @@ import { fetchStudies } from "../../../redux/ducks/studies";
 import { fetchUsers } from "../../../redux/ducks/users";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import FavoritesMenu from "./FavoritesMenu";
 import SidebarItem from "./SidebarItem";
 import { StyledDrawer } from "./styles";

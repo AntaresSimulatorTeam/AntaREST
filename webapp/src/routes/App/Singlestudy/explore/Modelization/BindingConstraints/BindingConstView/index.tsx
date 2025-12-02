@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import TabsView from "@/components/TabsView";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import TabsView from "../../../../../../common/TabsView";
 import ConstraintForm from "./ConstraintForm";
 import ConstraintMatrix from "./ConstraintMatrix";
 

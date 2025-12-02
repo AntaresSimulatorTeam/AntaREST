@@ -12,15 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import FormDialog, { type FormDialogProps } from "@/components/dialogs/FormDialog";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import type { UseFieldArrayAppend } from "react-hook-form";
 import useStudySynthesis from "../../../../../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../../../../../redux/selectors";
 import type { AllClustersAndLinks } from "../../../../../../../../../../../types/types";
-import FormDialog, {
-  type FormDialogProps,
-} from "../../../../../../../../../../common/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "../../../../../../../../../../common/Form/types";
-import UsePromiseCond from "../../../../../../../../../../common/utils/UsePromiseCond";
 import { type BindingConstraint, type ConstraintTerm, isLinkTerm } from "../../../../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
 

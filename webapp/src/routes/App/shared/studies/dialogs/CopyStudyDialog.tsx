@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import FormDialog from "@/components/common/dialogs/FormDialog";
-import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import Fieldset from "@/components/common/Fieldset";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import FormDialog from "@/components/dialogs/FormDialog";
+import FieldSkeleton from "@/components/fieldEditors/FieldSkeleton";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import Fieldset from "@/components/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { copyStudy } from "@/services/api/studies";
 import { getStudyOutputs } from "@/services/api/study";

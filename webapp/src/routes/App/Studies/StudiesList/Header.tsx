@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import RefreshButton from "@/components/App/Studies/RefreshButton";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
+import CustomScrollbar from "@/components/CustomScrollbar";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { updateStudiesSortConf, updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesSortConf, getStudyFilters } from "@/redux/selectors";
+import RefreshButton from "@/routes/App/Studies/RefreshButton";
 import { scanFolder } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";

@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import Matrix from "@/components/Matrix";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
-import Matrix from "../../../../../common/Matrix";
 
 function Solar() {
   const currentArea = useAppSelector(getCurrentAreaId);

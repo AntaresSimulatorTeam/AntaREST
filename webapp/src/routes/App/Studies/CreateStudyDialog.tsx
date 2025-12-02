@@ -12,7 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import FormDialog from "@/components/dialogs/FormDialog";
+import CheckboxesTagsFE from "@/components/fieldEditors/CheckboxesTagsFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import Fieldset from "@/components/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
 import { validateStudyName } from "@/utils/studiesUtils";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { Button, IconButton } from "@mui/material";
@@ -25,12 +31,6 @@ import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getGroups, getStudyVersionsFormatted } from "../../../redux/selectors";
 import type { StudyMetadata, StudyPublicMode } from "../../../types/types";
-import FormDialog from "../../common/dialogs/FormDialog";
-import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
-import StringFE from "../../common/fieldEditors/StringFE";
-import Fieldset from "../../common/Fieldset";
-import type { SubmitHandlerPlus } from "../../common/Form/types";
-import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
 
 interface FieldValues {
   name: string;

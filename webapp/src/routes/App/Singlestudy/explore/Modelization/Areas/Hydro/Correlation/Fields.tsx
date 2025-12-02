@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import DynamicList from "@/components/DynamicList";
+import { useFormContextPlus } from "@/components/Form";
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreasById, getCurrentArea } from "../../../../../../../../redux/selectors";
-import DynamicList from "../../../../../../../common/DynamicList";
-import { useFormContextPlus } from "../../../../../../../common/Form";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import { useAreasOptions } from "../hooks/useAreasOptions";
 import CorrelationField from "./CorrelationField";
 import type { CorrelationFormFields } from "./utils";

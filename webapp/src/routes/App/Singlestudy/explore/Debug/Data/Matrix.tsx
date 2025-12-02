@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import MatrixComp from "../../../../../common/Matrix";
+import MatrixComp from "@/components/Matrix";
 import type { DataCompProps } from "../utils";
 
 function Matrix({ filename, filePath, canEdit }: DataCompProps) {

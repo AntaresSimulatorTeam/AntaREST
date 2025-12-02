@@ -12,8 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
+import DataViewerDialog from "@/components/dialogs/DataViewerDialog";
+import FileTable from "@/components/FileTable";
+import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,9 +24,6 @@ import { useOutletContext } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import type { StudyMetadata } from "../../../../../types/types";
-import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
-import FileTable from "../../../../common/FileTable";
-import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import { Title } from "./share/styles";
 
 interface PropTypes {

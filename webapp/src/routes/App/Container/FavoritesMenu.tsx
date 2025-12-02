@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { getFavoriteStudies } from "@/redux/selectors";
+import FavoriteStudyToggle from "@/routes/App/shared/studies/FavoriteStudyToggle";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { List, ListItemButton, ListItemText, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import FavoriteStudyToggle from "@/components/App/shared/studies/FavoriteStudyToggle";
-import { getFavoriteStudies } from "@/redux/selectors";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import SidebarItem from "./SidebarItem";
 

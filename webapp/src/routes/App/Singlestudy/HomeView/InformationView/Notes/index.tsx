@@ -12,30 +12,30 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import type { AxiosError } from "axios";
-import { Box, Button, Divider, Skeleton, styled, Typography } from "@mui/material";
-import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
-import LinearScaleIcon from "@mui/icons-material/LinearScale";
-import StorageIcon from "@mui/icons-material/Storage";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import EditIcon from "@mui/icons-material/Edit";
 import HubIcon from "@mui/icons-material/Hub";
+import LinearScaleIcon from "@mui/icons-material/LinearScale";
+import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
+import StorageIcon from "@mui/icons-material/Storage";
+import { Box, Button, Divider, Skeleton, styled, Typography } from "@mui/material";
+import type { AxiosError } from "axios";
 import { Editor, EditorState } from "draft-js";
 import "draft-js/dist/Draft.css";
-import EditIcon from "@mui/icons-material/Edit";
-import { editComments, getComments, getStudyDiskUsage } from "../../../../../../services/api/study";
-import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";
-import type { StudyMetadata } from "../../../../../../types/types";
-import NoteEditorModal from "./NodeEditorModal";
+import { useSnackbar } from "notistack";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import { PromiseStatus } from "../../../../../../hooks/usePromise";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import DetailsList from "./DetailsList";
-import { getAreas, getLinks } from "../../../../../../redux/selectors";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
-import { PromiseStatus } from "../../../../../../hooks/usePromise";
+import { getAreas, getLinks } from "../../../../../../redux/selectors";
+import { editComments, getComments, getStudyDiskUsage } from "../../../../../../services/api/study";
+import type { StudyMetadata } from "../../../../../../types/types";
+import DetailsList from "./DetailsList";
+import NoteEditorModal from "./NodeEditorModal";
+import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";
 
 const Root = styled(Box)(() => ({
   flex: "0 0 40%",

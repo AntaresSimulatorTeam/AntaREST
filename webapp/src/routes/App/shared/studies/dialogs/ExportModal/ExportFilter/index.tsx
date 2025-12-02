@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import SelectMulti from "@/components/SelectMulti";
+import SelectSingle from "@/components/SelectSingle";
 import { Box, Checkbox, FormControlLabel, styled } from "@mui/material";
 import range from "lodash/range";
 import { useEffect, useState } from "react";
@@ -24,8 +26,6 @@ import {
   type FileStudyTreeConfigDTO,
   type StudyOutputDownloadDTO,
 } from "../../../../../../../types/types";
-import SelectMulti from "../../../../../../common/SelectMulti";
-import SelectSingle from "../../../../../../common/SelectSingle";
 import Filter from "./Filter";
 import TagSelect from "./TagSelect";
 

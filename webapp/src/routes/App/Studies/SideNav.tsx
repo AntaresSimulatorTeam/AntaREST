@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import ListCollapse from "@/components/ListCollapse";
+import StudyTree from "@/routes/App/Studies/StudyTree";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import StudyTree from "@/components/App/Studies/StudyTree";
-import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import ListCollapse from "@/components/common/ListCollapse";
 
 function SideNav() {
   const { t } = useTranslation();

@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -25,7 +26,6 @@ import type {
   UserDetailsDTO,
   UserDTO,
 } from "../../../../../types/types";
-import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 import UserFormDialog from "./UserFormDialog";
 import type { UserFormDefaultValues } from "./utils";
 

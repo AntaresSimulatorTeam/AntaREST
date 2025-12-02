@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { Button, Box, Skeleton } from "@mui/material";
+import BasicDialog, { type BasicDialogProps } from "@/components/dialogs/BasicDialog";
+import Matrix from "@/components/Matrix";
+import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { Box, Button, Skeleton } from "@mui/material";
+import type { AxiosError } from "axios";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
-import BasicDialog, { type BasicDialogProps } from "../../../../../../common/dialogs/BasicDialog";
-import Matrix from "../../../../../../common/Matrix";
-import type { HydroMatrixType } from "./utils";
-import { getAllocationMatrix } from "./Allocation/utils";
-import { getCorrelationMatrix } from "./Correlation/utils";
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import type { AxiosError } from "axios";
+import { getAllocationMatrix } from "./Allocation/utils";
+import { getCorrelationMatrix } from "./Correlation/utils";
+import type { HydroMatrixType } from "./utils";
 
 interface AdaptedMatrixData {
   data: number[][];

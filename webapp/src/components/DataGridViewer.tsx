@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import DataGrid, { type RowMarkers } from "@/components/DataGrid";
+import { isNumericValue } from "@/utils/numberUtils";
 import {
   GridCellKind,
   type GridColumn,
@@ -21,8 +23,6 @@ import {
 } from "@glideapps/glide-data-grid";
 import { useMemo } from "react";
 import { formatGridNumber } from "./Matrix/shared/utils";
-import DataGrid, { type RowMarkers } from "@/components/common/DataGrid";
-import { isNumericValue } from "@/utils/numberUtils";
 
 type CellValue = number | string;
 

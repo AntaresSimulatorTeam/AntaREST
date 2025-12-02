@@ -15,14 +15,14 @@
 /**
  * Updated tests for MatrixActions after changes in the Matrix component.
  */
-import type React from "react";
+import { TimeFrequency } from "@/components/Matrix/shared/constants";
+import { UTCDate } from "@date-fns/utc";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
+import { vi } from "vitest";
 import MatrixActions from ".";
 import { MatrixProvider } from "../../context/MatrixContext";
-import { vi } from "vitest";
-import { UTCDate } from "@date-fns/utc";
-import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
 
 vi.mock("../buttons/SplitButton", () => ({
   default: ({

@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import TabsView from "@/components/common/TabsView";
+import Matrix from "@/components/Matrix";
+import TabsView from "@/components/TabsView";
 import type { Cluster, StudyMetadata } from "@/types/types";
-import Matrix from "../../../../../../../common/Matrix";
+import { useTranslation } from "react-i18next";
 import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../utils";
 
 interface Props {

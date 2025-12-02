@@ -12,7 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import FormDialog from "@/components/dialogs/FormDialog";
+import CheckboxesTagsFE from "@/components/fieldEditors/CheckboxesTagsFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import Fieldset from "@/components/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
 import { validateStudyName } from "@/utils/studiesUtils";
 import type { AxiosError } from "axios";
 import debug from "debug";
@@ -32,12 +38,6 @@ import {
 } from "../../../../../services/api/study";
 import { getGroups } from "../../../../../services/api/user";
 import type { StudyMetadata } from "../../../../../types/types";
-import FormDialog from "../../../../common/dialogs/FormDialog";
-import CheckboxesTagsFE from "../../../../common/fieldEditors/CheckboxesTagsFE";
-import StringFE from "../../../../common/fieldEditors/StringFE";
-import Fieldset from "../../../../common/Fieldset";
-import type { SubmitHandlerPlus } from "../../../../common/Form/types";
-import { PUBLIC_MODE_LIST } from "../../../../common/utils/constants";
 
 const logErr = debug("antares:createstudyform:error");
 

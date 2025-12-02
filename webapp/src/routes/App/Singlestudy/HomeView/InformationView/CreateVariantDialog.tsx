@@ -12,7 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import FormDialog from "@/components/dialogs/FormDialog";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import Fieldset from "@/components/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useMemo } from "react";
@@ -21,10 +25,6 @@ import { useNavigate } from "react-router";
 import { createVariant } from "../../../../../services/api/variant";
 import { createListFromTree } from "../../../../../services/utils";
 import type { VariantTree } from "../../../../../types/types";
-import FormDialog from "../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../common/fieldEditors/StringFE";
-import Fieldset from "../../../../common/Fieldset";
-import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 
 interface Props {
   parentId: string;

@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import EmptyView from "../../../../../common/page/EmptyView";
-import BlockIcon from "@mui/icons-material/Block";
-import { Filename, Menubar } from "./styles";
-import type { DataCompProps } from "../utils";
-import DownloadButton from "@/components/common/buttons/DownloadButton";
-import UploadFileButton from "@/components/common/buttons/UploadFileButton";
-import { downloadFile } from "@/utils/fileUtils";
+import DownloadButton from "@/components/buttons/DownloadButton";
+import UploadFileButton from "@/components/buttons/UploadFileButton";
+import EmptyView from "@/components/page/EmptyView";
 import { getRawFile } from "@/services/api/studies/raw";
+import { downloadFile } from "@/utils/fileUtils";
+import BlockIcon from "@mui/icons-material/Block";
+import { useTranslation } from "react-i18next";
+import type { DataCompProps } from "../utils";
+import { Filename, Menubar } from "./styles";
 
 function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   const { t } = useTranslation();

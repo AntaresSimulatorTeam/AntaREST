@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { useFormContextPlus } from "@/components/Form";
+import NumberFE from "@/components/fieldEditors/NumberFE";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import { Box, Button, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AllClustersAndLinks } from "../../../../../../../../../../../../types/types";
-import { useFormContextPlus } from "../../../../../../../../../../../common/Form";
-import NumberFE from "../../../../../../../../../../../common/fieldEditors/NumberFE";
 import ConstraintElement from "../../../../../constraintviews/ConstraintElement";
 import OffsetInput from "../../../../../constraintviews/OffsetInput";
 import type { ConstraintTerm } from "../../../../../utils";

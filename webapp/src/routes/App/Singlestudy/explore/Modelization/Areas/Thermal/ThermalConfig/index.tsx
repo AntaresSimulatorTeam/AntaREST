@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import BackButton from "@/components/common/buttons/BackButton";
+import BackButton from "@/components/buttons/BackButton";
 import { Chip, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";

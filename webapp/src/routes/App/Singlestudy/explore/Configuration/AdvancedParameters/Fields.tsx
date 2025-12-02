@@ -12,14 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
+import { useFormContextPlus } from "@/components/Form";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../types/types";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import Fieldset from "../../../../../common/Fieldset";
-import { useFormContextPlus } from "../../../../../common/Form";
 import {
   HYDRO_HEURISTIC_POLICY_OPTIONS,
   HYDRO_PRICING_MODE_OPTIONS,
@@ -28,14 +29,13 @@ import {
   RENEWABLE_GENERATION_OPTIONS,
   RESERVE_MANAGEMENT_OPTIONS,
   SHEDDING_POLICY_OPTIONS,
+  SheddingPolicy,
   SIMULATION_CORES_OPTIONS,
   SPATIAL_CORRELATIONS_OPTIONS,
   UNIT_COMMITMENT_MODE_OPTIONS,
   UnitCommitmentMode,
-  SheddingPolicy,
   type AdvancedParamsFormFields,
 } from "./utils";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 
 function Fields() {
   const [t] = useTranslation();

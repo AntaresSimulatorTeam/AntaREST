@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import Form from "@/components/common/Form";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromise from "@/hooks/usePromise";
 import { setCurrentBindingConst } from "@/redux/ducks/studySyntheses";

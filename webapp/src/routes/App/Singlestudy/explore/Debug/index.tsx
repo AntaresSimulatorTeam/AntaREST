@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import SplitView from "@/components/SplitView";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import { buildKey } from "@/utils/reactUtils";
 import { Box, Skeleton } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { useUpdateEffect } from "react-use";
-import { buildKey } from "@/utils/reactUtils";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import type { StudyMetadata } from "../../../../../types/types";
-import SplitView from "../../../../common/SplitView";
-import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import Data from "./Data";
 import DebugContext from "./DebugContext";
 import Tree from "./Tree";

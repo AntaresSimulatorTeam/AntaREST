@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../types/types";
-import Form from "../../../../../common/Form";
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "../../../../../common/Form/types";
-import Fields from "./Fields";
-import { useTranslation } from "react-i18next";
-import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/Form/types";
+import { generateTimeSeries, setTimeSeriesConfig } from "@/services/api/studies/timeseries";
 import BuildIcon from "@mui/icons-material/Build";
 import { useRef, useState } from "react";
-import { setTimeSeriesConfig, generateTimeSeries } from "@/services/api/studies/timeseries";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
+import type { StudyMetadata } from "../../../../../../types/types";
+import Fields from "./Fields";
 import { defaultValues, type TimeSeriesConfigValues } from "./utils";
 
 function TimeSeriesManagement() {

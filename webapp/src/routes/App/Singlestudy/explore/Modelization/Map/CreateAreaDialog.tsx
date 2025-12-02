@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import FormDialog from "@/components/dialogs/FormDialog";
+import StringFE from "@/components/fieldEditors/StringFE";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../redux/selectors";
-import FormDialog from "../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
 interface Props {
   studyId: string;

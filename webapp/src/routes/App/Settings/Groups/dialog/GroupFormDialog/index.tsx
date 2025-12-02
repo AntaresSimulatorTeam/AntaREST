@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
+import FormDialog, { type FormDialogProps } from "@/components/dialogs/FormDialog";
 import { GROUP_FORM_DEFAULT_VALUES, type GroupFormDefaultValues } from "../utils";
 import GroupForm from "./GroupForm";
 

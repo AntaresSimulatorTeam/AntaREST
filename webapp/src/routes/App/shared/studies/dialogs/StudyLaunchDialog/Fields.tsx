@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import NumberFE from "@/components/common/fieldEditors/NumberFE";
-import SelectFE, { type SelectFEChangeEvent } from "@/components/common/fieldEditors/SelectFE";
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
-import Fieldset from "@/components/common/Fieldset";
-import { useFormContextPlus } from "@/components/common/Form";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
+import { useFormContextPlus } from "@/components/Form";
 import { validateNumber } from "@/utils/validation/number";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Box, IconButton, Tooltip } from "@mui/material";

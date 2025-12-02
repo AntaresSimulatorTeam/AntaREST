@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import OkDialog from "@/components/common/dialogs/OkDialog";
-import Form from "@/components/common/Form";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import Matrix from "@/components/common/Matrix";
+import OkDialog from "@/components/dialogs/OkDialog";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import Matrix from "@/components/Matrix";
 import {
   getAdditionalConstraint,
   updateAdditionalConstraint,

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { countDescendants, findNodeInTree } from "@/services/utils";
 import { WsEventType } from "@/services/webSocket/constants";

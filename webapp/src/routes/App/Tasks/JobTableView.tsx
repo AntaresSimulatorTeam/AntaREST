@@ -12,29 +12,29 @@
  * This file is part of the Antares project.
  */
 
+import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import SearchFE from "@/components/fieldEditors/SearchFE";
+import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import { isSearchMatching } from "@/utils/stringUtils";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import {
-  Box,
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  type TableSortLabelProps,
-  Tooltip,
+    Box,
+    IconButton,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TableSortLabel,
+    type TableSortLabelProps,
+    Tooltip,
 } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import SelectFE, { type SelectFEChangeEvent } from "@/components/common/fieldEditors/SelectFE";
-import storage, { StorageKey } from "@/services/utils/localStorage";
-import { isSearchMatching } from "@/utils/stringUtils";
 import { TaskType } from "../../../services/api/tasks/constants";
 import type { TaskView } from "../../../types/types";
 import ClustersMetrics from "./ClustersMetrics";

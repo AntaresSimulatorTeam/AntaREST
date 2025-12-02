@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -24,7 +25,6 @@ import type {
   RoleDetailsDTO,
   UserDTO,
 } from "../../../../../types/types";
-import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 import GroupFormDialog from "./GroupFormDialog";
 import type { GroupFormDefaultValues } from "./utils";
 

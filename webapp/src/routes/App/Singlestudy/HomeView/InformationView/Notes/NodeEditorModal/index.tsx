@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useState } from "react";
-import { Editor, EditorState, getDefaultKeyBinding, RichUtils } from "draft-js";
-import { Button } from "@mui/material";
-import { useTranslation } from "react-i18next";
+import BasicDialog from "@/components/dialogs/BasicDialog";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
+import { Button } from "@mui/material";
+import { Editor, EditorState, getDefaultKeyBinding, RichUtils } from "draft-js";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { convertDraftJSToXML, convertXMLToDraftJS } from "../utils";
-import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
 import { EditorButton, EditorContainer, EditorIcon, Header, Root } from "./style";
 
 interface Props {

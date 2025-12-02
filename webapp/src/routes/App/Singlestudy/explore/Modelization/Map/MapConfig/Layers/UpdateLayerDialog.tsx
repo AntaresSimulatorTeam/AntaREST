@@ -12,7 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import FormDialog from "@/components/dialogs/FormDialog";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import Fieldset from "@/components/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { validateString } from "@/utils/validation/string";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -28,11 +33,6 @@ import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../../../types/types";
-import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
-import FormDialog from "../../../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import Fieldset from "../../../../../../../common/Fieldset";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 
 interface Props {
   open: boolean;

@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
-import { useEffect, useState } from "react";
+import PropertiesView from "@/components/PropertiesView";
+import SplitView from "@/components/SplitView";
 import type {
   Level1Display,
   ScenarioDisplay,
   ScenarioType,
 } from "@/services/api/studies/config/scenarioBuilder/types";
-import PropertiesView from "../../../../../../../common/PropertiesView";
-import SplitView from "../../../../../../../common/SplitView";
+import { Box } from "@mui/material";
+import { useEffect, useState } from "react";
 import ListElement from "../../../../common/ListElement";
 import { hasAreaSelection, isLevel1Display, isLevel2Display, isLevel3Display } from "./types";
 import { requiresAreaSelection } from "./utils";

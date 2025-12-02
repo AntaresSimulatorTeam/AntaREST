@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import About from "@/components/App/Settings/About";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
-import TabsView from "@/components/common/TabsView";
+import RootPage from "@/components/page/RootPage";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import TabsView from "@/components/TabsView";
 import { useAppMode } from "@/hooks/useAppMode";
+import About from "@/routes/App/Settings/About";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../../redux/selectors";
-import RootPage from "../../common/page/RootPage";
 import General from "./General";
 import Groups from "./Groups";
 import Maintenance from "./Maintenance";

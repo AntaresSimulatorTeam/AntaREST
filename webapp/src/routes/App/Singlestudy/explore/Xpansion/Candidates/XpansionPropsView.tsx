@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { Box, Button } from "@mui/material";
-import { useTranslation } from "react-i18next";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import PropertiesView from "@/components/PropertiesView";
 import DeleteIcon from "@mui/icons-material/Delete";
-import PropertiesView from "../../../../../common/PropertiesView";
-import type { XpansionCandidate } from "../types";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
+import { Box, Button } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ListElement from "../../common/ListElement";
+import type { XpansionCandidate } from "../types";
 
 interface PropsType {
   candidateList: XpansionCandidate[];

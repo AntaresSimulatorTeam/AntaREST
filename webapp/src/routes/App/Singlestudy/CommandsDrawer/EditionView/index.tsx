@@ -12,52 +12,52 @@
  * This file is part of the Antares project.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useSnackbar } from "notistack";
-import { useTranslation } from "react-i18next";
-import type { DropResult } from "react-beautiful-dnd";
-import debounce from "lodash/debounce";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import EmptyView from "@/components/page/EmptyView";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import type { TaskEventPayload, WsEvent, WsEventTypeValue } from "@/services/webSocket/types";
+import BoltIcon from "@mui/icons-material/Bolt";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import BoltIcon from "@mui/icons-material/Bolt";
-import debug from "debug";
-import type { AxiosError } from "axios";
 import HelpIcon from "@mui/icons-material/Help";
 import { Box, Button, Skeleton, Tooltip, Typography } from "@mui/material";
+import type { AxiosError } from "axios";
+import debug from "debug";
+import debounce from "lodash/debounce";
+import { useSnackbar } from "notistack";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { DropResult } from "react-beautiful-dnd";
+import { useTranslation } from "react-i18next";
 import { useMountedState } from "react-use";
-import type { CommandItem, JsonCommandItem } from "./commandTypes";
-import CommandListView from "./DraggableCommands/CommandListView";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import { getTask } from "../../../../../services/api/tasks";
+import { TaskStatus } from "../../../../../services/api/tasks/constants";
 import {
-  reorder,
-  fromCommandDTOToCommandItem,
-  fromCommandDTOToJsonCommand,
-  exportJson,
-  isTaskFinal,
-  updateCommandResults,
-} from "./utils";
-import {
+  applyCommands,
   deleteCommand,
+  exportCommandsMatrices,
   getCommand,
   getCommands,
-  moveCommand,
-  updateCommand,
-  replaceCommands,
-  applyCommands,
   getStudyTask,
-  exportCommandsMatrices,
+  moveCommand,
+  replaceCommands,
+  updateCommand,
 } from "../../../../../services/api/variant";
-import type { CommandResultDTO } from "../../../../../types/types";
-import CommandImportButton from "./DraggableCommands/CommandImportButton";
-import { getTask } from "../../../../../services/api/tasks";
-import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { addWsEventListener, subscribeWsChannels } from "../../../../../services/webSocket/ws";
-import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
-import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
-import EmptyView from "../../../../common/page/EmptyView";
-import { TaskStatus } from "../../../../../services/api/tasks/constants";
-import type { TaskEventPayload, WsEventTypeValue, WsEvent } from "@/services/webSocket/types";
-import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import type { CommandResultDTO } from "../../../../../types/types";
+import type { CommandItem, JsonCommandItem } from "./commandTypes";
+import CommandImportButton from "./DraggableCommands/CommandImportButton";
+import CommandListView from "./DraggableCommands/CommandListView";
+import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
+import {
+  exportJson,
+  fromCommandDTOToCommandItem,
+  fromCommandDTOToJsonCommand,
+  isTaskFinal,
+  reorder,
+  updateCommandResults,
+} from "./utils";
 
 const logError = debug("antares:variantedition:error");
 

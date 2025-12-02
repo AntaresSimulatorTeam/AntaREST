@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import EditorIcon from "@/components/icons/EditorIcon";
+import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
-import EditorIcon from "@/components/common/icons/EditorIcon";
 import { Box, Divider, Tooltip, Typography, styled } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -27,7 +28,6 @@ import {
   displayVersionName,
 } from "../../../../services/utils";
 import type { StudyMetadata } from "../../../../types/types";
-import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
 
 const MAX_STUDY_TITLE_LENGTH = 45;
 

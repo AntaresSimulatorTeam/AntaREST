@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import BasicDialog, { type BasicDialogProps } from "@/components/dialogs/BasicDialog";
+import SelectSingle from "@/components/SelectSingle";
 import { Box, Button } from "@mui/material";
 import type { AxiosError } from "axios";
 import debug from "debug";
@@ -37,8 +39,6 @@ import {
   type StudyOutput,
   type StudyOutputDownloadDTO,
 } from "../../../../../../types/types";
-import BasicDialog, { type BasicDialogProps } from "../../../../../common/dialogs/BasicDialog";
-import SelectSingle from "../../../../../common/SelectSingle";
 import ExportFilter from "./ExportFilter";
 
 const logError = debug("antares:studies:card:error");

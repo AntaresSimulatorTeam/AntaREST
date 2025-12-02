@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata, Area } from "../../../../../../../../types/types";
+import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import client from "../../../../../../../../services/api/client";
-import type { MatrixDataDTO } from "../../../../../../../common/Matrix/shared/types";
+import type { Area, StudyMetadata } from "../../../../../../../../types/types";
 import type { AreaCoefficientItem } from "../utils";
 
 ////////////////////////////////////////////////////////////////

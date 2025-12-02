@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import type { DateInfo } from "@/components/Matrix/components/MatrixFilter/types";
+import { INDEX_TYPE_TO_DATEINFO_PROPERTY } from "@/components/Matrix/components/MatrixFilter/utils";
 import { useMemo } from "react";
 import { TIME_INDEXING } from "../constants";
 import { getDefaultRangeForIndexType } from "../utils/dateUtils";
-import type { DateInfo } from "@/components/common/Matrix/components/MatrixFilter/types";
-import { INDEX_TYPE_TO_DATEINFO_PROPERTY } from "@/components/common/Matrix/components/MatrixFilter/utils";
 
 export function useTemporalData(datesInfo?: DateInfo[]) {
   const indexTypeRanges = useMemo(() => {

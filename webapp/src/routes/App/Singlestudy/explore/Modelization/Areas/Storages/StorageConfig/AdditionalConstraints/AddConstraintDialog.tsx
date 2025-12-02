@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import FormDialog from "@/components/common/dialogs/FormDialog";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
-import Fieldset from "@/components/common/Fieldset";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import FormDialog from "@/components/dialogs/FormDialog";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { createAdditionalConstraint } from "@/services/api/studies/areas/storages";
 import type {
   AdditionalConstraint,

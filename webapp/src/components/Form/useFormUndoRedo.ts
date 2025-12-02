@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import useUndo, { type Actions } from "use-undo";
-import type { FieldValues } from "react-hook-form";
-import { useCallback, useEffect, useRef } from "react";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
 import * as R from "ramda";
+import { useCallback, useEffect, useRef } from "react";
+import type { FieldValues } from "react-hook-form";
+import useUndo, { type Actions } from "use-undo";
 import type { UseFormReturnPlus } from "./types";
-import useUpdatedRef from "../../../hooks/useUpdatedRef";
 
 enum ActionType {
   Undo = "UNDO",

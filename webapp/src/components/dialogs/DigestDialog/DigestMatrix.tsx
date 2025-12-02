@@ -16,7 +16,7 @@ import {
   generateDataColumns,
   generateResultColumns,
   groupResultColumns,
-} from "@/components/common/Matrix/shared/utils";
+} from "@/components/Matrix/shared/utils";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import { GridOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";

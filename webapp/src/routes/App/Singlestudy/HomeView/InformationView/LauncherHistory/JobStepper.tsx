@@ -12,7 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import DigestDialog from "@/components/common/dialogs/DigestDialog";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import DigestDialog from "@/components/dialogs/DigestDialog";
+import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import type { Job, JobStatus } from "@/services/api/launcher/jobs/types";
 import { getStudyOutputs, killStudy } from "@/services/api/study";
@@ -30,8 +32,6 @@ import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
 import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
 import {
   CancelContainer,

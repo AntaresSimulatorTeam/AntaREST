@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { deleteStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";

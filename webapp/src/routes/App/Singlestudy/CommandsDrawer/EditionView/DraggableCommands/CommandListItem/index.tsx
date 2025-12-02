@@ -13,13 +13,11 @@
  */
 
 // @flow
-import { useState } from "react";
-import type { DraggableProvided } from "react-beautiful-dnd";
-import ReactJson, { type InteractionProps } from "react-json-view";
-import ExpandMore from "@mui/icons-material/ExpandMore";
-import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import LogModal from "@/components/LogModal";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import {
   AccordionDetails,
   AccordionSummary,
@@ -28,10 +26,14 @@ import {
   styled,
   Typography,
 } from "@mui/material";
+import { useState } from "react";
+import type { DraggableProvided } from "react-beautiful-dnd";
+import ReactJson, { type InteractionProps } from "react-json-view";
+import type { CommandResultDTO } from "../../../../../../../types/types";
 import type { CommandItem } from "../../commandTypes";
 import CommandImportButton from "../CommandImportButton";
-import type { CommandResultDTO } from "../../../../../../../types/types";
-import LogModal from "../../../../../../common/LogModal";
+import CommandDetails from "./CommandDetails";
+import CommandMatrixViewer from "./CommandMatrixViewer";
 import {
   detailsStyle,
   DraggableAccorderon,
@@ -42,8 +44,6 @@ import {
   JsonContainer,
   StyledDeleteIcon,
 } from "./style";
-import CommandMatrixViewer from "./CommandMatrixViewer";
-import CommandDetails from "./CommandDetails";
 
 export const Item = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",

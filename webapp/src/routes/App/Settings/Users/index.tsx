@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import { toError } from "@/utils/fnUtils";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -41,7 +42,6 @@ import { deleteUser, getUsers } from "../../../../services/api/user";
 import { sortByName } from "../../../../services/utils";
 import type { UserDetailsDTO } from "../../../../types/types";
 import { isSearchMatching } from "../../../../utils/stringUtils";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import { RESERVED_USER_NAMES } from "../utils";
 import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import Header from "./Header";

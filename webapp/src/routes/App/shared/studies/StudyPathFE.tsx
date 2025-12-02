@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
+import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
 import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import { validatePath, validateString } from "@/utils/validation/string";
 import { combineValidators } from "@/utils/validation/utils";

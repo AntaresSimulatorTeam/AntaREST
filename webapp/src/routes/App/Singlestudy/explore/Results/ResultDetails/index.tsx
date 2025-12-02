@@ -12,25 +12,25 @@
  * This file is part of the Antares project.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useOutletContext, useParams } from "react-router";
-import type { FilterableMatrixGridHandle } from "@/components/common/Matrix/components/FilterableMatrixGrid";
-import { Column } from "@/components/common/Matrix/shared/constants";
-import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import type { FilterableMatrixGridHandle } from "@/components/Matrix/components/FilterableMatrixGrid";
+import { Column } from "@/components/Matrix/shared/constants";
+import type { ResultMatrixDTO } from "@/components/Matrix/shared/types";
+import {
+  generateDateTime,
+  generateResultColumns,
+  groupResultColumns,
+} from "@/components/Matrix/shared/utils";
+import SplitView from "@/components/SplitView/index";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type { Area, LinkElement, StudyMetadata } from "@/types/types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useOutletContext, useParams } from "react-router";
 import usePromise from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks } from "../../../../../../redux/selectors";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
 import { getStudyData } from "../../../../../../services/api/study";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
-import {
-  generateDateTime,
-  generateResultColumns,
-  groupResultColumns,
-} from "../../../../../common/Matrix/shared/utils";
-import SplitView from "../../../../../common/SplitView/index";
 import useStudyOutput from "../hooks/useStudyOutput";
 import ResultItemSelector from "./components/ResultItemSelector";
 import ResultMatrixViewer from "./components/ResultMatrixViewer";

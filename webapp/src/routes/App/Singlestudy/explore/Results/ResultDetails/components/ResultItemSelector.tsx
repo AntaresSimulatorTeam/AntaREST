@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import ButtonBack from "@/components/ButtonBack";
+import PropertiesView from "@/components/PropertiesView";
 import { Box, Tab, Tabs } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import ButtonBack from "../../../../../../common/ButtonBack";
-import PropertiesView from "../../../../../../common/PropertiesView";
 import ListElement from "../../../common/ListElement";
 import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
 import { OutputItemType } from "../utils";

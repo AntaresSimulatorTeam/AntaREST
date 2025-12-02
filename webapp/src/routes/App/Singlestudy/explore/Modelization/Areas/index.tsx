@@ -12,6 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import SplitView from "@/components/SplitView";
+import EmptyView from "@/components/page/EmptyView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";
 import { useUpdateEffect } from "react-use";
 import { setCurrentArea } from "../../../../../../redux/ducks/studySyntheses";
@@ -20,10 +24,6 @@ import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import { getCurrentArea, getStudySynthesis } from "../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../types/types";
-import SplitView from "../../../../../common/SplitView";
-import EmptyView from "../../../../../common/page/EmptyView";
-import ViewWrapper from "../../../../../common/page/ViewWrapper";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import AreaPropsView from "./AreaPropsView";
 import AreasTab from "./AreasTab";
 

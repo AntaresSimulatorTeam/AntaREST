@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import DataGrid from "@/components/common/DataGrid";
+import DataGrid from "@/components/DataGrid";
 import {
   CompactSelection,
   GridCellKind,
@@ -22,10 +22,13 @@ import {
   type GridSelection,
   type Item,
 } from "@glideapps/glide-data-grid";
-import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useCallback, useContext, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { MatrixContext } from "../../context/MatrixContext";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
+import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
+import { Column } from "../../shared/constants";
 import type {
   DateTimes,
   EnhancedGridColumn,
@@ -34,9 +37,6 @@ import type {
   NonEmptyMatrix,
 } from "../../shared/types";
 import { formatGridNumber } from "../../shared/utils";
-import { useTranslation } from "react-i18next";
-import { MatrixContext } from "../../context/MatrixContext";
-import { Column } from "../../shared/constants";
 import MatrixStats from "../MatrixStats";
 
 export interface MatrixGridProps {

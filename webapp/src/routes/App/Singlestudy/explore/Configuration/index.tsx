@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
+import PropertiesView from "@/components/PropertiesView";
+import SplitView from "@/components/SplitView";
+import TableMode from "@/components/TableMode";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
-import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../types/types";
-import PropertiesView from "../../../../common/PropertiesView";
 import ListElement from "../common/ListElement";
 import AdequacyPatch from "./AdequacyPatch";
 import AdvancedParameters from "./AdvancedParameters";
 import General from "./General";
 import Optimization from "./Optimization";
 import TimeSeriesManagement from "./TimeSeriesManagement";
-import TableMode from "../../../../common/TableMode";
-import SplitView from "../../../../common/SplitView";
-import ViewWrapper from "../../../../common/page/ViewWrapper";
 
 function Configuration() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

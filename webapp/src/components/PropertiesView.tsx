@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, type SxProps, type Theme } from "@mui/material";
-import SearchFE from "./fieldEditors/SearchFE";
-import { mergeSxProp } from "../../utils/muiUtils";
+import { mergeSxProp } from "@/utils/muiUtils";
 import AddIcon from "@mui/icons-material/Add";
+import { Box, Button, type SxProps, type Theme } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import SearchFE from "./fieldEditors/SearchFE";
 
 interface PropsType {
   topContent?: React.ReactNode;

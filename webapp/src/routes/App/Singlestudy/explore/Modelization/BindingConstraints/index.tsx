@@ -12,7 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import ViewWrapper from "@/components/common/page/ViewWrapper";
+import EmptyView from "@/components/page/EmptyView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import SplitView from "@/components/SplitView";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
@@ -23,9 +26,6 @@ import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentBindingConstId } from "../../../../../../redux/selectors";
 import { getBindingConstraintList } from "../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../types/types";
-import EmptyView from "../../../../../common/page/EmptyView";
-import SplitView from "../../../../../common/SplitView";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import BindingConstPropsView from "./BindingConstPropsView";
 import BindingConstView from "./BindingConstView";
 

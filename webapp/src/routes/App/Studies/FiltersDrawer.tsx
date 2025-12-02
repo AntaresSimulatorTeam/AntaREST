@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE, { type Options } from "@/components/common/fieldEditors/SelectFE";
-import Fieldset from "@/components/common/Fieldset";
-import Form from "@/components/common/Form";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import CheckboxesTagsFE from "@/components/fieldEditors/CheckboxesTagsFE";
+import SelectFE, { type Options } from "@/components/fieldEditors/SelectFE";
+import Fieldset from "@/components/Fieldset";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { updateStudyFilters, type StudyFilters } from "@/redux/ducks/studies";
 import {
   getGroupIds,
@@ -32,7 +33,6 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
 
 const STUDY_TYPE_OPTIONS: Options<StudyFilters["type"]> = [
   { label: (t) => t("global.all"), value: "all" },

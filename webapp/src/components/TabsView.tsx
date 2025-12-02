@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import BackButton from "@/components/common/buttons/BackButton";
+import BackButton from "@/components/buttons/BackButton";
 import useFormCloseConfirm from "@/hooks/useFormCloseConfirm";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Tab } from "@mui/material";

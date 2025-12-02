@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useState } from "react";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
+import type { PromiseAny } from "@/utils/tsUtils";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import { Box, Button, LinearProgress, Paper, Typography, colors } from "@mui/material";
+import { enqueueSnackbar } from "notistack";
+import { useEffect, useState } from "react";
 import { useDropzone, type Accept, type FileRejection } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../utils/fnUtils";
-import { enqueueSnackbar } from "notistack";
-import type { PromiseAny } from "../../../utils/tsUtils";
-import FileUploadIcon from "@mui/icons-material/FileUpload";
 
 export interface UploadDialogProps extends Omit<BasicDialogProps, "actions"> {
   dropzoneText?: string;

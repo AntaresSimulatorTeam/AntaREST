@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import type { DynamicListProps } from "@/components/DynamicList";
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../../../redux/selectors";
-import type { DynamicListProps } from "../../../../../../../common/DynamicList";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import type { AreaCoefficientItem } from "../utils";
 
 export function useAreasOptions(fields: AreaCoefficientItem[]): DynamicListProps["options"] {

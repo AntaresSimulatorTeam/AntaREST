@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import Matrix from "@/components/Matrix";
+import SplitView from "@/components/SplitView";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { getBindingConstraint } from "@/services/api/studydata";
 import { Box, Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import Matrix from "../../../../../../common/Matrix";
-import SplitView from "../../../../../../common/SplitView";
 
 interface Props {
   study: StudyMetadata;

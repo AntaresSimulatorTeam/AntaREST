@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import Fieldset from "@/components/Fieldset";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import type { Area, StudyMetadata } from "@/types/types";
 import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import Fieldset from "../../../../../../../common/Fieldset";
-import Form from "../../../../../../../common/Form";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
   convertPercentageToRatio,
   convertRatioToPercentage,

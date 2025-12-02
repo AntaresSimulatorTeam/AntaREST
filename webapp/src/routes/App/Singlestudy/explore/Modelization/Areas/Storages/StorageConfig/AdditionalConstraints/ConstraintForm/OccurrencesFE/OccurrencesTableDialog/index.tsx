@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
+import CustomScrollbar from "@/components/CustomScrollbar";
 import DataGridForm, {
   type DataGridFormApi,
   type DataGridFormProps,
-} from "@/components/common/DataGridForm";
-import BasicDialog from "@/components/common/dialogs/BasicDialog";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import NumberFE from "@/components/common/fieldEditors/NumberFE";
-import NumberSelectionsFE from "@/components/common/fieldEditors/NumberSelectionsFE";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+} from "@/components/DataGridForm";
+import BasicDialog from "@/components/dialogs/BasicDialog";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import NumberSelectionsFE from "@/components/fieldEditors/NumberSelectionsFE";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import useConfirm from "@/hooks/useConfirm";
 import type {
   AdditionalConstraint,

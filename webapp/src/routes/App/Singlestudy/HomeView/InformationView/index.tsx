@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import ViewWrapper from "@/components/common/page/ViewWrapper";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { copyStudy } from "@/services/api/studies";
 import { Box, Button, Divider } from "@mui/material";
 import type { AxiosError } from "axios";

@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import PropertiesView from "@/components/PropertiesView";
 import { useState } from "react";
 import type { MatrixDataSetDTO, MatrixInfoDTO } from "../../../types/types";
-import PropertiesView from "../../common/PropertiesView";
 import DataListing from "./DataListing";
 import { StyledListingBox } from "./styles";
 

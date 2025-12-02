@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import {
   FormControl,
   FormControlLabel,
@@ -20,7 +21,6 @@ import {
   type FormControlLabelProps,
   type SwitchProps,
 } from "@mui/material";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 export interface SwitchFEProps
   extends Omit<SwitchProps, "checked" | "defaultChecked" | "defaultValue"> {

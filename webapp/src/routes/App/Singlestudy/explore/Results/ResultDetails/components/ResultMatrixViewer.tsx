@@ -12,24 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import GridOffIcon from "@mui/icons-material/GridOff";
-import { Box, Skeleton } from "@mui/material";
-import { useTranslation } from "react-i18next";
+import FilterableMatrixGrid, {
+  type FilterableMatrixGridHandle,
+} from "@/components/Matrix/components/FilterableMatrixGrid";
 import type {
   DateTimes,
   EnhancedGridColumn,
   ResultMatrixDTO,
-} from "@/components/common/Matrix/shared/types";
+} from "@/components/Matrix/shared/types";
+import { isNonEmptyMatrix } from "@/components/Matrix/shared/types";
+import EmptyView from "@/components/page/EmptyView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
 import type { MatrixIndex } from "@/types/types";
+import GridOffIcon from "@mui/icons-material/GridOff";
+import { Box, Skeleton } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { toError } from "../../../../../../../utils/fnUtils";
-import FilterableMatrixGrid, {
-  type FilterableMatrixGridHandle,
-} from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
-import { isNonEmptyMatrix } from "../../../../../../common/Matrix/shared/types";
-import EmptyView from "../../../../../../common/page/EmptyView";
-import ViewWrapper from "../../../../../../common/page/ViewWrapper";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
 import { type DataType, MAX_YEAR, type Timestep } from "../utils";
 import ResultFilters from "./ResultFilters";

@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import DownloadMatrixButton from "@/components/buttons/DownloadMatrixButton";
+import SplitButton, { type SplitButtonProps } from "@/components/buttons/SplitButton";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";
 import UndoIcon from "@mui/icons-material/Undo";
 import { Button, Divider, IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
-import SplitButton, { type SplitButtonProps } from "@/components/common/buttons/SplitButton";
 import { useMatrixContext } from "../../context/MatrixContext";
 import type { DateTimes, TimeFrequencyType } from "../../shared/types";
 import MatrixFilter from "../MatrixFilter";

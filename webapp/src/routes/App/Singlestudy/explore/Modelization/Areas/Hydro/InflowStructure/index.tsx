@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import NumberFE from "@/components/common/fieldEditors/NumberFE";
-import Form from "@/components/common/Form";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "@/redux/selectors";
 import type { StudyMetadata } from "@/types/types";

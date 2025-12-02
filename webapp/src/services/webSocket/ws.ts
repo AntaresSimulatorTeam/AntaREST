@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { TASK_TYPES_MANAGED } from "@/components/App/Tasks/utils";
 import i18n from "@/i18n";
+import { TASK_TYPES_MANAGED } from "@/routes/App/Tasks/utils";
 import { includes } from "@/utils/tsUtils";
 import debug from "debug";
 import { enqueueSnackbar, type VariantType } from "notistack";
