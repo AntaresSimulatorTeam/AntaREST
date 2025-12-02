@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import BinaryIO, List, Optional
 
 from antarest.study.model import StudySimResultDTO
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
 
@@ -66,3 +67,9 @@ class IOutputStorage(ABC):
     @abstractmethod
     def get_output_path(self, study_id: str, output_id: str) -> Path:
         """Returns the output path for the given output_id"""
+
+    @abstractmethod
+    def get_digest(self, study_id: str, output_id: str) -> DigestUI:
+        """
+        Digest of the output.
+        """

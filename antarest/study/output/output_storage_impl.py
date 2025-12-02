@@ -27,6 +27,10 @@ from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
+    DigestSynthesis,
+    DigestUI,
+)
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
@@ -270,3 +274,14 @@ class OutputStorageImpl(IOutputStorage):
         """Returns the output path for the given output_id"""
         study_outputs = self._outputs_provider.get_outputs(study_id)
         return study_outputs.outputs_path / output_id
+
+    @override
+    def get_digest(self, study_id: str, output_id: str) -> DigestUI:
+        """
+        Digest of the output.
+        """
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        file_study = study_outputs.get_file_study()
+        digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
+        assert isinstance(digest_node, DigestSynthesis)
+        return digest_node.get_ui()

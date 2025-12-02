@@ -73,7 +73,6 @@ from antarest.study.storage.output_model import (
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
-    DigestSynthesis,
     DigestUI,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
@@ -191,10 +190,7 @@ class OutputService:
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
-        file_study = self._study_service.get_file_study(study)
-        digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
-        assert isinstance(digest_node, DigestSynthesis)
-        return digest_node.get_ui()
+        return self._storage.get_digest(study_id, output_id)
 
     @staticmethod
     def _get_output_archive_task_names(study: Study, output_id: str) -> tuple[str, str]:
