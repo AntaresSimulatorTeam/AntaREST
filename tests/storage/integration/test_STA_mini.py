@@ -82,15 +82,10 @@ def assert_url_content(client: TestClient, url: str, expected_output: dict[str, 
     assert_study(res.json(), expected_output)
 
 
-def assert_with_errors(
-    storage_service: StudyService,
-    url: str,
-    expected_output: Union[str, dict[str, Any]],
-    formatted: bool = True,
-) -> None:
+def assert_with_errors(storage_service: StudyService, url: str, expected_output: Union[str, dict[str, Any]]) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
-    output = storage_service.get(uuid=uuid, url=url, depth=3, formatted=formatted)
+    output = storage_service.get(uuid=uuid, url=url, depth=3, formatted=True)
     assert_study(
         output,
         expected_output,
@@ -183,18 +178,11 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
     )
 
 
-def expected_min_gen_response() -> bytes:
-    buffer = io.BytesIO()
-    df = pd.DataFrame(np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760))
-    df.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
-    return buffer.getvalue()
-
-
 @with_admin_user
 @pytest.mark.parametrize(
-    "url, expected_output, formatted",
+    "url, expected_output",
     [
-        (f"/v1/studies/{UUID}/raw?path=input/bindingconstraints/bindingconstraints", {}, True),
+        (f"/v1/studies/{UUID}/raw?path=input/bindingconstraints/bindingconstraints", {}),
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/series/de/mod",
             {
@@ -202,17 +190,12 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(365)),
                 "data": [[0.0]] * 365,
             },
-            True,
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/areas/list", ["DE", "ES", "FR", "IT"], True),
-        (f"/v1/studies/{UUID}/raw?path=input/areas/sets/all areas/output", False, True),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
-            0,
-            True,
-        ),
-        (f"/v1/studies/{UUID}/raw?path=input/areas/de/ui/layerX/0", 1, True),
-        (f"/v1/studies/{UUID}/raw?path=input/hydro/allocation/de/[allocation]/de", 1, True),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/list", ["DE", "ES", "FR", "IT"]),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/sets/all areas/output", False),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost", 0),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/de/ui/layerX/0", 1),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/allocation/de/[allocation]/de", 1),
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/common/capacity/reservoir_fr",
             {
@@ -220,7 +203,6 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(365)),
                 "data": [[0, 0.5, 1]] * 365,
             },
-            True,
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/thermal/series/fr/05_nuclear/series",
@@ -229,19 +211,14 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(8760)),
                 "data": [[2000]] * 8760,
             },
-            True,
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode", "annual", True),
-        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation", 0.5, True),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/energy",
-            {"data": [[]], "index": [0], "columns": []},
-            True,
-        ),
-        (f"/v1/studies/{UUID}/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr", 1, True),
-        (f"/v1/studies/{UUID}/raw?path=input/thermal/areas/unserverdenergycost/de", 3000.0, True),
-        (f"/v1/studies/{UUID}/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost", 50, True),
-        (f"/v1/studies/{UUID}/raw?path=input/links/fr/properties/it/hurdles-cost", True, True),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode", "annual"),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation", 0.5),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/energy", {"data": [[]], "index": [0], "columns": []}),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr", 1),
+        (f"/v1/studies/{UUID}/raw?path=input/thermal/areas/unserverdenergycost/de", 3000.0),
+        (f"/v1/studies/{UUID}/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost", 50),
+        (f"/v1/studies/{UUID}/raw?path=input/links/fr/properties/it/hurdles-cost", True),
         (
             f"/v1/studies/{UUID}/raw?path=input/links/fr/it",
             {
@@ -249,9 +226,8 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(8760)),
                 "data": [[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760,
             },
-            True,
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}, True),
+        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series",
             {
@@ -260,7 +236,6 @@ def expected_min_gen_response() -> bytes:
                 "load_fr": "matrixfile://load_fr.txt",
                 "load_it": "matrixfile://load_it.txt",
             },
-            True,
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
@@ -269,7 +244,6 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(8760)),
                 "data": [[i % 168 * 100] for i in range(8760)],
             },
-            True,
         ),
         pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
@@ -278,14 +252,6 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(8760)),
                 "data": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760,
             },
-            True,
-            id="empty_matrix_formatted",
-        ),
-        pytest.param(
-            f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
-            expected_min_gen_response(),
-            False,
-            id="empty_matrix_unformatted",
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/reserves/fr",
@@ -294,9 +260,8 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
-            True,
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}, True),
+        (f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}),
         (
             f"/v1/studies/{UUID}/raw?path=input/solar/series/solar_fr",
             {
@@ -304,9 +269,8 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
-            True,
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}, True),
+        (f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}),
         (
             f"/v1/studies/{UUID}/raw?path=input/wind/series/wind_fr",
             {
@@ -314,12 +278,27 @@ def expected_min_gen_response() -> bytes:
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
-            True,
         ),
     ],
 )
-def test_sta_mini_input(storage_service: StudyService, url: str, expected_output: Any, formatted: bool) -> None:
-    assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output, formatted=formatted)
+def test_sta_mini_input(storage_service: StudyService, url: str, expected_output: Any) -> None:
+    assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output)
+
+
+@pytest.mark.parametrize(
+    "url, expected_output",
+    [
+        pytest.param(
+            f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
+            pd.DataFrame(np.array([[0, 0, 0, 0, 0, 0, 0, 0]] * 8760)),
+            id="miscgen-fr",
+        )
+    ],
+)
+def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_output: pd.DataFrame) -> None:
+    res = client.get(f"{url}&formatted=False")
+    actual_output = pd.read_csv(io.BytesIO(res.content), sep="\t", header=None)
+    pd.testing.assert_frame_equal(actual_output, expected_output, check_dtype=False)
 
 
 @with_admin_user
@@ -502,7 +481,6 @@ def test_sta_mini_copy(
 
     storage_service.job_result_repository.find_by_study_and_output_ids.return_value = []
 
-    client = client
     result = client.post(f"/v1/studies/{source_study_name}/copy?study_name={destination_study_name}&use_task=false")
 
     assert result.status_code == HTTPStatus.CREATED.value
