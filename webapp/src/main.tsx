@@ -12,10 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { initConfig } from "./services/config";
+import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
-import App from "./components/App";
+import { routeTree } from "./routeTree.gen";
+import { initConfig } from "./services/config";
 import storage, { StorageKey } from "./services/utils/localStorage";
+
+// Exported for use in tanstack-router.d.ts
+export const router = createRouter({ routeTree });
 
 initConfig().then((config) => {
   const versionInstalled = storage.getItem(StorageKey.Version);
@@ -24,11 +28,11 @@ initConfig().then((config) => {
     window.location.reload();
   }
 
-  const container = document.getElementById("root");
+  const rootContainer = document.getElementById("root");
 
-  if (!container) {
+  if (!rootContainer) {
     throw new Error("Root container not found");
   }
 
-  createRoot(container).render(<App />);
+  createRoot(rootContainer).render(<RouterProvider router={router} />);
 });
