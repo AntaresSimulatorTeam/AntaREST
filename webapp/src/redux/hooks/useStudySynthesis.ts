@@ -13,10 +13,10 @@
  */
 
 import type { Response } from "@/components/utils/UsePromiseCond";
+import { PromiseStatus, type TPromiseStatus } from "@/hooks/usePromise";
+import type { StudyMetadata } from "@/types/types";
 import { useState } from "react";
 import { useAsync } from "react-use";
-import { PromiseStatus, type TPromiseStatus } from "../../hooks/usePromise";
-import type { StudyMetadata } from "../../types/types";
 import type { AppState } from "../ducks";
 import { createStudySynthesis } from "../ducks/studySyntheses";
 import { getStudySynthesis } from "../selectors";

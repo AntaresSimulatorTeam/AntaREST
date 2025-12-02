@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import * as api from "@/services/api/study";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyEventPayload } from "@/services/webSocket/types";
+import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
@@ -22,8 +24,6 @@ import {
 } from "@reduxjs/toolkit";
 import * as R from "ramda";
 import type { O } from "ts-toolbelt";
-import * as api from "../../services/api/study";
-import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../types/types";
 import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";

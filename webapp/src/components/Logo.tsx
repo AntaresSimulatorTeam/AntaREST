@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import logo from "@/assets/img/logo.png";
 import { Box, keyframes, styled } from "@mui/material";
-import logo from "../../assets/img/logo.png";
 
 const pulsatingAnimation = keyframes`
   0% {

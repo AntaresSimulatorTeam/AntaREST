@@ -13,9 +13,9 @@
  */
 
 import type { Response } from "@/components/utils/UsePromiseCond";
+import usePromise, { PromiseStatus, type TPromiseStatus } from "@/hooks/usePromise";
+import type { StudyMetadata } from "@/types/types";
 import { useState } from "react";
-import usePromise, { PromiseStatus, type TPromiseStatus } from "../../hooks/usePromise";
-import type { StudyMetadata } from "../../types/types";
 import type { AppState } from "../ducks";
 import { createStudyMap, fetchStudyMapDistricts, fetchStudyMapLayers } from "../ducks/studyMaps";
 import { getStudyMap } from "../selectors";
