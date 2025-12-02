@@ -35,7 +35,19 @@ import useStudyOutput from "../hooks/useStudyOutput";
 import ResultItemSelector from "./components/ResultItemSelector";
 import ResultMatrixViewer from "./components/ResultMatrixViewer";
 import SynthesisViewer, { type SynthesisData } from "./components/SynthesisViewer";
-import { createPath, DataType, OutputItemType, SYNTHESIS_ITEMS, Timestep } from "./utils";
+import {
+  createPath,
+  type DataType,
+  type MonteCarloMode,
+  type OutputItemType,
+  SYNTHESIS_ITEMS,
+  type Timestep,
+} from "./utils";
+import type {
+  SelectedVariableObject,
+  VariablesListDTO,
+} from "../../../../../../services/api/studies/outputs/variableViews/types";
+import { getVariablesList } from "../../../../../../services/api/studies/outputs/variableViews";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
@@ -45,21 +57,26 @@ function ResultDetails() {
   const { outputId } = useParams();
   const navigate = useNavigate();
 
-  const [dataType, setDataType] = useState(DataType.General);
-  const [timestep, setTimestep] = useState(Timestep.Hourly);
+  const [mcMode, setMcMode] = useState<MonteCarloMode>("mc-all");
+  const [dataType, setDataType] = useState<DataType>("values");
+  const [timestep, setTimestep] = useState<Timestep>("hourly");
   const [year, setYear] = useState(-1);
-  const [itemType, setItemType] = useState(OutputItemType.Areas);
+  const [itemType, setItemType] = useState<OutputItemType>("areas");
   const [selectedItemId, setSelectedItemId] = useState("");
   const [searchValue, setSearchValue] = useState("");
-  // Store filtered headers and their original indices separately
-  // This allows us to correctly map the data rows to their corresponding headers
-  // when some columns are filtered out
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
 
-  // Ref for the FilterableMatrixGrid to control the filter
+  const [selectedVariableObject, setSelectedVariableObject] =
+    useState<SelectedVariableObject | null>(null);
+  const [selectedVariable, setSelectedVariable] = useState("");
+  const [variablesMetadata, setVariablesMetadata] = useState<VariablesListDTO | null>(null);
+  const [isViewMaterialized, setIsViewMaterialized] = useState(false);
+  const [materializationTaskId, setMaterializationTaskId] = useState<string | null>(null);
+
   const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
-  const isSynthesis = itemType === OutputItemType.Synthesis;
+  const isSynthesis = itemType === "synthesis";
+  const isVariablePerVariable = mcMode === "variable-per-variable";
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const links = useAppSelector((state) => getLinks(state, study.id));
 
@@ -68,8 +85,23 @@ function ResultDetails() {
     outputId: outputId,
   });
 
+  useEffect(() => {
+    if (output && outputId && isVariablePerVariable) {
+      getVariablesList(study.id, outputId)
+        .then(setVariablesMetadata)
+        .catch((error) => {
+          console.error("Failed to load variables list:", error);
+          setVariablesMetadata(null);
+        });
+    } else {
+      setVariablesMetadata(null);
+      setSelectedVariableObject(null);
+      setSelectedVariable("");
+    }
+  }, [study.id, outputId, output, isVariablePerVariable]);
+
   const items = useMemo(() => {
-    const currentItems = (itemType === OutputItemType.Areas ? areas : links) as Array<{
+    const currentItems = (itemType === "areas" ? areas : links) as Array<{
       id: string;
       name: string;
       label?: string;

@@ -14,27 +14,18 @@
 
 import type { Area, LinkElement, Simulation } from "../../../../../../types/types";
 
-export enum OutputItemType {
-  Areas = "areas",
-  Links = "links",
-  Synthesis = "synthesis",
-}
+export const OUTPUT_ITEM_TYPES = ["areas", "links", "synthesis"] as const;
 
-export enum DataType {
-  General = "values",
-  Thermal = "details",
-  Renewable = "details-res",
-  Record = "id",
-  STStorage = "details-STstorage",
-}
+export const DATA_TYPES = ["values", "details", "details-res", "id", "details-STstorage"] as const;
 
-export enum Timestep {
-  Hourly = "hourly",
-  Daily = "daily",
-  Weekly = "weekly",
-  Monthly = "monthly",
-  Annual = "annual",
-}
+export const TIMESTEPS = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
+
+export const MONTE_CARLO_MODES = ["mc-ind", "mc-all", "variable-per-variable"] as const;
+
+export type OutputItemType = (typeof OUTPUT_ITEM_TYPES)[number];
+export type DataType = (typeof DATA_TYPES)[number];
+export type Timestep = (typeof TIMESTEPS)[number];
+export type MonteCarloMode = (typeof MONTE_CARLO_MODES)[number];
 
 interface Params {
   output: Partial<Simulation> & { id: string; name: string };
@@ -56,7 +47,7 @@ export function createPath(params: Params): string {
         .padStart(5, "0")}`
     : "mc-all";
   const isLink = "area1" in item;
-  const itemType = isLink ? OutputItemType.Links : OutputItemType.Areas;
+  const itemType = isLink ? "links" : "areas";
   const itemFolder = isLink ? `${item.area1}/${item.area2}` : item.id;
 
   return `output/${id}/${mode.toLowerCase()}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${timestep}`;
