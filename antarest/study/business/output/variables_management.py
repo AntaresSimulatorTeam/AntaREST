@@ -26,8 +26,9 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
-    normalize_column_names,
-    parse_output_file,
+    get_start_column,
+    normalize_df_column_names,
+    parse_headers,
 )
 from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -73,7 +74,7 @@ def _filter_files_with_same_prefix(
 
 
 def _read_headers_only(
-    file_path: Path, mc_root: MCRoot, freq: MatrixFrequency, file_type: QueryFileType
+    file_path: Path, mc_root: MCRoot, file_type: QueryFileType, start_column: int
 ) -> list[ColumnHeader]:
     """
     Returns the headers of a given output file.
@@ -87,16 +88,15 @@ def _read_headers_only(
     Returns:
         - A list of ColumnHeader objects
     """
-    body = parse_output_file(file_path, freq, 0)
+    output_headers = parse_headers(file_path.read_text(encoding="utf-8"), start_column)
 
     if "details" in file_type.value:
         cols_mapping: dict[str, set[str]] = {}
-        for col in body.columns:
+        for col in output_headers:
             cols_mapping.setdefault(col[0], set()).add(col[1])
         return [ColumnHeader(name=col, sub_columns_names=list(vars)) for col, vars in cols_mapping.items()]
 
-    normalized_cols = normalize_column_names(body, mc_root)
-    return [ColumnHeader(name=col) for col in normalized_cols]
+    return [ColumnHeader(name=col) for col in normalize_df_column_names(mc_root, output_headers)]
 
 
 def _get_all_headers_and_file_type(
@@ -109,7 +109,8 @@ def _get_all_headers_and_file_type(
     filtered_files = _filter_files_with_same_prefix(parent_path, file_type_class)
     for file_type, freq in filtered_files.items():
         file_path = parent_path / f"{file_type}-{freq.value}.txt"
-        yield _read_headers_only(file_path, mc_root, freq, file_type), file_type
+        start_col = get_start_column(freq)
+        yield _read_headers_only(file_path, mc_root, file_type, start_col), file_type
 
 
 def extract_variables_list(output_path: Path) -> OutputVariablesList:

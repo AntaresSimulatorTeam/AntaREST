@@ -26,6 +26,9 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
+    get_start_column,
+    normalize_df_column_names,
+    parse_headers,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
@@ -87,20 +90,6 @@ def _filtered_files_listing(
     return filtered_files
 
 
-def _parse_headers(content: str, start_col: int) -> list[list[str]]:
-    lines = content.splitlines()
-    header_lines = []
-    for idx, line in enumerate(lines[4:7]):
-        cols = line.split("\t")[start_col:]
-        if idx == 0:
-            header_lines = [[col] for col in cols]
-        else:
-            for k, col in enumerate(cols):
-                header_lines[k].append(col)
-
-    return header_lines
-
-
 class AggregatorManager:
     def __init__(
         self,
@@ -130,25 +119,11 @@ class AggregatorManager:
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
             else MCRoot.MC_ALL
         )
-        self._output_first_column = self._get_start_column()
-
-    def _get_start_column(self) -> int:
-        if self.frequency == MatrixFrequency.ANNUAL:
-            return 2
-        elif self.frequency == MatrixFrequency.MONTHLY:
-            return 3
-        elif self.frequency == MatrixFrequency.WEEKLY:
-            return 2
-        elif self.frequency == MatrixFrequency.DAILY:
-            return 4
-        elif self.frequency == MatrixFrequency.HOURLY:
-            return 5
-        else:
-            raise NotImplementedError(f"Unknown frequency {self.frequency.value}")
+        self._output_first_column = get_start_column(self.frequency)
 
     def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
         content = file_path.read_text(encoding="utf-8")
-        output_headers = _parse_headers(content, self._output_first_column)
+        output_headers = parse_headers(content, self._output_first_column)
         polars_df = pl.read_csv(io.StringIO(content), skip_lines=7, separator="\t", has_header=False, null_values="N/A")
         df = polars_df[polars_df.columns[self._output_first_column :]].to_pandas()
         df = df.replace({None: np.nan}).astype(np.float64)
@@ -156,10 +131,7 @@ class AggregatorManager:
         df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
 
         if normalize_column_names:
-            if self.mc_root == MCRoot.MC_IND:
-                df.columns = pd.Index([col[0] for col in output_headers])
-            else:
-                df.columns = pd.Index([" ".join([col[0], col[2]]).upper().strip() for col in output_headers])
+            df.columns = pd.Index(normalize_df_column_names(self.mc_root, output_headers))
 
         return df
 
