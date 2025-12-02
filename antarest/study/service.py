@@ -1267,7 +1267,7 @@ class StudyService:
         self,
         uuid: str,
         outputs: bool = True,
-        compression: ArchiveFormat = ArchiveFormat.ZIP,
+        compression: Optional[ArchiveFormat] = ArchiveFormat.ZIP,
     ) -> FileDownloadTaskDTO:
         """
         Export study to a zip file.
