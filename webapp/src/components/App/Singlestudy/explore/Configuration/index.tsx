@@ -14,19 +14,20 @@
 
 import * as R from "ramda";
 import { useMemo, useState } from "react";
-import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import semver from "semver";
 import type { StudyMetadata } from "../../../../../types/types";
 import PropertiesView from "../../../../common/PropertiesView";
+import SplitView from "../../../../common/SplitView";
+import TableMode from "../../../../common/TableMode";
+import ViewWrapper from "../../../../common/page/ViewWrapper";
 import ListElement from "../common/ListElement";
 import AdequacyPatch from "./AdequacyPatch";
 import AdvancedParameters from "./AdvancedParameters";
 import General from "./General";
 import Optimization from "./Optimization";
 import TimeSeriesManagement from "./TimeSeriesManagement";
-import TableMode from "../../../../common/TableMode";
-import SplitView from "../../../../common/SplitView";
-import ViewWrapper from "../../../../common/page/ViewWrapper";
 
 function Configuration() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -39,7 +40,7 @@ function Configuration() {
         { id: 0, name: "General" },
         { id: 1, name: "Time-series management" },
         { id: 2, name: "Optimization preferences" },
-        Number(study.version) >= 830 && { id: 3, name: "Adequacy Patch" },
+        semver.gte(study.version, "8.3.0") && { id: 3, name: "Adequacy Patch" },
         { id: 4, name: "Advanced parameters" },
         { id: 5, name: t("study.configuration.economicOpt") },
         { id: 6, name: t("study.configuration.geographicTrimmingAreas") },

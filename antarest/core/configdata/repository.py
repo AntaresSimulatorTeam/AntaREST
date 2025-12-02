@@ -17,8 +17,6 @@ from sqlalchemy import select
 
 from antarest.core.configdata.model import ConfigData
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import JSON
-from antarest.core.serde.json import from_json, to_json_string
 from antarest.core.utils.fastapi_sqlalchemy import db
 
 
@@ -38,20 +36,3 @@ class ConfigDataRepository:
                 )
             )
         ).scalar_one_or_none()
-
-    def get_json(self, key: str, owner: Optional[int] = None) -> Optional[JSON]:
-        configdata = self.get(key, owner)
-        if configdata and configdata.value is not None:
-            data: JSON = from_json(configdata.value)
-            return data
-        return None
-
-    def put_json(self, key: str, data: JSON, owner: Optional[int] = None) -> None:
-        configdata = ConfigData(
-            key=key,
-            value=to_json_string(data),
-            owner=owner or DEFAULT_ADMIN_USER.id,
-        )
-        configdata = db.session.merge(configdata)
-        db.session.add(configdata)
-        db.session.commit()

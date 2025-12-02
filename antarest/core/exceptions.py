@@ -45,7 +45,6 @@ class MustNotModifyOutputException(Exception):
 THERMAL_CLUSTER = "thermal cluster"
 RENEWABLE_CLUSTER = "renewable cluster"
 SHORT_TERM_STORAGE = "short-term storage"
-DISTRICT = "district"
 
 # ============================================================
 # NotFound (404)
@@ -139,51 +138,6 @@ class STStorageNotFound(ClusterNotFound):
     """Short-term storage is not found (404 Not Found)"""
 
     object_name = "Short-term storage"
-
-
-class MatrixNotFound(HTTPException):
-    """
-    Exception raised when a matrix is not found (404 Not Found).
-
-    Notes:
-        The study ID is not provided because it is implicit.
-
-    Attributes:
-        path: Path of the missing file(s) relative to the study directory.
-    """
-
-    object_name = ""
-    """Name of the object that is not found: thermal, renewables, etc."""
-
-    def __init__(self, path: str):
-        assert _match_input_path(path), f"Invalid path: '{path}'"
-        self.path = path
-        detail = f"Matrix '{path}' not found"
-        if self.object_name:
-            detail = f"{self.object_name.title()} {detail}"
-        super().__init__(HTTPStatus.NOT_FOUND, detail)
-
-    @override
-    def __str__(self) -> str:
-        return self.detail
-
-
-class ThermalClusterMatrixNotFound(MatrixNotFound):
-    """Matrix of the thermal cluster is not found (404 Not Found)"""
-
-    object_name = THERMAL_CLUSTER
-
-
-class RenewableClusterMatrixNotFound(MatrixNotFound):
-    """Matrix of the renewable cluster is not found (404 Not Found)"""
-
-    object_name = RENEWABLE_CLUSTER
-
-
-class STStorageMatrixNotFound(MatrixNotFound):
-    """Matrix of the short-term storage is not found (404 Not Found)"""
-
-    object_name = SHORT_TERM_STORAGE
 
 
 # ============================================================
@@ -481,11 +435,6 @@ class BindingConstraintNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class NoConstraintError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, message)
-
-
 class DuplicateConstraintName(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
@@ -609,18 +558,6 @@ class LayerNotAllowedToBeDeleted(HTTPException):
 
 class StudyOutputNotFoundError(Exception):
     pass
-
-
-class AllocationDataNotFound(HTTPException):
-    def __init__(self, *area_ids: str) -> None:
-        count = len(area_ids)
-        ids = ", ".join(f"'{a}'" for a in area_ids)
-        msg = {
-            0: "Allocation data is found",
-            1: f"Allocation data for area {ids} is not found",
-            2: f"Allocation data for areas {ids} is not found",
-        }[min(count, 2)]
-        super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
 class AreaNotFound(HTTPException):
@@ -772,11 +709,6 @@ class CandidateNameIsEmpty(HTTPException):
 
 
 class WrongLinkFormatError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
-
-
-class CandidateAlreadyExistsError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 

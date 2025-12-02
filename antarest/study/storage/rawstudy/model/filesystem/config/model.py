@@ -219,9 +219,6 @@ class FileStudyTreeConfig(DTO):
     def area_names(self) -> List[str]:
         return list(self.areas)
 
-    def set_names(self, only_output: bool = True) -> List[str]:
-        return [k for k, v in self.districts.items() if v.output or not only_output]
-
     def get_thermal_ids(self, area: str) -> List[str]:
         """
         Returns a list of thermal cluster IDs for a given area.

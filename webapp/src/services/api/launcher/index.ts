@@ -12,11 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import client from "../client";
+import { adaptLauncherParamsToDto, adaptLaunchersConfigDtoToLaunchersConfig } from "./adapters";
 import type {
   GetLauncherVersionsParams,
   JobCreationDTO,
-  LauncherParamsDTO,
+  LaunchersConfigDTO,
   LaunchStudyParams,
 } from "./types";
 
@@ -27,24 +29,19 @@ export async function launchStudy({
   launcherId,
   solverPresetsId,
   version,
-  config,
+  launcherParams,
 }: LaunchStudyParams) {
-  const launcherParams: LauncherParamsDTO = {
-    nb_cpu: config?.nbCores,
-    xpansion: config?.xpansion && {
-      enabled: config.xpansion?.enabled,
-      adequacy_criterion: config.xpansion?.adequacyCriterion,
-      sensitivity_mode: config.xpansion?.sensitivityMode,
-      output_id: config.xpansion?.outputId,
+  const { data } = await client.post<JobCreationDTO>(
+    `${BASE_URL}/run/${studyId}`,
+    launcherParams ? adaptLauncherParamsToDto(launcherParams) : {},
+    {
+      params: {
+        version: compactSemanticVersion(version),
+        launcher: launcherId,
+        solver_presets_id: solverPresetsId,
+      },
     },
-    auto_unzip: config?.autoUnzip,
-    output_suffix: config?.outputSuffix,
-    other_options: config?.otherOptions,
-  };
-
-  const { data } = await client.post<JobCreationDTO>(`${BASE_URL}/run/${studyId}`, launcherParams, {
-    params: { version, launcher: launcherId, solver_presets_id: solverPresetsId },
-  });
+  );
 
   return data;
 }
@@ -55,4 +52,9 @@ export async function getLauncherVersions({ launcherId }: GetLauncherVersionsPar
   });
 
   return data;
+}
+
+export async function getLaunchersConfig() {
+  const res = await client.get<LaunchersConfigDTO>("/v1/launcher/launchers");
+  return adaptLaunchersConfigDtoToLaunchersConfig(res.data);
 }
