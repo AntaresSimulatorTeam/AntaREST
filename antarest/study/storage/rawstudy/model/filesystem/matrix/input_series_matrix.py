@@ -18,7 +18,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import polars as pl
-from polars._plr import ComputeError, NoDataError
+from polars.exceptions import ComputeError, NoDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
