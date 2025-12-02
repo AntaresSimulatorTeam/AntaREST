@@ -76,7 +76,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader
-from antarest.study.storage.utils import assert_permission, get_start_date, is_output_archived, remove_from_cache
+from antarest.study.storage.utils import assert_permission, is_output_archived, remove_from_cache
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -329,8 +329,7 @@ class OutputService:
         """
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
-        file_study = self._study_service.get_file_study(study)
-        return get_start_date(file_study, output_id, frequency)
+        return self._storage.get_output_time_index(study_id, output_id, frequency)
 
     def export_output(self, study_uuid: str, output_uuid: str) -> FileDownloadTaskDTO:
         """
@@ -508,11 +507,12 @@ class OutputService:
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
         self._study_service.assert_study_unarchived(study)
-        file_study = self._study_service.get_file_study(study)
+
+        outputs = self._storage.get_study_sim_result(study_id)
         task_ids = []
-        for output in file_study.config.outputs:
-            if not file_study.config.outputs[output].archived:
-                task_id = self.archive_output(study_id, output)
+        for output in outputs:
+            if not output.archived:
+                task_id = self.archive_output(study_id, output.name)
                 if task_id:
                     task_ids.append(task_id)
         return task_ids

@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import BinaryIO, List, Optional
 
-from antarest.study.model import StudySimResultDTO
+from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -72,4 +72,16 @@ class IOutputStorage(ABC):
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
         """
         Digest of the output.
+        """
+
+    @abstractmethod
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+        """
+        Get the time index (start date and step count) for output matrices with a given frequency.
+        Args:
+            study_id: ID of the study
+            output_id: ID of the output
+            frequency: temporal frequency (hourly, daily, weekly, monthly, annually)
+        Returns:
+            MatrixIndex with start_date, steps, first_week_size and level
         """

@@ -22,7 +22,7 @@ from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
-from antarest.study.model import StudySimResultDTO, StudySimSettingsDTO
+from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO, StudySimResultDTO, StudySimSettingsDTO
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
@@ -32,7 +32,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
+from antarest.study.storage.utils import extract_output_name, fix_study_root, get_start_date, remove_from_cache
 
 logger = logging.getLogger(__name__)
 
@@ -285,3 +285,18 @@ class OutputStorageImpl(IOutputStorage):
         digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
         assert isinstance(digest_node, DigestSynthesis)
         return digest_node.get_ui()
+
+    @override
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+        """
+        Get the time index (start date and step count) for output matrices with a given frequency.
+        Args:
+            study_id: ID of the study
+            output_id: ID of the output
+            frequency: temporal frequency (hourly, daily, weekly, monthly, annually)
+        Returns:
+            MatrixIndex with start_date, steps, first_week_size and level
+        """
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        file_study = study_outputs.get_file_study()
+        return get_start_date(file_study, output_id, frequency)
