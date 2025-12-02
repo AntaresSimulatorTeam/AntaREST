@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Children, useState } from "react";
+import { Children, isValidElement, useState } from "react";
 import Split, { type SplitProps } from "react-split";
 import { useUpdateEffect } from "react-use";
 import storage from "../../../services/utils/localStorage";
@@ -33,6 +33,49 @@ function isValidSizes(sizes: unknown): sizes is number[] {
     sizes.every((size) => typeof size === "number") &&
     sizes.reduce((sum, size) => sum + size, 0) === 100
   );
+}
+
+/**
+ * Generates a stable key for a React child element.
+ * This prevents DOM ref issues with react-split when children change conditionally.
+ *
+ * The key is based on:
+ * 1. The child's existing key (if provided)
+ * 2. The component type (function/class name or element type)
+ * 3. The child's position index
+ *
+ * This ensures that when conditional rendering swaps children (e.g., SynthesisViewer <-> ResultMatrixViewer),
+ * react-split's internal DOM refs are properly updated instead of being reused incorrectly.
+ *
+ * @param child
+ * @param index
+ */
+function getChildKey(child: React.ReactNode, index: number): string {
+  if (!isValidElement(child)) {
+    return `split-child-${index}`;
+  }
+
+  // If the child already has a key, use it
+  if (child.key) {
+    return String(child.key);
+  }
+
+  // Generate a key based on the component type and index
+  let typeIdentifier = `unknown-${index}`;
+
+  if (typeof child.type === "string") {
+    // DOM element like 'div', 'span'
+    typeIdentifier = child.type;
+  } else if (typeof child.type === "function") {
+    // Function/Class component
+    typeIdentifier = child.type.name || child.type.toString();
+  } else if (child.type && typeof child.type === "object") {
+    // Memo/ForwardRef component
+    const componentType = child.type as { name?: string; displayName?: string };
+    typeIdentifier = componentType.name || componentType.displayName || "component";
+  }
+
+  return `split-${typeIdentifier}-${index}`;
 }
 
 /**
@@ -76,13 +119,20 @@ function SplitView({
     storage.setItem(localStorageKey, activeSizes?.map(Math.round));
   }, [activeSizes, localStorageKey]);
 
+  // Generate a composite key based on direction and children identities
+  // This ensures Split remounts when children change
+  // preventing react-split's DOM refs from getting confused
+  const childrenKeys = Children.map(children, (child, index) => getChildKey(child, index))?.join(
+    "-",
+  );
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
     <Split
-      key={direction} // Force re-render when direction changes.
+      key={`${direction}-${childrenKeys}`} // Force re-render when direction or children identities change
       className="SplitView"
       direction={direction}
       sizes={activeSizes ?? defaultSizes}
