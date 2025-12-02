@@ -36,6 +36,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, AggregatorManager
 from antarest.study.business.output.utils import (
     MCYEAR_COL,
@@ -174,15 +175,17 @@ class OutputService:
         task_service: ITaskService,
         file_transfer_manager: FileTransferManager,
         event_bus: IEventBus,
+        matrix_service: ISimpleMatrixService,
+        tmp_dir: Path,
     ) -> None:
         self._study_service = study_service
         self._storage = storage
         self._task_service = task_service
         self._file_transfer_manager = file_transfer_manager
         self._event_bus = event_bus
-        self._matrix_service = (
-            self._study_service.storage_service.variant_study_service.command_factory.command_context.matrix_service
-        )
+        self._matrix_service = matrix_service
+        self._tmp_dir = tmp_dir
+
         OutputVariablesMatrixUsageProvider(self._matrix_service)
 
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:

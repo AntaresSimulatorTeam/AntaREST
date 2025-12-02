@@ -723,6 +723,7 @@ def test_download_output(command_context: CommandContext) -> None:
         event_bus=service.event_bus,
         cache=service.cache_service,
         config=config,
+        matrix_service=Mock(),
     )
 
     study_service.get_raw.return_value = FileStudy(config=file_study_tree_config, tree=file_study_tree)

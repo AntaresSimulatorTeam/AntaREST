@@ -45,7 +45,7 @@ from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.output.output_storage_impl import IFileOutputsProvider, IFileStudyOutputs, OutputStorageImpl
 from antarest.study.service import StudyService
@@ -185,6 +185,7 @@ def build_output_service(
     filetransfer_service: FileTransferManager,
     event_bus: IEventBus,
     config: Config,
+    matrix_service: ISimpleMatrixService,
 ) -> OutputService:
     output_storage = OutputStorageImpl(outputs_provider=_file_outputs_provider(study_service), cache=cache)
 
@@ -194,6 +195,8 @@ def build_output_service(
         task_service=task_service,
         file_transfer_manager=filetransfer_service,
         event_bus=event_bus,
+        matrix_service=matrix_service,
+        tmp_dir=config.storage.tmp_dir,
     )
 
     if app_ctxt:
@@ -237,6 +240,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         filetransfer_service=filetransfer_service,
         event_bus=event_bus,
         config=config,
+        matrix_service=matrix_service,
     )
 
     if app_ctxt:

@@ -160,6 +160,7 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
         event_bus=study_service.event_bus,
         task_service=task_service_mock,
         filetransfer_service=Mock(),
+        matrix_service=matrix_service,
     )
 
     return study_service, output_service, config
