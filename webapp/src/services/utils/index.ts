@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import i18n from "@/i18n";
+import { toSemanticVersion } from "@/utils/versionUtils";
 import type { TFunction } from "i18next";
 import moment from "moment";
 import * as R from "ramda";
-import i18n from "@/i18n";
 import {
   type GenericInfo,
   type JWTGroup,
@@ -30,26 +31,28 @@ import {
 export const convertStudyDtoToMetadata = (
   sid: string,
   metadata: StudyMetadataDTO,
-): StudyMetadata => ({
-  id: sid,
-  name: metadata.name,
-  creationDate: metadata.created,
-  modificationDate: metadata.updated,
-  owner: metadata.owner,
-  author: metadata.author,
-  editor: metadata.editor,
-  groups: metadata.groups,
-  type: metadata.type,
-  publicMode: metadata.public_mode,
-  version: metadata.version.toString(),
-  workspace: metadata.workspace,
-  managed: metadata.managed,
-  archived: metadata.archived,
-  folder: metadata.folder,
-  horizon: metadata.horizon,
-  tags: metadata.tags,
-  parentId: metadata.parent_id,
-});
+): StudyMetadata => {
+  return {
+    id: sid,
+    name: metadata.name,
+    creationDate: metadata.created,
+    modificationDate: metadata.updated,
+    owner: metadata.owner,
+    author: metadata.author,
+    editor: metadata.editor,
+    groups: metadata.groups,
+    type: metadata.type,
+    publicMode: metadata.public_mode,
+    version: toSemanticVersion(metadata.version),
+    workspace: metadata.workspace,
+    managed: metadata.managed,
+    archived: metadata.archived,
+    folder: metadata.folder,
+    horizon: metadata.horizon,
+    tags: metadata.tags,
+    parentId: metadata.parent_id,
+  };
+};
 
 export const convertVariantTreeDTO = (variantTree: VariantTreeDTO): VariantTree => ({
   node: convertStudyDtoToMetadata(variantTree.node.id, variantTree.node),
@@ -146,24 +149,6 @@ export const exportText = (fileData: string, filename: string): void => {
   link.click();
   link.remove();
 };
-
-/**
- * Gets the appropriate root name to display.
- * The patch root is not displayed because it is not relevant.
- * Its value is always 0 from the server.
- *
- * Ex: '820' -> '8.2'
- *
- * @param v - Version in format '[major][minor]0' (ex: '820').
- * @returns Version in format '[major].[minor]' (ex: '8.2').
- */
-export const displayVersionName = (v: string): string => `${v[0]}.${v[1]}`;
-
-export const convertVersions = (versions: string[]): GenericInfo[] =>
-  versions.map((version) => ({
-    id: version,
-    name: displayVersionName(version),
-  }));
 
 export const isStringEmpty = (data: string): boolean => data.replace(/\s/g, "") === "";
 
