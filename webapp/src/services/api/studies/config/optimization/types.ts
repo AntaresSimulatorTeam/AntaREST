@@ -73,10 +73,10 @@ export interface SetOptimizationParams extends BaseOptimizationParams {
 }
 
 export interface GetOptimizationFormParams extends BaseOptimizationParams {
-  studyVersion: number;
+  studyVersion: string;
 }
 
 export interface SetOptimizationFormParams extends BaseOptimizationParams {
   values: Partial<OptimizationForm>;
-  studyVersion: number;
+  studyVersion: string;
 }

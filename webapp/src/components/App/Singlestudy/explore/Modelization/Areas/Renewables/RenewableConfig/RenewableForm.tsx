@@ -16,6 +16,7 @@ import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import type { Area, Cluster, StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
@@ -37,7 +38,6 @@ interface Props {
 
 function RenewableForm({ study, areaId, clusterId }: Props) {
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -64,7 +64,7 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
         <>
           <Fieldset legend={t("global.general")}>
             <StringFE label={t("global.name")} name="name" control={control} disabled />
-            {studyVersion < 930 ? (
+            {semver.lt(study.version, "9.3.0") ? (
               <SelectFE
                 label={t("global.group")}
                 name="group"
