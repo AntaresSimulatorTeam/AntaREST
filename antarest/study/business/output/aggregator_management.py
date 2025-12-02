@@ -130,7 +130,7 @@ class AggregatorManager:
                 io.StringIO(content), skip_lines=7, separator="\t", has_header=False, null_values="N/A"
             )
         except ComputeError:
-            # Happens if polars wrongly infered the schema. If so, we specify that he shouldn't try.
+            # Happens if polars wrongly inferred the schema. If so, we specify that he shouldn't try.
             # This way the parsing does not fail, but it is significantly slower.
             # This case does not seem to happen very often.
             polars_df = pl.read_csv(
