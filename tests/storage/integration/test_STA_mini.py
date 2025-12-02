@@ -67,7 +67,9 @@ def client(
     )
     build_ctxt = create_app_ctxt(app)
     add_study_routes(build_ctxt, storage_service, Mock(), config)
-    build_ctxt.api_root.include_router(create_output_routes(output_service, config))
+    build_ctxt.api_root.include_router(
+        create_output_routes(output_service, storage_service.file_transfer_manager, config)
+    )
 
     return TestClient(build_ctxt.build())
 

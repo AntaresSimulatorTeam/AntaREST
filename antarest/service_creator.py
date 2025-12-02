@@ -197,7 +197,7 @@ def build_output_service(
     )
 
     if app_ctxt:
-        app_ctxt.api_root.include_router(create_output_routes(output_service, config))
+        app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
     return output_service
 
@@ -240,7 +240,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     )
 
     if app_ctxt:
-        app_ctxt.api_root.include_router(create_output_routes(output_service, config))
+        app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
     return CoreServices(
         cache=cache,

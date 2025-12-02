@@ -20,6 +20,7 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -61,7 +62,9 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_output_routes(output_service: OutputService, config: Config) -> APIRouter:
+def create_output_routes(
+    output_service: OutputService, file_transfer_manager: FileTransferManager, config: Config
+) -> APIRouter:
     """
     Endpoint implementation for outputs management
 
@@ -147,7 +150,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         data: StudyDownloadDTO,
         request: Request,
         use_task: bool = False,
-        tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
+        tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
     ) -> Response | FileDownloadTaskDTO | FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)

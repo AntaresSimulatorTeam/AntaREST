@@ -91,7 +91,9 @@ def create_test_client(
         matrix_service=Mock(spec=MatrixService),
         blob_service=Mock(spec=BlobService),
     )
-    app_ctxt.api_root.include_router(create_output_routes(output_service=output_service, config=CONFIG))
+    app_ctxt.api_root.include_router(
+        create_output_routes(output_service=output_service, file_transfer_manager=file_transfer_manager, config=CONFIG)
+    )
     return TestClient(app_ctxt.build(), raise_server_exceptions=raise_server_exceptions)
 
 
