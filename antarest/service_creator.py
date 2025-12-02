@@ -47,7 +47,7 @@ from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
-from antarest.study.output.output_storage_impl import FileStudyOutputs, IFileOutputsProvider, OutputStorageImpl
+from antarest.study.output.output_storage_impl import IFileOutputsProvider, IFileStudyOutputs, OutputStorageImpl
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
@@ -152,10 +152,10 @@ class CoreServices:
     blob_service: BlobService
 
 
-def _create_file_outputs(study_service: StudyService, study_id: str) -> FileStudyOutputs:
+def _create_file_outputs(study_service: StudyService, study_id: str) -> IFileStudyOutputs:
     metadata = study_service.get_study(study_id)
 
-    class FileOutputsImpl(FileStudyOutputs):
+    class FileOutputsImpl(IFileStudyOutputs):
         @override
         def get_file_study(self) -> FileStudy:
             return study_service.get_file_study(metadata)
@@ -171,7 +171,7 @@ def _create_file_outputs(study_service: StudyService, study_id: str) -> FileStud
 def _file_outputs_provider(study_service: StudyService) -> IFileOutputsProvider:
     class Impl(IFileOutputsProvider):
         @override
-        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+        def get_outputs(self, study_id: str) -> IFileStudyOutputs:
             return _create_file_outputs(study_service, study_id)
 
     return Impl()

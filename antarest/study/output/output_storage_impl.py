@@ -33,7 +33,7 @@ from antarest.study.storage.utils import extract_output_name, fix_study_root, re
 logger = logging.getLogger(__name__)
 
 
-class FileStudyOutputs(ABC):
+class IFileStudyOutputs(ABC):
     """
     The implementation based on outputs stored as files requireds the following information.
 
@@ -60,7 +60,7 @@ class IFileOutputsProvider(ABC):
     """
 
     @abstractmethod
-    def get_outputs(self, study_id: str) -> FileStudyOutputs: ...
+    def get_outputs(self, study_id: str) -> IFileStudyOutputs: ...
 
 
 class OutputStorageImpl(IOutputStorage):

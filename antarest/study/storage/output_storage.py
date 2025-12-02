@@ -23,7 +23,7 @@ class IOutputStorage(ABC):
     @abstractmethod
     def import_output(
         self,
-        study_outputs: str,
+        study_id: str,
         output: BinaryIO | Path,
         output_name: Optional[str] = None,
     ) -> Optional[str]:
@@ -39,38 +39,19 @@ class IOutputStorage(ABC):
     @abstractmethod
     def get_study_sim_result(self, study_id: str) -> List[StudySimResultDTO]:
         """
-        Get global result information
-
-        Args:
-            metadata: study
-
-        Returns:
-            study output data
+        Get the list of output for a study
         """
 
     @abstractmethod
     def delete_output(self, study_id: str, output_id: str) -> None:
         """
         Delete a simulation output
-        Args:
-            metadata: study
-            output_id: output simulation
-
-        Returns:
-
         """
 
     @abstractmethod
     def export_output(self, study_id: str, output_id: str, target: Path) -> None:
         """
         Export and compresses study inside zip
-        Args:
-            metadata: study
-            output_id: output id
-            target: path of the file to export to
-
-        Returns: zip file with study files compressed inside
-
         """
 
     @abstractmethod

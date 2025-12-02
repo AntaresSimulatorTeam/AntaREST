@@ -26,7 +26,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.study.output.output_storage_impl import FileStudyOutputs, IFileOutputsProvider, OutputStorageImpl
+from antarest.study.output.output_storage_impl import IFileOutputsProvider, IFileStudyOutputs, OutputStorageImpl
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
@@ -439,7 +439,7 @@ timestamp = 1599488150
         """,
         )
 
-    class FileOutputsImpl(FileStudyOutputs):
+    class FileOutputsImpl(IFileStudyOutputs):
         def get_file_study(self) -> FileStudy:
             return study_service.get_raw(md)
 
@@ -448,7 +448,7 @@ timestamp = 1599488150
             return study_path / "output"
 
     class OutputsProvider(IFileOutputsProvider):
-        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+        def get_outputs(self, study_id: str) -> IFileStudyOutputs:
             return FileOutputsImpl()
 
     output_storage = OutputStorageImpl(OutputsProvider(), cache=Mock())
