@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import FilterTags from "@/components/App/Studies/HeaderActions/FliterTags";
+import FilterTags from "@/components/App/Studies/HeaderActions/FilterTags";
 import { createStudy } from "@/redux/ducks/studies";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
