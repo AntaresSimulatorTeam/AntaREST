@@ -1550,6 +1550,7 @@ def test_unarchive_output(tmp_path: Path, command_context: CommandContext) -> No
         event_bus=service.event_bus,
         cache=service.cache_service,
         config=Mock(spec=Config),
+        matrix_service=Mock(),
     )
     output_service.unarchive_output(study_id, output_id)
 
@@ -1659,6 +1660,7 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         event_bus=service.event_bus,
         cache=service.cache_service,
         config=Mock(spec=Config),
+        matrix_service=Mock(),
     )
     with pytest.raises(TaskAlreadyRunning):
         output_service.unarchive_output(study_id, output_zipped)
