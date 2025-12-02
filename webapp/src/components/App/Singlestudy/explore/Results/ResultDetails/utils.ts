@@ -76,9 +76,37 @@ export const SYNTHESIS_ITEMS = [
   },
 ];
 
-// Allow the possibilty to use OR operator on search using pipe
 export function matchesSearchTerm(text: string, searchTerm: string): boolean {
   const searchTerms = searchTerm.split("|").map((term) => term.trim().toLowerCase());
-
   return searchTerms.some((term) => text.toLowerCase().includes(term));
+}
+
+export function getFirstVariableForItem(
+  variablesMetadata: { mcAll: unknown; mcInd: unknown } | null,
+  mcMode: MonteCarloMode,
+  itemType: OutputItemType,
+  selectedItemId: string,
+): string {
+  if (!variablesMetadata || !selectedItemId) {
+    return "";
+  }
+
+  const data = (mcMode === "mc-all" ? variablesMetadata.mcAll : variablesMetadata.mcInd) as {
+    areas: Array<{ name: string; variables: string[] }>;
+    links: Array<{ area1Name: string; area2Name: string; variables: string[] }>;
+  };
+
+  if (itemType === "areas") {
+    const area = data.areas.find((a) => a.name === selectedItemId);
+    return area?.variables[0] || "";
+  }
+
+  if (itemType === "links") {
+    const link = data.links.find(
+      (l) => l.area1Name === selectedItemId || l.area2Name === selectedItemId,
+    );
+    return link?.variables[0] || "";
+  }
+
+  return "";
 }

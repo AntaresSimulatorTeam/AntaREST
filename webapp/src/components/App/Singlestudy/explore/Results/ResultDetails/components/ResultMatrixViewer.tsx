@@ -12,9 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import GridOffIcon from "@mui/icons-material/GridOff";
-import { Box, Skeleton } from "@mui/material";
-import { useTranslation } from "react-i18next";
+import { Box } from "@mui/material";
 import type {
   DateTimes,
   EnhancedGridColumn,
@@ -22,14 +20,8 @@ import type {
 } from "@/components/common/Matrix/shared/types";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
 import type { MatrixIndex } from "@/types/types";
-import { toError } from "../../../../../../../utils/fnUtils";
-import FilterableMatrixGrid, {
-  type FilterableMatrixGridHandle,
-} from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
-import { isNonEmptyMatrix } from "../../../../../../common/Matrix/shared/types";
-import EmptyView from "../../../../../../common/page/EmptyView";
+import type { FilterableMatrixGridHandle } from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
 import ViewWrapper from "../../../../../../common/page/ViewWrapper";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
 import {
   type DataType,
@@ -39,6 +31,8 @@ import {
   type Timestep,
 } from "../utils";
 import ResultFilters from "./ResultFilters";
+import ResultMatrix from "./ResultMatrix";
+import VariableMatrix from "./VariableMatrix";
 import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
 
 interface ResultMatrixViewerProps {
@@ -67,6 +61,9 @@ interface ResultMatrixViewerProps {
   selectedItemId: string;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
+  isViewMaterialized: boolean;
+  onMaterializeVariable: () => void;
+  isMaterializing: boolean;
 }
 
 function ResultMatrixViewer({
@@ -95,8 +92,11 @@ function ResultMatrixViewer({
   selectedItemId,
   selectedVariable,
   onVariableSelect,
+  isViewMaterialized,
+  onMaterializeVariable,
+  isMaterializing,
 }: ResultMatrixViewerProps) {
-  const { t } = useTranslation();
+  const isVariablePerVariable = mcMode === "variable-per-variable";
 
   return (
     <ViewWrapper flex>
@@ -125,45 +125,35 @@ function ResultMatrixViewer({
           />
         </Box>
         <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <UsePromiseCond
-            response={matrixRes}
-            ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-            ifFulfilled={() => {
-              if (resultColHeaders.length === 0) {
-                return <Skeleton sx={{ height: 1, transform: "none" }} />;
-              }
-
-              if (!isNonEmptyMatrix(filteredData)) {
-                return <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />;
-              }
-
-              return (
-                <FilterableMatrixGrid
-                  ref={matrixGridRef}
-                  key={`grid-${resultColHeaders.length}`}
-                  data={filteredData}
-                  rows={filteredData.length}
-                  columns={resultColumns}
-                  dateTime={dateTime}
-                  timeFrequency={dateTimeMetadata?.level}
-                  readOnly
-                />
-              );
-            }}
-            ifRejected={(err) => (
-              <EmptyView
-                title={
-                  // 404 error is expected when their is no data
-                  // for the selected area or link result
-                  // TODO: Instead this should be an empty response from the server
-                  toError(err).message.includes("404")
-                    ? t("study.results.noData")
-                    : t("data.error.matrix")
-                }
-                icon={GridOffIcon}
-              />
-            )}
-          />
+          {isVariablePerVariable ? (
+            <VariableMatrix
+              variablesMetadata={variablesMetadata}
+              mcMode={mcMode}
+              itemType={itemType}
+              selectedItemId={selectedItemId}
+              selectedVariable={selectedVariable}
+              isViewMaterialized={isViewMaterialized}
+              onMaterializeVariable={onMaterializeVariable}
+              isMaterializing={isMaterializing}
+              matrixRes={matrixRes}
+              resultColHeaders={resultColHeaders}
+              filteredData={filteredData}
+              resultColumns={resultColumns}
+              matrixGridRef={matrixGridRef}
+              dateTime={dateTime}
+              dateTimeMetadata={dateTimeMetadata}
+            />
+          ) : (
+            <ResultMatrix
+              matrixRes={matrixRes}
+              resultColHeaders={resultColHeaders}
+              filteredData={filteredData}
+              resultColumns={resultColumns}
+              matrixGridRef={matrixGridRef}
+              dateTime={dateTime}
+              dateTimeMetadata={dateTimeMetadata}
+            />
+          )}
         </Box>
       </Box>
     </ViewWrapper>

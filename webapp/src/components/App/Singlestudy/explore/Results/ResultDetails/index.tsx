@@ -38,15 +38,12 @@ import SynthesisViewer, { type SynthesisData } from "./components/SynthesisViewe
 import {
   createPath,
   type DataType,
+  getFirstVariableForItem,
   type MonteCarloMode,
   type OutputItemType,
   SYNTHESIS_ITEMS,
   type Timestep,
 } from "./utils";
-import type {
-  SelectedVariableObject,
-  VariablesListDTO,
-} from "../../../../../../services/api/studies/outputs/variableViews/types";
 import { getVariablesList } from "../../../../../../services/api/studies/outputs/variableViews";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
@@ -67,11 +64,8 @@ function ResultDetails() {
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
 
-  const [selectedVariableObject, setSelectedVariableObject] =
-    useState<SelectedVariableObject | null>(null);
   const [selectedVariable, setSelectedVariable] = useState("");
   const [isViewMaterialized, setIsViewMaterialized] = useState(false);
-  const [materializationTaskId, setMaterializationTaskId] = useState<string | null>(null);
 
   const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
   const isSynthesis = itemType === "synthesis";
@@ -106,10 +100,32 @@ function ResultDetails() {
 
   useEffect(() => {
     if (!isVariablePerVariable) {
-      setSelectedVariableObject(null);
       setSelectedVariable("");
+      setIsViewMaterialized(false);
     }
   }, [isVariablePerVariable]);
+
+  // Auto-select first variable when switching to variable-per-variable mode
+  useEffect(() => {
+    if (isVariablePerVariable && variablesMetadata && selectedItemId && !selectedVariable) {
+      const firstVariable = getFirstVariableForItem(
+        variablesMetadata,
+        mcMode,
+        itemType,
+        selectedItemId,
+      );
+      if (firstVariable) {
+        setSelectedVariable(firstVariable);
+      }
+    }
+  }, [
+    isVariablePerVariable,
+    variablesMetadata,
+    selectedItemId,
+    selectedVariable,
+    itemType,
+    mcMode,
+  ]);
 
   const items = useMemo(() => {
     const currentItems = (itemType === "areas" ? areas : links) as Array<{
@@ -139,12 +155,13 @@ function ResultDetails() {
     | undefined;
 
   // Auto-select first item if none selected
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <Using length to avoid reference issues>
   useEffect(() => {
     if (!selectedItem && filteredItems.length > 0) {
       setSelectedItemId(filteredItems[0].id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredItems.length, selectedItem]); // Using length to avoid reference issues
+  }, [filteredItems.length, selectedItem]);
 
   const path = useMemo(() => {
     if (output && selectedItem && !isSynthesis) {
@@ -282,6 +299,12 @@ function ResultDetails() {
     [searchValue],
   );
 
+  const handleMaterializeVariable = useCallback(() => {
+    // TODO: Implement materialization logic with WebSocket task tracking
+    console.log("Materializing variable:", selectedVariable);
+    setIsViewMaterialized(true);
+  }, [selectedVariable]);
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -323,11 +346,14 @@ function ResultDetails() {
           path={path}
           onColHeadersChange={handleColHeadersChange}
           onToggleFilter={handleToggleFilter}
-          variablesMetadata={variablesMetadata}
+          variablesMetadata={variablesMetadata ?? null}
           itemType={itemType}
           selectedItemId={selectedItemId}
           selectedVariable={selectedVariable}
           onVariableSelect={setSelectedVariable}
+          isViewMaterialized={isViewMaterialized}
+          onMaterializeVariable={handleMaterializeVariable}
+          isMaterializing={false}
         />
       )}
     </SplitView>

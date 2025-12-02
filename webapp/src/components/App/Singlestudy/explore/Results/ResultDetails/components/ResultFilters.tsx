@@ -366,9 +366,8 @@ function ResultFilters({
               flex: 1,
             }}
           >
-            {COLUMN_FILTERS.map(({ id, field }) => (
-              <Fragment key={id}>{field}</Fragment>
-            ))}
+            {!isVariablePerVariable &&
+              COLUMN_FILTERS.map(({ id, field }) => <Fragment key={id}>{field}</Fragment>)}
             {RESULT_FILTERS.map(({ id, field }) => (
               <Fragment key={id}>{field}</Fragment>
             ))}
