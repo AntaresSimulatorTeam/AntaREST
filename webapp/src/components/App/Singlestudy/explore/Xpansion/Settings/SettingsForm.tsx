@@ -76,7 +76,7 @@ function SettingsForm(props: PropType) {
         <Box display="flex" justifyContent="space-between" alignItems="flex-end">
           <Title>{t("xpansion.optimization")}</Title>
           <Button
-            variant="outlined"
+            variant="contained"
             color="primary"
             sx={{
               display: "flex",
