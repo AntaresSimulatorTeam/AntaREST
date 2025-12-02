@@ -86,21 +86,6 @@ def _filtered_files_listing(
     return filtered_files
 
 
-def _get_start_column(frequency: MatrixFrequency) -> int:
-    if frequency == MatrixFrequency.ANNUAL:
-        return 2
-    elif frequency == MatrixFrequency.MONTHLY:
-        return 3
-    elif frequency == MatrixFrequency.WEEKLY:
-        return 2
-    elif frequency == MatrixFrequency.DAILY:
-        return 4
-    elif frequency == MatrixFrequency.HOURLY:
-        return 5
-    else:
-        raise NotImplementedError(f"Unknown frequency {frequency.value}")
-
-
 def _parse_headers(content: str, start_col: int) -> list[list[str]]:
     lines = content.splitlines()
     header_lines = []
