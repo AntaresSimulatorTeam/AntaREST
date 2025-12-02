@@ -17,7 +17,7 @@ import { type StudyFilters, updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getGroups, getStudyFilters, getUsers } from "@/redux/selectors";
-import { displayVersionName } from "@/services/utils";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import { Box, Chip, colors } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
@@ -73,12 +73,12 @@ function FilterTags() {
         {filters.versions.map((version) => (
           <Chip
             key={version}
-            label={displayVersionName(version)}
+            label={compactSemanticVersion(version)}
             color="primary"
             onDelete={() => {
               setFilterValue(
                 "versions",
-                filters.versions.filter((ver) => ver !== version),
+                filters.versions.filter((v) => v !== version),
               );
             }}
           />

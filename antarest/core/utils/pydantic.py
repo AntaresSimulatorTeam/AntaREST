@@ -14,8 +14,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from antarest.study.business.model.scenario_builder_model import Ruleset
-
 
 def get_model_field_values(model: BaseModel) -> dict[str, Any]:
     """
@@ -23,4 +21,4 @@ def get_model_field_values(model: BaseModel) -> dict[str, Any]:
 
     Allows to get fields without performing a full, recursive, model_dump.
     """
-    return {f: getattr(model, f) for f in Ruleset.model_fields.keys()}
+    return {f: getattr(model, f) for f in model.model_fields.keys()}

@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
+from fastapi import HTTPException
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
@@ -33,19 +34,25 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
-from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, MCYEAR_COL, AggregatorManager
+from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, AggregatorManager
 from antarest.study.business.output.utils import (
+    MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
 from antarest.study.business.output.variables_management import (
-    check_variables_view_coherence_and_return_aggregation_info,
+    OutputIdentifier,
+    check_arguments_coherence_and_return_identifier,
+    check_output_variable_exists,
+    create_output_view_db_model,
     extract_variables_list,
+    get_output_view_inside_db,
 )
+from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
     ExportFormat,
     MatrixIndex,
@@ -61,7 +68,6 @@ from antarest.study.storage.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
-    OutputVariablesView,
 )
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -74,6 +80,90 @@ from antarest.study.storage.utils import assert_permission, get_start_date, is_o
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
+
+
+class OutputVariablesViewMaterializationTask:
+    """
+    Task to materialize an output variables view
+    """
+
+    def __init__(
+        self,
+        study_id: str,
+        output_id: str,
+        output_service: "OutputService",
+        variable_type: OutputVariablesType,
+        variable_name: str,
+        frequency: MatrixFrequency,
+        output_identifier: OutputIdentifier,
+    ) -> None:
+        self._study_id = study_id
+        self._output_id = output_id
+        self._variable_type = variable_type
+        self._frequency = frequency
+        self._variable_name = variable_name
+        self._output_service = output_service
+        self._output_identifier = output_identifier
+
+    def _materialize_view(self) -> None:
+        """Run the task"""
+        # Checks the asked couple `variable name` / `object_id` exists for the output
+        available_variables = self._output_service.get_output_variables_list(self._study_id, self._output_id)
+        check_output_variable_exists(
+            self._output_id, self._variable_type, self._variable_name, available_variables, self._output_identifier
+        )
+
+        with temp_file_path(dir=self._output_service._study_service.config.storage.tmp_dir) as tmp_path:
+            # Calls the aggregation with the right arguments
+            task_id = self._output_service.start_aggregate_output_data(
+                self._study_id,
+                self._output_id,
+                self._output_identifier.query_file,
+                self._frequency,
+                TableExportFormat.PARQUET,
+                [self._variable_name],
+                [self._output_identifier.get_id_for_aggregation()],
+                tmp_path,
+            )
+
+            # Wait for the aggregation to end
+            self._output_service._task_service.await_task(task_id)
+
+            # Transform the dataframe to have the expected format
+            if cluster_id := self._output_identifier.get_sub_id_for_aggregation():
+                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, self._variable_name, CLUSTER_ID_COL])
+                dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
+            else:
+                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, self._variable_name])
+
+        # Transform the dataframe to save only what's needed inside DB
+        dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
+        df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=self._variable_name)
+        matrix_id = self._output_service._matrix_service.create(df_pivot)
+
+        # Save the model inside DB
+        db_model = create_output_view_db_model(
+            self._study_id,
+            self._output_id,
+            self._variable_type,
+            self._variable_name,
+            self._frequency,
+            self._output_identifier,
+            matrix_id,
+        )
+        db.session.add(db_model)
+        db.session.commit()
+
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
+        msg = f"Materializing output variables view for study '{self._study_id}' and output '{self._output_id}'"
+        notifier.notify_message(msg)
+        self._materialize_view()
+        msg = f"Successfully materialized output variables view for study '{self._study_id}' and output '{self._output_id}'"
+        notifier.notify_message(msg)
+        return TaskResult(success=True, message=msg)
+
+    # Make `OutputVariablesViewMaterializationTask` object callable
+    __call__ = run_task
 
 
 class OutputService:
@@ -90,6 +180,10 @@ class OutputService:
         self._task_service = task_service
         self._file_transfer_manager = file_transfer_manager
         self._event_bus = event_bus
+        self._matrix_service = (
+            self._study_service.storage_service.variant_study_service.command_factory.command_context.matrix_service
+        )
+        OutputVariablesMatrixUsageProvider(self._matrix_service)
 
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
         study = self._study_service.get_study(study_id)
@@ -625,20 +719,18 @@ class OutputService:
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
 
-        with db():
-            output_variables: OutputVariables | None = db.session.get(OutputVariables, (study_id, output_id))
-            if output_variables:
-                return output_variables.to_model()
+        output_variables: OutputVariables | None = db.session.get(OutputVariables, (study_id, output_id))
+        if output_variables:
+            return output_variables.to_model()
 
         # Fetches the data inside the FS
         output_path = self._storage.get_output_path(study_id, output_id)
         model = extract_variables_list(output_path)
 
         # Save the model inside DB for next calls
-        with db():
-            db_model = OutputVariables.from_model(study_id, output_id, model)
-            db.session.add(db_model)
-            db.session.commit()
+        db_model = OutputVariables.from_model(study_id, output_id, model)
+        db.session.add(db_model)
+        db.session.commit()
 
         # Returns it
         return model
@@ -666,51 +758,93 @@ class OutputService:
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
-    ) -> OutputVariablesView:
+    ) -> pd.DataFrame:
+        """
+        If the view is already registered in DB, updates its `last_read` value and returns it.
+        Else, raise an HTTP 404 error.
+        """
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
 
-        # Checks the asked couple `variable name` / `object_id` exists for the output
-        available_variables = self.get_output_variables_list(study_id, output_id)
-        output_identifier = check_variables_view_coherence_and_return_aggregation_info(
-            output_id,
-            variable_type,
-            variable_name,
-            available_variables,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
+        output_identifier = check_arguments_coherence_and_return_identifier(
+            variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
         )
 
-        with temp_file_path(dir=self._study_service.config.storage.tmp_dir) as tmp_path:
-            # Calls the aggregation with the right arguments
-            task_id = self.start_aggregate_output_data(
-                study_id,
-                output_id,
-                output_identifier.query_file,
-                frequency,
-                TableExportFormat.PARQUET,
-                [variable_name],
-                [output_identifier.get_id_for_aggregation()],
-                tmp_path,
+        db_model = get_output_view_inside_db(
+            study_id, output_id, variable_type, variable_name, frequency, output_identifier
+        )
+        if db_model is not None:
+            # Update `last_read` value inside DB
+            db_model.last_read = current_time()
+            db.session.merge(db_model)
+            db.session.commit()
+
+            # Return the dataframe
+            dataframe = self._matrix_service.get(db_model.matrix_id)
+            dataframe.columns = pd.RangeIndex(len(dataframe.columns))  # type: ignore
+            return dataframe
+
+        raise HTTPException(status_code=404, detail="The output variables view is not materialized in DB yet")
+
+    def materialize_output_variables_view(
+        self,
+        study_id: str,
+        output_id: str,
+        variable_type: OutputVariablesType,
+        variable_name: str,
+        frequency: MatrixFrequency,
+        area_id: str | None = None,
+        area_from_id: str | None = None,
+        area_to_id: str | None = None,
+        thermal_id: str | None = None,
+        renewable_id: str | None = None,
+        st_storage_id: str | None = None,
+    ) -> str:
+        """
+        If the view is already registered in DB, raise an HTTP Conflict error.
+        Else, launch a task that fetches the required data and stores it inside the database.
+        """
+        study = self._study_service.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        self._study_service.assert_study_unarchived(study)
+
+        output_identifier = check_arguments_coherence_and_return_identifier(
+            variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
+        )
+
+        db_model = get_output_view_inside_db(
+            study_id, output_id, variable_type, variable_name, frequency, output_identifier
+        )
+        if db_model is not None:
+            raise HTTPException(status_code=417, detail="The output variables view is already materialized in DB")
+
+        # If a task materializing the same view is already running, returns its id
+        task_name = f"Materializing output view for study `{study_id}`, output `{output_id}`, frequency `{frequency}`, id `{output_identifier.get_id_for_aggregation()}`"
+        if sub_id := output_identifier.get_sub_id_for_aggregation():
+            task_name += f" sub_id `{sub_id}`"
+
+        study_tasks = self._task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.OUTPUT_VARIABLES_VIEW_MATERIALIZATION],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+                name=task_name,
             )
+        )
+        if len(study_tasks) > 0:
+            return study_tasks[0].id
 
-            # Wait for the aggregation to end
-            self._task_service.await_task(task_id)
+        # Materialize the view
+        task = OutputVariablesViewMaterializationTask(
+            study_id, output_id, self, variable_type, variable_name, frequency, output_identifier
+        )
 
-            # Transform the dataframe to have the expected format
-            if cluster_id := output_identifier.get_sub_id_for_aggregation():
-                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name, CLUSTER_ID_COL])
-                dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
-            else:
-                dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, variable_name])
-
-        dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
-        df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=variable_name)
-        data = df_pivot.to_dict(orient="split")
-        del data["index"]
-        return OutputVariablesView.model_validate(data)
+        return self._task_service.add_task(
+            task,
+            task_name,
+            task_type=TaskType.OUTPUT_VARIABLES_VIEW_MATERIALIZATION,
+            ref_id=study_id,
+            progress=0,
+            custom_event_messages=None,
+        )

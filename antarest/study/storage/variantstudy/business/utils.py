@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import pandas as pd
 
-from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_8_2
@@ -56,24 +55,6 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
             raise ValueError(f"Matrix with id '{matrix}' does not exist")
     else:
         raise TypeError(f"The data '{matrix}' is neither a matrix nor a link to a matrix")
-
-
-def get_or_create_section(json_ini: JSON, section: str) -> JSON:
-    if section not in json_ini:
-        json_ini[section] = {}
-    sub_json: JSON = json_ini[section]
-    return sub_json
-
-
-def remove_none_args(command_dto: CommandDTO) -> CommandDTO:
-    args = command_dto.args
-    if isinstance(args, list):
-        command_dto.args = [{k: v for k, v in args.items() if v is not None} for args in args]
-    elif isinstance(args, dict):
-        command_dto.args = {k: v for k, v in args.items() if v is not None}
-    else:
-        raise TypeError(f"Invalid type for args: {type(args)}")
-    return command_dto
 
 
 def strip_matrix_protocol(matrix_uri: List[List[float]] | str | None) -> str:

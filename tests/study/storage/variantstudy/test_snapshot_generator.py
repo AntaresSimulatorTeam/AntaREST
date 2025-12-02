@@ -34,7 +34,6 @@ from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
-from antarest.study.model import StudyAdditionalData
 from antarest.study.service import VariantStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -770,7 +769,7 @@ class TestSnapshotGenerator:
             version="860",
             created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            additional_data=StudyAdditionalData(author="john.doe"),
+            author="john.doe",
             owner_id=jwt_user.id,
         )
 
@@ -788,13 +787,13 @@ class TestSnapshotGenerator:
             variant_study_service.repository.save(root_study)
         return root_study_id
 
-    @pytest.fixture(name="variant_study")
+    @pytest.fixture(name="variant_study_id")
     def variant_study_fixture(
         self,
         root_study_id: str,
         variant_study_service: VariantStudyService,
         jwt_user: JWTUser,
-    ) -> VariantStudy:
+    ) -> str:
         with db():
             # Create un new variant
             name = "my-variant"
@@ -823,7 +822,7 @@ class TestSnapshotGenerator:
                         ),
                     ],
                 )
-            return variant_study
+            return variant_study.id
 
     def test_init(self, variant_study_service: VariantStudyService) -> None:
         """
@@ -845,7 +844,9 @@ class TestSnapshotGenerator:
     @with_admin_user
     @with_db_context
     def test_generate__nominal_case(
-        self, variant_study: VariantStudy, variant_study_service: VariantStudyService
+        self,
+        variant_study_id: str,
+        variant_study_service: VariantStudyService,
     ) -> None:
         """
         Test the generation of a variant study based on a raw study.
@@ -878,7 +879,7 @@ class TestSnapshotGenerator:
 
         with DBStatementRecorder(db.session.bind) as db_recorder:
             results = generator.generate_snapshot(
-                variant_study.id,
+                variant_study_id,
                 denormalize=False,
                 from_scratch=False,
                 notifier=notifier,
@@ -890,7 +891,7 @@ class TestSnapshotGenerator:
         # - 1 query to fetch the root study (with owner and groups for permission check),
         # - 1 query to fetch the list of variants with snapshot, commands, etc.,
         # - 1 query to fetch raw study information,
-        # - 1 query to update the variant study additional_data,
+        # - 1 query to update the variant study author, editor and horizon,
         # - 1 query to insert the variant study snapshot.
         assert len(db_recorder.sql_statements) == 6, str(db_recorder)
 
@@ -927,6 +928,8 @@ class TestSnapshotGenerator:
         }
 
         # Check: the variant is correctly generated and all commands are applied.
+        variant_study = variant_study_service.repository.get(variant_study_id)
+        assert isinstance(variant_study, VariantStudy)
         snapshot_dir = variant_study.snapshot_dir
         assert snapshot_dir.exists()
         assert (snapshot_dir / "study.antares").exists()
@@ -983,7 +986,7 @@ class TestSnapshotGenerator:
             assert study is not None
             assert study.snapshot is not None
             assert study.snapshot.last_executed_command == study.commands[-1].id
-            assert study.additional_data.author == "john.doe"
+            assert study.author == "john.doe"
 
         # Check: the cache is updated with the new variant configuration.
         # The cache is a mock created in the session's scope, so it is shared between all tests.
@@ -1039,7 +1042,7 @@ class TestSnapshotGenerator:
     @with_admin_user
     @with_db_context
     def test_generate__with_denormalize_true(
-        self, variant_study: VariantStudy, variant_study_service: VariantStudyService
+        self, variant_study_id: str, variant_study_service: VariantStudyService
     ) -> None:
         """
         Test the generation of a variant study with matrices de-normalization.
@@ -1054,7 +1057,7 @@ class TestSnapshotGenerator:
         )
 
         results = generator.generate_snapshot(
-            variant_study.id,
+            variant_study_id,
             denormalize=True,
             from_scratch=False,
         )
@@ -1093,6 +1096,8 @@ class TestSnapshotGenerator:
 
         # Check: the matrices are denormalized (we should have TSV files).
         # The matrices should be empty as they are default ones for the Simulator.
+        variant_study = variant_study_service.repository.get(variant_study_id)
+        assert isinstance(variant_study, VariantStudy)
         snapshot_dir = variant_study.snapshot_dir
         assert (snapshot_dir / "input/links/north/south_parameters.txt").exists()
         array = np.loadtxt(snapshot_dir / "input/links/north/south_parameters.txt", delimiter="\t")
@@ -1105,7 +1110,7 @@ class TestSnapshotGenerator:
     @with_admin_user
     @with_db_context
     def test_generate__with_invalid_command(
-        self, variant_study: VariantStudy, variant_study_service: VariantStudyService
+        self, variant_study_id: str, variant_study_service: VariantStudyService
     ) -> None:
         """
         Test the generation of a variant study with an invalid command.
@@ -1113,9 +1118,12 @@ class TestSnapshotGenerator:
         The snapshot directory must be removed (and no temporary directory must be left).
         """
         # Append an invalid command to the variant study.
+        variant_study = variant_study_service.repository.get(variant_study_id)
+        assert isinstance(variant_study, VariantStudy)
+
         study_version = StudyVersion.parse(variant_study.version)
         variant_study_service.append_commands(
-            variant_study.id,
+            variant_study_id,
             [
                 CommandDTO(action="create_area", args={"area_name": "North"}, study_version=study_version),  # duplicate
             ],
@@ -1152,7 +1160,7 @@ class TestSnapshotGenerator:
     @with_db_context
     def test_generate__notification_failure(
         self,
-        variant_study: VariantStudy,
+        variant_study_id: str,
         variant_study_service: VariantStudyService,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
@@ -1172,7 +1180,7 @@ class TestSnapshotGenerator:
 
         with caplog.at_level(logging.WARNING):
             results = generator.generate_snapshot(
-                variant_study.id,
+                variant_study_id,
                 denormalize=False,
                 from_scratch=False,
                 notifier=notifier,
@@ -1217,7 +1225,7 @@ class TestSnapshotGenerator:
     @with_db_context
     def test_generate__variant_of_variant(
         self,
-        variant_study: VariantStudy,
+        variant_study_id: str,
         variant_study_service: VariantStudyService,
     ) -> None:
         """
@@ -1233,13 +1241,13 @@ class TestSnapshotGenerator:
 
         # Generate the variant once.
         generator.generate_snapshot(
-            variant_study.id,
+            variant_study_id,
             denormalize=False,
             from_scratch=False,
         )
 
         # Create a new variant of the variant study
-        new_variant = variant_study_service.create_variant_study(variant_study.id, "my-variant")
+        new_variant = variant_study_service.create_variant_study(variant_study_id, "my-variant")
 
         # Append some commands to the new variant.
         study_version = StudyVersion.parse(new_variant.version)
@@ -1273,9 +1281,7 @@ class TestSnapshotGenerator:
 
     @with_admin_user
     @with_db_context
-    def test_generate_invalidate_cache(
-        self, variant_study_service: VariantStudyService, variant_study: VariantStudy
-    ) -> None:
+    def test_generate_invalidate_cache(self, variant_study_service: VariantStudyService, variant_study_id: str) -> None:
         cache = LocalCache()
         variant_study_service.cache = cache
         generator = SnapshotGenerator(
@@ -1287,19 +1293,19 @@ class TestSnapshotGenerator:
         )
 
         # Fill the cache for the test.
-        study = db.session.query(VariantStudy).get(variant_study.id)  #  `variant_study` isn't bound to the session yet.
+        study = db.session.query(VariantStudy).get(variant_study_id)  #  `variant_study` isn't bound to the session yet.
         study_interface = VariantStudyInterface(variant_study_service, study)
         file_study = study_interface.get_files()
         data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
-        update_cache(cache, variant_study.id, data)
+        update_cache(cache, variant_study_id, data)
 
         # Checks the cache content
-        cache_key = f"{CacheConstants.STUDY_FACTORY}/{variant_study.id}"
+        cache_key = f"{CacheConstants.STUDY_FACTORY}/{variant_study_id}"
         assert cache.get(cache_key) is not None
         starting_cache = cache.get(cache_key)
         assert starting_cache is not None
         # Generates the snapshot
-        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        results = generator.generate_snapshot(variant_study_id, denormalize=False)
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
         generated_cache = cache.get(cache_key)
@@ -1308,9 +1314,10 @@ class TestSnapshotGenerator:
         assert generated_cache == starting_cache
 
         # Add a `create_cluster` command
+        variant_study = variant_study_service.repository.get(variant_study_id)
         version = StudyVersion.parse(variant_study.version)
         variant_study_service.append_commands(
-            variant_study.id,
+            variant_study_id,
             [
                 CommandDTO(
                     action="create_cluster",
@@ -1321,7 +1328,7 @@ class TestSnapshotGenerator:
         )
 
         # Generates the snapshot
-        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        results = generator.generate_snapshot(variant_study_id, denormalize=False)
         # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
         assert not results.should_invalidate_cache
         # Ensures the cache was modified accordingly
@@ -1332,7 +1339,7 @@ class TestSnapshotGenerator:
 
         # Add an `update_config` command
         variant_study_service.append_commands(
-            variant_study.id,
+            variant_study_id,
             [
                 CommandDTO(
                     action="update_config",
@@ -1345,7 +1352,7 @@ class TestSnapshotGenerator:
             ],
         )
 
-        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        results = generator.generate_snapshot(variant_study_id, denormalize=False)
         # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
         assert results.should_invalidate_cache
         assert cache.get(cache_key) is None

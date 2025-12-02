@@ -33,7 +33,7 @@ describe("useFilteredData", () => {
   };
 
   describe("Empty Filter Behavior", () => {
-    it("should return all columns when column list filter is empty", () => {
+    test("should return all columns when column list filter is empty", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,
@@ -59,7 +59,7 @@ describe("useFilteredData", () => {
       expect(result.current.rowsIndices).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     });
 
-    it("should return all indices when filter is inactive", () => {
+    test("should return all indices when filter is inactive", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: false, // Filter is inactive
@@ -84,7 +84,7 @@ describe("useFilteredData", () => {
       expect(result.current.rowsIndices).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     });
 
-    it("should handle empty column list with different operators", () => {
+    test("should handle empty column list with different operators", () => {
       const operators = [
         FILTER_OPERATORS.EQUALS,
         FILTER_OPERATORS.GREATER_THAN,
@@ -118,7 +118,7 @@ describe("useFilteredData", () => {
       });
     });
 
-    it("should filter columns when list is not empty", () => {
+    test("should filter columns when list is not empty", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,
@@ -143,7 +143,7 @@ describe("useFilteredData", () => {
       expect(result.current.columnsIndices).toEqual([1, 3]); // 0-based indices
     });
 
-    it("should handle range filters correctly", () => {
+    test("should handle range filters correctly", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,
@@ -167,7 +167,7 @@ describe("useFilteredData", () => {
       expect(result.current.columnsIndices).toEqual([1, 2, 3]); // 0-based indices
     });
 
-    it("should handle greater than operator with single value", () => {
+    test("should handle greater than operator with single value", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,
@@ -192,7 +192,7 @@ describe("useFilteredData", () => {
       expect(result.current.columnsIndices).toEqual([3, 4, 5]); // Columns 4, 5, 6 (0-based: 3, 4, 5)
     });
 
-    it("should handle less than operator with single value", () => {
+    test("should handle less than operator with single value", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,
@@ -217,7 +217,7 @@ describe("useFilteredData", () => {
       expect(result.current.columnsIndices).toEqual([0, 1, 2]); // Columns 1, 2, 3 (0-based: 0, 1, 2)
     });
 
-    it("should handle range operator with list values", () => {
+    test("should handle range operator with list values", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,
@@ -242,7 +242,7 @@ describe("useFilteredData", () => {
       expect(result.current.columnsIndices).toEqual([1, 2, 3, 4]); // Columns 2, 3, 4, 5 (0-based: 1, 2, 3, 4)
     });
 
-    it("should handle invalid column indices gracefully", () => {
+    test("should handle invalid column indices gracefully", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,
@@ -267,7 +267,7 @@ describe("useFilteredData", () => {
       expect(result.current.columnsIndices).toEqual([]); // No valid indices
     });
 
-    it("should return empty range when range filter has no range defined", () => {
+    test("should return empty range when range filter has no range defined", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,
@@ -293,7 +293,7 @@ describe("useFilteredData", () => {
   });
 
   describe("Edge Cases", () => {
-    it("should handle zero rows and columns", () => {
+    test("should handle zero rows and columns", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter: defaultFilter,
@@ -309,7 +309,7 @@ describe("useFilteredData", () => {
       expect(result.current.rowsIndices).toEqual([]);
     });
 
-    it("should handle large datasets efficiently", () => {
+    test("should handle large datasets efficiently", () => {
       const filter: FilterState = {
         ...defaultFilter,
         active: true,

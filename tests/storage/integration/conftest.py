@@ -37,7 +37,7 @@ from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
 from tests.helpers import create_raw_study
@@ -89,7 +89,8 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
         version="700",
-        additional_data=StudyAdditionalData(author="Andrea SGATTONI", horizon=2030),
+        author="Andrea SGATTONI",
+        horizon=2030,
     )
     repo = Mock()
     # noinspection PyArgumentList
@@ -101,7 +102,6 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
         version="700",
-        additional_data=StudyAdditionalData(),
     )
     repo.get_all.return_value = [md]
 

@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
 import TabsView from "@/components/common/TabsView";
 import type { Cluster, StudyMetadata } from "@/types/types";
+import { useTranslation } from "react-i18next";
+import semver from "semver";
 import Matrix from "../../../../../../../common/Matrix";
 import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../utils";
 
@@ -26,7 +27,6 @@ interface Props {
 
 function ThermalMatrices({ study, areaId, clusterId }: Props) {
   const [t] = useTranslation();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -67,11 +67,11 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
             />
           ),
         },
-        studyVersion >= 870 && {
+        semver.gte(study.version, "8.7.0") && {
           label: t("study.modelization.clusters.matrix.fuelCosts"),
           content: <Matrix url={`input/thermal/series/${areaId}/${clusterId}/fuelCost`} />,
         },
-        studyVersion >= 870 && {
+        semver.gte(study.version, "8.7.0") && {
           label: t("study.modelization.clusters.matrix.co2Costs"),
           content: <Matrix url={`input/thermal/series/${areaId}/${clusterId}/CO2Cost`} />,
         },

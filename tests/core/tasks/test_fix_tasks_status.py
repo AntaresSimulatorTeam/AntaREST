@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 
 from antarest.core.tasks.model import TaskJob, TaskStatus
+from antarest.core.utils.utils import current_time
 from antarest.tools.admin_lib import _do_fix_interrupted_tasks_status
 
 
@@ -68,7 +69,7 @@ def test_fix_tasks_status(db_engine: Engine) -> None:
 
     _do_fix_interrupted_tasks_status(db_engine)
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    now = current_time()
 
     with make_session() as session:
         tasks_in_progress = (

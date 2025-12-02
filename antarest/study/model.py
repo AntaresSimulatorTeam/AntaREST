@@ -243,31 +243,6 @@ class CommentsDto(AntaresBaseModel):
     comments: str
 
 
-class StudyAdditionalData(Base):
-    """
-    Study additional data
-    """
-
-    __tablename__ = "study_additional_data"
-
-    study_id: Mapped[str] = mapped_column(
-        String(36),
-        ForeignKey("study.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    author: Mapped[str] = mapped_column(String(255), default="Unknown")
-    editor: Mapped[str] = mapped_column(String(255), default="Unknown")
-    horizon: Mapped[Optional[str]] = mapped_column(String)
-
-    @override
-    def __eq__(self, other: Any) -> bool:
-        if not super().__eq__(other):
-            return False
-        if not isinstance(other, StudyAdditionalData):
-            return False
-        return bool(other.author == self.author and other.horizon == self.horizon)
-
-
 class Study(Base):
     """
     Base study entity to save main metadata, common for any type of study (raw, variant, managed or not)
@@ -310,6 +285,8 @@ class Study(Base):
     type: Mapped[str] = mapped_column(String(50), index=True)
     version: Mapped[str] = mapped_column(String(255), index=True)
     author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    editor: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    horizon: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
@@ -329,11 +306,6 @@ class Study(Base):
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
     directory = relationship("Directory", uselist=False)
-    additional_data: Mapped[StudyAdditionalData | None] = relationship(
-        StudyAdditionalData,
-        uselist=False,
-        cascade="all, delete, delete-orphan",
-    )
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
@@ -385,26 +357,6 @@ class Study(Base):
         We want to store the path in posix format in the database, even on windows.
         """
         return normalize_path(folder)
-
-    def get_created_at(self) -> datetime:
-        """Get the creation date, raising an error if not set."""
-        if self.created_at is None:
-            raise ValueError(f"Study {self.id} has no creation date")
-        return self.created_at
-
-    def get_updated_at(self) -> datetime:
-        """Get the last update date, raising an error if not set."""
-        if self.updated_at is None:
-            raise ValueError(f"Study {self.id} has no update date")
-        return self.updated_at
-
-    def get_created_at_timestamp(self) -> float:
-        """Get the creation timestamp, raising an error if not set."""
-        return self.get_created_at().timestamp()
-
-    def get_updated_at_timestamp(self) -> float:
-        """Get the last update timestamp, raising an error if not set."""
-        return self.get_updated_at().timestamp()
 
 
 def normalize_path(path: Optional[str]) -> Optional[str]:
@@ -557,6 +509,7 @@ class StudyMetadataDTO(AntaresBaseModel):
     folder: Optional[str] = None
     tags: List[str] = []
     directory_id: Optional[str] = None
+    parent_id: Optional[str] = None
 
     @field_validator("horizon", mode="before")
     def transform_horizon_to_str(cls, val: str | int | None) -> Optional[str]:
@@ -734,11 +687,6 @@ class MatrixAggregationResult(AntaresBaseModel):
             ],
             warnings=self.warnings,
         )
-
-
-class ReferenceStudy(AntaresBaseModel):
-    version: str
-    template_name: str
 
 
 class DirectoryMetadata(AntaresBaseModel):

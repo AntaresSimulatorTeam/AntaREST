@@ -82,11 +82,8 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     study_data_info = study_tree.get(["study"])
     antares_info = study_data_info["antares"]
 
-    author = "Unknown"
-    editor = "Unknown"
-    if metadata.additional_data:
-        author = metadata.additional_data.author
-        editor = metadata.additional_data.editor
+    author = metadata.author
+    editor = metadata.editor
 
     # Update basic fields
     antares_info["caption"] = metadata.name
@@ -500,11 +497,3 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
         except (PermissionError, OSError):
             logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
     return False
-
-
-def is_non_study_folder(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
-    if is_study_folder(path):
-        return False
-    if should_ignore_folder_for_scan(path, filter_in, filter_out):
-        return False
-    return True
