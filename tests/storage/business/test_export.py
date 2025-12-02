@@ -146,6 +146,10 @@ def test_export_output(tmp_path: Path) -> None:
     study_factory.create_from_fs.return_value = study_tree
 
     class FileOutputsImpl(IFileStudyOutputs):
+        @property
+        def study_workspace(self) -> str:
+            return DEFAULT_WORKSPACE_NAME
+
         def get_file_study(self) -> FileStudy:
             return FileStudy(Mock(), study_tree)
 

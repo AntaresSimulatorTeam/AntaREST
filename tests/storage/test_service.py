@@ -28,7 +28,6 @@ import pytest
 from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
-from starlette.responses import Response
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -653,7 +652,7 @@ def test_save_metadata() -> None:
 
 
 @with_jwt_user
-def test_download_output(command_context: CommandContext) -> None:
+def test_download_output(tmp_path: Path, command_context: CommandContext) -> None:
     study_service = Mock()
     repository = Mock(spec=StudyMetadataRepository)
 
@@ -778,13 +777,12 @@ def test_download_output(command_context: CommandContext) -> None:
         ],
         warnings=[],
     )
-    res = t.cast(
-        Response,
-        output_service.download_outputs(
-            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
-        ),
+
+    tmp_file_path = tmp_path / "tmp.json"
+    output_service.create_output_download(
+        "study-id", "output-id", input_data, filetype=ExportFormat.JSON, tmp_export_file=tmp_file_path
     )
-    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(tmp_file_path.read_text()) == res_matrix
     # Ensures it was called with economy in lower case
     file_study_tree.get_node.assert_called_with(
         ["output", "output-id", "economy", "mc-ind", "00001", "areas", "east", "details-annual"]
@@ -803,9 +801,8 @@ def test_download_output(command_context: CommandContext) -> None:
     task_id = "task-id"
     service.task_service.add_task.return_value = task_id  # type: ignore
 
-    result = t.cast(
-        FileDownloadTaskDTO,
-        output_service.download_outputs("study-id", "output-id", input_data, use_task=True, filetype=ExportFormat.ZIP),
+    result = output_service.start_output_download_creation(
+        "study-id", "output-id", input_data, filetype=ExportFormat.ZIP
     )
 
     res_file_download = FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
@@ -830,13 +827,15 @@ def test_download_output(command_context: CommandContext) -> None:
         ],
         warnings=[],
     )
-    res = t.cast(
-        Response,
-        output_service.download_outputs(
-            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
-        ),
+    tmp_file = tmp_path / "tmp.json"
+    output_service.create_output_download(
+        "study-id",
+        "output-id",
+        input_data,
+        filetype=ExportFormat.JSON,
+        tmp_export_file=tmp_file,
     )
-    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(tmp_file.read_text()) == res_matrix
 
     # CLUSTER TYPE
     input_data.type = StudyDownloadType.DISTRICT
@@ -863,13 +862,15 @@ def test_download_output(command_context: CommandContext) -> None:
         ],
         warnings=[],
     )
-    res = t.cast(
-        Response,
-        output_service.download_outputs(
-            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
-        ),
+    tmp_file = tmp_path / "tmp.json"
+    output_service.create_output_download(
+        "study-id",
+        "output-id",
+        input_data,
+        filetype=ExportFormat.JSON,
+        tmp_export_file=tmp_file,
     )
-    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(tmp_file.read_text()) == res_matrix
 
 
 # noinspection PyArgumentList

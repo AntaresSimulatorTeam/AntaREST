@@ -17,7 +17,6 @@ from typing import BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
 from fastapi import HTTPException
-from starlette.responses import FileResponse, Response
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -395,22 +394,71 @@ class OutputService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def download_outputs(
+    def start_output_download_creation(
         self,
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
-        use_task: bool,
         filetype: ExportFormat,
-        tmp_export_file: Path,
-    ) -> Response | FileDownloadTaskDTO | FileResponse:
+    ) -> FileDownloadTaskDTO:
         """
         Download outputs
         Args:
             study_id: study ID.
             output_id: output ID.
             data: Json parameters.
-            use_task: use task or not.
+            filetype: type of returning file,.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        metadata = self._studies_repository.get_study_metadata(study_id)
+
+        logger.info(f"Study {study_id} output download asked by {get_user_id()}")
+
+        logger.info(f"Exporting {output_id} from study {study_id}")
+        export_name = f"Study filtered output {metadata.name}/{output_id} export"
+        export_file_download = self._file_transfer_manager.request_download(
+            f"{metadata.name}-{study_id}-{output_id}_filtered{filetype.suffix}", export_name
+        )
+        export_path = Path(export_file_download.path)
+        export_id = export_file_download.id
+
+        def export_task(_notifier: ITaskNotifier) -> TaskResult:
+            try:
+                self._storage.create_output_download(study_id, output_id, data, filetype, export_path)
+                self._file_transfer_manager.set_ready(export_id)
+                return TaskResult(
+                    success=True,
+                    message=f"Study filtered output {metadata.name}/{output_id} successfully exported",
+                )
+            except Exception as e:
+                self._file_transfer_manager.fail(export_id, str(e))
+                raise
+
+        task_id = self._task_service.add_task(
+            export_task,
+            export_name,
+            task_type=TaskType.EXPORT,
+            ref_id=study_id,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+        return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
+
+    def create_output_download(
+        self,
+        study_id: str,
+        output_id: str,
+        data: StudyDownloadDTO,
+        filetype: ExportFormat,
+        tmp_export_file: Path,
+    ) -> None:
+        """
+        Download outputs
+        Args:
+            study_id: study ID.
+            output_id: output ID.
+            data: Json parameters.
             filetype: type of returning file,.
             tmp_export_file: temporary file (if `use_task` is false),.
 
@@ -418,54 +466,8 @@ class OutputService:
 
         """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        metadata = self._studies_repository.get_study_metadata(study_id)
-
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
-
-        if use_task:
-            logger.info(f"Exporting {output_id} from study {study_id}")
-            export_name = f"Study filtered output {metadata.name}/{output_id} export"
-            export_file_download = self._file_transfer_manager.request_download(
-                f"{metadata.name}-{study_id}-{output_id}_filtered{filetype.suffix}", export_name
-            )
-            export_path = Path(export_file_download.path)
-            export_id = export_file_download.id
-
-            def export_task(_notifier: ITaskNotifier) -> TaskResult:
-                try:
-                    self._storage.create_output_download(study_id, output_id, data, filetype, export_path)
-                    self._file_transfer_manager.set_ready(export_id)
-                    return TaskResult(
-                        success=True,
-                        message=f"Study filtered output {metadata.name}/{output_id} successfully exported",
-                    )
-                except Exception as e:
-                    self._file_transfer_manager.fail(export_id, str(e))
-                    raise
-
-            task_id = self._task_service.add_task(
-                export_task,
-                export_name,
-                task_type=TaskType.EXPORT,
-                ref_id=study_id,
-                progress=None,
-                custom_event_messages=None,
-            )
-
-            return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
-        else:
-            self._storage.create_output_download(study_id, output_id, data, filetype, tmp_export_file)
-
-            if filetype == ExportFormat.JSON:
-                headers = {"Content-Disposition": "inline"}
-            elif filetype == ExportFormat.TAR_GZ:
-                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
-            elif filetype == ExportFormat.ZIP:
-                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
-            else:  # pragma: no cover
-                raise NotImplementedError(f"Export format {filetype} is not supported")
-
-            return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
+        self._storage.create_output_download(study_id, output_id, data, filetype, tmp_export_file)
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """

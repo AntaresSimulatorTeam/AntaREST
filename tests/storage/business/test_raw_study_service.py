@@ -447,6 +447,10 @@ timestamp = 1599488150
         def outputs_path(self) -> Path:
             return study_path / "output"
 
+        @property
+        def study_workspace(self) -> str:
+            return DEFAULT_WORKSPACE_NAME
+
     class OutputsProvider(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> IFileStudyOutputs:
             return FileOutputsImpl()

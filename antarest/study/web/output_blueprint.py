@@ -157,15 +157,31 @@ def create_output_routes(
         accept = request.headers["Accept"]
         filetype = ExportFormat.from_dto(accept)
 
-        content = output_service.download_outputs(
-            study_id,
-            output_id,
-            data,
-            use_task,
-            filetype,
-            tmp_export_file,
-        )
-        return content
+        if use_task:
+            return output_service.start_output_download_creation(
+                study_id,
+                output_id,
+                data,
+                filetype,
+            )
+        else:
+            output_service.create_output_download(
+                study_id,
+                output_id,
+                data,
+                filetype,
+                tmp_export_file,
+            )
+            if filetype == ExportFormat.JSON:
+                headers = {"Content-Disposition": "inline"}
+            elif filetype == ExportFormat.TAR_GZ:
+                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
+            elif filetype == ExportFormat.ZIP:
+                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
+            else:  # pragma: no cover
+                raise NotImplementedError(f"Export format {filetype} is not supported")
+
+            return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",
