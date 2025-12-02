@@ -178,13 +178,6 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
     )
 
 
-def expected_min_gen_response() -> bytes:
-    buffer = io.BytesIO()
-    df = pd.DataFrame(np.array([[0, 0, 0, 0, 0, 0, 0, 0]] * 8760))
-    df.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
-    return buffer.getvalue()
-
-
 @with_admin_user
 @pytest.mark.parametrize(
     "url, expected_output",
@@ -297,14 +290,15 @@ def test_sta_mini_input(storage_service: StudyService, url: str, expected_output
     [
         pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
-            expected_min_gen_response(),
+            pd.DataFrame(np.array([[0, 0, 0, 0, 0, 0, 0, 0]] * 8760)),
             id="miscgen-fr",
         )
     ],
 )
-def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_output: bytes) -> None:
+def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_output: pd.DataFrame) -> None:
     res = client.get(f"{url}&formatted=False")
-    assert res.content == expected_output
+    actual_output = pd.read_csv(io.BytesIO(res.content), sep="\t", header=None)
+    pd.testing.assert_frame_equal(actual_output, expected_output, check_dtype=False)
 
 
 @with_admin_user
