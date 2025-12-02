@@ -31,7 +31,7 @@ import EmptyView from "../../../../../../common/page/EmptyView";
 import ViewWrapper from "../../../../../../common/page/ViewWrapper";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
-import { type DataType, MAX_YEAR, type Timestep } from "../utils";
+import { type DataType, MAX_YEAR, type MonteCarloMode, type Timestep } from "../utils";
 import ResultFilters from "./ResultFilters";
 
 interface ResultMatrixViewerProps {
@@ -42,6 +42,8 @@ interface ResultMatrixViewerProps {
   matrixGridRef: React.RefObject<FilterableMatrixGridHandle>;
   dateTime: DateTimes | undefined;
   dateTimeMetadata: MatrixIndex | undefined;
+  mcMode: MonteCarloMode;
+  setMcMode: (mode: MonteCarloMode) => void;
   year: number;
   setYear: (year: number) => void;
   dataType: DataType;
@@ -63,6 +65,8 @@ function ResultMatrixViewer({
   matrixGridRef,
   dateTime,
   dateTimeMetadata,
+  mcMode,
+  setMcMode,
   year,
   setYear,
   dataType,
@@ -82,6 +86,8 @@ function ResultMatrixViewer({
       <Box sx={{ display: "flex", flexDirection: "column", height: 1, width: 1 }}>
         <Box sx={{ flexShrink: 0 }}>
           <ResultFilters
+            mcMode={mcMode}
+            setMcMode={setMcMode}
             year={year}
             setYear={setYear}
             dataType={dataType}

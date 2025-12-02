@@ -18,7 +18,7 @@ import ButtonBack from "../../../../../../common/ButtonBack";
 import PropertiesView from "../../../../../../common/PropertiesView";
 import ListElement from "../../../common/ListElement";
 import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
-import { OutputItemType } from "../utils";
+import type { OutputItemType } from "../utils";
 
 interface ResultItemSelectorProps {
   itemType: OutputItemType;
@@ -59,11 +59,9 @@ function ResultItemSelector({
               size="extra-small"
               variant="fullWidth"
             >
-              <Tab label={t("study.areas")} value={OutputItemType.Areas} />
-              <Tab label={t("study.links")} value={OutputItemType.Links} />
-              {output?.synthesis && (
-                <Tab label={t("study.synthesis")} value={OutputItemType.Synthesis} />
-              )}
+              <Tab label={t("study.areas")} value="areas" />
+              <Tab label={t("study.links")} value="links" />
+              {output?.synthesis && <Tab label={t("study.synthesis")} value="synthesis" />}
             </Tabs>
             <ListElement
               list={filteredItems}

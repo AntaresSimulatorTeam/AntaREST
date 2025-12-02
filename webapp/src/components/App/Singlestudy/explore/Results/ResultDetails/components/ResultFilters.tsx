@@ -27,7 +27,8 @@ import { useTranslation } from "react-i18next";
 import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatrixButton";
 import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import { DataType, matchesSearchTerm, Timestep } from "../utils";
+import { matchesSearchTerm, type DataType, type MonteCarloMode, type Timestep } from "../utils";
+import MonteCarloModeSelector from "./MonteCarloModeSelector";
 
 interface ColumnHeader {
   variable: string;
@@ -55,6 +56,8 @@ const defaultFilters = {
 } as const;
 
 interface Props {
+  mcMode: MonteCarloMode;
+  setMcMode: (mode: MonteCarloMode) => void;
   year: number;
   setYear: (year: number) => void;
   dataType: DataType;
@@ -70,6 +73,8 @@ interface Props {
 }
 
 function ResultFilters({
+  mcMode,
+  setMcMode,
   year,
   setYear,
   dataType,
@@ -231,11 +236,17 @@ function ResultFilters({
     },
   ] as const;
 
+  const isVariablePerVariable = mcMode === "variable-per-variable";
+
   // Data filters (requiring API calls, refetch new result)
   const RESULT_FILTERS = [
     {
+      id: "mcMode",
+      field: <MonteCarloModeSelector value={mcMode} onChange={setMcMode} />,
+    },
+    {
       id: "mc",
-      field: (
+      field: !isVariablePerVariable ? (
         <>
           <BooleanFE
             label={t("study.results.mc")}
@@ -264,26 +275,26 @@ function ResultFilters({
             />
           )}
         </>
-      ),
+      ) : null,
     },
     {
       id: "display",
-      field: (
+      field: !isVariablePerVariable ? (
         <SelectFE
           label={t("study.results.display")}
           value={dataType}
           options={[
-            { value: DataType.General, label: "General values" },
-            { value: DataType.Thermal, label: "Thermal plants" },
-            { value: DataType.Renewable, label: "Ren. clusters" },
-            { value: DataType.Record, label: "RecordYears" },
-            { value: DataType.STStorage, label: "ST Storages" },
+            { value: "values", label: "General values" },
+            { value: "details", label: "Thermal plants" },
+            { value: "details-res", label: "Ren. clusters" },
+            { value: "id", label: "RecordYears" },
+            { value: "details-STstorage", label: "ST Storages" },
           ]}
           size="extra-small"
           onChange={(event) => setDataType(event?.target.value as DataType)}
           margin="dense"
         />
-      ),
+      ) : null,
     },
     {
       id: "temporality",
@@ -292,11 +303,11 @@ function ResultFilters({
           label={t("study.results.temporality")}
           value={timestep}
           options={[
-            { value: Timestep.Hourly, label: "Hourly" },
-            { value: Timestep.Daily, label: "Daily" },
-            { value: Timestep.Weekly, label: "Weekly" },
-            { value: Timestep.Monthly, label: "Monthly" },
-            { value: Timestep.Annual, label: "Annual" },
+            { value: "hourly", label: "Hourly" },
+            { value: "daily", label: "Daily" },
+            { value: "weekly", label: "Weekly" },
+            { value: "monthly", label: "Monthly" },
+            { value: "annual", label: "Annual" },
           ]}
           size="extra-small"
           onChange={(event) => setTimestep(event?.target.value as Timestep)}

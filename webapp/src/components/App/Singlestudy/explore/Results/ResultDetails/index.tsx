@@ -299,6 +299,8 @@ function ResultDetails() {
           matrixGridRef={matrixGridRef}
           dateTime={dateTime}
           dateTimeMetadata={dateTimeMetadata}
+          mcMode={mcMode}
+          setMcMode={setMcMode}
           year={year}
           setYear={setYear}
           dataType={dataType}
