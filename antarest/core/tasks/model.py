@@ -64,7 +64,7 @@ class TaskStatus(Enum):
         if isinstance(other, TaskStatus):
             return other
         if isinstance(other, str):
-            if other in list(map(lambda c: c.name, cls)):  # cls.__members__:
+            if other in cls.__members__:
                 return cls[other]
             return cls(int(other))
         if isinstance(other, int):

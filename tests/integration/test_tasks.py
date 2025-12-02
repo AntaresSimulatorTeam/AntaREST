@@ -43,8 +43,6 @@ def test_list_tasks(client: TestClient, user_access_token: str, internal_study_i
     assert len(res_task_list) == 2
     assert actual_task_list == expected_task_list
 
-    # pour les status, faire des GET récupérant les COMPLETED et les RUNNING (confirmer qu'il n'y en a pas)
-
     # Getting all COMPLETED tasks and ensuring there's 2 of them
     res_tasks = client.get("/v1/tasks?status=COMPLETED", params={})
     res_task_completed_list = res_tasks.json()
