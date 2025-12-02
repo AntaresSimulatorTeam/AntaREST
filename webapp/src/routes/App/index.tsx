@@ -18,6 +18,7 @@ import { IconButton } from "@mui/material";
 import { SnackbarProvider, useSnackbar, type SnackbarKey } from "notistack";
 import { Provider } from "react-redux";
 import { Navigate, Outlet, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import ThemeProvider from "../-components/ThemeProvider";
 import Api from "./Api";
 import Container from "./Container";
 import Data from "./Data";
@@ -64,7 +65,6 @@ import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
 import Studies from "./Studies";
 import Tasks from "./Tasks";
-import ThemeProvider from "./ThemeProvider";
 
 // TODO: replace 'notistack' by 'sonner' (https://sonner.emilkowal.ski/)
 function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {

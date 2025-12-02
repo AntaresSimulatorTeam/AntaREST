@@ -12,12 +12,41 @@
  * This file is part of the Antares project.
  */
 
+import store from "@/redux/store";
+import CloseIcon from "@mui/icons-material/Close";
+import { Container, IconButton } from "@mui/material";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { type SnackbarKey, SnackbarProvider, useSnackbar } from "notistack";
+import { Provider } from "react-redux";
+import ThemeProvider from "./-components/ThemeProvider";
+
+function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {
+  const { closeSnackbar } = useSnackbar();
+
+  return (
+    <IconButton onClick={() => closeSnackbar(snackbarKey)}>
+      <CloseIcon />
+    </IconButton>
+  );
+}
 
 const RootLayout = () => (
   <>
-    <Outlet />
+    <Provider store={store}>
+      <ThemeProvider>
+        <SnackbarProvider
+          maxSnack={5}
+          autoHideDuration={3000}
+          action={(key) => <SnackbarCloseButton snackbarKey={key} />}
+          preventDuplicate
+        >
+          <Container>
+            <Outlet />
+          </Container>
+        </SnackbarProvider>
+      </ThemeProvider>
+    </Provider>
     <TanStackRouterDevtools />
   </>
 );
