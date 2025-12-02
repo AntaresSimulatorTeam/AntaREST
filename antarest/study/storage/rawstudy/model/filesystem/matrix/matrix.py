@@ -19,6 +19,7 @@ from typing import List, Optional, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.model import JSON
@@ -49,7 +50,7 @@ def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
     if df.empty and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        df.to_csv(path_or_buf, sep="\t", header=False, index=False)
+        pl.from_pandas(df).write_csv(path_or_buf, separator="\t", include_header=False)
 
 
 def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
@@ -124,23 +125,19 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> bytes | JSON:
+    ) -> JSON:
+        """
+        The only usage of formatted=False was via the R scripts inside the GET /raw endpoint.
+        Now we're using the `parse_as_dataframe` method so we can always return the value as if formatted was True.
+        """
         file_path, _ = self._get_real_file_path()
 
         df = self.parse_as_dataframe(file_path)
 
-        if formatted:
-            stopwatch = StopWatch()
-            data = cast(JSON, df.to_dict(orient="split"))
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
-            return data
-
-        # The R scripts use the flag formatted=False
-        if df.empty:
-            return b""
-        buffer = io.BytesIO()
-        df.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
-        return buffer.getvalue()
+        stopwatch = StopWatch()
+        data = cast(JSON, df.to_dict(orient="split"))
+        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
+        return data
 
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
