@@ -22,7 +22,6 @@ from typing_extensions import override
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
-    OutputNotFound,
     TaskAlreadyRunning,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -57,7 +56,6 @@ from antarest.study.business.output.variables_matrix_usage_provider import Outpu
 from antarest.study.model import (
     ExportFormat,
     MatrixIndex,
-    Study,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudySimResultDTO,
@@ -75,8 +73,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
-from antarest.study.storage.study_download_utils import StudyDownloader
-from antarest.study.storage.utils import assert_permission, is_output_archived, remove_from_cache
+from antarest.study.storage.utils import assert_permission, remove_from_cache
 
 logger = logging.getLogger(__name__)
 
@@ -214,22 +211,20 @@ class OutputService:
         return self._storage.get_digest(study_id, output_id)
 
     @staticmethod
-    def _get_output_archive_task_names(study: Study, output_id: str) -> tuple[str, str]:
+    def _get_output_archive_task_names(study_id: str, output_id: str) -> tuple[str, str]:
         return (
-            f"Archive output {study.id}/{output_id}",
-            f"Unarchive output {study.name}/{output_id} ({study.id})",
+            f"Archive output {study_id}/{output_id}",
+            f"Unarchive output {study_id}/{output_id}",
         )
 
     def unarchive_output(self, study_id: str, output_id: str) -> Optional[str]:
         self._permission_checker.check_permission(study_id, StudyPermissionType.READ)
 
-        output_path = Path(study.path) / "output" / output_id
-        if not is_output_archived(output_path):
-            if not output_path.exists():
-                raise OutputNotFound(output_id)
+        if not self._storage.is_output_archived(study_id, output_id):
             raise OutputAlreadyUnarchived(output_id)
+        # TODO SL: restore check about existence of the output ? Add it for all methods ?
 
-        archive_task_names = OutputService._get_output_archive_task_names(study, output_id)
+        archive_task_names = OutputService._get_output_archive_task_names(study_id, output_id)
         task_name = archive_task_names[1]
 
         study_tasks = self._task_service.list_tasks(
@@ -342,7 +337,7 @@ class OutputService:
         self._permission_checker.check_permission(study_uuid, StudyPermissionType.READ)
 
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
-        export_name = f"Study output {study.name}/{output_uuid} export"
+        export_name = f"Study output {study_uuid}/{output_uuid} export"
         export_file_download = self._file_transfer_manager.request_download(
             f"{study.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}", export_name
         )
@@ -369,7 +364,7 @@ class OutputService:
             export_task,
             export_name,
             task_type=TaskType.EXPORT,
-            ref_id=study.id,
+            ref_id=study_uuid,
             progress=None,
             custom_event_messages=None,
         )
@@ -383,7 +378,7 @@ class OutputService:
         data: StudyDownloadDTO,
         use_task: bool,
         filetype: ExportFormat,
-        tmp_export_file: Optional[Path] = None,
+        tmp_export_file: Path,
     ) -> Response | FileDownloadTaskDTO | FileResponse:
         """
         Download outputs
@@ -413,20 +408,7 @@ class OutputService:
 
             def export_task(_notifier: ITaskNotifier) -> TaskResult:
                 try:
-                    _study = self._study_service.get_study(study_id)
-                    _stopwatch = StopWatch()
-                    _matrix = StudyDownloader.build(
-                        self._study_service.get_file_study(_study),
-                        output_id,
-                        data,
-                    )
-                    _stopwatch.log_elapsed(
-                        lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s")
-                    )
-                    StudyDownloader.export(_matrix, filetype, export_path)
-                    _stopwatch.log_elapsed(
-                        lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
-                    )
+                    self._storage.create_output_download(study_id, output_id, data, filetype, export_path)
                     self._file_transfer_manager.set_ready(export_id)
                     return TaskResult(
                         success=True,
@@ -440,40 +422,25 @@ class OutputService:
                 export_task,
                 export_name,
                 task_type=TaskType.EXPORT,
-                ref_id=study.id,
+                ref_id=study_id,
                 progress=None,
                 custom_event_messages=None,
             )
 
             return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
         else:
-            stopwatch = StopWatch()
-            matrix = StudyDownloader.build(
-                self._study_service.get_file_study(study),
-                output_id,
-                data,
-            )
-            stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s"))
-            if tmp_export_file is not None:
-                StudyDownloader.export(matrix, filetype, tmp_export_file)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
-                )
+            self._storage.create_output_download(study_id, output_id, data, filetype, tmp_export_file)
 
-                if filetype == ExportFormat.JSON:
-                    headers = {"Content-Disposition": "inline"}
-                elif filetype == ExportFormat.TAR_GZ:
-                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
-                elif filetype == ExportFormat.ZIP:
-                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
-                else:  # pragma: no cover
-                    raise NotImplementedError(f"Export format {filetype} is not supported")
+            if filetype == ExportFormat.JSON:
+                headers = {"Content-Disposition": "inline"}
+            elif filetype == ExportFormat.TAR_GZ:
+                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
+            elif filetype == ExportFormat.ZIP:
+                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
+            else:  # pragma: no cover
+                raise NotImplementedError(f"Export format {filetype} is not supported")
 
-                return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
-
-            else:
-                json_response = matrix.model_dump_json()
-                return Response(content=json_response, media_type="application/json")
+            return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """
@@ -512,13 +479,13 @@ class OutputService:
     ) -> Optional[str]:
         self._permission_checker.check_permission(study_id, StudyPermissionType.WRITE)
 
-        output_path = Path(study.path) / "output" / output_id
-        if is_output_archived(output_path):
+        if self._storage.is_output_archived(study_id, output_id):
             raise OutputAlreadyArchived(output_id)
-        if not output_path.exists():
-            raise OutputNotFound(output_id)
+        # TODO: restore that check ? same in unarchive ?
+        # if not output_path.exists():
+        #    raise OutputNotFound(output_id)
 
-        archive_task_names = self._get_output_archive_task_names(study, output_id)
+        archive_task_names = self._get_output_archive_task_names(study_id, output_id)
         task_name = archive_task_names[0]
 
         if not force:
@@ -553,7 +520,7 @@ class OutputService:
             archive_output_task,
             task_name,
             task_type=TaskType.ARCHIVE,
-            ref_id=study.id,
+            ref_id=study_id,
             progress=None,
             custom_event_messages=None,
         )
@@ -672,7 +639,7 @@ class OutputService:
                 )
                 return TaskResult(
                     success=True,
-                    message=f"Successfully aggregated output data for study '{study.id}'."
+                    message=f"Successfully aggregated output data for study '{uuid}'."
                     f" Results are stored in '{file_path}'.",
                 )
 
@@ -683,9 +650,9 @@ class OutputService:
 
         task_id = self._task_service.add_task(
             aggregate_output_task,
-            f"Aggregate output {output_id} of study {study.id}.",
+            f"Aggregate output {output_id} of study {uuid}.",
             task_type=TaskType.OUTPUT_AGGREGATION,
-            ref_id=study.id,
+            ref_id=uuid,
             progress=None,
             custom_event_messages=None,
         )

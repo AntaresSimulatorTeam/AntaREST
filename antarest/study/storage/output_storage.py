@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import BinaryIO, List, Optional
 
-from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,18 @@ class IOutputStorage(ABC):
         """
         Export and compresses study inside zip
         """
+
+    @abstractmethod
+    def create_output_download(
+        self, study_id: str, output_id: str, data: StudyDownloadDTO, filetype: ExportFormat, target: Path
+    ) -> None:
+        """
+        For the "download" feature of the API.
+        """
+
+    @abstractmethod
+    def is_output_archived(self, study_id: str, output_id: str) -> bool:
+        """Check if a study output is archived."""
 
     @abstractmethod
     def archive_study_output(self, study_id: str, output_id: str) -> bool:

@@ -26,7 +26,9 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_arc
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    ExportFormat,
     MatrixIndex,
+    StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
@@ -40,7 +42,14 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.utils import extract_output_name, fix_study_root, get_start_date, remove_from_cache
+from antarest.study.storage.study_download_utils import StudyDownloader
+from antarest.study.storage.utils import (
+    extract_output_name,
+    fix_study_root,
+    get_start_date,
+    is_output_archived,
+    remove_from_cache,
+)
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -222,6 +231,31 @@ class OutputStorageImpl(IOutputStorage):
         if not path_output_zip.exists():
             archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
         stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {study_id} exported in {x}s"))
+
+    @override
+    def create_output_download(
+        self, study_id: str, output_id: str, data: StudyDownloadDTO, filetype: ExportFormat, target: Path
+    ) -> None:
+        """
+        For the "download" feature of the API.
+        """
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        stopwatch = StopWatch()
+        matrix = StudyDownloader.build(
+            study_outputs.get_file_study(),
+            output_id,
+            data,
+        )
+        stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s"))
+        StudyDownloader.export(matrix, filetype, target)
+        stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s"))
+
+    @override
+    def is_output_archived(self, study_id: str, output_id: str) -> bool:
+        """Check if a study output is archived."""
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        output_path = study_outputs.outputs_path / output_id
+        return is_output_archived(output_path)
 
     @override
     def archive_study_output(self, study_id: str, output_id: str) -> bool:
