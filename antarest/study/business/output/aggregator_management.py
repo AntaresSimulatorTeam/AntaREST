@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import io
 import logging
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
@@ -126,20 +125,13 @@ class AggregatorManager:
         content = file_path.read_text(encoding="utf-8")
         output_headers = parse_headers(content, self._output_first_column)
         try:
-            polars_df = pl.read_csv(
-                io.StringIO(content), skip_lines=7, separator="\t", has_header=False, null_values="N/A"
-            )
+            polars_df = pl.read_csv(file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A")
         except ComputeError:
             # Happens if polars wrongly inferred the schema. If so, we specify that he shouldn't try.
             # This way the parsing does not fail, but it is significantly slower.
             # This case does not seem to happen very often.
             polars_df = pl.read_csv(
-                io.StringIO(content),
-                skip_lines=7,
-                separator="\t",
-                has_header=False,
-                null_values="N/A",
-                infer_schema=False,
+                file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", infer_schema=False
             )
 
         df = polars_df[polars_df.columns[self._output_first_column :]].to_pandas().astype(np.float64)
