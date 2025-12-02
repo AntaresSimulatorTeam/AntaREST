@@ -13,8 +13,8 @@
  */
 
 import { Box, ToggleButton, ToggleButtonGroup, Tooltip, useColorScheme } from "@mui/material";
-import { THEME_MODES } from "../shared/constants";
 import { useTranslation } from "react-i18next";
+import { THEME_MODES } from "../../App/shared/constants";
 
 interface Props {
   children: React.ReactNode;
