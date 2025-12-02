@@ -113,7 +113,7 @@ class OutputVariablesViewMaterializationTask:
             self._output_id, self._variable_type, self._variable_name, available_variables, self._output_identifier
         )
 
-        with temp_file_path(dir=self._output_service._study_service.config.storage.tmp_dir) as tmp_path:
+        with temp_file_path(dir=self._output_service._tmp_dir) as tmp_path:
             # Calls the aggregation with the right arguments
             task_id = self._output_service.start_aggregate_output_data(
                 self._study_id,
@@ -676,7 +676,7 @@ class OutputService:
                 )
 
                 results = aggregator_manager.aggregate_output_data()
-                export_df_chunks(self._study_service.config.storage.tmp_dir, file_path, results, export_format)
+                export_df_chunks(self._tmp_dir, file_path, results, export_format)
 
                 stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_path}'."))
 
