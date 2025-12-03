@@ -23,7 +23,7 @@ from typing import Any, Dict, Set
 from antarest.celery.app import celery_app
 from antarest.celery.context import MaintenanceContext
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import PostgresqlLock, PostgresqlLockNotAcquired
+from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.service import MatrixService
 
@@ -75,7 +75,7 @@ def clean_matrices_task() -> Dict[str, Any]:
 
     try:
         with db():
-            with PostgresqlLock(db.session, lock_id=MATRIX_GC_LOCK_ID):
+            with create_lock(db.session, lock_id=MATRIX_GC_LOCK_ID):
                 used_matrices = {matrix.matrix_id for matrix in matrix_service.get_used_matrices()}
                 all_existing_matrices = matrix_service.get_matrices()
                 saved_matrices = {matrix.id: matrix.created_at for matrix in all_existing_matrices}
@@ -105,7 +105,7 @@ def clean_matrices_task() -> Dict[str, Any]:
                         matrix_service=matrix_service, unused_matrices=matrices_to_remove, dry_run=dry_run
                     )
 
-    except PostgresqlLockNotAcquired:
+    except LockNotAcquired:
         logger.warning(
             f"Could not acquire advisory lock {MATRIX_GC_LOCK_ID}. "
             "Another matrix GC process is probably running. Skipping this run."
