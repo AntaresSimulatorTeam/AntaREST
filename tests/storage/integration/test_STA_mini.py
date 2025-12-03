@@ -33,9 +33,9 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.main import add_study_routes
+from antarest.study.output.output_model import OutputVariablesInformation
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
-from antarest.study.storage.output_model import OutputVariablesInformation
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.web.output_blueprint import create_output_routes

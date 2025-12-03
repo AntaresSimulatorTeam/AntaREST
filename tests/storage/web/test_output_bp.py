@@ -31,7 +31,7 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.storage.output_service import OutputService
+from antarest.study.output.output_service import OutputService
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 from tests.storage.web.test_studies_bp import create_test_client

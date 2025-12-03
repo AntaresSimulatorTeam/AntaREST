@@ -43,9 +43,9 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.output.output_storage_impl import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
+from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
+from antarest.study.output.output_service import IStudiesRepository, OutputService, StudyMetadata
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.output_service import IStudiesRepository, OutputService, StudyMetadata
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     FileStudyTreeConfig,

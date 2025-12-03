@@ -30,7 +30,7 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.storage.study_download_utils import StudyDownloader
+from antarest.study.output.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import DAY_NAMES, get_start_date
 
 

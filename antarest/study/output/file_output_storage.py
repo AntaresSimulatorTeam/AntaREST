@@ -38,8 +38,9 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
-from antarest.study.storage.output_model import OutputVariablesList
-from antarest.study.storage.output_storage import IOutputStorage
+from antarest.study.output.output_model import OutputVariablesList
+from antarest.study.output.output_storage import IOutputStorage
+from antarest.study.output.study_download_utils import StudyDownloader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -49,7 +50,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,

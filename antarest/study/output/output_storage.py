@@ -18,7 +18,7 @@ import pandas as pd
 
 from antarest.study.business.output.utils import QueryFileType
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
-from antarest.study.storage.output_model import OutputVariablesList
+from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 

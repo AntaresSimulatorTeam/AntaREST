@@ -29,7 +29,7 @@ from antarest.study.business.output.utils import (
     normalize_column_names,
     parse_output_file,
 )
-from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType, OutputVariablesViewsModel
+from antarest.study.output.output_model import OutputVariablesList, OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 

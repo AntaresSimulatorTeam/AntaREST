@@ -21,7 +21,7 @@ from py7zr import SevenZipFile
 from antarest.core.config import Config, StorageConfig
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
-from antarest.study.output.output_storage_impl import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
+from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.helpers import create_raw_study

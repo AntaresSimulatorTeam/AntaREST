@@ -61,15 +61,15 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudySimResultDTO,
 )
-from antarest.study.service import StudyService
-from antarest.study.storage.df_download import export_df_chunks
-from antarest.study.storage.output_model import (
+from antarest.study.output.output_model import (
     OutputVariables,
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
 )
-from antarest.study.storage.output_storage import IOutputStorage
+from antarest.study.output.output_storage import IOutputStorage
+from antarest.study.service import StudyService
+from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,

@@ -48,11 +48,11 @@ from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
-from antarest.study.output.output_storage_impl import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
+from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
+from antarest.study.output.output_service import OutputService, StudyServiceStudiesRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
-from antarest.study.storage.output_service import OutputService, StudyServiceStudiesRepository
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
 from antarest.study.web.output_blueprint import create_output_routes

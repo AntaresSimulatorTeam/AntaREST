@@ -32,12 +32,12 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
 )
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
-from antarest.study.storage.output_model import (
+from antarest.study.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
 )
-from antarest.study.storage.output_service import OutputService
+from antarest.study.output.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
