@@ -22,7 +22,10 @@ Each Celery task retrieves services from this context instead of recreating them
 import logging
 import threading
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
+
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
 
 if TYPE_CHECKING:
     from antarest.blobstore.service import BlobService
@@ -82,17 +85,11 @@ class MaintenanceContext:
 
             logger.info(f"Initializing MaintenanceContext from {config_path}")
 
-            # Import here to avoid circular dependencies
-            from typing import Dict, cast
-
-            from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-            from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
-
             self.config = config
 
             # Initialize database session middleware (required for db() context manager)
             engine = init_db_engine(config_path, self.config, auto_upgrade_db=False)
-            DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+            DBSessionMiddleware(None, custom_engine=engine, session_args=cast(dict[str, bool], SESSION_ARGS))
 
             # Create services using existing factories
             # app_ctxt=None because we're not in a FastAPI context
