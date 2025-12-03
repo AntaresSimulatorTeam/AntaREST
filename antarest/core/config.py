@@ -641,25 +641,39 @@ class CeleryConfig:
     Sub config object dedicated to Celery (maintenance tasks scheduling)
 
     Attributes:
-        broker_url: URL of the message broker (Redis)
-        result_backend: URL of the result backend (Redis or DB)
+        broker_url: URL of the message broker (built from RedisConfig)
+        result_backend: URL of the result backend (built from RedisConfig)
         timezone: Timezone for scheduled tasks
         result_expires: Time in seconds before task results expire
         matrix_gc_interval: Interval in seconds between matrix GC runs
     """
 
-    broker_url: str = "redis://localhost:6379/1"
-    result_backend: str = "redis://localhost:6379/1"
+    # Redis database number for Celery (broker + results)
+    REDIS_DB: ClassVar[int] = 1
+
+    broker_url: str = ""
+    result_backend: str = ""
     timezone: str = "UTC"
     result_expires: int = 86400  # 24 hours
     matrix_gc_interval: int = 3600  # 1 hour
 
+    @staticmethod
+    def _build_redis_url(redis_config: RedisConfig, db: int) -> str:
+        password_part = f":{redis_config.password}@" if redis_config.password else ""
+        return f"redis://{password_part}{redis_config.host}:{redis_config.port}/{db}"
+
     @classmethod
-    def from_dict(cls, data: JSON) -> "CeleryConfig":
+    def from_dict(cls, data: JSON, redis_config: Optional[RedisConfig] = None) -> "CeleryConfig":
         defaults = cls()
+
+        if redis_config:
+            redis_url = cls._build_redis_url(redis_config, cls.REDIS_DB)
+        else:
+            redis_url = ""
+
         return cls(
-            broker_url=data.get("broker_url", defaults.broker_url),
-            result_backend=data.get("result_backend", defaults.result_backend),
+            broker_url=data.get("broker_url", redis_url),
+            result_backend=data.get("result_backend", redis_url),
             timezone=data.get("timezone", defaults.timezone),
             result_expires=data.get("result_expires", defaults.result_expires),
             matrix_gc_interval=data.get("matrix_gc_interval", defaults.matrix_gc_interval),
@@ -708,11 +722,11 @@ class Config:
             logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
             debug=data.get("debug", defaults.debug),
             resources_path=data["resources_path"] if "resources_path" in data else defaults.resources_path,
-            redis=RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis,
+            redis=(redis_config := RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis),
             eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
             cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
-            celery=CeleryConfig.from_dict(data["celery"]) if "celery" in data else defaults.celery,
+            celery=CeleryConfig.from_dict(data.get("celery", {}), redis_config=redis_config),
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
             desktop_mode=desktop_mode,
