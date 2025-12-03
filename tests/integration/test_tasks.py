@@ -50,9 +50,16 @@ def test_list_tasks(client: TestClient, user_access_token: str, internal_study_i
     for task_status in res_task_completed_list:
         assert task_status["status"] == TaskStatus.COMPLETED.value, task_status
 
+    # Getting COMPLETED tasks, this time with his status value instead of a string
+    res_tasks = client.get("/v1/tasks?status=3", params={})
+    res_task_completed_list = res_tasks.json()
+    assert len(res_task_completed_list) == 2
+
+
     # Getting all RUNNING tasks and making sure there's none
     res_tasks_running = client.get("/v1/tasks?status=RUNNING", params={}).json()
     assert len(res_tasks_running) == 0
+
 
     # Putting a non-existent status in the GET to have an error
     res_tasks_non_existent = client.get("/v1/tasks?status=NON_EXISTENT", params={})

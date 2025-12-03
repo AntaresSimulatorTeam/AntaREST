@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import datetime
-import re
 import time
 import typing as t
 from pathlib import Path
@@ -710,12 +709,6 @@ def test_memory_leak_fix(task_service: TaskJobService) -> None:
 def test_task_status_parsing() -> None:
     # Parsing multiple primitive types and TaskStatus
 
-    # Preparing invalid task status and error messages
-    invalid_task_status = "INVALID_STATUS"
-    invalid_float_task_status = 4.2
-    float_type = type(invalid_float_task_status)
-    error_str_message = "invalid literal for int() with base 10: 'INVALID_STATUS'"
-
     # Parsing an int into a TaskStatus
     task_status_int = TaskStatus.parse(1)
     assert task_status_int == TaskStatus.PENDING
@@ -735,13 +728,13 @@ def test_task_status_parsing() -> None:
     # Putting an invalid type (float) in the parse method
     with pytest.raises(
         TypeError,
-        match=f"Invalid status type: {float_type}",
+        match=f"Invalid status type: {type(4.2)}",
     ):
         TaskStatus.parse(4.2)
 
-    # Putting an invalid type (float) in the parse method
+    # Putting an invalid string status in the parse method
     with pytest.raises(
         ValueError,
-        match=re.escape(error_str_message),
+        match="Invalid status value : INVALID_STATUS",
     ):
-        TaskStatus.parse(invalid_task_status)
+        TaskStatus.parse("INVALID_STATUS")

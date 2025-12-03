@@ -66,7 +66,10 @@ class TaskStatus(Enum):
         if isinstance(other, str):
             if other in cls.__members__:
                 return cls[other]
-            return cls(int(other))
+            try:
+                return cls(int(other))
+            except ValueError as value_error:
+                raise ValueError(f"Invalid status value : {other}") from value_error
         if isinstance(other, int):
             return cls(other)
         else:
