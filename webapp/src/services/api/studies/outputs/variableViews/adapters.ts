@@ -26,7 +26,8 @@ export function buildVariableViewQueryParams(params: VariableViewParams): Record
       queryParams.area_id = params.areaId;
       break;
     case "link":
-      queryParams.link_id = params.linkId;
+      queryParams.area_from_id = params.areaFromId;
+      queryParams.area_to_id = params.areaToId;
       break;
     case "thermal_cluster":
     case "renewable_cluster":

@@ -19,7 +19,11 @@ import type {
   ResultMatrixDTO,
 } from "@/components/common/Matrix/shared/types";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
-import type { MatrixIndex } from "@/types/types";
+import type {
+  VariablesListDTO,
+  VariableViewMatrixDTO,
+} from "@/services/api/studies/outputs/variableViews/types";
+import type { Area, LinkElement, MatrixIndex } from "@/types/types";
 import type { FilterableMatrixGridHandle } from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
 import ViewWrapper from "../../../../../../common/page/ViewWrapper";
 import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
@@ -33,10 +37,6 @@ import {
 import ResultFilters from "./ResultFilters";
 import ResultMatrix from "./ResultMatrix";
 import VariableMatrix from "./VariableMatrix";
-import type {
-  VariablesListDTO,
-  VariableViewMatrixDTO,
-} from "@/services/api/studies/outputs/variableViews/types";
 
 interface ResultMatrixViewerProps {
   matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
@@ -62,6 +62,7 @@ interface ResultMatrixViewerProps {
   variablesMetadata: VariablesListDTO | null;
   itemType: OutputItemType;
   selectedItemId: string;
+  selectedItem: (Area & { id: string }) | LinkElement | undefined;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   onMaterializeVariable: () => void;
@@ -94,6 +95,7 @@ function ResultMatrixViewer({
   variablesMetadata,
   itemType,
   selectedItemId,
+  selectedItem,
   selectedVariable,
   onVariableSelect,
   onMaterializeVariable,
@@ -129,13 +131,21 @@ function ResultMatrixViewer({
             onVariableSelect={onVariableSelect}
           />
         </Box>
-        <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           {isVariablePerVariable ? (
             <VariableMatrix
               variablesMetadata={variablesMetadata}
               mcMode={mcMode}
               itemType={itemType}
               selectedItemId={selectedItemId}
+              selectedItem={selectedItem}
               selectedVariable={selectedVariable}
               onMaterializeVariable={onMaterializeVariable}
               isMaterializing={isMaterializing}

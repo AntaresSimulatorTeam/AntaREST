@@ -72,23 +72,6 @@ function ResultDetails() {
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const links = useAppSelector((state) => getLinks(state, study.id));
 
-  const {
-    variablesMetadata,
-    selectedVariable,
-    setSelectedVariable,
-    isMaterializing,
-    handleMaterializeVariable,
-    variableViewDataRes,
-  } = useVariablePerVariable({
-    studyId: study.id,
-    outputId,
-    isEnabled: isVariablePerVariable,
-    mcMode,
-    itemType,
-    timestep,
-    selectedItemId,
-  });
-
   const { data: output } = useStudyOutput({
     studyId: study.id,
     outputId: outputId,
@@ -128,6 +111,24 @@ function ResultDetails() {
     | (Area & { id: string })
     | LinkElement
     | undefined;
+
+  const {
+    variablesMetadata,
+    selectedVariable,
+    setSelectedVariable,
+    isMaterializing,
+    handleMaterializeVariable,
+    variableViewDataRes,
+  } = useVariablePerVariable({
+    studyId: study.id,
+    outputId,
+    isEnabled: isVariablePerVariable,
+    mcMode,
+    itemType,
+    timestep,
+    selectedItemId,
+    selectedItem,
+  });
 
   // Auto-select first item if none selected
   // biome-ignore lint/correctness/useExhaustiveDependencies: <Using length to avoid reference issues>
@@ -343,6 +344,7 @@ function ResultDetails() {
           variablesMetadata={variablesMetadata ?? null}
           itemType={itemType}
           selectedItemId={selectedItemId}
+          selectedItem={selectedItem}
           selectedVariable={selectedVariable}
           onVariableSelect={setSelectedVariable}
           onMaterializeVariable={handleMaterializeVariable}

@@ -104,7 +104,8 @@ export interface AreaVariableViewParams extends VariableViewBaseParams {
 
 export interface LinkVariableViewParams extends VariableViewBaseParams {
   type: "link";
-  linkId: string;
+  areaFromId: string;
+  areaToId: string;
 }
 
 export interface ThermalClusterVariableViewParams extends VariableViewBaseParams {

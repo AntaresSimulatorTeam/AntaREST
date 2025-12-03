@@ -21,6 +21,7 @@ import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
+import type { Area, LinkElement } from "@/types/types";
 import { toError } from "../../../../../../../utils/fnUtils";
 import FilterableMatrixGrid, {
   type FilterableMatrixGridHandle,
@@ -36,6 +37,7 @@ interface VariableMatrixProps {
   mcMode: MonteCarloMode;
   itemType: OutputItemType;
   selectedItemId: string;
+  selectedItem: (Area & { id: string }) | LinkElement | undefined;
   selectedVariable: string;
   onMaterializeVariable: () => void;
   isMaterializing: boolean;
@@ -49,15 +51,18 @@ function hasVariablesForItem(
   mcMode: MonteCarloMode,
   itemType: OutputItemType,
   selectedItemId: string,
+  selectedItem: (Area & { id: string }) | LinkElement | undefined,
 ): boolean {
   const data = mcMode === "mc-all" ? variablesMetadata.mcAll : variablesMetadata.mcInd;
 
   if (itemType === "areas") {
-    return data.areas.some((a) => a.name === selectedItemId);
+    return data.areas.some((area) => area.name === selectedItemId);
   }
 
-  if (itemType === "links") {
-    return data.links.some((l) => l.area1Name === selectedItemId || l.area2Name === selectedItemId);
+  if (itemType === "links" && selectedItem && "area1" in selectedItem) {
+    return data.links.some(
+      (link) => link.area1Name === selectedItem.area1 && link.area2Name === selectedItem.area2,
+    );
   }
 
   return false;
@@ -68,6 +73,7 @@ function VariableMatrix({
   mcMode,
   itemType,
   selectedItemId,
+  selectedItem,
   selectedVariable,
   onMaterializeVariable,
   isMaterializing,
@@ -81,7 +87,7 @@ function VariableMatrix({
     return <Skeleton sx={{ height: 1, transform: "none" }} />;
   }
 
-  if (!hasVariablesForItem(variablesMetadata, mcMode, itemType, selectedItemId)) {
+  if (!hasVariablesForItem(variablesMetadata, mcMode, itemType, selectedItemId, selectedItem)) {
     return <EmptyView title={t("study.results.noVariablesForArea")} icon={GridOffIcon} />;
   }
 
