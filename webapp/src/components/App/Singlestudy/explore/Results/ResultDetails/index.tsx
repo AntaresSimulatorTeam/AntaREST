@@ -18,7 +18,7 @@ import type { FilterableMatrixGridHandle } from "@/components/common/Matrix/comp
 import { Column } from "@/components/common/Matrix/shared/constants";
 import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { Area, LinkElement, StudyMetadata } from "@/types/types";
+import type { Area, LinkElement, MatrixIndex, StudyMetadata } from "@/types/types";
 import usePromise from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks } from "../../../../../../redux/selectors";
@@ -153,7 +153,7 @@ function ResultDetails() {
 
   const matrixRes = usePromise<ResultMatrixDTO | undefined>(
     async () => {
-      if (!output || !selectedItem || isSynthesis || !path) {
+      if (!output || !selectedItem || isSynthesis || !path || isVariablePerVariable) {
         return new Promise(() => {
           // Intentionally never resolves to keep promise in pending state
           // Prevents invalid "No data" while loading
@@ -182,7 +182,7 @@ function ResultDetails() {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [study.id, path, !!output, !!selectedItem, isSynthesis],
+      deps: [study.id, path, !!output, !!selectedItem, isSynthesis, isVariablePerVariable],
     },
   );
 
@@ -211,9 +211,19 @@ function ResultDetails() {
     },
   );
 
-  const { data: dateTimeMetadata } = usePromise(() => getStudyMatrixIndex(study.id, path), {
-    deps: [study.id, path],
-  });
+  const { data: dateTimeMetadata } = usePromise<MatrixIndex | undefined>(
+    () => {
+      // Skip fetching in variable-per-variable mode
+      if (isVariablePerVariable || !path) {
+        return Promise.resolve(undefined);
+      }
+
+      return getStudyMatrixIndex(study.id, path);
+    },
+    {
+      deps: [study.id, path, isVariablePerVariable],
+    },
+  );
 
   const dateTime = useMemo(
     () => dateTimeMetadata && generateDateTime(dateTimeMetadata),
