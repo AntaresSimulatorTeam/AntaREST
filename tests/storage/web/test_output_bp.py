@@ -23,6 +23,7 @@ from antarest.core.config import Config, StorageConfig
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.study.model import (
+    ExportFormat,
     MatrixAggregationResultDTO,
     MatrixIndex,
     StudyDownloadDTO,
@@ -58,7 +59,17 @@ def test_output_download(tmp_path: Path) -> None:
         ],
         warnings=[],
     )
-    mock_output_service.create.return_value = output_data
+
+    def mock_create_output_download(
+        study_id: str,
+        output_id: str,
+        data: StudyDownloadDTO,
+        filetype: ExportFormat,
+        tmp_export_file: Path,
+    ):
+        tmp_export_file.write_text(output_data.model_dump_json())
+
+    mock_output_service.create_output_download.side_effect = mock_create_output_download
 
     study_download = StudyDownloadDTO(
         type=StudyDownloadType.AREA,

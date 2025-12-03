@@ -12,7 +12,7 @@
 
 import uuid
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 from unittest.mock import Mock
 
 import pytest
@@ -257,17 +257,6 @@ def lite_path(tmp_path: Path) -> Path:
 
 
 class SimpleSyncTaskService(ITaskService):
-    @override
-    def add_worker_task(
-        self,
-        task_type: TaskType,
-        task_queue: str,
-        task_args: Dict[str, Union[int, float, bool, str]],
-        name: Optional[str],
-        ref_id: Optional[str],
-    ) -> Optional[str]:
-        raise NotImplementedError()
-
     @override
     def add_task(
         self,

@@ -80,17 +80,6 @@ class SynchTaskService(ITaskService):
         self._task_result: t.Optional[TaskResult] = None
 
     @override
-    def add_worker_task(
-        self,
-        task_type: TaskType,
-        task_queue: str,
-        task_args: t.Dict[str, t.Union[int, float, bool, str]],
-        name: t.Optional[str],
-        ref_id: t.Optional[str],
-    ) -> t.Optional[str]:
-        raise NotImplementedError()
-
-    @override
     def add_task(
         self,
         action: Task,

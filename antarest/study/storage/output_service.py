@@ -232,21 +232,23 @@ class OutputService:
         return self._storage.get_digest(study_id, output_id)
 
     @staticmethod
-    def _get_output_archive_task_names(study_id: str, output_id: str) -> tuple[str, str]:
+    def _get_output_archive_task_names(study_id: str, study_name: str, output_id: str) -> tuple[str, str]:
+        # TODO: why that inconsistency ??
         return (
             f"Archive output {study_id}/{output_id}",
-            f"Unarchive output {study_id}/{output_id}",
+            f"Unarchive output {study_name}/{output_id} ({study_id})",
         )
 
     def unarchive_output(self, study_id: str, output_id: str) -> Optional[str]:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        metadata = self._studies_repository.get_study_metadata(study_id)
 
         if not self._storage.output_exists(study_id, output_id):
             raise OutputNotFound(output_id)
         if not self._storage.is_output_archived(study_id, output_id):
             raise OutputAlreadyUnarchived(output_id)
 
-        archive_task_names = OutputService._get_output_archive_task_names(study_id, output_id)
+        archive_task_names = OutputService._get_output_archive_task_names(metadata.id, metadata.name, output_id)
         task_name = archive_task_names[1]
 
         study_tasks = self._task_service.list_tasks(
@@ -505,13 +507,14 @@ class OutputService:
         force: bool = False,
     ) -> Optional[str]:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
+        metadata = self._studies_repository.get_study_metadata(study_id)
 
         if not self._storage.output_exists(study_id, output_id):
             raise OutputNotFound(output_id)
         if self._storage.is_output_archived(study_id, output_id):
             raise OutputAlreadyArchived(output_id)
 
-        archive_task_names = self._get_output_archive_task_names(study_id, output_id)
+        archive_task_names = self._get_output_archive_task_names(metadata.id, metadata.name, output_id)
         task_name = archive_task_names[0]
 
         if not force:

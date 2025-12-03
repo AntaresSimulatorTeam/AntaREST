@@ -18,13 +18,16 @@ import pandas as pd
 import pytest
 from antares.study.version import StudyVersion
 from helpers import create_raw_study, with_admin_user
+from storage.conftest import SimpleSyncTaskService
 from storage.test_service import build_study_service, fill_study_service_with_command_context, with_jwt_user
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME, Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
-from antarest.core.model import PublicMode
-from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
+from antarest.core.model import PublicMode, StudyPermissionType
+from antarest.core.remote.remote_executor import IRemoteExecutor
+from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
 from antarest.login.model import User
 from antarest.service_creator import build_output_service
@@ -35,6 +38,7 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixIndex,
     RawStudy,
+    Study,
     StudyContentStatus,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
@@ -42,7 +46,9 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
+from antarest.study.output.output_storage_impl import IFileOutputsProvider, IFileStudyOutputs, OutputStorageImpl
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.output_service import IStudiesRepository, OutputService, StudyMetadata
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     FileStudyTreeConfig,
@@ -53,7 +59,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import is_output_archived
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.worker.archive_worker import ArchiveTaskArgs
@@ -74,8 +79,42 @@ def test_is_output_archived(tmp_path: Path) -> None:
     assert is_output_archived(path_output=tmp_path / "output_1.4.3")
 
 
+def _studies_repository(study: Study) -> IStudiesRepository:
+    class Impl(IStudiesRepository):
+        def get_study_metadata(self, study_id: str) -> StudyMetadata:
+            return StudyMetadata(study.id, study.name)
+
+        def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
+            pass
+
+    return Impl()
+
+
+def _file_outputs_provider(study: RawStudy) -> IFileOutputsProvider:
+    class OutputsImpl(IFileStudyOutputs):
+        def get_file_study(self) -> FileStudy:
+            raise NotImplementedError()
+
+        @property
+        def outputs_path(self) -> Path:
+            return Path(study.path) / "output"
+
+        @property
+        def study_workspace(self) -> str:
+            return study.workspace
+
+    class Impl(IFileOutputsProvider):
+        def get_outputs(self, study_id: str) -> IFileStudyOutputs:
+            return OutputsImpl()
+
+    return Impl()
+
+
 @with_admin_user
-def test_unarchive_output(tmp_path: Path, command_context: CommandContext) -> None:
+def test_unarchive_output_for_other_workspace_is_executed_on_remote(
+    tmp_path: Path, command_context: CommandContext
+) -> None:
+    # Prepare services and data
     study_id = str(uuid.uuid4())
     study_name = "My Study"
     study_mock = Mock(
@@ -93,50 +132,40 @@ def test_unarchive_output(tmp_path: Path, command_context: CommandContext) -> No
     # https://stackoverflow.com/a/62552149/1513933
     study_mock.name = study_name
 
-    service = build_study_service(
-        raw_study_service=Mock(spec=RawStudyService),
-        directory_service=Mock(spec=DirectoryService),
-        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
-        config=Mock(spec=Config),
+    cache_mock = Mock()
+    task_service = SimpleSyncTaskService()  # using a plain task executor to make sure the executor is called before
+    # the end
+    remote_executor: IRemoteExecutor = Mock(spec=IRemoteExecutor)
+    file_outputs_provider = _file_outputs_provider(study_mock)
+    output_storage = OutputStorageImpl(
+        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=remote_executor
     )
 
-    service.task_service.reset_mock()
+    studies_metadata_repository = _studies_repository(study_mock)
+    output_service = OutputService(
+        matrix_service=Mock(),
+        cache=cache_mock,
+        file_transfer_manager=Mock(),
+        tmp_dir=tmp_path,
+        studies_repository=studies_metadata_repository,
+        storage=output_storage,
+        task_service=task_service,
+    )
 
     output_id = "some-output"
-    service.task_service.add_worker_task.return_value = None  # type: ignore
-    service.task_service.list_tasks.return_value = []  # type: ignore
+    remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")  # type: ignore
     (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
 
-    fill_study_service_with_command_context(service, command_context)
-
-    output_service = build_output_service(
-        app_ctxt=None,
-        study_service=service,
-        task_service=service.task_service,
-        filetransfer_service=service.file_transfer_manager,
-        event_bus=service.event_bus,
-        cache=service.cache_service,
-        config=Mock(spec=Config),
-        matrix_service=Mock(),
-    )
+    # Asks for unarchive
     output_service.unarchive_output(study_id, output_id)
 
-    service.task_service.add_worker_task.assert_called_once_with(
+    # Check that a remote unarchive task was created
+    remote_executor.execute_remote_task.assert_called_once_with(
         TaskType.UNARCHIVE,
         "unarchive_other_workspace",
         ArchiveTaskArgs(
             src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
         ).model_dump(),
-        name=f"Unarchive output {study_name}/{output_id} ({study_id})",
-        ref_id=study_id,
-    )
-    service.task_service.add_task.assert_called_once_with(
-        ANY,
-        f"Unarchive output {study_name}/{output_id} ({study_id})",
-        task_type=TaskType.UNARCHIVE,
-        ref_id=study_id,
-        progress=None,
-        custom_event_messages=None,
     )
 
 
@@ -159,21 +188,27 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     # https://stackoverflow.com/a/62552149/1513933
     study_mock.name = study_name
 
-    service = build_study_service(
-        raw_study_service=Mock(spec=RawStudyService),
-        directory_service=Mock(spec=DirectoryService),
-        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
-        config=Mock(spec=Config),
-    )
+    cache_mock = Mock()
+    task_service = Mock(spec=ITaskService)
+    file_outputs_provider = _file_outputs_provider(study_mock)
+    output_storage = OutputStorageImpl(cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock())
 
-    service.task_service.reset_mock()
+    studies_metadata_repository = _studies_repository(study_mock)
+    output_service = OutputService(
+        matrix_service=Mock(),
+        cache=cache_mock,
+        file_transfer_manager=Mock(),
+        tmp_dir=tmp_path,
+        studies_repository=studies_metadata_repository,
+        storage=output_storage,
+        task_service=task_service,
+    )
 
     output_zipped = "some-output_zipped"
     output_unzipped = "some-output_unzipped"
-    service.task_service.add_worker_task.return_value = None  # type: ignore
     (tmp_path / "output" / output_unzipped).mkdir(parents=True)
     (tmp_path / "output" / f"{output_zipped}.zip").touch()
-    service.task_service.list_tasks.side_effect = [
+    task_service.list_tasks.side_effect = [
         [
             TaskDTO(
                 id="1",
@@ -217,18 +252,6 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         [],
     ]
 
-    fill_study_service_with_command_context(service, command_context)
-
-    output_service = build_output_service(
-        app_ctxt=None,
-        study_service=service,
-        task_service=service.task_service,
-        filetransfer_service=service.file_transfer_manager,
-        event_bus=service.event_bus,
-        cache=service.cache_service,
-        config=Mock(spec=Config),
-        matrix_service=Mock(),
-    )
     with pytest.raises(TaskAlreadyRunning):
         output_service.unarchive_output(study_id, output_zipped)
 
@@ -249,16 +272,7 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
 
     output_service.unarchive_output(study_id, output_zipped)
 
-    service.task_service.add_worker_task.assert_called_once_with(
-        TaskType.UNARCHIVE,
-        "unarchive_other_workspace",
-        ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_zipped}.zip"), dest=str(tmp_path / "output" / output_zipped)
-        ).model_dump(),
-        name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
-        ref_id=study_id,
-    )
-    service.task_service.add_task.assert_called_once_with(
+    task_service.add_task.assert_called_once_with(
         ANY,
         f"Unarchive output {study_name}/{output_zipped} ({study_id})",
         task_type=TaskType.UNARCHIVE,
