@@ -13,9 +13,9 @@
 import uuid
 from datetime import datetime
 from enum import Enum, StrEnum
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Annotated, Any, List, Optional, TypeAlias
 
-from pydantic import field_validator
+from pydantic import BeforeValidator, PlainSerializer, WithJsonSchema
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
@@ -59,6 +59,37 @@ class TaskStatus(Enum):
             TaskStatus.TIMEOUT,
         ]
 
+    @classmethod
+    def parse(cls, other: object) -> "TaskStatus":
+        if isinstance(other, TaskStatus):
+            return other
+        if isinstance(other, str):
+            if other in cls.__members__:
+                return cls[other]
+            try:
+                return cls(int(other))
+            except ValueError as value_error:
+                raise ValueError(f"Invalid status value : {other}") from value_error
+        if isinstance(other, int):
+            return cls(other)
+        else:
+            raise TypeError(f"Invalid status type: {type(other)!r}")
+
+
+def _format_task_status(s: TaskStatus) -> str:
+    return s.name
+
+
+_TASK_STATUS_JSON_SCHEMA = {"type": "string", "enum": [ts.name for ts in TaskStatus]}
+
+
+TaskStatusStr: TypeAlias = Annotated[
+    TaskStatus,
+    BeforeValidator(TaskStatus.parse),
+    PlainSerializer(_format_task_status, return_type=str),
+    WithJsonSchema(_TASK_STATUS_JSON_SCHEMA),
+]
+
 
 class TaskResult(AntaresBaseModel, extra="forbid"):
     success: bool
@@ -100,7 +131,7 @@ class TaskDTO(AntaresBaseModel, extra="forbid"):
 
 
 class TaskListFilter(AntaresBaseModel, extra="forbid"):
-    status: List[TaskStatus] = []
+    status: List[TaskStatusStr] = []
     name: Optional[str] = None
     type: List[TaskType] = []
     ref_id: Optional[str] = None
@@ -108,20 +139,6 @@ class TaskListFilter(AntaresBaseModel, extra="forbid"):
     to_creation_date_utc: Optional[float] = None
     from_completion_date_utc: Optional[float] = None
     to_completion_date_utc: Optional[float] = None
-
-    @field_validator("status", mode="before")
-    @classmethod
-    def convert_status_strings_to_ints(cls, v: Any) -> Any:
-        """
-        Convert string values to integers for TaskStatus enum validation.
-
-        Query parameters are received as strings by FastAPI. While Pydantic normally
-        handles string-to-int conversion, it doesn't do this automatically for integer
-        enums within lists, requiring explicit pre-validation conversion.
-        """
-        if isinstance(v, list):
-            return [int(item) if isinstance(item, str) and item.isdigit() else item for item in v]
-        return v
 
 
 class TaskJobLog(Base):
