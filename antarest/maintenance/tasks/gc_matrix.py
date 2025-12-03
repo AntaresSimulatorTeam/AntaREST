@@ -20,11 +20,10 @@ import logging
 import time
 from typing import Any, Dict, Set
 
-from sqlalchemy import text
-
 from antarest.celery.app import celery_app
 from antarest.celery.context import MaintenanceContext
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.lock import PostgresqlLock, PostgresqlLockNotAcquired
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.service import MatrixService
 
@@ -76,57 +75,47 @@ def clean_matrices_task() -> Dict[str, Any]:
 
     try:
         with db():
-            logger.info(f"Attempting to acquire advisory lock {MATRIX_GC_LOCK_ID}")
-            result = db.session.execute(text("SELECT pg_try_advisory_lock(:lock_id)"), {"lock_id": MATRIX_GC_LOCK_ID})
-            lock_acquired = result.scalar()
+            with PostgresqlLock(db.session, lock_id=MATRIX_GC_LOCK_ID):
+                used_matrices = {matrix.matrix_id for matrix in matrix_service.get_used_matrices()}
+                all_existing_matrices = matrix_service.get_matrices()
+                saved_matrices = {matrix.id: matrix.created_at for matrix in all_existing_matrices}
+                unused_matrices = set(saved_matrices) - used_matrices
 
-            if not lock_acquired:
-                logger.warning(
-                    f"Could not acquire advisory lock {MATRIX_GC_LOCK_ID}. "
-                    "Another matrix GC process is probably running. Skipping this run."
-                )
-                return {
-                    "status": "skipped",
-                    "reason": "lock_not_acquired",
-                    "deleted_count": 0,
-                    "duration_seconds": time.time() - start_time,
-                }
-
-            logger.info(f"Advisory lock {MATRIX_GC_LOCK_ID} acquired successfully")
-
-            # Perform garbage collection
-            used_matrices = {matrix.matrix_id for matrix in matrix_service.get_used_matrices()}
-            all_existing_matrices = matrix_service.get_matrices()
-            saved_matrices = {matrix.id: matrix.created_at for matrix in all_existing_matrices}
-            unused_matrices = set(saved_matrices) - used_matrices
-
-            logger.info(
-                f"Matrix statistics: "
-                f"total={len(saved_matrices)}, "
-                f"used={len(used_matrices)}, "
-                f"unused={len(unused_matrices)}"
-            )
-
-            if unused_matrices:
-                # Compare for each matrix, its lifetime duration to the `retention_time` value.
-                # If it's more, remove the matrix. Otherwise, pass.
-                matrices_to_remove = set()
-                now = current_time()
-                for matrix in unused_matrices:
-                    matrix_lifetime = (now - saved_matrices[matrix]).total_seconds()
-                    if matrix_lifetime >= retention_time:
-                        matrices_to_remove.add(matrix)
-
-                deleted_count = len(matrices_to_remove)
-                logger.info(f"Matrices to remove: {deleted_count}")
-
-                _delete_unused_saved_matrices(
-                    matrix_service=matrix_service, unused_matrices=matrices_to_remove, dry_run=dry_run
+                logger.info(
+                    f"Matrix statistics: "
+                    f"total={len(saved_matrices)}, "
+                    f"used={len(used_matrices)}, "
+                    f"unused={len(unused_matrices)}"
                 )
 
-            # Lock is automatically released when session ends (commit or rollback)
-            logger.info(f"Releasing advisory lock {MATRIX_GC_LOCK_ID}")
+                if unused_matrices:
+                    # Compare for each matrix, its lifetime duration to the `retention_time` value.
+                    # If it's more, remove the matrix. Otherwise, pass.
+                    matrices_to_remove = set()
+                    now = current_time()
+                    for matrix in unused_matrices:
+                        matrix_lifetime = (now - saved_matrices[matrix]).total_seconds()
+                        if matrix_lifetime >= retention_time:
+                            matrices_to_remove.add(matrix)
 
+                    deleted_count = len(matrices_to_remove)
+                    logger.info(f"Matrices to remove: {deleted_count}")
+
+                    _delete_unused_saved_matrices(
+                        matrix_service=matrix_service, unused_matrices=matrices_to_remove, dry_run=dry_run
+                    )
+
+    except PostgresqlLockNotAcquired:
+        logger.warning(
+            f"Could not acquire advisory lock {MATRIX_GC_LOCK_ID}. "
+            "Another matrix GC process is probably running. Skipping this run."
+        )
+        return {
+            "status": "skipped",
+            "reason": "lock_not_acquired",
+            "deleted_count": 0,
+            "duration_seconds": time.time() - start_time,
+        }
     except Exception as e:
         logger.error("Error during matrix GC", exc_info=e)
         return {

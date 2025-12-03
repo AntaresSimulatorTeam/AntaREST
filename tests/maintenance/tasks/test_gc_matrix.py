@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from antarest.core.utils.lock import PostgresqlLockNotAcquired
 from antarest.maintenance.tasks.gc_matrix import (
     _delete_unused_saved_matrices,
     clean_matrices_task,
@@ -86,21 +87,30 @@ class TestCleanMatricesTask:
             yield mock_ctx
 
     @pytest.fixture
-    def mock_db(self):
-        """Create a mock db context manager."""
-        with patch("antarest.maintenance.tasks.gc_matrix.db") as mock_db:
-            mock_session = MagicMock()
+    def mock_db_and_lock(self):
+        """Create mock db and PostgresqlLock context managers."""
+        with (
+            patch("antarest.maintenance.tasks.gc_matrix.db") as mock_db,
+            patch("antarest.maintenance.tasks.gc_matrix.PostgresqlLock") as mock_lock_class,
+        ):
             mock_db.return_value.__enter__ = Mock(return_value=None)
             mock_db.return_value.__exit__ = Mock(return_value=None)
-            mock_db.session = mock_session
-            yield mock_db
+            mock_db.session = MagicMock()
 
-    def test_returns_skipped_when_lock_not_acquired(self, mock_context, mock_db):
+            # By default, lock is acquired successfully
+            mock_lock = MagicMock()
+            mock_lock.__enter__ = Mock(return_value=mock_lock)
+            mock_lock.__exit__ = Mock(return_value=None)
+            mock_lock_class.return_value = mock_lock
+
+            yield {"db": mock_db, "lock_class": mock_lock_class, "lock": mock_lock}
+
+    def test_returns_skipped_when_lock_not_acquired(self, mock_context, mock_db_and_lock):
         """Test that task returns 'skipped' status when advisory lock cannot be acquired."""
-        # Simulate lock not acquired
-        mock_result = Mock()
-        mock_result.scalar.return_value = False
-        mock_db.session.execute.return_value = mock_result
+        # Simulate lock not acquired by raising PostgresqlLockNotAcquired
+        mock_db_and_lock["lock_class"].return_value.__enter__.side_effect = PostgresqlLockNotAcquired(
+            "Lock not acquired"
+        )
 
         result = clean_matrices_task()
 
@@ -109,13 +119,8 @@ class TestCleanMatricesTask:
         assert result["deleted_count"] == 0
         assert "duration_seconds" in result
 
-    def test_returns_success_with_no_matrices_to_delete(self, mock_context, mock_db):
+    def test_returns_success_with_no_matrices_to_delete(self, mock_context, mock_db_and_lock):
         """Test successful execution when there are no matrices to delete."""
-        # Simulate lock acquired
-        mock_result = Mock()
-        mock_result.scalar.return_value = True
-        mock_db.session.execute.return_value = mock_result
-
         # No matrices exist
         mock_context.matrix_service.get_used_matrices.return_value = []
         mock_context.matrix_service.get_matrices.return_value = []
@@ -128,13 +133,8 @@ class TestCleanMatricesTask:
         assert "duration_seconds" in result
 
     @patch("antarest.maintenance.tasks.gc_matrix.current_time")
-    def test_deletes_old_unused_matrices(self, mock_current_time, mock_context, mock_db):
+    def test_deletes_old_unused_matrices(self, mock_current_time, mock_context, mock_db_and_lock):
         """Test that old unused matrices are deleted."""
-        # Simulate lock acquired
-        mock_result = Mock()
-        mock_result.scalar.return_value = True
-        mock_db.session.execute.return_value = mock_result
-
         # Set current time
         now = datetime(2025, 1, 1, 12, 0, 0)
         mock_current_time.return_value = now
@@ -162,12 +162,8 @@ class TestCleanMatricesTask:
         mock_context.matrix_service.delete.assert_called_once_with("old_unused")
 
     @patch("antarest.maintenance.tasks.gc_matrix.current_time")
-    def test_respects_dry_run_flag(self, mock_current_time, mock_context, mock_db):
+    def test_respects_dry_run_flag(self, mock_current_time, mock_context, mock_db_and_lock):
         """Test that dry_run=True prevents actual deletion."""
-        mock_result = Mock()
-        mock_result.scalar.return_value = True
-        mock_db.session.execute.return_value = mock_result
-
         now = datetime(2025, 1, 1, 12, 0, 0)
         mock_current_time.return_value = now
 
@@ -189,9 +185,9 @@ class TestCleanMatricesTask:
         # Matrix should NOT be deleted in dry run mode
         mock_context.matrix_service.delete.assert_not_called()
 
-    def test_returns_error_on_exception(self, mock_context, mock_db):
+    def test_returns_error_on_exception(self, mock_context, mock_db_and_lock):
         """Test that exceptions are caught and returned as error status."""
-        mock_db.session.execute.side_effect = Exception("Database connection failed")
+        mock_context.matrix_service.get_used_matrices.side_effect = Exception("Database connection failed")
 
         result = clean_matrices_task()
 
@@ -201,12 +197,8 @@ class TestCleanMatricesTask:
         assert "duration_seconds" in result
 
     @patch("antarest.maintenance.tasks.gc_matrix.current_time")
-    def test_respects_retention_time(self, mock_current_time, mock_context, mock_db):
+    def test_respects_retention_time(self, mock_current_time, mock_context, mock_db_and_lock):
         """Test that only matrices older than retention_time are deleted."""
-        mock_result = Mock()
-        mock_result.scalar.return_value = True
-        mock_db.session.execute.return_value = mock_result
-
         now = datetime(2025, 1, 1, 12, 0, 0)
         mock_current_time.return_value = now
 
