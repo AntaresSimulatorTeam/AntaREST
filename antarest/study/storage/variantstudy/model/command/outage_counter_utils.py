@@ -13,17 +13,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import DefaultDict
 
-import numpy as np
-from numpy.typing import NDArray
-
 
 class OutageCounter:
     def __init__(self) -> None:
         # Nested defaultdict: area_id -> resource_id -> matrix ID (str)
         self.forced_outages_data: DefaultDict[str, DefaultDict[str, str]] = defaultdict(lambda: defaultdict(str))
-        self.planned_outages_data: DefaultDict[str, DefaultDict[str, str]] = defaultdict(
-            lambda: defaultdict(str)
-        )
+        self.planned_outages_data: DefaultDict[str, DefaultDict[str, str]] = defaultdict(lambda: defaultdict(str))
 
     def add_forced_outage(self, area_id: str, power_system_resource_id: str, count: str) -> None:
         self.forced_outages_data[area_id][power_system_resource_id] = count
