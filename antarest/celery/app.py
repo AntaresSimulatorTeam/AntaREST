@@ -107,8 +107,7 @@ def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None:
     # Import here to avoid circular imports and get the task signature
     from antarest.maintenance.tasks.gc_matrix import clean_matrices_task
 
-    # Get interval from config (loaded at module level), fallback to default
-    matrix_gc_interval = _config.celery.matrix_gc_interval if _config and _config.celery else 3600
+    matrix_gc_interval = _config.storage.matrix_gc_sleeping_time if _config else 3600
 
     sender.add_periodic_task(
         matrix_gc_interval,

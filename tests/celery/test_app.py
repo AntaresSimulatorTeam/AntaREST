@@ -185,24 +185,24 @@ class TestSetupPeriodicTasks:
         assert call_args[0][0] == 3600  # default interval
         assert call_args[1]["name"] == "matrix-gc"
 
-    def test_setup_periodic_tasks_uses_interval_from_config(self):
-        """Test that setup_periodic_tasks uses interval from config."""
+    def test_setup_periodic_tasks_uses_interval_from_storage_config(self):
+        """Test that setup_periodic_tasks uses interval from storage config."""
         mock_sender = Mock()
 
-        # Create mock config with custom interval
-        mock_celery_config = Mock()
-        mock_celery_config.matrix_gc_interval = 7200
+        # Create mock config with custom interval in storage config
+        mock_storage_config = Mock()
+        mock_storage_config.matrix_gc_sleeping_time = 7200
 
         mock_config = Mock()
-        mock_config.celery = mock_celery_config
+        mock_config.storage = mock_storage_config
 
         with patch("antarest.celery.app._config", mock_config):
             from antarest.celery.app import setup_periodic_tasks
 
             setup_periodic_tasks(mock_sender)
 
-        # Verify add_periodic_task was called with custom interval
+        # Verify add_periodic_task was called with custom interval from storage config
         mock_sender.add_periodic_task.assert_called_once()
         call_args = mock_sender.add_periodic_task.call_args
-        assert call_args[0][0] == 7200  # custom interval from config
+        assert call_args[0][0] == 7200  # custom interval from storage config
         assert call_args[1]["name"] == "matrix-gc"

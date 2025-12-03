@@ -638,13 +638,12 @@ class MetricsConfig:
 @dataclass(frozen=True)
 class CeleryConfig:
     """
-    Sub config object dedicated to Celery (maintenance tasks scheduling)
+    Sub config object dedicated to Celery technical configuration.
 
     Attributes:
         broker_url: URL of the message broker (built from RedisConfig)
         result_backend: URL of the result backend (built from RedisConfig)
         result_expires: Time in seconds before task results expire
-        matrix_gc_interval: Interval in seconds between matrix GC runs
     """
 
     # Redis database number for Celery (broker + results)
@@ -653,7 +652,6 @@ class CeleryConfig:
     broker_url: str = ""
     result_backend: str = ""
     result_expires: int = 86400  # 24 hours
-    matrix_gc_interval: int = 3600  # 1 hour
 
     @staticmethod
     def _build_redis_url(redis_config: RedisConfig, db: int) -> str:
@@ -673,7 +671,6 @@ class CeleryConfig:
             broker_url=data.get("broker_url", redis_url),
             result_backend=data.get("result_backend", redis_url),
             result_expires=data.get("result_expires", defaults.result_expires),
-            matrix_gc_interval=data.get("matrix_gc_interval", defaults.matrix_gc_interval),
         )
 
 

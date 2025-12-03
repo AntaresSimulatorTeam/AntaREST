@@ -66,6 +66,4 @@ debug: False
 # The broker_url and result_backend are automatically built from the redis config above.
 # You only need to configure celery-specific settings here if you want to override defaults.
 # celery:
-#   timezone: "UTC"
 #   result_expires: 86400  # 24 hours
-#   matrix_gc_interval: 3600  # 1 hour
