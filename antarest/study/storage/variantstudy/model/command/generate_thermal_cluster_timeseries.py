@@ -24,6 +24,7 @@ from typing_extensions import override
 from antarest.study.business.model.thermal_cluster_model import LocalTSGenerationBehavior
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
     CommandOutput,
     command_failed,
     command_succeeded,
@@ -47,6 +48,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
     Command used to generate thermal cluster timeseries for an entire study
     """
 
+    command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
+
     generate_outage_files_thermal: bool = Field(
         default=False
     )  # This is required to be Field because ICommand is a Pydantic model
@@ -61,6 +64,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         series_mapping: dict[str, dict[str, str]] = {}
         outage_counter = OutageCounter() if self.generate_outage_files_thermal else None
+
+        logger.info("Starting thermal cluster time series generation")
+        logger.info(f"generate outage files thermal: {self.generate_outage_files_thermal}")
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
         nb_years = study_data.get_timeseries_config().thermal.number
@@ -145,19 +151,19 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
         # 11- Once we've written all matrices inside the matrix-store, modify the input folder.
 
-        if self.generate_outage_files:
+        if self.generate_outage_files_thermal:
             study_dir = study_data.get_study_path()
-            outage_dir = study_dir / "ts-generator" / "thermal"
+            outage_dir = study_dir / "user" / "ts-generator" / "thermal"
             outage_dir.mkdir(parents=True, exist_ok=True)
 
         for area_id, values in series_mapping.items():
-            if self.generate_outage_files:
+            if self.generate_outage_files_thermal:
                 area_dir = outage_dir / area_id
                 area_dir.mkdir(exist_ok=True)
             for thermal_id, series in values.items():
                 study_data.save_thermal_series(area_id, thermal_id, series)
 
-                if self.generate_outage_files:
+                if self.generate_outage_files_thermal:
                     thermal_dir = area_dir / thermal_id
                     thermal_dir.mkdir(parents=True, exist_ok=True)
                     outage_counter.save_planned_outages(thermal_dir, area_id, thermal_id)

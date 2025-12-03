@@ -170,8 +170,8 @@ class RemoveArea(ICommand):
             study_data: FileStudy to update.
 
         """
-        if (study_data.tree.config.path / "ts-generator" / self.id).exists():
-            study_data.tree.delete(["ts-generator", self.id])
+        if (study_data.tree.config.path / "user" / "ts-generator" / "thermal" / self.id).exists():
+            study_data.tree.delete(["user", "ts-generator", "thermal", self.id])
 
         # Note: we do not delete the prepro file because it can be useful for
         # other areas if they share the same cluster.

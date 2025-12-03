@@ -177,8 +177,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
             paths.append(["input", "thermal", "prepro", area_id])
             paths.append(["input", "thermal", "series", area_id])
 
-        if (study_data.tree.config.path / "ts-generator" / area_id / "thermal" / cluster_id).exists():
-            paths.append(["ts-generator", area_id, "thermal", cluster_id])
+        if (study_data.tree.config.path / "ts-generator" / "thermal" / area_id / cluster_id).exists():
+            paths.append(["ts-generator", "thermal", area_id, cluster_id])
 
         for path in paths:
             study_data.tree.delete(path)

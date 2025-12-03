@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from pathlib import Path
 from typing import Dict, Sequence
 
 import pandas as pd
@@ -115,9 +114,6 @@ class StudyDao(
         To ease transition, to be removed when all goes through other methods
         """
         raise NotImplementedError()
-
-    def get_study_path(self) -> Path:
-        return self.get_file_study().config.path
 
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):

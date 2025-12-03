@@ -23,7 +23,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.layers.layers import 
 from antarest.study.storage.rawstudy.model.filesystem.root.output.output import Output
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.settings import Settings
 from antarest.study.storage.rawstudy.model.filesystem.root.study_antares import StudyAntares
-from antarest.study.storage.rawstudy.model.filesystem.root.ts_generator.ts_generator import TsGenerator
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
 logger = logging.getLogger(__name__)
@@ -52,8 +51,5 @@ class FileStudyTree(FolderNode):
             output_config = self.config.next_file("output")
             output_config.path = self.config.output_path or output_config.path
             children["output"] = Output(self.matrix_mapper, output_config)
-
-        if (self.config.path / "ts-generator").exists():
-            children["ts-generator"] = TsGenerator(self.matrix_mapper, self.config.next_file("ts-generator"))
 
         return children
