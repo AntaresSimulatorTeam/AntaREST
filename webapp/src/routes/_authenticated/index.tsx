@@ -12,24 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import Container from "./-components/Container";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/")({
-  beforeLoad: ({ context, location }) => {
-    if (!context.auth.isAuthenticated) {
-      throw redirect({
-        to: "/login",
-        search: {
-          // Save current location for redirect after login
-          redirect: location.href,
-        },
-      });
-    }
+  beforeLoad: () => {
+    throw redirect({
+      to: "/apidoc",
+      replace: true,
+    });
   },
-  component: () => (
-    <Container>
-      <Outlet />
-    </Container>
-  ),
 });

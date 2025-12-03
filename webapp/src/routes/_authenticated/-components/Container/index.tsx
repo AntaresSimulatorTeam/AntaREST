@@ -102,8 +102,6 @@ function Container({ children }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  // TODO samir - A <Link> wrapper that knows if it's "active" or not.
-
   return (
     <>
       <Box sx={{ height: 1, display: "flex" }}>
