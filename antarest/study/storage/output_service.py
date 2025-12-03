@@ -19,6 +19,7 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
+    OutputAggregationError,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
     OutputNotFound,
@@ -50,6 +51,7 @@ from antarest.study.business.output.variables_management import (
     check_output_variable_exists,
     create_output_view_db_model,
     extract_variables_list,
+    get_available_variables,
     get_output_view_inside_db,
 )
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
@@ -663,12 +665,22 @@ class OutputService:
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         output_path = self._storage.get_output_path(study, output_id)
+        # Fetch available variables for the given inputs
+        variables_list = self.get_output_variables_list(uuid, output_id)
+        available_variables = get_available_variables(variables_list, query_file, set(ids_to_consider))
+        # If any of the asked column names isn't available, raise immediately
+        for column in columns_names:
+            if column not in available_variables:
+                raise OutputAggregationError(output_id, f"The variable {column} does not exist for the given output.")
+        # Give the column names to the aggregator in advance.
+        # This way the aggregation won't generate dataframes with column mismatch.
+        final_columns = columns_names if columns_names else available_variables
         aggregator_manager = AggregatorManager(
             output_path,
             query_file,
             frequency,
             ids_to_consider,
-            columns_names,
+            final_columns,
             mc_years,
         )
 
