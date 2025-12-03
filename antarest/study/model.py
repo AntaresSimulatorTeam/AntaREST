@@ -687,7 +687,3 @@ class MatrixAggregationResult(AntaresBaseModel):
 class ReferenceStudy(AntaresBaseModel):
     version: str
     template_name: str
-
-
-class GenerateTimeSeriesRequestOutages(AntaresBaseModel):
-    generate_outage_files_thermal: bool = False

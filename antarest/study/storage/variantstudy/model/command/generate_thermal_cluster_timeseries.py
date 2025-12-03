@@ -53,33 +53,14 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
 
-    generate_outage_files_thermal: bool = Field(
-        default=False
-    )  # This is required to be Field because ICommand is a Pydantic model
-
-    def __init__(
-        self,
-        command_context: CommandContext,
-        study_version: StudyVersionStr,
-        generate_outage_files_thermal: bool,
-        command_id: Optional[uuid.UUID] = None,
-    ) -> None:
-        super().__init__(
-            command_context=command_context,
-            study_version=study_version,
-            command_name=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES,
-        )
-        self.generate_outage_files_thermal = generate_outage_files_thermal
-        if command_id is not None:
-            self.command_id = command_id
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         series_mapping: dict[str, dict[str, str]] = {}
-        outage_counter: Optional[OutageCounter] = OutageCounter() if self.generate_outage_files_thermal else None
+        outage_counter: Optional[OutageCounter] = OutageCounter() 
 
         logger.info("Starting thermal cluster time series generation")
-        logger.info(f"generate outage files thermal: {self.generate_outage_files_thermal}")
+
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
         nb_years = study_data.get_timeseries_config().thermal.number
@@ -143,15 +124,15 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     series_mapping.setdefault(area_id, {})[thermal_id] = matrix_id
 
                     # 9.1 - Write planned and forced outage matrices inside the matrix-store and store id in memory
-                    if self.generate_outage_files_thermal and outage_counter is not None:
+                    if  outage_counter is not None:
                         planned_outages = pd.DataFrame(data=results.outage_output.planned_outages)
                         planned_outages = planned_outages[list(planned_outages.columns)].astype(int)
                         forced_outages = pd.DataFrame(data=results.outage_output.forced_outages)
                         forced_outages = forced_outages[list(forced_outages.columns)].astype(int)
-                        planned_matrix_id = self.command_context.matrix_service.create(planned_outages)
-                        forced_matrix_id = self.command_context.matrix_service.create(forced_outages)
-                        outage_counter.add_planned_outage(area_id, thermal_id, planned_matrix_id)
-                        outage_counter.add_forced_outage(area_id, thermal_id, forced_matrix_id)
+                        #planned_matrix_id = self.command_context.matrix_service.create(planned_outages)
+                        #forced_matrix_id = self.command_context.matrix_service.create(forced_outages)
+                        #outage_counter.add_planned_outage(area_id, thermal_id, planned_matrix_id)
+                        #outage_counter.add_forced_outage(area_id, thermal_id, forced_matrix_id)
 
                     # 10- Notify the progress to the notifier
                     generation_performed += 1
@@ -164,7 +145,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
         # 11- Once we've written all matrices inside the matrix-store, modify the input folder.
 
-        if self.generate_outage_files_thermal and outage_counter is not None:
+        if  outage_counter is not None:
             file_study = study_data.get_file_study()
             study_dir = file_study.tree.config.path
             outage_dir = study_dir / "user" / "ts-generator" / "thermal"

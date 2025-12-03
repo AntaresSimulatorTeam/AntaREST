@@ -97,7 +97,6 @@ from antarest.study.business.model.thermal_cluster_model import (
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.model import GenerateTimeSeriesRequestOutages
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
@@ -1376,17 +1375,16 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Generate timeseries",
     )
-    def generate_timeseries(uuid: str, data: GenerateTimeSeriesRequestOutages) -> str:
+    def generate_timeseries(uuid: str) -> str:
         """
         Generates time-series for thermal clusters and put them inside input data.
 
         Args:
         - `uuid`: The UUID of the study.
-        - `data`: The request body containing generation options for planned and forced outages.
         """
         logger.info(f"Generating timeseries for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        return study_service.generate_timeseries(study, data.generate_outage_files_thermal)
+        return study_service.generate_timeseries(study)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/properties/form",

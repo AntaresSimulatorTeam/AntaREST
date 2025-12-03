@@ -230,14 +230,12 @@ class ThermalClusterTimeSeriesGeneratorTask:
         storage_service: StudyStorageService,
         event_bus: IEventBus,
         study_interface_supplier: Callable[[Study], StudyInterface],
-        generate_outage_files_thermal: bool,
     ):
         self._study_id = _study_id
         self.repository = repository
         self.storage_service = storage_service
         self.event_bus = event_bus
         self.study_interface_supplier = study_interface_supplier
-        self.generate_outage_files_thermal = generate_outage_files_thermal
 
     def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
@@ -249,7 +247,6 @@ class ThermalClusterTimeSeriesGeneratorTask:
             command = GenerateThermalClusterTimeSeries(
                 command_context=command_context,
                 study_version=study_version,
-                generate_outage_files_thermal=self.generate_outage_files_thermal,
             )
             self.study_interface_supplier(study).add_commands([command], listener)
 
@@ -2094,7 +2091,7 @@ class StudyService:
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
 
-    def generate_timeseries(self, study: Study, generate_outage_files_thermal: bool) -> str:
+    def generate_timeseries(self, study: Study) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
@@ -2112,7 +2109,6 @@ class StudyService:
             storage_service=self.storage_service,
             event_bus=self.event_bus,
             study_interface_supplier=self.get_study_interface,
-            generate_outage_files_thermal=generate_outage_files_thermal,
         )
         return self.task_service.add_task(
             thermal_cluster_timeseries_generation_task,
