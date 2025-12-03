@@ -15,6 +15,7 @@ from antarest.core.serde import AntaresBaseModel
 
 class TimeSeriesType(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
     number: int = 1
+    outage_details_thermal: bool = False
 
 
 class TimeSeriesConfiguration(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):

@@ -18,7 +18,7 @@ from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 TIMESERIES_PATH = ["settings", "generaldata", "general", "nbtimeseriesthermal"]
-
+TIMESERIES_OUTAGE_DETAILS_THERMAL_PATH = ["settings", "generaldata", "general", "outage-details-thermal"]
 
 class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     @abstractmethod
@@ -35,9 +35,18 @@ class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
             nb_ts_gen_thermal = data
         except KeyError:
             nb_ts_gen_thermal = 1
-        return TimeSeriesConfiguration.model_validate({"thermal": {"number": nb_ts_gen_thermal}})
+
+        try:
+            data = file_study.tree.get(TIMESERIES_OUTAGE_DETAILS_THERMAL_PATH)
+            assert isinstance(data, bool)
+            outage_details_thermal = data
+        except KeyError:
+            outage_details_thermal = False
+
+        return TimeSeriesConfiguration.model_validate({"thermal": {"number": nb_ts_gen_thermal, "outage_details_thermal": outage_details_thermal}})
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
         file_study = self.get_file_study()
         file_study.tree.save(config.thermal.number, TIMESERIES_PATH)
+        file_study.tree.save(config.thermal.outage_details_thermal, TIMESERIES_OUTAGE_DETAILS_THERMAL_PATH)

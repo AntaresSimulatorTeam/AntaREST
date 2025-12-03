@@ -12,7 +12,7 @@
 from collections import defaultdict
 from pathlib import Path
 from typing import DefaultDict
-
+import pandas as pd
 
 class OutageCounter:
     def __init__(self) -> None:
@@ -33,21 +33,18 @@ class OutageCounter:
         return self.planned_outages_data[area_id][power_system_resource_id]
 
     def save_planned_outages(self, file_path: Path, area_id: str, power_system_resource_id: str) -> None:
-        path = file_path / "planned_outages.tsv.link"
+        path = file_path / "planned_outages.tsv"
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("w", encoding="utf-8") as f:
-            planned_outages = self.get_planned_outages(area_id, power_system_resource_id)
-            f.write(f"matrix://{planned_outages}")
+        planned_outages = self.get_planned_outages(area_id, power_system_resource_id)
+        planned_outages = pd.DataFrame(data=planned_outages)
+        planned_outages = planned_outages[list(planned_outages.columns)].astype(int)
+        planned_outages.to_csv(path, index=True, sep="\t")
 
     def save_forced_outages(self, file_path: Path, area_id: str, power_system_resource_id: str) -> None:
-        path = file_path / "forced_outages.tsv.link"
+        path = file_path / "forced_outages.tsv"
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("w", encoding="utf-8") as f:
-            forced_outages = self.get_forced_outages(area_id, power_system_resource_id)
-            f.write(f"matrix://{forced_outages}")
+        forced_outages = self.get_forced_outages(area_id, power_system_resource_id)
+        forced_outages = pd.DataFrame(data=forced_outages)
+        forced_outages = forced_outages[list(forced_outages.columns)].astype(int)
+        forced_outages.to_csv(path, index=True, sep="\t")
 
-    def check_if_power_system_resource_id_exists(self, area_id: str, power_system_resource_id: str) -> bool:
-        return (
-            power_system_resource_id in self.forced_outages_data[area_id]
-            or power_system_resource_id in self.planned_outages_data[area_id]
-        )

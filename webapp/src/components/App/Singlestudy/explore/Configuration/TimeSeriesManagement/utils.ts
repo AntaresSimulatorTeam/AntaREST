@@ -24,6 +24,6 @@ export type TimeSeriesConfigValues = Record<
 >;
 
 export const defaultValues = Object.values(TimeSeriesType).reduce((acc, type) => {
-  acc[type] = { number: 1, enabled: false };
+  acc[type] = { number: 1, enabled: false, outage_details_thermal: false };
   return acc;
 }, {} as TimeSeriesConfigValues);

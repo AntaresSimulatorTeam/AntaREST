@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from
 import { useTranslation } from "react-i18next";
 import type { TimeSeriesConfigValues } from "../utils";
 import TypeConfigFields from "./TypeConfigFields";
+import OutageDetailsField from "./OutageDetailsField";
 
 function Fields() {
   const { control } = useFormContextPlus<TimeSeriesConfigValues>();
@@ -37,6 +38,9 @@ function Fields() {
             <TableCell align="center">{t("global.status")}</TableCell>
             <TableCell align="center">
               {t("study.configuration.tsManagement.numberStochasticTs")}
+            </TableCell>
+            <TableCell align="center">
+              {t("study.configuration.tsManagement.outageDetailsThermal")}
             </TableCell>
           </TableRow>
         </TableHead>
@@ -57,6 +61,7 @@ function Fields() {
                 />
               </TableCell>
               <TypeConfigFields type={type} />
+              <OutageDetailsField type={type} />
             </TableRow>
           ))}
         </TableBody>

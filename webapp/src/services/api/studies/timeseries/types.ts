@@ -21,6 +21,7 @@ export type TimeSeriesTypeValue = O.UnionOf<typeof TimeSeriesType>;
 
 export interface TimeSeriesTypeConfig {
   number: number;
+  outage_details_thermal?: boolean;
 }
 
 export type TimeSeriesConfigDTO = Record<TimeSeriesTypeValue, TimeSeriesTypeConfig>;
