@@ -38,7 +38,7 @@ from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL, AggregatorManager
+from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL
 from antarest.study.business.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
@@ -51,7 +51,6 @@ from antarest.study.business.output.variables_management import (
     check_arguments_coherence_and_return_identifier,
     check_output_variable_exists,
     create_output_view_db_model,
-    extract_variables_list,
     get_output_view_inside_db,
 )
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
@@ -638,16 +637,6 @@ class OutputService:
         """
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
 
-        output_path = self._storage.get_output_path(uuid, output_id)
-        aggregator_manager = AggregatorManager(
-            output_path,
-            query_file,
-            frequency,
-            ids_to_consider,
-            columns_names,
-            mc_years,
-        )
-
         def aggregate_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 stopwatch = StopWatch()
@@ -655,7 +644,9 @@ class OutputService:
                     lambda x: logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
                 )
 
-                results = aggregator_manager.aggregate_output_data()
+                results = self._storage.aggregate_output_data(
+                    uuid, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
+                )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)
 
                 stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_path}'."))
@@ -701,9 +692,8 @@ class OutputService:
         if output_variables:
             return output_variables.to_model()
 
-        # Fetches the data inside the FS
-        output_path = self._storage.get_output_path(study_id, output_id)
-        model = extract_variables_list(output_path)
+        # Fetches the data from stored output
+        model = self._storage.extract_variables_list(study_id, output_id)
 
         # Save the model inside DB for next calls
         db_model = OutputVariables.from_model(study_id, output_id, model)

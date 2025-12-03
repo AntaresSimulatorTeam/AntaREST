@@ -13,9 +13,10 @@ import logging
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import BinaryIO, Optional
+from typing import BinaryIO, Iterator, Optional, Sequence
 from uuid import uuid4
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
@@ -24,6 +25,9 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.tasks.model import TaskType
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
+from antarest.study.business.output.aggregator_management import AggregatorManager
+from antarest.study.business.output.utils import QueryFileType
+from antarest.study.business.output.variables_management import extract_variables_list
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     ExportFormat,
@@ -33,10 +37,12 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
+from antarest.study.storage.output_model import OutputVariablesList
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
@@ -326,12 +332,6 @@ class OutputStorageImpl(IOutputStorage):
                 )
 
     @override
-    def get_output_path(self, study_id: str, output_id: str) -> Path:
-        """Returns the output path for the given output_id"""
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        return study_outputs.outputs_path / output_id
-
-    @override
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
         """
         Digest of the output.
@@ -356,3 +356,30 @@ class OutputStorageImpl(IOutputStorage):
         study_outputs = self._outputs_provider.get_outputs(study_id)
         file_study = study_outputs.get_file_study()
         return get_start_date(file_study, output_id, frequency)
+
+    @override
+    def aggregate_output_data(
+        self,
+        study_id: str,
+        output_id: str,
+        query_file: QueryFileType,
+        frequency: MatrixFrequency,
+        ids_to_consider: Sequence[str],
+        columns_names: Sequence[str],
+        mc_years: Optional[Sequence[int]] = None,
+    ) -> Iterator[pd.DataFrame]:
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        aggregator_manager = AggregatorManager(
+            study_outputs.outputs_path / output_id,
+            query_file,
+            frequency,
+            ids_to_consider,
+            columns_names,
+            mc_years,
+        )
+        return aggregator_manager.aggregate_output_data()
+
+    @override
+    def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        return extract_variables_list(study_outputs.outputs_path / output_id)

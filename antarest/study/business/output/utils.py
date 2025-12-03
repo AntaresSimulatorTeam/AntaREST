@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from enum import Enum, StrEnum
 from pathlib import Path
+from typing import TypeAlias
 
 import pandas as pd
 
@@ -53,7 +54,7 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
-QueryFileType = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
+QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
 
 def parse_output_file(file_path: Path, frequency: MatrixFrequency, n_rows: int | None = None) -> pd.DataFrame:

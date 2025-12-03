@@ -12,15 +12,27 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import BinaryIO, List, Optional
+from typing import BinaryIO, Iterator, List, Optional, Sequence
 
+import pandas as pd
+
+from antarest.study.business.output.utils import QueryFileType
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.storage.output_model import OutputVariablesList
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
 
 
 class IOutputStorage(ABC):
+    """
+    Provides access to stored outputs.
+
+    That API must not be dependent on a particular storage implementation, in particular
+    on the antares-solver file format.
+    """
+
     @abstractmethod
     def import_output(
         self,
@@ -29,7 +41,8 @@ class IOutputStorage(ABC):
         output_name: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Import an output
+        Import an outputs to the storage.
+
         Args:
             study_id: the study id
             output: Path of the output or raw data
@@ -81,10 +94,6 @@ class IOutputStorage(ABC):
         """Un-archive a study output."""
 
     @abstractmethod
-    def get_output_path(self, study_id: str, output_id: str) -> Path:
-        """Returns the output path for the given output_id"""
-
-    @abstractmethod
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
         """
         Digest of the output.
@@ -94,10 +103,32 @@ class IOutputStorage(ABC):
     def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
         """
         Get the time index (start date and step count) for output matrices with a given frequency.
+
         Args:
             study_id: ID of the study
             output_id: ID of the output
             frequency: temporal frequency (hourly, daily, weekly, monthly, annually)
         Returns:
             MatrixIndex with start_date, steps, first_week_size and level
+        """
+
+    @abstractmethod
+    def aggregate_output_data(
+        self,
+        study_id: str,
+        output_id: str,
+        query_file: QueryFileType,
+        frequency: MatrixFrequency,
+        ids_to_consider: Sequence[str],
+        columns_names: Sequence[str],
+        mc_years: Optional[Sequence[int]] = None,
+    ) -> Iterator[pd.DataFrame]:
+        """
+        Aggregates output data based on several filtering conditions, as a stream of dataframes.
+        """
+
+    @abstractmethod
+    def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+        """
+        Extract variables list from output.
         """
