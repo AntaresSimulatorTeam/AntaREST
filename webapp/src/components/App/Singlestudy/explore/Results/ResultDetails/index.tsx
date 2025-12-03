@@ -38,13 +38,12 @@ import SynthesisViewer, { type SynthesisData } from "./components/SynthesisViewe
 import {
   createPath,
   type DataType,
-  getFirstVariableForItem,
   type MonteCarloMode,
   type OutputItemType,
   SYNTHESIS_ITEMS,
   type Timestep,
 } from "./utils";
-import { getVariablesList } from "../../../../../../services/api/studies/outputs/variableViews";
+import { useVariablePerVariable } from "./hooks/useVariablePerVariable";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
@@ -64,14 +63,29 @@ function ResultDetails() {
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
 
-  const [selectedVariable, setSelectedVariable] = useState("");
-  const [isViewMaterialized, setIsViewMaterialized] = useState(false);
-
   const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
   const isSynthesis = itemType === "synthesis";
   const isVariablePerVariable = mcMode === "variable-per-variable";
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const links = useAppSelector((state) => getLinks(state, study.id));
+
+  const {
+    variablesMetadata,
+    selectedVariable,
+    setSelectedVariable,
+    isViewMaterialized,
+    isMaterializing,
+    handleMaterializeVariable,
+    variableViewDataRes,
+  } = useVariablePerVariable({
+    studyId: study.id,
+    outputId,
+    isEnabled: isVariablePerVariable,
+    mcMode,
+    itemType,
+    timestep,
+    selectedItemId,
+  });
 
   const { data: output } = useStudyOutput({
     studyId: study.id,
@@ -85,47 +99,6 @@ function ResultDetails() {
       setYear(1);
     }
   }, [mcMode, year]);
-
-  const { data: variablesMetadata } = usePromise(
-    () => {
-      if (output && outputId && isVariablePerVariable) {
-        return getVariablesList(study.id, outputId);
-      }
-      return Promise.resolve(null);
-    },
-    {
-      deps: [study.id, outputId, output, isVariablePerVariable],
-    },
-  );
-
-  useEffect(() => {
-    if (!isVariablePerVariable) {
-      setSelectedVariable("");
-      setIsViewMaterialized(false);
-    }
-  }, [isVariablePerVariable]);
-
-  // Auto-select first variable when switching to variable-per-variable mode
-  useEffect(() => {
-    if (isVariablePerVariable && variablesMetadata && selectedItemId && !selectedVariable) {
-      const firstVariable = getFirstVariableForItem(
-        variablesMetadata,
-        mcMode,
-        itemType,
-        selectedItemId,
-      );
-      if (firstVariable) {
-        setSelectedVariable(firstVariable);
-      }
-    }
-  }, [
-    isVariablePerVariable,
-    variablesMetadata,
-    selectedItemId,
-    selectedVariable,
-    itemType,
-    mcMode,
-  ]);
 
   const items = useMemo(() => {
     const currentItems = (itemType === "areas" ? areas : links) as Array<{
@@ -264,6 +237,25 @@ function ResultDetails() {
     );
   }, [matrixRes.data, resultColHeaders, isDarkMode]);
 
+  const variableViewColumns = useMemo(() => {
+    if (!variableViewDataRes.data || !variableViewDataRes.data.columns) {
+      return [];
+    }
+
+    return groupResultColumns(
+      [
+        {
+          id: "index",
+          title: "Index",
+          type: Column.Text,
+          editable: false,
+        },
+        ...generateResultColumns({ titles: [variableViewDataRes.data.columns] }),
+      ],
+      isDarkMode,
+    );
+  }, [variableViewDataRes.data, isDarkMode]);
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -298,12 +290,6 @@ function ResultDetails() {
     },
     [searchValue],
   );
-
-  const handleMaterializeVariable = useCallback(() => {
-    // TODO: Implement materialization logic with WebSocket task tracking
-    console.log("Materializing variable:", selectedVariable);
-    setIsViewMaterialized(true);
-  }, [selectedVariable]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -353,7 +339,9 @@ function ResultDetails() {
           onVariableSelect={setSelectedVariable}
           isViewMaterialized={isViewMaterialized}
           onMaterializeVariable={handleMaterializeVariable}
-          isMaterializing={false}
+          isMaterializing={isMaterializing}
+          variableViewDataRes={variableViewDataRes}
+          variableViewColumns={variableViewColumns}
         />
       )}
     </SplitView>

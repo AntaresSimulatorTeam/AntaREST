@@ -15,13 +15,12 @@
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type {
-  DateTimes,
-  EnhancedGridColumn,
-  ResultMatrixDTO,
-} from "@/components/common/Matrix/shared/types";
+import type { EnhancedGridColumn } from "@/components/common/Matrix/shared/types";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
-import type { MatrixIndex } from "@/types/types";
+import type {
+  VariablesListDTO,
+  VariableViewMatrixDTO,
+} from "@/services/api/studies/outputs/variableViews/types";
 import { toError } from "../../../../../../../utils/fnUtils";
 import FilterableMatrixGrid, {
   type FilterableMatrixGridHandle,
@@ -31,7 +30,6 @@ import EmptyView from "../../../../../../common/page/EmptyView";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import type { MonteCarloMode, OutputItemType } from "../utils";
 import ProcessButton from "./ProcessButton";
-import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
 
 interface VariableMatrixProps {
   variablesMetadata: VariablesListDTO | null;
@@ -42,13 +40,9 @@ interface VariableMatrixProps {
   isViewMaterialized: boolean;
   onMaterializeVariable: () => void;
   isMaterializing: boolean;
-  matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
-  resultColHeaders: string[][];
-  filteredData: number[][];
+  variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
   resultColumns: EnhancedGridColumn[];
   matrixGridRef: React.RefObject<FilterableMatrixGridHandle>;
-  dateTime: DateTimes | undefined;
-  dateTimeMetadata: MatrixIndex | undefined;
 }
 
 function hasVariablesForItem(
@@ -79,13 +73,9 @@ function VariableMatrix({
   isViewMaterialized,
   onMaterializeVariable,
   isMaterializing,
-  matrixRes,
-  resultColHeaders,
-  filteredData,
+  variableViewDataRes,
   resultColumns,
   matrixGridRef,
-  dateTime,
-  dateTimeMetadata,
 }: VariableMatrixProps) {
   const { t } = useTranslation();
 
@@ -113,26 +103,20 @@ function VariableMatrix({
 
   return (
     <UsePromiseCond
-      response={matrixRes}
+      response={variableViewDataRes}
       ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-      ifFulfilled={() => {
-        if (resultColHeaders.length === 0) {
-          return <Skeleton sx={{ height: 1, transform: "none" }} />;
-        }
-
-        if (!isNonEmptyMatrix(filteredData)) {
+      ifFulfilled={(matrix) => {
+        if (!matrix || !isNonEmptyMatrix(matrix.data)) {
           return <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />;
         }
 
         return (
           <FilterableMatrixGrid
             ref={matrixGridRef}
-            key={`grid-${resultColHeaders.length}`}
-            data={filteredData}
-            rows={filteredData.length}
+            key={`grid-${matrix.columns.length}`}
+            data={matrix.data}
+            rows={matrix.data.length}
             columns={resultColumns}
-            dateTime={dateTime}
-            timeFrequency={dateTimeMetadata?.level}
             readOnly
           />
         );

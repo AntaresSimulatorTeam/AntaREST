@@ -33,7 +33,10 @@ import {
 import ResultFilters from "./ResultFilters";
 import ResultMatrix from "./ResultMatrix";
 import VariableMatrix from "./VariableMatrix";
-import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
+import type {
+  VariablesListDTO,
+  VariableViewMatrixDTO,
+} from "@/services/api/studies/outputs/variableViews/types";
 
 interface ResultMatrixViewerProps {
   matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
@@ -64,6 +67,8 @@ interface ResultMatrixViewerProps {
   isViewMaterialized: boolean;
   onMaterializeVariable: () => void;
   isMaterializing: boolean;
+  variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
+  variableViewColumns: EnhancedGridColumn[];
 }
 
 function ResultMatrixViewer({
@@ -95,6 +100,8 @@ function ResultMatrixViewer({
   isViewMaterialized,
   onMaterializeVariable,
   isMaterializing,
+  variableViewDataRes,
+  variableViewColumns,
 }: ResultMatrixViewerProps) {
   const isVariablePerVariable = mcMode === "variable-per-variable";
 
@@ -135,13 +142,9 @@ function ResultMatrixViewer({
               isViewMaterialized={isViewMaterialized}
               onMaterializeVariable={onMaterializeVariable}
               isMaterializing={isMaterializing}
-              matrixRes={matrixRes}
-              resultColHeaders={resultColHeaders}
-              filteredData={filteredData}
-              resultColumns={resultColumns}
+              variableViewDataRes={variableViewDataRes}
+              resultColumns={variableViewColumns}
               matrixGridRef={matrixGridRef}
-              dateTime={dateTime}
-              dateTimeMetadata={dateTimeMetadata}
             />
           ) : (
             <ResultMatrix

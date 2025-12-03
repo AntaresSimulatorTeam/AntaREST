@@ -15,7 +15,6 @@
 import client from "@/services/api/client";
 import { buildVariableViewQueryParams } from "./adapters";
 import type {
-  MaterializationTaskDTO,
   TimeIndexDTO,
   VariableViewExportFormat,
   VariableViewFrequency,
@@ -36,7 +35,7 @@ export async function getVariablesList(studyId: string, outputId: string) {
 }
 
 ////////////////////////////////////////////////////////////////
-// Time Index
+// Variable View Data
 ////////////////////////////////////////////////////////////////
 
 export async function getTimeIndex(
@@ -50,10 +49,6 @@ export async function getTimeIndex(
   );
   return data;
 }
-
-////////////////////////////////////////////////////////////////
-// Variable View Data
-////////////////////////////////////////////////////////////////
 
 export async function getVariableViewData(
   studyId: string,
@@ -100,7 +95,7 @@ export async function materializeVariableView(
   params: VariableViewParams,
 ) {
   const queryParams = buildVariableViewQueryParams(params);
-  const { data } = await client.post<MaterializationTaskDTO>(
+  const { data } = await client.post<string>(
     `/v1/studies/${studyId}/output/${outputId}/variables-views/materialize`,
     null,
     { params: queryParams },
