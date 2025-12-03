@@ -17,8 +17,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from antares.study.version import StudyVersion
-from storage.conftest import SimpleSyncTaskService
-from storage.test_service import build_study_service, fill_study_service_with_command_context, with_jwt_user
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME, Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
@@ -62,6 +60,8 @@ from antarest.study.storage.utils import is_output_archived
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.helpers import create_raw_study, with_admin_user
+from tests.storage.conftest import SimpleSyncTaskService
+from tests.storage.test_service import build_study_service, fill_study_service_with_command_context, with_jwt_user
 
 
 def test_is_output_archived(tmp_path: Path) -> None:
