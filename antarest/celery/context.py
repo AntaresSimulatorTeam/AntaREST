@@ -45,8 +45,8 @@ class MaintenanceContext:
     The context is initialized once per worker process in the worker_init signal.
     """
 
-    _instance: Optional["MaintenanceContext"] = None
-    _lock = threading.Lock()
+    _INSTANCE: Optional["MaintenanceContext"] = None
+    _LOCK = threading.Lock()
 
     def __init__(self) -> None:
         self.config: Optional["Config"] = None
@@ -56,11 +56,11 @@ class MaintenanceContext:
     @classmethod
     def get_instance(cls) -> "MaintenanceContext":
         """Get or create the singleton instance (thread-safe)."""
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = MaintenanceContext()
-        return cls._instance
+        if cls._INSTANCE is None:
+            with cls._LOCK:
+                if cls._INSTANCE is None:
+                    cls._INSTANCE = MaintenanceContext()
+        return cls._INSTANCE
 
     def initialize(self, config: "Config", config_path: Path) -> None:
         """
@@ -76,7 +76,7 @@ class MaintenanceContext:
             logger.debug("MaintenanceContext already initialized")
             return
 
-        with self._lock:
+        with self._LOCK:
             if self._initialized:
                 return
 

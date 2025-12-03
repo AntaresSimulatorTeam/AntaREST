@@ -127,9 +127,9 @@ class TestInitWorker:
         """Reset MaintenanceContext singleton before each test."""
         from antarest.celery.context import MaintenanceContext
 
-        MaintenanceContext._instance = None
+        MaintenanceContext._INSTANCE = None
         yield
-        MaintenanceContext._instance = None
+        MaintenanceContext._INSTANCE = None
 
     def test_init_worker_returns_early_without_config(self):
         """Test that init_worker returns early when _config is None."""

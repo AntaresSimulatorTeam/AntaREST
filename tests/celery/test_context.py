@@ -23,9 +23,9 @@ from antarest.celery.context import MaintenanceContext
 @pytest.fixture(autouse=True)
 def reset_singleton():
     """Reset the singleton instance before and after each test."""
-    MaintenanceContext._instance = None
+    MaintenanceContext._INSTANCE = None
     yield
-    MaintenanceContext._instance = None
+    MaintenanceContext._INSTANCE = None
 
 
 class TestMaintenanceContext:
