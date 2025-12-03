@@ -161,7 +161,7 @@ def test_export_output(tmp_path: Path) -> None:
         def get_outputs(self, study_id: str) -> IFileStudyOutputs:
             return FileOutputsImpl()
 
-    output_storage = OutputStorageImpl(OutputsProvider(), cache=Mock())
+    output_storage = OutputStorageImpl(OutputsProvider(), cache=Mock(), remote_executor=Mock())
 
     output_storage.export_output(study.id, output_id, export_path)
     zipf = ZipFile(export_path)

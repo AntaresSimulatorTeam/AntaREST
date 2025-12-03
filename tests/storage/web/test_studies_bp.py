@@ -389,7 +389,7 @@ def test_output_download(tmp_path: Path) -> None:
         ],
         warnings=[],
     )
-    mock_output_service.download_outputs.return_value = output_data
+    mock_output_service.create.return_value = output_data
 
     study_download = StudyDownloadDTO(
         type=StudyDownloadType.AREA,

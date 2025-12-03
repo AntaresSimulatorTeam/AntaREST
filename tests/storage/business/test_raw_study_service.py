@@ -455,7 +455,7 @@ timestamp = 1599488150
         def get_outputs(self, study_id: str) -> IFileStudyOutputs:
             return FileOutputsImpl()
 
-    output_storage = OutputStorageImpl(OutputsProvider(), cache=Mock())
+    output_storage = OutputStorageImpl(OutputsProvider(), cache=Mock(), remote_executor=Mock())
 
     expected_output_name = "20200907-1615eco-11mc"
     output_name = output_storage.import_output(name, zipped_output)
