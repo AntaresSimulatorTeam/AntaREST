@@ -244,9 +244,8 @@ class AggregatorManager:
         Returns:
             the DataFrame with the correct columns and values
         """
-        transform_headers = self.transform_columns_headers or is_details
-        df = self._parse_output_file(file_path, normalize_column_names=transform_headers)
-        if not transform_headers:
+        df = self._parse_output_file(file_path, normalize_column_names=not is_details)
+        if not is_details or not self.transform_columns_headers:
             return df
 
         # number of rows in the data frame
