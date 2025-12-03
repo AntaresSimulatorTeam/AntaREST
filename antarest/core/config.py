@@ -643,7 +643,6 @@ class CeleryConfig:
     Attributes:
         broker_url: URL of the message broker (built from RedisConfig)
         result_backend: URL of the result backend (built from RedisConfig)
-        timezone: Timezone for scheduled tasks
         result_expires: Time in seconds before task results expire
         matrix_gc_interval: Interval in seconds between matrix GC runs
     """
@@ -653,7 +652,6 @@ class CeleryConfig:
 
     broker_url: str = ""
     result_backend: str = ""
-    timezone: str = "UTC"
     result_expires: int = 86400  # 24 hours
     matrix_gc_interval: int = 3600  # 1 hour
 
@@ -674,7 +672,6 @@ class CeleryConfig:
         return cls(
             broker_url=data.get("broker_url", redis_url),
             result_backend=data.get("result_backend", redis_url),
-            timezone=data.get("timezone", defaults.timezone),
             result_expires=data.get("result_expires", defaults.result_expires),
             matrix_gc_interval=data.get("matrix_gc_interval", defaults.matrix_gc_interval),
         )

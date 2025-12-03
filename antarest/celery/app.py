@@ -58,7 +58,6 @@ def _apply_celery_config(app: Celery, celery_config: CeleryConfig) -> None:
         broker_url=celery_config.broker_url,
         result_backend=celery_config.result_backend,
         result_expires=celery_config.result_expires,
-        timezone=celery_config.timezone,
     )
 
 
