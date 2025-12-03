@@ -33,16 +33,16 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import { Box, Divider, List, Toolbar, Tooltip, Typography, useTheme } from "@mui/material";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink } from "react-router-dom";
 import { useMount } from "react-use";
-import { logout } from "../../../redux/ducks/auth";
-import { fetchGroups } from "../../../redux/ducks/groups";
-import { fetchStudies } from "../../../redux/ducks/studies";
-import { fetchUsers } from "../../../redux/ducks/users";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { logout } from "../../../../redux/ducks/auth";
+import { fetchGroups } from "../../../../redux/ducks/groups";
+import { fetchStudies } from "../../../../redux/ducks/studies";
+import { fetchUsers } from "../../../../redux/ducks/users";
+import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import FavoritesMenu from "./FavoritesMenu";
 import SidebarItem from "./SidebarItem";
 import { StyledDrawer } from "./styles";
@@ -102,13 +102,15 @@ function Container({ children }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  // TODO samir - A <Link> wrapper that knows if it's "active" or not.
+
   return (
     <>
       <Box sx={{ height: 1, display: "flex" }}>
         <StyledDrawer variant="permanent" open={isDrawerOpen}>
           <Toolbar disableGutters sx={[{ px: 2 }]}>
             <Tooltip title={version}>
-              <NavLink
+              <Link
                 to="/"
                 style={{
                   display: "flex",
@@ -130,7 +132,7 @@ function Container({ children }: Props) {
                 >
                   Antares Web
                 </Typography>
-              </NavLink>
+              </Link>
             </Tooltip>
           </Toolbar>
           <Divider />

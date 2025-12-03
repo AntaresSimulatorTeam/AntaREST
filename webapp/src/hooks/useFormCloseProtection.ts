@@ -16,7 +16,6 @@ import { setFormStatus } from "@/redux/ducks/ui";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { useEffect } from "react";
 import { usePrevious, useUnmount } from "react-use";
-import useBlocker from "./useBlocker";
 import useFormCloseConfirm from "./useFormCloseConfirm";
 
 export interface UseFormCloseProtectionParams {
@@ -76,13 +75,14 @@ function useFormCloseProtection({
     dispatch(setFormStatus({ isSubmitting: false, isDirty: false }));
   });
 
+  // TODO samir
   // Block navigation if the form is dirty or submitting and the hook is not disabled
-  useBlocker(
-    withFormCloseCheck((tx) => {
-      tx.retry();
-    }),
-    !disableHook && (isSubmitting || isDirty),
-  );
+  // useBlocker(
+  //   withFormCloseCheck((tx) => {
+  //     tx.retry();
+  //   }),
+  //   !disableHook && (isSubmitting || isDirty),
+  // );
 
   return { executeWithoutFormCloseCheck };
 }

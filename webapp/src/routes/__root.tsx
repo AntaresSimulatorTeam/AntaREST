@@ -12,28 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import store from "@/redux/store";
-import CloseIcon from "@mui/icons-material/Close";
-import { Container, IconButton } from "@mui/material";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import type { RouterContext } from "@/router";
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { type SnackbarKey, SnackbarProvider, useSnackbar } from "notistack";
-import { Provider } from "react-redux";
-import ThemeProvider from "./-components/ThemeProvider";
+import { SnackbarProvider } from "notistack";
+import SnackbarCloseButton from "./_authenticated/-components/SnackbarCloseButton";
+import ThemeProvider from "./_authenticated/-components/ThemeProvider";
 
-function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {
-  const { closeSnackbar } = useSnackbar();
-
-  return (
-    <IconButton onClick={() => closeSnackbar(snackbarKey)}>
-      <CloseIcon />
-    </IconButton>
-  );
-}
-
-const RootLayout = () => (
-  <>
-    <Provider store={store}>
+export const Route = createRootRouteWithContext<RouterContext>()({
+  component: () => (
+    <>
       <ThemeProvider>
         <SnackbarProvider
           maxSnack={5}
@@ -41,14 +29,10 @@ const RootLayout = () => (
           action={(key) => <SnackbarCloseButton snackbarKey={key} />}
           preventDuplicate
         >
-          <Container>
-            <Outlet />
-          </Container>
+          <Outlet />
         </SnackbarProvider>
       </ThemeProvider>
-    </Provider>
-    <TanStackRouterDevtools />
-  </>
-);
-
-export const Route = createRootRoute({ component: RootLayout });
+      <TanStackRouterDevtools position="bottom-right" />
+    </>
+  ),
+});

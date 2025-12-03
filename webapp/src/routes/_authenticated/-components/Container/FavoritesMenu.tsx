@@ -16,9 +16,9 @@ import { getFavoriteStudies } from "@/redux/selectors";
 import FavoriteStudyToggle from "@/routes/App/shared/studies/FavoriteStudyToggle";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { List, ListItemButton, ListItemText, Tooltip } from "@mui/material";
+import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
+import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import SidebarItem from "./SidebarItem";
 
 function FavoritesMenu() {
@@ -38,7 +38,7 @@ function FavoritesMenu() {
     <SidebarItem title={t("studies.favorites")} icon={<StarBorderIcon />}>
       <List disablePadding dense>
         {favorites.map((fav) => (
-          <ListItemButton key={fav.id} onClick={() => navigate(`/studies/${fav.id}`)}>
+          <ListItemButton key={fav.id} onClick={() => navigate({ to: `/studies/${fav.id}` })}>
             <Tooltip title={fav.name}>
               <ListItemText
                 primary={fav.name}

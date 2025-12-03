@@ -12,10 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import { router } from "../index";
+import { createRouter } from "@tanstack/react-router";
+import { routeTree } from "./routeTree.gen";
 
+const context = {
+  auth: {
+    isAuthenticated: false,
+    isLoading: true,
+    isRejected: false,
+  },
+};
+
+export type RouterContext = typeof context;
+
+const router = createRouter({ routeTree, context });
+
+// Register the router instance for type safety
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
 }
+
+export default router;

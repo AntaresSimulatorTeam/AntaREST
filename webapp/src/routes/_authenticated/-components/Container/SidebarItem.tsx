@@ -12,6 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { setMenuOpen as setMainMenuOpen } from "@/redux/ducks/ui";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isMenuOpen as isMainMenuOpen } from "@/redux/selectors";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LaunchIcon from "@mui/icons-material/Launch";
@@ -23,12 +27,8 @@ import {
   ListItemText,
   Tooltip,
 } from "@mui/material";
+import { Link, useLocation } from "@tanstack/react-router";
 import { Children, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { setMenuOpen as setMainMenuOpen } from "@/redux/ducks/ui";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { isMenuOpen as isMainMenuOpen } from "@/redux/selectors";
 
 type Props = {
   title: string;
