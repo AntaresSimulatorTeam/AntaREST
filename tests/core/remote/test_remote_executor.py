@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from threading import Thread
+from unittest.mock import Mock
 
 import pytest
 
@@ -67,8 +68,7 @@ def test_remote_executor_should_reject_unknown_queue():
     config = Config()
     config.tasks.remote_workers.append(RemoteWorkerConfig("worker", queues=["q1", "q2"]))
 
-    event_bus = EventBusService(LocalEventBus())
-    executor = RemoteWorkerExecutor(event_bus=event_bus, config=config)
+    executor = RemoteWorkerExecutor(event_bus=Mock(), config=config)
 
     with pytest.raises(ValueError):
         executor.execute_remote_task(
