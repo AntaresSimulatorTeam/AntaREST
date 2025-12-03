@@ -19,10 +19,10 @@ from numpy.typing import NDArray
 
 class OutageCounter:
     def __init__(self) -> None:
-        # Nested defaultdict: area_id -> resource_id -> array of outage counts (ints)
+        # Nested defaultdict: area_id -> resource_id -> matrix ID (str)
         self.forced_outages_data: DefaultDict[str, DefaultDict[str, str]] = defaultdict(lambda: defaultdict(str))
-        self.planned_outages_data: DefaultDict[str, DefaultDict[str, NDArray[np.int_]]] = defaultdict(
-            lambda: defaultdict(lambda: np.array([], dtype=str))
+        self.planned_outages_data: DefaultDict[str, DefaultDict[str, str]] = defaultdict(
+            lambda: defaultdict(str)
         )
 
     def add_forced_outage(self, area_id: str, power_system_resource_id: str, count: str) -> None:
