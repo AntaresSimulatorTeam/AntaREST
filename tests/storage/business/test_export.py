@@ -21,7 +21,7 @@ from py7zr import SevenZipFile
 from antarest.core.config import Config, StorageConfig
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
-from antarest.study.output.output_storage_impl import IFileOutputsProvider, IFileStudyOutputs, OutputStorageImpl
+from antarest.study.output.output_storage_impl import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.helpers import create_raw_study
@@ -145,23 +145,15 @@ def test_export_output(tmp_path: Path) -> None:
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 
-    class FileOutputsImpl(IFileStudyOutputs):
-        @property
-        def study_workspace(self) -> str:
-            return DEFAULT_WORKSPACE_NAME
-
-        def get_file_study(self) -> FileStudy:
-            return FileStudy(Mock(), study_tree)
-
-        @property
-        def outputs_path(self) -> Path:
-            return root / "output"
-
     class OutputsProvider(IFileOutputsProvider):
-        def get_outputs(self, study_id: str) -> IFileStudyOutputs:
-            return FileOutputsImpl()
+        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            return FileStudyOutputs(
+                get_file_study=lambda: FileStudy(Mock(), study_tree),
+                outputs_path=root / "output",
+                study_workspace=DEFAULT_WORKSPACE_NAME,
+            )
 
-    output_storage = OutputStorageImpl(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
 
     output_storage.export_output(study.id, output_id, export_path)
     zipf = ZipFile(export_path)

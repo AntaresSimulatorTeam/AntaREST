@@ -12,8 +12,9 @@
 import logging
 import shutil
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence
+from typing import BinaryIO, Callable, Iterator, Optional, Sequence
 from uuid import uuid4
 
 import pandas as pd
@@ -61,29 +62,20 @@ from antarest.worker.archive_worker import ArchiveTaskArgs
 logger = logging.getLogger(__name__)
 
 
-class IFileStudyOutputs(ABC):
+@dataclass(frozen=True)
+class FileStudyOutputs:
     """
-    The implementation based on outputs stored as files requireds the following information.
+    The implementation based on outputs stored as files requires the following information to work with a study.
 
-    The wiring of the application is responsible for providing a mapping from study ID to that information.
+    Attributes:
+        get_file_study: allows to load the underlying file study as needed.
+        outputs_path: path to the study outputs directory.
+        study_workspace: name of the study workspace.
     """
 
-    @abstractmethod
-    def get_file_study(self) -> FileStudy:
-        """
-        Provides the "file study" form of that study.
-        """
-
-    @property
-    @abstractmethod
-    def outputs_path(self) -> Path:
-        """
-        Provides path where outputs of that file study are stored.
-        """
-
-    @property
-    @abstractmethod
-    def study_workspace(self) -> str: ...
+    get_file_study: Callable[[], FileStudy]
+    outputs_path: Path
+    study_workspace: str
 
 
 class IFileOutputsProvider(ABC):
@@ -92,10 +84,14 @@ class IFileOutputsProvider(ABC):
     """
 
     @abstractmethod
-    def get_outputs(self, study_id: str) -> IFileStudyOutputs: ...
+    def get_outputs(self, study_id: str) -> FileStudyOutputs: ...
 
 
-class OutputStorageImpl(IOutputStorage):
+class FileOutputStorage(IOutputStorage):
+    """
+    Implementation based on outputs stored in antares-solver file format.
+    """
+
     def __init__(self, outputs_provider: IFileOutputsProvider, cache: ICache, remote_executor: IRemoteExecutor) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
@@ -194,11 +190,6 @@ class OutputStorageImpl(IOutputStorage):
     def delete_output(self, study_id: str, output_id: str) -> None:
         """
         Delete a simulation output
-        Args:
-            metadata: study
-            output_id: output simulation
-
-        Returns:
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
         output_path = study_outputs.outputs_path / output_id
@@ -294,7 +285,7 @@ class OutputStorageImpl(IOutputStorage):
             )
             return False
 
-    def _remote_unarchive(self, output_id: str, study_outputs: IFileStudyOutputs) -> None:
+    def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest = study_outputs.outputs_path / output_id
         src = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
         self._remote_executor.execute_remote_task(

@@ -43,7 +43,7 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.output.output_storage_impl import IFileOutputsProvider, IFileStudyOutputs, OutputStorageImpl
+from antarest.study.output.output_storage_impl import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.output_service import IStudiesRepository, OutputService, StudyMetadata
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -91,21 +91,16 @@ def _studies_repository(study: Study) -> IStudiesRepository:
 
 
 def _file_outputs_provider(study: RawStudy) -> IFileOutputsProvider:
-    class OutputsImpl(IFileStudyOutputs):
-        def get_file_study(self) -> FileStudy:
-            raise NotImplementedError()
-
-        @property
-        def outputs_path(self) -> Path:
-            return Path(study.path) / "output"
-
-        @property
-        def study_workspace(self) -> str:
-            return study.workspace
+    def not_implemented():
+        raise NotImplementedError()
 
     class Impl(IFileOutputsProvider):
-        def get_outputs(self, study_id: str) -> IFileStudyOutputs:
-            return OutputsImpl()
+        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            return FileStudyOutputs(
+                get_file_study=not_implemented,
+                outputs_path=Path(study.path) / "output",
+                study_workspace=study.workspace,
+            )
 
     return Impl()
 
@@ -137,7 +132,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     # the end
     remote_executor: IRemoteExecutor = Mock(spec=IRemoteExecutor)
     file_outputs_provider = _file_outputs_provider(study_mock)
-    output_storage = OutputStorageImpl(
+    output_storage = FileOutputStorage(
         cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=remote_executor
     )
 
@@ -191,7 +186,7 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     cache_mock = Mock()
     task_service = Mock(spec=ITaskService)
     file_outputs_provider = _file_outputs_provider(study_mock)
-    output_storage = OutputStorageImpl(cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock())
+    output_storage = FileOutputStorage(cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock())
 
     studies_metadata_repository = _studies_repository(study_mock)
     output_service = OutputService(
