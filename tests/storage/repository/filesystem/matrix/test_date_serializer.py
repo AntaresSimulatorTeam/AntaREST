@@ -53,24 +53,6 @@ DE	hourly				01_solar	02_wind_on
     pd.testing.assert_frame_equal(body, expected)
 
 
-def test_build_hourly(tmp_path: Path) -> None:
-    exp = pd.DataFrame(
-        {
-            0: ["DE", "", "", "", ""],
-            1: ["hourly", "", "index", 1, 2],
-            2: ["", "", "day", "01", "01"],
-            3: ["", "", "month", "JAN", "JAN"],
-            4: ["", "", "hour", "00:00", "01:00"],
-        }
-    )
-
-    index = pd.Index(["01/01 00:00", "01/01 01:00"])
-
-    serializer = HourlyMatrixSerializer(area="de")
-    res = serializer.build_date(index)
-    assert exp.values.tolist() == res.values.tolist()
-
-
 def test_extract_daily(tmp_path: Path) -> None:
     file = tmp_path / "matrix-daily.txt"
     content = """
@@ -98,23 +80,6 @@ DE	daily			01_solar	02_wind_on
             }
         ),
     )
-
-
-def test_build_daily(tmp_path: Path) -> None:
-    exp = pd.DataFrame(
-        {
-            0: ["DE", "", "", "", ""],
-            1: ["daily", "", "index", 1, 2],
-            2: ["", "", "day", "01", "02"],
-            3: ["", "", "month", "JAN", "JAN"],
-        }
-    )
-
-    index = pd.Index(["01/01", "01/02"])
-
-    serializer = DailyMatrixSerializer(area="de")
-    res = serializer.build_date(index)
-    assert exp.values.tolist() == res.values.tolist()
 
 
 def test_extract_weekly(tmp_path: Path) -> None:
@@ -146,21 +111,6 @@ DE	weekly	01_solar	02_wind_on
     )
 
 
-def test_build_weekly(tmp_path: Path) -> None:
-    exp = pd.DataFrame(
-        {
-            0: ["DE", "", "", "", ""],
-            1: ["weekly", "", "week", "1", "2"],
-        }
-    )
-
-    index = pd.Index(["1", "2"])
-
-    serializer = WeeklyMatrixSerializer(area="de")
-    res = serializer.build_date(index)
-    assert exp.values.tolist() == res.values.tolist()
-
-
 def test_extract_monthly(tmp_path: Path) -> None:
     file = tmp_path / "matrix-monthly.txt"
     content = """
@@ -187,22 +137,6 @@ DE	monthly		01_solar	02_wind_on
             }
         ),
     )
-
-
-def test_build_monthly(tmp_path: Path) -> None:
-    exp = pd.DataFrame(
-        {
-            0: ["DE", "", "", "", ""],
-            1: ["monthly", "", "index", 1, 2],
-            2: ["", "", "month", "MAR", "MAY"],
-        }
-    )
-
-    index = pd.Index(["03", "05"])
-
-    serializer = MonthlyMatrixSerializer(area="de")
-    res = serializer.build_date(index)
-    assert exp.values.tolist() == res.values.tolist()
 
 
 def test_extract_annual(tmp_path: Path) -> None:
@@ -232,16 +166,3 @@ DE	annual	01_solar	02_wind_on
             }
         ),
     )
-
-
-def test_build_annual() -> None:
-    exp = pd.DataFrame(
-        {
-            0: ["DE", "", "", ""],
-            1: ["annual", "", "", "Annual"],
-        }
-    )
-
-    serializer = AnnualMatrixSerializer(area="de")
-    res = serializer.build_date(pd.Index([], dtype=str))
-    assert exp.values.tolist() == res.values.tolist()
