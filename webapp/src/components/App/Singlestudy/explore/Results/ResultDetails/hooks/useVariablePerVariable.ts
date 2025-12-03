@@ -13,7 +13,7 @@
  */
 
 import { enqueueSnackbar } from "notistack";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePromise from "@/hooks/usePromise";
 import { useTaskMonitor } from "@/hooks/useTaskMonitor";
@@ -55,6 +55,15 @@ export function useVariablePerVariable({
   const [selectedVariable, setSelectedVariable] = useState("");
   const [isMaterializing, setIsMaterializing] = useState(false);
   const [materializationTaskId, setMaterializationTaskId] = useState<string | null>(null);
+
+  // Track which view was materialized to only reload if user is still on that view
+  // If user navigates away during materialization, this ref is cleared to null
+  const materializationParamsRef = useRef<{
+    variable: string;
+    itemId: string;
+    itemType: OutputItemType;
+    timestep: Timestep;
+  } | null>(null);
 
   const { data: variablesMetadata } = usePromise(
     () => {
@@ -104,6 +113,10 @@ export function useVariablePerVariable({
       unsubscribeWsChannels([WsChannel.Task + materializationTaskId]);
       setMaterializationTaskId(null);
     }
+
+    // When user navigates to a different variable or item, cancel ongoing materialization
+    // and clear the materialization params ref so we don't reload the wrong view
+    materializationParamsRef.current = null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariable, selectedItemId]);
 
@@ -122,7 +135,7 @@ export function useVariablePerVariable({
     }
   }, [isEnabled, variablesMetadata, selectedItemId, selectedVariable, itemType, mcMode]);
 
-  const handleMaterializeVariable = useCallback(async () => {
+  const handleMaterializeVariable = async () => {
     if (!outputId || !selectedVariable || !selectedItemId) {
       return;
     }
@@ -139,21 +152,36 @@ export function useVariablePerVariable({
 
       const taskId = await materializeVariableView(studyId, outputId, params);
       setMaterializationTaskId(taskId);
+
+      // Store the current view params to check later if user is still on this view
+      materializationParamsRef.current = {
+        variable: selectedVariable,
+        itemId: selectedItemId,
+        itemType,
+        timestep,
+      };
+
       subscribeWsChannels([WsChannel.Task + taskId]);
-    } catch (error) {
-      console.error("Failed to start materialization:", error);
+    } catch {
+      // TODO use error snackbar
       enqueueSnackbar(t("study.results.materializationStartFailed"), { variant: "error" });
       setIsMaterializing(false);
     }
-  }, [studyId, outputId, selectedVariable, selectedItemId, itemType, timestep, t]);
+  };
 
   useTaskMonitor({
     taskId: materializationTaskId,
     onComplete: () => {
       setIsMaterializing(false);
       setMaterializationTaskId(null);
-      variableViewDataRes.reload();
-      enqueueSnackbar(t("study.results.materializationSuccess"), { variant: "success" });
+
+      // Only reload if user is still on the view that was materialized
+      // (if user navigated away, the ref was cleared to null)
+      if (materializationParamsRef.current) {
+        variableViewDataRes.reload();
+      }
+
+      materializationParamsRef.current = null;
     },
     onFailed: useCallback(
       (message: string) => {

@@ -26,6 +26,7 @@ import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
 import { getStudyData } from "../../../../../../services/api/study";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
 import {
+  generateCustomColumns,
   generateDateTime,
   generateResultColumns,
   groupResultColumns,
@@ -44,11 +45,13 @@ import {
   type Timestep,
 } from "./utils";
 import { useVariablePerVariable } from "./hooks/useVariablePerVariable";
+import { useTranslation } from "react-i18next";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { t } = useTranslation();
   const { isDarkMode } = useThemeColorScheme();
   const { outputId } = useParams();
   const navigate = useNavigate();
@@ -241,19 +244,15 @@ function ResultDetails() {
       return [];
     }
 
+    const { columns } = variableViewDataRes.data;
+
     return groupResultColumns(
-      [
-        {
-          id: "index",
-          title: "Index",
-          type: Column.Text,
-          editable: false,
-        },
-        ...generateResultColumns({ titles: [variableViewDataRes.data.columns] }),
-      ],
+      generateCustomColumns({
+        titles: columns.map((col) => `${t("global.year")} ${col}`),
+      }),
       isDarkMode,
     );
-  }, [variableViewDataRes.data, isDarkMode]);
+  }, [variableViewDataRes.data, isDarkMode, t]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
