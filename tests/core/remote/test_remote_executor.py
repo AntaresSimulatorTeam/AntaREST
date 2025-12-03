@@ -48,8 +48,11 @@ def test_remote_executor():
     # TODO: weird, the event bus queue name is not the "task queue"
     event_bus.add_queue_consumer(event_listener, TaskType.UNARCHIVE)
 
+    task_result = None
+
     def start_task():
-        executor.execute_remote_task(
+        nonlocal task_result
+        task_result = executor.execute_remote_task(
             task_type=TaskType.UNARCHIVE, task_queue="q1", task_args={"src": "src", "dest": "dest"}
         )
 
@@ -57,6 +60,7 @@ def test_remote_executor():
     thread.start()
     thread.join()
     assert len(events) == 1
+    assert task_result == TaskResult(success=True, message="OK")
 
 
 def test_remote_executor_should_reject_unknown_queue():
