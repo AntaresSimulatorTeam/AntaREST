@@ -37,7 +37,6 @@ interface VariableMatrixProps {
   itemType: OutputItemType;
   selectedItemId: string;
   selectedVariable: string;
-  isViewMaterialized: boolean;
   onMaterializeVariable: () => void;
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
@@ -70,7 +69,6 @@ function VariableMatrix({
   itemType,
   selectedItemId,
   selectedVariable,
-  isViewMaterialized,
   onMaterializeVariable,
   isMaterializing,
   variableViewDataRes,
@@ -89,16 +87,6 @@ function VariableMatrix({
 
   if (!selectedVariable) {
     return <Skeleton sx={{ height: 1, transform: "none" }} />;
-  }
-
-  if (!isViewMaterialized) {
-    return (
-      <EmptyView
-        title={t("study.results.scanRequired")}
-        icon={GridOffIcon}
-        action={<ProcessButton onClick={onMaterializeVariable} loading={isMaterializing} />}
-      />
-    );
   }
 
   return (
@@ -121,16 +109,23 @@ function VariableMatrix({
           />
         );
       }}
-      ifRejected={(err) => (
-        <EmptyView
-          title={
-            toError(err).message.includes("404")
-              ? t("study.results.noData")
-              : t("data.error.matrix")
-          }
-          icon={GridOffIcon}
-        />
-      )}
+      ifRejected={(err) => {
+        const errorMessage = toError(err).message;
+        const isNotFound = errorMessage.includes("404") || errorMessage.includes("not found");
+
+        // The output variables view is not materialized in DB yet
+        if (isNotFound) {
+          return (
+            <EmptyView
+              title={t("study.results.scanRequired")}
+              icon={GridOffIcon}
+              action={<ProcessButton onClick={onMaterializeVariable} loading={isMaterializing} />}
+            />
+          );
+        }
+
+        return <EmptyView title={t("data.error.matrix")} icon={GridOffIcon} />;
+      }}
     />
   );
 }

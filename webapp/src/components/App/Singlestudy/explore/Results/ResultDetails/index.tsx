@@ -73,7 +73,6 @@ function ResultDetails() {
     variablesMetadata,
     selectedVariable,
     setSelectedVariable,
-    isViewMaterialized,
     isMaterializing,
     handleMaterializeVariable,
     variableViewDataRes,
@@ -337,7 +336,6 @@ function ResultDetails() {
           selectedItemId={selectedItemId}
           selectedVariable={selectedVariable}
           onVariableSelect={setSelectedVariable}
-          isViewMaterialized={isViewMaterialized}
           onMaterializeVariable={handleMaterializeVariable}
           isMaterializing={isMaterializing}
           variableViewDataRes={variableViewDataRes}

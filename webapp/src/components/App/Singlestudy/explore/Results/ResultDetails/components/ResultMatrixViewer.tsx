@@ -64,7 +64,6 @@ interface ResultMatrixViewerProps {
   selectedItemId: string;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
-  isViewMaterialized: boolean;
   onMaterializeVariable: () => void;
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
@@ -97,7 +96,6 @@ function ResultMatrixViewer({
   selectedItemId,
   selectedVariable,
   onVariableSelect,
-  isViewMaterialized,
   onMaterializeVariable,
   isMaterializing,
   variableViewDataRes,
@@ -139,7 +137,6 @@ function ResultMatrixViewer({
               itemType={itemType}
               selectedItemId={selectedItemId}
               selectedVariable={selectedVariable}
-              isViewMaterialized={isViewMaterialized}
               onMaterializeVariable={onMaterializeVariable}
               isMaterializing={isMaterializing}
               variableViewDataRes={variableViewDataRes}

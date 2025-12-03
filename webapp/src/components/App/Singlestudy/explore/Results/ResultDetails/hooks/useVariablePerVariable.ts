@@ -53,7 +53,6 @@ export function useVariablePerVariable({
 }: UseVariablePerVariableProps) {
   const { t } = useTranslation();
   const [selectedVariable, setSelectedVariable] = useState("");
-  const [isViewMaterialized, setIsViewMaterialized] = useState(false);
   const [isMaterializing, setIsMaterializing] = useState(false);
   const [materializationTaskId, setMaterializationTaskId] = useState<string | null>(null);
 
@@ -70,7 +69,7 @@ export function useVariablePerVariable({
 
   const variableViewDataRes = usePromise(
     async () => {
-      if (!outputId || !selectedVariable || !selectedItemId || !isViewMaterialized) {
+      if (!outputId || !selectedVariable || !selectedItemId) {
         return null;
       }
 
@@ -85,22 +84,13 @@ export function useVariablePerVariable({
       return data;
     },
     {
-      deps: [
-        studyId,
-        outputId,
-        selectedVariable,
-        selectedItemId,
-        itemType,
-        timestep,
-        isViewMaterialized,
-      ],
+      deps: [studyId, outputId, selectedVariable, selectedItemId, itemType, timestep],
     },
   );
 
   useEffect(() => {
     if (!isEnabled) {
       setSelectedVariable("");
-      setIsViewMaterialized(false);
       setIsMaterializing(false);
       setMaterializationTaskId(null);
     }
@@ -108,7 +98,6 @@ export function useVariablePerVariable({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: materializationTaskId is intentionally excluded to avoid infinite loop when unsubscribing
   useEffect(() => {
-    setIsViewMaterialized(false);
     setIsMaterializing(false);
 
     if (materializationTaskId) {
@@ -161,9 +150,9 @@ export function useVariablePerVariable({
   useTaskMonitor({
     taskId: materializationTaskId,
     onComplete: () => {
-      setIsViewMaterialized(true);
       setIsMaterializing(false);
       setMaterializationTaskId(null);
+      enqueueSnackbar(t("study.results.materializationSuccess"), { variant: "success" });
     },
     onFailed: useCallback(
       (message: string) => {
@@ -181,7 +170,6 @@ export function useVariablePerVariable({
     variablesMetadata,
     selectedVariable,
     setSelectedVariable,
-    isViewMaterialized,
     isMaterializing,
     handleMaterializeVariable,
     variableViewDataRes,
