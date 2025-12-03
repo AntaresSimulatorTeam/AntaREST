@@ -30,7 +30,14 @@ from antarest.study.business.output.utils import (
     normalize_df_column_names,
     parse_headers,
 )
-from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType, OutputVariablesViewsModel
+from antarest.study.storage.output_model import (
+    AreaVariables,
+    LinkVariables,
+    OutputVariablesList,
+    OutputVariablesType,
+    OutputVariablesViewsModel,
+    Variables,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
@@ -457,3 +464,53 @@ def create_output_view_db_model(
             raise NotImplementedError(f"output identifier `{output_identifier.__class__}` is not implemented")
 
     return model
+
+
+def _filter_link_variables(ids_to_consider: set[str], link_variables: list[LinkVariables]) -> set[str]:
+    final_variables: set[str] = set()
+    for var in link_variables:
+        if ids_to_consider and f"{var.area_1_name} - {var.area_2_name}" not in ids_to_consider:
+            continue
+        final_variables.update(var.variables)
+    return final_variables
+
+
+def _filter_area_variables(
+    ids_to_consider: set[str],
+    area_variables: list[AreaVariables],
+    query_file: MCIndAreasQueryFile | MCAllAreasQueryFile,
+) -> set[str]:
+    intermediate_dict: dict[str, dict[str, list[list[str]]]] = {}
+    for variable in area_variables:
+        intermediate_dict[variable.name] = {
+            MCIndAreasQueryFile.DETAILS.value: [v.variables for v in variable.thermal_clusters],
+            MCIndAreasQueryFile.DETAILS_RES.value: [v.variables for v in variable.renewable_clusters],
+            MCIndAreasQueryFile.DETAILS_ST_STORAGE.value: [v.variables for v in variable.short_term_storages],
+            MCIndAreasQueryFile.VALUES.value: [variable.variables],
+            MCAllAreasQueryFile.ID.value: [variable.variables],
+        }
+
+    area_ids = ids_to_consider if ids_to_consider else intermediate_dict.keys()
+    final_variables: set[str] = set()
+    for area_id in area_ids:
+        for var in intermediate_dict[area_id][query_file.value]:
+            final_variables.update(var)
+    return final_variables
+
+
+def get_available_variables(
+    variables_list: OutputVariablesList, query_file: QueryFileType, ids_to_consider: set[str]
+) -> Variables:
+    if isinstance(query_file, MCAllAreasQueryFile):
+        return list(_filter_area_variables(ids_to_consider, variables_list.mc_all.areas, query_file))
+
+    elif isinstance(query_file, MCAllLinksQueryFile):
+        return list(_filter_link_variables(ids_to_consider, variables_list.mc_all.links))
+
+    elif isinstance(query_file, MCIndAreasQueryFile):
+        return list(_filter_area_variables(ids_to_consider, variables_list.mc_ind.areas, query_file))
+
+    elif isinstance(query_file, MCIndLinksQueryFile):
+        return list(_filter_link_variables(ids_to_consider, variables_list.mc_ind.links))
+
+    raise NotImplementedError(f"QueryFile `{query_file.__class__}` is not implemented")
