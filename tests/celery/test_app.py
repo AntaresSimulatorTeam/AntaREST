@@ -17,12 +17,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from antarest.celery.app import _mask_url_credentials
+
 
 class TestMaskUrlCredentials:
     def test_masks_password_in_url(self):
         """Test that password is masked in URL."""
-        from antarest.celery.app import _mask_url_credentials
-
         url = "redis://user:secret_password@localhost:6379/0"
         masked = _mask_url_credentials(url)
 
@@ -31,8 +31,6 @@ class TestMaskUrlCredentials:
 
     def test_preserves_url_without_credentials(self):
         """Test that URL without credentials is unchanged."""
-        from antarest.celery.app import _mask_url_credentials
-
         url = "redis://localhost:6379/0"
         masked = _mask_url_credentials(url)
 
@@ -40,8 +38,6 @@ class TestMaskUrlCredentials:
 
     def test_masks_password_with_special_chars(self):
         """Test that passwords with special chars (except @) are masked."""
-        from antarest.celery.app import _mask_url_credentials
-
         url = "redis://admin:p4ss!w0rd#123@host:6379/1"
         masked = _mask_url_credentials(url)
 
@@ -50,62 +46,79 @@ class TestMaskUrlCredentials:
 
 
 class TestCeleryAppConfiguration:
-    def test_celery_app_has_correct_name(self):
+    @pytest.fixture(autouse=True)
+    def mock_config_loading(self):
+        """Mock config loading to avoid needing ANTAREST_CONF."""
+        with patch("antarest.celery.app._load_config", return_value=None):
+            yield
+
+    def test_celery_app_has_correct_name(self, mock_config_loading):
         """Test that the Celery app is created with the correct name."""
-        from antarest.celery.app import celery_app
+        # Import after mock is set up
+        import importlib
 
-        assert celery_app.main == "antarest-maintenance"
+        import antarest.celery.app as app_module
 
-    def test_celery_app_has_json_serialization(self):
+        importlib.reload(app_module)
+
+        assert app_module.celery_app.main == "antarest-maintenance"
+
+    def test_celery_app_has_json_serialization(self, mock_config_loading):
         """Test that JSON serialization is configured."""
-        from antarest.celery.app import celery_app
+        import importlib
 
-        assert celery_app.conf.task_serializer == "json"
-        assert celery_app.conf.result_serializer == "json"
-        assert "json" in celery_app.conf.accept_content
+        import antarest.celery.app as app_module
 
-    def test_celery_app_has_task_routing(self):
+        importlib.reload(app_module)
+
+        assert app_module.celery_app.conf.task_serializer == "json"
+        assert app_module.celery_app.conf.result_serializer == "json"
+        assert "json" in app_module.celery_app.conf.accept_content
+
+    def test_celery_app_has_task_routing(self, mock_config_loading):
         """Test that task routing is configured for maintenance queue."""
-        from antarest.celery.app import celery_app
+        import importlib
 
-        assert "antarest.maintenance.tasks.*" in celery_app.conf.task_routes
-        assert celery_app.conf.task_routes["antarest.maintenance.tasks.*"]["queue"] == "maintenance"
+        import antarest.celery.app as app_module
 
-    def test_celery_app_has_timeouts_configured(self):
+        importlib.reload(app_module)
+
+        assert "antarest.maintenance.tasks.*" in app_module.celery_app.conf.task_routes
+        assert app_module.celery_app.conf.task_routes["antarest.maintenance.tasks.*"]["queue"] == "maintenance"
+
+    def test_celery_app_has_timeouts_configured(self, mock_config_loading):
         """Test that task timeouts are configured."""
-        from antarest.celery.app import celery_app
+        import importlib
 
-        assert celery_app.conf.task_soft_time_limit == 7000
-        assert celery_app.conf.task_time_limit == 7200
+        import antarest.celery.app as app_module
 
-    def test_celery_app_has_worker_settings(self):
+        importlib.reload(app_module)
+
+        assert app_module.celery_app.conf.task_soft_time_limit == 7000
+        assert app_module.celery_app.conf.task_time_limit == 7200
+
+    def test_celery_app_has_worker_settings(self, mock_config_loading):
         """Test that worker settings are configured."""
-        from antarest.celery.app import celery_app
+        import importlib
 
-        assert celery_app.conf.worker_prefetch_multiplier == 1
-        assert celery_app.conf.worker_max_tasks_per_child == 100
-        assert celery_app.conf.task_acks_late is True
-        assert celery_app.conf.task_reject_on_worker_lost is True
+        import antarest.celery.app as app_module
 
-    def test_celery_app_uses_utc(self):
+        importlib.reload(app_module)
+
+        assert app_module.celery_app.conf.worker_prefetch_multiplier == 1
+        assert app_module.celery_app.conf.worker_max_tasks_per_child == 100
+        assert app_module.celery_app.conf.task_acks_late is True
+        assert app_module.celery_app.conf.task_reject_on_worker_lost is True
+
+    def test_celery_app_uses_utc(self, mock_config_loading):
         """Test that UTC timezone is enabled."""
-        from antarest.celery.app import celery_app
+        import importlib
 
-        assert celery_app.conf.enable_utc is True
+        import antarest.celery.app as app_module
 
-    @patch.dict(os.environ, {"CELERY_BROKER_URL": "redis://custom:6379/2"})
-    def test_celery_app_reads_broker_from_env(self):
-        """Test that broker URL can be configured via environment variable."""
-        # Need to reimport to pick up the env var
-        # Note: This test verifies the mechanism, actual value depends on import order
-        broker_url = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/1")
-        assert broker_url == "redis://custom:6379/2"
+        importlib.reload(app_module)
 
-    @patch.dict(os.environ, {"CELERY_TIMEZONE": "Europe/Paris"})
-    def test_celery_app_reads_timezone_from_env(self):
-        """Test that timezone can be configured via environment variable."""
-        timezone = os.getenv("CELERY_TIMEZONE", "UTC")
-        assert timezone == "Europe/Paris"
+        assert app_module.celery_app.conf.enable_utc is True
 
 
 class TestInitWorker:
@@ -118,107 +131,53 @@ class TestInitWorker:
         yield
         MaintenanceContext._instance = None
 
-    @patch.dict(os.environ, {}, clear=True)
-    def test_init_worker_returns_early_without_config_env(self):
-        """Test that init_worker returns early when ANTAREST_CONF is not set."""
-        from antarest.celery.app import init_worker
+    def test_init_worker_returns_early_without_config(self):
+        """Test that init_worker returns early when _config is None."""
         from antarest.celery.context import MaintenanceContext
 
-        # Remove ANTAREST_CONF if it exists
-        os.environ.pop("ANTAREST_CONF", None)
+        with patch("antarest.celery.app._config", None):
+            from antarest.celery.app import init_worker
 
-        init_worker()
+            init_worker()
 
-        # Context should not be initialized
-        ctx = MaintenanceContext.get_instance()
-        assert ctx._initialized is False
+            # Context should not be initialized
+            ctx = MaintenanceContext.get_instance()
+            assert ctx._initialized is False
 
-    @patch.dict(os.environ, {"ANTAREST_CONF": "/nonexistent/path/config.yaml"})
-    def test_init_worker_returns_early_when_config_not_found(self):
-        """Test that init_worker returns early when config file doesn't exist."""
-        from antarest.celery.app import init_worker
-        from antarest.celery.context import MaintenanceContext
-
-        init_worker()
-
-        ctx = MaintenanceContext.get_instance()
-        assert ctx._initialized is False
-
-    @patch("antarest.celery.app.get_local_path")
     @patch("antarest.celery.app.MaintenanceContext")
-    @patch("antarest.celery.app.Config")
-    def test_init_worker_initializes_context(self, mock_config_class, mock_ctx_class, mock_get_local_path, tmp_path):
+    def test_init_worker_initializes_context(self, mock_ctx_class, tmp_path):
         """Test that init_worker properly initializes the MaintenanceContext."""
-        from antarest.celery.app import init_worker
-
-        # Create a temporary config file
-        config_file = tmp_path / "application.yaml"
-        config_file.write_text("debug: false\n")
-
-        # Setup mocks
-        mock_get_local_path.return_value = tmp_path
+        # Create a mock config
         mock_config = Mock()
-        mock_config.celery = None  # No celery config in YAML
-        mock_config_class.from_yaml_file.return_value = mock_config
+        mock_config.celery = Mock()
 
         mock_ctx = Mock()
         mock_ctx_class.get_instance.return_value = mock_ctx
 
-        with patch.dict(os.environ, {"ANTAREST_CONF": str(config_file)}):
+        config_file = tmp_path / "application.yaml"
+        config_file.write_text("debug: false\n")
+
+        with (
+            patch("antarest.celery.app._config", mock_config),
+            patch.dict(os.environ, {"ANTAREST_CONF": str(config_file)}),
+        ):
+            from antarest.celery.app import init_worker
+
             init_worker()
 
         mock_ctx.initialize.assert_called_once_with(mock_config, config_file)
-
-    @patch("antarest.celery.app.get_local_path")
-    @patch("antarest.celery.app.celery_app")
-    @patch("antarest.celery.app.MaintenanceContext")
-    @patch("antarest.celery.app.Config")
-    def test_init_worker_overrides_celery_config_from_yaml(
-        self, mock_config_class, mock_ctx_class, mock_celery_app, mock_get_local_path, tmp_path
-    ):
-        """Test that init_worker overrides Celery config from YAML if present."""
-        from antarest.celery.app import init_worker
-
-        config_file = tmp_path / "application.yaml"
-        config_file.write_text("debug: false\n")
-
-        # Setup mocks
-        mock_get_local_path.return_value = tmp_path
-
-        # Setup mock config with celery section
-        mock_celery_config = Mock()
-        mock_celery_config.broker_url = "redis://yaml-broker:6379/0"
-        mock_celery_config.result_backend = "redis://yaml-backend:6379/0"
-        mock_celery_config.timezone = "Europe/Paris"
-        mock_celery_config.result_expires = 43200
-
-        mock_config = Mock()
-        mock_config.celery = mock_celery_config
-        mock_config_class.from_yaml_file.return_value = mock_config
-
-        mock_ctx = Mock()
-        mock_ctx_class.get_instance.return_value = mock_ctx
-
-        with patch.dict(os.environ, {"ANTAREST_CONF": str(config_file)}):
-            init_worker()
-
-        # Verify celery_app.conf.update was called with YAML values
-        mock_celery_app.conf.update.assert_called_once_with(
-            broker_url="redis://yaml-broker:6379/0",
-            result_backend="redis://yaml-backend:6379/0",
-            timezone="Europe/Paris",
-            result_expires=43200,
-        )
 
 
 class TestSetupPeriodicTasks:
     def test_setup_periodic_tasks_adds_matrix_gc_with_default_interval(self):
         """Test that setup_periodic_tasks registers the matrix GC task with default interval."""
-        from antarest.celery.app import setup_periodic_tasks
-
         mock_sender = Mock()
 
-        setup_periodic_tasks(mock_sender)
+        # When _config is None, use default interval of 3600
+        with patch("antarest.celery.app._config", None):
+            from antarest.celery.app import setup_periodic_tasks
+
+            setup_periodic_tasks(mock_sender)
 
         # Verify add_periodic_task was called with correct arguments
         mock_sender.add_periodic_task.assert_called_once()
@@ -226,17 +185,24 @@ class TestSetupPeriodicTasks:
         assert call_args[0][0] == 3600  # default interval
         assert call_args[1]["name"] == "matrix-gc"
 
-    @patch.dict(os.environ, {"CELERY_MATRIX_GC_INTERVAL": "7200"})
-    def test_setup_periodic_tasks_uses_custom_interval_from_env(self):
-        """Test that setup_periodic_tasks uses custom interval from environment variable."""
-        from antarest.celery.app import setup_periodic_tasks
-
+    def test_setup_periodic_tasks_uses_interval_from_config(self):
+        """Test that setup_periodic_tasks uses interval from config."""
         mock_sender = Mock()
 
-        setup_periodic_tasks(mock_sender)
+        # Create mock config with custom interval
+        mock_celery_config = Mock()
+        mock_celery_config.matrix_gc_interval = 7200
+
+        mock_config = Mock()
+        mock_config.celery = mock_celery_config
+
+        with patch("antarest.celery.app._config", mock_config):
+            from antarest.celery.app import setup_periodic_tasks
+
+            setup_periodic_tasks(mock_sender)
 
         # Verify add_periodic_task was called with custom interval
         mock_sender.add_periodic_task.assert_called_once()
         call_args = mock_sender.add_periodic_task.call_args
-        assert call_args[0][0] == 7200  # custom interval from env
+        assert call_args[0][0] == 7200  # custom interval from config
         assert call_args[1]["name"] == "matrix-gc"
