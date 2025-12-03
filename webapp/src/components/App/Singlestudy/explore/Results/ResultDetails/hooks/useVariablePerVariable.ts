@@ -152,6 +152,7 @@ export function useVariablePerVariable({
     onComplete: () => {
       setIsMaterializing(false);
       setMaterializationTaskId(null);
+      variableViewDataRes.reload();
       enqueueSnackbar(t("study.results.materializationSuccess"), { variant: "success" });
     },
     onFailed: useCallback(
