@@ -25,9 +25,9 @@ from typing import Optional
 from celery import Celery
 from celery.signals import worker_init
 
-from antarest.celery.context import MaintenanceContext
 from antarest.core.config import CeleryConfig, Config
 from antarest.core.utils.utils import get_local_path
+from antarest.maintenance.context import MaintenanceContext
 
 logger = logging.getLogger(__name__)
 

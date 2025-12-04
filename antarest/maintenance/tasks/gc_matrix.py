@@ -20,11 +20,11 @@ import logging
 import time
 from typing import Any, Dict, Set
 
-from antarest.celery.app import celery_app
-from antarest.celery.context import MaintenanceContext
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
+from antarest.maintenance.app import celery_app
+from antarest.maintenance.context import MaintenanceContext
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)

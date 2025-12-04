@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.celery.context import MaintenanceContext
+from antarest.maintenance.context import MaintenanceContext
 
 
 @pytest.fixture(autouse=True)
@@ -122,9 +122,9 @@ class TestMaintenanceContext:
         # Config should still be None since initialize returned early
         assert ctx.config is None
 
-    @patch("antarest.celery.context.init_db_engine")
-    @patch("antarest.celery.context.DBSessionMiddleware")
-    @patch("antarest.celery.context.create_core_services")
+    @patch("antarest.maintenance.context.init_db_engine")
+    @patch("antarest.maintenance.context.DBSessionMiddleware")
+    @patch("antarest.maintenance.context.create_core_services")
     def test_initialize_creates_services(
         self,
         mock_create_core_services,
@@ -150,9 +150,9 @@ class TestMaintenanceContext:
         assert ctx.core_services is mock_core_services
         mock_create_core_services.assert_called_once_with(app_ctxt=None, config=mock_config)
 
-    @patch("antarest.celery.context.init_db_engine")
-    @patch("antarest.celery.context.DBSessionMiddleware")
-    @patch("antarest.celery.context.create_core_services")
+    @patch("antarest.maintenance.context.init_db_engine")
+    @patch("antarest.maintenance.context.DBSessionMiddleware")
+    @patch("antarest.maintenance.context.create_core_services")
     def test_initialize_is_idempotent(
         self,
         mock_create_core_services,

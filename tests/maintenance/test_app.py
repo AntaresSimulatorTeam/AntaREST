@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.celery.app import _mask_url_credentials
+from antarest.maintenance.app import _mask_url_credentials
 
 
 class TestMaskUrlCredentials:
@@ -49,7 +49,7 @@ class TestCeleryAppConfiguration:
     @pytest.fixture(autouse=True)
     def mock_config_loading(self):
         """Mock config loading to avoid needing ANTAREST_CONF."""
-        with patch("antarest.celery.app._load_config", return_value=None):
+        with patch("antarest.maintenance.app._load_config", return_value=None):
             yield
 
     def test_celery_app_has_correct_name(self, mock_config_loading):
@@ -57,7 +57,7 @@ class TestCeleryAppConfiguration:
         # Import after mock is set up
         import importlib
 
-        import antarest.celery.app as app_module
+        import antarest.maintenance.app as app_module
 
         importlib.reload(app_module)
 
@@ -67,7 +67,7 @@ class TestCeleryAppConfiguration:
         """Test that JSON serialization is configured."""
         import importlib
 
-        import antarest.celery.app as app_module
+        import antarest.maintenance.app as app_module
 
         importlib.reload(app_module)
 
@@ -79,7 +79,7 @@ class TestCeleryAppConfiguration:
         """Test that task routing is configured for maintenance queue."""
         import importlib
 
-        import antarest.celery.app as app_module
+        import antarest.maintenance.app as app_module
 
         importlib.reload(app_module)
 
@@ -90,7 +90,7 @@ class TestCeleryAppConfiguration:
         """Test that task timeouts are configured."""
         import importlib
 
-        import antarest.celery.app as app_module
+        import antarest.maintenance.app as app_module
 
         importlib.reload(app_module)
 
@@ -101,7 +101,7 @@ class TestCeleryAppConfiguration:
         """Test that worker settings are configured."""
         import importlib
 
-        import antarest.celery.app as app_module
+        import antarest.maintenance.app as app_module
 
         importlib.reload(app_module)
 
@@ -114,7 +114,7 @@ class TestCeleryAppConfiguration:
         """Test that UTC timezone is enabled."""
         import importlib
 
-        import antarest.celery.app as app_module
+        import antarest.maintenance.app as app_module
 
         importlib.reload(app_module)
 
@@ -125,7 +125,7 @@ class TestInitWorker:
     @pytest.fixture(autouse=True)
     def reset_context(self):
         """Reset MaintenanceContext singleton before each test."""
-        from antarest.celery.context import MaintenanceContext
+        from antarest.maintenance.context import MaintenanceContext
 
         MaintenanceContext._INSTANCE = None
         yield
@@ -133,10 +133,10 @@ class TestInitWorker:
 
     def test_init_worker_returns_early_without_config(self):
         """Test that init_worker returns early when _config is None."""
-        from antarest.celery.context import MaintenanceContext
+        from antarest.maintenance.context import MaintenanceContext
 
-        with patch("antarest.celery.app._config", None):
-            from antarest.celery.app import init_worker
+        with patch("antarest.maintenance.app._config", None):
+            from antarest.maintenance.app import init_worker
 
             init_worker()
 
@@ -144,7 +144,7 @@ class TestInitWorker:
             ctx = MaintenanceContext.get_instance()
             assert ctx._initialized is False
 
-    @patch("antarest.celery.app.MaintenanceContext")
+    @patch("antarest.maintenance.app.MaintenanceContext")
     def test_init_worker_initializes_context(self, mock_ctx_class, tmp_path):
         """Test that init_worker properly initializes the MaintenanceContext."""
         # Create a mock config
@@ -158,10 +158,10 @@ class TestInitWorker:
         config_file.write_text("debug: false\n")
 
         with (
-            patch("antarest.celery.app._config", mock_config),
+            patch("antarest.maintenance.app._config", mock_config),
             patch.dict(os.environ, {"ANTAREST_CONF": str(config_file)}),
         ):
-            from antarest.celery.app import init_worker
+            from antarest.maintenance.app import init_worker
 
             init_worker()
 
@@ -174,8 +174,8 @@ class TestSetupPeriodicTasks:
         mock_sender = Mock()
 
         # When _config is None, use default interval of 3600
-        with patch("antarest.celery.app._config", None):
-            from antarest.celery.app import setup_periodic_tasks
+        with patch("antarest.maintenance.app._config", None):
+            from antarest.maintenance.app import setup_periodic_tasks
 
             setup_periodic_tasks(mock_sender)
 
@@ -196,8 +196,8 @@ class TestSetupPeriodicTasks:
         mock_config = Mock()
         mock_config.storage = mock_storage_config
 
-        with patch("antarest.celery.app._config", mock_config):
-            from antarest.celery.app import setup_periodic_tasks
+        with patch("antarest.maintenance.app._config", mock_config):
+            from antarest.maintenance.app import setup_periodic_tasks
 
             setup_periodic_tasks(mock_sender)
 

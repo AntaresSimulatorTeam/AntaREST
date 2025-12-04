@@ -11,8 +11,10 @@
 # This file is part of the Antares project.
 
 """
-Maintenance tasks for AntaREST.
+Maintenance package for AntaREST.
 
-This package contains periodic maintenance tasks (garbage collection,
-archiving, cleanup, etc.) executed by Celery workers.
+This package contains:
+- Celery application configuration (app.py)
+- Worker context for dependency injection (context.py)
+- Periodic maintenance tasks in tasks/ (garbage collection, archiving, etc.)
 """
