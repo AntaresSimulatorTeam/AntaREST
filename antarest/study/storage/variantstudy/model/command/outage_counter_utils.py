@@ -12,7 +12,9 @@
 from collections import defaultdict
 from pathlib import Path
 from typing import DefaultDict
+
 import pandas as pd
+
 
 class OutageCounter:
     def __init__(self) -> None:
@@ -47,4 +49,3 @@ class OutageCounter:
         forced_outages = pd.DataFrame(data=forced_outages)
         forced_outages = forced_outages[list(forced_outages.columns)].astype(int)
         forced_outages.to_csv(path, index=True, sep="\t")
-

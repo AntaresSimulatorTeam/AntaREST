@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
 from pathlib import Path
+from typing import List, Optional
+
 import numpy as np
 import pandas as pd
 from antares.tsgen.duration_generator import ProbabilityLaw
@@ -157,7 +158,6 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     thermal_dir.mkdir(parents=True, exist_ok=True)
                     outage_counter.save_planned_outages(thermal_dir, area_id, thermal_id)
                     outage_counter.save_forced_outages(thermal_dir, area_id, thermal_id)
-
 
         return command_succeeded(message="All time series were generated successfully")
 

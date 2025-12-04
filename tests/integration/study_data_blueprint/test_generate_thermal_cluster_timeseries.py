@@ -72,7 +72,6 @@ class TestGenerateThermalClusterTimeseries:
         # Timeseries generation should succeed
         task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.COMPLETED
-        
 
         # Check matrices
         # First one

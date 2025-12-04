@@ -20,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 TIMESERIES_PATH = ["settings", "generaldata", "general", "nbtimeseriesthermal"]
 TIMESERIES_OUTAGE_DETAILS_THERMAL_PATH = ["settings", "generaldata", "general", "outage-details-thermal"]
 
+
 class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
@@ -43,7 +44,9 @@ class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
         except KeyError:
             outage_details_thermal = False
 
-        return TimeSeriesConfiguration.model_validate({"thermal": {"number": nb_ts_gen_thermal, "outage_details_thermal": outage_details_thermal}})
+        return TimeSeriesConfiguration.model_validate(
+            {"thermal": {"number": nb_ts_gen_thermal, "outage_details_thermal": outage_details_thermal}}
+        )
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
