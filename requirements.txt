@@ -37,6 +37,7 @@ openpyxl~=3.1.5
 pandas~=2.2.3
 paramiko~=3.4.1
 plyer~=2.0.0
+polars~=1.35.2
 psycopg2-binary~=2.9.9
 pyarrow~=21.0.0
 py7zr~=0.20.6
