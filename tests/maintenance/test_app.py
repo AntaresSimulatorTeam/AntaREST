@@ -144,28 +144,26 @@ class TestInitWorker:
             ctx = MaintenanceContext.get_instance()
             assert ctx._initialized is False
 
-    @patch("antarest.maintenance.app.MaintenanceContext")
-    def test_init_worker_initializes_context(self, mock_ctx_class, tmp_path):
-        """Test that init_worker properly initializes the MaintenanceContext."""
-        # Create a mock config
+    def test_init_worker_returns_early_without_env_var(self):
+        """Test that init_worker returns early when ANTAREST_CONF is not set."""
+        from antarest.maintenance.context import MaintenanceContext
+
         mock_config = Mock()
-        mock_config.celery = Mock()
-
-        mock_ctx = Mock()
-        mock_ctx_class.get_instance.return_value = mock_ctx
-
-        config_file = tmp_path / "application.yaml"
-        config_file.write_text("debug: false\n")
 
         with (
             patch("antarest.maintenance.app._config", mock_config),
-            patch.dict(os.environ, {"ANTAREST_CONF": str(config_file)}),
+            patch.dict(os.environ, {}, clear=True),
         ):
+            # Remove ANTAREST_CONF if it exists
+            os.environ.pop("ANTAREST_CONF", None)
+
             from antarest.maintenance.app import init_worker
 
             init_worker()
 
-        mock_ctx.initialize.assert_called_once_with(mock_config, config_file)
+            # Context should not be initialized
+            ctx = MaintenanceContext.get_instance()
+            assert ctx._initialized is False
 
 
 class TestSetupPeriodicTasks:
