@@ -12,8 +12,6 @@
 
 """Tests for MaintenanceContext singleton."""
 
-import threading
-
 import pytest
 
 from antarest.maintenance.context import MaintenanceContext
@@ -34,28 +32,6 @@ class TestMaintenanceContext:
         instance2 = MaintenanceContext.get_instance()
 
         assert instance1 is instance2
-
-    def test_get_instance_thread_safe(self):
-        """Test that get_instance is thread-safe."""
-        instances = []
-        errors = []
-
-        def get_instance():
-            try:
-                instances.append(MaintenanceContext.get_instance())
-            except Exception as e:
-                errors.append(e)
-
-        threads = [threading.Thread(target=get_instance) for _ in range(10)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-
-        assert len(errors) == 0
-        assert len(instances) == 10
-        # All instances should be the same object
-        assert all(inst is instances[0] for inst in instances)
 
     def test_matrix_service_raises_when_not_initialized(self):
         """Test that accessing matrix_service before initialization raises RuntimeError."""

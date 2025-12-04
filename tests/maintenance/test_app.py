@@ -140,9 +140,9 @@ class TestInitWorker:
 
             init_worker()
 
-            # Context should not be initialized
+            # Context should not be initialized (core_services remains None)
             ctx = MaintenanceContext.get_instance()
-            assert ctx._initialized is False
+            assert ctx.core_services is None
 
     def test_init_worker_returns_early_without_env_var(self):
         """Test that init_worker returns early when ANTAREST_CONF is not set."""
@@ -161,9 +161,9 @@ class TestInitWorker:
 
             init_worker()
 
-            # Context should not be initialized
+            # Context should not be initialized (core_services remains None)
             ctx = MaintenanceContext.get_instance()
-            assert ctx._initialized is False
+            assert ctx.core_services is None
 
 
 class TestSetupPeriodicTasks:
