@@ -14,6 +14,7 @@ import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedDataIndexRouteImport } from './routes/_authenticated/data/index'
 import { Route as AuthenticatedApidocIndexRouteImport } from './routes/_authenticated/apidoc/index'
 import { Route as AuthenticatedSettingsMaintenanceRouteImport } from './routes/_authenticated/settings/maintenance'
@@ -47,6 +48,12 @@ const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   path: '/tasks/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedDataIndexRoute = AuthenticatedDataIndexRouteImport.update({
   id: '/data/',
   path: '/data/',
@@ -104,13 +111,13 @@ export interface FileRoutesByFullPath {
   '/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
   '/apidoc': typeof AuthenticatedApidocIndexRoute
   '/data': typeof AuthenticatedDataIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/settings/groups': typeof AuthenticatedSettingsGroupsIndexRoute
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
 }
 export interface FileRoutesByTo {
-  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginIndexRoute
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
   '/apidoc': typeof AuthenticatedApidocIndexRoute
   '/data': typeof AuthenticatedDataIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/settings/groups': typeof AuthenticatedSettingsGroupsIndexRoute
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
   '/_authenticated/apidoc/': typeof AuthenticatedApidocIndexRoute
   '/_authenticated/data/': typeof AuthenticatedDataIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/settings/groups/': typeof AuthenticatedSettingsGroupsIndexRoute
   '/_authenticated/settings/tokens/': typeof AuthenticatedSettingsTokensIndexRoute
@@ -150,13 +159,13 @@ export interface FileRouteTypes {
     | '/settings/maintenance'
     | '/apidoc'
     | '/data'
+    | '/settings/'
     | '/tasks'
     | '/settings/groups'
     | '/settings/tokens'
     | '/settings/users'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/settings'
     | '/'
     | '/login'
     | '/settings/about'
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/settings/maintenance'
     | '/apidoc'
     | '/data'
+    | '/settings'
     | '/tasks'
     | '/settings/groups'
     | '/settings/tokens'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/maintenance'
     | '/_authenticated/apidoc/'
     | '/_authenticated/data/'
+    | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/settings/groups/'
     | '/_authenticated/settings/tokens/'
@@ -226,6 +237,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tasks'
       preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/data/': {
       id: '/_authenticated/data/'
@@ -290,6 +308,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsAboutRoute: typeof AuthenticatedSettingsAboutRoute
   AuthenticatedSettingsGeneralRoute: typeof AuthenticatedSettingsGeneralRoute
   AuthenticatedSettingsMaintenanceRoute: typeof AuthenticatedSettingsMaintenanceRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsGroupsIndexRoute: typeof AuthenticatedSettingsGroupsIndexRoute
   AuthenticatedSettingsTokensIndexRoute: typeof AuthenticatedSettingsTokensIndexRoute
   AuthenticatedSettingsUsersIndexRoute: typeof AuthenticatedSettingsUsersIndexRoute
@@ -299,6 +318,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsAboutRoute: AuthenticatedSettingsAboutRoute,
   AuthenticatedSettingsGeneralRoute: AuthenticatedSettingsGeneralRoute,
   AuthenticatedSettingsMaintenanceRoute: AuthenticatedSettingsMaintenanceRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsGroupsIndexRoute: AuthenticatedSettingsGroupsIndexRoute,
   AuthenticatedSettingsTokensIndexRoute: AuthenticatedSettingsTokensIndexRoute,
   AuthenticatedSettingsUsersIndexRoute: AuthenticatedSettingsUsersIndexRoute,
