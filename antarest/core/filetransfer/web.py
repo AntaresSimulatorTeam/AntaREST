@@ -17,25 +17,26 @@ from starlette.responses import FileResponse
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadDTO
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.typing import Supplier
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
 
-def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: Config) -> APIRouter:
+def create_file_transfer_api(filetransfer_manager: Supplier[FileTransferManager], config: Config) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", tags=[APITag.downloads], dependencies=[auth.required()])
 
     @bp.get("/downloads", summary="Get available downloads")
     def get_downloads() -> list[FileDownloadDTO]:
-        return filetransfer_manager.list_downloads()
+        return filetransfer_manager().list_downloads()
 
     @bp.get(
         "/downloads/{download_id}",
         summary="Retrieve download file",
     )
     def fetch_download(download_id: str) -> FileResponse:
-        download = filetransfer_manager.fetch_download(download_id)
+        download = filetransfer_manager().fetch_download(download_id)
         return FileResponse(
             Path(download.path),
             headers={"Content-Disposition": f'attachment; filename="{download.filename}"'},
@@ -48,6 +49,6 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
     )
     def get_download_metadata(download_id: str, wait_for_availability: bool = False) -> FileDownloadDTO:
         sanitized_download_id = sanitize_uuid(download_id)
-        return filetransfer_manager.get_download_metadata(sanitized_download_id, wait_for_availability)
+        return filetransfer_manager().get_download_metadata(sanitized_download_id, wait_for_availability)
 
     return bp

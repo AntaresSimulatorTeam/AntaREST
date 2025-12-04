@@ -24,6 +24,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
+from antarest.core.typing import Supplier
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -52,7 +53,7 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_study_routes(study_service: StudyService, config: Config) -> APIRouter:
+def create_study_routes(study_service: Supplier[StudyService], config: Config) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
@@ -145,7 +146,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             access_permissions=AccessPermissions.for_current_user(),
         )
 
-        matching_studies = study_service.get_studies_information(
+        matching_studies = study_service().get_studies_information(
             study_filter=study_filter,
             sort_by=sort_by,
             pagination=StudyPagination(page_nb=page_nb, page_size=page_size),
@@ -196,7 +197,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info("Counting matching studies")
         user_list = [int(v) for v in _split_comma_separated_values(users)]
 
-        count = study_service.count_studies(
+        count = study_service().count_studies(
             study_filter=StudyFilter(
                 name=name,
                 managed=managed,
@@ -242,7 +243,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         try:
-            uuid = study_service.import_study(study.file, group_ids)
+            uuid = study_service().import_study(study.file, group_ids)
         except BadArchiveContent as e:
             raise BadZipBinary(str(e))
 
@@ -274,7 +275,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         )
         logger.info(msg)
         # returns the task ID
-        return study_service.upgrade_study(uuid, target_version)
+        return study_service().upgrade_study(uuid, target_version)
 
     @bp.post(
         "/studies/{uuid}/copy",
@@ -316,7 +317,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = validate_study_name(escape(study_name))
 
-        task_id = study_service.copy_study(
+        task_id = study_service().copy_study(
             src_uuid=uuid_sanitized,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
@@ -334,7 +335,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def move_study(uuid: str, folder_dest: str) -> None:
         logger.info(f"Moving study {uuid} into folder '{folder_dest}'")
-        study_service.move_study(uuid, validate_folder_path(folder_dest))
+        study_service().move_study(uuid, validate_folder_path(folder_dest))
 
     @bp.post(
         "/studies",
@@ -356,7 +357,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         directory_path_sanitized = validate_folder_path(directory) if directory else ""
 
-        uuid = study_service.create_study(name_sanitized, version, group_ids, directory=directory_path_sanitized)
+        uuid = study_service().create_study(name_sanitized, version, group_ids, directory=directory_path_sanitized)
 
         return uuid
 
@@ -367,7 +368,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def get_study_synthesis(uuid: str) -> FileStudyTreeConfigDTO:
         study_id = sanitize_uuid(uuid)
         logger.info(f"Return a synthesis for study '{study_id}'")
-        return study_service.get_study_synthesis(study_id)
+        return study_service().get_study_synthesis(study_id)
 
     @bp.get(
         "/studies/{uuid}/matrixindex",
@@ -376,7 +377,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def get_study_matrix_index(uuid: str, path: str = "") -> MatrixIndex:
         study_id = sanitize_uuid(uuid)
         logger.info(f"Return the start date for input matrix '{study_id}'")
-        return study_service.get_input_matrix_startdate(study_id, path)
+        return study_service().get_input_matrix_startdate(study_id, path)
 
     @bp.get(
         "/studies/{uuid}/export",
@@ -386,7 +387,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info(f"Exporting study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
 
-        return study_service.export_study(uuid_sanitized, not no_output)
+        return study_service().export_study(uuid_sanitized, not no_output)
 
     @bp.delete(
         "/studies/{uuid}",
@@ -397,7 +398,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info(f"Deleting study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
 
-        study_service.delete_study(uuid_sanitized, children)
+        study_service().delete_study(uuid_sanitized, children)
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",
@@ -407,7 +408,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def change_owner(uuid: str, user_id: int) -> None:
         logger.info(f"Changing owner to {user_id} for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-        study_service.change_owner(uuid_sanitized, user_id)
+        study_service().change_owner(uuid_sanitized, user_id)
 
     @bp.put(
         "/studies/{uuid}/groups/{group_id}",
@@ -418,7 +419,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info(f"Adding group {group_id} to study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_string(group_id)
-        study_service.add_group(uuid_sanitized, group_id)
+        study_service().add_group(uuid_sanitized, group_id)
 
     @bp.delete(
         "/studies/{uuid}/groups/{group_id}",
@@ -430,7 +431,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_string(group_id)
 
-        study_service.remove_group(uuid_sanitized, group_id)
+        study_service().remove_group(uuid_sanitized, group_id)
 
     @bp.put(
         "/studies/{uuid}/public_mode/{mode}",
@@ -440,7 +441,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def set_public_mode(uuid: str, mode: PublicMode) -> None:
         logger.info(f"Setting public mode to {mode} for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-        study_service.set_public_mode(uuid_sanitized, mode)
+        study_service().set_public_mode(uuid_sanitized, mode)
 
     @bp.get(
         "/studies/_versions",
@@ -456,7 +457,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def get_study_metadata(uuid: str) -> StudyMetadataDTO:
         logger.info(f"Fetching study {uuid} metadata")
-        study_metadata = study_service.get_study_information(uuid)
+        study_metadata = study_service().get_study_information(uuid)
         return study_metadata
 
     @bp.put(
@@ -467,7 +468,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info(f"Updating metadata for study {uuid}")
         if study_metadata_patch.name:
             study_metadata_patch.name = validate_study_name(study_metadata_patch.name)
-        study_metadata = study_service.update_study_information(uuid, study_metadata_patch)
+        study_metadata = study_service().update_study_information(uuid, study_metadata_patch)
         return study_metadata
 
     @bp.put(
@@ -477,7 +478,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def archive_study(study_id: str) -> str:
         logger.info(f"Archiving study {study_id}")
         study_id = sanitize_uuid(study_id)
-        return study_service.archive(study_id)
+        return study_service().archive(study_id)
 
     @bp.put(
         "/studies/{study_id}/unarchive",
@@ -486,7 +487,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def unarchive_study(study_id: str) -> str:
         logger.info(f"Unarchiving study {study_id}")
         study_id = sanitize_uuid(study_id)
-        return study_service.unarchive(study_id)
+        return study_service().unarchive(study_id)
 
     @bp.get(
         "/studies/{uuid}/disk-usage",
@@ -503,7 +504,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         - The disk usage of the study in bytes.
         """
         logger.info("Retrieving study disk usage")
-        return study_service.get_disk_usage(uuid=uuid)
+        return study_service().get_disk_usage(uuid=uuid)
 
     @bp.put(
         "/studies/{study_id}/normalize",
@@ -517,6 +518,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         """
         logger.info(f"Normalizing study {study_id}")
         study_id = sanitize_uuid(study_id)
-        return study_service.normalize_study_by_id(study_id)
+        return study_service().normalize_study_by_id(study_id)
 
     return bp

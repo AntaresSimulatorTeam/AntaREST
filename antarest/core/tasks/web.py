@@ -20,6 +20,7 @@ from fastapi import APIRouter, HTTPException, Query
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, TaskJobService
+from antarest.core.typing import Supplier
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -27,7 +28,7 @@ from antarest.login.auth import Auth
 logger = logging.getLogger(__name__)
 
 
-def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
+def create_tasks_api(service: Supplier[TaskJobService], config: Config) -> APIRouter:
     """
     Endpoints login implementation
 
@@ -43,11 +44,11 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
 
     @bp.post("/tasks", deprecated=True)
     def list_tasks(filter: TaskListFilter) -> list[TaskDTO]:
-        return service.list_tasks(filter)
+        return service().list_tasks(filter)
 
     @bp.get("/tasks")
     def get_task_list(task_filter: Annotated[TaskListFilter, Query()]) -> list[TaskDTO]:
-        return service.list_tasks(task_filter)
+        return service().list_tasks(task_filter)
 
     @bp.get("/tasks/{task_id}")
     def get_task(
@@ -73,13 +74,13 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         """
         sanitized_task_id = sanitize_uuid(task_id)
 
-        task_status = service.status_task(sanitized_task_id, with_logs)
+        task_status = service().status_task(sanitized_task_id, with_logs)
 
         if wait_for_completion and not task_status.status.is_final():
             # Ensure 0 <= timeout <= 48 h
             timeout = min(max(0, timeout), DEFAULT_AWAIT_MAX_TIMEOUT)
             try:
-                service.await_task(sanitized_task_id, timeout_sec=timeout)
+                service().await_task(sanitized_task_id, timeout_sec=timeout)
             except TimeoutError as exc:  # pragma: no cover
                 # Note that if the task does not complete within the specified time,
                 # the task will continue running but the user will receive a timeout.
@@ -89,12 +90,12 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
                     detail="The request timed out while waiting for task completion.",
                 ) from exc
 
-        return service.status_task(sanitized_task_id, with_logs)
+        return service().status_task(sanitized_task_id, with_logs)
 
     @bp.put("/tasks/{task_id}/cancel", status_code=HTTPStatus.ACCEPTED)
     def cancel_task(task_id: str) -> None:
         logger.info(f"Requesting cancellation for task {task_id}")
-        service.cancel_task(task_id)
+        service().cancel_task(task_id)
 
     @bp.get(
         "/tasks/{task_id}/progress",
@@ -103,6 +104,6 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     def get_progress(task_id: str) -> Optional[int]:
         sanitized_task_id = sanitize_uuid(task_id)
         logger.info(f"Fetching task progress of task {sanitized_task_id}")
-        return service.get_task_progress(sanitized_task_id)
+        return service().get_task_progress(sanitized_task_id)
 
     return bp

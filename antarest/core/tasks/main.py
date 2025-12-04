@@ -10,33 +10,24 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 import prometheus_client
 
-from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.metrics import TasksMetricsRecorder
 from antarest.core.tasks.repository import TaskJobRepository
-from antarest.core.tasks.service import ITaskService, TaskJobService
-from antarest.core.tasks.web import create_tasks_api
+from antarest.core.tasks.service import TaskJobService
 
 
 def build_taskjob_manager(
-    app_ctxt: Optional[AppBuildContext],
     config: Config,
     event_bus: IEventBus = DummyEventBusService(),
-) -> ITaskService:
+) -> TaskJobService:
     repository = TaskJobRepository()
 
     listeners = []
     if config.metrics.prometheus:
         listeners.append(TasksMetricsRecorder(prometheus_client.REGISTRY))
 
-    service = TaskJobService(config, repository, event_bus, listeners=listeners)
-
-    if app_ctxt:
-        app_ctxt.api_root.include_router(create_tasks_api(service, config))
-
-    return service
+    return TaskJobService(config, repository, event_bus, listeners=listeners)

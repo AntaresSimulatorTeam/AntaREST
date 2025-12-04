@@ -13,13 +13,16 @@
 import logging
 from dataclasses import dataclass
 from enum import StrEnum
+from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple, TypeVar
 
 import redis
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
 from antarest.blobstore.main import build_blob_service
@@ -27,33 +30,50 @@ from antarest.blobstore.service import BlobService
 from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config, RedisConfig
+from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.filetransfer.web import create_file_transfer_api
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.maintenance.service import MaintenanceService
+from antarest.core.maintenance.web import create_maintenance_api
 from antarest.core.metrics import add_db_metrics
 from antarest.core.persistence import upgrade_db
 from antarest.core.tasks.main import build_taskjob_manager
-from antarest.core.tasks.service import ITaskService
+from antarest.core.tasks.service import TaskJobService
+from antarest.core.tasks.web import create_tasks_api
+from antarest.core.typing import Supplier
 from antarest.eventbus.main import build_eventbus
+from antarest.eventbus.web import ConnectionManager
+from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
+from antarest.launcher.web import create_launcher_api
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
+from antarest.login.web import create_login_api, create_user_api
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import MatrixService
+from antarest.study.directory_service import DirectoryService
 from antarest.study.main import build_study_service
+from antarest.study.repository import DirectoryRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.watcher import Watcher
-from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
+from antarest.study.web.directory_blueprint import create_directory_routes
 from antarest.study.web.explorer_blueprint import create_explorer_routes
+from antarest.study.web.output_blueprint import create_output_routes
+from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
+from antarest.study.web.studies_blueprint import create_study_routes
+from antarest.study.web.study_data_blueprint import create_study_data_routes
+from antarest.study.web.variant_blueprint import create_study_variant_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
+from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
 
@@ -128,35 +148,38 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
     return redis_client  # type: ignore
 
 
-def create_event_bus(app_ctxt: Optional[AppBuildContext], config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
+# TODO: connection manager optional
+def create_event_bus(connection_manager: ConnectionManager, config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:
     redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
-        build_eventbus(app_ctxt, config, True, redis_client),
+        build_eventbus(connection_manager, True, redis_client),
         redis_client,
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class CoreServices:
     cache: ICache
     event_bus: IEventBus
-    task_service: ITaskService
+    task_service: TaskJobService
     file_transfer_manager: FileTransferManager
     login_service: LoginService
     matrix_service: MatrixService
     study_service: StudyService
     output_service: OutputService
     blob_service: BlobService
+    directory_service: DirectoryService
+    connection_manager: ConnectionManager
 
 
-def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
-    event_bus, redis_client = create_event_bus(app_ctxt, config)
+def create_core_services(config: Config) -> CoreServices:
+    connection_manager = ConnectionManager()
+    event_bus, redis_client = create_event_bus(connection_manager, config)
     cache = build_cache(config=config, redis_client=redis_client)
-    task_service = build_taskjob_manager(app_ctxt, config, event_bus)
-    filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
-    login_service = build_login(app_ctxt, config, event_bus=event_bus)
+    task_service = build_taskjob_manager(config, event_bus)
+    filetransfer_service = build_filetransfer_service(event_bus, config)
+    login_service = build_login(config, event_bus=event_bus)
     matrix_service = build_matrix_service(
-        app_ctxt,
         config=config,
         file_transfer_manager=filetransfer_service,
         task_service=task_service,
@@ -164,8 +187,13 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         service=None,
     )
     blob_service = build_blob_service(config=config, service=None)
-    study_service = build_study_service(
-        app_ctxt,
+
+    directory_repository = DirectoryRepository()
+    directory_service = DirectoryService(
+        directory_repository=directory_repository,
+    )
+
+    study_service, output_service = build_study_service(
         config,
         matrix_service=matrix_service,
         cache=cache,
@@ -174,16 +202,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         user_service=login_service,
         event_bus=event_bus,
         blob_service=blob_service,
-    )
-    storage_dispatcher = OutputStorageDispatcher(
-        study_service.storage_service.raw_study_service, study_service.storage_service.variant_study_service
-    )
-    output_service = OutputService(
-        study_service=study_service,
-        storage=storage_dispatcher,
-        task_service=task_service,
-        file_transfer_manager=filetransfer_service,
-        event_bus=event_bus,
+        directory_service=directory_service,
     )
     return CoreServices(
         cache=cache,
@@ -195,6 +214,8 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         study_service=study_service,
         output_service=output_service,
         blob_service=blob_service,
+        directory_service=directory_service,
+        connection_manager=connection_manager,
     )
 
 
@@ -217,7 +238,6 @@ def create_blob_gc(config: Config, blob_service: BlobService) -> BlobGarbageColl
 
 def create_watcher(
     config: Config,
-    app_ctxt: Optional[AppBuildContext],
     study_service: Optional[StudyService] = None,
 ) -> Watcher:
     if study_service:
@@ -227,35 +247,25 @@ def create_watcher(
             task_service=study_service.task_service,
         )
     else:
-        core_services = create_core_services(app_ctxt, config)
+        core_services = create_core_services(config)
         watcher = Watcher(
             config=config,
             study_service=core_services.study_service,
             task_service=core_services.task_service,
         )
-
-    if app_ctxt:
-        app_ctxt.api_root.include_router(create_watcher_routes(watcher=watcher, config=config))
-
     return watcher
 
 
-def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext]) -> Explorer:
-    explorer = Explorer(config=config)
-    if app_ctxt:
-        app_ctxt.api_root.include_router(create_explorer_routes(config=config, explorer=explorer))
-
-    return explorer
+def create_explorer(config: Config) -> Explorer:
+    return Explorer(config=config)
 
 
 def create_archive_worker(
     config: Config,
     workspace: str,
+    event_bus: IEventBus,
     local_root: Path = Path("/"),
-    event_bus: Optional[IEventBus] = None,
 ) -> AbstractWorker:
-    if not event_bus:
-        event_bus, _ = create_event_bus(None, config)
     return ArchiveWorker(event_bus, workspace, local_root, config)
 
 
@@ -265,25 +275,28 @@ class Services:
     explorer: Explorer
     event_bus: IEventBus
     study: StudyService
+    output: OutputService
     matrix: MatrixService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
+    task: TaskJobService
+    directory: DirectoryService
+    ftm: FileTransferManager
     launcher: Optional[LauncherService] = None
     matrix_gc: Optional[MatrixGarbageCollector] = None
     auto_archiver: Optional[AutoArchiveService] = None
     blob_gc: Optional[BlobGarbageCollector] = None
 
 
-def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Services:
-    core_services = create_core_services(app_ctxt, config)
+def create_services(config: Config, create_all: bool = False) -> Services:
+    core_services = create_core_services(config)
 
     maintenance_service = build_maintenance_manager(
-        app_ctxt, config=config, cache=core_services.cache, event_bus=core_services.event_bus
+        config=config, cache=core_services.cache, event_bus=core_services.event_bus
     )
 
     launcher = build_launcher(
-        app_ctxt,
         config,
         study_service=core_services.study_service,
         output_service=core_services.output_service,
@@ -294,8 +307,8 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         cache=core_services.cache,
     )
 
-    watcher = create_watcher(config=config, app_ctxt=app_ctxt, study_service=core_services.study_service)
-    explorer_service = create_explorer(config=config, app_ctxt=app_ctxt)
+    watcher = create_watcher(config=config, study_service=core_services.study_service)
+    explorer_service = create_explorer(config=config)
 
     matrix_garbage_collector = None
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
@@ -308,6 +321,20 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     auto_archiver = None
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
         auto_archiver = AutoArchiveService(core_services.study_service, core_services.output_service, config)
+
+    # Important note:
+    # those singleton services must be "started" ONLY when explictly asked.
+    # Typically for a production multi-process deployment, they should not be started
+    # for each HTTP worker, but only for one dedicated background worker.
+    if watcher and Module.WATCHER in config.server.services:
+        watcher.start()
+
+    if matrix_garbage_collector and Module.MATRIX_GC in config.server.services:
+        matrix_garbage_collector.start()
+    if auto_archiver and Module.AUTO_ARCHIVER in config.server.services:
+        auto_archiver.start()
+    if blob_garbage_collector and Module.BLOB_GC in config.server.services:
+        blob_garbage_collector.start()
 
     return Services(
         watcher=watcher,
@@ -322,4 +349,60 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,
         blob_gc=blob_garbage_collector,
+        task=core_services.task_service,
+        directory=core_services.directory_service,
+        output=core_services.output_service,
+        ftm=core_services.file_transfer_manager,
     )
+
+
+T = TypeVar("T")
+
+
+def _raises_if_none(supplier: Supplier[T | None]) -> Supplier[T]:
+    def wrapped_supplier() -> T:
+        value = supplier()
+        if value is None:
+            raise ValueError("Service not initialized")
+        return value
+
+    return wrapped_supplier
+
+
+def create_routes(app_ctxt: AppBuildContext, services: Supplier[Services], config: Config) -> None:
+    root = app_ctxt.api_root
+
+    # Technical routes
+    root.include_router(create_login_api(lambda: services().user))
+    root.include_router(create_user_api(lambda: services().user, config))
+    root.include_router(create_maintenance_api(lambda: services().maintenance, config))
+    root.include_router(create_tasks_api(lambda: services().task, config))
+    root.include_router(create_utils_routes(config))
+    root.include_router(create_file_transfer_api(lambda: services().ftm, config))
+    # TODO: filesystem
+
+    @app_ctxt.app.exception_handler(AuthJWTException)
+    def authjwt_exception_handler(request: Request, exc: AuthJWTException) -> Any:
+        return JSONResponse(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            content={"detail": exc.message},
+        )
+
+    # Launcher
+    root.include_router(create_launcher_api(_raises_if_none(lambda: services().launcher), config))
+
+    # Studies
+    root.include_router(create_study_routes(lambda: services().study, config))
+    root.include_router(create_study_data_routes(lambda: services().study, config))
+    root.include_router(create_xpansion_routes(lambda: services().study, config))
+    root.include_router(create_raw_study_routes(lambda: services().study, config))
+    root.include_router(create_study_variant_routes(lambda: services().study, config))
+
+    root.include_router(create_explorer_routes(config, lambda: services().explorer))
+    root.include_router(create_directory_routes(lambda: services().directory, config))
+    root.include_router(create_watcher_routes(lambda: services().watcher, config))
+
+    # Outputs
+    root.include_router(create_output_routes(lambda: services().output, config))
+
+    # TODO: Websockets

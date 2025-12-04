@@ -19,7 +19,8 @@ from antarest import __version__
 from antarest.core.config import Config
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.utils import get_local_path
-from antarest.service_creator import create_archive_worker
+from antarest.eventbus.web import ConnectionManager
+from antarest.service_creator import create_archive_worker, create_event_bus
 
 # use the real module name instead of `__name__` (because `__name__ == "__main__"`)
 logger = logging.getLogger("antarest.worker.archive_worker_service")
@@ -71,6 +72,7 @@ def run_archive_worker(args: ArgsType = None) -> None:
     # Handler for logging to a file, rotating the log file at certain timed intervals.
     configure_logger(config, handler_cls="logging.handlers.TimedRotatingFileHandler")
     logger.info(f"Starting Archive Worker for {namespace}...")
-    worker = create_archive_worker(config, workspace, Path(local_root))
+    event_bus, _ = create_event_bus(ConnectionManager(), config)
+    worker = create_archive_worker(config, workspace, event_bus, Path(local_root))
     worker.start(threaded=False)
     logger.info("Archive Worker task is done, bye.")

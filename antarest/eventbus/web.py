@@ -21,12 +21,11 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.json import to_json_string
+from antarest.core.typing import Supplier
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
 
@@ -92,21 +91,16 @@ class ConnectionManager:
                 await connection.websocket.send_text(message)
 
 
-def configure_websockets(app_ctxt: AppBuildContext, config: Config, event_bus: IEventBus) -> None:
-    manager = ConnectionManager()
-
-    async def send_event_to_ws(event: Event) -> None:
-        event_data = event.model_dump()
-        del event_data["permissions"]
-        del event_data["channel"]
-        await manager.broadcast(to_json_string(event_data), event.permissions, event.channel)
-
+def configure_websockets(
+    app_ctxt: AppBuildContext, config: Config, connection_manager: Supplier[ConnectionManager]
+) -> None:
     @app_ctxt.api_root.websocket("/ws")
     async def connect(
         websocket: WebSocket,
         token: str = Query(...),
         jwt_manager: AuthJWT = Depends(),
     ) -> None:
+        manager = connection_manager()
         user: Optional[JWTUser] = None
         if not config.security.disabled:
             try:
@@ -134,5 +128,3 @@ def configure_websockets(app_ctxt: AppBuildContext, config: Config, event_bus: I
                     )
         except WebSocketDisconnect:
             manager.disconnect(websocket)
-
-    event_bus.add_listener(send_event_to_ws)

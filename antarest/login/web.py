@@ -22,6 +22,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
+from antarest.core.typing import Supplier
 from antarest.core.utils.web import APITag
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
@@ -62,7 +63,7 @@ def _generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timed
     )
 
 
-def create_user_api(service: LoginService, config: Config) -> APIRouter:
+def create_user_api(service: Supplier[LoginService], config: Config) -> APIRouter:
     """
     Endpoints user implementation
 
@@ -79,16 +80,16 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get("/users")
     def users_get_all(details: bool = False) -> list[IdentityDTO | UserInfo]:
         logger.info("Fetching users list")
-        return service.get_all_users(details)
+        return service().get_all_users(details)
 
     @bp.get("/users/{id}")
     def users_get_id(id: int, details: bool = False) -> IdentityDTO | UserInfo:
         logger.info(f"Fetching user info for {id}")
         u: IdentityDTO | UserInfo | None = None
         if details:
-            u = service.get_user_info(id)
+            u = service().get_user_info(id)
         else:
-            ou = service.get_user(id)
+            ou = service().get_user(id)
             if ou:
                 u = ou.to_dto()
         if u:
@@ -100,7 +101,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
     def users_create(create_user: UserCreateDTO) -> UserInfo:
         logger.info(f"Creating new user '{create_user.name}'")
 
-        return service.create_user(create_user).to_dto()
+        return service().create_user(create_user).to_dto()
 
     @bp.put("/users/{id}")
     def users_update(id: int, user_info: UserInfo) -> UserInfo:
@@ -109,33 +110,33 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         if id != user_info.id:
             raise HTTPException(status_code=400, detail="Id in path must be same id in body")
 
-        return service.save_user(User.from_dto(user_info)).to_dto()
+        return service().save_user(User.from_dto(user_info)).to_dto()
 
     @bp.delete("/users/{id}")
     def users_delete(id: int) -> None:
         logger.info(f"Removing user {id}")
-        service.delete_user(id)
+        service().delete_user(id)
 
     @bp.delete("/users/roles/{id}")
     def roles_delete_by_user(id: int) -> None:
         logger.info(f"Removing user {id} roles")
-        service.delete_all_roles_from_user(id)
+        service().delete_all_roles_from_user(id)
 
     @bp.get(
         "/groups",
     )
     def groups_get_all(details: bool = False) -> list[GroupDetailDTO | GroupDTO]:
         logger.info("Fetching groups list")
-        return service.get_all_groups(details)
+        return service().get_all_groups(details)
 
     @bp.get("/groups/{id}")
     def groups_get_id(id: str, details: bool = False) -> GroupDetailDTO | GroupDTO:
         logger.info(f"Fetching group {id} info")
         group: GroupDetailDTO | GroupDTO | None = None
         if details:
-            group = service.get_group_info(id)
+            group = service().get_group_info(id)
         else:
-            optional_group = service.get_group(id)
+            optional_group = service().get_group(id)
             if optional_group:
                 group = optional_group.to_dto()
         if group:
@@ -150,35 +151,35 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
             id=group_dto.id,
             name=group_dto.name,
         )
-        return service.save_group(group).to_dto()
+        return service().save_group(group).to_dto()
 
     @bp.delete("/groups/{id}")
     def groups_delete(id: str) -> None:
         logger.info(f"Removing group {id}")
-        service.delete_group(id)
+        service().delete_group(id)
 
     @bp.get("/roles/group/{group}")
     def roles_get_all(group: str) -> list[RoleDetailDTO]:
         logger.info(f"Fetching roles for group {group}")
-        return [r.to_dto() for r in service.get_all_roles_in_group(group=group)]
+        return [r.to_dto() for r in service().get_all_roles_in_group(group=group)]
 
     @bp.post("/roles")
     def role_create(role: RoleCreationDTO) -> RoleDetailDTO:
         logger.info(f"Creating new role ({role.group_id},{role.type}) for {role.identity_id}")
-        return service.save_role(role).to_dto()
+        return service().save_role(role).to_dto()
 
     @bp.delete("/roles/{group}/{user}")
     def roles_delete(user: int, group: str) -> None:
         logger.info(f"Remove role in group {group} for {user}")
-        service.delete_role(user, group)
+        service().delete_role(user, group)
 
     @bp.post("/bots", summary="Create bot token")
     def bots_create(create: BotCreateDTO, jwt_manager: AuthJWT = Depends()) -> str:
         logger.info(f"Creating new bot '{create.name}'")
-        bot = service.save_bot(create)
+        bot = service().save_bot(create)
         groups = []
         for role in create.roles:
-            group = service.get_group(role.group)
+            group = service().get_group(role.group)
             if not group:
                 raise UserHasNotPermissionError()
             jwt_group = JWTGroup(
@@ -200,7 +201,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get("/bots/{id}")
     def get_bot(id: int, verbose: Optional[int] = None) -> BotIdentityDTO | BotDTO:
         logger.info(f"Fetching bot {id}")
-        bot = service.get_bot_info(id) if verbose else service.get_bot(id).to_dto()
+        bot = service().get_bot_info(id) if verbose else service().get_bot(id).to_dto()
         if not bot:
             raise UserHasNotPermissionError()
         return bot
@@ -212,7 +213,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
     def get_all_bots(owner: Optional[int] = None) -> list[BotDTO]:
         logger.info(f"Fetching bot list for {owner or get_user_id()}")
 
-        bots = service.get_all_bots_by_owner(owner) if owner else service.get_all_bots()
+        bots = service().get_all_bots_by_owner(owner) if owner else service().get_all_bots()
         return [b.to_dto() for b in bots]
 
     @bp.delete(
@@ -221,7 +222,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
     )
     def bots_delete(id: int) -> None:
         logger.info(f"Removing bot {id}")
-        service.delete_bot(id)
+        service().delete_bot(id)
 
     @bp.get("/auth", include_in_schema=False)
     def auth_needed() -> bool:
@@ -230,7 +231,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
     return bp
 
 
-def create_login_api(service: LoginService) -> APIRouter:
+def create_login_api(service: Supplier[LoginService]) -> APIRouter:
     """
     Endpoints login implementation
 
@@ -248,7 +249,7 @@ def create_login_api(service: LoginService) -> APIRouter:
         jwt_manager: AuthJWT = Depends(),
     ) -> CredentialsDTO:
         logger.info(f"New login for {credentials.username}")
-        user = service.authenticate(credentials.username, credentials.password)
+        user = service().authenticate(credentials.username, credentials.password)
         if not user:
             raise HTTPException(status_code=401, detail="Bad username or password")
 
@@ -265,7 +266,7 @@ def create_login_api(service: LoginService) -> APIRouter:
         jwt_manager.jwt_refresh_token_required()
         identity = from_json(jwt_manager.get_jwt_subject())
         logger.debug(f"Refreshing access token for {identity['id']}")
-        user = service.get_jwt(identity["id"])
+        user = service().get_jwt(identity["id"])
         if user:
             resp = _generate_tokens(user, jwt_manager)
 

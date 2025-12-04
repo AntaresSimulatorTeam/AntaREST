@@ -12,15 +12,16 @@
 import collections
 import logging
 from http import HTTPStatus
-from pathlib import Path
 from typing import Annotated, Any, Sequence
 
-from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from fastapi import APIRouter, Query, Request, UploadFile
+from starlette.background import BackgroundTasks
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.typing import Supplier
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -60,7 +61,7 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_output_routes(output_service: OutputService, config: Config) -> APIRouter:
+def create_output_routes(output_service: Supplier[OutputService], config: Config) -> APIRouter:
     """
     Endpoint implementation for outputs management
 
@@ -83,7 +84,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     def import_output(uuid: str, output: UploadFile) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-        output_id = output_service.import_output(uuid_sanitized, output.file)
+        output_id = output_service().import_output(uuid_sanitized, output.file)
         return output_id
 
     @bp.get(
@@ -94,7 +95,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
-        return output_service.get_output_variables_information(study_id, output_id)
+        return output_service().get_output_variables_information(study_id, output_id)
 
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/export",
@@ -104,7 +105,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
-        return output_service.export_output(study_uuid=study_id, output_uuid=output_id)
+        return output_service().export_output(study_uuid=study_id, output_uuid=output_id)
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/time-index",
@@ -133,7 +134,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         study_id = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
-        return output_service.get_output_time_index(study_id, output_id, frequency)
+        return output_service().get_output_time_index(study_id, output_id, frequency)
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/download",
@@ -141,12 +142,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         response_model=None,  # only pydantic models are supported as response model
     )
     def output_download(
+        background_tasks: BackgroundTasks,
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
         request: Request,
         use_task: bool = False,
-        tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
     ) -> Response | FileDownloadTaskDTO | FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
@@ -154,7 +155,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         accept = request.headers["Accept"]
         filetype = ExportFormat.from_dto(accept)
 
-        content = output_service.download_outputs(
+        tmp_export_file = output_service()._file_transfer_manager.request_tmp_file(background_tasks)
+
+        content = output_service().download_outputs(
             study_id,
             output_id,
             data,
@@ -172,7 +175,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"FDeleting output {output_id} from study {study_id}")
-        output_service.delete_output(study_id, output_id)
+        output_service().delete_output(study_id, output_id)
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/_archive",
@@ -183,7 +186,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         output_id = sanitize_string(output_id)
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
 
-        content = output_service.archive_output(study_id, output_id)
+        content = output_service().archive_output(study_id, output_id)
         return content
 
     @bp.post(
@@ -195,7 +198,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         output_id = sanitize_string(output_id)
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
 
-        content = output_service.unarchive_output(study_id, output_id)
+        content = output_service().unarchive_output(study_id, output_id)
         return content
 
     @bp.get(
@@ -206,7 +209,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
-        return output_service.get_digest_file(study_id, output_id)
+        return output_service().get_digest_file(study_id, output_id)
 
     @bp.get(
         "/studies/{study_id}/outputs",
@@ -215,7 +218,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     def sim_result(study_id: str) -> list[StudySimResultDTO]:
         logger.info(f"Fetching output list for study {study_id}")
         study_id = sanitize_uuid(study_id)
-        content = output_service.get_study_sim_result(study_id)
+        content = output_service().get_study_sim_result(study_id)
         return content
 
     @bp.get(
@@ -264,7 +267,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.create_aggregated_output_data_download(
+        return output_service().create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -341,7 +344,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.create_aggregated_output_data_download(
+        return output_service().create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -418,7 +421,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return output_service.create_aggregated_output_data_download(
+        return output_service().create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -494,7 +497,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             f"Aggregate output '{output_id}' data for study '{uuid}' and prepares the output in a {export_format} file."
         )
 
-        return output_service.create_aggregated_output_data_download(
+        return output_service().create_aggregated_output_data_download(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -532,7 +535,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     def get_output_variables_list(uuid: str, output_id: str) -> OutputVariablesList:
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        return output_service.get_output_variables_list(uuid, output_id)
+        return output_service().get_output_variables_list(uuid, output_id)
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/variables-views/data",
@@ -558,7 +561,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        dataframe = output_service.get_output_variables_view(
+        dataframe = output_service().get_output_variables_view(
             uuid,
             output_id,
             type,
@@ -598,7 +601,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        return output_service.materialize_output_variables_view(
+        return output_service().materialize_output_variables_view(
             uuid,
             output_id,
             type,

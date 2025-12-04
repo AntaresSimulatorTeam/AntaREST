@@ -18,6 +18,7 @@ from typing import List
 from fastapi import APIRouter
 
 from antarest.core.config import Config
+from antarest.core.typing import Supplier
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.storage.rawstudy.watcher import Watcher
@@ -31,7 +32,7 @@ class BadPathFormatError(HTTPException):
 
 
 def create_watcher_routes(
-    watcher: Watcher,
+    watcher: Supplier[Watcher],
     config: Config,
 ) -> APIRouter:
     """
@@ -68,6 +69,6 @@ def create_watcher_routes(
             logger.info("Scanning all workspaces")
             relative_path = None
             workspace = None
-        return watcher.oneshot_scan(recursive=recursive, workspace=workspace, path=relative_path)
+        return watcher().oneshot_scan(recursive=recursive, workspace=workspace, path=relative_path)
 
     return bp

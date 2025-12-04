@@ -15,7 +15,7 @@ import copy
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Optional, Tuple, cast
+from typing import Any, AsyncGenerator, Dict, Optional, cast
 
 import pydantic
 import uvicorn
@@ -31,19 +31,19 @@ from antarest import __version__
 from antarest.core.application import AppBuildContext
 from antarest.core.cli import PathType
 from antarest.core.config import Config
-from antarest.core.core_blueprint import create_utils_routes
-from antarest.core.filesystem_blueprint import create_file_system_blueprint
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.metrics import add_metrics
 from antarest.core.swagger import customize_openapi
+from antarest.core.typing import Supplier
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
-from antarest.service_creator import SESSION_ARGS, Module, Services, create_services, init_db_engine
+from antarest.service_creator import SESSION_ARGS, Module, Services, create_routes, create_services, init_db_engine
 from antarest.singleton_services import start_all_services
 from antarest.tools.admin_lib import clean_locks
 
@@ -197,9 +197,30 @@ def fastapi_app(
     resource_path: Optional[Path] = None,
     mount_front: bool = True,
     auto_upgrade_db: bool = False,
-) -> Tuple[FastAPI, Services]:
+) -> FastAPI:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
+
+    # database initialization
+    engine = init_db_engine(config_file, config, auto_upgrade_db)
+    init_db_singleton(custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
+
+    # Services creation and starting
+    services = create_services(config)
+    supplier = lambda: services
+
+    # Finally, create the API app
+    return _fastapi_app(config, supplier, resource_path, mount_front)
+
+
+def _fastapi_app(
+    config: Config,
+    services: Supplier[Services],
+    resource_path: Optional[Path] = None,
+    mount_front: bool = True,
+) -> FastAPI:
+    res = resource_path or get_local_path() / "resources"
     configure_logger(config)
 
     logger.info("Initiating application")
@@ -227,13 +248,8 @@ def fastapi_app(
 
     app_ctxt = AppBuildContext(application, api_root)
 
-    # Database
-    engine = init_db_engine(config_file, config, auto_upgrade_db)
-    application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
-    # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
-    # But we need to instantiate this middleware as it's needed for the study service.
-    # So we manually instantiate it here.
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    # Database middleware
+    application.add_middleware(DBSessionMiddleware)
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
@@ -253,29 +269,11 @@ def fastapi_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    api_root.include_router(create_utils_routes(config))
-    api_root.include_router(create_file_system_blueprint(config))
 
     add_exception_handlers(application)
 
-    init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
-    services = create_services(config, app_ctxt)
-
+    create_routes(app_ctxt, services, config)
     application.include_router(api_root)
-
-    # Important note:
-    # those singleton services must be "started" ONLY when explictly asked.
-    # Typically for a production multi-process deployment, they should not be started
-    # for each HTTP worker, but only for one dedicated background worker.
-    if services.watcher and Module.WATCHER in config.server.services:
-        services.watcher.start()
-
-    if services.matrix_gc and Module.MATRIX_GC in config.server.services:
-        services.matrix_gc.start()
-    if services.auto_archiver and Module.AUTO_ARCHIVER in config.server.services:
-        services.auto_archiver.start()
-    if services.blob_gc and Module.BLOB_GC in config.server.services:
-        services.blob_gc.start()
 
     customize_openapi(application)
 
@@ -293,7 +291,7 @@ def fastapi_app(
     # by inner middlewares are correctly logged with the context of the request.
     application.add_middleware(LoggingMiddleware)
 
-    return application, services
+    return application
 
 
 LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
@@ -313,7 +311,7 @@ def main() -> None:
             arguments.config_file,
             mount_front=not arguments.no_front,
             auto_upgrade_db=arguments.auto_upgrade_db,
-        )[0]
+        )
         # noinspection PyTypeChecker
         uvicorn.run(app, host="0.0.0.0", port=8080, log_config=LOGGING_CONFIG)
     else:

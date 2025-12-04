@@ -12,6 +12,7 @@
 import os
 import typing as t
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
@@ -21,9 +22,12 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
+from antarest.core.config import Config, ExternalAuthConfig, SecurityConfig
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.dbmodel import Base
-from antarest.main import fastapi_app
-from antarest.service_creator import Services
+from antarest.login.model import init_admin_user
+from antarest.main import _fastapi_app
+from antarest.service_creator import SESSION_ARGS, Services, create_services, init_db_engine
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
 
@@ -34,8 +38,36 @@ RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 RUN_ON_WINDOWS = os.name == "nt"
 
 
+@dataclass
+class ServicesSupplier:
+    services: Services | None = None
+
+    def get_services(self) -> Services:
+        if self.services is None:
+            raise ValueError("No services supplied")
+        return self.services
+
+
+@pytest.fixture(scope="session")
+def services_supplier() -> ServicesSupplier:
+    return ServicesSupplier()
+
+
+@pytest.fixture(scope="session")
+def global_config() -> Config:
+    config = Config(
+        security=SecurityConfig(
+            disabled=False,
+            jwt_key="super-secret",
+            admin_pwd="admin",
+            external_auth=ExternalAuthConfig(),
+        )
+    )
+    return config
+
+
 @pytest.fixture
-def app_and_services(tmp_path: Path) -> Iterable[tuple[FastAPI, Services]]:
+def services(tmp_path: Path, services_supplier: ServicesSupplier) -> Iterable[Services]:
     # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
@@ -93,19 +125,24 @@ def app_and_services(tmp_path: Path) -> Iterable[tuple[FastAPI, Services]]:
             )
         )
 
-    app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
-    yield app, services
+    config = Config.from_yaml_file(res=RESOURCES_DIR, file=config_path)
+
+    # database initialization
+    engine = init_db_engine(config_path, config, False)
+    init_db_singleton(custom_engine=engine, session_args=SESSION_ARGS)
+    init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
+
+    # Services creation and starting
+    services = create_services(config)
+    services_supplier.services = services
+    yield services
     services.watcher.stop()
+    services_supplier.services = None
 
 
-@pytest.fixture(name="app")
-def app_fixture(app_and_services: tuple[FastAPI, Services]) -> FastAPI:
-    return app_and_services[0]
-
-
-@pytest.fixture
-def services(app_and_services: tuple[FastAPI, Services]) -> Services:
-    return app_and_services[1]
+@pytest.fixture(scope="session")
+def app(services_supplier: ServicesSupplier, global_config: Config) -> FastAPI:
+    return _fastapi_app(global_config, lambda: services_supplier.services, RESOURCES_DIR, mount_front=False)
 
 
 @pytest.fixture
@@ -114,7 +151,7 @@ def study_service(services: Services) -> StudyService:
 
 
 @pytest.fixture(name="client")
-def client_fixture(app: FastAPI) -> TestClient:
+def client_fixture(app: FastAPI, services: Services) -> TestClient:
     """Get the webservice client used for unit testing"""
     return TestClient(app, raise_server_exceptions=False)
 

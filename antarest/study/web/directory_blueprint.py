@@ -17,6 +17,7 @@ from typing import List
 from fastapi import APIRouter
 
 from antarest.core.config import Config
+from antarest.core.typing import Supplier
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.directory_service import DirectoryService
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_directory_routes(
-    directory_service: DirectoryService,
+    directory_service: Supplier[DirectoryService],
     config: Config,
 ) -> APIRouter:
     auth = Auth(config)
@@ -38,7 +39,7 @@ def create_directory_routes(
     )
     def list_directories() -> List[DirectoryMetadata]:
         logger.info("Listing directories for current user")
-        return directory_service.list_directories()
+        return directory_service().list_directories()
 
     @bp.post(
         "/directories",
@@ -47,7 +48,7 @@ def create_directory_routes(
     )
     def create_directory(data: DirectoryCreation) -> DirectoryMetadata:
         logger.info(f"Creating directory '{data.name}'")
-        return directory_service.create_directory(data)
+        return directory_service().create_directory(data)
 
     @bp.patch(
         "/directories/{directory_id}",
@@ -58,7 +59,7 @@ def create_directory_routes(
         Update directory name or parent.
         """
         logger.info(f"Updating directory {directory_id}")
-        return directory_service.update_directory(directory_id, data)
+        return directory_service().update_directory(directory_id, data)
 
     @bp.delete(
         "/directories/{directory_id}",
@@ -70,6 +71,6 @@ def create_directory_routes(
         Delete a directory only if it and all its subdirectories contain no studies.
         """
         logger.info(f"Deleting directory {directory_id}")
-        directory_service.delete_directory(directory_id)
+        directory_service().delete_directory(directory_id)
 
     return bp

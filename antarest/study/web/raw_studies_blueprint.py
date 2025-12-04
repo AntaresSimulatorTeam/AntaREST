@@ -29,6 +29,7 @@ from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
 from antarest.core.swagger import get_path_examples
+from antarest.core.typing import Supplier
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -111,7 +112,7 @@ class MatrixFormat(EnumIgnoreCase):
 
 
 def create_raw_study_routes(
-    study_service: StudyService,
+    study_service: Supplier[StudyService],
     config: Config,
 ) -> APIRouter:
     """
@@ -153,7 +154,7 @@ def create_raw_study_routes(
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
 
-        output = study_service.get_raw_content(uuid, path, depth, formatted)
+        output = study_service().get_raw_content(uuid, path, depth, formatted)
 
         if isinstance(output, pd.DataFrame):
             if matrix_format is None:
@@ -167,7 +168,7 @@ def create_raw_study_routes(
         if isinstance(output, bytes):
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
-            parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True)
+            parent_cfg = study_service().get(uuid, str(resource_path.parent), depth=2, formatted=True)
             child = parent_cfg[resource_path.name]
             suffix = PurePosixPath(child).suffix
 
@@ -228,7 +229,7 @@ def create_raw_study_routes(
         Returns the fetched file in its original format.
         """
         logger.info(f"📘 Fetching file at {path} from study {uuid}")
-        original_file = study_service.get_file(uuid, path)
+        original_file = study_service().get_file(uuid, path)
         filename = original_file.filename
         output = original_file.content
         suffix = original_file.suffix
@@ -258,7 +259,7 @@ def create_raw_study_routes(
     ) -> None:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
-        study_service.delete_user_file_or_folder(uuid, path)
+        study_service().delete_user_file_or_folder(uuid, path)
 
     @bp.post(
         "/studies/{uuid}/raw",
@@ -272,7 +273,7 @@ def create_raw_study_routes(
         """
         logger.info(f"Editing data at {path} for study {uuid}")
         path = sanitize_string(path)
-        return study_service.edit_study(uuid, path, data)
+        return study_service().edit_study(uuid, path, data)
 
     @bp.put(
         "/studies/{uuid}/raw",
@@ -305,10 +306,10 @@ def create_raw_study_routes(
         path = sanitize_string(path)
         if resource_type == ResourceType.FOLDER:  # type: ignore
             logger.info(f"Creating folder {path} for study {uuid}")
-            study_service.create_user_folder(uuid, path)
+            study_service().create_user_folder(uuid, path)
         else:
             logger.info(f"Uploading new data file at {path} for study {uuid}")
-            study_service.edit_study(uuid, path, file)
+            study_service().edit_study(uuid, path, file)
 
     @bp.get(
         "/studies/{uuid}/raw/download",
@@ -347,7 +348,7 @@ def create_raw_study_routes(
         uuid = sanitize_uuid(uuid)
         matrix_path = sanitize_string(matrix_path)
 
-        df_matrix = study_service.get_matrix_with_index_and_header(
+        df_matrix = study_service().get_matrix_with_index_and_header(
             study_id=uuid, path=matrix_path, with_index=with_index, with_header=with_header
         )
 
@@ -357,7 +358,7 @@ def create_raw_study_routes(
 
         return export_file(
             df_matrix,
-            study_service.file_transfer_manager,
+            study_service().file_transfer_manager,
             export_format,
             with_index,
             with_header,

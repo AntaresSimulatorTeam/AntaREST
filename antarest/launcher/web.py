@@ -19,6 +19,7 @@ from pydantic import Field
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.typing import Supplier
 from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
     JobCreationDTO,
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_MAX_LATEST_JOBS = 200
 
 
-def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
+def create_launcher_api(service: Supplier[LauncherService], config: Config) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1/launcher", tags=[APITag.launcher], dependencies=[auth.required()])
 
@@ -59,7 +60,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         selected_launcher = launcher if launcher is not None else config.launcher.default
 
         return JobCreationDTO(
-            job_id=service.run_study(
+            job_id=service().run_study(
                 study_id,
                 selected_launcher,
                 launcher_parameters,
@@ -76,7 +77,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         study: Optional[str] = None, filter_orphans: bool = True, latest: Optional[int] = None
     ) -> List[JobResultDTO]:
         logger.info(f"Fetching execution jobs for study {study or '<all>'}")
-        return [job.to_dto() for job in service.get_jobs(study, filter_orphans, latest)]
+        return [job.to_dto() for job in service().get_jobs(study, filter_orphans, latest)]
 
     @bp.get(
         "/jobs/{job_id}/logs",
@@ -84,7 +85,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_job_log(job_id: str, log_type: LogType = LogType.STDOUT) -> str | None:
         logger.info(f"Fetching logs for job {job_id}")
-        return service.get_log(job_id, log_type)
+        return service().get_log(job_id, log_type)
 
     @bp.get(
         "/jobs/{job_id}/output",
@@ -92,7 +93,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def export_job_output(job_id: str) -> FileDownloadTaskDTO:
         logger.info(f"Exporting output for job {job_id}")
-        return service.download_output(job_id)
+        return service().download_output(job_id)
 
     @bp.post(
         "/jobs/{job_id}/kill",
@@ -103,7 +104,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     ) -> JobResultDTO:
         logger.info(f"Killing job {job_id}")
 
-        return service.kill_job(job_id=job_id).to_dto()
+        return service().kill_job(job_id=job_id).to_dto()
 
     @bp.get(
         "/jobs/{job_id}",
@@ -111,7 +112,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_result(job_id: UUID) -> JobResultDTO:
         logger.info(f"Fetching job info {job_id}")
-        return service.get_result(job_id).to_dto()
+        return service().get_result(job_id).to_dto()
 
     @bp.get(
         "/jobs/{job_id}/progress",
@@ -119,7 +120,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_progress(job_id: str) -> int:
         logger.info(f"Fetching job progress of job {job_id}")
-        return int(service.get_launch_progress(job_id))
+        return int(service().get_launch_progress(job_id))
 
     @bp.delete(
         "/jobs/{job_id}",
@@ -128,7 +129,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def remove_result(job_id: str) -> None:
         logger.info(f"Removing job {job_id}")
-        service.remove_job(job_id)
+        service().remove_job(job_id)
 
     @bp.get(
         "/launchers",
@@ -136,7 +137,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_launchers() -> LauncherListDTO:
         logger.info("Listing launchers")
-        return service.get_launchers()
+        return service().get_launchers()
 
     @bp.get(
         "/load",
@@ -145,7 +146,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     def get_load(launcher_id: Optional[str] = None) -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
-            return service.get_load(launcher_id)
+            return service().get_load(launcher_id)
         except SlurmError as e:
             logger.warning(e, exc_info=e)
             args = {
@@ -177,7 +178,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         launcher_id = launcher_id or solver
         launcher_msg = f"launcher '{launcher_id}'" if launcher_id else "default launcher"
         logger.info(f"Fetching the list of solver versions for {launcher_msg}")
-        return service.get_solver_versions(launcher_id)
+        return service().get_solver_versions(launcher_id)
 
     @bp.post(
         "/solver-presets",
@@ -185,7 +186,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def create_solver_presets(solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         logger.info("Creating new solver presets")
-        return service.create_solver_presets(solver_presets_creation)
+        return service().create_solver_presets(solver_presets_creation)
 
     @bp.get(
         "/solver-presets/{solver_presets_id}",
@@ -193,7 +194,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_solver_presets(solver_presets_id: str) -> SolverPresets:
         logger.info(f"Retrieving solver presets for ID {solver_presets_id}")
-        return service.get_solver_presets(solver_presets_id)
+        return service().get_solver_presets(solver_presets_id)
 
     @bp.get(
         "/solver-presets",
@@ -201,7 +202,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def get_solver_presets_list() -> List[SolverPresets]:
         logger.info("Retrieving solver presets")
-        return service.get_solver_presets_list()
+        return service().get_solver_presets_list()
 
     @bp.put(
         "/solver-presets/{solver_presets_id}",
@@ -209,7 +210,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresets:
         logger.info(f"Updating solver preset for ID {solver_presets_id}")
-        return service.update_solver_presets(solver_presets_id, solver_presets_update)
+        return service().update_solver_presets(solver_presets_id, solver_presets_update)
 
     @bp.delete(
         "/solver-presets/{solver_presets_id}",
@@ -217,6 +218,6 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     )
     def delete_solver_presets(solver_presets_id: str) -> None:
         logger.info(f"Deleting solver preset for ID {solver_presets_id}")
-        service.delete_solver_presets(solver_presets_id)
+        service().delete_solver_presets(solver_presets_id)
 
     return bp
