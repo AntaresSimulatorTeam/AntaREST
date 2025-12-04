@@ -146,13 +146,13 @@ class GenerateThermalClusterTimeSeries(ICommand):
             outage_dir.mkdir(parents=True, exist_ok=True)
 
         for area_id, values in series_mapping.items():
-            if outage_details_thermal:
+            if outage_details_thermal and outage_dir is not None:
                 area_dir = outage_dir / area_id
                 area_dir.mkdir(exist_ok=True)
             for thermal_id, series in values.items():
                 study_data.save_thermal_series(area_id, thermal_id, series)
 
-                if outage_details_thermal:
+                if outage_details_thermal and outage_dir is not None:
                     thermal_dir = area_dir / thermal_id
                     thermal_dir.mkdir(parents=True, exist_ok=True)
                     outage_counter.save_planned_outages(thermal_dir, area_id, thermal_id)
