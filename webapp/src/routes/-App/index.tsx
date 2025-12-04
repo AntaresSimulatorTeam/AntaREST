@@ -21,11 +21,11 @@ import { Navigate, Outlet, Route, BrowserRouter as Router, Routes } from "react-
 import Container from "../_authenticated/-components/Container";
 import ThemeProvider from "../_authenticated/-components/ThemeProvider";
 import Api from "../_authenticated/apidoc";
+import Settings from "../_authenticated/settings";
 import Login from "../login";
 import Tasks from "../tasks";
 import Data from "./Data";
 import MaintenanceMode from "./MaintenanceMode";
-import Settings from "./Settings";
 import SingleStudy from "./Singlestudy";
 import Configuration from "./Singlestudy/explore/Configuration";
 import Debug from "./Singlestudy/explore/Debug";

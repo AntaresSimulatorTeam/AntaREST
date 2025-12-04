@@ -13,29 +13,30 @@
  */
 
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { createGroup, createRole } from "../../../../../services/api/user";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import { createRole, createUser } from "../../../../../../services/api/user";
 import type {
-  GroupDetailsDTO,
   GroupDTO,
   RoleDetailsDTO,
+  RoleType,
+  UserDetailsDTO,
   UserDTO,
-} from "../../../../../types/types";
-import GroupFormDialog from "./GroupFormDialog";
-import type { GroupFormDefaultValues } from "./utils";
+} from "../../../../../../types/types";
+import UserFormDialog from "./UserFormDialog";
+import type { UserFormDefaultValues } from "./utils";
 
 interface Props {
   open: boolean;
-  addGroup: (group: GroupDetailsDTO) => void;
-  reloadFetchGroups: VoidFunction;
+  addUser: (user: UserDetailsDTO) => void;
+  reloadFetchUsers: VoidFunction;
   onCancel: VoidFunction;
 }
 
-function CreateGroupDialog({ open, addGroup, reloadFetchGroups, onCancel }: Props) {
+function CreateUserDialog({ open, addUser, reloadFetchUsers, onCancel }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const mounted = usePromiseWrapper();
@@ -45,47 +46,48 @@ function CreateGroupDialog({ open, addGroup, reloadFetchGroups, onCancel }: Prop
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus<GroupFormDefaultValues>) => {
-    const { name, permissions } = data.values;
-    let newGroup: GroupDTO;
+  const handleSubmit = async (data: SubmitHandlerPlus<UserFormDefaultValues>) => {
+    const { username, password, permissions } = data.values;
+    let newUser: UserDTO;
 
     try {
-      newGroup = await mounted(createGroup(name));
-      enqueueSnackbar(t("settings.success.groupCreation", { 0: newGroup.name }), {
+      newUser = await mounted(createUser(username, password));
+      enqueueSnackbar(t("settings.success.userCreation", { 0: newUser.name }), {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(t("settings.error.groupSave", { 0: name }), e as Error);
+      enqueueErrorSnackbar(t("settings.error.userSave", { 0: username }), e as Error);
       throw e;
     }
 
     try {
-      let users: GroupDetailsDTO["users"] = [];
+      let roles: UserDetailsDTO["roles"] = [];
 
       if (permissions.length > 0) {
-        const promises = permissions.map((perm: { user: UserDTO; type: number }) =>
+        const promises = permissions.map((perm: { group: GroupDTO; type: RoleType }) =>
           createRole({
-            group_id: newGroup.id,
+            group_id: perm.group.id,
             type: perm.type,
-            identity_id: perm.user.id,
+            identity_id: newUser.id,
           }),
         );
 
         const res: RoleDetailsDTO[] = await mounted(Promise.all(promises));
 
-        users = res.map(({ identity, type }) => ({
-          id: identity.id,
-          name: identity.name,
-          role: type,
+        roles = res.map(({ group, identity, type }) => ({
+          group_id: group.id,
+          group_name: group.name,
+          identity_id: identity.id,
+          type,
         }));
       }
 
-      addGroup({ ...newGroup, users });
+      addUser({ ...newUser, roles });
     } catch (e) {
       // Because we cannot recover roles eventually created
-      reloadFetchGroups();
+      reloadFetchUsers();
 
-      enqueueErrorSnackbar(t("settings.error.userRolesSave", { 0: newGroup.name }), e as Error);
+      enqueueErrorSnackbar(t("settings.error.userRolesSave", { 0: newUser.name }), e as Error);
     }
 
     onCancel();
@@ -96,14 +98,14 @@ function CreateGroupDialog({ open, addGroup, reloadFetchGroups, onCancel }: Prop
   ////////////////////////////////////////////////////////////////
 
   return (
-    <GroupFormDialog
+    <UserFormDialog
       open={open}
-      title={t("settings.createGroup")}
-      titleIcon={GroupAddIcon}
+      title={t("settings.createUser")}
+      titleIcon={PersonAddIcon}
       onSubmit={handleSubmit}
       onCancel={onCancel}
     />
   );
 }
 
-export default CreateGroupDialog;
+export default CreateUserDialog;

@@ -16,16 +16,21 @@ import RootPage from "@/components/page/RootPage";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TabsView from "@/components/TabsView";
 import { useAppMode } from "@/hooks/useAppMode";
-import About from "@/routes/-App/Settings/About";
+import About from "@/routes/_authenticated/settings/-components/About";
 import SettingsIcon from "@mui/icons-material/Settings";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../../redux/selectors";
-import General from "./General";
-import Groups from "./Groups";
-import Maintenance from "./Maintenance";
-import Tokens from "./Tokens";
-import Users from "./Users";
+import General from "./-components/General";
+import Groups from "./-components/Groups";
+import Maintenance from "./-components/Maintenance";
+import Tokens from "./-components/Tokens";
+import Users from "./-components/Users";
+
+export const Route = createFileRoute("/_authenticated/settings/")({
+  component: Settings,
+});
 
 function Settings() {
   const { t } = useTranslation();
@@ -72,5 +77,3 @@ function Settings() {
     </RootPage>
   );
 }
-
-export default Settings;

@@ -20,14 +20,14 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import type { GroupEdit } from "..";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   createRole,
   deleteUserRole,
   getRolesForGroup,
   updateGroup,
-} from "../../../../../services/api/user";
-import type { GroupDetailsDTO } from "../../../../../types/types";
+} from "../../../../../../services/api/user";
+import type { GroupDetailsDTO } from "../../../../../../types/types";
 import GroupFormDialog from "./GroupFormDialog";
 import type { GroupFormDefaultValues } from "./utils";
 

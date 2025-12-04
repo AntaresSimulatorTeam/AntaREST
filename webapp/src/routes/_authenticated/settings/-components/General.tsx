@@ -20,7 +20,7 @@ import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { changeLanguage, getCurrentLanguage } from "@/utils/i18nUtils";
 import { useColorScheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { THEME_MODES } from "../shared/constants";
+import { THEME_MODES } from "../../../-App/shared/constants";
 
 function General() {
   const { mode, setMode } = useColorScheme();

@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedDataIndexRouteImport } from './routes/_authenticated/data/index'
 import { Route as AuthenticatedApidocIndexRouteImport } from './routes/_authenticated/apidoc/index'
 
@@ -35,6 +36,12 @@ const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   path: '/tasks/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDataIndexRoute = AuthenticatedDataIndexRouteImport.update({
   id: '/data/',
   path: '/data/',
@@ -52,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginIndexRoute
   '/apidoc': typeof AuthenticatedApidocIndexRoute
   '/data': typeof AuthenticatedDataIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
 }
 export interface FileRoutesByTo {
@@ -59,6 +67,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginIndexRoute
   '/apidoc': typeof AuthenticatedApidocIndexRoute
   '/data': typeof AuthenticatedDataIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
 }
 export interface FileRoutesById {
@@ -68,13 +77,14 @@ export interface FileRoutesById {
   '/login/': typeof LoginIndexRoute
   '/_authenticated/apidoc/': typeof AuthenticatedApidocIndexRoute
   '/_authenticated/data/': typeof AuthenticatedDataIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/apidoc' | '/data' | '/tasks'
+  fullPaths: '/' | '/login' | '/apidoc' | '/data' | '/settings' | '/tasks'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/apidoc' | '/data' | '/tasks'
+  to: '/' | '/login' | '/apidoc' | '/data' | '/settings' | '/tasks'
   id:
     | '__root__'
     | '/_authenticated'
@@ -82,6 +92,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/_authenticated/apidoc/'
     | '/_authenticated/data/'
+    | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
   fileRoutesById: FileRoutesById
 }
@@ -120,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/data/': {
       id: '/_authenticated/data/'
       path: '/data'
@@ -141,6 +159,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedApidocIndexRoute: typeof AuthenticatedApidocIndexRoute
   AuthenticatedDataIndexRoute: typeof AuthenticatedDataIndexRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
 }
 
@@ -148,6 +167,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedApidocIndexRoute: AuthenticatedApidocIndexRoute,
   AuthenticatedDataIndexRoute: AuthenticatedDataIndexRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
 }
 

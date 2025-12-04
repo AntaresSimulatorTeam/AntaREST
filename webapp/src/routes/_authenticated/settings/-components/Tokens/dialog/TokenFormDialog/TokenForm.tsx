@@ -41,13 +41,13 @@ import { useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
-import usePromise from "../../../../../../hooks/usePromise";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getAuthUser, isAuthUserAdmin } from "../../../../../../redux/selectors";
-import { getGroups } from "../../../../../../services/api/user";
-import { roleToString, sortByName } from "../../../../../../services/utils";
-import { RoleType, type GroupDTO } from "../../../../../../types/types";
-import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
+import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../../-utils/utils";
+import usePromise from "../../../../../../../hooks/usePromise";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { getAuthUser, isAuthUserAdmin } from "../../../../../../../redux/selectors";
+import { getGroups } from "../../../../../../../services/api/user";
+import { roleToString, sortByName } from "../../../../../../../services/utils";
+import { RoleType, type GroupDTO } from "../../../../../../../types/types";
 import type { TokenFormDefaultValues } from "../utils";
 
 interface Props {

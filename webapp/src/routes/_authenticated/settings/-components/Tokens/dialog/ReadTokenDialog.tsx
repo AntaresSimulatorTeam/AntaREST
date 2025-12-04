@@ -14,7 +14,7 @@
 
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { BotDetailsDTO } from "../../../../../types/types";
+import type { BotDetailsDTO } from "../../../../../../types/types";
 import TokenFormDialog from "./TokenFormDialog";
 import type { TokenFormDefaultValues } from "./utils";
 
