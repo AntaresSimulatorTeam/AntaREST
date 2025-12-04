@@ -18,7 +18,10 @@ This task deletes unused matrices from the matrix store based on retention time.
 
 import logging
 import time
-from typing import Any, Dict, Set
+from enum import StrEnum
+from typing import Optional, Set
+
+from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
@@ -27,9 +30,26 @@ from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.matrixstore.service import MatrixService
 
+
+class TaskStatus(StrEnum):
+    SUCCESS = "success"
+    SKIPPED = "skipped"
+    ERROR = "error"
+
+
+class GCTaskResult(BaseModel):
+    """Result of a garbage collection task execution."""
+
+    status: TaskStatus
+    deleted_count: int
+    duration_seconds: float
+    dry_run: Optional[bool] = None
+    reason: Optional[str] = None
+    error: Optional[str] = None
+
+
 logger = logging.getLogger(__name__)
 
-# PostgreSQL advisory lock ID for matrix GC (prevents concurrent runs)
 MATRIX_GC_LOCK_ID = 1001
 
 
@@ -44,7 +64,7 @@ def _delete_unused_saved_matrices(matrix_service: MatrixService, unused_matrices
 
 
 @celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task")
-def clean_matrices_task() -> Dict[str, Any]:
+def clean_matrices_task() -> GCTaskResult:
     """
     Delete all matrices that are not used anymore.
 
@@ -55,7 +75,7 @@ def clean_matrices_task() -> Dict[str, Any]:
     4. Deletes matrices that are unused and exceed the retention period
 
     Returns:
-        dict with execution stats (deleted count, duration, status)
+        GCTaskResult with execution stats (deleted count, duration, status)
     """
     ctx = MaintenanceContext.get_instance()
     matrix_service = ctx.matrix_service
@@ -110,27 +130,27 @@ def clean_matrices_task() -> Dict[str, Any]:
             f"Could not acquire advisory lock {MATRIX_GC_LOCK_ID}. "
             "Another matrix GC process is probably running. Skipping this run."
         )
-        return {
-            "status": "skipped",
-            "reason": "lock_not_acquired",
-            "deleted_count": 0,
-            "duration_seconds": time.time() - start_time,
-        }
+        return GCTaskResult(
+            status=TaskStatus.SKIPPED,
+            reason="lock_not_acquired",
+            deleted_count=0,
+            duration_seconds=time.time() - start_time,
+        )
     except Exception as e:
         logger.error("Error during matrix GC", exc_info=e)
-        return {
-            "status": "error",
-            "error": str(e),
-            "deleted_count": 0,
-            "duration_seconds": time.time() - start_time,
-        }
+        return GCTaskResult(
+            status=TaskStatus.ERROR,
+            error=str(e),
+            deleted_count=0,
+            duration_seconds=time.time() - start_time,
+        )
 
     duration = time.time() - start_time
     logger.info(f"Finished matrix GC in {duration}s (deleted {deleted_count} matrices)")
 
-    return {
-        "status": "success",
-        "deleted_count": deleted_count,
-        "duration_seconds": duration,
-        "dry_run": dry_run,
-    }
+    return GCTaskResult(
+        status=TaskStatus.SUCCESS,
+        deleted_count=deleted_count,
+        duration_seconds=duration,
+        dry_run=dry_run,
+    )
