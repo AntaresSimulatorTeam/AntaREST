@@ -142,7 +142,6 @@ class GenerateThermalClusterTimeSeries(ICommand):
         if outage_details_thermal:
             file_study = study_data.get_file_study()
             study_dir = file_study.tree.config.path
-            file_study = file_study.tree
             outage_dir = study_dir / "user" / "ts-generator" / "thermal"
             outage_dir.mkdir(parents=True, exist_ok=True)
 

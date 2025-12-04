@@ -35,7 +35,8 @@ export async function generateTimeSeries(params: { studyId: StudyMetadata["id"] 
 export async function setTimeSeriesConfig({ studyId, values }: SetTimeSeriesConfigParams) {
   // Extra fields not allowed by the API
   const validDTO = R.map(
-    (config = {}) => R.pick(["number","outage_details_thermal"] as Array<keyof TimeSeriesTypeConfig>, config),
+    (config = {}) =>
+      R.pick(["number", "outage_details_thermal"] as Array<keyof TimeSeriesTypeConfig>, config),
     values,
   );
 

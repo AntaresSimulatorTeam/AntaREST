@@ -25,27 +25,27 @@ interface Props {
 }
 
 function OutageDetailsField({ type }: Props) {
-    const { control } = useFormContextPlus<TimeSeriesConfigValues>();
-  
-    const isEnabled = useWatch({
-      name: `${type}.enabled`,
-      control,
-    });
-  
-    if (type !== TimeSeriesType.Thermal) {
-      return <TableCell />;
-    }
-  
-    return (
-      <TableCell align="center">
-        <SwitchFE
-          name={`${type}.outage_details_thermal` as const}  // ← Use snake_case
-          control={control}
-          disabled={!isEnabled}
-          size="small"
-        />
-      </TableCell>
-    );
+  const { control } = useFormContextPlus<TimeSeriesConfigValues>();
+
+  const isEnabled = useWatch({
+    name: `${type}.enabled`,
+    control,
+  });
+
+  if (type !== TimeSeriesType.Thermal) {
+    return <TableCell />;
   }
+
+  return (
+    <TableCell align="center">
+      <SwitchFE
+        name={`${type}.outage_details_thermal` as const} // ← Use snake_case
+        control={control}
+        disabled={!isEnabled}
+        size="small"
+      />
+    </TableCell>
+  );
+}
 
 export default OutageDetailsField;
