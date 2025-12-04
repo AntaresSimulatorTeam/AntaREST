@@ -22,6 +22,7 @@ import Container from "../_authenticated/-components/Container";
 import ThemeProvider from "../_authenticated/-components/ThemeProvider";
 import Api from "../_authenticated/apidoc";
 import Login from "../login";
+import Tasks from "../tasks";
 import Data from "./Data";
 import MaintenanceMode from "./MaintenanceMode";
 import Settings from "./Settings";
@@ -64,7 +65,6 @@ import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
 import Studies from "./Studies";
-import Tasks from "./Tasks";
 
 // TODO: replace 'notistack' by 'sonner' (https://sonner.emilkowal.ski/)
 function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {

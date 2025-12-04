@@ -56,7 +56,7 @@ import {
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import type { StudyMetadata, StudyOutput } from "../../../../../types/types";
 import type { EmptyObject } from "../../../../../utils/tsUtils";
-import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
+import LaunchJobLogView from "../../../../tasks/-components/LaunchJobLogView";
 
 interface OutputDetail {
   name: string;

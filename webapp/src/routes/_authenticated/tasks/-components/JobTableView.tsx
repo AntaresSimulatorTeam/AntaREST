@@ -15,28 +15,28 @@
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import SearchFE from "@/components/fieldEditors/SearchFE";
 import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
+import { TaskType } from "@/services/api/tasks/constants";
 import storage, { StorageKey } from "@/services/utils/localStorage";
+import type { TaskView } from "@/types/types";
 import { isSearchMatching } from "@/utils/stringUtils";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import {
-    Box,
-    IconButton,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    TableSortLabel,
-    type TableSortLabelProps,
-    Tooltip,
+  Box,
+  IconButton,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  type TableSortLabelProps,
+  Tooltip,
 } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { TaskType } from "../../../services/api/tasks/constants";
-import type { TaskView } from "../../../types/types";
 import ClustersMetrics from "./ClustersMetrics";
 
 const FILTER_LIST: Array<TaskView["type"]> = [

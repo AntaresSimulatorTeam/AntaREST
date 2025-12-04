@@ -19,11 +19,29 @@ import SimpleLoader from "@/components/loaders/SimpleLoader";
 import LogModal from "@/components/LogModal";
 import RootPage from "@/components/page/RootPage";
 import ViewWrapper from "@/components/page/ViewWrapper";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { resetTaskNotifications } from "@/redux/ducks/ui";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudies, getUsersById } from "@/redux/selectors";
+import {
+  convertFileDownloadDTO,
+  getDownloadUrl,
+  getDownloadsList,
+  type FileDownload,
+} from "@/services/api/downloads";
+import { getJobProgress } from "@/services/api/launcher";
 import { getJobs } from "@/services/api/launcher/jobs";
 import type { Job } from "@/services/api/launcher/jobs/types";
+import { downloadJobOutput, killStudy } from "@/services/api/study";
+import { getTask, getTasks } from "@/services/api/tasks";
+import { TaskStatus } from "@/services/api/tasks/constants";
+import type { TaskDTO } from "@/services/api/tasks/types";
+import { convertUTCToLocalTime } from "@/services/utils/index";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
+import { addWsEventListener, subscribeWsChannels } from "@/services/webSocket/ws";
+import type { LaunchJobsProgress, TaskView } from "@/types/types";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import BlockIcon from "@mui/icons-material/Block";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -41,39 +59,25 @@ import {
   colors,
   useTheme,
 } from "@mui/material";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import debug from "debug";
 import debounce from "lodash/debounce";
 import moment from "moment";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import { useMount } from "react-use";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudies, getUsersById } from "../../../redux/selectors";
-import {
-  convertFileDownloadDTO,
-  getDownloadUrl,
-  getDownloadsList,
-  type FileDownload,
-} from "../../../services/api/downloads";
-import { getJobProgress } from "../../../services/api/launcher";
-import { downloadJobOutput, killStudy } from "../../../services/api/study";
-import { getTask, getTasks } from "../../../services/api/tasks";
-import { TaskStatus } from "../../../services/api/tasks/constants";
-import type { TaskDTO } from "../../../services/api/tasks/types";
-import { convertUTCToLocalTime } from "../../../services/utils/index";
-import { addWsEventListener, subscribeWsChannels } from "../../../services/webSocket/ws";
-import type { LaunchJobsProgress, TaskView } from "../../../types/types";
-import JobTableView from "./JobTableView";
-import LaunchJobLogView from "./LaunchJobLogView";
-import { TASK_TYPES_MANAGED } from "./utils";
+import JobTableView from "./-components/JobTableView";
+import LaunchJobLogView from "./-components/LaunchJobLogView";
+import { TASK_TYPES_MANAGED } from "./-components/utils";
+
+export const Route = createFileRoute("/_authenticated/tasks/")({
+  component: Tasks,
+});
 
 const logError = debug("antares:studymanagement:error");
 
-function JobsListing() {
+function Tasks() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const theme = useTheme();
@@ -499,5 +503,3 @@ function JobsListing() {
     </RootPage>
   );
 }
-
-export default JobsListing;

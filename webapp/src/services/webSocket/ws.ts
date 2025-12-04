@@ -13,7 +13,7 @@
  */
 
 import i18n from "@/i18n";
-import { TASK_TYPES_MANAGED } from "@/routes/App/Tasks/utils";
+import { TASK_TYPES_MANAGED } from "@/routes/_authenticated/tasks/-components/utils";
 import { includes } from "@/utils/tsUtils";
 import debug from "debug";
 import { enqueueSnackbar, type VariantType } from "notistack";

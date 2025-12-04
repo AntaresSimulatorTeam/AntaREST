@@ -13,15 +13,15 @@
  */
 
 import LogModal from "@/components/LogModal";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import type { Job } from "@/services/api/launcher/jobs/types";
+import { getStudyJobLog } from "@/services/api/study";
 import ErrorIcon from "@mui/icons-material/Error";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { Box, Tooltip } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { getStudyJobLog } from "../../../services/api/study";
 
 interface PropsType {
   job: Job;
