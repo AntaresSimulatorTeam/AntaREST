@@ -14,6 +14,7 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
+import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from typing_extensions import override
@@ -96,7 +97,6 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
         rename_unnamed(body)
         matrix = body.astype(float)
-        matrix = matrix.fillna(value=None)
         matrix.index = date
         matrix.columns = body.columns
         return matrix
