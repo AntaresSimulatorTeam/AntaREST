@@ -23,7 +23,7 @@ import axios, { type AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { forwardRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BoxParam, BoxParamHeader, ParamTitle } from "../styles";
+import { BoxParam, BoxParamHeader, ParamTitle } from "../-styles";
 import { saveMatrix } from "../utils";
 
 interface PropTypes {

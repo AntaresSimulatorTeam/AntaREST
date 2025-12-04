@@ -15,7 +15,7 @@
 import PropertiesView from "@/components/PropertiesView";
 import type { MatrixDataSetDTO, MatrixInfoDTO } from "@/types/types";
 import { useState } from "react";
-import { StyledListingBox } from "../styles";
+import { StyledListingBox } from "../-styles";
 import DataListing from "./DataListing";
 
 interface PropTypes {
