@@ -20,7 +20,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import SwaggerUI from "swagger-ui-react";
 import "swagger-ui-react/swagger-ui.css";
-import "./-styles/styles.css";
+import "./styles.css";
 
 export const Route = createFileRoute("/_authenticated/apidoc/")({
   component: Api,
