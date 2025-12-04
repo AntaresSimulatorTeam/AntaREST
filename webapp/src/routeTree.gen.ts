@@ -13,9 +13,9 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedDataIndexRouteImport } from './routes/_authenticated/data/index'
 import { Route as AuthenticatedApidocIndexRouteImport } from './routes/_authenticated/apidoc/index'
+import { Route as AuthenticatedSettingsSettingsRouteImport } from './routes/_authenticated/settings/settings'
 import { Route as AuthenticatedSettingsMaintenanceRouteImport } from './routes/_authenticated/settings/maintenance'
 import { Route as AuthenticatedSettingsGeneralRouteImport } from './routes/_authenticated/settings/general'
 import { Route as AuthenticatedSettingsAboutRouteImport } from './routes/_authenticated/settings/about'
@@ -42,12 +42,6 @@ const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   path: '/tasks/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/settings/',
-    path: '/settings/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedDataIndexRoute = AuthenticatedDataIndexRouteImport.update({
   id: '/data/',
   path: '/data/',
@@ -57,6 +51,12 @@ const AuthenticatedApidocIndexRoute =
   AuthenticatedApidocIndexRouteImport.update({
     id: '/apidoc/',
     path: '/apidoc/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsSettingsRoute =
+  AuthenticatedSettingsSettingsRouteImport.update({
+    id: '/settings/settings',
+    path: '/settings/settings',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedSettingsMaintenanceRoute =
@@ -102,9 +102,9 @@ export interface FileRoutesByFullPath {
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/general': typeof AuthenticatedSettingsGeneralRoute
   '/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
+  '/settings/settings': typeof AuthenticatedSettingsSettingsRoute
   '/apidoc': typeof AuthenticatedApidocIndexRoute
   '/data': typeof AuthenticatedDataIndexRoute
-  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/settings/groups': typeof AuthenticatedSettingsGroupsIndexRoute
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
@@ -116,9 +116,9 @@ export interface FileRoutesByTo {
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/general': typeof AuthenticatedSettingsGeneralRoute
   '/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
+  '/settings/settings': typeof AuthenticatedSettingsSettingsRoute
   '/apidoc': typeof AuthenticatedApidocIndexRoute
   '/data': typeof AuthenticatedDataIndexRoute
-  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/settings/groups': typeof AuthenticatedSettingsGroupsIndexRoute
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
@@ -132,9 +132,9 @@ export interface FileRoutesById {
   '/_authenticated/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/_authenticated/settings/general': typeof AuthenticatedSettingsGeneralRoute
   '/_authenticated/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
+  '/_authenticated/settings/settings': typeof AuthenticatedSettingsSettingsRoute
   '/_authenticated/apidoc/': typeof AuthenticatedApidocIndexRoute
   '/_authenticated/data/': typeof AuthenticatedDataIndexRoute
-  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/settings/groups/': typeof AuthenticatedSettingsGroupsIndexRoute
   '/_authenticated/settings/tokens/': typeof AuthenticatedSettingsTokensIndexRoute
@@ -148,9 +148,9 @@ export interface FileRouteTypes {
     | '/settings/about'
     | '/settings/general'
     | '/settings/maintenance'
+    | '/settings/settings'
     | '/apidoc'
     | '/data'
-    | '/settings'
     | '/tasks'
     | '/settings/groups'
     | '/settings/tokens'
@@ -162,9 +162,9 @@ export interface FileRouteTypes {
     | '/settings/about'
     | '/settings/general'
     | '/settings/maintenance'
+    | '/settings/settings'
     | '/apidoc'
     | '/data'
-    | '/settings'
     | '/tasks'
     | '/settings/groups'
     | '/settings/tokens'
@@ -177,9 +177,9 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/about'
     | '/_authenticated/settings/general'
     | '/_authenticated/settings/maintenance'
+    | '/_authenticated/settings/settings'
     | '/_authenticated/apidoc/'
     | '/_authenticated/data/'
-    | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
     | '/_authenticated/settings/groups/'
     | '/_authenticated/settings/tokens/'
@@ -221,13 +221,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/settings/': {
-      id: '/_authenticated/settings/'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/data/': {
       id: '/_authenticated/data/'
       path: '/data'
@@ -240,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/apidoc'
       fullPath: '/apidoc'
       preLoaderRoute: typeof AuthenticatedApidocIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/settings': {
+      id: '/_authenticated/settings/settings'
+      path: '/settings/settings'
+      fullPath: '/settings/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings/maintenance': {
@@ -292,9 +292,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsAboutRoute: typeof AuthenticatedSettingsAboutRoute
   AuthenticatedSettingsGeneralRoute: typeof AuthenticatedSettingsGeneralRoute
   AuthenticatedSettingsMaintenanceRoute: typeof AuthenticatedSettingsMaintenanceRoute
+  AuthenticatedSettingsSettingsRoute: typeof AuthenticatedSettingsSettingsRoute
   AuthenticatedApidocIndexRoute: typeof AuthenticatedApidocIndexRoute
   AuthenticatedDataIndexRoute: typeof AuthenticatedDataIndexRoute
-  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedSettingsGroupsIndexRoute: typeof AuthenticatedSettingsGroupsIndexRoute
   AuthenticatedSettingsTokensIndexRoute: typeof AuthenticatedSettingsTokensIndexRoute
@@ -306,9 +306,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsAboutRoute: AuthenticatedSettingsAboutRoute,
   AuthenticatedSettingsGeneralRoute: AuthenticatedSettingsGeneralRoute,
   AuthenticatedSettingsMaintenanceRoute: AuthenticatedSettingsMaintenanceRoute,
+  AuthenticatedSettingsSettingsRoute: AuthenticatedSettingsSettingsRoute,
   AuthenticatedApidocIndexRoute: AuthenticatedApidocIndexRoute,
   AuthenticatedDataIndexRoute: AuthenticatedDataIndexRoute,
-  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedSettingsGroupsIndexRoute: AuthenticatedSettingsGroupsIndexRoute,
   AuthenticatedSettingsTokensIndexRoute: AuthenticatedSettingsTokensIndexRoute,

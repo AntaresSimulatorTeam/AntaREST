@@ -22,7 +22,7 @@ import { useTranslation } from "react-i18next";
 import useAppSelector from "../../redux/hooks/useAppSelector";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../redux/selectors";
 
-export const Route = createFileRoute("/_authenticated/settings/")({
+export const Route = createFileRoute("/_authenticated/settings/settings")({
   component: Settings,
 });
 
