@@ -13,18 +13,13 @@
  */
 
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createGroup, createRole } from "@/services/api/user";
+import type { GroupDetailsDTO, GroupDTO, RoleDetailsDTO, UserDTO } from "@/types/types";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { createGroup, createRole } from "../../../../../../services/api/user";
-import type {
-  GroupDetailsDTO,
-  GroupDTO,
-  RoleDetailsDTO,
-  UserDTO,
-} from "../../../../../../types/types";
 import GroupFormDialog from "./GroupFormDialog";
 import type { GroupFormDefaultValues } from "./utils";
 

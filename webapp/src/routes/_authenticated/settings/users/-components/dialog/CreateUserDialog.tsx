@@ -13,19 +13,13 @@
  */
 
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createRole, createUser } from "@/services/api/user";
+import type { GroupDTO, RoleDetailsDTO, RoleType, UserDetailsDTO, UserDTO } from "@/types/types";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { createRole, createUser } from "../../../../../../services/api/user";
-import type {
-  GroupDTO,
-  RoleDetailsDTO,
-  RoleType,
-  UserDetailsDTO,
-  UserDTO,
-} from "../../../../../../types/types";
 import UserFormDialog from "./UserFormDialog";
 import type { UserFormDefaultValues } from "./utils";
 

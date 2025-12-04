@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import { RoleType } from "@/types/types";
 import * as RA from "ramda-adjunct";
-import { RoleType } from "../../../../types/types";
 
 export const RESERVED_USER_NAMES = ["admin"];
 export const RESERVED_GROUP_NAMES = ["admin"];

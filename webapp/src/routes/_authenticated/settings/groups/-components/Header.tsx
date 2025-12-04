@@ -13,23 +13,26 @@
  */
 
 import SearchFE from "@/components/fieldEditors/SearchFE";
-import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isAuthUserAdmin } from "@/redux/selectors";
+import type { GroupDetailsDTO } from "@/types/types";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { Box, Button } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { UserDetailsDTO } from "../../../../../types/types";
-import CreateUserDialog from "./dialog/CreateUserDialog";
+import CreateGroupDialog from "./dialog/CreateGroupDialog";
 
 interface Props {
   setSearchValue: (v: string) => void;
-  addUser: (user: UserDetailsDTO) => void;
-  reloadFetchUsers: () => void;
+  addGroup: (user: GroupDetailsDTO) => void;
+  reloadFetchGroups: () => void;
 }
 
 function Header(props: Props) {
-  const { setSearchValue, addUser, reloadFetchUsers } = props;
+  const { setSearchValue, addGroup, reloadFetchGroups } = props;
   const { t } = useTranslation();
-  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const isUserAdmin = useAppSelector(isAuthUserAdmin);
 
   return (
     <>
@@ -42,20 +45,22 @@ function Header(props: Props) {
         }}
       >
         <SearchFE sx={{ m: 0 }} onSearchValueChange={setSearchValue} />
-        <Button
-          startIcon={<PersonAddAltIcon />}
-          variant="outlined"
-          onClick={() => setShowCreateUserModal(true)}
-        >
-          {t("global.create")}
-        </Button>
+        {isUserAdmin && (
+          <Button
+            startIcon={<GroupAddIcon />}
+            variant="outlined"
+            onClick={() => setShowCreateGroupModal(true)}
+          >
+            {t("global.create")}
+          </Button>
+        )}
       </Box>
-      {showCreateUserModal && (
-        <CreateUserDialog
+      {showCreateGroupModal && (
+        <CreateGroupDialog
           open
-          addUser={addUser}
-          reloadFetchUsers={reloadFetchUsers}
-          onCancel={() => setShowCreateUserModal(false)}
+          addGroup={addGroup}
+          reloadFetchGroups={reloadFetchGroups}
+          onCancel={() => setShowCreateGroupModal(false)}
         />
       )}
     </>

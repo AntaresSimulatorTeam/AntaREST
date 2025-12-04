@@ -14,14 +14,14 @@
 
 import OkDialog from "@/components/dialogs/OkDialog";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { createBot } from "@/services/api/user";
+import type { BotCreateDTO, GroupDTO, RoleType } from "@/types/types";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import TokenIcon from "@mui/icons-material/Token";
 import { IconButton, Paper } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { createBot } from "../../../../../../services/api/user";
-import type { BotCreateDTO, GroupDTO, RoleType } from "../../../../../../types/types";
 import TokenFormDialog from "./TokenFormDialog";
 import type { TokenFormDefaultValues } from "./utils";
 

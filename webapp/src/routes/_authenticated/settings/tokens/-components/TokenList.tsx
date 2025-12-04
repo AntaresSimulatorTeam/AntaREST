@@ -36,8 +36,8 @@ import {
 import { useSnackbar } from "notistack";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { BotDetailsDtoWithUser } from "../-types";
 import ReadTokenDialog from "./dialog/ReadTokenDialog";
-import type { BotDetailsDtoWithUser } from "./types";
 
 interface Props {
   tokens: BotDetailsDtoWithUser[];

@@ -13,7 +13,13 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { deleteUser, getUsers } from "@/services/api/user";
+import { sortByName } from "@/services/utils";
+import type { UserDetailsDTO } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { isSearchMatching } from "@/utils/stringUtils";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PersonIcon from "@mui/icons-material/Person";
@@ -29,6 +35,7 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
@@ -36,15 +43,13 @@ import { useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
 import type { Action } from "redux";
-import { RESERVED_USER_NAMES } from "../../-utils/utils";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import { deleteUser, getUsers } from "../../../../../services/api/user";
-import { sortByName } from "../../../../../services/utils";
-import type { UserDetailsDTO } from "../../../../../types/types";
-import { isSearchMatching } from "../../../../../utils/stringUtils";
-import UpdateUserDialog from "./dialog/UpdateUserDialog";
-import Header from "./Header";
+import { RESERVED_USER_NAMES } from "../-utils";
+import UpdateUserDialog from "./-components/dialog/UpdateUserDialog";
+import Header from "./-components/Header";
+
+export const Route = createFileRoute("/_authenticated/settings/users/")({
+  component: Users,
+});
 
 enum UserActionKind {
   ADD = "ADD",
@@ -259,5 +264,3 @@ function Users() {
     </Box>
   );
 }
-
-export default Users;

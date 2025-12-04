@@ -13,7 +13,15 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
+import { deleteGroup, getGroups } from "@/services/api/user";
+import { sortByName } from "@/services/utils";
+import type { GroupDetailsDTO } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { isSearchMatching } from "@/utils/stringUtils";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import GroupIcon from "@mui/icons-material/Group";
@@ -29,6 +37,7 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { produce } from "immer";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
@@ -36,17 +45,13 @@ import { useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
 import type { Action } from "redux";
-import { RESERVED_GROUP_NAMES } from "../../-utils/utils";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { getAuthUser } from "../../../../../redux/selectors";
-import { deleteGroup, getGroups } from "../../../../../services/api/user";
-import { sortByName } from "../../../../../services/utils";
-import type { GroupDetailsDTO } from "../../../../../types/types";
-import { isSearchMatching } from "../../../../../utils/stringUtils";
-import Header from "./Header";
-import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
+import { RESERVED_GROUP_NAMES } from "../-utils";
+import Header from "./-components/Header";
+import UpdateGroupDialog from "./-components/dialog/UpdateGroupDialog";
+
+export const Route = createFileRoute("/_authenticated/settings/groups/")({
+  component: Groups,
+});
 
 enum GroupActionKind {
   ADD = "ADD",
@@ -272,5 +277,3 @@ function Groups() {
     </Box>
   );
 }
-
-export default Groups;

@@ -14,21 +14,40 @@
 
 import BackButton from "@/components/buttons/BackButton";
 import useFormCloseConfirm from "@/hooks/useFormCloseConfirm";
+import type { RoutePaths } from "@/router";
+import { buildKey } from "@/utils/reactUtils";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
+import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useState } from "react";
 
+interface BaseTab {
+  label: string;
+  disabled?: boolean;
+}
+
+interface RouteTab extends BaseTab {
+  to: RoutePaths;
+  content?: never;
+}
+
+interface ContentTab extends BaseTab {
+  content: React.ReactNode;
+  to?: never;
+}
+
 interface TabsViewProps {
-  items: Array<{
-    label: string;
-    content: React.ReactNode;
-    disabled?: boolean;
-  }>;
+  items: RouteTab[] | ContentTab[];
   onChange?: TabListProps["onChange"];
   onBack?: VoidFunction;
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
+}
+
+function isRouteTabs(tabs: RouteTab[] | ContentTab[]): tabs is RouteTab[] {
+  const firstTab = tabs[0];
+  return !!firstTab && "to" in firstTab && typeof firstTab.to === "string";
 }
 
 function TabsView({
@@ -39,17 +58,49 @@ function TabsView({
   disablePadding = false,
   disableGutters = false,
 }: TabsViewProps) {
-  const [value, setValue] = useState(0);
+  const { pathname } = useLocation();
   const { withFormCloseCheck } = useFormCloseConfirm();
+  const [currentTabIndex, setCurrentTabIndex] = useState(0);
+
+  const hasRouteTabs = isRouteTabs(items);
+  const currentTabValue = hasRouteTabs
+    ? items.find(({ to }) => pathname === to || pathname.startsWith(to + "/"))?.to || ""
+    : currentTabIndex;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleChange = withFormCloseCheck((event: React.SyntheticEvent, newValue: number) => {
-    setValue(newValue);
+    if (!hasRouteTabs) {
+      setCurrentTabIndex(newValue);
+    }
     onChange?.(event, newValue);
   });
+
+  ////////////////////////////////////////////////////////////////
+  // Tab
+  ////////////////////////////////////////////////////////////////
+
+  const getTabKey = (itemIndex: number) => {
+    return hasRouteTabs ? items[itemIndex].to : buildKey(items[itemIndex].label, itemIndex);
+  };
+
+  const getTabValue = (itemIndex: number) => {
+    return hasRouteTabs ? items[itemIndex].to : itemIndex;
+  };
+
+  const getTabProps = (itemIndex: number) => {
+    if (hasRouteTabs) {
+      return {
+        value: getTabValue(itemIndex),
+        LinkComponent: Link,
+        href: items[itemIndex].to,
+      };
+    }
+
+    return { value: getTabValue(itemIndex) };
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -65,7 +116,7 @@ function TabsView({
         height: 1,
       }}
     >
-      <TabContext value={value}>
+      <TabContext value={currentTabValue}>
         <Box
           sx={[
             !!onBack && { display: "flex" },
@@ -74,15 +125,20 @@ function TabsView({
         >
           {onBack && <BackButton onClick={onBack} />}
           <TabList onChange={handleChange}>
-            {items.map(({ label, disabled }, index) => (
-              <Tab key={label + index} label={label} value={index} disabled={disabled} />
+            {items.map((item, index) => (
+              <Tab
+                key={getTabKey(index)}
+                label={item.label}
+                disabled={item.disabled}
+                {...getTabProps(index)}
+              />
             ))}
           </TabList>
         </Box>
-        {items.map(({ content, label }, index) => (
+        {items.map((item, index) => (
           <TabPanel
-            key={label + index}
-            value={index}
+            key={getTabKey(index)}
+            value={getTabValue(index)}
             sx={[
               {
                 flex: 1,
@@ -98,7 +154,7 @@ function TabsView({
               disableGutters && { px: 0 },
             ]}
           >
-            {content}
+            {hasRouteTabs ? <Outlet /> : item.content}
           </TabPanel>
         ))}
       </TabContext>

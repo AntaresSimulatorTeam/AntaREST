@@ -17,6 +17,11 @@ import { GITHUB_URL } from "@/routes/-App/shared/constants";
 import { getConfig } from "@/services/config";
 import LaunchIcon from "@mui/icons-material/Launch";
 import { IconButton, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/_authenticated/settings/about")({
+  component: About,
+});
 
 function About() {
   const { version, gitcommit } = getConfig().versionInfo;
@@ -62,5 +67,3 @@ function About() {
     </List>
   );
 }
-
-export default About;

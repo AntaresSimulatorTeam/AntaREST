@@ -16,17 +16,11 @@ import RootPage from "@/components/page/RootPage";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TabsView from "@/components/TabsView";
 import { useAppMode } from "@/hooks/useAppMode";
-import About from "@/routes/_authenticated/settings/-components/About";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../../redux/selectors";
-import General from "./-components/General";
-import Groups from "./-components/Groups";
-import Maintenance from "./-components/Maintenance";
-import Tokens from "./-components/Tokens";
-import Users from "./-components/Users";
+import useAppSelector from "../../redux/hooks/useAppSelector";
+import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../redux/selectors";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
   component: Settings,
@@ -49,27 +43,27 @@ function Settings() {
           items={[
             {
               label: t("global.general"),
-              content: <General />,
+              to: "/settings/general" as const,
             },
             isUserAdmin && {
               label: t("global.users"),
-              content: <Users />,
+              to: "/settings/users" as const,
             },
             (isUserAdmin || isUserInGroupAdmin) && {
               label: t("global.group"),
-              content: <Groups />,
+              to: "/settings/groups" as const,
             },
             isWebMode && {
               label: t("global.tokens"),
-              content: <Tokens />,
+              to: "/settings/tokens" as const,
             },
             isUserAdmin && {
               label: t("global.maintenance"),
-              content: <Maintenance />,
+              to: "/settings/maintenance" as const,
             },
             {
               label: t("global.about"),
-              content: <About />,
+              to: "/settings/about" as const,
             },
           ].filter(Boolean)}
         />

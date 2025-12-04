@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { createRouter } from "@tanstack/react-router";
+import { createRouter, type LinkProps } from "@tanstack/react-router";
+import type { U } from "ts-toolbelt";
 import { routeTree } from "./routeTree.gen";
 
 const context = {
@@ -33,5 +34,7 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+
+export type RoutePaths = U.Exclude<LinkProps["to"], undefined>;
 
 export default router;

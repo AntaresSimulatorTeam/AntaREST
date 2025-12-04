@@ -13,18 +13,23 @@
  */
 
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
+import { getBots, getUser, getUsers } from "@/services/api/user";
+import { isUserAdmin } from "@/services/utils";
 import type { BotDetailsDTO } from "@/types/types";
 import { Box, List, ListItem, Skeleton } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { getAuthUser } from "../../../../../redux/selectors";
-import { getBots, getUser, getUsers } from "../../../../../services/api/user";
-import { isUserAdmin } from "../../../../../services/utils";
-import Header from "./Header";
-import TokenList from "./TokenList";
-import type { BotDetailsDtoWithUser } from "./types";
+import Header from "./-components/Header";
+import TokenList from "./-components/TokenList";
+import type { BotDetailsDtoWithUser } from "./-types";
+
+export const Route = createFileRoute("/_authenticated/settings/tokens/")({
+  component: Tokens,
+});
 
 function Tokens() {
   const { t } = useTranslation();
@@ -105,5 +110,3 @@ function Tokens() {
     </Box>
   );
 }
-
-export default Tokens;

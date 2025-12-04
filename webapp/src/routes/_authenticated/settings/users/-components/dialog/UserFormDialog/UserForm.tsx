@@ -12,10 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import PasswordFE from "@/components/fieldEditors/PasswordFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/components/Form";
-import { validateString } from "@/utils/validation/string";
+import usePromise from "@/hooks/usePromise";
+import { getGroups, getUsers } from "@/services/api/user";
+import { roleToString, sortByName } from "@/services/utils";
+import { RoleType, type GroupDTO } from "@/types/types";
+import { validatePassword, validateString } from "@/utils/validation/string";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
 import {
@@ -41,27 +46,27 @@ import { useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
-import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../../-utils/utils";
-import usePromise from "../../../../../../../hooks/usePromise";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getAuthUser, isAuthUserAdmin } from "../../../../../../../redux/selectors";
-import { getGroups } from "../../../../../../../services/api/user";
-import { roleToString, sortByName } from "../../../../../../../services/utils";
-import { RoleType, type GroupDTO } from "../../../../../../../types/types";
-import type { TokenFormDefaultValues } from "../utils";
+import type { UserFormDialogProps } from ".";
+import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../../-utils";
+import type { UserFormDefaultValues } from "../utils";
 
 interface Props {
-  readOnly?: boolean;
+  onlyPermissions?: UserFormDialogProps["onlyPermissions"];
 }
 
-function TokenForm({ readOnly }: Props) {
-  const { control, getValues } = useFormContextPlus<TokenFormDefaultValues>();
+function UserForm({ onlyPermissions }: Props) {
+  const {
+    control,
+    getValues,
+    formState: { defaultValues },
+  } = useFormContextPlus<UserFormDefaultValues>();
+
+  const { t } = useTranslation();
   const groupLabelId = useRef(uuidv4()).current;
   const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
   const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
-  const { t } = useTranslation();
-  const authUser = useAppSelector(getAuthUser);
-  const isUserAdmin = useAppSelector(isAuthUserAdmin);
+  const { data: users } = usePromise(getUsers);
+  const existingUsers = useMemo(() => users?.map(({ name }) => name), [users]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -91,19 +96,6 @@ function TokenForm({ readOnly }: Props) {
   };
 
   ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const getValidRolesTypesForGroup = (groupName: string) => {
-    if (isUserAdmin) {
-      return ROLE_TYPE_KEYS;
-    }
-
-    const group = authUser?.groups?.find((gp) => gp.name === groupName);
-    return group ? ROLE_TYPE_KEYS.filter((key) => RoleType[key] <= group.role) : [];
-  };
-
-  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -111,13 +103,40 @@ function TokenForm({ readOnly }: Props) {
     <>
       <Fieldset fullFieldWidth>
         <StringFE
-          autoFocus={!readOnly}
-          label={t("global.name")}
-          name="name"
+          autoFocus
+          label={t("global.username")}
+          name="username"
           control={control}
-          disabled={readOnly}
-          rules={{ validate: validateString() }}
+          disabled={onlyPermissions}
+          rules={{
+            validate: validateString({
+              existingValues: existingUsers,
+              excludedValues: RESERVED_USER_NAMES,
+              editedValue: defaultValues?.username,
+            }),
+          }}
         />
+        {!onlyPermissions && (
+          <>
+            <PasswordFE
+              label={t("global.password")}
+              name="password"
+              control={control}
+              rules={{
+                validate: validatePassword,
+              }}
+            />
+            <PasswordFE
+              label={t("settings.user.form.confirmPassword")}
+              name="confirmPassword"
+              control={control}
+              rules={{
+                validate: (v) =>
+                  v === getValues("password") || t("settings.user.form.error.passwordMismatch"),
+              }}
+            />
+          </>
+        )}
       </Fieldset>
       {/* Permissions */}
       <Paper sx={{ p: 2 }}>
@@ -136,68 +155,56 @@ function TokenForm({ readOnly }: Props) {
         )}
         {filteredAndSortedGroups.length > 0 && (
           <>
-            {!readOnly && (
-              <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-                <FormControl sx={{ mr: 2, flex: 1 }}>
-                  <InputLabel id={groupLabelId}>{t("global.group")}</InputLabel>
-                  <Select
-                    labelId={groupLabelId}
-                    label={t("global.group")}
-                    defaultValue=""
-                    onChange={handleGroupChange}
-                  >
-                    {filteredAndSortedGroups.map((group) => (
-                      <MenuItem key={group.id} value={group.id}>
-                        {group.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Button
-                  variant="contained"
-                  disabled={!canAddPermission}
-                  onClick={() => {
-                    if (canAddPermission) {
-                      append({ group: selectedGroup, type: RoleType.READER });
-                    }
-                  }}
+            <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+              <FormControl sx={{ mr: 2, flex: 1 }}>
+                <InputLabel id={groupLabelId}>{t("global.group")}</InputLabel>
+                <Select
+                  labelId={groupLabelId}
+                  label={t("global.group")}
+                  defaultValue=""
+                  onChange={handleGroupChange}
                 >
-                  {t("button.add")}
-                </Button>
-              </Box>
-            )}
+                  {filteredAndSortedGroups.map((group) => (
+                    <MenuItem key={group.id} value={group.id}>
+                      {group.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                disabled={!canAddPermission}
+                onClick={() => {
+                  if (canAddPermission) {
+                    append({ group: selectedGroup, type: RoleType.READER });
+                  }
+                }}
+              >
+                {t("button.add")}
+              </Button>
+            </Box>
             <List>
               {fields.map((field, index) => (
                 <ListItem
                   key={field.id}
                   secondaryAction={
                     <>
-                      {!readOnly ? (
-                        <Controller
-                          control={control}
-                          name={`permissions.${index}.type`}
-                          render={({ field }) => (
-                            <Select variant="standard" {...field}>
-                              {getValidRolesTypesForGroup(
-                                getValues(`permissions.${index}.group.name`),
-                              ).map((key) => (
-                                <MenuItem key={key} value={RoleType[key]}>
-                                  {roleToString(RoleType[key])}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                      ) : (
-                        <Typography>
-                          {roleToString(getValues(`permissions.${index}.type`))}
-                        </Typography>
-                      )}
-                      {!readOnly && (
-                        <IconButton edge="end" onClick={() => remove(index)}>
-                          <DeleteIcon />
-                        </IconButton>
-                      )}
+                      <Controller
+                        control={control}
+                        name={`permissions.${index}.type`}
+                        render={({ field }) => (
+                          <Select variant="standard" {...field}>
+                            {ROLE_TYPE_KEYS.map((key) => (
+                              <MenuItem key={key} value={RoleType[key]}>
+                                {roleToString(RoleType[key])}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        )}
+                      />
+                      <IconButton edge="end" onClick={() => remove(index)}>
+                        <DeleteIcon />
+                      </IconButton>
                     </>
                   }
                   disablePadding
@@ -233,4 +240,4 @@ function TokenForm({ readOnly }: Props) {
   );
 }
 
-export default TokenForm;
+export default UserForm;

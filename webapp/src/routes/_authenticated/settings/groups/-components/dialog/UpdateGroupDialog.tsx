@@ -13,21 +13,16 @@
  */
 
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createRole, deleteUserRole, getRolesForGroup, updateGroup } from "@/services/api/user";
+import type { GroupDetailsDTO } from "@/types/types";
 import EditIcon from "@mui/icons-material/Edit";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import type { GroupEdit } from "..";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  createRole,
-  deleteUserRole,
-  getRolesForGroup,
-  updateGroup,
-} from "../../../../../../services/api/user";
-import type { GroupDetailsDTO } from "../../../../../../types/types";
+import type { GroupEdit } from "../..";
 import GroupFormDialog from "./GroupFormDialog";
 import type { GroupFormDefaultValues } from "./utils";
 

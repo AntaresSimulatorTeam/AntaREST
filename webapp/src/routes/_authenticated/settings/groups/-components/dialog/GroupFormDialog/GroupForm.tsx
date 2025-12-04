@@ -12,11 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import PasswordFE from "@/components/fieldEditors/PasswordFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/components/Form";
-import { validatePassword, validateString } from "@/utils/validation/string";
+import usePromise from "@/hooks/usePromise";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
+import { getGroups, getUsers } from "@/services/api/user";
+import { roleToString, sortByName } from "@/services/utils";
+import { RoleType, type UserDTO } from "@/types/types";
+import { validateString } from "@/utils/validation/string";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
 import {
@@ -42,35 +47,24 @@ import { useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
-import type { UserFormDialogProps } from ".";
-import {
-  RESERVED_GROUP_NAMES,
-  RESERVED_USER_NAMES,
-  ROLE_TYPE_KEYS,
-} from "../../../../-utils/utils";
-import usePromise from "../../../../../../../hooks/usePromise";
-import { getGroups, getUsers } from "../../../../../../../services/api/user";
-import { roleToString, sortByName } from "../../../../../../../services/utils";
-import { RoleType, type GroupDTO } from "../../../../../../../types/types";
-import type { UserFormDefaultValues } from "../utils";
+import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../../-utils";
+import type { GroupFormDefaultValues } from "../utils";
 
-interface Props {
-  onlyPermissions?: UserFormDialogProps["onlyPermissions"];
-}
-
-function UserForm({ onlyPermissions }: Props) {
+function GroupForm() {
   const {
     control,
     getValues,
     formState: { defaultValues },
-  } = useFormContextPlus<UserFormDefaultValues>();
+  } = useFormContextPlus<GroupFormDefaultValues>();
 
   const { t } = useTranslation();
-  const groupLabelId = useRef(uuidv4()).current;
-  const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
-  const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
-  const { data: users } = usePromise(getUsers);
-  const existingUsers = useMemo(() => users?.map(({ name }) => name), [users]);
+  const authUser = useAppSelector(getAuthUser);
+  const userLabelId = useRef(uuidv4()).current;
+  const [selectedUser, setSelectedUser] = useState<UserDTO>();
+  const { data: users, isLoading: isUsersLoading } = usePromise(getUsers);
+  const { data: groups } = usePromise(getGroups);
+
+  const existingGroups = useMemo(() => groups?.map((group) => group.name), [groups]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -80,23 +74,26 @@ function UserForm({ onlyPermissions }: Props) {
   const permissions = useWatch({ control, name: "permissions" });
 
   const canAddPermission =
-    selectedGroup && !permissions.some(({ group }) => group.id === selectedGroup.id);
+    selectedUser && !permissions.some(({ user }) => user.id === selectedUser.id);
 
-  const filteredAndSortedGroups = useMemo(() => {
-    if (!groups) {
+  const filteredAndSortedUsers = useMemo(() => {
+    if (!users) {
       return [];
     }
-    return sortByName(groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name)));
-  }, [groups]);
+
+    return sortByName(
+      users.filter((user) => !RESERVED_USER_NAMES.includes(user.name) && user.id !== authUser?.id),
+    );
+  }, [users, authUser]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleGroupChange = (event: SelectChangeEvent<string>) => {
-    const groupId = event.target.value;
-    const group = groups?.find((gp) => gp.id === groupId);
-    setSelectedGroup(group);
+  const handleUserChange = (event: SelectChangeEvent<string>) => {
+    const userId = Number(event.target.value);
+    const user = users?.find((u) => u.id === userId);
+    setSelectedUser(user);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -108,44 +105,22 @@ function UserForm({ onlyPermissions }: Props) {
       <Fieldset fullFieldWidth>
         <StringFE
           autoFocus
-          label={t("global.username")}
-          name="username"
+          label={t("global.name")}
+          name="name"
           control={control}
-          disabled={onlyPermissions}
           rules={{
             validate: validateString({
-              existingValues: existingUsers,
-              excludedValues: RESERVED_USER_NAMES,
-              editedValue: defaultValues?.username,
+              existingValues: existingGroups,
+              excludedValues: RESERVED_GROUP_NAMES,
+              editedValue: defaultValues?.name,
             }),
           }}
         />
-        {!onlyPermissions && (
-          <>
-            <PasswordFE
-              label={t("global.password")}
-              name="password"
-              control={control}
-              rules={{
-                validate: validatePassword,
-              }}
-            />
-            <PasswordFE
-              label={t("settings.user.form.confirmPassword")}
-              name="confirmPassword"
-              control={control}
-              rules={{
-                validate: (v) =>
-                  v === getValues("password") || t("settings.user.form.error.passwordMismatch"),
-              }}
-            />
-          </>
-        )}
       </Fieldset>
       {/* Permissions */}
       <Paper sx={{ p: 2 }}>
         <Typography>{t("global.permissions")}</Typography>
-        {isGroupsLoading && (
+        {isUsersLoading && (
           <Box
             sx={{
               display: "flex",
@@ -157,20 +132,20 @@ function UserForm({ onlyPermissions }: Props) {
             <CircularProgress color="inherit" />
           </Box>
         )}
-        {filteredAndSortedGroups.length > 0 && (
+        {filteredAndSortedUsers.length > 0 && (
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
               <FormControl sx={{ mr: 2, flex: 1 }}>
-                <InputLabel id={groupLabelId}>{t("global.group")}</InputLabel>
+                <InputLabel id={userLabelId}>{t("global.user")}</InputLabel>
                 <Select
-                  labelId={groupLabelId}
-                  label={t("global.group")}
+                  labelId={userLabelId}
+                  label={t("global.user")}
                   defaultValue=""
-                  onChange={handleGroupChange}
+                  onChange={handleUserChange}
                 >
-                  {filteredAndSortedGroups.map((group) => (
-                    <MenuItem key={group.id} value={group.id}>
-                      {group.name}
+                  {filteredAndSortedUsers.map((user) => (
+                    <MenuItem key={user.id} value={user.id}>
+                      {user.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -180,7 +155,7 @@ function UserForm({ onlyPermissions }: Props) {
                 disabled={!canAddPermission}
                 onClick={() => {
                   if (canAddPermission) {
-                    append({ group: selectedGroup, type: RoleType.READER });
+                    append({ user: selectedUser, type: RoleType.READER });
                   }
                 }}
               >
@@ -220,8 +195,8 @@ function UserForm({ onlyPermissions }: Props) {
                     </ListItemIcon>
                     <ListItemText
                       primary={
-                        <Tooltip title={getValues(`permissions.${index}.group.name`)}>
-                          <span>{getValues(`permissions.${index}.group.name`)}</span>
+                        <Tooltip title={getValues(`permissions.${index}.user.name`)}>
+                          <span>{getValues(`permissions.${index}.user.name`)}</span>
                         </Tooltip>
                       }
                       sx={{
@@ -244,4 +219,4 @@ function UserForm({ onlyPermissions }: Props) {
   );
 }
 
-export default UserForm;
+export default GroupForm;

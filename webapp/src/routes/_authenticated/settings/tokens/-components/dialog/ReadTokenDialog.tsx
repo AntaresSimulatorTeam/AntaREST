@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import type { BotDetailsDTO } from "@/types/types";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { BotDetailsDTO } from "../../../../../../types/types";
 import TokenFormDialog from "./TokenFormDialog";
 import type { TokenFormDefaultValues } from "./utils";
 

@@ -23,7 +23,12 @@ import {
   updateMaintenanceMode,
   updateMessageInfo,
 } from "@/services/api/maintenance";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+
+export const Route = createFileRoute("/_authenticated/settings/maintenance")({
+  component: Maintenance,
+});
 
 const getDefaultValues = async () => ({
   mode: await getMaintenanceMode(),
@@ -69,5 +74,3 @@ function Maintenance() {
     </Form>
   );
 }
-
-export default Maintenance;

@@ -19,8 +19,13 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { changeLanguage, getCurrentLanguage } from "@/utils/i18nUtils";
 import { useColorScheme } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { THEME_MODES } from "../../../-App/shared/constants";
+import { THEME_MODES } from "../../-App/shared/constants";
+
+export const Route = createFileRoute("/_authenticated/settings/general")({
+  component: General,
+});
 
 function General() {
   const { mode, setMode } = useColorScheme();
@@ -78,5 +83,3 @@ function General() {
     </Form>
   );
 }
-
-export default General;
