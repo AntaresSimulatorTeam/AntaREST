@@ -16,7 +16,7 @@ import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import type {
   XpansionCandidate,
   XpansionSettings,
-} from "@/routes/App/Singlestudy/explore/Xpansion/types";
+} from "@/routes/-App/Singlestudy/explore/Xpansion/types";
 import type { AxiosRequestConfig } from "axios";
 import client from "./client";
 

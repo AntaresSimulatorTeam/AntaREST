@@ -22,7 +22,7 @@ import { updateStudiesSortConf, updateStudyFilters } from "@/redux/ducks/studies
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesSortConf, getStudyFilters } from "@/redux/selectors";
-import RefreshButton from "@/routes/App/Studies/RefreshButton";
+import RefreshButton from "@/routes/-App/Studies/RefreshButton";
 import { scanFolder } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";

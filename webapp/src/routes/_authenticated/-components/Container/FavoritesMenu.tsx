@@ -13,7 +13,7 @@
  */
 
 import { getFavoriteStudies } from "@/redux/selectors";
-import FavoriteStudyToggle from "@/routes/App/shared/studies/FavoriteStudyToggle";
+import FavoriteStudyToggle from "@/routes/-App/shared/studies/FavoriteStudyToggle";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { List, ListItemButton, ListItemText, Tooltip } from "@mui/material";
 import { useNavigate } from "@tanstack/react-router";

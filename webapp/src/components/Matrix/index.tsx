@@ -13,7 +13,7 @@
  */
 
 import MatrixUpload from "@/components/Matrix/components/MatrixUpload";
-import type { fetchMatrixFn } from "@/routes/App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import type { fetchMatrixFn } from "@/routes/-App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import type { StudyMetadata } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Skeleton, Tooltip } from "@mui/material";

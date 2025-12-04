@@ -14,7 +14,7 @@
 
 import UploadDialog, { type UploadDialogProps } from "@/components/dialogs/UploadDialog";
 import { createStudy } from "@/redux/ducks/studies";
-import FilterTags from "@/routes/App/Studies/HeaderActions/FliterTags";
+import FilterTags from "@/routes/-App/Studies/HeaderActions/FliterTags";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";

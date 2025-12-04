@@ -16,7 +16,7 @@ import RootPage from "@/components/page/RootPage";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TabsView from "@/components/TabsView";
 import { useAppMode } from "@/hooks/useAppMode";
-import About from "@/routes/App/Settings/About";
+import About from "@/routes/-App/Settings/About";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
