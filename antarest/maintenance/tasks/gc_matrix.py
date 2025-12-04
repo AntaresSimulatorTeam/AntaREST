@@ -63,30 +63,28 @@ def _delete_unused_saved_matrices(matrix_service: MatrixService, unused_matrices
             matrix_service.delete(unused_matrix_id)
 
 
-@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task")
-def clean_matrices_task() -> GCTaskResult:
+def clean_matrices(
+    matrix_service: MatrixService,
+    dry_run: bool,
+    retention_time: int,
+) -> GCTaskResult:
     """
-    Delete all matrices that are not used anymore.
+    Core logic for matrix garbage collection.
 
-    This task:
+    This function:
     1. Acquires a PostgreSQL advisory lock to prevent concurrent execution
     2. Fetches all used matrices and all existing matrices
     3. Compares their lifetimes to the retention_time configuration
     4. Deletes matrices that are unused and exceed the retention period
 
+    Args:
+        matrix_service: Service for matrix operations
+        dry_run: If True, don't actually delete matrices
+        retention_time: Time in seconds before unused matrices can be deleted
+
     Returns:
         GCTaskResult with execution stats (deleted count, duration, status)
     """
-    ctx = MaintenanceContext.get_instance()
-    matrix_service = ctx.matrix_service
-    config = ctx.config
-    if config is None:
-        raise RuntimeError("MaintenanceContext config is not initialized. Ensure worker was properly started.")
-
-    # Get configuration
-    dry_run = config.storage.matrix_gc_dry_run
-    retention_time = config.storage.matrix_gc_retention_time
-
     start_time = time.time()
     deleted_count = 0
 
@@ -153,4 +151,22 @@ def clean_matrices_task() -> GCTaskResult:
         deleted_count=deleted_count,
         duration_seconds=duration,
         dry_run=dry_run,
+    )
+
+
+@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task")
+def clean_matrices_task() -> GCTaskResult:
+    """
+    Celery task wrapper for clean_matrices.
+
+    Retrieves dependencies from the worker context and delegates to clean_matrices().
+    """
+    ctx = MaintenanceContext.get_instance()
+    if ctx.config is None:
+        raise RuntimeError("MaintenanceContext config is not initialized. Ensure worker was properly started.")
+
+    return clean_matrices(
+        matrix_service=ctx.matrix_service,
+        dry_run=ctx.config.storage.matrix_gc_dry_run,
+        retention_time=ctx.config.storage.matrix_gc_retention_time,
     )

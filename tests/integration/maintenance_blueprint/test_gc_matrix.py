@@ -13,43 +13,20 @@
 """Integration tests for the matrix garbage collection task."""
 
 from datetime import datetime, timedelta
-from unittest.mock import Mock
 
 import pandas as pd
-import pytest
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.gc_matrix import (
     GCTaskResult,
     TaskStatus,
-    clean_matrices_task,
+    clean_matrices,
 )
 from antarest.matrixstore.service import MatrixService
 
 
-class TestCleanMatricesTaskIntegration:
-    """Integration tests for clean_matrices_task using real database and services."""
-
-    @pytest.fixture(autouse=True)
-    def setup_maintenance_context(self, matrix_service: MatrixService):
-        """Setup MaintenanceContext with real services."""
-        # Reset singleton
-        MaintenanceContext._INSTANCE = None
-
-        # Create and configure context
-        ctx = MaintenanceContext.get_instance()
-        ctx._initialized = True
-        ctx.core_services = Mock()
-        ctx.core_services.matrix_service = matrix_service
-        ctx.config = Mock()
-        ctx.config.storage.matrix_gc_dry_run = False
-        ctx.config.storage.matrix_gc_retention_time = 3600  # 1 hour
-
-        yield ctx
-
-        # Cleanup
-        MaintenanceContext._INSTANCE = None
+class TestCleanMatricesIntegration:
+    """Integration tests for clean_matrices using real database and services."""
 
     def test_deletes_old_unused_matrices(self, matrix_service: MatrixService):
         """Test that old unused matrices are deleted."""
@@ -69,8 +46,12 @@ class TestCleanMatricesTaskIntegration:
             matrix_obj.created_at = datetime.utcnow() - timedelta(hours=2)
             db.session.commit()
 
-        # Run GC task
-        result = clean_matrices_task()
+        # Run GC with explicit arguments (no context needed)
+        result = clean_matrices(
+            matrix_service=matrix_service,
+            dry_run=False,
+            retention_time=3600,  # 1 hour
+        )
 
         # Verify result
         assert isinstance(result, GCTaskResult)
@@ -91,8 +72,12 @@ class TestCleanMatricesTaskIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
 
-        # Run GC task
-        result = clean_matrices_task()
+        # Run GC
+        result = clean_matrices(
+            matrix_service=matrix_service,
+            dry_run=False,
+            retention_time=3600,
+        )
 
         # Verify result
         assert result.status == TaskStatus.SUCCESS
@@ -105,10 +90,6 @@ class TestCleanMatricesTaskIntegration:
 
     def test_dry_run_does_not_delete(self, matrix_service: MatrixService):
         """Test that dry_run mode does not delete matrices."""
-        # Enable dry run
-        ctx = MaintenanceContext.get_instance()
-        ctx.config.storage.matrix_gc_dry_run = True
-
         # Create and age a matrix
         matrix_data = pd.DataFrame([[1, 2], [3, 4]])
 
@@ -121,8 +102,12 @@ class TestCleanMatricesTaskIntegration:
             matrix_obj.created_at = datetime.utcnow() - timedelta(hours=2)
             db.session.commit()
 
-        # Run GC task
-        result = clean_matrices_task()
+        # Run GC with dry_run=True
+        result = clean_matrices(
+            matrix_service=matrix_service,
+            dry_run=True,
+            retention_time=3600,
+        )
 
         # Verify result indicates deletion would happen
         assert result.status == TaskStatus.SUCCESS
@@ -136,7 +121,11 @@ class TestCleanMatricesTaskIntegration:
 
     def test_returns_success_with_no_matrices(self, matrix_service: MatrixService):
         """Test successful execution when there are no matrices."""
-        result = clean_matrices_task()
+        result = clean_matrices(
+            matrix_service=matrix_service,
+            dry_run=False,
+            retention_time=3600,
+        )
 
         assert result.status == TaskStatus.SUCCESS
         assert result.deleted_count == 0
