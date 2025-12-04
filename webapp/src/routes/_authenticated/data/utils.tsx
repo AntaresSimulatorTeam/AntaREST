@@ -12,17 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { createDataSet, createMatrixByImportation, updateDataSet } from "@/services/api/matrix";
 import type {
   GroupDTO,
   MatrixDataSetDTO,
   MatrixDataSetUpdateDTO,
   MatrixInfoDTO,
-} from "../../../types/types";
-import {
-  createMatrixByImportation,
-  updateDataSet,
-  createDataSet,
-} from "../../../services/api/matrix";
+} from "@/types/types";
 
 const updateMatrix = async (
   data: MatrixDataSetDTO,

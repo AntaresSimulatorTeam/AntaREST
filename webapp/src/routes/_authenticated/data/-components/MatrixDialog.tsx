@@ -14,9 +14,9 @@
 
 import BasicDialog from "@/components/dialogs/BasicDialog";
 import MatrixContent from "@/components/dialogs/DatabaseUploadDialog/components/MatrixContent";
+import type { MatrixInfoDTO } from "@/types/types";
 import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { MatrixInfoDTO } from "../../../types/types";
 
 interface PropTypes {
   matrix: MatrixInfoDTO;

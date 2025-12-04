@@ -17,28 +17,33 @@ import FileTable from "@/components/FileTable";
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import RootPage from "@/components/page/RootPage";
 import SplitView from "@/components/SplitView";
-import DeleteIcon from "@mui/icons-material/Delete";
-import DownloadIcon from "@mui/icons-material/Download";
-import EditIcon from "@mui/icons-material/Edit";
-import StorageIcon from "@mui/icons-material/Storage";
-import { Box, IconButton, Tooltip, Typography } from "@mui/material";
-import type { AxiosError } from "axios";
-import { useSnackbar } from "notistack";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getAuthUser } from "../../../redux/selectors";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
 import {
   deleteDataSet,
   exportMatrixDataset,
   getExportMatrixUrl,
   getMatrixList,
-} from "../../../services/api/matrix";
-import type { MatrixDataSetDTO, MatrixInfoDTO } from "../../../types/types";
-import DataPropsView from "./DataPropsView";
-import DatasetCreationDialog from "./DatasetCreationDialog";
-import MatrixDialog from "./MatrixDialog";
+} from "@/services/api/matrix";
+import type { MatrixDataSetDTO, MatrixInfoDTO } from "@/types/types";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
+import EditIcon from "@mui/icons-material/Edit";
+import StorageIcon from "@mui/icons-material/Storage";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
+import type { AxiosError } from "axios";
+import { useSnackbar } from "notistack";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import DataPropsView from "./-components/DataPropsView";
+import DatasetCreationDialog from "./-components/DatasetCreationDialog";
+import MatrixDialog from "./-components/MatrixDialog";
+
+export const Route = createFileRoute("/_authenticated/data/")({
+  component: Data,
+});
 
 function Data() {
   const [t] = useTranslation();
@@ -273,5 +278,3 @@ function Data() {
     </RootPage>
   );
 }
-
-export default Data;

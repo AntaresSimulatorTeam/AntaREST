@@ -18,7 +18,7 @@ import SimpleLoader from "@/components/loaders/SimpleLoader";
 import SplitView from "@/components/SplitView";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import DataPropsView from "@/routes/App/Data/DataPropsView";
+import DataPropsView from "@/routes/_authenticated/data/-components/DataPropsView";
 import { CommandEnum } from "@/routes/App/Singlestudy/CommandsDrawer/EditionView/commandTypes";
 import { getMatrixList } from "@/services/api/matrix";
 import { appendCommands } from "@/services/api/variant";

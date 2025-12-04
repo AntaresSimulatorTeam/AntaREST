@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { styled, Box, Typography } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
+import { Box, styled, Typography } from "@mui/material";
 
 export const BoxParamHeader = styled(Box)({
   width: "100%",
