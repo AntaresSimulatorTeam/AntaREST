@@ -12,7 +12,7 @@
 
 import logging
 from typing import List, Optional
-
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from antares.tsgen.duration_generator import ProbabilityLaw
@@ -48,12 +48,11 @@ class GenerateThermalClusterTimeSeries(ICommand):
     """
 
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
-    outage_counter: OutageCounter = OutageCounter()
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         series_mapping: dict[str, dict[str, str]] = {}
-
+        outage_counter: OutageCounter = OutageCounter()
         logger.info("Starting thermal cluster time series generation")
 
         # 1- Get the seed and nb_years to generate and outage details thermal
@@ -125,8 +124,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
                         planned_outages = planned_outages[list(planned_outages.columns)].astype(int)
                         forced_outages = pd.DataFrame(data=results.outage_output.forced_outages)
                         forced_outages = forced_outages[list(forced_outages.columns)].astype(int)
-                        self.outage_counter.add_planned_outage(area_id, thermal_id, planned_outages)
-                        self.outage_counter.add_forced_outage(area_id, thermal_id, forced_outages)
+                        outage_counter.add_planned_outage(area_id, thermal_id, planned_outages)
+                        outage_counter.add_forced_outage(area_id, thermal_id, forced_outages)
 
                     # 10- Notify the progress to the notifier
                     generation_performed += 1
@@ -138,24 +137,26 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     return command_failed(f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0])
 
         # 11- Once we've written all matrices inside the matrix-store, modify the input and user folders.
-
+        outage_dir: Path | None = None
         if outage_details_thermal:
             file_study = study_data.get_file_study()
             study_dir = file_study.tree.config.path
+            file_study = file_study.tree
             outage_dir = study_dir / "user" / "ts-generator" / "thermal"
             outage_dir.mkdir(parents=True, exist_ok=True)
 
         for area_id, values in series_mapping.items():
-            area_dir = outage_dir / area_id
-            area_dir.mkdir(exist_ok=True)
+            if outage_details_thermal:
+                area_dir = outage_dir / area_id
+                area_dir.mkdir(exist_ok=True)
             for thermal_id, series in values.items():
                 study_data.save_thermal_series(area_id, thermal_id, series)
 
                 if outage_details_thermal:
                     thermal_dir = area_dir / thermal_id
                     thermal_dir.mkdir(parents=True, exist_ok=True)
-                    self.outage_counter.save_planned_outages(thermal_dir, area_id, thermal_id)
-                    self.outage_counter.save_forced_outages(thermal_dir, area_id, thermal_id)
+                    outage_counter.save_planned_outages(thermal_dir, area_id, thermal_id)
+                    outage_counter.save_forced_outages(thermal_dir, area_id, thermal_id)
 
 
         return command_succeeded(message="All time series were generated successfully")
