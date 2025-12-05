@@ -208,7 +208,9 @@ def fastapi_app(
 
     # Services creation and starting
     services = create_services(config)
-    supplier = lambda: services
+
+    def supplier() -> Services:
+        return services
 
     # Finally, create the API app
     return _fastapi_app(config, supplier, resource_path, mount_front)

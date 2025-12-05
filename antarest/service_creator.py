@@ -149,7 +149,7 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
 
 
 # TODO: connection manager optional
-def create_event_bus(connection_manager: ConnectionManager, config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:
+def create_event_bus(connection_manager: ConnectionManager, config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
     redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
         build_eventbus(connection_manager, True, redis_client),

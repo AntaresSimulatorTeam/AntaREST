@@ -10,7 +10,9 @@
 #
 # This file is part of the Antares project.
 import os
+import shutil
 import typing as t
+import uuid
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +20,7 @@ from typing import Iterable
 
 import jinja2
 import pytest
+from _pytest.tmpdir import TempPathFactory
 from fastapi import FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
@@ -66,8 +69,19 @@ def global_config() -> Config:
     return config
 
 
+@pytest.fixture(scope="session")
+def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
+    tmp_dir = tmp_path_factory.mktemp(basename=f"initial_db_file-{uuid.uuid4()}")
+    db_path = tmp_dir / "db.sqlite"
+    db_url = f"sqlite:///{db_path}"
+    engine = create_engine(db_url, echo=False)
+    Base.metadata.create_all(engine)
+
+    return db_path
+
+
 @pytest.fixture
-def services(tmp_path: Path, services_supplier: ServicesSupplier) -> Iterable[Services]:
+def services(tmp_path: Path, initial_db_file: Path) -> Iterable[Services]:
     # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
@@ -76,13 +90,7 @@ def services(tmp_path: Path, services_supplier: ServicesSupplier) -> Iterable[Se
     db_path = tmp_path / "db.sqlite"
     db_url = f"sqlite:///{db_path}"
 
-    # ATTENTION: when setting up integration tests, be aware that creating the database
-    # tables requires a dedicated DB engine (the `engine` below).
-    # This is crucial as the FastAPI application initializes its own engine (a global object),
-    # and the DB engine used in integration tests is not the same.
-    engine = create_engine(db_url, echo=False)
-    Base.metadata.create_all(engine)
-    del engine  # This object won't be used anymore.
+    shutil.copyfile(initial_db_file, db_path)
 
     # Prepare the directories used by the repos
     matrix_dir = tmp_path / "matrix_store"
