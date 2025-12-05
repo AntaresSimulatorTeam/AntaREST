@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import List, Optional, Self
+from typing import Optional, Self
 
 from pydantic import model_validator
 from typing_extensions import override
@@ -97,7 +97,3 @@ class CreateSTStorageAdditionalConstraints(ICommand):
         constraints = [c.model_dump(mode="json", by_alias=True, exclude_none=True) for c in self.constraints]
         args = {"area_id": self.area_id, "storage_id": self.storage_id, "constraints": constraints}
         return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

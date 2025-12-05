@@ -30,11 +30,13 @@ from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
@@ -127,7 +129,7 @@ def test_clean_matrices_actual_service(
 @with_db_context
 @with_admin_user
 def test_clean_matrices_variant_snapshot(
-    empty_study_930: FileStudy, variant_study_service: VariantStudyService
+    empty_study_930: FileStudy, variant_study_service: VariantStudyService, command_context: CommandContext
 ) -> None:
     # Create a real matrix_service
     bucket_dir = (
@@ -143,7 +145,6 @@ def test_clean_matrices_variant_snapshot(
         user_service=Mock(),
     )
     variant_study_service.command_factory.command_context.matrix_service = matrix_service
-    command_context = variant_study_service.command_factory.command_context
 
     # Create a RawStudy with 1 area and 1 thermal
     study = empty_study_930
@@ -179,6 +180,9 @@ def test_clean_matrices_variant_snapshot(
     # Ensures the matrix created by the `GenerateThermalClusterTimeSeries` command is seen as used.
     # Because it's present in the variant snapshot
     # This way it won't be cleaned by the garbage collector.
+    provider = CommandMatrixUsageProvider(variant_study_service.repository, variant_study_service.command_factory)
+    a = provider.get_matrix_usage()
+    print(list(a))
     used_matrices = list(matrix_service.get_used_matrices())
     assert len(used_matrices) == 1
 
