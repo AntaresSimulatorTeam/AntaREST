@@ -22,7 +22,7 @@ from antarest.study.business.model.sts_model import STStorageCreation, STStorage
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.common import CommandName, InnerMatrices
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -406,7 +406,7 @@ class TestCreateSTStorage:
                 study_version=study_version,
             )
             # Ensures we don't fill default matrices inside the command parameters
-            assert cmd.get_inner_matrices() == []
+            assert cmd.get_inner_matrices() == InnerMatrices()
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
         study = empty_study_920
