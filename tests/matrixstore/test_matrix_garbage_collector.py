@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import shutil
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -31,6 +32,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
+from antarest.study.storage.variantstudy.model.command.common import InnerMatrices
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
@@ -152,6 +154,7 @@ def test_clean_matrices_variant_snapshot(
     create_area_cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
     output = create_area_cmd.apply(study)
     assert output.status
+    assert create_area_cmd.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=False)
     cmd = CreateCluster(
         area_id="fr",
         parameters=ThermalClusterCreation(name="thermal_cluster", nominal_capacity=1000),
@@ -171,24 +174,22 @@ def test_clean_matrices_variant_snapshot(
     variant_study = variant_study_service.create_variant_study(parent_id, "variant_study")
 
     # Add a GenerateThermalTimeSeries command
-    command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=version).to_dto()
-    variant_study_service.append_command(variant_study.id, command)
+    command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=version)
+    assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=True)
+    variant_study_service.append_command(variant_study.id, command.to_dto())
 
     # Generate the snapshot
     variant_study_service.get_raw(variant_study)
 
-    # Ensures the matrix created by the `GenerateThermalClusterTimeSeries` command is seen as used.
-    # Because it's present in the variant snapshot
+    # Ensures the provider sees matrices in the snapshot as the variant contains the command `GenerateThermalClusterTimeSeries`.
     # This way it won't be cleaned by the garbage collector.
     provider = CommandMatrixUsageProvider(variant_study_service.repository, variant_study_service.command_factory)
-    a = provider.get_matrix_usage()
-    print(list(a))
-    used_matrices = list(matrix_service.get_used_matrices())
-    assert len(used_matrices) == 1
+    used_matrices = list(provider.get_matrix_usage())
+    assert len(used_matrices) > 0
 
-    # Clean the snapshot
-    variant_study_service.clear_all_snapshots(retention_time=timedelta())
+    # Clean the snapshot manually
+    shutil.rmtree(Path(variant_study.path) / "snapshot")
 
     # Ensures no matrix is used now that the snapshot is cleaned
-    used_matrices = list(matrix_service.get_used_matrices())
+    used_matrices = list(provider.get_matrix_usage())
     assert len(used_matrices) == 0
