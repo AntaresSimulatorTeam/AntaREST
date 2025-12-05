@@ -156,7 +156,6 @@ def test_command_matrix_usage_provider(
         study_version = "880"
         variant_study_repository.save(VariantStudy(id=study_id, version=study_version, path=tmp_path.as_posix()))
         matrices_id = "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664"
-        use_description = f"Used by command {matrices_id} from variant study {study_id}"
 
         # TODO: add series to the command blocks
         command_block1 = CommandBlock(
@@ -171,7 +170,7 @@ def test_command_matrix_usage_provider(
             study_id=study_id,
             command=CommandName.CREATE_LINK.value,
             args='{"area1": "area2", "area2": "area3","series": [[1,2,3]]}',
-            index=0,
+            index=1,
             version=7,
             study_version=study_version,
         )
@@ -180,14 +179,28 @@ def test_command_matrix_usage_provider(
         db.session.add(command_block2)
         db.session.commit()
 
+        # DB request to fetch the command ids
+        cmd1_id, cmd2_id = "", ""
+        for cmd in db.session.query(CommandBlock).all():
+            if cmd.index == 0:
+                cmd1_id = cmd.id
+            else:
+                cmd2_id = cmd.id
+        description1 = f"Used by command {cmd1_id} from variant study {study_id}"
+        description2 = f"Used by command {cmd2_id} from variant study {study_id}"
+
+        # Check the response
         matrices_references = list(command_matrix_usage_provider.get_matrix_usage())
 
-        assert matrices_references == [MatrixReference(matrix_id=matrices_id, use_description=use_description)] * 2
+        assert matrices_references == [
+            MatrixReference(matrix_id=matrices_id, use_description=description1),
+            MatrixReference(matrix_id=matrices_id, use_description=description2),
+        ]
 
 
 @with_db_context
 @with_admin_user
-def test_clean_matrices_variant_snapshot(
+def test_command_matrix_usage_provider_with_snapshot(
     empty_study_930: FileStudy, variant_study_service: VariantStudyService, command_context: CommandContext
 ) -> None:
     # Create a real matrix_service
