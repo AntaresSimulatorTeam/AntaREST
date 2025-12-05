@@ -264,6 +264,17 @@ def test_command_matrix_usage_provider_with_snapshot(
     used_matrices = list(provider.get_matrix_usage())
     assert len(used_matrices) == 0
 
+    # Create another variant with a command that is not a `GenerateThermalTimeSeries`
+    variant_study = variant_study_service.create_variant_study(parent_id, "variant_study2")
+    command = CreateArea(area_name="be", command_context=command_context, study_version=version)
+    assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=False)
+    variant_study_service.append_command(variant_study.id, command.to_dto())
+    # Generate its snapshot
+    variant_study_service.get_raw(variant_study)
+    # Ensures no matrix is used even if the snapshot exists
+    used_matrices = list(provider.get_matrix_usage())
+    assert len(used_matrices) == 0
+
 
 def test_constants_matrix_usage_provider(constants_matrix_usage_provider: ConstantsMatrixUsageProvider) -> None:
     constant1 = {"c1": "constant_name1"}
