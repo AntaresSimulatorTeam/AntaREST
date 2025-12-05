@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -28,7 +28,6 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -36,7 +35,6 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
@@ -129,13 +127,13 @@ def test_clean_matrices_actual_service(
 @with_db_context
 @with_admin_user
 def test_clean_matrices_variant_snapshot(
-    command_context: CommandContext, empty_study_930: FileStudy, variant_study_service: VariantStudyService
+    empty_study_930: FileStudy, variant_study_service: VariantStudyService
 ) -> None:
     # Create a real matrix_service
     bucket_dir = (
         variant_study_service.command_factory.command_context.matrix_service.matrix_content_repository.bucket_dir
     )
-    service = MatrixService(
+    matrix_service = MatrixService(
         repo=MatrixRepository(db.session),
         repo_dataset=MatrixDataSetRepository(db.session),
         matrix_content_repository=MatrixContentRepository(bucket_dir, InternalMatrixFormat.TSV),
@@ -144,13 +142,14 @@ def test_clean_matrices_variant_snapshot(
         config=Mock(),
         user_service=Mock(),
     )
-    variant_study_service.command_factory.command_context.matrix_service = service
+    variant_study_service.command_factory.command_context.matrix_service = matrix_service
+    command_context = variant_study_service.command_factory.command_context
 
     # Create a RawStudy with 1 area and 1 thermal
     study = empty_study_930
     version = study.config.version
-    cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
-    output = cmd.apply(study)
+    create_area_cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
+    output = create_area_cmd.apply(study)
     assert output.status
     cmd = CreateCluster(
         area_id="fr",
@@ -169,27 +168,23 @@ def test_clean_matrices_variant_snapshot(
 
     # Create a variant
     variant_study = variant_study_service.create_variant_study(parent_id, "variant_study")
-    variant_id = variant_study.id
 
     # Add a GenerateThermalTimeSeries command
-    cmd = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=version).to_dto()
-    variant_study_service.append_command(variant_id, cmd)
+    command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=version).to_dto()
+    variant_study_service.append_command(variant_study.id, command)
 
     # Generate the snapshot
-    file_study_variant = variant_study_service.get_raw(variant_study)
+    variant_study_service.get_raw(variant_study)
 
-    # Ensure we can fetch the matrix content
-    node = file_study_variant.tree.get_node(["input", "thermal", "series", "fr", "thermal_cluster", "series"])
-    assert isinstance(node, InputSeriesMatrix)
-    df = node.parse_as_dataframe()
-    pd.testing.assert_frame_equal(df, pd.DataFrame(8760 * [[1000]]), check_dtype=False)
+    # Ensures the matrix created by the `GenerateThermalClusterTimeSeries` command is seen as used.
+    # Because it's present in the variant snapshot
+    # This way it won't be cleaned by the garbage collector.
+    used_matrices = list(matrix_service.get_used_matrices())
+    assert len(used_matrices) == 1
 
-    # Build a MatrixGarbageCollector that runs instantly
-    gc = MatrixGarbageCollector(matrix_service=service, sleeping_time=0, dry_run=False, retention_time=0)
-    gc.clean_matrices()
+    # Clean the snapshot
+    variant_study_service.clear_all_snapshots(retention_time=timedelta())
 
-    # Ensures we can still fetch the matrix
-    node = file_study_variant.tree.get_node(["input", "thermal", "series", "fr", "thermal_cluster", "series"])
-    assert isinstance(node, InputSeriesMatrix)
-    df = node.parse_as_dataframe()
-    pd.testing.assert_frame_equal(df, pd.DataFrame(8760 * [[1000]]), check_dtype=False)
+    # Ensures no matrix is used now that the snapshot is cleaned
+    used_matrices = list(matrix_service.get_used_matrices())
+    assert len(used_matrices) == 0
