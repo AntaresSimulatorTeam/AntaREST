@@ -12,23 +12,18 @@
 from starlette.testclient import TestClient
 
 
-class TestStudyExport:
-    # Doing exports with both .zip and .7z
-    def test_export_study_with_both_compression(
-        self, client: TestClient, internal_study_id: str, user_access_token: str
-    ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+# Doing exports with both .zip and .7z
+def test_export_study_with_both_compression(client: TestClient, internal_study_id: str, user_access_token: str) -> None:
+    # exporting without any parameters (thus exporting in .zip by default)
+    export_res = client.get(f"/v1/studies/{internal_study_id}/export", stream=True)
+    export_json_res = export_res.json()
+    assert ".zip" in export_json_res["file"]["filename"]
 
-        # exporting without any parameters (thus exporting in .zip by default)
-        export_res = client.get(f"/v1/studies/{internal_study_id}/export")
-        export_json_res = export_res.json()
-        assert ".zip" in export_json_res["file"]["filename"]
+    # exporting with the .7z compression
+    export_res = client.get(f"/v1/studies/{internal_study_id}/export?compression=.7z")
+    export_json_res = export_res.json()
+    assert ".7z" in export_json_res["file"]["filename"]
 
-        # exporting with the .7z compression
-        export_res = client.get(f"/v1/studies/{internal_study_id}/export?compression=.7z")
-        export_json_res = export_res.json()
-        assert ".7z" in export_json_res["file"]["filename"]
-
-        # exporting with an unauthorized compression
-        failed_export_res = client.get(f"/v1/studies/{internal_study_id}/export?compression=.rar")
-        assert failed_export_res.status_code == 422, failed_export_res
+    # exporting with an unauthorized compression
+    failed_export_res = client.get(f"/v1/studies/{internal_study_id}/export?compression=.rar")
+    assert failed_export_res.status_code == 422, failed_export_res

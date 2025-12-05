@@ -384,7 +384,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Export Study",
     )
     def export_study(
-        uuid: str, no_output: Optional[bool] = False, compression: Optional[ArchiveFormat] = ArchiveFormat.ZIP
+        uuid: str, no_output: Optional[bool] = False, compression: ArchiveFormat = ArchiveFormat.ZIP
     ) -> FileDownloadTaskDTO:
         logger.info(f"Exporting study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)

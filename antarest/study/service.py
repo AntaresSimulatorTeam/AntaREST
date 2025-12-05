@@ -1267,14 +1267,14 @@ class StudyService:
         self,
         uuid: str,
         outputs: bool = True,
-        compression: Optional[ArchiveFormat] = ArchiveFormat.ZIP,
+        archive_format: ArchiveFormat = ArchiveFormat.ZIP,
     ) -> FileDownloadTaskDTO:
         """
         Export study to a zip file.
         Args:
             uuid: study id
             outputs: integrate output folder in zip file
-            compression: allow to choose between compression format
+            archive_format: allow to choose between compression format
 
         """
         study = self.get_study(uuid)
@@ -1284,13 +1284,13 @@ class StudyService:
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
 
-        archive_format = ArchiveFormat.ZIP
+        compression_format = ArchiveFormat.ZIP
 
-        if compression in list(map(lambda arch_format: arch_format, ArchiveFormat)):
-            archive_format = compression
+        if archive_format in list(map(lambda arch_format: arch_format, ArchiveFormat)):
+            compression_format = archive_format
 
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}{archive_format}", export_name
+            f"{study.name}-{uuid}{compression_format}", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -1298,7 +1298,9 @@ class StudyService:
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
-                self.storage_service.get_storage(target_study).export_study(target_study, export_path, outputs)
+                self.storage_service.get_storage(target_study).export_study(
+                    target_study, export_path, outputs, compression_format
+                )
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(success=True, message=f"Study {uuid} successfully exported")
             except Exception as e:
