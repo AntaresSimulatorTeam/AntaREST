@@ -66,7 +66,7 @@ import type { VariableViewParams } from "@/services/api/studies/outputs/variable
 import { WsChannel } from "@/services/webSocket/constants";
 import { subscribeWsChannels, unsubscribeWsChannels } from "@/services/webSocket/ws";
 import type { Area, LinkElement } from "@/types/types";
-import { getFirstVariableForItem, type OutputItemType, type Timestep } from "../utils";
+import type { OutputItemType, Timestep } from "../utils";
 
 interface UseVariablePerVariableProps {
   studyId: string;
@@ -165,16 +165,6 @@ export function useVariablePerVariable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariable, selectedItemId]);
 
-  useEffect(() => {
-    if (isEnabled && variablesMetadata && selectedItemId && !selectedVariable) {
-      const firstVariable = getFirstVariableForItem(variablesMetadata, itemType, selectedItemId);
-
-      if (firstVariable) {
-        setSelectedVariable(firstVariable);
-      }
-    }
-  }, [isEnabled, variablesMetadata, selectedItemId, selectedVariable, itemType]);
-
   const handleMaterializeVariable = async () => {
     if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {
       return;
@@ -188,13 +178,13 @@ export function useVariablePerVariable({
           ? {
               type: "area",
               variableName: selectedVariable,
-              frequency: timestep as VariableViewParams["frequency"],
+              frequency: timestep,
               areaId: selectedItemId,
             }
           : {
               type: "link",
               variableName: selectedVariable,
-              frequency: timestep as VariableViewParams["frequency"],
+              frequency: timestep,
               areaFromId: (selectedItem as LinkElement).area1,
               areaToId: (selectedItem as LinkElement).area2,
             };
@@ -236,6 +226,7 @@ export function useVariablePerVariable({
       (message: string) => {
         setIsMaterializing(false);
         setMaterializationTaskId(null);
+        // TODO use error snackbar
         enqueueSnackbar(message || t("study.results.materializationFailed"), {
           variant: "error",
         });

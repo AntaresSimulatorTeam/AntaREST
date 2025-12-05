@@ -106,16 +106,11 @@ function VariableMatrix({
 }: VariableMatrixProps) {
   const { t } = useTranslation();
 
-  if (!variablesMetadata) {
+  if (!variablesMetadata || !selectedVariable) {
     return <Skeleton sx={{ height: 1, transform: "none" }} />;
   }
-
   if (!hasVariablesForItem(variablesMetadata, itemType, selectedItemId, selectedItem)) {
     return <EmptyView title={t("study.results.noVariablesForArea")} icon={GridOffIcon} />;
-  }
-
-  if (!selectedVariable) {
-    return <Skeleton sx={{ height: 1, transform: "none" }} />;
   }
 
   ////////////////////////////////////////////////////////////////

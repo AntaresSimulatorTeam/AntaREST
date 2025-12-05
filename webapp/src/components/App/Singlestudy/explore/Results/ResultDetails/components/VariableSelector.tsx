@@ -33,14 +33,13 @@ import { Autocomplete } from "@mui/material";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import StringFE from "@/components/common/fieldEditors/StringFE";
-import type {
-  AreaVariablesDTO,
-  RenewableClusterVariablesDTO,
-  ShortTermStorageVariablesDTO,
-  ThermalClusterVariablesDTO,
-  VariablesListDTO,
-} from "@/services/api/studies/outputs/variableViews/types";
-import { getFirstVariableForItem, type DataType, type OutputItemType } from "../utils";
+import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
+import {
+  getFirstVariableForItem,
+  getVariables,
+  type DataType,
+  type OutputItemType,
+} from "../utils";
 
 interface VariableSelectorProps {
   variablesMetadata: VariablesListDTO | null;
@@ -50,89 +49,6 @@ interface VariableSelectorProps {
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   disabled?: boolean;
-}
-
-/**
- * Extracts variables from an area based on the data type
- *
- * @param area - The area containing variables and clusters
- * @param dataType - The type of data to extract (values, details, details-res, details-STstorage)
- * @returns Array of variable names
- */
-function getAreaVariables(area: AreaVariablesDTO, dataType: DataType): string[] {
-  switch (dataType) {
-    case "values":
-      return area.variables;
-
-    case "details":
-      return (
-        area.thermalClusters?.flatMap((cluster: ThermalClusterVariablesDTO) => cluster.variables) ||
-        []
-      );
-
-    case "details-res":
-      return (
-        area.renewableClusters?.flatMap(
-          (cluster: RenewableClusterVariablesDTO) => cluster.variables,
-        ) || []
-      );
-
-    case "details-STstorage":
-      return (
-        area.shortTermStorages?.flatMap(
-          (storage: ShortTermStorageVariablesDTO) => storage.variables,
-        ) || []
-      );
-
-    default:
-      return [];
-  }
-}
-
-/**
- * Checks if a link matches the selected ID (bidirectional match)
- *
- * @param area1 - First area name
- * @param area2 - Second area name
- * @param selectedId - The selected link ID to match against
- * @returns True if the link matches in either direction
- */
-function isLinkMatch(area1: string, area2: string, selectedId: string): boolean {
-  const linkId1 = `${area1}%${area2}`;
-  const linkId2 = `${area2}%${area1}`;
-  return linkId1 === selectedId || linkId2 === selectedId;
-}
-
-/**
- * Extracts variables based on item type (areas or links)
- *
- * @param variablesMetadata - The metadata containing all variables information
- * @param itemType - The type of item (areas or links)
- * @param selectedItemId - The ID of the selected item
- * @param dataType - The type of data to extract
- * @returns Array of variable names
- */
-function getVariables(
-  variablesMetadata: VariablesListDTO,
-  itemType: OutputItemType,
-  selectedItemId: string,
-  dataType: DataType,
-): string[] {
-  const data = variablesMetadata.mcInd;
-
-  if (itemType === "areas") {
-    const area = data.areas.find((a) => a.name === selectedItemId);
-    return area ? getAreaVariables(area, dataType) : [];
-  }
-
-  if (itemType === "links") {
-    const link = data.links.find((link) =>
-      isLinkMatch(link.area1Name, link.area2Name, selectedItemId),
-    );
-    return link?.variables || [];
-  }
-
-  return [];
 }
 
 function VariableSelector({

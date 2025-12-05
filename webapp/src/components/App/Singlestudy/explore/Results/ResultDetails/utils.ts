@@ -12,6 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import type {
+  AreaVariablesDTO,
+  RenewableClusterVariablesDTO,
+  ShortTermStorageVariablesDTO,
+  ThermalClusterVariablesDTO,
+  VariablesListDTO,
+} from "@/services/api/studies/outputs/variableViews/types";
 import type { Area, LinkElement, Simulation } from "../../../../../../types/types";
 
 export const OUTPUT_ITEM_TYPES = ["areas", "links", "synthesis"] as const;
@@ -81,8 +88,27 @@ export function matchesSearchTerm(text: string, searchTerm: string): boolean {
   return searchTerms.some((term) => text.toLowerCase().includes(term));
 }
 
+////////////////////////////////////////////////////////////////
+// Variable per variable utils
+////////////////////////////////////////////////////////////////
+
+/**
+ * Retrieves the first variable for a selected item (area or link)
+ *
+ * @param variablesMetadata - The metadata containing all variables information, or null if not loaded
+ * @param itemType - The type of item (areas, links, or synthesis)
+ * @param selectedItemId - The ID of the selected item (area name or link ID in format "area1%area2")
+ * @returns The first variable name for the item, or empty string if not found or no variables exist
+ *
+ * @example
+ * // For an area
+ * getFirstVariableForItem(metadata, "areas", "area1") // Returns first variable of area1
+ *
+ * // For a link
+ * getFirstVariableForItem(metadata, "links", "area1%area2") // Returns first variable of the link
+ */
 export function getFirstVariableForItem(
-  variablesMetadata: { mcAll: unknown; mcInd: unknown } | null,
+  variablesMetadata: VariablesListDTO | null,
   itemType: OutputItemType,
   selectedItemId: string,
 ): string {
@@ -90,22 +116,102 @@ export function getFirstVariableForItem(
     return "";
   }
 
-  const data = variablesMetadata.mcInd as {
-    areas: Array<{ name: string; variables: string[] }>;
-    links: Array<{ area1Name: string; area2Name: string; variables: string[] }>;
-  };
+  const data = variablesMetadata.mcInd;
 
   if (itemType === "areas") {
-    const area = data.areas.find((a) => a.name === selectedItemId);
+    const area = data.areas.find((area) => area.name === selectedItemId);
     return area?.variables[0] || "";
   }
 
   if (itemType === "links") {
-    const link = data.links.find(
-      (l) => l.area1Name === selectedItemId || l.area2Name === selectedItemId,
+    const link = data.links.find((link) =>
+      isLinkMatch(link.area1Name, link.area2Name, selectedItemId),
     );
     return link?.variables[0] || "";
   }
 
   return "";
+}
+
+/**
+ * Extracts variables from an area based on the data type
+ *
+ * @param area - The area containing variables and clusters
+ * @param dataType - The type of data to extract (values, details, details-res, details-STstorage)
+ * @returns Array of variable names
+ */
+export function getAreaVariables(area: AreaVariablesDTO, dataType: DataType): string[] {
+  switch (dataType) {
+    case "values":
+      return area.variables;
+
+    case "details":
+      return (
+        area.thermalClusters?.flatMap((cluster: ThermalClusterVariablesDTO) => cluster.variables) ||
+        []
+      );
+
+    case "details-res":
+      return (
+        area.renewableClusters?.flatMap(
+          (cluster: RenewableClusterVariablesDTO) => cluster.variables,
+        ) || []
+      );
+
+    case "details-STstorage":
+      return (
+        area.shortTermStorages?.flatMap(
+          (storage: ShortTermStorageVariablesDTO) => storage.variables,
+        ) || []
+      );
+
+    default:
+      return [];
+  }
+}
+
+/**
+ * Checks if a link matches the selected ID (bidirectional match)
+ *
+ * @param area1 - First area name
+ * @param area2 - Second area name
+ * @param selectedId - The selected link ID to match against
+ * @returns True if the link matches in either direction
+ */
+function isLinkMatch(area1: string, area2: string, selectedId: string): boolean {
+  const linkId1 = `${area1}%${area2}`;
+  const linkId2 = `${area2}%${area1}`;
+  return linkId1 === selectedId || linkId2 === selectedId;
+}
+
+/**
+ * Extracts variables based on item type (areas or links)
+ *
+ * @param variablesMetadata - The metadata containing all variables information
+ * @param itemType - The type of item (areas or links)
+ * @param selectedItemId - The ID of the selected item
+ * @param dataType - The type of data to extract
+ * @returns Array of variable names
+ */
+export function getVariables(
+  variablesMetadata: VariablesListDTO,
+  itemType: OutputItemType,
+  selectedItemId: string,
+  dataType: DataType,
+): string[] {
+  const data = variablesMetadata.mcInd;
+
+  if (itemType === "areas") {
+    const area = data.areas.find((a) => a.name === selectedItemId);
+    return area ? getAreaVariables(area, dataType) : [];
+  }
+
+  if (itemType === "links") {
+    const link = data.links.find((link) =>
+      isLinkMatch(link.area1Name, link.area2Name, selectedItemId),
+    );
+    return link?.variables || [];
+  }
+
+  return [];
 }
