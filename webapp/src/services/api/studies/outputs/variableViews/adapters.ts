@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { TimeIndexDTO, VariableViewParams } from "./types";
+import type { VariableViewParams } from "./types";
 
 export function buildVariableViewQueryParams(params: VariableViewParams): Record<string, string> {
   const queryParams: Record<string, string> = {
@@ -38,13 +38,4 @@ export function buildVariableViewQueryParams(params: VariableViewParams): Record
   }
 
   return queryParams;
-}
-
-export function adaptTimeIndexDtoToTimeIndex(dto: TimeIndexDTO): TimeIndexDTO {
-  return {
-    startDate: dto.startDate,
-    steps: dto.steps,
-    firstWeekSize: dto.firstWeekSize,
-    level: dto.level,
-  };
 }

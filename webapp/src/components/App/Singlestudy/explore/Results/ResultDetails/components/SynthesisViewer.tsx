@@ -34,6 +34,10 @@ interface SynthesisViewerProps {
 function SynthesisViewer({ synthesisRes }: SynthesisViewerProps) {
   const { t } = useTranslation();
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <ViewWrapper flex>
       <UsePromiseCond

@@ -12,6 +12,46 @@
  * This file is part of the Antares project.
  */
 
+/**
+ * Hook: useVariablePerVariable
+ *
+ * Manages the state and operations for the variable-per-variable view mode.
+ * This hook handles:
+ * - Fetching the list of available variables from the API
+ * - Managing variable selection state
+ * - Fetching variable view data (consolidated year-by-year matrix)
+ * - Materializing variable views when they haven't been generated yet
+ * - Tracking materialization progress via WebSocket
+ *
+ * IMPORTANT - DATA SOURCE:
+ * The variables list API endpoint (/v1/studies/{uuid}/output/{output_id}/variables-list)
+ * returns both mcInd and mcAll data structures in a single response:
+ *
+ * Response structure:
+ * {
+ *   "mcInd": { areas: [...], links: [...] },  // Year-by-year individual simulation data
+ *   "mcAll": { areas: [...], links: [...] }   // Pre-aggregated statistical data
+ * }
+ *
+ * This hook and all variable-per-variable components EXCLUSIVELY use mcInd because:
+ *
+ * 1. mcInd (Monte Carlo Individual):
+ *    - Contains non-aggregated, year-by-year data for each Monte Carlo simulation run
+ *    - Essential for variable-per-variable views that show all years in a consolidated table
+ *    - Enables users to analyze detailed simulation results without navigating 1000+ matrices
+ *
+ * 2. mcAll (Monte Carlo Aggregated):
+ *    - Contains pre-aggregated statistics (sum, standard deviation, etc.)
+ *    - Already synthesized, so no benefit from variable-by-variable breakdown
+ *    - Used elsewhere in the application (e.g., Synthesis view with single matrix)
+ *
+ * The API design decision to return both in a single endpoint was made for practical reasons
+ * (splitting into /mc-all and /mc-ind endpoints was deemed impractical), but the front-end
+ * primarily consumes mcInd for variable-per-variable features.
+ *
+ * Note: The variable lists can differ between mcInd and mcAll for the same area/link.
+ */
+
 import { enqueueSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,18 +66,12 @@ import type { VariableViewParams } from "@/services/api/studies/outputs/variable
 import { WsChannel } from "@/services/webSocket/constants";
 import { subscribeWsChannels, unsubscribeWsChannels } from "@/services/webSocket/ws";
 import type { Area, LinkElement } from "@/types/types";
-import {
-  getFirstVariableForItem,
-  type MonteCarloMode,
-  type OutputItemType,
-  type Timestep,
-} from "../utils";
+import { getFirstVariableForItem, type OutputItemType, type Timestep } from "../utils";
 
 interface UseVariablePerVariableProps {
   studyId: string;
   outputId: string | undefined;
   isEnabled: boolean;
-  mcMode: MonteCarloMode;
   itemType: OutputItemType;
   timestep: Timestep;
   selectedItemId: string;
@@ -48,7 +82,6 @@ export function useVariablePerVariable({
   studyId,
   outputId,
   isEnabled,
-  mcMode,
   itemType,
   timestep,
   selectedItemId,
@@ -90,13 +123,13 @@ export function useVariablePerVariable({
           ? {
               type: "area",
               variableName: selectedVariable,
-              frequency: timestep as VariableViewParams["frequency"],
+              frequency: timestep,
               areaId: selectedItemId,
             }
           : {
               type: "link",
               variableName: selectedVariable,
-              frequency: timestep as VariableViewParams["frequency"],
+              frequency: timestep,
               areaFromId: (selectedItem as LinkElement).area1,
               areaToId: (selectedItem as LinkElement).area2,
             };
@@ -134,18 +167,13 @@ export function useVariablePerVariable({
 
   useEffect(() => {
     if (isEnabled && variablesMetadata && selectedItemId && !selectedVariable) {
-      const firstVariable = getFirstVariableForItem(
-        variablesMetadata,
-        mcMode,
-        itemType,
-        selectedItemId,
-      );
+      const firstVariable = getFirstVariableForItem(variablesMetadata, itemType, selectedItemId);
 
       if (firstVariable) {
         setSelectedVariable(firstVariable);
       }
     }
-  }, [isEnabled, variablesMetadata, selectedItemId, selectedVariable, itemType, mcMode]);
+  }, [isEnabled, variablesMetadata, selectedItemId, selectedVariable, itemType]);
 
   const handleMaterializeVariable = async () => {
     if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {

@@ -103,7 +103,9 @@ function ResultMatrixViewer({
   variableViewDataRes,
   variableViewColumns,
 }: ResultMatrixViewerProps) {
-  const isVariablePerVariable = mcMode === "variable-per-variable";
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <ViewWrapper flex>
@@ -139,10 +141,9 @@ function ResultMatrixViewer({
             flexDirection: "column",
           }}
         >
-          {isVariablePerVariable ? (
+          {mcMode === "variable-per-variable" ? (
             <VariableMatrix
               variablesMetadata={variablesMetadata}
-              mcMode={mcMode}
               itemType={itemType}
               selectedItemId={selectedItemId}
               selectedItem={selectedItem}

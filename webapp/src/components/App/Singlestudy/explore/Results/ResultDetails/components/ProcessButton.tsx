@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Button, CircularProgress } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import { Button, CircularProgress } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 interface ProcessButtonProps {

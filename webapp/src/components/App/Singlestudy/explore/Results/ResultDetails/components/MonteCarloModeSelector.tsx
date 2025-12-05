@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { useTranslation } from "react-i18next";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { MonteCarloMode } from "../utils";
 
 interface MonteCarloModeSelectorProps {
@@ -35,7 +35,7 @@ function MonteCarloModeSelector({ value, onChange, disabled }: MonteCarloModeSel
         { value: "variable-per-variable", label: t("study.results.variablePerVariable") },
       ]}
       size="extra-small"
-      onChange={(event) => onChange(event.target.value as MonteCarloMode)}
+      onChange={(event) => onChange(event.target.value)}
       margin="dense"
       disabled={disabled}
       sx={{ minWidth: 150 }}

@@ -32,7 +32,7 @@ import {
   groupResultColumns,
 } from "../../../../../common/Matrix/shared/utils";
 import SplitView from "../../../../../common/SplitView/index";
-import useStudyOutput from "../hooks/useStudyOutput";
+import useStudyOutput from "./hooks/useStudyOutput";
 import ResultItemSelector from "./components/ResultItemSelector";
 import ResultMatrixViewer from "./components/ResultMatrixViewer";
 import SynthesisViewer, { type SynthesisData } from "./components/SynthesisViewer";
@@ -123,7 +123,6 @@ function ResultDetails() {
     studyId: study.id,
     outputId,
     isEnabled: isVariablePerVariable,
-    mcMode,
     itemType,
     timestep,
     selectedItemId,

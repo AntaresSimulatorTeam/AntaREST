@@ -12,21 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import type {
-  MONTE_CARLO_MODES,
-  VARIABLE_VIEW_EXPORT_FORMATS,
-  VARIABLE_VIEW_FREQUENCIES,
-  VARIABLE_VIEW_OBJECT_TYPES,
-} from "./constants";
+import type { VARIABLE_VIEW_FREQUENCIES } from "./constants";
 
 ////////////////////////////////////////////////////////////////
 // Derived Types
 ////////////////////////////////////////////////////////////////
 
 export type VariableViewFrequency = (typeof VARIABLE_VIEW_FREQUENCIES)[number];
-export type VariableViewObjectType = (typeof VARIABLE_VIEW_OBJECT_TYPES)[number];
-export type VariableViewExportFormat = (typeof VARIABLE_VIEW_EXPORT_FORMATS)[number];
-export type MonteCarloMode = (typeof MONTE_CARLO_MODES)[number];
 
 ////////////////////////////////////////////////////////////////
 // API DTO Types
@@ -66,6 +58,11 @@ export interface VariablesListDataDTO {
   links: LinkVariablesDTO[];
 }
 
+/**
+ * Variables List DTO - Response from /v1/studies/{uuid}/output/{output_id}/variables-list
+ * This response contains both mcInd and mcAll data structures in a single API call.
+ * Variable-per-variable views in the front-end only use mcInd.
+ */
 export interface VariablesListDTO {
   mcInd: VariablesListDataDTO;
   mcAll: VariablesListDataDTO;
@@ -132,25 +129,3 @@ export type VariableViewParams =
   | ThermalClusterVariableViewParams
   | RenewableClusterVariableViewParams
   | ShortTermStorageVariableViewParams;
-
-////////////////////////////////////////////////////////////////
-// UI Types
-////////////////////////////////////////////////////////////////
-
-export interface SelectedVariableObject {
-  type: VariableViewObjectType;
-  areaId?: string;
-  linkId?: string;
-  clusterId?: string;
-  label: string;
-}
-
-export interface VariablePerVariableState {
-  mode: MonteCarloMode;
-  selectedObject: SelectedVariableObject | null;
-  selectedVariable: string;
-  selectedFrequency: VariableViewFrequency;
-  isViewMaterialized: boolean;
-  isProcessing: boolean;
-  materializationTaskId: string | null;
-}

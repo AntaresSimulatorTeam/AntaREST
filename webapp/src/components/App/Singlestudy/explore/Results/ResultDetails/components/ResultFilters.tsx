@@ -266,7 +266,6 @@ function ResultFilters({
       field: isVariablePerVariable ? (
         <VariableSelector
           variablesMetadata={variablesMetadata}
-          mcMode={mcMode}
           dataType={dataType}
           itemType={itemType}
           selectedItemId={selectedItemId}

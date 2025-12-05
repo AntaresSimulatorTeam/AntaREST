@@ -12,6 +12,31 @@
  * This file is part of the Antares project.
  */
 
+/**
+ * Variable Matrix Component for Variable-per-Variable Views
+ *
+ * This component displays the consolidated matrix view for a specific variable across all years
+ * in the variable-per-variable mode.
+ *
+ * DATA SOURCE RATIONALE:
+ * This component exclusively uses mcInd (Monte Carlo Individual) data from the variables metadata.
+ * Although the API endpoint /v1/studies/{uuid}/output/{output_id}/variables-list returns both
+ * mcInd and mcAll in a single response, we only use mcInd here because:
+ *
+ * - mcInd: Contains non-aggregated, year-by-year individual simulation data
+ *   → Perfect for variable-per-variable views where users want to see detailed data across all years
+ *   → Eliminates the need to navigate through potentially 1000+ individual matrices
+ *
+ * - mcAll: Contains pre-aggregated statistics (sum, standard deviation, etc.) across all simulations
+ *   → Already synthesized, so a single matrix view is sufficient (used in Synthesis view)
+ *   → Does not benefit from variable-by-variable breakdown
+ *
+ * The API keeps both in a single endpoint for practical reasons (splitting was deemed impractical),
+ * but the front-end primarily consumes mcInd for variable-per-variable features.
+ *
+ * Note: Variable lists may differ between mcInd and mcAll for the same area/link.
+ */
+
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -29,12 +54,11 @@ import FilterableMatrixGrid, {
 import { isNonEmptyMatrix } from "../../../../../../common/Matrix/shared/types";
 import EmptyView from "../../../../../../common/page/EmptyView";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import type { MonteCarloMode, OutputItemType } from "../utils";
+import type { OutputItemType } from "../utils";
 import ProcessButton from "./ProcessButton";
 
 interface VariableMatrixProps {
   variablesMetadata: VariablesListDTO | null;
-  mcMode: MonteCarloMode;
   itemType: OutputItemType;
   selectedItemId: string;
   selectedItem: (Area & { id: string }) | LinkElement | undefined;
@@ -48,12 +72,12 @@ interface VariableMatrixProps {
 
 function hasVariablesForItem(
   variablesMetadata: VariablesListDTO,
-  mcMode: MonteCarloMode,
   itemType: OutputItemType,
   selectedItemId: string,
   selectedItem: (Area & { id: string }) | LinkElement | undefined,
 ): boolean {
-  const data = mcMode === "mc-all" ? variablesMetadata.mcAll : variablesMetadata.mcInd;
+  // Variable-per-variable always uses mcInd
+  const data = variablesMetadata.mcInd;
 
   if (itemType === "areas") {
     return data.areas.some((area) => area.name === selectedItemId);
@@ -70,7 +94,6 @@ function hasVariablesForItem(
 
 function VariableMatrix({
   variablesMetadata,
-  mcMode,
   itemType,
   selectedItemId,
   selectedItem,
@@ -87,13 +110,17 @@ function VariableMatrix({
     return <Skeleton sx={{ height: 1, transform: "none" }} />;
   }
 
-  if (!hasVariablesForItem(variablesMetadata, mcMode, itemType, selectedItemId, selectedItem)) {
+  if (!hasVariablesForItem(variablesMetadata, itemType, selectedItemId, selectedItem)) {
     return <EmptyView title={t("study.results.noVariablesForArea")} icon={GridOffIcon} />;
   }
 
   if (!selectedVariable) {
     return <Skeleton sx={{ height: 1, transform: "none" }} />;
   }
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <UsePromiseCond

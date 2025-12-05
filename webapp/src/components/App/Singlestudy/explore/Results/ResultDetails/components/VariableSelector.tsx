@@ -12,16 +12,38 @@
  * This file is part of the Antares project.
  */
 
+/**
+ * Variable Selector Component for Variable-per-Variable Views
+ *
+ * This component allows users to select a variable from the list of available variables
+ * for a given item (area or link) in the variable-per-variable mode.
+ *
+ * IMPORTANT: Variable-per-variable views always use mcInd (Monte Carlo Individual) data.
+ * Although the API returns both mcInd and mcAll in the response, we exclusively use mcInd
+ * because:
+ * - mcInd contains non-aggregated, year-by-year individual simulation data
+ * - This allows users to view all years for a specific variable in a consolidated table
+ * - mcAll contains pre-aggregated statistics (sum, std, etc.) which doesn't benefit from
+ *   variable-by-variable breakdown since it's already synthesized
+ *
+ * The mcAll data is used elsewhere (e.g., Synthesis view) but never in variable-per-variable mode.
+ */
+
 import { Autocomplete } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import StringFE from "@/components/common/fieldEditors/StringFE";
-import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
-import type { DataType, MonteCarloMode, OutputItemType } from "../utils";
+import type {
+  AreaVariablesDTO,
+  RenewableClusterVariablesDTO,
+  ShortTermStorageVariablesDTO,
+  ThermalClusterVariablesDTO,
+  VariablesListDTO,
+} from "@/services/api/studies/outputs/variableViews/types";
+import type { DataType, OutputItemType } from "../utils";
 
 interface VariableSelectorProps {
   variablesMetadata: VariablesListDTO | null;
-  mcMode: MonteCarloMode;
   dataType: DataType;
   itemType: OutputItemType;
   selectedItemId: string;
@@ -30,13 +52,91 @@ interface VariableSelectorProps {
   disabled?: boolean;
 }
 
-interface VariableOption {
-  variable: string;
+/**
+ * Extracts variables from an area based on the data type
+ *
+ * @param area - The area containing variables and clusters
+ * @param dataType - The type of data to extract (values, details, details-res, details-STstorage)
+ * @returns Array of variable names
+ */
+function getAreaVariables(area: AreaVariablesDTO, dataType: DataType): string[] {
+  switch (dataType) {
+    case "values":
+      return area.variables;
+
+    case "details":
+      return (
+        area.thermalClusters?.flatMap((cluster: ThermalClusterVariablesDTO) => cluster.variables) ||
+        []
+      );
+
+    case "details-res":
+      return (
+        area.renewableClusters?.flatMap(
+          (cluster: RenewableClusterVariablesDTO) => cluster.variables,
+        ) || []
+      );
+
+    case "details-STstorage":
+      return (
+        area.shortTermStorages?.flatMap(
+          (storage: ShortTermStorageVariablesDTO) => storage.variables,
+        ) || []
+      );
+
+    default:
+      return [];
+  }
+}
+
+/**
+ * Checks if a link matches the selected ID (bidirectional match)
+ *
+ * @param area1 - First area name
+ * @param area2 - Second area name
+ * @param selectedId - The selected link ID to match against
+ * @returns True if the link matches in either direction
+ */
+function isLinkMatch(area1: string, area2: string, selectedId: string): boolean {
+  const linkId1 = `${area1}%${area2}`;
+  const linkId2 = `${area2}%${area1}`;
+  return linkId1 === selectedId || linkId2 === selectedId;
+}
+
+/**
+ * Extracts variables based on item type (areas or links)
+ *
+ * @param variablesMetadata - The metadata containing all variables information
+ * @param itemType - The type of item (areas or links)
+ * @param selectedItemId - The ID of the selected item
+ * @param dataType - The type of data to extract
+ * @returns Array of variable names
+ */
+function getVariables(
+  variablesMetadata: VariablesListDTO,
+  itemType: OutputItemType,
+  selectedItemId: string,
+  dataType: DataType,
+): string[] {
+  const data = variablesMetadata.mcInd;
+
+  if (itemType === "areas") {
+    const area = data.areas.find((a) => a.name === selectedItemId);
+    return area ? getAreaVariables(area, dataType) : [];
+  }
+
+  if (itemType === "links") {
+    const link = data.links.find((link) =>
+      isLinkMatch(link.area1Name, link.area2Name, selectedItemId),
+    );
+    return link?.variables || [];
+  }
+
+  return [];
 }
 
 function VariableSelector({
   variablesMetadata,
-  mcMode,
   dataType,
   itemType,
   selectedItemId,
@@ -51,67 +151,22 @@ function VariableSelector({
       return [];
     }
 
-    const data = mcMode === "mc-all" ? variablesMetadata.mcAll : variablesMetadata.mcInd;
-    const options: VariableOption[] = [];
+    return getVariables(variablesMetadata, itemType, selectedItemId, dataType);
+  }, [variablesMetadata, dataType, itemType, selectedItemId]);
 
-    if (itemType === "areas") {
-      const area = data.areas.find((a) => a.name === selectedItemId);
-      if (!area) {
-        return [];
-      }
+  const isVariableValid = variableOptions.includes(selectedVariable);
 
-      if (dataType === "values") {
-        area.variables.forEach((variable) => {
-          options.push({ variable });
-        });
-      } else if (dataType === "details") {
-        area.thermalClusters?.forEach((cluster) => {
-          cluster.variables.forEach((variable) => {
-            options.push({ variable });
-          });
-        });
-      } else if (dataType === "details-res") {
-        area.renewableClusters?.forEach((cluster) => {
-          cluster.variables.forEach((variable) => {
-            options.push({ variable });
-          });
-        });
-      } else if (dataType === "details-STstorage") {
-        area.shortTermStorages?.forEach((storage) => {
-          storage.variables.forEach((variable) => {
-            options.push({ variable });
-          });
-        });
-      }
-    } else if (itemType === "links") {
-      const link = data.links.find(
-        (l) =>
-          `${l.area1Name}%${l.area2Name}` === selectedItemId ||
-          `${l.area2Name}%${l.area1Name}` === selectedItemId,
-      );
-
-      if (!link) {
-        return [];
-      }
-
-      link.variables.forEach((variable) => {
-        options.push({ variable });
-      });
-    }
-
-    return options;
-  }, [variablesMetadata, mcMode, dataType, itemType, selectedItemId]);
-
-  const selectedOption = variableOptions.find((opt) => opt.variable === selectedVariable) || null;
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Autocomplete
       size="small"
       options={variableOptions}
-      getOptionLabel={(option) => option.variable}
-      value={selectedOption}
+      value={isVariableValid ? selectedVariable : null}
       onChange={(_event, newValue) => {
-        onVariableSelect(newValue?.variable || "");
+        onVariableSelect(newValue || "");
       }}
       disabled={disabled || variableOptions.length === 0}
       renderInput={(params) => (

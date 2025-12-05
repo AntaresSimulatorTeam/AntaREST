@@ -16,11 +16,10 @@ import client from "@/services/api/client";
 import { buildVariableViewQueryParams } from "./adapters";
 import type {
   TimeIndexDTO,
-  VariableViewExportFormat,
+  VariablesListDTO,
   VariableViewFrequency,
   VariableViewMatrixDTO,
   VariableViewParams,
-  VariablesListDTO,
 } from "./types";
 
 ////////////////////////////////////////////////////////////////
@@ -61,28 +60,6 @@ export async function getVariableViewData(
     { params: queryParams },
   );
   return data;
-}
-
-export async function exportVariableViewData(
-  studyId: string,
-  outputId: string,
-  params: VariableViewParams,
-  format: VariableViewExportFormat,
-) {
-  const queryParams = {
-    ...buildVariableViewQueryParams(params),
-    format,
-  };
-
-  const { data } = await client.get<string>(
-    `/v1/studies/${studyId}/output/${outputId}/variables-views/data`,
-    {
-      params: queryParams,
-      responseType: format === "json" ? "json" : "text",
-    },
-  );
-
-  return typeof data === "string" ? data : JSON.stringify(data);
 }
 
 ////////////////////////////////////////////////////////////////

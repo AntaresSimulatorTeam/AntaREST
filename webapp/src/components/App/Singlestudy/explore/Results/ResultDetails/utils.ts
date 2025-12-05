@@ -83,7 +83,6 @@ export function matchesSearchTerm(text: string, searchTerm: string): boolean {
 
 export function getFirstVariableForItem(
   variablesMetadata: { mcAll: unknown; mcInd: unknown } | null,
-  mcMode: MonteCarloMode,
   itemType: OutputItemType,
   selectedItemId: string,
 ): string {
@@ -91,7 +90,7 @@ export function getFirstVariableForItem(
     return "";
   }
 
-  const data = (mcMode === "mc-all" ? variablesMetadata.mcAll : variablesMetadata.mcInd) as {
+  const data = variablesMetadata.mcInd as {
     areas: Array<{ name: string; variables: string[] }>;
     links: Array<{ area1Name: string; area2Name: string; variables: string[] }>;
   };

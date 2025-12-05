@@ -19,15 +19,3 @@ export const VARIABLE_VIEW_FREQUENCIES = [
   "monthly",
   "annual",
 ] as const;
-
-export const VARIABLE_VIEW_OBJECT_TYPES = [
-  "area",
-  "link",
-  "thermal_cluster",
-  "renewable_cluster",
-  "short_term_storage",
-] as const;
-
-export const VARIABLE_VIEW_EXPORT_FORMATS = ["json", "csv", "tsv"] as const;
-
-export const MONTE_CARLO_MODES = ["mc-ind", "mc-all", "variable-per-variable"] as const;
