@@ -130,11 +130,19 @@ def test_raw_studies_matrix_usage_provider(
 
     with db():
         raw_study = raw_study_service.create(metadata_raw_study)
+        study_path = Path(raw_study.path)
+        input_path = study_path / "input"
+        expansion_path = study_path / "user" / "expansion"
+        expansion_path.mkdir(parents=True, exist_ok=True)
 
-        (Path(raw_study.path) / f"{matrix_name1}.link").write_text(f"matrix://{matrix_name1}")
-        (Path(raw_study.path) / f"{matrix_name2}.link").write_text(f"matrix://{matrix_name2}")
-        (Path(raw_study.path) / f"{matrix_name3}.link").write_text(f"matrix://{matrix_name3}")
-        (Path(raw_study.path) / f"{matrix_name4}.txt").write_text(f"matrix://{matrix_name4}")
+        (input_path / f"{matrix_name1}.link").write_text(f"matrix://{matrix_name1}")
+        (input_path / f"{matrix_name2}.link").write_text(f"matrix://{matrix_name2}")
+        (expansion_path / f"{matrix_name3}.link").write_text(f"matrix://{matrix_name3}")
+
+        # Not a .link file -> Should not appear
+        (input_path / f"{matrix_name4}.txt").write_text(f"matrix://{matrix_name4}")
+        # Not in `input` or `expansion` folder -> Should not appear
+        (study_path / f"{matrix_name4}.link").write_text(f"matrix://{matrix_name4}")
 
         raw_studies_matrix_usage_provider.study_metadata_repo.save(metadata_raw_study)
 
