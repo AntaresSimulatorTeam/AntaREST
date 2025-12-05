@@ -30,7 +30,7 @@
  */
 
 import { Autocomplete } from "@mui/material";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import type {
@@ -40,7 +40,7 @@ import type {
   ThermalClusterVariablesDTO,
   VariablesListDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { DataType, OutputItemType } from "../utils";
+import { getFirstVariableForItem, type DataType, type OutputItemType } from "../utils";
 
 interface VariableSelectorProps {
   variablesMetadata: VariablesListDTO | null;
@@ -155,6 +155,17 @@ function VariableSelector({
   }, [variablesMetadata, dataType, itemType, selectedItemId]);
 
   const isVariableValid = variableOptions.includes(selectedVariable);
+
+  // Auto-select first variable when switching item types or when no valid variable is selected
+  useEffect(() => {
+    if (!isVariableValid && variablesMetadata && selectedItemId) {
+      const firstVariable = getFirstVariableForItem(variablesMetadata, itemType, selectedItemId);
+
+      if (firstVariable) {
+        onVariableSelect(firstVariable);
+      }
+    }
+  }, [isVariableValid, variablesMetadata, selectedItemId, itemType, onVariableSelect]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
