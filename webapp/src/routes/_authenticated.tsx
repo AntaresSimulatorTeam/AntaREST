@@ -13,8 +13,8 @@
  */
 
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import Container from "./_authenticated/-components/Container";
-import MaintenanceMode from "./_authenticated/-components/MaintenanceMode";
+import Container from "./_authenticated/(layout)/-components/Container";
+import MaintenanceMode from "./_authenticated/(layout)/-components/MaintenanceMode";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context, location }) => {

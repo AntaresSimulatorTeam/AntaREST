@@ -15,7 +15,13 @@
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import Logo from "@/components/Logo";
 import { useAppMode } from "@/hooks/useAppMode";
+import { logout } from "@/redux/ducks/auth";
+import { fetchGroups } from "@/redux/ducks/groups";
+import { fetchStudies } from "@/redux/ducks/studies";
 import { setFormCloseDialogStatus, setMenuOpen } from "@/redux/ducks/ui";
+import { fetchUsers } from "@/redux/ducks/users";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import {
   getCurrentStudyId,
   getFormState,
@@ -37,12 +43,6 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMount } from "react-use";
-import { logout } from "../../../../redux/ducks/auth";
-import { fetchGroups } from "../../../../redux/ducks/groups";
-import { fetchStudies } from "../../../../redux/ducks/studies";
-import { fetchUsers } from "../../../../redux/ducks/users";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import FavoritesMenu from "./FavoritesMenu";
 import SidebarItem from "./SidebarItem";
 import { StyledDrawer } from "./styles";

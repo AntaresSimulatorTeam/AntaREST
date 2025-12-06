@@ -16,8 +16,8 @@ import type { RouterContext } from "@/router";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { SnackbarProvider } from "notistack";
-import SnackbarCloseButton from "./_authenticated/-components/SnackbarCloseButton";
-import ThemeProvider from "./_authenticated/-components/ThemeProvider";
+import SnackbarCloseButton from "./_authenticated/(layout)/-components/SnackbarCloseButton";
+import ThemeProvider from "./_authenticated/(layout)/-components/ThemeProvider";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: () => (
