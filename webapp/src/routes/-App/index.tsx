@@ -18,11 +18,12 @@ import { IconButton } from "@mui/material";
 import { SnackbarProvider, useSnackbar, type SnackbarKey } from "notistack";
 import { Provider } from "react-redux";
 import { Navigate, Outlet, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Container from "../_authenticated/-components/Container";
-import MaintenanceMode from "../_authenticated/-components/MaintenanceMode";
-import ThemeProvider from "../_authenticated/-components/ThemeProvider";
+import Container from "../_authenticated/(layout)/-components/Container";
+import MaintenanceMode from "../_authenticated/(layout)/-components/MaintenanceMode";
+import ThemeProvider from "../_authenticated/(layout)/-components/ThemeProvider";
 import Api from "../_authenticated/apidoc";
 import Settings from "../_authenticated/settings";
+import Studies from "../_authenticated/studies";
 import Login from "../login";
 import Tasks from "../tasks";
 import Data from "./Data";
@@ -64,7 +65,6 @@ import Capacities from "./Singlestudy/explore/Xpansion/Capacities";
 import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
 import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
 import Weights from "./Singlestudy/explore/Xpansion/Weights";
-import Studies from "./Studies";
 
 // TODO: replace 'notistack' by 'sonner' (https://sonner.emilkowal.ski/)
 function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {

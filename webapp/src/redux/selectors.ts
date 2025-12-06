@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { buildStudyTree } from "@/routes/-App/Studies/StudyTree/utils";
+import { buildStudyTree } from "@/routes/_authenticated/studies/-components/StudyTree/utils";
 import { createLinkId } from "@/services/api/studies/links/utils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import * as R from "ramda";

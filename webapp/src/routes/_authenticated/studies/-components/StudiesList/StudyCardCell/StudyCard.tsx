@@ -14,7 +14,12 @@
 
 import CopyButton from "@/components/buttons/CopyButton";
 import EditorIcon from "@/components/icons/EditorIcon";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudy } from "@/redux/selectors";
+import { buildModificationDate, convertUTCToLocalTime, displayVersionName } from "@/services/utils";
+import { StudyType, type StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
@@ -35,23 +40,14 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { Link, useNavigate } from "@tanstack/react-router";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, useNavigate } from "react-router-dom";
 import { areEqual } from "react-window";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import { getStudy } from "../../../../../redux/selectors";
-import {
-  buildModificationDate,
-  convertUTCToLocalTime,
-  displayVersionName,
-} from "../../../../../services/utils";
-import { StudyType, type StudyMetadata } from "../../../../../types/types";
-import FavoriteStudyToggle from "../../../shared/studies/FavoriteStudyToggle";
-import StudyActionsMenu from "../../../shared/studies/StudyActionsMenu";
+import FavoriteStudyToggle from "../../../../../-App/shared/studies/FavoriteStudyToggle";
+import StudyActionsMenu from "../../../../../-App/shared/studies/StudyActionsMenu";
 
 const logError = debug("antares:studieslist:error");
 
@@ -155,7 +151,7 @@ const StudyCard = memo((props: Props) => {
               noWrap
               variant="h6"
               component="div"
-              onClick={() => navigate(`/studies/${study.id}`)}
+              onClick={() => navigate({ to: `/studies/${study.id}` })}
               sx={{
                 boxSizing: "border-box",
                 flexFlow: "nowrap",
@@ -290,9 +286,9 @@ const StudyCard = memo((props: Props) => {
         </Box>
       </CardContent>
       <CardActions>
-        <NavLink to={`/studies/${study.id}`} style={{ textDecoration: "none" }}>
+        <Link to={`/studies/${study.id}`} style={{ textDecoration: "none" }}>
           <Button color="primary">{t("button.explore")}</Button>
-        </NavLink>
+        </Link>
         <Tooltip title={t("studies.moreActions")}>
           <Button
             color="primary"

@@ -19,18 +19,18 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
+import { createStudy } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getGroups, getStudyVersionsFormatted } from "@/redux/selectors";
+import type { StudyMetadata, StudyPublicMode } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { Button, IconButton } from "@mui/material";
+import { useNavigate } from "@tanstack/react-router";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { createStudy } from "../../../redux/ducks/studies";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getGroups, getStudyVersionsFormatted } from "../../../redux/selectors";
-import type { StudyMetadata, StudyPublicMode } from "../../../types/types";
 
 interface FieldValues {
   name: string;
@@ -77,7 +77,7 @@ function CreateStudyDialog({ open, onClose }: Props) {
         <>
           <Button
             onClick={() => {
-              navigate(`/studies/${newStudy.id}`);
+              navigate({ to: `/studies/${newStudy.id}` });
               closeSnackbar(snackbarId);
             }}
           >

@@ -15,7 +15,7 @@
 import type { StudiesSortConf, StudiesState, StudyFilters } from "@/redux/ducks/studies";
 import type { UIState } from "@/redux/ducks/ui";
 import type { TableTemplate } from "@/routes/-App/Singlestudy/explore/TableModeList/utils";
-import type { FolderDTO } from "@/routes/-App/Studies/StudyTree/types";
+import type { FolderDTO } from "@/routes/_authenticated/studies/-components/StudyTree/types";
 import type { UserInfo } from "@/types/types";
 import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";

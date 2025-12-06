@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import useDebounce from "@/hooks/useDebounce";
 import { setStudyScrollPosition } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesScrollPosition } from "@/redux/selectors";
 import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
 import { useCallback, useState } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
-import useDebounce from "../../../../hooks/useDebounce";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import StudyLaunchDialog from "../../shared/studies/dialogs/StudyLaunchDialog";
+import StudyLaunchDialog from "../../../../-App/shared/studies/dialogs/StudyLaunchDialog";
 import Header from "./Header";
 import StudyCardCell, { type StudyCardCellProps } from "./StudyCardCell";
 

@@ -13,8 +13,8 @@
  */
 
 import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/utils/constants";
-import * as api from "../../../../services/api/study";
-import type { StudyMetadata } from "../../../../types/types";
+import * as api from "@/services/api/study";
+import type { StudyMetadata } from "@/types/types";
 import type { FolderDTO, StudyTreeNodeMetadata, WorkspaceDTO } from "./types";
 
 /**

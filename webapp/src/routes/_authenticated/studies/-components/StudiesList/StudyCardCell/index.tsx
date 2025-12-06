@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import type { StudyMetadata } from "@/types/types";
 import { Box, Skeleton } from "@mui/material";
 import { memo } from "react";
 import { areEqual, type GridChildComponentProps } from "react-window";
 import type { StudiesListProps } from "..";
-import type { StudyMetadata } from "../../../../../types/types";
 import StudyCard from "./StudyCard";
 
 export type StudyCardCellProps = GridChildComponentProps<{

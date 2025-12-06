@@ -12,7 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { FolderDTO, WorkspaceDTO } from "@/routes/-App/Studies/StudyTree/types";
+import type {
+  FolderDTO,
+  WorkspaceDTO,
+} from "@/routes/_authenticated/studies/-components/StudyTree/types";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";

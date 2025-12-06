@@ -18,6 +18,8 @@ import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { updateStudyFilters, type StudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import {
   getGroupIds,
   getGroupsById,
@@ -31,8 +33,6 @@ import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import { Box, Button, Drawer, Toolbar, Typography } from "@mui/material";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
 
 const STUDY_TYPE_OPTIONS: Options<StudyFilters["type"]> = [
   { label: (t) => t("global.all"), value: "all" },

@@ -21,13 +21,18 @@ import { getStudiesStatus, getStudyIdsFilteredAndSorted } from "@/redux/selector
 import { FetchStatus } from "@/redux/utils";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import { Box } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import FiltersDrawer from "./FiltersDrawer";
-import HeaderActions from "./HeaderActions";
-import RefreshButton from "./RefreshButton";
-import SideNav from "./SideNav";
-import StudiesList from "./StudiesList";
+import FiltersDrawer from "./-components/FiltersDrawer";
+import HeaderActions from "./-components/HeaderActions";
+import RefreshButton from "./-components/RefreshButton";
+import SideNav from "./-components/SideNav";
+import StudiesList from "./-components/StudiesList";
+
+export const Route = createFileRoute("/_authenticated/studies/")({
+  component: Studies,
+});
 
 function Studies() {
   const [openFilter, setOpenFilter] = useState(false);
@@ -72,5 +77,3 @@ function Studies() {
     </RootPage>
   );
 }
-
-export default Studies;
