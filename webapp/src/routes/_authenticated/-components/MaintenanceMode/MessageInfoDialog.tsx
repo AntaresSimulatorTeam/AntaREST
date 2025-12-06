@@ -13,19 +13,19 @@
  */
 
 import OkDialog from "@/components/dialogs/OkDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { setMessageInfo } from "@/redux/ducks/ui";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser, getMessageInfo } from "@/redux/selectors";
+import * as api from "@/services/api/maintenance";
+import { isStringEmpty, isUserAdmin } from "@/services/utils";
 import InfoIcon from "@mui/icons-material/Info";
 import { Typography } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMount } from "react-use";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { setMessageInfo } from "../../../redux/ducks/ui";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getAuthUser, getMessageInfo } from "../../../redux/selectors";
-import * as api from "../../../services/api/maintenance";
-import { isStringEmpty, isUserAdmin } from "../../../services/utils";
 
 function MessageInfoDialog() {
   const { t } = useTranslation();

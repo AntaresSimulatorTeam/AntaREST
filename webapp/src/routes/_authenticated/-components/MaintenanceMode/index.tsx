@@ -12,18 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { Box, Button, Typography, useTheme } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { logout } from "@/redux/ducks/auth";
+import { setMaintenanceMode } from "@/redux/ducks/ui";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser, getMaintenanceMode } from "@/redux/selectors";
+import * as api from "@/services/api/maintenance";
+import { isUserAdmin } from "@/services/utils";
 import ErrorIcon from "@mui/icons-material/Error";
-import { isUserAdmin } from "../../../services/utils";
-import MessageInfoDialog from "./MessageInfoDialog";
-import { setMaintenanceMode } from "../../../redux/ducks/ui";
-import { getAuthUser, getMaintenanceMode } from "../../../redux/selectors";
-import * as api from "../../../services/api/maintenance";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { Box, Button, Typography, useTheme } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useMount } from "react-use";
+import MessageInfoDialog from "./MessageInfoDialog";
 
 interface Props {
   children: React.ReactNode;
@@ -31,8 +32,6 @@ interface Props {
 
 function MaintenanceMode({ children }: Props) {
   const { t } = useTranslation();
-  const location = useLocation();
-  const navigate = useNavigate();
   const user = useAppSelector(getAuthUser);
   const maintenanceMode = useAppSelector(getMaintenanceMode);
   const dispatch = useAppDispatch();
@@ -47,19 +46,15 @@ function MaintenanceMode({ children }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleLoginClick = () => {
-    navigate("/login");
+  const handleLogoutClick = () => {
+    dispatch(logout());
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (
-    maintenanceMode &&
-    (user === undefined || !isUserAdmin(user)) &&
-    location.pathname !== "/login"
-  ) {
+  if (maintenanceMode && (user === undefined || !isUserAdmin(user))) {
     return (
       <>
         <Button
@@ -69,9 +64,11 @@ function MaintenanceMode({ children }: Props) {
             top: theme.spacing(2),
             right: theme.spacing(2),
           }}
-          onClick={handleLoginClick}
+          onClick={handleLogoutClick}
+          color="secondary"
+          startIcon={<LogoutIcon />}
         >
-          {t("global.signIn")}
+          {t("global.signOut")}
         </Button>
         <Box
           sx={{

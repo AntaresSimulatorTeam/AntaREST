@@ -14,6 +14,7 @@
 
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import Container from "./_authenticated/-components/Container";
+import MaintenanceMode from "./_authenticated/-components/MaintenanceMode";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context, location }) => {
@@ -28,8 +29,10 @@ export const Route = createFileRoute("/_authenticated")({
     }
   },
   component: () => (
-    <Container>
-      <Outlet />
-    </Container>
+    <MaintenanceMode>
+      <Container>
+        <Outlet />
+      </Container>
+    </MaintenanceMode>
   ),
 });
