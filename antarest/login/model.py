@@ -9,12 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import uuid
 from typing import TYPE_CHECKING, List, Optional
 
 import bcrypt
 from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
@@ -337,13 +337,22 @@ def init_admin_user(admin_password: str) -> None:
     """
     with db():
         group = Group(id=GROUP_ID, name=GROUP_NAME)
-        db.session.add(group)
-        db.session.commit()
+        try:
+            db.session.add(group)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
 
         user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(admin_password))
-        db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.add(user)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
 
         role = Role(type=RoleType.ADMIN, identity_id=ADMIN_ID, group_id=GROUP_ID)
-        db.session.add(role)
-        db.session.commit()
+        try:
+            db.session.add(role)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()

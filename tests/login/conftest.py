@@ -14,7 +14,6 @@ import pytest
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.ldap import LdapService
 from antarest.login.repository import (
     BotRepository,
@@ -29,7 +28,7 @@ from antarest.login.service import LoginService
 
 # noinspection PyUnusedLocal
 @pytest.fixture(name="group_repo")
-def group_repo_fixture(db_middleware: DBSessionMiddleware) -> GroupRepository:
+def group_repo_fixture(db_session_singleton) -> GroupRepository:
     """Fixture that creates a GroupRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
     return GroupRepository()
@@ -37,14 +36,14 @@ def group_repo_fixture(db_middleware: DBSessionMiddleware) -> GroupRepository:
 
 # noinspection PyUnusedLocal
 @pytest.fixture(name="user_repo")
-def user_repo_fixture(db_middleware: DBSessionMiddleware) -> UserRepository:
+def user_repo_fixture(db_session_singleton) -> UserRepository:
     """Fixture that creates a UserRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
     return UserRepository()
 
 
 @pytest.fixture(name="identity_repo")
-def identity_repo_fixture(db_middleware: DBSessionMiddleware) -> IdentityRepository:
+def identity_repo_fixture(db_session_singleton) -> IdentityRepository:
     """Fixture that creates an IdentityRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
     return IdentityRepository()
@@ -52,7 +51,7 @@ def identity_repo_fixture(db_middleware: DBSessionMiddleware) -> IdentityReposit
 
 # noinspection PyUnusedLocal
 @pytest.fixture(name="user_ldap_repo")
-def user_ldap_repo_fixture(db_middleware: DBSessionMiddleware) -> UserLdapRepository:
+def user_ldap_repo_fixture(db_session_singleton) -> UserLdapRepository:
     """Fixture that creates a UserLdapRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
     return UserLdapRepository()
@@ -60,7 +59,7 @@ def user_ldap_repo_fixture(db_middleware: DBSessionMiddleware) -> UserLdapReposi
 
 # noinspection PyUnusedLocal
 @pytest.fixture(name="bot_repo")
-def bot_repo_fixture(db_middleware: DBSessionMiddleware) -> BotRepository:
+def bot_repo_fixture(db_session_singleton) -> BotRepository:
     """Fixture that creates a BotRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
     return BotRepository()
@@ -68,7 +67,7 @@ def bot_repo_fixture(db_middleware: DBSessionMiddleware) -> BotRepository:
 
 # noinspection PyUnusedLocal
 @pytest.fixture(name="role_repo")
-def role_repo_fixture(db_middleware: DBSessionMiddleware) -> RoleRepository:
+def role_repo_fixture(db_session_singleton) -> RoleRepository:
     """Fixture that creates a RoleRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
     return RoleRepository()

@@ -10,9 +10,8 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import sessionmaker
 
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import (
     ADMIN_ID,
     ADMIN_NAME,
@@ -24,7 +23,6 @@ from antarest.login.model import (
     User,
     init_admin_user,
 )
-from antarest.service_creator import SESSION_ARGS
 
 TEST_ADMIN_PASS_WORD = "test"
 
@@ -34,10 +32,10 @@ def test_password() -> None:
 
 
 class TestInitAdminUser:
-    def test_init_admin_user_nominal(self, db_engine: Engine) -> None:
-        init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
-        make_session = sessionmaker(bind=db_engine)
-        with make_session() as session:
+    def test_init_admin_user_nominal(self, db_session_singleton) -> None:
+        init_admin_user(admin_password=TEST_ADMIN_PASS_WORD)
+        with db():
+            session = db.session
             user = session.query(User).get(ADMIN_ID)
             assert user is not None
             assert user.id == ADMIN_ID
@@ -52,24 +50,24 @@ class TestInitAdminUser:
             assert role.identity is user
             assert role.group is group
 
-    def test_init_admin_user_redundancy_check(self, db_engine: Engine) -> None:
+    def test_init_admin_user_redundancy_check(self, db_session_singleton) -> None:
         # run first time
-        init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
+        init_admin_user(admin_password=TEST_ADMIN_PASS_WORD)
         # run second time
-        init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
+        init_admin_user(admin_password=TEST_ADMIN_PASS_WORD)
 
-    def test_init_admin_user_existing_group(self, db_engine: Engine) -> None:
-        make_session = sessionmaker(bind=db_engine)
-        with make_session() as session:
+    def test_init_admin_user_existing_group(self, db_session_singleton) -> None:
+        with db():
+            session = db.session
             group = Group(id=GROUP_ID, name=GROUP_NAME)
             session.add(group)
             session.commit()
-        init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
+        init_admin_user(admin_password=TEST_ADMIN_PASS_WORD)
 
-    def test_init_admin_user_existing_user(self, db_engine: Engine) -> None:
-        make_session = sessionmaker(bind=db_engine)
-        with make_session() as session:
+    def test_init_admin_user_existing_user(self, db_session_singleton) -> None:
+        with db():
+            session = db.session
             user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(TEST_ADMIN_PASS_WORD))
             session.add(user)
             session.commit()
-        init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
+        init_admin_user(admin_password=TEST_ADMIN_PASS_WORD)
