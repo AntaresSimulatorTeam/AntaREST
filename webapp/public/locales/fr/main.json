@@ -465,6 +465,7 @@
   "study.configuration.general.filtering": "Filtering",
   "study.configuration.general.dialogWarning": "Le formulaire doit être sauvegardé avant de pouvoir accéder à ces paramètres.",
   "study.configuration.tsManagement.numberStochasticTs": "Nombre stochastique TS",
+  "study.configuration.tsManagement.thermalOutageDetails": "Détails des pannes thermiques",
   "study.configuration.tsManagement.status.toBeGenerated": "À générer",
   "study.configuration.tsManagement.status.readyMade": "Prête à l'emploi",
   "study.configuration.tsManagement.generateTs": "Générer les TS",

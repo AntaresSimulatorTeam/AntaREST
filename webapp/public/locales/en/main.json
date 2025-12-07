@@ -465,6 +465,7 @@
   "study.configuration.general.filtering": "Filtering",
   "study.configuration.general.dialogWarning": "The form must be saved before you can access these settings.",
   "study.configuration.tsManagement.numberStochasticTs": "Number Stochastic TS",
+  "study.configuration.tsManagement.thermalOutageDetails": "Thermal outage details",
   "study.configuration.tsManagement.status.toBeGenerated": "To Be Generated",
   "study.configuration.tsManagement.status.readyMade": "Ready Made",
   "study.configuration.tsManagement.generateTs": "Generate TS",
