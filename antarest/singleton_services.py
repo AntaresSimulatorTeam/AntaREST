@@ -17,7 +17,7 @@ from typing import Dict, List, cast
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
 from antarest.core.logging.utils import configure_logger
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.service_creator import (
     SESSION_ARGS,
@@ -40,7 +40,7 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
         config,
         False,
     )
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    init_db_singleton(custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
     configure_logger(config)
 
     core_services = create_core_services(None, config)

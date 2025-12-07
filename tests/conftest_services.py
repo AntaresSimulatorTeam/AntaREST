@@ -32,7 +32,6 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
@@ -352,14 +351,12 @@ def command_factory_fixture(
 @pytest.fixture(name="variant_study_repository")
 def variant_study_repository_fixture(
     core_cache: ICache,
-    db_middleware: DBSessionMiddleware,  # required
 ) -> VariantStudyRepository:
     """
     Fixture that creates a VariantStudyRepository instance.
 
     Args:
         core_cache: An instance of the ICache class.
-        db_middleware: An instance of the DBSessionMiddleware class.
 
     Returns:
         An instance of the VariantStudyRepository class with the provided cache service.

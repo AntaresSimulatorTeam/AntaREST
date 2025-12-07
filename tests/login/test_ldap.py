@@ -20,7 +20,8 @@ from typing_extensions import override
 
 from antarest.core.config import Config, ExternalAuthConfig, SecurityConfig
 from antarest.core.roles import RoleType
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.dbmodel import Base
 from antarest.login.ldap import AuthDTO, ExternalUser, LdapService
 from antarest.login.model import UserLdap
@@ -88,8 +89,7 @@ class TestLdapService:
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)
         # noinspection SpellCheckingInspection
-        DBSessionMiddleware(
-            None,
+        init_db_singleton(
             custom_engine=engine,
             session_args={"autocommit": False, "autoflush": False},
         )

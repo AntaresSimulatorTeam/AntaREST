@@ -32,35 +32,51 @@ def enable_sqlite_foreign_keys(dbapi_connection: Any, connection_record: Any) ->
     cursor.close()
 
 
+def init_db_singleton(
+    db_url: Optional[Union[str, URL]] = None,
+    custom_engine: Optional[Engine] = None,
+    engine_args: Optional[Dict[str, Any]] = None,
+    session_args: Optional[Dict[str, Any]] = None,
+) -> None:
+    """
+    Initialize singleton session maker that will be used throughout the app.
+    This must be called before any actual use of the middleware, in particular,
+    but also other services that might use the "db" helper.
+    """
+    global _Session
+    engine_args = engine_args or {}
+
+    session_args = session_args or {}
+    if not custom_engine and not db_url:
+        raise ValueError("You need to pass a db_url or a custom_engine parameter.")
+    if not custom_engine:
+        assert db_url is not None, "Database URL cannot be None"
+        engine = create_engine(db_url, **engine_args)
+    else:
+        engine = custom_engine
+
+    if _is_sqlite_engine(engine):
+        listen(engine, "connect", enable_sqlite_foreign_keys)
+
+    _Session = sessionmaker(bind=engine, **session_args)
+
+
+def reset_db_singleton() -> None:
+    global _Session
+    _Session = None
+
+
 class DBSessionMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: Optional[ASGIApp],
-        db_url: Optional[Union[str, URL]] = None,
-        custom_engine: Optional[Engine] = None,
-        engine_args: Optional[Dict[str, Any]] = None,
-        session_args: Optional[Dict[str, Any]] = None,
         commit_on_exit: bool = False,
     ) -> None:
         if app:
             super().__init__(app)
-        global _Session
-        engine_args = engine_args or {}
         self.commit_on_exit = commit_on_exit
 
-        session_args = session_args or {}
-        if not custom_engine and not db_url:
-            raise ValueError("You need to pass a db_url or a custom_engine parameter.")
-        if not custom_engine:
-            assert db_url is not None, "Database URL cannot be None"
-            engine = create_engine(db_url, **engine_args)
-        else:
-            engine = custom_engine
-
-        if _is_sqlite_engine(engine):
-            listen(engine, "connect", enable_sqlite_foreign_keys)
-
-        _Session = sessionmaker(bind=engine, **session_args)
+        # TODO SL: check it's initialized
 
     @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:

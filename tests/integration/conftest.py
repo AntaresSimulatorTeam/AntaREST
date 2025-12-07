@@ -9,7 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import cProfile
 import os
+import pstats
 import shutil
 import typing as t
 import uuid
@@ -24,6 +26,7 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
+from antarest.core.utils.fastapi_sqlalchemy.middleware import reset_db_singleton
 from antarest.dbmodel import Base
 from antarest.main import fastapi_app
 from antarest.service_creator import Services
@@ -49,7 +52,17 @@ def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
 
 
 @pytest.fixture
-def app_and_services(tmp_path: Path, initial_db_file: Path) -> Iterable[tuple[FastAPI, Services]]:
+def profile() -> Iterable[None]:
+    with cProfile.Profile() as profile:
+        yield None
+
+    stats = pstats.Stats(profile)
+    stats.sort_stats("cumulative")
+    stats.dump_stats("/home/leclercsyl/tmp/profiling.dump")
+
+
+@pytest.fixture
+def app_and_services(tmp_path: Path, initial_db_file: Path, profile) -> Iterable[tuple[FastAPI, Services]]:
     # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
@@ -104,6 +117,7 @@ def app_and_services(tmp_path: Path, initial_db_file: Path) -> Iterable[tuple[Fa
     app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
     yield app, services
     services.watcher.stop()
+    reset_db_singleton()
 
 
 @pytest.fixture(name="app")

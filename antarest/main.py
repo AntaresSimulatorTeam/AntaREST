@@ -37,6 +37,7 @@ from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.metrics import add_metrics
 from antarest.core.swagger import customize_openapi
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
 from antarest.fastapi_jwt_auth import AuthJWT
@@ -229,11 +230,8 @@ def fastapi_app(
 
     # Database
     engine = init_db_engine(config_file, config, auto_upgrade_db)
-    application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
-    # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
-    # But we need to instantiate this middleware as it's needed for the study service.
-    # So we manually instantiate it here.
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    init_db_singleton(custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    application.add_middleware(DBSessionMiddleware)
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
@@ -258,7 +256,7 @@ def fastapi_app(
 
     add_exception_handlers(application)
 
-    init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
+    init_admin_user(admin_password=config.security.admin_pwd)
     services = create_services(config, app_ctxt)
 
     application.include_router(api_root)

@@ -18,7 +18,7 @@ from sqlalchemy import StaticPool, create_engine, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton, reset_db_singleton
 from antarest.dbmodel import Base
 
 
@@ -60,10 +60,11 @@ def db_session_fixture(db_engine: Engine) -> t.Generator[Session, None, None]:
         yield session
 
 
-@pytest.fixture(name="db_middleware", autouse=True)
-def db_middleware_fixture(
+# TODO: should not be auto use
+@pytest.fixture(name="db_session_singleton", autouse=True)
+def db_session_singleton_fixture(
     db_engine: Engine,
-) -> t.Generator[DBSessionMiddleware, None, None]:
+) -> t.Iterable[None]:
     """
     Fixture that sets up a database session middleware with custom engine settings.
 
@@ -73,8 +74,10 @@ def db_middleware_fixture(
     Yields:
         An instance of the configured DBSessionMiddleware.
     """
-    yield DBSessionMiddleware(
+    init_db_singleton(
         None,
         custom_engine=db_engine,
         session_args={"autocommit": False, "autoflush": False},
     )
+    yield
+    reset_db_singleton()

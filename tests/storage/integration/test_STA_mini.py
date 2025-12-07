@@ -30,6 +30,7 @@ from antarest.core.application import create_app_ctxt
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
@@ -57,11 +58,11 @@ ADMIN = JWTUser(
 @pytest.fixture
 def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
     app = FastAPI(title=__name__)
-    app.add_middleware(
-        DBSessionMiddleware,
+    init_db_singleton(
         custom_engine=db_engine,
         session_args={"autocommit": False, "autoflush": False},
     )
+    app.add_middleware(DBSessionMiddleware)
     build_ctxt = create_app_ctxt(app)
     build_study_service(
         build_ctxt,
