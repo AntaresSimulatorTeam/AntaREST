@@ -16,17 +16,17 @@ import RootPage from "@/components/page/RootPage";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TabsView from "@/components/TabsView";
 import { useAppMode } from "@/hooks/useAppMode";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "@/redux/selectors";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useAppSelector from "../../redux/hooks/useAppSelector";
-import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../redux/selectors";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  component: Settings,
+  component: SettingsLayout,
 });
 
-function Settings() {
+function SettingsLayout() {
   const { t } = useTranslation();
   const isUserAdmin = useAppSelector(isAuthUserAdmin);
   const isUserInGroupAdmin = useAppSelector(isAuthUserInGroupAdmin);

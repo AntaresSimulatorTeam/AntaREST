@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import {
-  CssBaseline,
-  StyledEngineProvider,
-  ThemeProvider as MuiThemeProvider,
-} from "@mui/material";
+import theme from "@/theme";
 import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
-import theme from "@/theme";
+import {
+  CssBaseline,
+  ThemeProvider as MuiThemeProvider,
+  StyledEngineProvider,
+} from "@mui/material";
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <StyledEngineProvider injectFirst>
-      <MuiThemeProvider theme={theme} defaultMode="dark">
+      <MuiThemeProvider theme={theme} defaultMode="dark" noSsr>
         <CssBaseline />
         {children}
       </MuiThemeProvider>
