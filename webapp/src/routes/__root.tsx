@@ -16,11 +16,15 @@ import type { RouterContext } from "@/router";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { SnackbarProvider } from "notistack";
-import SnackbarCloseButton from "./_authenticated/(layout)/-components/SnackbarCloseButton";
-import ThemeProvider from "./_authenticated/(layout)/-components/ThemeProvider";
+import SnackbarCloseButton from "./_authenticated/-components/SnackbarCloseButton";
+import ThemeProvider from "./_authenticated/-components/ThemeProvider";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  component: () => (
+  component: RootLayout,
+});
+
+function RootLayout() {
+  return (
     <>
       <ThemeProvider>
         <SnackbarProvider
@@ -34,5 +38,5 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       </ThemeProvider>
       <TanStackRouterDevtools position="bottom-right" />
     </>
-  ),
-});
+  );
+}

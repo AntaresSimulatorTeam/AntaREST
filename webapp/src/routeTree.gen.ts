@@ -9,15 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedStudiesIndexRouteImport } from './routes/_authenticated/studies/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedDataIndexRouteImport } from './routes/_authenticated/data/index'
 import { Route as AuthenticatedApidocIndexRouteImport } from './routes/_authenticated/apidoc/index'
-import { Route as AuthenticatedlayoutIndexRouteImport } from './routes/_authenticated/(layout)/index'
 import { Route as AuthenticatedSettingsMaintenanceRouteImport } from './routes/_authenticated/settings/maintenance'
 import { Route as AuthenticatedSettingsGeneralRouteImport } from './routes/_authenticated/settings/general'
 import { Route as AuthenticatedSettingsAboutRouteImport } from './routes/_authenticated/settings/about'
@@ -25,7 +25,7 @@ import { Route as AuthenticatedSettingsUsersIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsTokensIndexRouteImport } from './routes/_authenticated/settings/tokens/index'
 import { Route as AuthenticatedSettingsGroupsIndexRouteImport } from './routes/_authenticated/settings/groups/index'
 
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
@@ -34,22 +34,27 @@ const LoginIndexRoute = LoginIndexRouteImport.update({
   path: '/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
     path: '/settings',
-    getParentRoute: () => AuthenticatedRoute,
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
-  getParentRoute: () => AuthenticatedRoute,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStudiesIndexRoute =
   AuthenticatedStudiesIndexRouteImport.update({
     id: '/studies/',
     path: '/studies/',
-    getParentRoute: () => AuthenticatedRoute,
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
@@ -60,19 +65,13 @@ const AuthenticatedSettingsIndexRoute =
 const AuthenticatedDataIndexRoute = AuthenticatedDataIndexRouteImport.update({
   id: '/data/',
   path: '/data/',
-  getParentRoute: () => AuthenticatedRoute,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedApidocIndexRoute =
   AuthenticatedApidocIndexRouteImport.update({
     id: '/apidoc/',
     path: '/apidoc/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedlayoutIndexRoute =
-  AuthenticatedlayoutIndexRouteImport.update({
-    id: '/(layout)/',
-    path: '/',
-    getParentRoute: () => AuthenticatedRoute,
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsMaintenanceRoute =
   AuthenticatedSettingsMaintenanceRouteImport.update({
@@ -113,11 +112,11 @@ const AuthenticatedSettingsGroupsIndexRoute =
 
 export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginIndexRoute
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/general': typeof AuthenticatedSettingsGeneralRoute
   '/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
-  '/': typeof AuthenticatedlayoutIndexRoute
   '/apidoc': typeof AuthenticatedApidocIndexRoute
   '/data': typeof AuthenticatedDataIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -128,11 +127,11 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginIndexRoute
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/general': typeof AuthenticatedSettingsGeneralRoute
   '/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
-  '/': typeof AuthenticatedlayoutIndexRoute
   '/apidoc': typeof AuthenticatedApidocIndexRoute
   '/data': typeof AuthenticatedDataIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -144,13 +143,13 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/login/': typeof LoginIndexRoute
   '/_authenticated/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/_authenticated/settings/general': typeof AuthenticatedSettingsGeneralRoute
   '/_authenticated/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
-  '/_authenticated/(layout)/': typeof AuthenticatedlayoutIndexRoute
   '/_authenticated/apidoc/': typeof AuthenticatedApidocIndexRoute
   '/_authenticated/data/': typeof AuthenticatedDataIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -164,11 +163,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/settings'
+    | '/'
     | '/login'
     | '/settings/about'
     | '/settings/general'
     | '/settings/maintenance'
-    | '/'
     | '/apidoc'
     | '/data'
     | '/settings/'
@@ -179,11 +178,11 @@ export interface FileRouteTypes {
     | '/settings/users'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/login'
     | '/settings/about'
     | '/settings/general'
     | '/settings/maintenance'
-    | '/'
     | '/apidoc'
     | '/data'
     | '/settings'
@@ -196,11 +195,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/_authenticated/settings'
+    | '/_authenticated/'
     | '/login/'
     | '/_authenticated/settings/about'
     | '/_authenticated/settings/general'
     | '/_authenticated/settings/maintenance'
-    | '/_authenticated/(layout)/'
     | '/_authenticated/apidoc/'
     | '/_authenticated/data/'
     | '/_authenticated/settings/'
@@ -212,7 +211,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginIndexRoute: typeof LoginIndexRoute
 }
 
@@ -222,7 +221,7 @@ declare module '@tanstack/react-router' {
       id: '/_authenticated'
       path: ''
       fullPath: ''
-      preLoaderRoute: typeof AuthenticatedRouteImport
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login/': {
@@ -232,26 +231,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/': {
+      id: '/_authenticated/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tasks/': {
       id: '/_authenticated/tasks/'
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/studies/': {
       id: '/_authenticated/studies/'
       path: '/studies'
       fullPath: '/studies'
       preLoaderRoute: typeof AuthenticatedStudiesIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
@@ -265,21 +271,14 @@ declare module '@tanstack/react-router' {
       path: '/data'
       fullPath: '/data'
       preLoaderRoute: typeof AuthenticatedDataIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/apidoc/': {
       id: '/_authenticated/apidoc/'
       path: '/apidoc'
       fullPath: '/apidoc'
       preLoaderRoute: typeof AuthenticatedApidocIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/(layout)/': {
-      id: '/_authenticated/(layout)/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedlayoutIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/maintenance': {
       id: '/_authenticated/settings/maintenance'
@@ -355,30 +354,29 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
-interface AuthenticatedRouteChildren {
+interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
-  AuthenticatedlayoutIndexRoute: typeof AuthenticatedlayoutIndexRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedApidocIndexRoute: typeof AuthenticatedApidocIndexRoute
   AuthenticatedDataIndexRoute: typeof AuthenticatedDataIndexRoute
   AuthenticatedStudiesIndexRoute: typeof AuthenticatedStudiesIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
 }
 
-const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
-  AuthenticatedlayoutIndexRoute: AuthenticatedlayoutIndexRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedApidocIndexRoute: AuthenticatedApidocIndexRoute,
   AuthenticatedDataIndexRoute: AuthenticatedDataIndexRoute,
   AuthenticatedStudiesIndexRoute: AuthenticatedStudiesIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
 }
 
-const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
-  AuthenticatedRouteChildren,
-)
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginIndexRoute: LoginIndexRoute,
 }
 export const routeTree = rootRouteImport

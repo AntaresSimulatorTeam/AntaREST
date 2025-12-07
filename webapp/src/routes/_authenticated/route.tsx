@@ -13,8 +13,8 @@
  */
 
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import Container from "./_authenticated/(layout)/-components/Container";
-import MaintenanceMode from "./_authenticated/(layout)/-components/MaintenanceMode";
+import Container from "./-components/Container";
+import MaintenanceMode from "./-components/MaintenanceMode";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: ({ context, location }) => {
@@ -28,11 +28,15 @@ export const Route = createFileRoute("/_authenticated")({
       });
     }
   },
-  component: () => (
+  component: AuthenticatedLayout,
+});
+
+function AuthenticatedLayout() {
+  return (
     <MaintenanceMode>
       <Container>
         <Outlet />
       </Container>
     </MaintenanceMode>
-  ),
-});
+  );
+}
