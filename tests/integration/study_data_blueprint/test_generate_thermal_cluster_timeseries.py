@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+import io
+
 import numpy as np
 import pytest
 from starlette.testclient import TestClient
@@ -26,6 +28,15 @@ class TestGenerateThermalClusterTimeseries:
     @staticmethod
     def _generate_timeseries(client: TestClient, user_access_token: str, study_id: str) -> TaskDTO:
         res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
+        assert res.status_code == 200
+        task_id = res.json()
+        assert task_id
+        task = wait_task_completion(client, user_access_token, task_id)
+        return task
+
+    @staticmethod
+    def _generate_timeseries_with_outage_details(client: TestClient, user_access_token: str, study_id: str) -> TaskDTO:
+        res = client.put(f"/v1/studies/{study_id}/timeseries/generate", params={"thermal_outage_details": True})
         assert res.status_code == 200
         task_id = res.json()
         assert task_id
@@ -82,6 +93,22 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 200
         data = res.json()["data"]
         assert data[1] == nb_years * [nominal_capacity_cluster_1]
+        # Timeseries generation with outage details shouldn't be available
+        outage_files = [
+            "num_units_forced_outages.tsv",
+            "num_units_planned_outages.tsv",
+            "num_units_mixed_outages.tsv",
+            "forced_outages_durations.tsv",
+            "planned_outages_durations.tsv",
+            "available_units.tsv",
+        ]
+        for outage_file in outage_files:
+            res = client.get(
+                f"/v1/studies/{study_id}/raw",
+                params={"path": f"user/ts-generator-output/thermal/{area1_id}/{cluster_1.lower()}/{outage_file}"},
+            )
+            assert res.status_code == 404
+
         # Second one
         res = client.get(
             f"/v1/studies/{study_id}/raw",
@@ -90,6 +117,14 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 200
         data = res.json()["data"]
         assert data[1] == nb_years * [0]  # should be zeros as the modulation matrix is only zeros
+        # Timeseries generation with outage details shouldn't be available
+        for outage_file in outage_files:
+            res = client.get(
+                f"/v1/studies/{study_id}/raw",
+                params={"path": f"user/ts-generator-output/thermal/{area2_id}/{cluster_2.lower()}/{outage_file}"},
+            )
+            assert res.status_code == 404
+
         # Third one
         res = client.get(
             f"/v1/studies/{study_id}/raw",
@@ -98,6 +133,34 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 200
         data = res.json()["data"]
         assert data == 8760 * [[0]]  # no generation c.f. gen-ts parameter -> empty file -> default simulator value
+
+        # Timeseries generation with outage details shouldn't be available
+        for outage_file in outage_files:
+            res = client.get(
+                f"/v1/studies/{study_id}/raw",
+                params={"path": f"user/ts-generator-output/thermal/{area2_id}/{cluster_2.lower()}/{outage_file}"},
+            )
+            assert res.status_code == 404
+
+        # Timeseries generation should succeed
+        task = self._generate_timeseries_with_outage_details(client, user_access_token, study_id)
+        assert task.status == TaskStatus.COMPLETED
+
+        # Timeseries generation with outage details should be available for all clusters excluding area2 cluster 3 because it has no generation
+
+        for area_id, cluster_name in [
+            (area1_id, cluster_1),
+            (area2_id, cluster_2),
+        ]:
+            for outage_file in outage_files:
+                res = client.get(
+                    f"/v1/studies/{study_id}/raw",
+                    params={"path": f"user/ts-generator-output/thermal/{area_id}/{cluster_name.lower()}/{outage_file}"},
+                )
+                assert res.status_code == 200
+                tsv_content = res.text
+                tsv_content = np.loadtxt(io.StringIO(tsv_content), delimiter="\t")
+                assert tsv_content.shape[0] == 365
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str, study_type: str) -> None:

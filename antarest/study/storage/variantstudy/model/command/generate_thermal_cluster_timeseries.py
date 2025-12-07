@@ -10,23 +10,22 @@
 #
 # This file is part of the Antares project.
 
+import io
 import logging
-from typing import List, Optional, Any, Dict, Final
+from pathlib import PurePosixPath
+from typing import Any, Dict, Final, List, Optional
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from antares.tsgen.duration_generator import ProbabilityLaw
 from antares.tsgen.random_generator import MersenneTwisterRNG
 from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluster, TimeseriesGenerator
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
-import io
-from pathlib import PurePosixPath
-import polars as pl
-from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
-
 from antarest.study.business.model.thermal_cluster_model import LocalTSGenerationBehavior
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -37,6 +36,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
 logger = logging.getLogger(__name__)
 
 
@@ -49,10 +49,10 @@ class GenerateThermalClusterTimeSeries(ICommand):
     """
 
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
-    
+
     # version 2: add thermal_outage_details field
     _SERIALIZATION_VERSION: Final[int] = 2
-    
+
     thermal_outage_details: bool
 
     @model_validator(mode="before")
@@ -122,7 +122,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     )
                     # 8- Generate the time-series
                     results = generator.generate_time_series_for_clusters(cluster, nb_years)
-                    
+
                     # 9- Save information about outages if needed
                     # Convert numpy arrays to bytes and save to blobstore, then use DAO to persist
                     if self.thermal_outage_details:
@@ -135,13 +135,13 @@ class GenerateThermalClusterTimeSeries(ICommand):
                             "planned_outages_durations": results.outage_output.planned_outage_durations,
                             "available_units": results.outage_output.available_units,
                         }
-                        
+
                         for detail_type, data in outage_dataframes.items():
                             # Convert numpy array to TSV bytes using polars
                             buffer = io.StringIO()
                             pl.DataFrame(data).write_csv(buffer, separator="\t", include_header=False)
                             tsv_bytes = buffer.getvalue().encode("utf-8")
-                            
+
                             blob_id = self.command_context.blob_service.save(tsv_bytes)
 
                             resource_path = PurePosixPath(
@@ -182,7 +182,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
             version=self._SERIALIZATION_VERSION,
             action=self.command_name.value,
             args={"thermal_outage_details": self.thermal_outage_details},
-            study_version=self.study_version
+            study_version=self.study_version,
         )
 
     @override

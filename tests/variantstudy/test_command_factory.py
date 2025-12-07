@@ -1249,6 +1249,8 @@ def test_parse_create_link_dto_v1(command_factory: CommandFactory) -> None:
             assert dto.args["parameters"] == {}
         else:
             assert dto.args["parameters"]["linkWidth"] == 0.56
+
+
 def test_parse_generate_thermal_cluster_timeseries_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
@@ -1262,6 +1264,7 @@ def test_parse_generate_thermal_cluster_timeseries_dto_v1(command_factory: Comma
     dto = command.to_dto()
     assert dto.version == 2
     assert dto.args == {"thermal_outage_details": False}
+
 
 def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
