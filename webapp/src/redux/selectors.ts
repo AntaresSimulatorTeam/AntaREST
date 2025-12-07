@@ -143,7 +143,7 @@ export const getCurrentStudy = createSelector(
 /**
  * Returns a mapping of study IDs to their children study IDs.
  *
- * @param state The application state.
+ * @param state - The application state.
  * @returns Example: { "parentStudyId": ["childStudyId1", "childStudyId2"], ... }
  */
 export const getVariantsIdsByParent = createSelector(getStudies, (studies) => {

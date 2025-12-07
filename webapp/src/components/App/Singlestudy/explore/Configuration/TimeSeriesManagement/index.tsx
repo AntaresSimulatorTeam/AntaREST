@@ -73,7 +73,7 @@ function TimeSeriesManagement() {
       submitButtonIcon={<BuildIcon />}
       apiRef={apiRef}
     >
-      <Fields 
+      <Fields
         thermalOutageDetails={thermalOutageDetails}
         setThermalOutageDetails={setThermalOutageDetails}
       />
