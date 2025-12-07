@@ -230,13 +230,14 @@ class ThermalClusterTimeSeriesGeneratorTask:
         storage_service: StudyStorageService,
         event_bus: IEventBus,
         study_interface_supplier: Callable[[Study], StudyInterface],
+        thermal_outage_details: bool,
     ):
         self._study_id = _study_id
         self.repository = repository
         self.storage_service = storage_service
         self.event_bus = event_bus
         self.study_interface_supplier = study_interface_supplier
-
+        self.thermal_outage_details = thermal_outage_details
     def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
         command_context = self.storage_service.variant_study_service.command_factory.command_context
@@ -244,7 +245,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
         with db():
             study = self.repository.one(self._study_id)
             study_version = StudyVersion.parse(study.version)
-            command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=study_version)
+            command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=study_version,thermal_outage_details=self.thermal_outage_details)
             self.study_interface_supplier(study).add_commands([command], listener)
 
             if isinstance(study, VariantStudy):
@@ -2147,7 +2148,7 @@ class StudyService:
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
 
-    def generate_timeseries(self, study: Study) -> str:
+    def generate_timeseries(self, study: Study,thermal_outage_details: bool) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
@@ -2165,6 +2166,7 @@ class StudyService:
             storage_service=self.storage_service,
             event_bus=self.event_bus,
             study_interface_supplier=self.get_study_interface,
+            thermal_outage_details=thermal_outage_details,
         )
 
         return self.task_service.add_task(
