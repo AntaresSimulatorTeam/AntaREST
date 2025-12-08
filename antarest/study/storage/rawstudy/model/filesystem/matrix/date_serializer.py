@@ -74,13 +74,13 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
         df_date = df.iloc[:, 2:5]
         df_date.columns = pd.Index(data=["day", "month", "hour"])
         df_date["month"] = df_date["month"].map(IDateMatrixSerializer._MONTHS)
-        date = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2) + " " + df_date["hour"]
+        date = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2) + " " + df_date["hour"]  # type: ignore
 
         # Extract right part with data
         to_remove = cast(Sequence[Hashable], df.columns[0:5])
         body = df.drop(to_remove, axis=1)
 
-        return pd.Index(date), body  # type: ignore
+        return pd.Index(date), body
 
 
 class DailyMatrixSerializer(IDateMatrixSerializer):
@@ -94,7 +94,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
         df_date = df.iloc[:, 2:4]
         df_date.columns = pd.Index(["day", "month"])
         df_date["month"] = df_date["month"].map(IDateMatrixSerializer._MONTHS)
-        date: pd.Series[str] = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2)
+        date: pd.Series[str] = df_date["month"].astype(str) + "/" + df_date["day"].astype(str).str.zfill(2)  # type: ignore
 
         # Extract right part with data
         to_remove = cast(Sequence[Hashable], df.columns[0:4])
