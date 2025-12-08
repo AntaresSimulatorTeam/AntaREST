@@ -30,6 +30,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    InnerMatrices,
     command_failed,
     command_succeeded,
 )
@@ -186,6 +187,5 @@ class GenerateThermalClusterTimeSeries(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> List[str]:
-        # This is used to get used matrices and not remove them inside the garbage collector loop.
-        return []
+    def get_inner_matrices(self) -> InnerMatrices:
+        return InnerMatrices(generates_matrices_at_run_time=True)

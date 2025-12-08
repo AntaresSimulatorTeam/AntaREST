@@ -19,7 +19,12 @@ from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    InnerMatrices,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -45,9 +50,9 @@ class AbstractCreateXpansionMatrix(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> InnerMatrices:
         assert_this(isinstance(self.matrix, str))
-        return [strip_matrix_protocol(self.matrix)]
+        return InnerMatrices(matrices=[strip_matrix_protocol(self.matrix)])
 
 
 class CreateXpansionWeight(AbstractCreateXpansionMatrix):
