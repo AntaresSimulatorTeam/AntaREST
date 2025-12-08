@@ -107,12 +107,6 @@ class OutputVariablesViewMaterializationTask:
 
     def _materialize_view(self) -> None:
         """Run the task"""
-        # Checks the asked couple `variable name` / `object_id` exists for the output
-        available_variables = self._output_service.get_output_variables_list(self._study_id, self._output_id)
-        check_output_variable_exists(
-            self._output_id, self._variable_type, self._variable_name, available_variables, self._output_identifier
-        )
-
         with temp_file_path(dir=self._output_service._study_service.config.storage.tmp_dir) as tmp_path:
             # Calls the aggregation with the right arguments
             task_id = self._output_service.start_aggregate_output_data(
@@ -788,6 +782,10 @@ class OutputService:
             dataframe.columns = pd.RangeIndex(len(dataframe.columns))  # type: ignore
             return dataframe
 
+        # Checks if the asked couple `variable name` / `output_identifier` exists for the output
+        available_variables = self.get_output_variables_list(study_id, output_id)
+        check_output_variable_exists(output_id, variable_type, variable_name, available_variables, output_identifier)
+
         raise HTTPException(status_code=404, detail="The output variables view is not materialized in DB yet")
 
     def materialize_output_variables_view(
@@ -837,6 +835,10 @@ class OutputService:
         )
         if len(study_tasks) > 0:
             return study_tasks[0].id
+
+        # Checks the asked couple `variable name` / `object_id` exists for the output
+        available_variables = self.get_output_variables_list(study_id, output_id)
+        check_output_variable_exists(output_id, variable_type, variable_name, available_variables, output_identifier)
 
         # Materialize the view
         task = OutputVariablesViewMaterializationTask(

@@ -248,3 +248,11 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     assert task.status == TaskStatus.COMPLETED
     res = client.get(f"{url}/data", params=query_params)
     assert np.isnan(np.array(res.json()["data"])).all()
+
+    # Ensures we raise before running the task when asking for materializing wrong data.
+    query_params = {"type": "area", "variable_name": "H. LEV", "frequency": "weekly", "area_id": "FAKE_AREA"}
+    res = client.post(f"{url}/materialize", params=query_params).json()
+    assert res == {
+        "description": "Could not retrieve variables view for output '20201014-1425eco-goodbye' : The variable 'H. LEV' does not exist for area 'FAKE_AREA' and type 'area'.",
+        "exception": "OutputVariablesViewError",
+    }
