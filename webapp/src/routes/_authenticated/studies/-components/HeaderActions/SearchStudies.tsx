@@ -65,7 +65,7 @@ function SearchStudies() {
       config={{ defaultValues }}
       onSubmit={handleSubmit}
       hideSubmitButton
-      disableCloseProtection
+      disableBlocker
       sx={{
         minWidth: 200,
         transition: "min-width 0.2s ease",

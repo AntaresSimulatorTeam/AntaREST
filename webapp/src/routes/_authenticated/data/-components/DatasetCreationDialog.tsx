@@ -301,7 +301,7 @@ function DatasetCreationDialog(props: PropTypes) {
         !importing && (
           <Box>
             <Button color="primary" onClick={onClose} sx={{ m: 2 }}>
-              {t("button.cancel")}
+              {t("global.cancel")}
             </Button>
             <Button variant="contained" onClick={onSave} sx={{ m: 2 }}>
               {t("button.save")}

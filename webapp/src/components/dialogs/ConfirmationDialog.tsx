@@ -60,7 +60,7 @@ function ConfirmationDialog({
             {cancelButtonText || t("global.cancel")}
           </Button>
           <Button onClick={onConfirm} variant="contained" disabled={disableConfirm} color={alert}>
-            {confirmButtonText || t("button.ok")}
+            {confirmButtonText || t("global.confirm")}
           </Button>
         </>
       }

@@ -13,7 +13,6 @@
  */
 
 import BackButton from "@/components/buttons/BackButton";
-import useFormCloseConfirm from "@/hooks/useFormCloseConfirm";
 import type { RoutePaths } from "@/router";
 import { buildKey } from "@/utils/reactUtils";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
@@ -59,7 +58,6 @@ function TabsView({
   disableGutters = false,
 }: TabsViewProps) {
   const { pathname } = useLocation();
-  const { withFormCloseCheck } = useFormCloseConfirm();
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
 
   const hasRouteTabs = isRouteTabs(items);
@@ -71,12 +69,12 @@ function TabsView({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = withFormCloseCheck((event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     if (!hasRouteTabs) {
       setCurrentTabIndex(newValue);
     }
     onChange?.(event, newValue);
-  });
+  };
 
   ////////////////////////////////////////////////////////////////
   // Tab

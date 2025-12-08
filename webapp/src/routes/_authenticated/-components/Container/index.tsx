@@ -18,16 +18,11 @@ import { useAppMode } from "@/hooks/useAppMode";
 import { logout } from "@/redux/ducks/auth";
 import { fetchGroups } from "@/redux/ducks/groups";
 import { fetchStudies } from "@/redux/ducks/studies";
-import { setFormCloseDialogStatus, setMenuOpen } from "@/redux/ducks/ui";
+import { setMenuOpen } from "@/redux/ducks/ui";
 import { fetchUsers } from "@/redux/ducks/users";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import {
-  getCurrentStudyId,
-  getFormState,
-  isMenuOpen,
-  isWebSocketConnected,
-} from "@/redux/selectors";
+import { getCurrentStudyId, isMenuOpen, isWebSocketConnected } from "@/redux/selectors";
 import { getConfig } from "@/services/config";
 import ApiIcon from "@mui/icons-material/Api";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
@@ -86,7 +81,6 @@ function Container({ children }: Props) {
   const isDrawerOpen = useAppSelector(isMenuOpen);
   const currentStudyId = useAppSelector(getCurrentStudyId);
   const isWsConnected = useAppSelector(isWebSocketConnected);
-  const formState = useAppSelector(getFormState);
   const dispatch = useAppDispatch();
   const { isWebMode } = useAppMode();
 
@@ -186,16 +180,6 @@ function Container({ children }: Props) {
           open
         >
           <Typography sx={{ px: 3, py: 1 }}>{t("dialog.message.signOut")}</Typography>
-        </ConfirmationDialog>
-      )}
-      {formState.closeDialogStatus === "opened" && (
-        <ConfirmationDialog
-          open
-          alert="warning"
-          onConfirm={() => dispatch(setFormCloseDialogStatus("confirmed"))}
-          onCancel={() => dispatch(setFormCloseDialogStatus("canceled"))}
-        >
-          {formState.status.isSubmitting ? t("form.submit.inProgress") : t("form.changeNotSaved")}
         </ConfirmationDialog>
       )}
     </>

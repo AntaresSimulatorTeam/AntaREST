@@ -13,7 +13,7 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useFormCloseProtection from "@/hooks/useFormCloseProtection";
+import useFormBlocker from "@/hooks/useFormBlocker";
 import { getColumnWidth } from "@/utils/dataGridUtils";
 import { toError } from "@/utils/fnUtils";
 import { mergeSxProp } from "@/utils/muiUtils";
@@ -136,7 +136,7 @@ function DataGridForm<TData extends Data>({
     [isDirty, isSubmitting],
   );
 
-  useFormCloseProtection({ isSubmitting, isDirty });
+  useFormBlocker({ isSubmitting, isDirty });
 
   useUpdateEffect(() => onDataChange?.(data), [data]);
 

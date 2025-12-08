@@ -13,6 +13,7 @@
  */
 
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import DialogManager from "../../components/dialogs/DialogManager";
 import Container from "./-components/Container";
 import MaintenanceMode from "./-components/MaintenanceMode";
 
@@ -33,10 +34,12 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   return (
-    <MaintenanceMode>
-      <Container>
-        <Outlet />
-      </Container>
-    </MaintenanceMode>
+    <DialogManager>
+      <MaintenanceMode>
+        <Container>
+          <Outlet />
+        </Container>
+      </MaintenanceMode>
+    </DialogManager>
   );
 }

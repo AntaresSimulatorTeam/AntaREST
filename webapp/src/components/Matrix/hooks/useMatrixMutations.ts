@@ -13,7 +13,7 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useFormCloseProtection from "@/hooks/useFormCloseProtection";
+import useFormBlocker from "@/hooks/useFormBlocker";
 import { updateMatrix } from "@/services/api/matrix";
 import { uploadFile } from "@/services/api/studies/raw";
 import { toError } from "@/utils/fnUtils";
@@ -55,7 +55,7 @@ export function useMatrixMutations({
   const { t } = useTranslation();
 
   // Prevents accidental navigation when matrix has unsaved changes or during submission
-  useFormCloseProtection({ isSubmitting, isDirty });
+  useFormBlocker({ isSubmitting, isDirty });
 
   const updateMatrixData = useCallback(
     (updates: GridUpdate[]): void => {

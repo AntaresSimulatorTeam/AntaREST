@@ -14,7 +14,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useFormCloseProtection from "@/hooks/useFormCloseProtection";
+import useFormBlocker from "@/hooks/useFormBlocker";
 import { toError, voidFn } from "@/utils/fnUtils";
 import { mergeSxProp } from "@/utils/muiUtils";
 import RedoIcon from "@mui/icons-material/Redo";
@@ -84,7 +84,7 @@ export interface FormProps<
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
   disableStickyFooter?: boolean;
   extraActions?: React.ReactNode | ((state: { canSubmit: boolean }) => React.ReactNode);
-  disableCloseProtection?: boolean;
+  disableBlocker?: boolean;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
@@ -110,7 +110,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
   apiRef,
   disableStickyFooter,
   extraActions,
-  disableCloseProtection = false,
+  disableBlocker = false,
   ...formProps
 }: FormProps<TFieldValues, TContext>) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -149,25 +149,28 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   const { set: setNewPresent, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApiPlus);
 
-  const { executeWithoutFormCloseCheck } = useFormCloseProtection({
+  useFormBlocker({
     isSubmitting,
-    isDirty,
-    disableHook: disableCloseProtection,
+    // When submit is successful, form still considered dirty until we reset it.
+    // So if `isSubmitSuccessful` is true, we consider form not dirty to avoid blocking navigation
+    // inside `submitSuccessfulCb.current()`.
+    isDirty: isSubmitSuccessful ? false : isDirty,
+    disabled: disableBlocker,
   });
 
   // Reset after successful submit.
   // It's recommended to reset inside useEffect after submission: https://react-hook-form.com/api/useform/reset
   useEffect(
     () => {
-      if (isSubmitSuccessful && lastSubmittedData.current) {
-        // Form still dirty here, so we need to bypass the form close protection
-        // in case the callback makes a view transition
-        executeWithoutFormCloseCheck(submitSuccessfulCb.current);
+      if (isSubmitSuccessful) {
+        submitSuccessfulCb.current();
 
-        // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
-        reset(lastSubmittedData.current);
+        if (lastSubmittedData.current) {
+          // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
+          reset(lastSubmittedData.current);
 
-        setNewPresent(lastSubmittedData.current);
+          setNewPresent(lastSubmittedData.current);
+        }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

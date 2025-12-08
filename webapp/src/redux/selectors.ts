@@ -514,15 +514,3 @@ export const getMessageInfo = (state: AppState): UIState["messageInfo"] => {
 export const isMenuOpen = (state: AppState): UIState["menuOpen"] => {
   return getUIState(state).menuOpen;
 };
-
-export const getFormState = (state: AppState): UIState["form"] => {
-  return getUIState(state).form;
-};
-
-export const getFormStatus = (state: AppState): UIState["form"]["status"] => {
-  return getUIState(state).form.status;
-};
-
-export const getFormCloseDialogStatus = (state: AppState): UIState["form"]["closeDialogStatus"] => {
-  return getUIState(state).form.closeDialogStatus;
-};
