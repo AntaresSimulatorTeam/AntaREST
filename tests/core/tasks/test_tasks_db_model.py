@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.tasks.model import TaskJob, TaskJobLog
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Password, User
 from antarest.study.model import RawStudy
 from tests.helpers import create_raw_study
@@ -101,7 +102,7 @@ def test_study_constraints(db_session: Session) -> None:
 
 
 def test_database_date_utc(db_session: Session) -> None:
-    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    now = current_time()
     later = now + datetime.timedelta(seconds=1)
 
     with db_session:
@@ -116,7 +117,7 @@ def test_database_date_utc(db_session: Session) -> None:
 
     with db_session:
         task_job = db_session.query(TaskJob).filter(TaskJob.name == "foo").one()
-        task_job.completion_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        task_job.completion_date = current_time()
         db_session.commit()
 
     with db_session:

@@ -109,23 +109,6 @@ class CommandDTO(AntaresBaseModel):
         return self.args if isinstance(self.args, list) else [self.args]
 
 
-class CommandResultDTO(AntaresBaseModel):
-    """
-    This class represents the result of a command.
-
-    Attributes:
-        study_id: The unique identifier of the study.
-        id: The unique identifier of the command.
-        success: A boolean indicating whether the command was successful.
-        message: A message detailing the result of the command.
-    """
-
-    study_id: str
-    id: str
-    success: bool
-    message: str
-
-
 class VariantTreeDTO:
     """
     This class represents a variant tree structure.

@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,7 @@ from typing_extensions import override
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.repository import GroupRepository
 from antarest.login.service import LoginService
@@ -28,7 +30,10 @@ from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO, MatrixReference
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.output_model import OutputVariablesType, OutputVariablesViewsModel
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
@@ -102,13 +107,14 @@ def test_raw_studies_matrix_usage_provider(
     matrix_name4 = "matrix_name4"
     matrices_name = ["matrix_name1", "matrix_name2", "matrix_name3"]
 
+    now = current_time()
     metadata_raw_study = create_raw_study(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path / "studies"),
         version="720",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
     )
 
     with db():
@@ -220,3 +226,38 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
                 MatrixReference(matrix_id=matrix_a, use_description=use_description),
                 MatrixReference(matrix_id=matrix_b, use_description=use_description),
             }
+
+
+def test_output_variables_matrix_usage_provider(matrix_service: MatrixService) -> None:
+    # Create a matrix to avoid ForeignKey issue
+    matrix_id = matrix_service.create(pd.DataFrame([0]))
+
+    with db():
+        # Create a study to avoid ForeignKey issue
+        study_id = str(uuid.uuid4())
+        db.session.add(create_raw_study(id=study_id, name="Study 1", version="8.8"))
+        db.session.commit()
+
+        # Create a view referencing the study and the matrix
+        db_model = OutputVariablesViewsModel(
+            study_id=study_id,
+            output_id="output_id",
+            type=OutputVariablesType.AREA,
+            frequency=MatrixFrequency.ANNUAL,
+            variable_name="NODU",
+            area_id="fr",
+            matrix_id=matrix_id,
+            last_read=datetime.now(timezone.utc).replace(tzinfo=None),
+        )
+        db.session.add(db_model)
+        db.session.commit()
+
+        # Register the provider
+        OutputVariablesMatrixUsageProvider(matrix_service)
+
+        # Ensures the `get_used_matrices` method returns the output variable view.
+        used_matrices = list(matrix_service.get_used_matrices())
+        assert len(used_matrices) == 1
+        assert used_matrices[0] == MatrixReference(
+            matrix_id=matrix_id, use_description="Matrix used inside variables views"
+        )

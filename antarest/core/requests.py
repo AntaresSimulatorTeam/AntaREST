@@ -14,17 +14,7 @@ from collections import OrderedDict
 from typing import Any, Generator, Mapping, MutableMapping, Tuple
 
 from fastapi import HTTPException
-from ratelimit import Rule  # type: ignore
 from typing_extensions import override
-
-RATE_LIMIT_CONFIG = {
-    r"^/v1/launcher/run": [
-        Rule(second=1, minute=20),
-    ],
-    r"^/v1/watcher/_scan": [
-        Rule(minute=2),
-    ],
-}
 
 
 class CaseInsensitiveDict(MutableMapping[str, Any]):  # copy of the requests class to avoid importing the package

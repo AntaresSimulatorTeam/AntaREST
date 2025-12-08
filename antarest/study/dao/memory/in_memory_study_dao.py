@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, Iterator, List, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -52,7 +52,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.user_model import UserResourceDataCreation
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -121,6 +121,15 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_properties: Dict[str, HydroProperties] = {}
         self._hydro_allocation: dict[str, HydroAllocation] = {}
         self._hydro_correlation: dict[str, HydroCorrelation] = {}
+        self._hydro_maxpower: dict[str, str] = {}
+        self._hydro_reservoir: dict[str, str] = {}
+        self._hydro_energy: dict[str, str] = {}
+        self._hydro_run_of_river: dict[str, str] = {}
+        self._hydro_modulation: dict[str, str] = {}
+        self._hydro_credit_modulations: dict[str, str] = {}
+        self._hydro_inflow_pattern: dict[str, str] = {}
+        self._hydro_water_values: dict[str, str] = {}
+        self._hydro_mingen: dict[str, str] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -184,6 +193,16 @@ class InMemoryStudyDao(StudyDao):
         # Scenario Builder
         self.rulesets: Rulesets = {}
         self.active_ruleset_name: Optional[str] = None
+        # Load
+        self._load: dict[str, str] = {}
+        # Reserves
+        self._reserves: dict[str, str] = {}
+        # Misc-gen
+        self._misc_gen: dict[str, str] = {}
+        # Solar
+        self._solar: dict[str, str] = {}
+        # Wind
+        self._wind: dict[str, str] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -218,6 +237,21 @@ class InMemoryStudyDao(StudyDao):
             return self._links[link_key(area1_id, area2_id)]
         except KeyError:
             raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
+
+    @override
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        matrix_id = self._link_indirect_capacities[link_key(area_from, area_to)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        matrix_id = self._link_direct_capacities[link_key(area_from, area_to)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+        matrix_id = self._link_capacities[link_key(area_from, area_to)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def save_link(self, link: Link) -> None:
@@ -806,6 +840,16 @@ class InMemoryStudyDao(StudyDao):
         self._playlist_config = playlist
 
     @override
+    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+        for path, content in self._user_resources.items():
+            resource_type = ResourceType.FOLDER if content is None else ResourceType.FILE
+            yield UserResourceDataCreation(
+                path=path,
+                resource_type=resource_type,
+                blob_id=content,
+            )
+
+    @override
     def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
         self._user_resources[resource_data.path] = resource_data.blob_id
 
@@ -921,3 +965,129 @@ class InMemoryStudyDao(StudyDao):
                 raise AreaNotFound(area_id)
 
         self._layer_areas[layer_id] = set(area_ids)
+
+    @override
+    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_maxpower[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_reservoir[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_energy[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_run_of_river[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_modulation[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_credit_modulations[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_inflow_pattern[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_water_values[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._hydro_mingen[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+        self._hydro_maxpower[area_id] = series_id
+
+    @override
+    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+        self._hydro_reservoir[area_id] = series_id
+
+    @override
+    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+        self._hydro_energy[area_id] = series_id
+
+    @override
+    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+        self._hydro_run_of_river[area_id] = series_id
+
+    @override
+    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+        self._hydro_modulation[area_id] = series_id
+
+    @override
+    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+        self._hydro_credit_modulations[area_id] = series_id
+
+    @override
+    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+        self._hydro_inflow_pattern[area_id] = series_id
+
+    @override
+    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+        self._hydro_water_values[area_id] = series_id
+
+    @override
+    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        self._hydro_mingen[area_id] = series_id
+
+    @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._load[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._misc_gen[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._reserves[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._solar[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        matrix_id = self._wind[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def save_load(self, area_id: str, series_id: str) -> None:
+        self._load[area_id] = series_id
+
+    @override
+    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+        self._misc_gen[area_id] = series_id
+
+    @override
+    def save_reserves(self, area_id: str, series_id: str) -> None:
+        self._reserves[area_id] = series_id
+
+    @override
+    def save_solar(self, area_id: str, series_id: str) -> None:
+        self._solar[area_id] = series_id
+
+    @override
+    def save_wind(self, area_id: str, series_id: str) -> None:
+        self._wind[area_id] = series_id

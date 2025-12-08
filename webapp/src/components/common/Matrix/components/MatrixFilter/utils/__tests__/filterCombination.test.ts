@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { UTCDate } from "@date-fns/utc";
 import { FILTER_OPERATORS, FILTER_TYPES, TIME_INDEXING } from "../../constants";
 import type { FilterOperatorType, FilterState, FilterType, TimeIndexingType } from "../../types";
 import { extractDatesInfo, processRowFilters } from "../index";
-import { UTCDate } from "@date-fns/utc";
 
 describe("Filter Combination Logic", () => {
   const createMockFilter = (
@@ -55,7 +55,7 @@ describe("Filter Combination Logic", () => {
   const mockDatesInfo = extractDatesInfo(mockValues);
 
   describe("Mixed Type Filters (AND between types, OR within types)", () => {
-    it("should apply AND logic between different indexingTypes", () => {
+    test("should apply AND logic between different indexingTypes", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -84,7 +84,7 @@ describe("Filter Combination Logic", () => {
       }
     });
 
-    it("should return empty array when filters have no intersection", () => {
+    test("should return empty array when filters have no intersection", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -102,7 +102,7 @@ describe("Filter Combination Logic", () => {
       expect(result).toEqual([]);
     });
 
-    it("should handle range filters with AND logic between types", () => {
+    test("should handle range filters with AND logic between types", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -130,7 +130,7 @@ describe("Filter Combination Logic", () => {
       }
     });
 
-    it("should apply OR logic within same indexingType", () => {
+    test("should apply OR logic within same indexingType", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -157,7 +157,7 @@ describe("Filter Combination Logic", () => {
       }
     });
 
-    it("should apply OR within type and AND between types", () => {
+    test("should apply OR within type and AND between types", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -189,7 +189,7 @@ describe("Filter Combination Logic", () => {
       }
     });
 
-    it("should handle multiple filters of different types correctly", () => {
+    test("should handle multiple filters of different types correctly", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -223,7 +223,7 @@ describe("Filter Combination Logic", () => {
   });
 
   describe("Same Type Duplicates", () => {
-    it("should not duplicate results when same filter is applied multiple times", () => {
+    test("should not duplicate results when same filter is applied multiple times", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.DAY_OF_MONTH,
@@ -249,7 +249,7 @@ describe("Filter Combination Logic", () => {
   });
 
   describe("Edge Cases", () => {
-    it("should handle empty filter lists as no filter (show all rows)", () => {
+    test("should handle empty filter lists as no filter (show all rows)", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -262,7 +262,7 @@ describe("Filter Combination Logic", () => {
       expect(result.length).toBe(365); // Should show all rows when list is empty
     });
 
-    it("should treat empty list filters as no filter applied", () => {
+    test("should treat empty list filters as no filter applied", () => {
       // Test with multiple empty list filters
       const filter = createMockFilter([
         {
@@ -298,7 +298,7 @@ describe("Filter Combination Logic", () => {
       expect(mixedResult.length).toBe(30); // Should show all days in June
     });
 
-    it("should handle single filter", () => {
+    test("should handle single filter", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -311,13 +311,13 @@ describe("Filter Combination Logic", () => {
       expect(result.length).toBe(31); // July has 31 days
     });
 
-    it("should handle no filters", () => {
+    test("should handle no filters", () => {
       const filter = createMockFilter([]);
       const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
       expect(result.length).toBe(365); // All rows
     });
 
-    it("should handle three or more filters correctly", () => {
+    test("should handle three or more filters correctly", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -347,7 +347,7 @@ describe("Filter Combination Logic", () => {
       }
     });
 
-    it("should handle complex scenario with multiple same-type filters", () => {
+    test("should handle complex scenario with multiple same-type filters", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -384,7 +384,7 @@ describe("Filter Combination Logic", () => {
       }
     });
 
-    it("should handle mix of range and list filters of same type", () => {
+    test("should handle mix of range and list filters of same type", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.DAY_OF_MONTH,
@@ -418,7 +418,7 @@ describe("Filter Combination Logic", () => {
       }
     });
 
-    it("should handle filters with different operators correctly", () => {
+    test("should handle filters with different operators correctly", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.DAY_OF_MONTH,
@@ -456,7 +456,7 @@ describe("Filter Combination Logic", () => {
       expect(result.length).toBeLessThan(250);
     });
 
-    it("should return empty when no filter matches", () => {
+    test("should return empty when no filter matches", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -474,7 +474,7 @@ describe("Filter Combination Logic", () => {
       expect(result).toEqual([]);
     });
 
-    it("should handle hour-based filters correctly", () => {
+    test("should handle hour-based filters correctly", () => {
       // Create hourly mock data for a single day
       const hourlyValues = Array.from({ length: 24 }, (_, i) => {
         return new UTCDate(Date.UTC(2024, 0, 1, i, 0, 0));

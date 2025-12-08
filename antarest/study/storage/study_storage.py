@@ -190,7 +190,3 @@ class IStudyStorage(ABC):
         Returns: FileStudyTreeConfigDTO
 
         """
-
-    @abstractmethod
-    def initialize_additional_data(self, study: Study) -> bool:
-        """Initialize additional data for a study."""

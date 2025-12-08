@@ -75,6 +75,7 @@ class TestSTStorage:
             "folder": "STA-mini",
             "tags": [],
             "directory_id": None,
+            "parent_id": None,
         }
 
         # Here is the list of available areas

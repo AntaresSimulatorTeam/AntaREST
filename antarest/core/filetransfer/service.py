@@ -35,15 +35,13 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT
-from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_current_user, require_current_user
 
 logger = logging.getLogger(__name__)
 
 
 class FileTransferManager:
-    _instance: Optional["FileTransferManager"] = None
-
     def __init__(
         self,
         repository: FileDownloadRepository,
@@ -78,7 +76,7 @@ class FileTransferManager:
             ready=False,
             path=str(tmpfile),
             owner=owner.impersonator if owner is not None else None,
-            expiration_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            expiration_date=current_time()
             + datetime.timedelta(
                 minutes=expiration_time_in_minutes or self.download_default_expiration_timeout_minutes
             ),
@@ -138,18 +136,6 @@ class FileTransferManager:
             )
         )
 
-    def remove(self, download_id: str) -> None:
-        download = self.repository.get(download_id)
-        owner = download.owner if download else None
-        self.repository.delete(download_id)
-        self.event_bus.push(
-            Event(
-                type=EventType.DOWNLOAD_EXPIRED,
-                payload=download_id,
-                permissions=PermissionInfo(owner=owner) if owner else PermissionInfo(public_mode=PublicMode.READ),
-            )
-        )
-
     def request_tmp_file(self, background_tasks: BackgroundTasks) -> Path:
         """
         Returns a new tmp path that will be deleted at the end of the request
@@ -174,7 +160,7 @@ class FileTransferManager:
         return [d.to_dto() for d in downloads]
 
     def _clean_up_expired_downloads(self, file_downloads: List[FileDownload]) -> None:
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        now = current_time()
         to_remove = []
         for file_download in file_downloads:
             if file_download.expiration_date is not None and file_download.expiration_date <= now:
@@ -229,9 +215,8 @@ class FileTransferManager:
 
             # disable download variable typing since it will always be defined
             while time.time() < end and not download.ready and not download.failed:
-                with db():  # needs db context to refresh download
-                    download = self.repository.get(download_id)
-                    assert download is not None
+                download = self.repository.get(download_id)
+                assert download is not None
                 time.sleep(2)
 
         if download.failed:

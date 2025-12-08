@@ -15,6 +15,7 @@
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { StudyMetadata } from "@/types/types";
 import { useOutletContext } from "react-router-dom";
+import semver from "semver";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
@@ -30,7 +31,6 @@ function Fields() {
     "useHeuristic",
     "useLeeway",
   ]);
-  const studyVersion = Number(study.version);
 
   return (
     <>
@@ -84,7 +84,7 @@ function Fields() {
           disabled={!reservoirDisabled}
           sx={{ alignSelf: "center" }}
         />
-        {studyVersion >= 920 && (
+        {semver.gte(study.version, "9.2.0") && (
           <NumberFE
             name="overflowSpilledCostDifference"
             label="Overflow Spilled Cost Difference"

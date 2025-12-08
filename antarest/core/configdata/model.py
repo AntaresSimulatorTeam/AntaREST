@@ -18,12 +18,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from typing_extensions import override
 
 from antarest.core.persistence import Base
-from antarest.core.serde import AntaresBaseModel
-
-
-class ConfigDataDTO(AntaresBaseModel):
-    key: str
-    value: Optional[str]
 
 
 class ConfigData(Base):
@@ -41,9 +35,6 @@ class ConfigData(Base):
     @override
     def __repr__(self) -> str:
         return f"key={self.key}, value={self.value}, owner={self.owner}"
-
-    def to_dto(self) -> ConfigDataDTO:
-        return ConfigDataDTO(key=self.key, value=self.value)
 
 
 # APP MAIN CONFIG KEYS

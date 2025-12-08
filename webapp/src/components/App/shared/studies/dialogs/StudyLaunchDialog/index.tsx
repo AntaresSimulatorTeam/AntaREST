@@ -15,7 +15,7 @@
 import FormDialog from "@/components/common/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { launchStudy } from "@/services/api/launcher/index";
-import type { LauncherConfig } from "@/services/api/launcher/types";
+import type { LauncherParams } from "@/services/api/launcher/types";
 import type { StudyMetadata } from "@/types/types";
 import BoltIcon from "@mui/icons-material/Bolt";
 import { useTranslation } from "react-i18next";
@@ -38,9 +38,11 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
-    const config: LauncherConfig = {
+    const hasConfig = values.configuration !== "";
+
+    const launcherParams: LauncherParams = {
       outputSuffix: values.name,
-      otherOptions: values.otherOptions,
+      otherOptions: hasConfig ? undefined : values.otherOptions,
       autoUnzip: values.autoUnzip,
       // Note: fields can be set event if Xpansion is disabled.
       // This can happen with the default values.
@@ -61,7 +63,8 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
         launchStudy({
           studyId: id,
           launcherId: values.launcher,
-          config,
+          solverPresetsId: hasConfig ? values.configuration : undefined,
+          launcherParams,
           version: values.version,
         }),
       ),

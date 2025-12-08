@@ -12,6 +12,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
+import pandas as pd
+
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 
 
@@ -54,6 +56,26 @@ class ReadOnlyAreaDao(ABC):
         Raises:
             AreaNotFound: If the area does not exist.
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_wind(self, area_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
 
@@ -119,4 +141,24 @@ class AreaDao(ReadOnlyAreaDao):
         Raises:
             LayerNotFound: If the layer does not exist.
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_load(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_reserves(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_solar(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_wind(self, area_id: str, series_id: str) -> None:
         raise NotImplementedError()

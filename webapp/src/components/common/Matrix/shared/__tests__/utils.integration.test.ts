@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+/* eslint-disable vitest/no-conditional-expect */
+
 import { describe, expect, test } from "vitest";
 import { TimeFrequency } from "../constants";
 import type { DateTimeMetadataDTO } from "../types";

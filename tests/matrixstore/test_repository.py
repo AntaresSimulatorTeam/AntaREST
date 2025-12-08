@@ -25,6 +25,7 @@ from pandas._testing import assert_frame_equal
 from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
 from antarest.matrixstore.model import Matrix, MatrixDataSet, MatrixDataSetRelation
@@ -48,7 +49,7 @@ class TestMatrixRepository:
                 id="hello",
                 width=0,
                 height=0,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=current_time(),
                 version=0,
             )
             repo.save(m)
@@ -94,7 +95,7 @@ class TestMatrixRepository:
                 id="hello",
                 width=0,
                 height=0,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=current_time(),
                 version=0,
             )
             repo.save(m1)
@@ -102,7 +103,7 @@ class TestMatrixRepository:
                 id="world",
                 width=0,
                 height=0,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=current_time(),
                 version=0,
             )
             repo.save(m2)
@@ -112,8 +113,8 @@ class TestMatrixRepository:
                 public=True,
                 owner_id=user.id,
                 groups=[group],
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=current_time(),
+                updated_at=current_time(),
             )
 
             matrix_relation = MatrixDataSetRelation(name="m1")
@@ -149,32 +150,15 @@ class TestMatrixRepository:
             user2 = user_repo.save(User(name="hello", password=Password("world  ")))
 
             repo = MatrixRepository(session=db_session)
-            m1 = Matrix(
-                id="hello",
-                width=0,
-                height=0,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-                version=0,
-            )
+            now = current_time()
+            m1 = Matrix(id="hello", width=0, height=0, created_at=now, version=0)
             repo.save(m1)
-            m2 = Matrix(
-                id="world",
-                width=0,
-                height=0,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-                version=0,
-            )
+            m2 = Matrix(id="world", width=0, height=0, created_at=now, version=0)
             repo.save(m2)
 
             dataset_repo = MatrixDataSetRepository(session=db_session)
 
-            dataset = MatrixDataSet(
-                name="some name",
-                public=True,
-                owner_id=user1.id,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            )
+            dataset = MatrixDataSet(name="some name", public=True, owner_id=user1.id, created_at=now, updated_at=now)
             matrix_relation = MatrixDataSetRelation(name="m1")
             matrix_relation.matrix_id = "hello"
             dataset.matrices.append(matrix_relation)
@@ -183,13 +167,7 @@ class TestMatrixRepository:
             dataset.matrices.append(matrix_relation)
             dataset_repo.save(dataset)
 
-            dataset = MatrixDataSet(
-                name="some name 2",
-                public=False,
-                owner_id=user2.id,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-                updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            )
+            dataset = MatrixDataSet(name="some name 2", public=False, owner_id=user2.id, created_at=now, updated_at=now)
             matrix_relation = MatrixDataSetRelation(name="m1")
             matrix_relation.matrix_id = "hello"
             dataset.matrices.append(matrix_relation)

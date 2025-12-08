@@ -9,28 +9,30 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import logging
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
 
+import numpy as np
 import pandas as pd
+import polars as pl
+from polars.exceptions import ComputeError
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.study.business.output.utils import (
+    MCYEAR_COL,
     MCAllAreasQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
-    normalize_column_names,
-    parse_output_file,
+    get_start_column,
+    normalize_df_column_names,
+    parse_headers,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 # noinspection SpellCheckingInspection
-MCYEAR_COL = "mcYear"
-"""Column name for the Monte Carlo year."""
 AREA_COL = "area"
 """Column name for the area."""
 LINK_COL = "link"
@@ -117,19 +119,36 @@ class AggregatorManager:
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
             else MCRoot.MC_ALL
         )
+        self._output_first_column = get_start_column(self.frequency)
 
-    def _parse_output_file(self, file_path: Path, normalize_column_name: bool = True) -> pd.DataFrame:
-        body = parse_output_file(file_path, self.frequency)
+    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
+        content = file_path.read_text(encoding="utf-8")
+        output_headers = parse_headers(content, self._output_first_column)
+        try:
+            polars_df = pl.read_csv(
+                file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1
+            )
+        except ComputeError:
+            # Happens if polars wrongly inferred the schema. If so, we specify that he shouldn't try.
+            # This way the parsing does not fail, but it is significantly slower.
+            # This case does not seem to happen very often.
+            polars_df = pl.read_csv(
+                file_path,
+                skip_lines=7,
+                separator="\t",
+                has_header=False,
+                null_values="N/A",
+                infer_schema=False,
+                n_threads=1,
+            )
 
-        df = body.astype(float)
+        df = polars_df[polars_df.columns[self._output_first_column :]].to_pandas().astype(np.float64)
 
-        if not normalize_column_name:
-            return df
+        df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
 
-        # normalize columns names
-        new_cols = normalize_column_names(body, self.mc_root)
+        if normalize_column_names:
+            df.columns = pd.Index(normalize_df_column_names(self.mc_root, output_headers))
 
-        df.columns = pd.Index(new_cols)
         return df
 
     def _filter_ids(self, folder_path: Path) -> List[str]:
@@ -225,38 +244,33 @@ class AggregatorManager:
             the DataFrame with the correct columns and values
         """
 
-        if is_details:
-            # extract the data frame from the file without processing the columns
-            un_normalized_df = self._parse_output_file(file_path, normalize_column_name=False)
-            # number of rows in the data frame
-            df_len = len(un_normalized_df)
-            cluster_dummy_product_cols = sorted(
-                set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in un_normalized_df.columns])
-            )
-            # actual columns without the cluster id (NODU, production etc.)
-            actual_cols = sorted(set(un_normalized_df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
-
-            # using a dictionary to build the new data frame with the base columns (NO2, production etc.)
-            # and the cluster id and time id
-            new_obj: Dict[str, Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
-
-            # loop over the cluster id to extract the values of the actual columns
-            for cluster_id, dummy_component in cluster_dummy_product_cols:
-                for actual_col in actual_cols:
-                    col_values = un_normalized_df[(cluster_id, actual_col, dummy_component)].tolist()
-                    new_obj[actual_col] += col_values
-                new_obj[CLUSTER_ID_COL] += [cluster_id for _ in range(df_len)]
-                new_obj[TIME_ID_COL] += list(range(1, df_len + 1))
-
-            # reorganize the data frame
-            columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
-            df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
-
+        df = self._parse_output_file(file_path, normalize_column_names=not is_details)
+        if not is_details:
             return df
 
-        else:
-            # just extract the data frame from the file by just merging the columns components
-            return self._parse_output_file(file_path)
+        # number of rows in the data frame
+        df_len = len(df)
+        cluster_dummy_product_cols = sorted(set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in df.columns]))
+        # actual columns without the cluster id (NODU, production etc.)
+        actual_cols = sorted(set(df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
+
+        # using a dictionary to build the new data frame with the base columns (NO2, production etc.)
+        # and the cluster id and time id
+        new_obj: Dict[str, Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
+
+        # loop over the cluster id to extract the values of the actual columns
+        for cluster_id, dummy_component in cluster_dummy_product_cols:
+            for actual_col in actual_cols:
+                col_values = df[(cluster_id, actual_col, dummy_component)].tolist()
+                new_obj[actual_col] += col_values
+            new_obj[CLUSTER_ID_COL] += [cluster_id for _ in range(df_len)]
+            new_obj[TIME_ID_COL] += list(range(1, df_len + 1))
+
+        # reorganize the data frame
+        columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
+        final_df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
+
+        return final_df
 
     def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:

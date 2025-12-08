@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import base64
 import collections
 import contextlib
@@ -17,8 +16,7 @@ import http
 import io
 import logging
 import os
-import time
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
 from uuid import uuid4
@@ -60,7 +58,7 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
@@ -115,7 +113,6 @@ from antarest.study.model import (
     MatrixIndex,
     RawStudy,
     Study,
-    StudyAdditionalData,
     StudyContentStatus,
     StudyDownloadLevelDTO,
     StudyFolder,
@@ -148,9 +145,6 @@ from antarest.study.storage.utils import (
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.create_user_resource import (
-    CreateUserResource,
-)
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -160,6 +154,9 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
 )
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_user_resource import (
+    ReplaceUserResource,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -434,19 +431,17 @@ class RawStudyInterface(StudyInterface):
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
-        self._update_editor(file_study)
+        self._update_editor_and_lastsave(file_study)
 
-    def _update_editor(self, file_study: FileStudy) -> None:
+    def _update_editor_and_lastsave(self, file_study: FileStudy) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
         if user:
             user_name = user.name or ""
             study_antares = file_study.tree.get(["study", "antares"])
-            study_antares["editor"] = user.name
+            study_antares["editor"] = user_name
+            study_antares["lastsave"] = current_time()
             file_study.tree.save(study_antares, ["study", "antares"])
-            if not self._study.additional_data:
-                self._study.additional_data = StudyAdditionalData(author=user_name, editor=user_name)
-            else:
-                self._study.additional_data.editor = user_name
+            self._study.editor = user_name
             self._repository.save(self._study)
 
 
@@ -773,7 +768,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         logger.info("Study metadata requested for study %s by user %s", uuid, get_user_id())
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
-        study.last_access = datetime.now(timezone.utc).replace(tzinfo=None)
+        study.last_access = current_time()
         self.repository.save(study)
         return self.storage_service.get_storage(study).get_study_information(study)
 
@@ -813,13 +808,12 @@ class StudyService:
 
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
 
-        study.additional_data = study.additional_data or StudyAdditionalData()
         if metadata_patch.name:
             study.name = metadata_patch.name
         if metadata_patch.author:
-            study.additional_data.author = metadata_patch.author
+            study.author = metadata_patch.author
         if metadata_patch.horizon:
-            study.additional_data.horizon = metadata_patch.horizon
+            study.horizon = metadata_patch.horizon
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
@@ -892,7 +886,12 @@ class StudyService:
 
         Returns:
             str: The ID of the newly created study.
+
+        Raises:
+            UserHasNotPermissionError: If the user doesn't have permission for the specified groups.
         """
+        owner, groups = self._validate_and_prepare_permissions(group_ids)
+
         sid = str(uuid4())
         study_path = self.config.get_workspace_path() / sid
 
@@ -900,21 +899,26 @@ class StudyService:
 
         directory_id = self.directory_service.get_directory_by_path(directory)
 
-        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        now_utc = current_time()
         raw = RawStudy(
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(study_path),
+            author=author,
+            editor=author,
             created_at=now_utc,
             updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
-            additional_data=StudyAdditionalData(author=author, editor=author),
             directory_id=directory_id,
+            owner=owner,
+            groups=groups,
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
-        self._save_study(raw, group_ids)
+
+        self._save_study(raw)
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -949,7 +953,7 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
-        study.last_access = datetime.now(timezone.utc).replace(tzinfo=None)
+        study.last_access = current_time()
         self.repository.save(study)
         study_storage_service = self.storage_service.get_storage(study)
         return study_storage_service.get_synthesis(study)
@@ -996,7 +1000,7 @@ class StudyService:
         Returns:
 
         """
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = current_time()
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
         if directory:
@@ -1173,6 +1177,8 @@ class StudyService:
         assert_permission(src_study, StudyPermissionType.READ)
         self.assert_study_unarchived(src_study)
 
+        owner, groups = self._validate_and_prepare_permissions(group_ids)
+
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
@@ -1184,7 +1190,10 @@ class StudyService:
                 with_outputs,
             )
 
-            self._save_study(study, group_ids)
+            study.owner = owner
+            study.groups = groups
+
+            self._save_study(study)
             self.normalize_study(study)
 
             # Copying all jobs associated with the study
@@ -1389,21 +1398,25 @@ class StudyService:
 
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
+            UserHasNotPermissionError: If the user doesn't have permission for the specified groups.
         """
+        owner, groups = self._validate_and_prepare_permissions(group_ids)
+
         sid = str(uuid4())
         path = str(self.config.get_workspace_path() / sid)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
-            additional_data=StudyAdditionalData(editor=self.get_user_name()),
+            editor=self.get_user_name(),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
-            groups=group_ids,
+            owner=owner,
+            groups=groups,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
-        study.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        study.updated_at = current_time()
 
-        self._save_study(study, group_ids)
+        self._save_study(study)
         self.normalize_study(study)
         self.event_bus.push(
             Event(
@@ -1462,14 +1475,21 @@ class StudyService:
                 )
         raise NotImplementedError()
 
-    def _edit_study_using_command(
-        self,
-        study: Study,
-        url: str,
-        data: SUB_JSON,
-        *,
-        create_missing: bool = False,
-    ) -> List[ICommand]:
+    def _create_replace_user_resource_command(
+        self, version: StudyVersion, data: SUB_JSON, file_relpath: PurePosixPath
+    ) -> ICommand:
+        # We should make sure the path is located inside the user folder. Otherwise, we raise an Exception
+        user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
+        # Save the content inside the blob service and create the command.
+        content = data or b""
+        assert isinstance(content, bytes)
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        blob_id = context.blob_service.save(content)
+        args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
+        command_data = UserResourceDataCreation.model_validate(args)
+        return ReplaceUserResource(data=command_data, command_context=context, study_version=version)
+
+    def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> List[ICommand]:
         """
         Replace data on disk with new, using variant commands.
 
@@ -1480,37 +1500,31 @@ class StudyService:
             study: study
             url: data path to reach
             data: new data to replace
-            create_missing: Flag to indicate whether to create file or parent directories if missing.
         """
         study_service = self.storage_service.get_storage(study)
         file_study = study_service.get_raw(metadata=study)
         version = file_study.config.version
-        commands: List[ICommand] = []
 
+        command: ICommand
         file_relpath = PurePosixPath(url.strip().strip("/"))
-        file_path = study_service.get_study_path(study).joinpath(file_relpath)
-        create_missing &= not file_path.exists()
-        if create_missing:
-            context = self.storage_service.variant_study_service.command_factory.command_context
-            user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
-            content = data or b""
-            assert isinstance(content, bytes)
-            blob_id = context.blob_service.save(content)
-            args = {"path": user_path, "resource_type": ResourceType.FILE, "blob_id": blob_id}
-            command_data = UserResourceDataCreation.model_validate(args)
-            cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
-            commands.append(cmd_1)
-        else:
-            # A 404 Not Found error is raised if the file does not exist.
-            tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
-            commands.append(self._create_edit_study_command(tree_node, url, data, version))
 
-        if isinstance(study_service, RawStudyService):
-            url = "study/antares/lastsave"
-            last_save_node = file_study.tree.get_node(url.split("/"))
-            cmd = self._create_edit_study_command(last_save_node, url, int(time.time()), version)
-            commands.append(cmd)
+        try:
+            # A ChildNotFoundError is raised if the file does not exist.
+            tree_node = file_study.tree.get_node(list(file_relpath.parts))
+            # A ResourceCreationNotAllowed is raised if the path isn't located inside the user folder
+            _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
+            # We're modifying an existing resource inside the user folder.
+            command = self._create_replace_user_resource_command(version, data, file_relpath)
 
+        except ChildNotFoundError:
+            # We're creating a resource
+            command = self._create_replace_user_resource_command(version, data, file_relpath)
+
+        except ResourceCreationNotAllowed:
+            # We're modifying an existing resource outside the user folder
+            command = self._create_edit_study_command(tree_node, url, data, version)
+
+        commands = [command]
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
@@ -1540,14 +1554,7 @@ class StudyService:
         )
         return None
 
-    def edit_study(
-        self,
-        uuid: str,
-        url: str,
-        new: SUB_JSON,
-        *,
-        create_missing: bool = False,
-    ) -> JSON:
+    def edit_study(self, uuid: str, url: str, new: SUB_JSON) -> JSON:
         """
         Replace data inside study.
 
@@ -1555,7 +1562,6 @@ class StudyService:
             uuid: study id
             url: path data target in study
             new: new data to replace
-            create_missing: Flag to indicate whether to create file or parent directories if missing.
 
         Returns: new data replaced
         """
@@ -1563,7 +1569,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new, create_missing=create_missing)
+        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
         self.event_bus.push(
             Event(
@@ -1572,12 +1578,7 @@ class StudyService:
                 permissions=PermissionInfo.from_study(study),
             )
         )
-        logger.info(
-            "data %s on study %s updated by user %s",
-            url,
-            uuid,
-            get_user_id(),
-        )
+        logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
         return cast(JSON, new)
 
     def change_owner(self, study_id: str, owner_id: int) -> None:
@@ -1962,41 +1963,54 @@ class StudyService:
             custom_event_messages=None,
         )
 
-    def _save_study(
-        self,
-        study: Study,
-        group_ids: Sequence[str] = (),
-    ) -> None:
+    def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, List[Group]]:
         """
-        Create or update a study with specified attributes.
-
-        This function is responsible for creating a new study or updating an existing one
-        with the provided information.
+        Validate that the current user has permissions for the specified groups.
 
         Args:
-            study: The study to be saved or updated.
-            group_ids: The list of group IDs to associate with the study.
+            group_ids: The list of group IDs to validate.
+
+        Returns:
+            A tuple containing:
+            - The owner (User) from the database
+            - The list of validated Group objects
 
         Raises:
             UserHasNotPermissionError:
-                If the owner or the group role is not specified.
+                If the owner is not specified, has invalid authentication,
+                or does not have permission for any of the specified group IDs.
         """
-        owner = get_current_user()
-        if not owner:
+        current_user = get_current_user()
+        if not current_user:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
-        if isinstance(study, RawStudy):
-            study.content_status = StudyContentStatus.VALID
+        owner = self.user_service.get_user(current_user.impersonator)
 
-        study.owner = self.user_service.get_user(owner.impersonator)
-
-        study.groups.clear()
+        groups: List[Group] = []
         for gid in group_ids:
-            owned_groups = (g for g in owner.groups if g.id == gid)
+            owned_groups = (g for g in current_user.groups if g.id == gid)
             jwt_group: Optional[JWTGroup] = next(owned_groups, None)
             if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
-            study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
+            groups.append(Group(id=jwt_group.id, name=jwt_group.name))
+
+        return owner, groups
+
+    def _save_study(
+        self,
+        study: Study,
+    ) -> None:
+        """
+        Save a study to the database.
+
+        This function is responsible for saving a study to the repository.
+        The study's owner and groups should already be set before calling this method.
+
+        Args:
+            study: The study to be saved.
+        """
+        if isinstance(study, RawStudy):
+            study.content_status = StudyContentStatus.VALID
 
         self.repository.save(study)
 
@@ -2028,7 +2042,7 @@ class StudyService:
     # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions() -> List[str]:
-        return sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])
+        return sorted([str(v) for v in STUDY_REFERENCE_TEMPLATES])
 
     def create_xpansion_configuration(
         self,
@@ -2359,13 +2373,13 @@ class StudyService:
             "resource_type": ResourceType.FOLDER,
         }
         command_data = UserResourceDataCreation.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)
+        self._alter_user_folder(study_id, command_data, ReplaceUserResource, ResourceCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
         command_data: UserResourceDataCreation | UserResourceDataRemoval,
-        command_class: Type[CreateUserResource | RemoveUserResource],
+        command_class: Type[ReplaceUserResource | RemoveUserResource],
         exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:
         study = self.get_study(study_id)
