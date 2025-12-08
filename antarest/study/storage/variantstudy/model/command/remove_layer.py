@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List
 
 from typing_extensions import override
 
@@ -48,7 +47,3 @@ class RemoveLayer(ICommand):
             args={"layer_id": self.layer_id},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

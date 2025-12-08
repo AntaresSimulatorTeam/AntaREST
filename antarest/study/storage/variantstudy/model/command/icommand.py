@@ -20,7 +20,12 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_failed
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    InnerMatrices,
+    command_failed,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -99,12 +104,14 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> InnerMatrices:
         """
-        Retrieves the list of matrix IDs.
+        Method used by the CommandMatrixUsageProvider.
+        It retrieves the list of matrix IDs used by the command.
+        It also returns a flag indicating if the command generates matrices at the run time.
+        If so, the provider will also have to check the variant snapshot to check all used matrices.
         """
-        raise NotImplementedError()
+        return InnerMatrices()
 
     def get_inner_blobs(self) -> List[str]:
         """

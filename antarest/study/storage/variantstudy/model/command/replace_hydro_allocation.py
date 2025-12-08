@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
+from typing import Optional
 
 from typing_extensions import override
 
@@ -51,7 +51,3 @@ class ReplaceHydroAllocation(ICommand):
             args={"area_id": self.area_id, "allocation": self.allocation.model_dump(exclude_none=True)},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

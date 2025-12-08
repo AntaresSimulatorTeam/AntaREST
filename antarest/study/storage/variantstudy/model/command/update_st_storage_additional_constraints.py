@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List, Optional, Self
+from typing import Optional, Self
 
 from pydantic import TypeAdapter, model_validator
 from typing_extensions import override
@@ -89,7 +89,3 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []
