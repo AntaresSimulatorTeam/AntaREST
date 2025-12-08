@@ -85,7 +85,7 @@ def test_get_used_blobs(command_factory: CommandFactory) -> None:
             index=0,
             version=2,
             study_version="9.3",
-            command="create_user_resource",
+            command="replace_user_resource",
             args='{"data": {"resource_type": "file", "path": "file.txt", "blob_id": "blob_1"}}',
         ),
         CommandBlock(
@@ -94,7 +94,7 @@ def test_get_used_blobs(command_factory: CommandFactory) -> None:
             index=1,
             version=1,
             study_version="9.3",
-            command="create_user_resource",
+            command="replace_user_resource",
             args='{"data": {"resource_type": "file", "path": "file2.txt", "content": "Hello World !"}}',
         ),
         CommandBlock(
@@ -103,7 +103,7 @@ def test_get_used_blobs(command_factory: CommandFactory) -> None:
             index=2,
             version=2,
             study_version="9.3",
-            command="create_user_resource",
+            command="replace_user_resource",
             args='{"data": {"resource_type": "folder", "path": "new_folder"}}',
         ),
         CommandBlock(

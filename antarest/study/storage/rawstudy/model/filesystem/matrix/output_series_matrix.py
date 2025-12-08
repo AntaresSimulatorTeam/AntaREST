@@ -96,7 +96,6 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
         rename_unnamed(body)
         matrix = body.astype(float)
-        matrix = matrix.where(pd.notna(matrix), None)
         matrix.index = date
         matrix.columns = body.columns
         return matrix

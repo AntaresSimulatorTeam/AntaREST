@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { toSemanticVersion } from "@/utils/versionUtils";
 import snakeCase from "lodash/snakeCase";
 import * as RA from "ramda-adjunct";
 import client from "../client";
@@ -27,4 +28,9 @@ export async function copyStudy({ studyId, ...params }: CopyStudyParams) {
     },
   });
   return data;
+}
+
+export async function getStudyVersions() {
+  const { data } = await client.get<string[]>("/v1/studies/_versions");
+  return data.map(toSemanticVersion);
 }

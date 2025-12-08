@@ -10,15 +10,14 @@
 #
 # This file is part of the Antares project.
 
-import json
-from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.model import PublicMode
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData, StudyContentStatus
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyContentStatus
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from tests.helpers import create_raw_study, create_study, create_variant_study
 
@@ -28,13 +27,13 @@ def test_lifecycle(db_session: Session) -> None:
 
     user = User(id=1, name="admin")
     group = Group(id="my-group", name="group")
-
+    now = current_time()
     a = create_study(
         name="a",
         version="820",
         author="John Smith",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -43,8 +42,8 @@ def test_lifecycle(db_session: Session) -> None:
         name="b",
         version="830",
         author="Morpheus",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -53,19 +52,19 @@ def test_lifecycle(db_session: Session) -> None:
         name="c",
         version="830",
         author="Trinity",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
-        missing=datetime.now(timezone.utc).replace(tzinfo=None),
+        missing=now,
     )
     d = create_variant_study(
         name="d",
         version="830",
         author="Mr. Anderson",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],
@@ -90,58 +89,18 @@ def test_lifecycle(db_session: Session) -> None:
     assert repo.get(a_id) is None
 
 
-def test_study__additional_data(db_session: Session) -> None:
-    repo = StudyMetadataRepository(LocalCache(), session=db_session)
-
-    user = User(id=0, name="admin")
-    group = Group(id="my-group", name="group")
-
-    a = create_raw_study(
-        name="a",
-        version="820",
-        author="John Smith",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        public_mode=PublicMode.FULL,
-        owner=user,
-        groups=[group],
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path="study",
-        content_status=StudyContentStatus.WARNING,
-        additional_data=StudyAdditionalData(author="John Smith", horizon="2024-2050"),
-    )
-
-    repo.save(a)
-    a_id = a.id
-
-    # Check that the additional data is correctly saved
-    additional_data = repo.get_additional_data(a_id)
-    assert additional_data.author == "John Smith"
-    assert additional_data.horizon == "2024-2050"
-
-    # Check that the additional data is correctly updated
-    new_patch = {"foo": "baz"}
-    a.additional_data.patch = json.dumps(new_patch)
-    repo.save(a)
-    additional_data = repo.get_additional_data(a_id)
-    assert json.loads(additional_data.patch) == new_patch
-
-    # Check that the additional data is correctly deleted when the study is deleted
-    repo.delete(a_id)
-    assert repo.get_additional_data(a_id) is None
-
-
 def test_study_inheritance(db_session: Session) -> None:
     repo = StudyMetadataRepository(LocalCache(), session=db_session)
 
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
+    now = current_time()
     a = create_raw_study(
         name="a",
         version="820",
         author="John Smith",
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+        created_at=now,
+        updated_at=now,
         public_mode=PublicMode.FULL,
         owner=user,
         groups=[group],

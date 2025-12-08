@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Sequence
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
@@ -56,6 +57,28 @@ class FileStudyLinkDao(LinkDao, ABC):
             return True
         except KeyError:
             return False
+
+    @override
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        area_from, area_to = sorted((area_from, area_to))
+        url = ["input", "links", area_from, "capacities", f"{area_to}_indirect"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        area_from, area_to = sorted((area_from, area_to))
+        url = ["input", "links", area_from, "capacities", f"{area_to}_direct"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        area_from, area_to = sorted((area_from, area_to))
+        if study_data.config.version < STUDY_VERSION_8_2:
+            url = ["input", "links", area_from, area_to]
+        else:
+            url = ["input", "links", area_from, f"{area_to}_parameters"]
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_link(self, area1_id: str, area2_id: str) -> Link:

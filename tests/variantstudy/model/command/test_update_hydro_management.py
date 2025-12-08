@@ -46,6 +46,14 @@ class TestUpdateHydroManagement:
                 "leeway low": {"fr": 1, "be": 1},
                 "leeway up": {"fr": 1, "be": 1},
                 "pumping efficiency": {"fr": 1, "be": 1},
+                "follow load": {"be": True, "fr": True},
+                "hard bounds": {"be": False, "fr": False},
+                "power to level": {"be": False, "fr": False},
+                "reservoir": {"be": False, "fr": False},
+                "reservoir capacity": {"be": 0.0, "fr": 0.0},
+                "use heuristic": {"be": True, "fr": True},
+                "use leeway": {"be": 0.0, "fr": 0.0},
+                "use water": {"be": False, "fr": False},
             }
 
             # Update several properties
@@ -66,16 +74,15 @@ class TestUpdateHydroManagement:
                 "intra-daily-modulation": {"be": 24.0, "fr": 24.0},
                 "leeway low": {"be": 1.0, "fr": 1.0},
                 "leeway up": {"be": 1.0, "fr": 1.0},
-                "power to level": {"fr": False},
+                "power to level": {"be": False, "fr": False},
                 "pumping efficiency": {"be": 1.0, "fr": 1.0},
-                # Default fields are not present at the creation but are written by the command
-                "reservoir": {"fr": True},  # the field has been written with the given value
-                "reservoir capacity": {"fr": 0},
-                "use heuristic": {"fr": True},
-                "use leeway": {"fr": False},
-                "use water": {"fr": False},
-                "follow load": {"fr": True},
-                "hard bounds": {"fr": False},
+                "reservoir": {"be": False, "fr": True},  # the field has been written with the given value
+                "reservoir capacity": {"be": 0.0, "fr": 0},
+                "use heuristic": {"be": True, "fr": True},
+                "use leeway": {"be": 0.0, "fr": False},
+                "use water": {"be": False, "fr": False},
+                "follow load": {"be": True, "fr": True},
+                "hard bounds": {"be": False, "fr": False},
             }
             if study_version >= STUDY_VERSION_9_2:
                 expected_content["overflow spilled cost difference"] = {"fr": 1.0}

@@ -40,6 +40,7 @@ from antarest.core.tasks.model import (
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import ITaskNotifier, TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
@@ -88,7 +89,7 @@ def test_service(task_repo: TaskJobRepository, task_service: TaskJobService) -> 
     service = task_service
 
     # Prepare a TaskJob in the database
-    creation_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    creation_date = current_time()
     running_task = TaskJob(id="a", name="b", status=TaskStatus.RUNNING.value, creation_date=creation_date)
     task_repo.save(running_task)
 
@@ -178,7 +179,7 @@ def test_repository() -> None:
 
     new_task = TaskJob(name="foo", owner_id=user1_id, type=TaskType.COPY)
 
-    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    now = current_time()
     new_task = task_job_repo.save(new_task)
     assert task_job_repo.get(new_task.id) == new_task
     assert new_task.status == TaskStatus.PENDING.value
@@ -213,7 +214,7 @@ def test_repository() -> None:
     result = task_job_repo.list(TaskListFilter(name="fo", status=[TaskStatus.RUNNING]))
     assert len(result) == 1
 
-    new_task.completion_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    new_task.completion_date = current_time()
     task_job_repo.save(new_task)
     result = task_job_repo.list(
         TaskListFilter(
@@ -426,7 +427,7 @@ def test_ts_generation_task(
         author="John Smith",
         created_at=datetime.datetime(2023, 7, 15, 16, 45),
         updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-        last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        last_access=current_time(),
         public_mode=PublicMode.FULL,
         owner=regular_user,
         path=str(raw_study_path),
@@ -703,3 +704,37 @@ def test_memory_leak_fix(task_service: TaskJobService) -> None:
         # accessing an implementation detail, but no other way to check it
         assert task_id not in task_service.tasks
         assert task_service.status_task(task_id).status == TaskStatus.COMPLETED
+
+
+def test_task_status_parsing() -> None:
+    # Parsing multiple primitive types and TaskStatus
+
+    # Parsing an int into a TaskStatus
+    task_status_int = TaskStatus.parse(1)
+    assert task_status_int == TaskStatus.PENDING
+
+    # Parsing a string into a TaskStatus
+    task_status_str = TaskStatus.parse("COMPLETED")
+    assert task_status_str == TaskStatus.COMPLETED
+
+    # Parsing 5 (TIMEOUT) as a str into a TaskStatus
+    task_status_number_to_str = TaskStatus.parse("5")
+    assert task_status_number_to_str == TaskStatus.TIMEOUT
+
+    # Parsing a TaskStatus into a TaskStatus
+    task_status = TaskStatus.parse(TaskStatus(2))
+    assert task_status == TaskStatus.RUNNING
+
+    # Putting an invalid type (float) in the parse method
+    with pytest.raises(
+        TypeError,
+        match=f"Invalid status type: {type(4.2)}",
+    ):
+        TaskStatus.parse(4.2)
+
+    # Putting an invalid string status in the parse method
+    with pytest.raises(
+        ValueError,
+        match="Invalid status value : INVALID_STATUS",
+    ):
+        TaskStatus.parse("INVALID_STATUS")

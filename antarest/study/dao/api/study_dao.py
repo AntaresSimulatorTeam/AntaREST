@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Sequence
+from typing import Iterator, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -40,6 +40,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -181,6 +182,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def link_exists(self, area1_id: str, area2_id: str) -> bool:
         return self._adaptee.link_exists(area1_id, area2_id)
+
+    @override
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        return self._adaptee.get_link_indirect_capacities(area_from, area_to)
+
+    @override
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        return self._adaptee.get_link_direct_capacities(area_from, area_to)
+
+    @override
+    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+        return self._adaptee.get_link_series(area_from, area_to)
 
     @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
@@ -347,6 +360,42 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_hydro_correlation_matrix()
 
     @override
+    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_maxpower(area_id)
+
+    @override
+    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_reservoir(area_id)
+
+    @override
+    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_energy(area_id)
+
+    @override
+    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_run_of_river(area_id)
+
+    @override
+    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_modulation(area_id)
+
+    @override
+    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_credit_modulations(area_id)
+
+    @override
+    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_inflow_pattern(area_id)
+
+    @override
+    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_water_values(area_id)
+
+    @override
+    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_mingen(area_id)
+
+    @override
     def get_general_config(self) -> GeneralConfig:
         return self._adaptee.get_general_config()
 
@@ -483,3 +532,27 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
         return self._adaptee.get_area_ui(area_id, layer)
+
+    @override
+    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+        return self._adaptee.get_all_user_resources()
+
+    @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_load(area_id)
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_misc_gen(area_id)
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_reserves(area_id)
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_solar(area_id)
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_wind(area_id)

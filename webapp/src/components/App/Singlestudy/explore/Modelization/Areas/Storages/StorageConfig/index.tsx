@@ -18,6 +18,7 @@ import { nameToId } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import semver from "semver";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import AdditionalConstraints from "./AdditionalConstraints";
 import StorageForm from "./StorageForm";
@@ -30,7 +31,6 @@ function StorageConfig() {
   const { storageId = "" } = useParams();
   const { t } = useTranslation();
   const studyId = study.id;
-  const studyVersion = Number(study.version);
 
   return (
     <TabsView
@@ -42,7 +42,7 @@ function StorageConfig() {
           content: (
             <StorageForm
               studyId={studyId}
-              studyVersion={studyVersion}
+              studyVersion={study.version}
               areaId={areaId}
               storageId={storageId}
             />
@@ -51,17 +51,17 @@ function StorageConfig() {
         {
           label: t("global.timeSeries"),
           content: (
-            <StorageMatrices studyVersion={studyVersion} areaId={areaId} storageId={storageId} />
+            <StorageMatrices studyVersion={study.version} areaId={areaId} storageId={storageId} />
           ),
         },
-        studyVersion >= 920 && {
+        semver.gte(study.version, "9.2.0") && {
           label: t("study.modelization.storages.additionalConstraints"),
           content: (
             <AdditionalConstraints
               studyId={studyId}
               areaId={areaId}
               storageId={nameToId(storageId)}
-              studyVersion={studyVersion}
+              studyVersion={study.version}
             />
           ),
         },

@@ -26,7 +26,7 @@ from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import User
 from antarest.login.utils import current_user_context
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -294,7 +294,6 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
         owner=User(id=2, name="me"),
         groups=[],
         public_mode=PublicMode.NONE,
-        additional_data=StudyAdditionalData(),
     )
     children = [
         create_variant_study(
@@ -307,7 +306,6 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
             owner=User(id=2, name="me"),
             groups=[],
             public_mode=PublicMode.NONE,
-            additional_data=StudyAdditionalData(),
         ),
         create_variant_study(
             id="child2",
@@ -319,7 +317,6 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
             owner=User(id=3, name="not me"),
             groups=[],
             public_mode=PublicMode.NONE,
-            additional_data=StudyAdditionalData(),
         ),
     ]
     for jwt_user in [jwt_user_me, jwt_user_not_me, admin_user]:
@@ -338,43 +335,3 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
             else:
                 with pytest.raises(UserHasNotPermissionError):
                     study_service.get_all_variants_children("parent")
-
-
-def test_initialize_additional_data(tmp_path: Path) -> None:
-    name = "my-study"
-    study_path = tmp_path / name
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
-
-    md = create_variant_study(id=name, path=str(study_path))
-
-    additional_data = StudyAdditionalData(horizon=2050, author="Zoro")
-
-    study_factory = Mock()
-    study_factory.create_from_fs.return_value = md
-
-    variant_study_service = VariantStudyService(
-        raw_study_service=Mock(),
-        cache=Mock(),
-        task_service=Mock(),
-        command_factory=Mock(),
-        study_factory=study_factory,
-        config=build_config(tmp_path),
-        repository=Mock(spec=VariantStudyRepository),
-        event_bus=Mock(),
-    )
-
-    variant_study_service._read_additional_data_from_files = Mock(return_value=additional_data)
-
-    variant_study_service.exists = Mock(return_value=False)
-
-    assert variant_study_service.initialize_additional_data(md)
-    assert md.additional_data == StudyAdditionalData()
-
-    variant_study_service.exists = Mock(return_value=True)
-    assert variant_study_service.initialize_additional_data(md)
-    assert md.additional_data == additional_data
-
-    variant_study_service._read_additional_data_from_files.side_effect = FileNotFoundError()
-
-    assert not variant_study_service.initialize_additional_data(md)
