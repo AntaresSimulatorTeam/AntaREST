@@ -252,7 +252,7 @@ def test_command_matrix_usage_provider_with_snapshot(
     variant_study = variant_study_service.create_variant_study(parent_id, "variant_study")
 
     # Add a GenerateThermalTimeSeries command
-    command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=version)
+    command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=version, thermal_outage_details=False)
     assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=True)
     variant_study_service.append_command(variant_study.id, command.to_dto())
 
