@@ -20,6 +20,7 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -571,8 +572,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             renewable_id,
             st_storage_id,
         )
-        content = dataframe.to_json(orient="split", index=False)
-        return Response(content=content, media_type="application/json")
+        content = dataframe.to_dict(orient="split", index=False)
+        return Response(content=to_json(content), media_type="application/json")
 
     @bp.post(
         "/studies/{uuid}/output/{output_id}/variables-views/materialize",

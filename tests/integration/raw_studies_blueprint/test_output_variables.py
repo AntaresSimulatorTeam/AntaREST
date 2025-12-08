@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+import numpy as np
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -239,3 +240,11 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         assert third_view.area_to_id == "fr"
         assert third_view.frequency == MatrixFrequency.HOURLY
         assert third_view.variable_name == "FLOW LIN."
+
+    # Ensures we return `NaN` and not `null` inside the endpoint
+    query_params = {"type": "area", "variable_name": "H. LEV", "frequency": "weekly", "area_id": "de"}
+    task_id = client.post(f"{url}/materialize", params=query_params).json()
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+    res = client.get(f"{url}/data", params=query_params)
+    assert np.isnan(np.array(res.json()["data"])).all()
