@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final, List, Optional
+from typing import Any, Dict, Final, Optional
 
 from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
@@ -101,7 +101,3 @@ class CreateDistrict(ICommand):
             version=self._SERIALIZATION_VERSION,
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

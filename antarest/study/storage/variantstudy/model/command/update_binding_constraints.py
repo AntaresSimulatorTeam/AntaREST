@@ -105,7 +105,3 @@ class UpdateBindingConstraints(ICommand):
             version=self._SERIALIZATION_VERSION,
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> t.List[str]:
-        return []
