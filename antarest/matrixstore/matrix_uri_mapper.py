@@ -14,7 +14,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Iterator, List, Optional, Sequence
 
 import pandas as pd
 from typing_extensions import override
@@ -84,7 +84,7 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def normalize(self, node: MatrixNode) -> None:
+    def get_matrices(self, nodes: Sequence[MatrixNode]) -> Iterator[pd.DataFrame]:
         pass
 
     @abstractmethod
@@ -148,15 +148,13 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         pass
 
     @override
-    def normalize(self, node: MatrixNode) -> None:
-        link_path = self.get_link_path(node)
-        if link_path.exists() or node.config.archive_path:
-            return
+    def get_matrices(self, nodes: Sequence[MatrixNode]) -> Iterator[pd.DataFrame]:
+        for node in nodes:
+            link_path = self.get_link_path(node)
+            if link_path.exists() or node.config.archive_path:
+                return
 
-        matrix = node.parse_as_dataframe()
-        matrix_uri = self.create_matrix(matrix)
-        link_path.write_text(matrix_uri)
-        node.config.path.unlink(missing_ok=True)
+            yield node.parse_as_dataframe()
 
     @override
     def denormalize(self, node: MatrixNode) -> None:

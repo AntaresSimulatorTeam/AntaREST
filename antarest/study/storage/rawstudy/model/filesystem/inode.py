@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeAlias, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Self, Tuple, TypeAlias, TypeVar
 
 from antarest.core.exceptions import WritingInsideZippedFileException
 from antarest.core.utils.archives import extract_file_to_tmp_dir, read_original_file_in_archive
@@ -107,13 +107,11 @@ class INode(ABC, Generic[G, S, V]):
         """
         raise NotImplementedError()
 
-    def normalize(self) -> None:
+    def normalize(self) -> list[Self]:
         """
         Scan tree to send matrix in matrix store and replace by its links
-        Returns:
-
         """
-        pass
+        return []
 
     def denormalize(self) -> None:
         """

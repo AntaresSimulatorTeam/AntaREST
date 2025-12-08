@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Self
+
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
@@ -34,8 +36,8 @@ class Output(FolderNode):
         return children
 
     @override
-    def normalize(self) -> None:
-        pass  # no external store in this node
+    def normalize(self) -> list[Self]:
+        return []  # no external store in this node
 
     @override
     def denormalize(self) -> None:

@@ -17,7 +17,7 @@ import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence
+from typing import Iterable, Iterator, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -95,6 +95,17 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def create_batch(self, data: Iterator[pd.DataFrame]) -> list[str]:
+        """
+        Creates several matrices with the specified data.
+        Returns the list of the created matrices ids.
+
+        Warning:
+            DataFrame indexes are ignored, therefore providing one with a non-default one will raise an exception.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def get(self, matrix_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
@@ -148,6 +159,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def create(self, data: pd.DataFrame) -> str:
         return self.matrix_content_repository.save(data).hash
+
+    @override
+    def create_batch(self, data: Iterator[pd.DataFrame]) -> list[str]:
+        return [self.matrix_content_repository.save(df).hash for df in data]
 
     @override
     def get(self, matrix_id: str) -> pd.DataFrame:
@@ -231,6 +246,17 @@ class MatrixService(ISimpleMatrixService):
         self.usage_providers: List[IMatrixUsageProvider] = []
         self._create_dataset_usage_provider()
 
+    def _create(self, data: pd.DataFrame) -> tuple[str, Matrix | None]:
+        check_dataframe_compliance(data)
+        matrix_metadata = self.matrix_content_repository.save(data)
+        matrix_id = matrix_metadata.hash
+        if not matrix_metadata.new:
+            # Nothing to do
+            return matrix_id, None
+        created_at = current_time()
+        matrix = Matrix(id=matrix_id, width=data.shape[1], height=data.shape[0], created_at=created_at, version=2)
+        return matrix_id, matrix
+
     @override
     def create(self, data: pd.DataFrame) -> str:
         """
@@ -256,20 +282,22 @@ class MatrixService(ISimpleMatrixService):
             The `MatrixGarbageCollector` class is responsible for removing
             unreferenced matrices to avoid leaving unused files lying around.
         """
-        check_dataframe_compliance(data)
-        matrix_metadata = self.matrix_content_repository.save(data)
-        matrix_id = matrix_metadata.hash
-        if not matrix_metadata.new:
-            # Nothing to change inside the DB
-            return matrix_id
-        else:
-            with db():
-                created_at = current_time()
-                matrix = Matrix(
-                    id=matrix_id, width=data.shape[1], height=data.shape[0], created_at=created_at, version=2
-                )
-                self.repo.save(matrix)
+        matrix_id, matrix_model = self._create(data)
+        if matrix_model is not None:
+            self.repo.save(matrix_model)
         return matrix_id
+
+    @override
+    def create_batch(self, data: Iterator[pd.DataFrame]) -> list[str]:
+        matrices = []
+        matrices_ids = []
+        for df in data:
+            matrix_id, matrix_model = self._create(df)
+            if matrix_model is not None:
+                matrices.append(matrix_model)
+                matrices_ids.append(matrix_id)
+        self.repo.save_batch(matrices)
+        return matrices_ids
 
     def create_by_importation(self, file: UploadFile, is_json: bool = False) -> List[MatrixInfoDTO]:
         """

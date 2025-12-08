@@ -286,22 +286,10 @@ class StudyUpgraderTask:
     Task to perform a study upgrade.
     """
 
-    def __init__(
-        self,
-        study_id: str,
-        target_version: StudyVersion,
-        *,
-        repository: StudyMetadataRepository,
-        storage_service: StudyStorageService,
-        cache_service: ICache,
-        event_bus: IEventBus,
-    ):
+    def __init__(self, study_id: str, target_version: StudyVersion, *, study_service: "StudyService"):
         self._study_id = study_id
         self._target_version = target_version
-        self.repository = repository
-        self.storage_service = storage_service
-        self.cache_service = cache_service
-        self.event_bus = event_bus
+        self._study_service = study_service
 
     def _upgrade_study(self) -> None:
         """Run the task (lock the database)."""
@@ -310,24 +298,25 @@ class StudyUpgraderTask:
         is_study_denormalized = False
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
-            study_to_upgrade = self.repository.one(study_id)
+            study_to_upgrade = self._study_service.repository.one(study_id)
             try:
                 # sourcery skip: extract-method
+                storage_service = self._study_service.storage_service
                 if isinstance(study_to_upgrade, VariantStudy):
-                    self.storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
+                    storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
                 else:
                     study_path = Path(study_to_upgrade.path)
                     study_upgrader = StudyUpgrader(study_path, target_version)
                     if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
                         # We have to denormalize the study because the upgrade impacts study matrices
-                        file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
+                        file_study = storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                         file_study.tree.denormalize()
                         is_study_denormalized = True
                     study_upgrader.upgrade()
-                remove_from_cache(self.cache_service, study_to_upgrade.id)
+                remove_from_cache(self._study_service.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = f"{target_version:2d}"
-                self.repository.save(study_to_upgrade)
-                self.event_bus.push(
+                self._study_service.repository.save(study_to_upgrade)
+                self._study_service.event_bus.push(
                     Event(
                         type=EventType.STUDY_EDITED,
                         payload=study_to_upgrade.to_json_summary(),
@@ -336,8 +325,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
-                    file_study.tree.normalize()
+                    self._study_service.normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -2213,14 +2201,7 @@ class StudyService:
         if len(study_tasks) > 0:
             raise TaskAlreadyRunning()
 
-        study_upgrader_task = StudyUpgraderTask(
-            study_id,
-            parsed_target_version,
-            repository=self.repository,
-            storage_service=self.storage_service,
-            cache_service=self.cache_service,
-            event_bus=self.event_bus,
-        )
+        study_upgrader_task = StudyUpgraderTask(study_id, parsed_target_version, study_service=self)
 
         return self.task_service.add_task(
             study_upgrader_task,
@@ -2422,7 +2403,16 @@ class StudyService:
         Method used to normalize a study.
         It will put every matrix in the study in the matrix-store.
         """
-        self.storage_service.get_storage(study).get_raw(study).tree.normalize()
+        matrix_nodes = cast(list[MatrixNode], self.storage_service.get_storage(study).get_raw(study).tree.normalize())
+        if not matrix_nodes:
+            return
+
+        matrix_mapper = matrix_nodes[0].matrix_mapper
+        matrix_service = self.storage_service.variant_study_service.command_factory.command_context.matrix_service
+        matrix_ids = matrix_service.create_batch(matrix_mapper.get_matrices(matrix_nodes))
+
+        for k, node in enumerate(matrix_nodes):
+            matrix_mapper.save_matrix(node, matrix_ids[k])
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """

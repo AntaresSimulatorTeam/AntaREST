@@ -15,7 +15,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import List, Optional, TypeAlias, cast
+from typing import List, Optional, Self, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
@@ -95,7 +95,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         return f"matrixfile://{self.config.path.name}"
 
     @override
-    def normalize(self) -> None:
+    def normalize(self) -> list[Self]:
         # noinspection SpellCheckingInspection
         """
         Normalize the matrix by creating a link to the normalized version.
@@ -107,7 +107,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         Raises:
             DenormalizationException: if the original matrix retrieval fails.
         """
-        self.matrix_mapper.normalize(self)
+        return [self] if self.matrix_mapper.has_link(self) else []
 
     @override
     def denormalize(self) -> None:

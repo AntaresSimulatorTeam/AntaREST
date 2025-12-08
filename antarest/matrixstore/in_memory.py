@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List
+from typing import Dict, Iterator, List
 
 import pandas as pd
 from typing_extensions import override
@@ -35,6 +35,10 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         matrix_hash = compute_hash(data)
         self._content[matrix_hash] = data
         return matrix_hash
+
+    @override
+    def create_batch(self, data: Iterator[pd.DataFrame]) -> list[str]:
+        return [self.create(df) for df in data]
 
     @override
     def get(self, matrix_id: str) -> pd.DataFrame:

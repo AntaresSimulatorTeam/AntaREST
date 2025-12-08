@@ -22,6 +22,7 @@ import pandas as pd
 from filelock import FileLock
 from pandas import util
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
@@ -125,6 +126,16 @@ class MatrixRepository:
 
         self.session.commit()
         return merged_matrix
+
+    def save_batch(self, matrices: list[Matrix]) -> None:
+        try:
+            self.session.add_all(matrices)
+            self.session.commit()
+        except IntegrityError:
+            # Can happen if one the matrices is already inside DB.
+            self.session.rollback()
+            for matrix in matrices:
+                self.save(matrix)
 
     def get(self, matrix_hash: str) -> Optional[Matrix]:
         return self.session.get(Matrix, matrix_hash)

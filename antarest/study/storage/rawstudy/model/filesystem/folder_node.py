@@ -12,7 +12,7 @@
 
 import shutil
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import List, Optional, Self, Tuple
 
 from typing_extensions import override
 
@@ -146,9 +146,12 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             shutil.rmtree(self.config.path)
 
     @override
-    def normalize(self) -> None:
+    def normalize(self) -> list[Self]:
+        nodes: list[Self] = []
         for child in self.build().values():
-            child.normalize()
+            node = child.normalize()
+            nodes.extend(node)  # type: ignore
+        return nodes
 
     @override
     def denormalize(self) -> None:
