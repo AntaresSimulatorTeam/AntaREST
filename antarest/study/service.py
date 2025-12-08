@@ -2153,7 +2153,7 @@ class StudyService:
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
 
-    def generate_timeseries(self, study: Study, thermal_outage_details: bool) -> str:
+    def generate_timeseries(self, study: Study, outage_details: bool) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
@@ -2171,7 +2171,7 @@ class StudyService:
             storage_service=self.storage_service,
             event_bus=self.event_bus,
             study_interface_supplier=self.get_study_interface,
-            thermal_outage_details=thermal_outage_details,
+            thermal_outage_details=outage_details,
         )
 
         return self.task_service.add_task(

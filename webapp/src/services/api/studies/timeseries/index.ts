@@ -35,7 +35,7 @@ export async function generateTimeSeries(params: {
   const { data } = await client.put<string>(
     `/v1/studies/${params.studyId}/timeseries/generate`,
     null,
-    { params: { thermal_outage_details: params.thermalOutageDetails ?? false } },
+    { params: { outage_details: params.thermalOutageDetails ?? false } },
   );
   return data;
 }

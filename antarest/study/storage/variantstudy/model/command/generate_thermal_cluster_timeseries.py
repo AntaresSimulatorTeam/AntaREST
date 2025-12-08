@@ -138,9 +138,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
                         for detail_type, data in outage_dataframes.items():
                             # Convert numpy array to TSV bytes using polars
-                            buffer = io.StringIO()
+                            buffer = io.BytesIO()
                             pl.DataFrame(data).write_csv(buffer, separator="\t", include_header=False)
-                            tsv_bytes = buffer.getvalue().encode("utf-8")
+                            tsv_bytes = buffer.getvalue()
 
                             blob_id = self.command_context.blob_service.save(tsv_bytes)
 
