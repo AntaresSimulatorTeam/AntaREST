@@ -297,22 +297,18 @@ class StudyUpgraderTask:
         target_version = self._target_version
         is_study_denormalized = False
         with db():
-            # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
             study_to_upgrade = self._study_service.repository.one(study_id)
             try:
                 # sourcery skip: extract-method
                 storage_service = self._study_service.storage_service
-                if isinstance(study_to_upgrade, VariantStudy):
-                    storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
-                else:
-                    study_path = Path(study_to_upgrade.path)
-                    study_upgrader = StudyUpgrader(study_path, target_version)
-                    if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
-                        # We have to denormalize the study because the upgrade impacts study matrices
-                        file_study = storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
-                        file_study.tree.denormalize()
-                        is_study_denormalized = True
-                    study_upgrader.upgrade()
+                study_path = Path(study_to_upgrade.path)
+                study_upgrader = StudyUpgrader(study_path, target_version)
+                if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
+                    # We have to denormalize the study because the upgrade impacts study matrices
+                    file_study = storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
+                    file_study.tree.denormalize()
+                    is_study_denormalized = True
+                study_upgrader.upgrade()
                 remove_from_cache(self._study_service.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = f"{target_version:2d}"
                 self._study_service.repository.save(study_to_upgrade)
