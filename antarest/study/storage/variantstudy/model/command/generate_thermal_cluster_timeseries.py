@@ -13,7 +13,7 @@
 import io
 import logging
 from pathlib import PurePosixPath
-from typing import Any, Dict, Final, List, Optional
+from typing import Any, Dict, Final, Optional
 
 import numpy as np
 import pandas as pd
