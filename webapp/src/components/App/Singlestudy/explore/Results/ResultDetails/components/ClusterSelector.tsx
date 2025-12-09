@@ -78,7 +78,7 @@ function ClusterSelector({
 
   return (
     <Autocomplete
-      size="small"
+      size="extra-small"
       options={clusterOptions}
       getOptionLabel={(option: ClusterOption) => option.name}
       value={clusterOptions.find((c) => c.name === selectedClusterId) || null}
@@ -87,7 +87,13 @@ function ClusterSelector({
       }}
       disabled={disabled || clusterOptions.length === 0}
       renderInput={(params) => (
-        <StringFE {...params} label={getLabel()} margin="dense" sx={{ minWidth: 160 }} />
+        <StringFE
+          {...params}
+          label={getLabel()}
+          margin="dense"
+          size="extra-small"
+          sx={{ minWidth: 160 }}
+        />
       )}
       noOptionsText={t("study.results.noClusters")}
     />

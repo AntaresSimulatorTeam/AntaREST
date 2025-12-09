@@ -99,7 +99,7 @@ function VariableSelector({
 
   return (
     <Autocomplete
-      size="small"
+      size="extra-small"
       options={variableOptions}
       value={isVariableValid ? selectedVariable : null}
       onChange={(_event, newValue) => {
@@ -112,6 +112,7 @@ function VariableSelector({
           label={t("study.results.variable")}
           margin="dense"
           sx={{ minWidth: 160 }}
+          size="extra-small"
         />
       )}
       noOptionsText={t("study.results.noVariables")}

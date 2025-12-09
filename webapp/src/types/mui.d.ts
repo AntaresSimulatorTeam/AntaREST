@@ -26,6 +26,10 @@ declare module "@mui/material" {
     "extra-small": true;
   }
 
+  interface AutocompletePropsSizeOverrides {
+    "extra-small": true;
+  }
+
   interface ButtonPropsSizeOverrides {
     "extra-small": true;
   }
