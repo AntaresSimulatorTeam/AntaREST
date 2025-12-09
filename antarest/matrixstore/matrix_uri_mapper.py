@@ -92,10 +92,6 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def denormalize(self, node: MatrixNode) -> None:
-        pass
-
-    @abstractmethod
     def delete(self, node: MatrixNode) -> None:
         pass
 
@@ -159,17 +155,6 @@ class BaseMatrixUriMapper(MatrixUriMapper):
     @override
     def save_matrices(self, nodes: Sequence[MatrixNode]) -> list[str]:
         return self._matrix_service.create_batch((node.parse_as_dataframe() for node in nodes))
-
-    @override
-    def denormalize(self, node: MatrixNode) -> None:
-        link_path = self.get_link_path(node)
-        if node.config.path.exists() or not link_path.exists():
-            return
-
-        uuid = link_path.read_text()
-        matrix = self.get_matrix(uuid)
-        node.write_dataframe(matrix)
-        link_path.unlink()
 
     @override
     def delete(self, node: MatrixNode, url: Optional[List[str]] = None) -> None:
