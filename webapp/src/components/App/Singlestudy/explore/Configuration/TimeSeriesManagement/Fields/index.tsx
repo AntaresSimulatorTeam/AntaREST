@@ -21,12 +21,8 @@ import { useTranslation } from "react-i18next";
 import type { TimeSeriesConfigValues } from "../utils";
 import TypeConfigFields from "./TypeConfigFields";
 
-interface FieldsProps {
-  thermalOutageDetails: boolean;
-  setThermalOutageDetails: (value: boolean) => void;
-}
 
-function Fields({ thermalOutageDetails, setThermalOutageDetails }: FieldsProps) {
+function Fields() {
   const { control } = useFormContextPlus<TimeSeriesConfigValues>();
   const { t } = useTranslation();
 
@@ -69,8 +65,8 @@ function Fields({ thermalOutageDetails, setThermalOutageDetails }: FieldsProps) 
               <TableCell align="center">
                 {type === TimeSeriesType.Thermal ? (
                   <SwitchFE
-                    value={thermalOutageDetails}
-                    onChange={(e) => setThermalOutageDetails(e.target.checked)}
+                    name={`${type}.outageDetails` as const}
+                    control={control}
                     size="medium"
                   />
                 ) : null}

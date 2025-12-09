@@ -25,17 +25,17 @@ import * as R from "ramda";
  *
  * @param params - The parameters.
  * @param params.studyId - The study ID.
- * @param params.thermalOutageDetails - Whether to generate thermal outage details.
+ * @param params.outageDetails - Whether to generate outage details.
  * @returns A promise that returns the task ID if fulfilled.
  */
 export async function generateTimeSeries(params: {
   studyId: StudyMetadata["id"];
-  thermalOutageDetails?: boolean;
+  outageDetails?: boolean;
 }) {
   const { data } = await client.put<string>(
     `/v1/studies/${params.studyId}/timeseries/generate`,
     null,
-    { params: { outage_details: params.thermalOutageDetails ?? false } },
+    { params: { outage_details: params.outageDetails ?? false } },
   );
   return data;
 }

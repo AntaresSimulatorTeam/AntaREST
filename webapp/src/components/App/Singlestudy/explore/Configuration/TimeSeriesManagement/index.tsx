@@ -29,7 +29,6 @@ function TimeSeriesManagement() {
   const { t } = useTranslation();
   const [isLaunchTaskInProgress, setIsLaunchTaskInProgress] = useState(false);
   const apiRef = useRef<UseFormReturnPlus<TimeSeriesConfigValues>>(null);
-  const [thermalOutageDetails, setThermalOutageDetails] = useState(false);
 
   const handleGenerateTs = usePromiseHandler({
     fn: generateTimeSeries,
@@ -45,11 +44,11 @@ function TimeSeriesManagement() {
     return setTimeSeriesConfig({ studyId: study.id, values });
   };
 
-  const handleSubmitSuccessful = async () => {
+  const handleSubmitSuccessful = async ({ values }: SubmitHandlerPlus<TimeSeriesConfigValues>) => {
     setIsLaunchTaskInProgress(true);
 
     // The WebSocket will trigger an event after the fulfillment of the promise (see `FreezeStudy`)
-    await handleGenerateTs({ studyId: study.id, thermalOutageDetails });
+    await handleGenerateTs({ studyId: study.id, outageDetails: values.thermal.outageDetails });
 
     setIsLaunchTaskInProgress(false);
 
@@ -73,10 +72,7 @@ function TimeSeriesManagement() {
       submitButtonIcon={<BuildIcon />}
       apiRef={apiRef}
     >
-      <Fields
-        thermalOutageDetails={thermalOutageDetails}
-        setThermalOutageDetails={setThermalOutageDetails}
-      />
+      <Fields />
     </Form>
   );
 }
