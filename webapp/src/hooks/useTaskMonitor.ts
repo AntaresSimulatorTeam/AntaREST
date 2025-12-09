@@ -39,10 +39,8 @@ export function useTaskMonitor({ taskId, onComplete, onFailed }: UseTaskMonitorO
 
     const handleTaskEvent = (event: WsEvent) => {
       if (event.type === WsEventType.TaskCompleted && event.payload.id === taskId) {
-        setTimeout(() => {
-          onComplete();
-          unsubscribeWsChannels([channel]);
-        }, 4000);
+        onComplete();
+        unsubscribeWsChannels([channel]);
       } else if (event.type === WsEventType.TaskFailed && event.payload.id === taskId) {
         onFailed(event.payload.message);
         unsubscribeWsChannels([channel]);

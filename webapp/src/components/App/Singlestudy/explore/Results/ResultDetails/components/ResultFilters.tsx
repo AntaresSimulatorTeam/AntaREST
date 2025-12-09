@@ -29,14 +29,14 @@ import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatri
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import {
   type DataType,
+  type Frequency,
   type MonteCarloMode,
   matchesSearchTerm,
-  type Timestep,
   type OutputItemType,
 } from "../utils";
+import ClusterSelector from "./ClusterSelector";
 import MonteCarloModeSelector from "./MonteCarloModeSelector";
 import VariableSelector from "./VariableSelector";
-import ClusterSelector from "./ClusterSelector";
 
 interface ColumnHeader {
   variable: string;
@@ -70,8 +70,8 @@ interface Props {
   setYear: (year: number) => void;
   dataType: DataType;
   setDataType: (dataType: DataType) => void;
-  timestep: Timestep;
-  setTimestep: (timestep: Timestep) => void;
+  frequency: Frequency;
+  setFrequency: (frequency: Frequency) => void;
   maxYear: number;
   studyId: string;
   path: string;
@@ -94,8 +94,8 @@ function ResultFilters({
   setYear,
   dataType,
   setDataType,
-  timestep,
-  setTimestep,
+  frequency,
+  setFrequency,
   maxYear,
   studyId,
   path,
@@ -340,7 +340,7 @@ function ResultFilters({
       field: (
         <SelectFE
           label={t("study.results.temporality")}
-          value={timestep}
+          value={frequency}
           options={[
             { value: "hourly", label: "Hourly" },
             { value: "daily", label: "Daily" },
@@ -349,7 +349,7 @@ function ResultFilters({
             { value: "annual", label: "Annual" },
           ]}
           size="extra-small"
-          onChange={(event) => setTimestep(event.target.value)}
+          onChange={(event) => setFrequency(event.target.value)}
           margin="dense"
           sx={{ minWidth: 94 }}
         />

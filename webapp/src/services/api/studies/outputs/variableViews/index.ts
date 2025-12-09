@@ -75,5 +75,6 @@ export async function materializeVariableView({
     null,
     { params: queryParams },
   );
+
   return data;
 }

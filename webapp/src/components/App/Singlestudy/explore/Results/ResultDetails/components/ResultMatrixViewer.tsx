@@ -26,17 +26,17 @@ import type {
 import type { Area, LinkElement, MatrixIndex } from "@/types/types";
 import type { FilterableMatrixGridHandle } from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
 import ViewWrapper from "../../../../../../common/page/ViewWrapper";
+import type { PartialStudyOutput } from "../hooks/useStudyOutput";
 import {
   type DataType,
+  type Frequency,
   MAX_YEAR,
   type MonteCarloMode,
   type OutputItemType,
-  type Timestep,
 } from "../utils";
 import ResultFilters from "./ResultFilters";
 import ResultMatrix from "./ResultMatrix";
 import VariableMatrix from "./VariableMatrix";
-import type { PartialStudyOutput } from "../hooks/useStudyOutput";
 
 interface ResultMatrixViewerProps {
   matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
@@ -52,8 +52,8 @@ interface ResultMatrixViewerProps {
   setYear: (year: number) => void;
   dataType: DataType;
   setDataType: (dataType: DataType) => void;
-  timestep: Timestep;
-  setTimestep: (timestep: Timestep) => void;
+  frequency: Frequency;
+  setFrequency: (frequency: Frequency) => void;
   output: PartialStudyOutput | undefined;
   studyId: string;
   path: string;
@@ -87,8 +87,8 @@ function ResultMatrixViewer({
   setYear,
   dataType,
   setDataType,
-  timestep,
-  setTimestep,
+  frequency,
+  setFrequency,
   output,
   studyId,
   path,
@@ -122,8 +122,8 @@ function ResultMatrixViewer({
             setYear={setYear}
             dataType={dataType}
             setDataType={setDataType}
-            timestep={timestep}
-            setTimestep={setTimestep}
+            frequency={frequency}
+            setFrequency={setFrequency}
             maxYear={output?.nbyears || MAX_YEAR}
             studyId={studyId}
             path={path}

@@ -42,7 +42,7 @@ import {
   type MonteCarloMode,
   type OutputItemType,
   SYNTHESIS_ITEMS,
-  type Timestep,
+  type Frequency,
 } from "./utils";
 import { useVariablePerVariable } from "./hooks/useVariablePerVariable";
 import { useTranslation } from "react-i18next";
@@ -58,7 +58,7 @@ function ResultDetails() {
 
   const [mcMode, setMcMode] = useState<MonteCarloMode>("mc-all");
   const [dataType, setDataType] = useState<DataType>("values");
-  const [timestep, setTimestep] = useState<Timestep>("hourly");
+  const [frequency, setFrequency] = useState<Frequency>("hourly");
   const [year, setYear] = useState(-1);
   const [itemType, setItemType] = useState<OutputItemType>("areas");
   const [selectedItemId, setSelectedItemId] = useState("");
@@ -125,7 +125,7 @@ function ResultDetails() {
     outputId,
     isEnabled: isVariablePerVariable,
     itemType,
-    timestep,
+    frequency,
     selectedItemId,
     selectedItem,
     dataType,
@@ -147,12 +147,12 @@ function ResultDetails() {
         output,
         item: selectedItem,
         dataType,
-        timestep,
+        frequency,
         year,
       });
     }
     return "";
-  }, [output, selectedItem, isSynthesis, dataType, timestep, year]);
+  }, [output, selectedItem, isSynthesis, dataType, frequency, year]);
 
   const matrixRes = usePromise<ResultMatrixDTO | undefined>(
     async () => {
@@ -337,8 +337,8 @@ function ResultDetails() {
           setYear={setYear}
           dataType={dataType}
           setDataType={setDataType}
-          timestep={timestep}
-          setTimestep={setTimestep}
+          frequency={frequency}
+          setFrequency={setFrequency}
           output={output}
           studyId={study.id}
           path={path}

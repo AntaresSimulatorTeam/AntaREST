@@ -17,35 +17,33 @@ import type {
   RenewableClusterVariablesDTO,
   ShortTermStorageVariablesDTO,
   ThermalClusterVariablesDTO,
+  VariableViewParams,
   VariablesListDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { Area, LinkElement, Simulation } from "../../../../../../types/types";
 
 export const OUTPUT_ITEM_TYPES = ["areas", "links", "synthesis"] as const;
-
 export const DATA_TYPES = ["values", "details", "details-res", "id", "details-STstorage"] as const;
-
-export const TIMESTEPS = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
-
+export const FREQUENCIES = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
 export const MONTE_CARLO_MODES = ["mc-ind", "mc-all", "variable-per-variable"] as const;
 
 export type OutputItemType = (typeof OUTPUT_ITEM_TYPES)[number];
 export type DataType = (typeof DATA_TYPES)[number];
-export type Timestep = (typeof TIMESTEPS)[number];
+export type Frequency = (typeof FREQUENCIES)[number];
 export type MonteCarloMode = (typeof MONTE_CARLO_MODES)[number];
 
 interface Params {
   output: Partial<Simulation> & { id: string; name: string };
   item: (Area & { id: string }) | LinkElement;
   dataType: DataType;
-  timestep: Timestep;
+  frequency: Frequency;
   year?: number;
 }
 
 export const MAX_YEAR = 99999;
 
 export function createPath(params: Params): string {
-  const { output, item, dataType, timestep, year } = params;
+  const { output, item, dataType, frequency, year } = params;
   const { id, mode = "economy" } = output;
   const isYearPeriod = year && year > 0;
   const periodFolder = isYearPeriod
@@ -57,7 +55,7 @@ export function createPath(params: Params): string {
   const itemType = isLink ? "links" : "areas";
   const itemFolder = isLink ? `${item.area1}/${item.area2}` : item.id;
 
-  return `output/${id}/${mode.toLowerCase()}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${timestep}`;
+  return `output/${id}/${mode.toLowerCase()}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${frequency}`;
 }
 
 export const SYNTHESIS_ITEMS = [
@@ -91,6 +89,89 @@ export function matchesSearchTerm(text: string, searchTerm: string): boolean {
 ////////////////////////////////////////////////////////////////
 // Variable per variable utils
 ////////////////////////////////////////////////////////////////
+
+/**
+ * Builds parameters for variable view API requests based on item type and data type
+ *
+ * @param itemType - The type of output item (areas, links, or synthesis)
+ * @param dataType - The type of data being requested (values, details, details-res, details-STstorage, or id)
+ * @param selectedClusterId - The ID of the selected cluster (for cluster-specific data types)
+ * @param selectedItemId - The ID of the selected item (area name or link ID)
+ * @param selectedItem - The full item object (Area or LinkElement)
+ * @param selectedVariable - The name of the variable to retrieve
+ * @param frequency - The time frequency for the data (hourly, daily, weekly, monthly, annual)
+ * @returns VariableViewParams object configured for the appropriate endpoint
+ *
+ * @example
+ * // For area values
+ * buildVariableViewParams("areas", "values", "", "area1", areaObj, "LOAD", "hourly")
+ * // Returns: { type: "area", variableName: "LOAD", frequency: "hourly", areaId: "area1" }
+ *
+ * // For thermal cluster details
+ * buildVariableViewParams("areas", "details", "cluster1", "area1", areaObj, "production", "daily")
+ * // Returns: { type: "thermal", variableName: "production", frequency: "daily", areaId: "area1", clusterId: "cluster1" }
+ *
+ * // For links
+ * buildVariableViewParams("links", "values", "", "link1", linkObj, "FLOW LIN.", "monthly")
+ * // Returns: { type: "link", variableName: "FLOW LIN.", frequency: "monthly", areaFromId: "area1", areaToId: "area2" }
+ */
+export function buildVariableViewParams(
+  itemType: OutputItemType,
+  dataType: string,
+  selectedClusterId: string,
+  selectedItemId: string,
+  selectedItem: (Area & { id: string }) | LinkElement,
+  selectedVariable: string,
+  frequency: Frequency,
+): VariableViewParams {
+  if (itemType === "areas") {
+    // Cluster/storage params
+    if (dataType === "details" && selectedClusterId) {
+      return {
+        type: "thermal",
+        variableName: selectedVariable,
+        frequency: frequency,
+        areaId: selectedItemId,
+        clusterId: selectedClusterId,
+      };
+    }
+    if (dataType === "details-res" && selectedClusterId) {
+      return {
+        type: "renewable",
+        variableName: selectedVariable,
+        frequency: frequency,
+        areaId: selectedItemId,
+        clusterId: selectedClusterId,
+      };
+    }
+    if (dataType === "details-STstorage" && selectedClusterId) {
+      return {
+        type: "st_storage",
+        variableName: selectedVariable,
+        frequency: frequency,
+        areaId: selectedItemId,
+        clusterId: selectedClusterId,
+      };
+    }
+
+    // Area params
+    return {
+      type: "area",
+      variableName: selectedVariable,
+      frequency: frequency,
+      areaId: selectedItemId,
+    };
+  }
+
+  // Link params
+  return {
+    type: "link",
+    variableName: selectedVariable,
+    frequency: frequency,
+    areaFromId: (selectedItem as LinkElement).area1,
+    areaToId: (selectedItem as LinkElement).area2,
+  };
+}
 
 /**
  * Retrieves the first variable for a selected item (area or link)

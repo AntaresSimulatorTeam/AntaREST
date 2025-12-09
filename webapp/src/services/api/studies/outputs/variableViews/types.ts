@@ -12,17 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { VARIABLE_VIEW_FREQUENCIES } from "./constants";
-
-////////////////////////////////////////////////////////////////
-// Derived Types
-////////////////////////////////////////////////////////////////
-
-export type VariableViewFrequency = (typeof VARIABLE_VIEW_FREQUENCIES)[number];
-
-////////////////////////////////////////////////////////////////
-// API DTO Types
-////////////////////////////////////////////////////////////////
+import type { Frequency } from "@/components/App/Singlestudy/explore/Results/ResultDetails/utils";
 
 export interface ThermalClusterVariablesDTO {
   name: string;
@@ -72,7 +62,7 @@ export interface TimeIndexDTO {
   startDate: string;
   steps: number;
   firstWeekSize: number;
-  level: VariableViewFrequency;
+  level: Frequency;
 }
 
 export interface VariableViewMatrixDTO {
@@ -87,7 +77,7 @@ export interface MaterializationTaskDTO {
 
 interface VariableViewBaseParams {
   variableName: string;
-  frequency: VariableViewFrequency;
+  frequency: Frequency;
 }
 
 export type VariableViewParams =
@@ -99,7 +89,7 @@ export type VariableViewParams =
 
 interface VariableViewBaseParamsDTO {
   variable_name: string;
-  frequency: VariableViewFrequency;
+  frequency: Frequency;
 }
 
 export type VariableViewParamsDTO =
@@ -117,7 +107,7 @@ export interface GetVariablesListParams {
 export interface GetTimeIndexParams {
   studyId: string;
   outputId: string;
-  frequency: VariableViewFrequency;
+  frequency: Frequency;
 }
 
 export interface GetVariableViewDataParams {

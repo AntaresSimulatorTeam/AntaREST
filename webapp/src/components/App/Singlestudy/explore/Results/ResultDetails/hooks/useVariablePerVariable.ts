@@ -13,27 +13,10 @@
  */
 
 /**
- * Hook: useVariablePerVariable
- *
  * Manages the state and operations for the variable-per-variable view mode.
- * This hook handles:
- * - Fetching the list of available variables from the API
- * - Managing variable selection state
- * - Fetching variable view data (consolidated year-by-year matrix)
- * - Materializing variable views when they haven't been generated yet
- * - Tracking materialization progress via WebSocket
  *
- * IMPORTANT - DATA SOURCE:
  * The variables list API endpoint (/v1/studies/{uuid}/output/{output_id}/variables-list)
  * returns both mcInd and mcAll data structures in a single response:
- *
- * Response structure:
- * {
- *   "mcInd": { areas: [...], links: [...] },  // Year-by-year individual simulation data
- *   "mcAll": { areas: [...], links: [...] }   // Pre-aggregated statistical data
- * }
- *
- * This hook and all variable-per-variable components EXCLUSIVELY use mcInd because:
  *
  * 1. mcInd (Monte Carlo Individual):
  *    - Contains non-aggregated, year-by-year data for each Monte Carlo simulation run
@@ -48,13 +31,11 @@
  * The API design decision to return both in a single endpoint was made for practical reasons
  * (splitting into /mc-all and /mc-ind endpoints was deemed impractical), but the front-end
  * primarily consumes mcInd for variable-per-variable features.
- *
- * Note: The variable lists can differ between mcInd and mcAll for the same area/link.
  */
 
-import { enqueueSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromise from "@/hooks/usePromise";
 import { useTaskMonitor } from "@/hooks/useTaskMonitor";
 import {
@@ -62,80 +43,20 @@ import {
   getVariableViewData,
   materializeVariableView,
 } from "@/services/api/studies/outputs/variableViews";
-import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
-import { WsChannel } from "@/services/webSocket/constants";
-import { unsubscribeWsChannels } from "@/services/webSocket/ws";
 import type { Area, LinkElement } from "@/types/types";
-import type { OutputItemType, Timestep } from "../utils";
+import { toError } from "@/utils/fnUtils";
+import { buildVariableViewParams, type Frequency, type OutputItemType } from "../utils";
 
 interface UseVariablePerVariableProps {
   studyId: string;
   outputId: string | undefined;
   isEnabled: boolean;
   itemType: OutputItemType;
-  timestep: Timestep;
+  frequency: Frequency;
   selectedItemId: string;
   selectedItem: (Area & { id: string }) | LinkElement | undefined;
   dataType: string;
   selectedClusterId: string;
-}
-
-function buildVariableViewParams(
-  itemType: OutputItemType,
-  dataType: string,
-  selectedClusterId: string,
-  selectedItemId: string,
-  selectedItem: (Area & { id: string }) | LinkElement,
-  selectedVariable: string,
-  timestep: Timestep,
-): VariableViewParams {
-  if (itemType === "areas") {
-    // Cluster/storage params
-    if (dataType === "details" && selectedClusterId) {
-      return {
-        type: "thermal",
-        variableName: selectedVariable,
-        frequency: timestep,
-        areaId: selectedItemId,
-        clusterId: selectedClusterId,
-      };
-    }
-    if (dataType === "details-res" && selectedClusterId) {
-      return {
-        type: "renewable",
-        variableName: selectedVariable,
-        frequency: timestep,
-        areaId: selectedItemId,
-        clusterId: selectedClusterId,
-      };
-    }
-    if (dataType === "details-STstorage" && selectedClusterId) {
-      return {
-        type: "st_storage",
-        variableName: selectedVariable,
-        frequency: timestep,
-        areaId: selectedItemId,
-        clusterId: selectedClusterId,
-      };
-    }
-
-    // Area params
-    return {
-      type: "area",
-      variableName: selectedVariable,
-      frequency: timestep,
-      areaId: selectedItemId,
-    };
-  }
-
-  // Link params
-  return {
-    type: "link",
-    variableName: selectedVariable,
-    frequency: timestep,
-    areaFromId: (selectedItem as LinkElement).area1,
-    areaToId: (selectedItem as LinkElement).area2,
-  };
 }
 
 export function useVariablePerVariable({
@@ -143,13 +64,14 @@ export function useVariablePerVariable({
   outputId,
   isEnabled,
   itemType,
-  timestep,
+  frequency,
   selectedItemId,
   selectedItem,
   dataType,
   selectedClusterId,
 }: UseVariablePerVariableProps) {
   const { t } = useTranslation();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [selectedVariable, setSelectedVariable] = useState("");
   const [isMaterializing, setIsMaterializing] = useState(false);
   const [materializationTaskId, setMaterializationTaskId] = useState<string | null>(null);
@@ -160,7 +82,7 @@ export function useVariablePerVariable({
     variable: string;
     itemId: string;
     itemType: OutputItemType;
-    timestep: Timestep;
+    frequency: Frequency;
   } | null>(null);
 
   const { data: variablesMetadata } = usePromise(
@@ -187,7 +109,7 @@ export function useVariablePerVariable({
         selectedItemId,
         selectedItem,
         selectedVariable,
-        timestep,
+        frequency,
       );
 
       const data = await getVariableViewData({ studyId, outputId, params });
@@ -200,7 +122,7 @@ export function useVariablePerVariable({
         selectedVariable,
         selectedItemId,
         itemType,
-        timestep,
+        frequency,
         dataType,
         selectedClusterId,
       ],
@@ -215,19 +137,13 @@ export function useVariablePerVariable({
     }
   }, [isEnabled]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: materializationTaskId is intentionally excluded to avoid infinite loop when unsubscribing
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Effect intentionally runs when selectedVariable or selectedItemId changes to cancel ongoing materialization
   useEffect(() => {
+    // When user navigates to a different variable or item
+    // clear the materialization ref so we don't reload the wrong view
     setIsMaterializing(false);
-
-    if (materializationTaskId) {
-      unsubscribeWsChannels([WsChannel.Task + materializationTaskId]);
-      setMaterializationTaskId(null);
-    }
-
-    // When user navigates to a different variable or item, cancel ongoing materialization
-    // and clear the materialization params ref so we don't reload the wrong view
+    setMaterializationTaskId(null);
     materializationParamsRef.current = null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVariable, selectedItemId]);
 
   const handleMaterializeVariable = async () => {
@@ -245,10 +161,11 @@ export function useVariablePerVariable({
         selectedItemId,
         selectedItem,
         selectedVariable,
-        timestep,
+        frequency,
       );
 
       const taskId = await materializeVariableView({ studyId, outputId, params });
+
       setMaterializationTaskId(taskId);
 
       // Store the current view params to check later if user is still on this view
@@ -256,41 +173,36 @@ export function useVariablePerVariable({
         variable: selectedVariable,
         itemId: selectedItemId,
         itemType,
-        timestep,
+        frequency,
       };
-    } catch {
-      // TODO use error snackbar
-      enqueueSnackbar(t("study.results.materializationStartFailed"), { variant: "error" });
+    } catch (error) {
+      enqueueErrorSnackbar(t("study.results.materializationStartFailed"), toError(error));
       setIsMaterializing(false);
     }
   };
 
   useTaskMonitor({
     taskId: materializationTaskId,
-    onComplete: () => {
+    onComplete: useCallback(() => {
       setIsMaterializing(false);
       setMaterializationTaskId(null);
 
-      // Only reload if user is still on the view that was materialized
-      // (if user navigated away, the ref was cleared to null)
+      // Only fetch data if user is still on the view that was materialized
       if (materializationParamsRef.current) {
         variableViewDataRes.reload();
       }
 
       materializationParamsRef.current = null;
-    },
+    }, [variableViewDataRes]),
     onFailed: useCallback(
       (message: string) => {
         setIsMaterializing(false);
         setMaterializationTaskId(null);
-        // TODO use error snackbar
-        enqueueSnackbar(message || t("study.results.materializationFailed"), {
-          variant: "error",
-        });
+        enqueueErrorSnackbar(t("study.results.materializationFailed"), new Error(message));
+        materializationParamsRef.current = null;
       },
-      [t],
+      [enqueueErrorSnackbar, t],
     ),
-    // TODO add deps array + add in eslint config
   });
 
   return {
