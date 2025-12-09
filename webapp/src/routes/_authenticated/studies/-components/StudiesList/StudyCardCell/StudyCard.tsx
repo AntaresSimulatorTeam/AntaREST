@@ -151,7 +151,7 @@ const StudyCard = memo((props: Props) => {
               noWrap
               variant="h6"
               component="div"
-              onClick={() => navigate({ to: `/studies/${study.id}` })}
+              onClick={() => navigate({ to: "/studies/$studyId", params: { studyId: study.id } })}
               sx={{
                 boxSizing: "border-box",
                 flexFlow: "nowrap",

@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { v4 as uuidv4 } from "uuid";
+import { TABLE_MODE_COLUMNS_BY_TYPE } from "@/services/api/studies/tableMode/constants";
 import type {
   TableModeColumnsForType,
   TableModeType,
-} from "../../../../../services/api/studies/tableMode/types";
-import { TABLE_MODE_COLUMNS_BY_TYPE } from "../../../../../services/api/studies/tableMode/constants";
+} from "@/services/api/studies/tableMode/types";
+import { v4 as uuidv4 } from "uuid";
 
 ////////////////////////////////////////////////////////////////
 // Types

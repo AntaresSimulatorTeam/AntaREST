@@ -41,7 +41,7 @@ function Breadcrumb({ study }: BreadcrumbProps) {
     if (isLastSegment) {
       // Navigate to the specific study's detail page when clicking the study name
       // This allows users to go back to the study overview from any sub-page
-      navigate({ to: `/studies/${study.id}` });
+      navigate({ to: "/studies/$studyId", params: { studyId: study.id } });
     } else {
       // Navigate to studies list with folder filter when clicking folder segments
       // This allows users to browse other studies in the same folder hierarchy

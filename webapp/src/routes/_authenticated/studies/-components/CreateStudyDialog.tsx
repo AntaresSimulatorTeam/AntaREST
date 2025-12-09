@@ -77,7 +77,7 @@ function CreateStudyDialog({ open, onClose }: Props) {
         <>
           <Button
             onClick={() => {
-              navigate({ to: `/studies/${newStudy.id}` });
+              navigate({ to: "/studies/$studyId", params: { studyId: newStudy.id } });
               closeSnackbar(snackbarId);
             }}
           >

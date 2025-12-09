@@ -36,7 +36,7 @@ function RootLayout() {
           <Outlet />
         </SnackbarProvider>
       </ThemeProvider>
-      <TanStackRouterDevtools position="top-left" />
+      <TanStackRouterDevtools />
     </>
   );
 }

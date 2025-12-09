@@ -15,7 +15,7 @@
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useTranslation } from "react-i18next";
-import { createTableTemplate, type TableTemplate } from "../utils";
+import { createTableTemplate, type TableTemplate } from "../../-utils";
 import TableTemplateFormDialog, {
   type TableTemplateFormDialogProps,
 } from "./TableTemplateFormDialog";

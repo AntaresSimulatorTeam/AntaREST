@@ -13,11 +13,11 @@
  */
 
 import BackButton from "@/components/buttons/BackButton";
-import type { RoutePaths } from "@/router";
+import router from "@/router";
 import { buildKey } from "@/utils/reactUtils";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
-import { Box, Tab } from "@mui/material";
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Box, Tab, type TabProps } from "@mui/material";
+import { Link, Outlet, useLocation, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 
 interface BaseTab {
@@ -26,16 +26,16 @@ interface BaseTab {
 }
 
 interface RouteTab extends BaseTab {
-  to: RoutePaths;
+  linkOptions: ToOptions;
   content?: never;
 }
 
 interface ContentTab extends BaseTab {
+  linkOptions?: never;
   content: React.ReactNode;
-  to?: never;
 }
 
-interface TabsViewProps {
+export interface TabsViewProps {
   items: RouteTab[] | ContentTab[];
   onChange?: TabListProps["onChange"];
   onBack?: VoidFunction;
@@ -45,8 +45,14 @@ interface TabsViewProps {
 }
 
 function isRouteTabs(tabs: RouteTab[] | ContentTab[]): tabs is RouteTab[] {
-  const firstTab = tabs[0];
-  return !!firstTab && "to" in firstTab && typeof firstTab.to === "string";
+  return !!tabs[0]?.linkOptions;
+}
+
+function buildHrefOnRouteTabs(items: RouteTab[]): Array<RouteTab & { href: string }> {
+  return items.map((item) => ({
+    ...item,
+    href: router.buildLocation(item.linkOptions).href,
+  }));
 }
 
 function TabsView({
@@ -57,12 +63,16 @@ function TabsView({
   disablePadding = false,
   disableGutters = false,
 }: TabsViewProps) {
-  const { pathname } = useLocation();
+  const location = useLocation();
   const [currentTabIndex, setCurrentTabIndex] = useState(0);
 
-  const hasRouteTabs = isRouteTabs(items);
+  const tabs = isRouteTabs(items) ? buildHrefOnRouteTabs(items) : items;
+  const hasRouteTabs = isRouteTabs(tabs);
+
   const currentTabValue = hasRouteTabs
-    ? items.find(({ to }) => pathname === to || pathname.startsWith(to + "/"))?.to || ""
+    ? tabs.find(
+        ({ href }) => location.pathname === href || location.pathname.startsWith(href + "/"),
+      )?.href || ""
     : currentTabIndex;
 
   ////////////////////////////////////////////////////////////////
@@ -80,24 +90,24 @@ function TabsView({
   // Tab
   ////////////////////////////////////////////////////////////////
 
-  const getTabKey = (itemIndex: number) => {
-    return hasRouteTabs ? items[itemIndex].to : buildKey(items[itemIndex].label, itemIndex);
+  const getTabKey = (tabIndex: number) => {
+    return hasRouteTabs ? tabs[tabIndex].href : buildKey(tabs[tabIndex].label, tabIndex);
   };
 
-  const getTabValue = (itemIndex: number) => {
-    return hasRouteTabs ? items[itemIndex].to : itemIndex;
+  const getTabValue = (tabIndex: number) => {
+    return hasRouteTabs ? tabs[tabIndex].href : tabIndex;
   };
 
-  const getTabProps = (itemIndex: number) => {
+  const getTabProps = (tabIndex: number): TabProps & { href?: string } => {
     if (hasRouteTabs) {
       return {
-        value: getTabValue(itemIndex),
+        value: getTabValue(tabIndex),
         LinkComponent: Link,
-        href: items[itemIndex].to,
+        href: tabs[tabIndex].href,
       };
     }
 
-    return { value: getTabValue(itemIndex) };
+    return { value: getTabValue(tabIndex) };
   };
 
   ////////////////////////////////////////////////////////////////
@@ -123,17 +133,17 @@ function TabsView({
         >
           {onBack && <BackButton onClick={onBack} />}
           <TabList onChange={handleChange}>
-            {items.map((item, index) => (
+            {tabs.map((tab, index) => (
               <Tab
                 key={getTabKey(index)}
-                label={item.label}
-                disabled={item.disabled}
+                label={tab.label}
+                disabled={tab.disabled}
                 {...getTabProps(index)}
               />
             ))}
           </TabList>
         </Box>
-        {items.map((item, index) => (
+        {tabs.map((tab, index) => (
           <TabPanel
             key={getTabKey(index)}
             value={getTabValue(index)}
@@ -152,7 +162,7 @@ function TabsView({
               disableGutters && { px: 0 },
             ]}
           >
-            {hasRouteTabs ? <Outlet /> : item.content}
+            {hasRouteTabs ? <Outlet /> : tab.content}
           </TabPanel>
         ))}
       </TabContext>

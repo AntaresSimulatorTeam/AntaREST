@@ -23,22 +23,20 @@ import { WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import { addWsEventListener } from "@/services/webSocket/ws";
 import { Box, Divider } from "@mui/material";
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useMatch } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import FreezeStudy from "./-components/FreezeStudy";
 import NavHeader from "./-components/NavHeader";
-import { Route as StudyRootRoute } from "./index";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId")({
-  component: StudyLayout,
+  component: StudyHomeLayout,
 });
 
-function StudyLayout() {
+function StudyHomeLayout() {
   const { studyId } = Route.useParams();
-  const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const isExplorer = !!StudyRootRoute.useMatch();
+  const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
+  const isExplorer = !!match;
 
   const res = usePromise(async () => {
     const study = await getStudyMetadata(studyId);
@@ -127,38 +125,6 @@ function StudyLayout() {
             overflow="hidden"
             position="relative"
           >
-            {/* {isExplorer === true ? (
-              <TabWrapper
-                study={study}
-                divider
-                tabList={[
-                  {
-                    label: t("study.modelization"),
-                    path: `/studies/${studyId}/explore/modelization`,
-                  },
-                  {
-                    label: t("study.configuration"),
-                    path: `/studies/${studyId}/explore/configuration`,
-                  },
-                  {
-                    label: t("study.tableMode"),
-                    path: `/studies/${studyId}/explore/tablemode`,
-                  },
-                  { label: "Xpansion", path: `/studies/${studyId}/explore/xpansion` },
-                  {
-                    label: t("study.results"),
-                    path: `/studies/${studyId}/explore/results`,
-                  },
-                  {
-                    label: t("study.debug"),
-                    path: `/studies/${studyId}/explore/debug`,
-                  },
-                ]}
-                disablePadding
-              />
-            ) : (
-              <HomeView study={study} variantTree={variantTree} />
-            )} */}
             <Outlet />
             <FreezeStudy studyId={study.id} />
           </Box>

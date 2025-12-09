@@ -17,13 +17,13 @@ import ListFE from "@/components/fieldEditors/ListFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
+import { TABLE_MODE_TYPES } from "@/services/api/studies/tableMode/constants";
 import { validateArray } from "@/utils/validation/array";
 import { validateString } from "@/utils/validation/string";
 import startCase from "lodash/startCase";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { TABLE_MODE_TYPES } from "../../../../../../services/api/studies/tableMode/constants";
-import { getTableColumnsForType, type TableTemplate } from "../utils";
+import { getTableColumnsForType, type TableTemplate } from "../../-utils";
 
 export interface TableTemplateFormDialogProps
   extends Pick<

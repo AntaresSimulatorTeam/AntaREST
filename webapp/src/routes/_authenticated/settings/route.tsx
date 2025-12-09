@@ -19,7 +19,7 @@ import { useAppMode } from "@/hooks/useAppMode";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "@/redux/selectors";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -43,27 +43,39 @@ function SettingsLayout() {
           items={[
             {
               label: t("global.general"),
-              to: "/settings/general" as const,
+              linkOptions: linkOptions({
+                to: "/settings/general",
+              }),
             },
             isUserAdmin && {
               label: t("global.users"),
-              to: "/settings/users" as const,
+              linkOptions: linkOptions({
+                to: "/settings/users",
+              }),
             },
             (isUserAdmin || isUserInGroupAdmin) && {
               label: t("global.group"),
-              to: "/settings/groups" as const,
+              linkOptions: linkOptions({
+                to: "/settings/groups",
+              }),
             },
             isWebMode && {
               label: t("global.tokens"),
-              to: "/settings/tokens" as const,
+              linkOptions: linkOptions({
+                to: "/settings/tokens",
+              }),
             },
             isUserAdmin && {
               label: t("global.maintenance"),
-              to: "/settings/maintenance" as const,
+              linkOptions: linkOptions({
+                to: "/settings/maintenance",
+              }),
             },
             {
               label: t("global.about"),
-              to: "/settings/about" as const,
+              linkOptions: linkOptions({
+                to: "/settings/about",
+              }),
             },
           ].filter(Boolean)}
         />

@@ -14,10 +14,10 @@
 
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudy } from "@/redux/selectors";
-import { Route as StudyLayoutRoute } from "../route";
+import { Route as StudyHomeLayout } from "../route";
 
 function useStudy() {
-  const { studyId } = StudyLayoutRoute.useParams();
+  const { studyId } = StudyHomeLayout.useParams();
   const study = useAppSelector((state) => getStudy(state, studyId));
 
   if (!study) {

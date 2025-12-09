@@ -44,7 +44,6 @@ import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/District
 import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
 import Results from "./Singlestudy/explore/Results";
 import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
-import TableModeList from "./Singlestudy/explore/TableModeList";
 import Xpansion from "./Singlestudy/explore/Xpansion";
 import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
 import Capacities from "./Singlestudy/explore/Xpansion/Capacities";
@@ -111,7 +110,6 @@ function App() {
               <Route path="*" element={<Map />} />
             </Route>
             <Route path="configuration" element={<Configuration />} />
-            <Route path="tablemode" element={<TableModeList />} />
             <Route path="xpansion" element={<Xpansion />}>
               <Route path="candidates" element={<Candidates />} />
               <Route path="settings" element={<XpansionSettings />} />

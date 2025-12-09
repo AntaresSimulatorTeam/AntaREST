@@ -80,7 +80,7 @@ function InformationView({ study, variantTree }: Props) {
           <Button
             variant="contained"
             onClick={() => {
-              navigate({ to: `/studies/${study.id}/explore` });
+              navigate({ to: "/studies/$studyId/explore", params: { studyId: study.id } });
             }}
           >
             {t("global.open")}

@@ -57,7 +57,9 @@ function StudyHome() {
             <StudyTreeView
               study={study}
               variantTree={variantTree}
-              onClick={(studyId: string) => navigate({ to: `/studies/${studyId}` })}
+              onClick={(studyId: string) =>
+                navigate({ to: "/studies/$studyId", params: { studyId } })
+              }
             />
           </Box>
           {/* Right */}

@@ -21,17 +21,21 @@ import TableMode from "@/components/TableMode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { Button } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
 import { useUpdateEffect } from "react-use";
 import { v4 as uuidv4 } from "uuid";
-import storage, { StorageKey } from "../../../../../services/utils/localStorage";
-import type { StudyMetadata } from "../../../../../types/types";
-import ListElement from "../common/ListElement";
-import CreateTemplateTableDialog from "./dialogs/CreateTemplateTableDialog";
-import UpdateTemplateTableDialog from "./dialogs/UpdateTemplateTableDialog";
-import type { TableTemplate } from "./utils";
+import useStudy from "../../-hooks/useStudy";
+import ListElement from "../../../../../-App/Singlestudy/explore/common/ListElement";
+import storage, { StorageKey } from "../../../../../../services/utils/localStorage";
+import CreateTemplateTableDialog from "./-components/dialogs/CreateTemplateTableDialog";
+import UpdateTemplateTableDialog from "./-components/dialogs/UpdateTemplateTableDialog";
+import type { TableTemplate } from "./-utils";
+
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/tablemode/")({
+  component: TableModeList,
+});
 
 function TableModeList() {
   const { t } = useTranslation();
@@ -50,7 +54,7 @@ function TableModeList() {
     templateId: TableTemplate["id"];
   } | null>(null);
 
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const selectedTemplate = templates.find((tp) => tp.id === selectedTemplateId);
   const dialogTemplate = dialog && templates.find((tp) => tp.id === dialog.templateId);
 
@@ -183,5 +187,3 @@ function TableModeList() {
     </>
   );
 }
-
-export default TableModeList;

@@ -26,6 +26,9 @@ import { Route as AuthenticatedStudiesStudyIdIndexRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsUsersIndexRouteImport } from './routes/_authenticated/settings/users/index'
 import { Route as AuthenticatedSettingsTokensIndexRouteImport } from './routes/_authenticated/settings/tokens/index'
 import { Route as AuthenticatedSettingsGroupsIndexRouteImport } from './routes/_authenticated/settings/groups/index'
+import { Route as AuthenticatedStudiesStudyIdExploreRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/route'
+import { Route as AuthenticatedStudiesStudyIdExploreIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/index'
+import { Route as AuthenticatedStudiesStudyIdExploreTablemodeIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/tablemode/index'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -123,6 +126,24 @@ const AuthenticatedSettingsGroupsIndexRoute =
     path: '/groups/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedStudiesStudyIdExploreRouteRoute =
+  AuthenticatedStudiesStudyIdExploreRouteRouteImport.update({
+    id: '/explore',
+    path: '/explore',
+    getParentRoute: () => AuthenticatedStudiesStudyIdRouteRoute,
+  } as any)
+const AuthenticatedStudiesStudyIdExploreIndexRoute =
+  AuthenticatedStudiesStudyIdExploreIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedStudiesStudyIdExploreRouteRoute,
+  } as any)
+const AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute =
+  AuthenticatedStudiesStudyIdExploreTablemodeIndexRouteImport.update({
+    id: '/tablemode/',
+    path: '/tablemode/',
+    getParentRoute: () => AuthenticatedStudiesStudyIdExploreRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -137,10 +158,13 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/studies': typeof AuthenticatedStudiesIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/studies/$studyId/explore': typeof AuthenticatedStudiesStudyIdExploreRouteRouteWithChildren
   '/settings/groups': typeof AuthenticatedSettingsGroupsIndexRoute
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
   '/studies/$studyId/': typeof AuthenticatedStudiesStudyIdIndexRoute
+  '/studies/$studyId/explore/': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
+  '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
@@ -157,6 +181,8 @@ export interface FileRoutesByTo {
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
   '/studies/$studyId': typeof AuthenticatedStudiesStudyIdIndexRoute
+  '/studies/$studyId/explore': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
+  '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -173,10 +199,13 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/studies/': typeof AuthenticatedStudiesIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/_authenticated/studies/$studyId/explore': typeof AuthenticatedStudiesStudyIdExploreRouteRouteWithChildren
   '/_authenticated/settings/groups/': typeof AuthenticatedSettingsGroupsIndexRoute
   '/_authenticated/settings/tokens/': typeof AuthenticatedSettingsTokensIndexRoute
   '/_authenticated/settings/users/': typeof AuthenticatedSettingsUsersIndexRoute
   '/_authenticated/studies/$studyId/': typeof AuthenticatedStudiesStudyIdIndexRoute
+  '/_authenticated/studies/$studyId/explore/': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
+  '/_authenticated/studies/$studyId/explore/tablemode/': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -193,10 +222,13 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/studies'
     | '/tasks'
+    | '/studies/$studyId/explore'
     | '/settings/groups'
     | '/settings/tokens'
     | '/settings/users'
     | '/studies/$studyId/'
+    | '/studies/$studyId/explore/'
+    | '/studies/$studyId/explore/tablemode'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -213,6 +245,8 @@ export interface FileRouteTypes {
     | '/settings/tokens'
     | '/settings/users'
     | '/studies/$studyId'
+    | '/studies/$studyId/explore'
+    | '/studies/$studyId/explore/tablemode'
   id:
     | '__root__'
     | '/_authenticated'
@@ -228,10 +262,13 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/studies/'
     | '/_authenticated/tasks/'
+    | '/_authenticated/studies/$studyId/explore'
     | '/_authenticated/settings/groups/'
     | '/_authenticated/settings/tokens/'
     | '/_authenticated/settings/users/'
     | '/_authenticated/studies/$studyId/'
+    | '/_authenticated/studies/$studyId/explore/'
+    | '/_authenticated/studies/$studyId/explore/tablemode/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -360,6 +397,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsGroupsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore': {
+      id: '/_authenticated/studies/$studyId/explore'
+      path: '/explore'
+      fullPath: '/studies/$studyId/explore'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/': {
+      id: '/_authenticated/studies/$studyId/explore/'
+      path: '/'
+      fullPath: '/studies/$studyId/explore/'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/tablemode/': {
+      id: '/_authenticated/studies/$studyId/explore/tablemode/'
+      path: '/tablemode'
+      fullPath: '/studies/$studyId/explore/tablemode'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRoute
+    }
   }
 }
 
@@ -392,12 +450,33 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
+interface AuthenticatedStudiesStudyIdExploreRouteRouteChildren {
+  AuthenticatedStudiesStudyIdExploreIndexRoute: typeof AuthenticatedStudiesStudyIdExploreIndexRoute
+  AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
+}
+
+const AuthenticatedStudiesStudyIdExploreRouteRouteChildren: AuthenticatedStudiesStudyIdExploreRouteRouteChildren =
+  {
+    AuthenticatedStudiesStudyIdExploreIndexRoute:
+      AuthenticatedStudiesStudyIdExploreIndexRoute,
+    AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute:
+      AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute,
+  }
+
+const AuthenticatedStudiesStudyIdExploreRouteRouteWithChildren =
+  AuthenticatedStudiesStudyIdExploreRouteRoute._addFileChildren(
+    AuthenticatedStudiesStudyIdExploreRouteRouteChildren,
+  )
+
 interface AuthenticatedStudiesStudyIdRouteRouteChildren {
+  AuthenticatedStudiesStudyIdExploreRouteRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRouteWithChildren
   AuthenticatedStudiesStudyIdIndexRoute: typeof AuthenticatedStudiesStudyIdIndexRoute
 }
 
 const AuthenticatedStudiesStudyIdRouteRouteChildren: AuthenticatedStudiesStudyIdRouteRouteChildren =
   {
+    AuthenticatedStudiesStudyIdExploreRouteRoute:
+      AuthenticatedStudiesStudyIdExploreRouteRouteWithChildren,
     AuthenticatedStudiesStudyIdIndexRoute:
       AuthenticatedStudiesStudyIdIndexRoute,
   }

@@ -15,7 +15,7 @@
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
-import type { TableTemplate } from "../utils";
+import type { TableTemplate } from "../../-utils";
 import TableTemplateFormDialog, {
   type TableTemplateFormDialogProps,
 } from "./TableTemplateFormDialog";
