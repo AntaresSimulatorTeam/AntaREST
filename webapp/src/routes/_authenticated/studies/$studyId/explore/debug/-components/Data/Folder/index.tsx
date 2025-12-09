@@ -17,8 +17,8 @@ import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import EmptyView from "@/components/page/EmptyView";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { deleteFile } from "@/services/api/studies/raw";
-import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -39,8 +39,6 @@ import {
 } from "@mui/material";
 import { Fragment, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import DebugContext from "../../DebugContext";
 import {
   canEditFile,
   type DataCompProps,
@@ -48,14 +46,15 @@ import {
   getFileType,
   isFolder,
   type TreeFolder,
-} from "../../utils";
+} from "../../../-utils";
+import DebugContext from "../../DebugContext";
 import { Filename, Menubar } from "../styles";
 import CreateFolderDialog from "./CreateFolderDialog";
 
 function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProps) {
   const { setSelectedFile, reloadTree } = useContext(DebugContext);
   const { t } = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const replaceAction = useConfirm();
   const deleteAction = useConfirm<{ isFolder: boolean; filename: string }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();

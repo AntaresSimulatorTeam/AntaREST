@@ -14,28 +14,35 @@
 
 import SplitView from "@/components/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { buildKey } from "@/utils/reactUtils";
 import { Box, Skeleton } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext, useSearchParams } from "react-router-dom";
 import { useUpdateEffect } from "react-use";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import type { StudyMetadata } from "../../../../../types/types";
-import Data from "./Data";
-import DebugContext from "./DebugContext";
-import Tree from "./Tree";
-import { type FileInfo, getFileType, getTreeData, type TreeData } from "./utils";
+import useStudy from "../../-hooks/useStudy";
+import Data from "./-components/Data";
+import DebugContext from "./-components/DebugContext";
+import Tree from "./-components/Tree";
+import { type FileInfo, getFileType, getTreeData, type TreeData } from "./-utils";
+
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/debug/")({
+  validateSearch: (search) => ({
+    path: (search.path as string) || "",
+  }),
+  component: Debug,
+});
 
 function Debug() {
   const { t } = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
   // Allow to keep expanded items when the tree is reloaded with `reloadTree`
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const path = searchParams.get("path");
+  const navigate = Route.useNavigate();
+  const { path } = Route.useSearch();
 
   const treeDataResponse = usePromiseWithSnackbarError(() => getTreeData(study.id), {
     errorMessage: t("studies.error.retrieveData"),
@@ -53,6 +60,11 @@ function Debug() {
 
   // Update the selected file
   useUpdateEffect(() => {
+    // Avoid updating while the tree is loading
+    if (treeDataResponse.isLoading) {
+      return;
+    }
+
     const pathSegments = path?.split("/");
     const filename = pathSegments ? R.last(pathSegments) : null;
     const treeData = pathSegments ? R.path<TreeData>(pathSegments, treeDataResponse.data) : null;
@@ -90,7 +102,9 @@ function Debug() {
   // Update the `path` URL parameter
   useUpdateEffect(() => {
     if (selectedFile?.filePath !== path) {
-      setSearchParams({ path: selectedFile?.filePath || "" });
+      navigate({
+        search: { path: selectedFile?.filePath || "" },
+      });
     }
   }, [selectedFile?.filePath]);
 

@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { getParentPaths } from "@/utils/pathUtils";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { useContext } from "react";
-import { getParentPaths } from "../../../../../../utils/pathUtils";
+import type { TreeFolder } from "../../-utils";
 import DebugContext from "../DebugContext";
-import type { TreeFolder } from "../utils";
 import FileTreeItem from "./FileTreeItem";
 
 interface Props {

@@ -29,6 +29,7 @@ import { Route as AuthenticatedSettingsGroupsIndexRouteImport } from './routes/_
 import { Route as AuthenticatedStudiesStudyIdExploreRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/route'
 import { Route as AuthenticatedStudiesStudyIdExploreIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/index'
 import { Route as AuthenticatedStudiesStudyIdExploreTablemodeIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/tablemode/index'
+import { Route as AuthenticatedStudiesStudyIdExploreDebugIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/debug/index'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -144,6 +145,12 @@ const AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute =
     path: '/tablemode/',
     getParentRoute: () => AuthenticatedStudiesStudyIdExploreRouteRoute,
   } as any)
+const AuthenticatedStudiesStudyIdExploreDebugIndexRoute =
+  AuthenticatedStudiesStudyIdExploreDebugIndexRouteImport.update({
+    id: '/debug/',
+    path: '/debug/',
+    getParentRoute: () => AuthenticatedStudiesStudyIdExploreRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
   '/studies/$studyId/': typeof AuthenticatedStudiesStudyIdIndexRoute
   '/studies/$studyId/explore/': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
+  '/studies/$studyId/explore/debug': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
 }
 export interface FileRoutesByTo {
@@ -182,6 +190,7 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
   '/studies/$studyId': typeof AuthenticatedStudiesStudyIdIndexRoute
   '/studies/$studyId/explore': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
+  '/studies/$studyId/explore/debug': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
 }
 export interface FileRoutesById {
@@ -205,6 +214,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/users/': typeof AuthenticatedSettingsUsersIndexRoute
   '/_authenticated/studies/$studyId/': typeof AuthenticatedStudiesStudyIdIndexRoute
   '/_authenticated/studies/$studyId/explore/': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
+  '/_authenticated/studies/$studyId/explore/debug/': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/_authenticated/studies/$studyId/explore/tablemode/': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
 }
 export interface FileRouteTypes {
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/studies/$studyId/'
     | '/studies/$studyId/explore/'
+    | '/studies/$studyId/explore/debug'
     | '/studies/$studyId/explore/tablemode'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/studies/$studyId'
     | '/studies/$studyId/explore'
+    | '/studies/$studyId/explore/debug'
     | '/studies/$studyId/explore/tablemode'
   id:
     | '__root__'
@@ -268,6 +280,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users/'
     | '/_authenticated/studies/$studyId/'
     | '/_authenticated/studies/$studyId/explore/'
+    | '/_authenticated/studies/$studyId/explore/debug/'
     | '/_authenticated/studies/$studyId/explore/tablemode/'
   fileRoutesById: FileRoutesById
 }
@@ -418,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/debug/': {
+      id: '/_authenticated/studies/$studyId/explore/debug/'
+      path: '/debug'
+      fullPath: '/studies/$studyId/explore/debug'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreDebugIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRoute
+    }
   }
 }
 
@@ -452,6 +472,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 
 interface AuthenticatedStudiesStudyIdExploreRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreIndexRoute: typeof AuthenticatedStudiesStudyIdExploreIndexRoute
+  AuthenticatedStudiesStudyIdExploreDebugIndexRoute: typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
 }
 
@@ -459,6 +480,8 @@ const AuthenticatedStudiesStudyIdExploreRouteRouteChildren: AuthenticatedStudies
   {
     AuthenticatedStudiesStudyIdExploreIndexRoute:
       AuthenticatedStudiesStudyIdExploreIndexRoute,
+    AuthenticatedStudiesStudyIdExploreDebugIndexRoute:
+      AuthenticatedStudiesStudyIdExploreDebugIndexRoute,
     AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute:
       AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute,
   }

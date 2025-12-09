@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { voidFn } from "@/utils/fnUtils";
 import { createContext } from "react";
-import { voidFn } from "../../../../../utils/fnUtils";
-import type { FileInfo, getTreeData } from "./utils";
+import type { FileInfo, getTreeData } from "../-utils";
 
 const initialDebugContextValue = {
   setSelectedFile: voidFn<[FileInfo]>,

@@ -16,7 +16,10 @@ import DownloadButton from "@/components/buttons/DownloadButton";
 import UploadFileButton from "@/components/buttons/UploadFileButton";
 import EmptyView from "@/components/page/EmptyView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getRawFile } from "@/services/api/studies/raw";
+import { getStudyData } from "@/services/api/study";
+import { downloadFile } from "@/utils/fileUtils";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { useTheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -26,10 +29,7 @@ import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintex
 import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import { getStudyData } from "../../../../../../services/api/study";
-import { downloadFile } from "../../../../../../utils/fileUtils";
-import { isEmptyContent, parseContent, type DataCompProps } from "../utils";
+import { isEmptyContent, parseContent, type DataCompProps } from "../../-utils";
 import { Filename, Menubar } from "./styles";
 
 SyntaxHighlighter.registerLanguage("xml", xml);

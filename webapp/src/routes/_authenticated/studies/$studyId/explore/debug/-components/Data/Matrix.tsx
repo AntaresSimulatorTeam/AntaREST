@@ -13,10 +13,10 @@
  */
 
 import MatrixComp from "@/components/Matrix";
-import type { DataCompProps } from "../utils";
+import type { DataCompProps } from "../../-utils";
 
-function Matrix({ filename, filePath, canEdit }: DataCompProps) {
-  return <MatrixComp title={filename} url={filePath} canImport={!canEdit} />;
+function Matrix({ studyId, filename, filePath, canEdit }: DataCompProps) {
+  return <MatrixComp studyId={studyId} title={filename} url={filePath} canImport={!canEdit} />;
 }
 
 export default Matrix;

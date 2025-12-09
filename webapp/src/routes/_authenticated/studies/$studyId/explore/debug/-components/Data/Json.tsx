@@ -20,17 +20,17 @@ import JSONEditor, {
   type JSONState,
 } from "@/components/JSONEditor";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getRawFile } from "@/services/api/studies/raw";
+import { editStudy, getStudyData } from "@/services/api/study";
+import { downloadFile } from "@/utils/fileUtils";
 import SaveIcon from "@mui/icons-material/Save";
 import { Button, Divider } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import { editStudy, getStudyData } from "../../../../../../services/api/study";
-import { downloadFile } from "../../../../../../utils/fileUtils";
-import type { DataCompProps } from "../utils";
+import type { DataCompProps } from "../../-utils";
 import { Filename, Menubar } from "./styles";
 
 function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {

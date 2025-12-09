@@ -19,7 +19,7 @@ import { getRawFile } from "@/services/api/studies/raw";
 import { downloadFile } from "@/utils/fileUtils";
 import BlockIcon from "@mui/icons-material/Block";
 import { useTranslation } from "react-i18next";
-import type { DataCompProps } from "../utils";
+import type { DataCompProps } from "../../-utils";
 import { Filename, Menubar } from "./styles";
 
 function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {

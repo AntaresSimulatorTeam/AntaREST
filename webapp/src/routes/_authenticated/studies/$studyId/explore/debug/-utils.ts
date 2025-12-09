@@ -14,6 +14,7 @@
 
 import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import { getStudyData } from "@/services/api/study";
+import type { StudyMetadata } from "@/types/types";
 import type { SvgIconComponent } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
 import DataObjectIcon from "@mui/icons-material/DataObject";
@@ -22,7 +23,6 @@ import FolderIcon from "@mui/icons-material/Folder";
 import TextSnippetIcon from "@mui/icons-material/TextSnippet";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../types/types";
 
 ////////////////////////////////////////////////////////////////
 // Types

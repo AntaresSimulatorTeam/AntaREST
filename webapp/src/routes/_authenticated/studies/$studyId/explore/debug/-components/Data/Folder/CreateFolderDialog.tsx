@@ -20,9 +20,10 @@ import StudyPathFE from "@/routes/-shared/components/studies/StudyPathFE";
 import { createFolder } from "@/services/api/studies/raw";
 import type { StudyMetadata } from "@/types/types";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import { useNavigate } from "@tanstack/react-router";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { Route as DebugRoute } from "../../../index";
 import DebugContext from "../../DebugContext";
 
 interface Props {
@@ -39,7 +40,7 @@ type DefaultValues = typeof defaultValues;
 function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
   const { reloadTree } = useContext(DebugContext);
   const { t } = useTranslation();
-  const setSearchParams = useSearchParams()[1];
+  const navigate = useNavigate({ from: DebugRoute.fullPath });
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -63,7 +64,9 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
     await reloadTree();
 
     if (openFolder) {
-      setSearchParams({ path: toPath(folder) });
+      navigate({
+        search: { path: toPath(folder) },
+      });
     }
   };
 

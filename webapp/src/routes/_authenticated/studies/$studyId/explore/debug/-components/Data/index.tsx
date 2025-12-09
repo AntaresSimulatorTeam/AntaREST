@@ -14,16 +14,16 @@
 
 import BackdropLoading from "@/components/loaders/BackdropLoading";
 import ViewWrapper from "@/components/page/ViewWrapper";
+import type { StudyMetadata } from "@/types/types";
 import { useContext } from "react";
-import type { StudyMetadata } from "../../../../../../types/types";
-import DebugContext from "../DebugContext";
 import {
   canEditFile,
   getEffectiveFileType,
   type DataCompProps,
   type FileInfo,
   type FileType,
-} from "../utils";
+} from "../../-utils";
+import DebugContext from "../DebugContext";
 import Folder from "./Folder";
 import Json from "./Json";
 import Matrix from "./Matrix";

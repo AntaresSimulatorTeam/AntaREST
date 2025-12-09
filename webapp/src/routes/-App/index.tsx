@@ -15,7 +15,6 @@
 import { Navigate, Outlet, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import SingleStudy from "../_authenticated/studies/$studyId";
 import Configuration from "./Singlestudy/explore/Configuration";
-import Debug from "./Singlestudy/explore/Debug";
 import Modelization from "./Singlestudy/explore/Modelization";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
@@ -123,7 +122,6 @@ function App() {
               <Route path=":outputId" element={<ResultDetails />} />
               <Route index element={<Results />} />
             </Route>
-            <Route path="debug" element={<Debug />} />
             <Route path="*" element={<Modelization />}>
               <Route index element={<Map />} />
             </Route>

@@ -15,8 +15,8 @@
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
 import { Box, Tooltip } from "@mui/material";
 import { useContext } from "react";
+import { getFileIcon, getFileType, isFolder, type TreeData } from "../../-utils";
 import DebugContext from "../DebugContext";
-import { getFileIcon, getFileType, isFolder, type TreeData } from "../utils";
 
 interface Props {
   name: string;

@@ -19,7 +19,6 @@ import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Skeleton, Tooltip } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
 import CustomScrollbar from "../CustomScrollbar";
 import EmptyView from "../page/EmptyView";
 import MatrixActions from "./components/MatrixActions";
@@ -33,6 +32,7 @@ import { getAggregateTypes } from "./shared/utils";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 
 interface MatrixProps {
+  studyId: StudyMetadata["id"];
   url: string;
   title?: string;
   customRowHeaders?: string[];
@@ -64,6 +64,7 @@ interface MatrixProps {
 }
 
 function Matrix({
+  studyId,
   url,
   title,
   customRowHeaders = [],
@@ -82,7 +83,6 @@ function Matrix({
   enableResize = isTimeSeries,
 }: MatrixProps) {
   const { t } = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(undefined);
 
   const aggregateTypes = useMemo(
@@ -107,7 +107,7 @@ function Matrix({
     rowCount,
     matrixTimeFrequency,
   } = useMatrixData({
-    studyId: study.id,
+    studyId,
     path: url,
     aggregateTypes,
     fetchFn: fetchMatrixData,
@@ -116,7 +116,7 @@ function Matrix({
 
   const { isSubmitting, handleCellEdit, handleMultipleCellsEdit, handleUpload, handleSaveUpdates } =
     useMatrixMutations({
-      studyId: study.id,
+      studyId,
       path: url,
       currentState,
       setMatrixData,
@@ -168,7 +168,7 @@ function Matrix({
                 <MatrixTitle>{title || t("global.timeSeries")}</MatrixTitle>
               </Tooltip>
               <MatrixActions
-                studyId={study.id}
+                studyId={studyId}
                 path={url}
                 disabled={currentState.data.length === 0}
                 dateTime={dateTime}
@@ -205,7 +205,7 @@ function Matrix({
         )}
         {uploadType === "file" && (
           <MatrixUpload
-            studyId={study.id}
+            studyId={studyId}
             path={url}
             type="file"
             open={true}
@@ -219,7 +219,7 @@ function Matrix({
         )}
         {uploadType === "database" && (
           <MatrixUpload
-            studyId={study.id}
+            studyId={studyId}
             path={url}
             type="database"
             open={true}
