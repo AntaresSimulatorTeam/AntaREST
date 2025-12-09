@@ -109,17 +109,15 @@ class INode(ABC, Generic[G, S, V]):
 
     def normalize(self) -> list[Self]:
         """
-        Scan tree to send matrix in matrix store and replace by its links
+        Scan tree to return matrix nodes to store in matrix store and replace by its links
         """
         return []
 
-    def denormalize(self) -> None:
+    def denormalize(self) -> list[Self]:
         """
-        Scan tree to fetch matrix by its links
-        Returns:
-
+        Scan tree to return matrix nodes to replace its links by its data from the matrix store.
         """
-        pass
+        return []
 
     def get_file_content(self) -> OriginalFile:
         suffix = self.config.path.suffix

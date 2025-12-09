@@ -84,7 +84,7 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def get_matrices(self, nodes: Sequence[MatrixNode]) -> Iterator[pd.DataFrame]:
+    def get_matrices(self, uris: Sequence[str]) -> Iterator[pd.DataFrame]:
         pass
 
     @abstractmethod
@@ -148,13 +148,9 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         pass
 
     @override
-    def get_matrices(self, nodes: Sequence[MatrixNode]) -> Iterator[pd.DataFrame]:
-        for node in nodes:
-            link_path = self.get_link_path(node)
-            if link_path.exists() or node.config.archive_path:
-                return
-
-            yield node.parse_as_dataframe()
+    def get_matrices(self, uris: Sequence[str]) -> Iterator[pd.DataFrame]:
+        sanitized_uris = [extract_matrix_id(uri) for uri in uris]
+        return self._matrix_service.yield_matrices(sanitized_uris)
 
     @override
     def denormalize(self, node: MatrixNode) -> None:

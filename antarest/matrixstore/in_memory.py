@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, List, Sequence
 
 import pandas as pd
 from typing_extensions import override
@@ -59,6 +59,11 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     @override
     def get_matrices(self) -> list[MatrixMetadataDTO]:
         raise NotImplementedError()
+
+    @override
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[pd.DataFrame]:
+        for matrix_id in matrix_ids:
+            yield self.get(matrix_id)
 
     @override
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:

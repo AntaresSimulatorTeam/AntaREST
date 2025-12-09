@@ -110,13 +110,13 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         return [self] if self.matrix_mapper.has_link(self) else []
 
     @override
-    def denormalize(self) -> None:
+    def denormalize(self) -> list[Self]:
         """
         Read the matrix ID from the matrix link, retrieve the original matrix
         and write the matrix data to the file specified by `self.config.path`
         before removing the link file.
         """
-        self.matrix_mapper.denormalize(self)
+        return [] if self.matrix_mapper.has_link(self) else [self]
 
     @override
     def load(

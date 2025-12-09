@@ -143,6 +143,9 @@ class MatrixRepository:
     def get_matrices(self) -> list[Matrix]:
         return list(self.session.scalars(select(Matrix)))
 
+    def get_batch(self, matrix_hashes: list[str]) -> list[Matrix]:
+        return list(self.session.scalars(select(Matrix).filter(Matrix.id.in_(matrix_hashes))))
+
     def exists(self, matrix_hash: str) -> bool:
         result = self.session.get(Matrix, matrix_hash)
         return result is not None

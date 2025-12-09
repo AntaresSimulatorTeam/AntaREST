@@ -40,5 +40,5 @@ class Output(FolderNode):
         return []  # no external store in this node
 
     @override
-    def denormalize(self) -> None:
-        pass  # no external store in this node
+    def denormalize(self) -> list[Self]:
+        return []  # no external store in this node

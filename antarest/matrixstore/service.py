@@ -114,6 +114,10 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[pd.DataFrame]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def exists(self, matrix_id: str) -> bool:
         raise NotImplementedError()
 
@@ -171,6 +175,11 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def get_matrices(self) -> list[MatrixMetadataDTO]:
         raise NotImplementedError()
+
+    @override
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[pd.DataFrame]:
+        for matrix_id in matrix_ids:
+            yield self.get(matrix_id)
 
     @override
     def exists(self, matrix_id: str) -> bool:
@@ -467,6 +476,16 @@ class MatrixService(ISimpleMatrixService):
 
         matrices = self.repo.get_matrices()
         return [_matrix_to_dto(m) for m in matrices]
+
+    @override
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[pd.DataFrame]:
+        matrices = self.repo.get_batch(list(matrix_ids))
+        if len(matrices) != len(matrix_ids):
+            for matrix in matrices:
+                if matrix.id not in matrix_ids:
+                    raise MatrixNotFound(matrix.id)
+        for matrix in matrices:
+            yield self.matrix_content_repository.get(matrix.id, matrix.version)
 
     @override
     def exists(self, matrix_id: str) -> bool:

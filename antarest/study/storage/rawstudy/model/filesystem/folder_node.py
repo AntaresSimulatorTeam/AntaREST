@@ -154,9 +154,12 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         return nodes
 
     @override
-    def denormalize(self) -> None:
+    def denormalize(self) -> list[Self]:
+        nodes: list[Self] = []
         for child in self.build().values():
-            child.denormalize()
+            node = child.denormalize()
+            nodes.extend(node)  # type: ignore
+        return nodes
 
     def _extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
         names, sub_url = url[0].split(","), url[1:]

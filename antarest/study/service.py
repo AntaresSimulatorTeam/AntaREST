@@ -2403,12 +2403,30 @@ class StudyService:
         if not matrix_nodes:
             return
 
-        matrix_mapper = matrix_nodes[0].matrix_mapper
         matrix_service = self.storage_service.variant_study_service.command_factory.command_context.matrix_service
-        matrix_ids = matrix_service.create_batch(matrix_mapper.get_matrices(matrix_nodes))
+        matrix_ids = matrix_service.create_batch((node.parse_as_dataframe() for node in matrix_nodes))
 
         for k, node in enumerate(matrix_nodes):
-            matrix_mapper.save_matrix(node, matrix_ids[k])
+            node.matrix_mapper.save_matrix(node, matrix_ids[k])
+
+    def denormalize_study(self, study: Study) -> None:
+        """
+        Method used to denormalize a study.
+        It will replace every `.link` file in the study with its content stored in the matrix-store.
+        """
+        matrix_nodes = cast(list[MatrixNode], self.storage_service.get_storage(study).get_raw(study).tree.denormalize())
+        if not matrix_nodes:
+            return
+
+        matrices_ids = []
+        for node in matrix_nodes:
+            link_content = node.matrix_mapper.get_link_content(node)
+            assert link_content is not None
+            matrices_ids.append(link_content)
+
+        matrix_mapper = matrix_nodes[0].matrix_mapper
+        for k, dataframe in enumerate(matrix_mapper.get_matrices(matrices_ids)):
+            matrix_nodes[k].write_dataframe(dataframe)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
