@@ -111,6 +111,7 @@ class InputSeriesMatrix(MatrixNode):
             self.config.path.write_text("")
         else:
             write_dataframe_in_tsv_format(df, self.config.path)
+        self.matrix_mapper.remove_link(self)
 
     def _infer_path(self) -> Path:
         link_path = self.matrix_mapper.get_link_path(self)

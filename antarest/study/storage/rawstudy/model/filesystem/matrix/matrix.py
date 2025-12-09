@@ -96,27 +96,17 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
 
     @override
     def normalize(self) -> list[Self]:
-        # noinspection SpellCheckingInspection
         """
-        Normalize the matrix by creating a link to the normalized version.
-        The original matrix is then deleted.
-
-        Skips the normalization process if the link path already exists
-        or the matrix is zipped.
-
-        Raises:
-            DenormalizationException: if the original matrix retrieval fails.
+        Return a list of itself if the node is not in the matrix-store. Else, return an empty list.
         """
-        return [self] if self.matrix_mapper.has_link(self) else []
+        return [] if self.matrix_mapper.has_link(self) else [self]
 
     @override
     def denormalize(self) -> list[Self]:
         """
-        Read the matrix ID from the matrix link, retrieve the original matrix
-        and write the matrix data to the file specified by `self.config.path`
-        before removing the link file.
+        Return a list of itself if the node is in the matrix-store. Else, return an empty list.
         """
-        return [] if self.matrix_mapper.has_link(self) else [self]
+        return [self] if self.matrix_mapper.has_link(self) else []
 
     @override
     def load(
