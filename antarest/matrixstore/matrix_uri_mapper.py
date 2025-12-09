@@ -59,12 +59,6 @@ class MatrixUriMapper(ABC):
     Defines the interface for URI schema handling related to matrices.
     The expected URI schema is "matrix://<id>", which maps to matrices
     stored in a matrix service.
-
-    Methods to implement:
-    - get_matrix: Retrieve a matrix from a URI.
-    - create_matrix: Create a matrix and return its URI.
-    - matrix_exists: Check if a matrix exists for a given URI.
-    - is_managed: Property indicating if the mapper is managed.
     """
 
     @abstractmethod
