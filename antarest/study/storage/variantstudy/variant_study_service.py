@@ -61,7 +61,6 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService, copy_output_folders
 from antarest.study.storage.utils import (
     assert_permission,
-    export_study_flat,
     is_managed,
     remove_from_cache,
     update_antares_info,
@@ -950,10 +949,9 @@ class VariantStudyService(AbstractStorageService):
 
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
         output_src_path = path_study / "output"
-        export_study_flat(
+        self.raw_study_service.export_study_flat_utils(
             snapshot_path,
             dst_path,
-            self.study_factory,
             outputs,
             output_list_filter,
             denormalize,

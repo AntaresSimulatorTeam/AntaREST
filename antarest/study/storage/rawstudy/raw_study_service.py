@@ -18,6 +18,7 @@ from pathlib import Path, PurePosixPath
 from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence, cast
 from uuid import uuid4
+from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -40,7 +41,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
     create_new_empty_study,
-    export_study_flat,
     fix_study_root,
     is_managed,
     remove_from_cache,
@@ -404,10 +404,9 @@ class RawStudyService(AbstractStorageService):
                 else:
                     raise TypeError(f"unarchive requires a RawStudy, got {type(metadata)}")
 
-            export_study_flat(
+            self.export_study_flat_utils(
                 Path(metadata.path),
                 dst_path,
-                self.study_factory,
                 outputs,
                 output_list_filter,
                 denormalize,
@@ -543,12 +542,14 @@ class RawStudyService(AbstractStorageService):
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
 
-    def denormalize_study(self, study: Study) -> None:
+    def denormalize_study(self, study: Study | FileStudy) -> None:
         """
         Method used to denormalize a study.
         It will replace every `.link` file in the study with its content stored in the matrix-store.
         """
-        matrix_nodes = cast(list[MatrixNode], self.get_raw(study).tree.denormalize())
+        if isinstance(study, Study):
+            study = self.get_raw(study)
+        matrix_nodes = cast(list[MatrixNode], study.tree.denormalize())
         if not matrix_nodes:
             return
 
@@ -561,3 +562,53 @@ class RawStudyService(AbstractStorageService):
         matrix_mapper = matrix_nodes[0].matrix_mapper
         for k, dataframe in enumerate(matrix_mapper.get_matrices(matrices_ids)):
             matrix_nodes[k].write_dataframe(dataframe)
+
+    def export_study_flat_utils(
+        self,
+        study_dir: Path,
+        dest: Path,
+        outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
+        denormalize: bool = True,
+        output_src_path: Optional[Path] = None,
+        is_study_managed: bool = True,
+    ) -> None:
+        start_time = time.time()
+
+        output_src_path = output_src_path or study_dir / "output"
+        output_dest_path = dest / "output"
+
+        def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
+            return ["output"] if str(directory) == str(study_dir) else []
+
+        shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
+
+        if outputs and output_src_path.exists():
+            if output_list_filter is None:
+                # Retrieve all directories or ZIP files without duplicates
+                output_list_filter = list(
+                    {f.with_suffix("").name for f in output_src_path.iterdir() if f.is_dir() or f.suffix == ".zip"}
+                )
+            # Copy each folder or uncompress each ZIP file to the destination dir.
+            shutil.rmtree(output_dest_path, ignore_errors=True)
+            output_dest_path.mkdir()
+            for output in output_list_filter:
+                zip_path = output_src_path / f"{output}.zip"
+                if zip_path.exists():
+                    with ZipFile(zip_path) as zf:
+                        zf.extractall(output_dest_path / output)
+                else:
+                    shutil.copytree(
+                        src=output_src_path / output,
+                        dst=output_dest_path / output,
+                    )
+
+        stop_time = time.time()
+        duration = "{:.3f}".format(stop_time - start_time)
+        with_outputs = "with outputs" if outputs else "without outputs"
+        logger.info(f"Study '{study_dir}' exported ({with_outputs}, flat mode) in {duration}s")
+        study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
+        if denormalize:
+            self.denormalize_study(study)
+            duration = "{:.3f}".format(time.time() - stop_time)
+            logger.info(f"Study '{study_dir}' denormalized in {duration}s")

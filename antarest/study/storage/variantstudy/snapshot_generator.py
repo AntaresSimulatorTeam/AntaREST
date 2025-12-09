@@ -31,7 +31,7 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat, is_managed, remove_from_cache
+from antarest.study.storage.utils import assert_permission_on_studies, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
@@ -160,10 +160,9 @@ class SnapshotGenerator:
     def _export_ref_study(self, snapshot_dir: Path, ref_study: Study) -> None:
         if isinstance(ref_study, VariantStudy):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-            export_study_flat(
+            self.raw_study_service.export_study_flat_utils(
                 ref_study.snapshot_dir,
                 snapshot_dir,
-                self.study_factory,
                 denormalize=False,  # de-normalization is done at the end
                 outputs=False,  # do NOT export outputs
                 is_study_managed=is_managed(ref_study),
