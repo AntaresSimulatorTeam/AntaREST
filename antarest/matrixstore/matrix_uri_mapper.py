@@ -72,10 +72,6 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def create_matrix(self, matrix: pd.DataFrame) -> str:
-        pass
-
-    @abstractmethod
     def matrix_exists(self, uri: str) -> bool:
         pass
 
@@ -134,10 +130,6 @@ class BaseMatrixUriMapper(MatrixUriMapper):
     @override
     def get_matrix(self, uri: str) -> pd.DataFrame:
         return self._matrix_service.get(extract_matrix_id(uri))
-
-    @override
-    def create_matrix(self, matrix: pd.DataFrame) -> str:
-        return build_matrix_uri(self._matrix_service.create(matrix))
 
     @override
     def matrix_exists(self, uri: str) -> bool:
