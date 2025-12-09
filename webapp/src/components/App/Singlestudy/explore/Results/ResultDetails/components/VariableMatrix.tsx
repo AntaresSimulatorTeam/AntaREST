@@ -62,7 +62,6 @@ interface VariableMatrixProps {
   itemType: OutputItemType;
   selectedItemId: string;
   selectedItem: (Area & { id: string }) | LinkElement | undefined;
-  selectedVariable: string;
   onMaterializeVariable: () => void;
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
@@ -97,7 +96,6 @@ function VariableMatrix({
   itemType,
   selectedItemId,
   selectedItem,
-  selectedVariable,
   onMaterializeVariable,
   isMaterializing,
   variableViewDataRes,
@@ -106,10 +104,11 @@ function VariableMatrix({
 }: VariableMatrixProps) {
   const { t } = useTranslation();
 
-  if (!variablesMetadata || !selectedVariable) {
-    return <Skeleton sx={{ height: 1, transform: "none" }} />;
-  }
-  if (!hasVariablesForItem(variablesMetadata, itemType, selectedItemId, selectedItem)) {
+  // TODO: !variablesMetadata check may be unnecessary
+  if (
+    !variablesMetadata ||
+    !hasVariablesForItem(variablesMetadata, itemType, selectedItemId, selectedItem)
+  ) {
     return <EmptyView title={t("study.results.noVariablesForArea")} icon={GridOffIcon} />;
   }
 

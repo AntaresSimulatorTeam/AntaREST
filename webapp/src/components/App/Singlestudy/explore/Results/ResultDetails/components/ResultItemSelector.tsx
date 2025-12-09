@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import ButtonBack from "../../../../../../common/ButtonBack";
 import PropertiesView from "../../../../../../common/PropertiesView";
 import ListElement from "../../../common/ListElement";
-import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
+import type { PartialStudyOutput } from "../hooks/useStudyOutput";
 import type { OutputItemType } from "../utils";
 
 interface ResultItemSelectorProps {

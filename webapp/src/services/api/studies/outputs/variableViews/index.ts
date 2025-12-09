@@ -13,7 +13,7 @@
  */
 
 import client from "@/services/api/client";
-import { buildVariableViewQueryParams } from "./adapters";
+import { adaptVariableViewParamsToDto } from "./adapters";
 import type {
   TimeIndexDTO,
   VariablesListDTO,
@@ -54,7 +54,7 @@ export async function getVariableViewData(
   outputId: string,
   params: VariableViewParams,
 ) {
-  const queryParams = buildVariableViewQueryParams(params);
+  const queryParams = adaptVariableViewParamsToDto(params);
   const { data } = await client.get<VariableViewMatrixDTO>(
     `/v1/studies/${studyId}/output/${outputId}/variables-views/data`,
     { params: queryParams },
@@ -71,7 +71,7 @@ export async function materializeVariableView(
   outputId: string,
   params: VariableViewParams,
 ) {
-  const queryParams = buildVariableViewQueryParams(params);
+  const queryParams = adaptVariableViewParamsToDto(params);
   const { data } = await client.post<string>(
     `/v1/studies/${studyId}/output/${outputId}/variables-views/materialize`,
     null,

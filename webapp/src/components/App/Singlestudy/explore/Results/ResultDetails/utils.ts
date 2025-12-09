@@ -215,3 +215,131 @@ export function getVariables(
 
   return [];
 }
+
+////////////////////////////////////////////////////////////////
+// Cluster utils
+////////////////////////////////////////////////////////////////
+
+export interface ClusterOption {
+  name: string;
+  variables: string[];
+}
+
+/**
+ * Extracts thermal cluster list for a given area
+ *
+ * @param variablesMetadata - The metadata containing all variables information
+ * @param areaId - The ID of the area
+ * @returns Array of thermal clusters with their names and variables
+ */
+export function getThermalClusters(
+  variablesMetadata: VariablesListDTO | null,
+  areaId: string,
+): ClusterOption[] {
+  if (!variablesMetadata || !areaId) {
+    return [];
+  }
+
+  const area = variablesMetadata.mcInd.areas.find((a) => a.name === areaId);
+  return area?.thermalClusters || [];
+}
+
+/**
+ * Extracts renewable cluster list for a given area
+ *
+ * @param variablesMetadata - The metadata containing all variables information
+ * @param areaId - The ID of the area
+ * @returns Array of renewable clusters with their names and variables
+ */
+export function getRenewableClusters(
+  variablesMetadata: VariablesListDTO | null,
+  areaId: string,
+): ClusterOption[] {
+  if (!variablesMetadata || !areaId) {
+    return [];
+  }
+
+  const area = variablesMetadata.mcInd.areas.find((a) => a.name === areaId);
+  return area?.renewableClusters || [];
+}
+
+/**
+ * Extracts short-term storage list for a given area
+ *
+ * @param variablesMetadata - The metadata containing all variables information
+ * @param areaId - The ID of the area
+ * @returns Array of short-term storages with their names and variables
+ */
+export function getShortTermStorages(
+  variablesMetadata: VariablesListDTO | null,
+  areaId: string,
+): ClusterOption[] {
+  if (!variablesMetadata || !areaId) {
+    return [];
+  }
+
+  const area = variablesMetadata.mcInd.areas.find((a) => a.name === areaId);
+  return area?.shortTermStorages || [];
+}
+
+/**
+ * Gets cluster options based on the data type
+ *
+ * @param variablesMetadata - The metadata containing all variables information
+ * @param areaId - The ID of the area
+ * @param dataType - The type of data (details, details-res, details-STstorage)
+ * @returns Array of cluster options based on data type
+ */
+export function getClusters(
+  variablesMetadata: VariablesListDTO | null,
+  areaId: string,
+  dataType: DataType,
+): ClusterOption[] {
+  switch (dataType) {
+    case "details":
+      return getThermalClusters(variablesMetadata, areaId);
+    case "details-res":
+      return getRenewableClusters(variablesMetadata, areaId);
+    case "details-STstorage":
+      return getShortTermStorages(variablesMetadata, areaId);
+    default:
+      return [];
+  }
+}
+
+/**
+ * Gets the first cluster ID for a given area and data type
+ *
+ * @param variablesMetadata - The metadata containing all variables information
+ * @param areaId - The ID of the area
+ * @param dataType - The type of data
+ * @returns The first cluster ID, or empty string if not found
+ */
+export function getFirstClusterId(
+  variablesMetadata: VariablesListDTO | null,
+  areaId: string,
+  dataType: DataType,
+): string {
+  const clusters = getClusters(variablesMetadata, areaId, dataType);
+  return clusters[0]?.name || "";
+}
+
+/**
+ * Gets variables for a specific cluster
+ *
+ * @param variablesMetadata - The metadata containing all variables information
+ * @param areaId - The ID of the area
+ * @param dataType - The type of data
+ * @param clusterId - The ID of the cluster
+ * @returns Array of variable names for the cluster
+ */
+export function getClusterVariables(
+  variablesMetadata: VariablesListDTO | null,
+  areaId: string,
+  dataType: DataType,
+  clusterId: string,
+): string[] {
+  const clusters = getClusters(variablesMetadata, areaId, dataType);
+  const cluster = clusters.find((c) => c.name === clusterId);
+  return cluster?.variables || [];
+}

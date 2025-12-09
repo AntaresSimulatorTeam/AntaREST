@@ -64,7 +64,7 @@ import {
 } from "@/services/api/studies/outputs/variableViews";
 import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
 import { WsChannel } from "@/services/webSocket/constants";
-import { subscribeWsChannels, unsubscribeWsChannels } from "@/services/webSocket/ws";
+import { unsubscribeWsChannels } from "@/services/webSocket/ws";
 import type { Area, LinkElement } from "@/types/types";
 import type { OutputItemType, Timestep } from "../utils";
 
@@ -76,6 +76,8 @@ interface UseVariablePerVariableProps {
   timestep: Timestep;
   selectedItemId: string;
   selectedItem: (Area & { id: string }) | LinkElement | undefined;
+  dataType: string;
+  selectedClusterId: string;
 }
 
 export function useVariablePerVariable({
@@ -86,6 +88,8 @@ export function useVariablePerVariable({
   timestep,
   selectedItemId,
   selectedItem,
+  dataType,
+  selectedClusterId,
 }: UseVariablePerVariableProps) {
   const { t } = useTranslation();
   const [selectedVariable, setSelectedVariable] = useState("");
@@ -112,33 +116,73 @@ export function useVariablePerVariable({
     { deps: [studyId, outputId, isEnabled] },
   );
 
+  // TODO: Refactor variables data retrieval logic
   const variableViewDataRes = usePromise(
     async () => {
       if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {
         return null;
       }
 
-      const params: VariableViewParams =
-        itemType === "areas"
-          ? {
-              type: "area",
-              variableName: selectedVariable,
-              frequency: timestep,
-              areaId: selectedItemId,
-            }
-          : {
-              type: "link",
-              variableName: selectedVariable,
-              frequency: timestep,
-              areaFromId: (selectedItem as LinkElement).area1,
-              areaToId: (selectedItem as LinkElement).area2,
-            };
+      let params: VariableViewParams;
+
+      if (itemType === "areas") {
+        // Check if we're dealing with cluster data
+        if (dataType === "details" && selectedClusterId) {
+          params = {
+            type: "thermal",
+            variableName: selectedVariable,
+            frequency: timestep,
+            areaId: selectedItemId,
+            clusterId: selectedClusterId,
+          };
+        } else if (dataType === "details-res" && selectedClusterId) {
+          params = {
+            type: "renewable",
+            variableName: selectedVariable,
+            frequency: timestep,
+            areaId: selectedItemId,
+            clusterId: selectedClusterId,
+          };
+        } else if (dataType === "details-STstorage" && selectedClusterId) {
+          params = {
+            type: "st_storage",
+            variableName: selectedVariable,
+            frequency: timestep,
+            areaId: selectedItemId,
+            clusterId: selectedClusterId,
+          };
+        } else {
+          params = {
+            type: "area",
+            variableName: selectedVariable,
+            frequency: timestep,
+            areaId: selectedItemId,
+          };
+        }
+      } else {
+        params = {
+          type: "link",
+          variableName: selectedVariable,
+          frequency: timestep,
+          areaFromId: (selectedItem as LinkElement).area1,
+          areaToId: (selectedItem as LinkElement).area2,
+        };
+      }
 
       const data = await getVariableViewData(studyId, outputId, params);
       return data;
     },
     {
-      deps: [studyId, outputId, selectedVariable, selectedItemId, itemType, timestep],
+      deps: [
+        studyId,
+        outputId,
+        selectedVariable,
+        selectedItemId,
+        itemType,
+        timestep,
+        dataType,
+        selectedClusterId,
+      ],
     },
   );
 
@@ -173,21 +217,51 @@ export function useVariablePerVariable({
     try {
       setIsMaterializing(true);
 
-      const params: VariableViewParams =
-        itemType === "areas"
-          ? {
-              type: "area",
-              variableName: selectedVariable,
-              frequency: timestep,
-              areaId: selectedItemId,
-            }
-          : {
-              type: "link",
-              variableName: selectedVariable,
-              frequency: timestep,
-              areaFromId: (selectedItem as LinkElement).area1,
-              areaToId: (selectedItem as LinkElement).area2,
-            };
+      let params: VariableViewParams;
+
+      if (itemType === "areas") {
+        // Check if we're dealing with cluster data
+        if (dataType === "details" && selectedClusterId) {
+          params = {
+            type: "thermal",
+            variableName: selectedVariable,
+            frequency: timestep,
+            areaId: selectedItemId,
+            clusterId: selectedClusterId,
+          };
+        } else if (dataType === "details-res" && selectedClusterId) {
+          params = {
+            type: "renewable",
+            variableName: selectedVariable,
+            frequency: timestep,
+            areaId: selectedItemId,
+            clusterId: selectedClusterId,
+          };
+        } else if (dataType === "details-STstorage" && selectedClusterId) {
+          params = {
+            type: "st_storage",
+            variableName: selectedVariable,
+            frequency: timestep,
+            areaId: selectedItemId,
+            clusterId: selectedClusterId,
+          };
+        } else {
+          params = {
+            type: "area",
+            variableName: selectedVariable,
+            frequency: timestep,
+            areaId: selectedItemId,
+          };
+        }
+      } else {
+        params = {
+          type: "link",
+          variableName: selectedVariable,
+          frequency: timestep,
+          areaFromId: (selectedItem as LinkElement).area1,
+          areaToId: (selectedItem as LinkElement).area2,
+        };
+      }
 
       const taskId = await materializeVariableView(studyId, outputId, params);
       setMaterializationTaskId(taskId);
@@ -199,8 +273,6 @@ export function useVariablePerVariable({
         itemType,
         timestep,
       };
-
-      subscribeWsChannels([WsChannel.Task + taskId]);
     } catch {
       // TODO use error snackbar
       enqueueSnackbar(t("study.results.materializationStartFailed"), { variant: "error" });
@@ -233,6 +305,7 @@ export function useVariablePerVariable({
       },
       [t],
     ),
+    // TODO add deps array + add in eslint config
   });
 
   return {

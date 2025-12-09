@@ -37,6 +37,7 @@ import type { VariablesListDTO } from "@/services/api/studies/outputs/variableVi
 import {
   getFirstVariableForItem,
   getVariables,
+  getClusterVariables,
   type DataType,
   type OutputItemType,
 } from "../utils";
@@ -49,6 +50,7 @@ interface VariableSelectorProps {
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   disabled?: boolean;
+  selectedClusterId?: string;
 }
 
 function VariableSelector({
@@ -59,6 +61,7 @@ function VariableSelector({
   selectedVariable,
   onVariableSelect,
   disabled,
+  selectedClusterId,
 }: VariableSelectorProps) {
   const { t } = useTranslation();
 
@@ -67,8 +70,15 @@ function VariableSelector({
       return [];
     }
 
+    // For cluster data types, get variables from the specific cluster
+    const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
+
+    if (isClusterDataType && selectedClusterId && itemType === "areas") {
+      return getClusterVariables(variablesMetadata, selectedItemId, dataType, selectedClusterId);
+    }
+
     return getVariables(variablesMetadata, itemType, selectedItemId, dataType);
-  }, [variablesMetadata, dataType, itemType, selectedItemId]);
+  }, [variablesMetadata, dataType, itemType, selectedItemId, selectedClusterId]);
 
   const isVariableValid = variableOptions.includes(selectedVariable);
 

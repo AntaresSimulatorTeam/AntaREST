@@ -106,19 +106,19 @@ export interface LinkVariableViewParams extends VariableViewBaseParams {
 }
 
 export interface ThermalClusterVariableViewParams extends VariableViewBaseParams {
-  type: "thermal_cluster";
+  type: "thermal";
   areaId: string;
   clusterId: string;
 }
 
 export interface RenewableClusterVariableViewParams extends VariableViewBaseParams {
-  type: "renewable_cluster";
+  type: "renewable";
   areaId: string;
   clusterId: string;
 }
 
 export interface ShortTermStorageVariableViewParams extends VariableViewBaseParams {
-  type: "short_term_storage";
+  type: "st_storage";
   areaId: string;
   clusterId: string;
 }

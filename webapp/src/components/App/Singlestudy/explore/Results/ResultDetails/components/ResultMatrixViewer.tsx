@@ -26,7 +26,6 @@ import type {
 import type { Area, LinkElement, MatrixIndex } from "@/types/types";
 import type { FilterableMatrixGridHandle } from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
 import ViewWrapper from "../../../../../../common/page/ViewWrapper";
-import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
 import {
   type DataType,
   MAX_YEAR,
@@ -37,6 +36,7 @@ import {
 import ResultFilters from "./ResultFilters";
 import ResultMatrix from "./ResultMatrix";
 import VariableMatrix from "./VariableMatrix";
+import type { PartialStudyOutput } from "../hooks/useStudyOutput";
 
 interface ResultMatrixViewerProps {
   matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
@@ -69,6 +69,8 @@ interface ResultMatrixViewerProps {
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
   variableViewColumns: EnhancedGridColumn[];
+  selectedClusterId: string;
+  onClusterSelect: (clusterId: string) => void;
 }
 
 function ResultMatrixViewer({
@@ -102,6 +104,8 @@ function ResultMatrixViewer({
   isMaterializing,
   variableViewDataRes,
   variableViewColumns,
+  selectedClusterId,
+  onClusterSelect,
 }: ResultMatrixViewerProps) {
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -131,6 +135,8 @@ function ResultMatrixViewer({
             selectedItemId={selectedItemId}
             selectedVariable={selectedVariable}
             onVariableSelect={onVariableSelect}
+            selectedClusterId={selectedClusterId}
+            onClusterSelect={onClusterSelect}
           />
         </Box>
         <Box
@@ -147,7 +153,6 @@ function ResultMatrixViewer({
               itemType={itemType}
               selectedItemId={selectedItemId}
               selectedItem={selectedItem}
-              selectedVariable={selectedVariable}
               onMaterializeVariable={onMaterializeVariable}
               isMaterializing={isMaterializing}
               variableViewDataRes={variableViewDataRes}

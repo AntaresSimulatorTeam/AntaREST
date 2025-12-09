@@ -14,7 +14,15 @@
 
 import type { VariableViewParams } from "./types";
 
-export function buildVariableViewQueryParams(params: VariableViewParams): Record<string, string> {
+/**
+ * Adapts VariableViewParams to a DTO format suitable for query parameters.
+ * Converts camelCase property names to snake_case and structures the data
+ * according to the variable type (area, link, thermal, renewable, st_storage).
+ *
+ * @param params - The variable view parameters to adapt
+ * @returns A record of query parameter key-value pairs in DTO format
+ */
+export function adaptVariableViewParamsToDto(params: VariableViewParams): Record<string, string> {
   const queryParams: Record<string, string> = {
     type: params.type,
     variable_name: params.variableName,
@@ -29,11 +37,17 @@ export function buildVariableViewQueryParams(params: VariableViewParams): Record
       queryParams.area_from_id = params.areaFromId;
       queryParams.area_to_id = params.areaToId;
       break;
-    case "thermal_cluster":
-    case "renewable_cluster":
-    case "short_term_storage":
+    case "thermal":
       queryParams.area_id = params.areaId;
-      queryParams.cluster_id = params.clusterId;
+      queryParams.thermal_id = params.clusterId;
+      break;
+    case "renewable":
+      queryParams.area_id = params.areaId;
+      queryParams.renewable_id = params.clusterId;
+      break;
+    case "st_storage":
+      queryParams.area_id = params.areaId;
+      queryParams.storage_id = params.clusterId;
       break;
   }
 

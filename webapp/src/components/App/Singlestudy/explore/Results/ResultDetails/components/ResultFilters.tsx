@@ -36,6 +36,7 @@ import {
 } from "../utils";
 import MonteCarloModeSelector from "./MonteCarloModeSelector";
 import VariableSelector from "./VariableSelector";
+import ClusterSelector from "./ClusterSelector";
 
 interface ColumnHeader {
   variable: string;
@@ -82,6 +83,8 @@ interface Props {
   selectedItemId: string;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
+  selectedClusterId: string;
+  onClusterSelect: (clusterId: string) => void;
 }
 
 function ResultFilters({
@@ -104,6 +107,8 @@ function ResultFilters({
   selectedItemId,
   selectedVariable,
   onVariableSelect,
+  selectedClusterId,
+  onClusterSelect,
 }: Props) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -254,12 +259,46 @@ function ResultFilters({
   ] as const;
 
   const isVariablePerVariable = mcMode === "variable-per-variable";
+  const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
+  const shouldShowClusterSelector =
+    isVariablePerVariable && isClusterDataType && itemType === "areas";
 
   // Data filters (requiring API calls, refetch new result)
   const RESULT_FILTERS = [
     {
       id: "mcMode",
       field: <MonteCarloModeSelector value={mcMode} onChange={setMcMode} />,
+    },
+    {
+      id: "display",
+      field: (
+        <SelectFE
+          label={t("study.results.display")}
+          value={dataType}
+          options={[
+            { value: "values", label: "General values" },
+            { value: "details", label: "Thermal plants" },
+            { value: "details-res", label: "Ren. clusters" },
+            { value: "id", label: "RecordYears" },
+            { value: "details-STstorage", label: "ST Storages" },
+          ]}
+          size="extra-small"
+          onChange={(event) => setDataType(event.target.value)}
+          margin="dense"
+        />
+      ),
+    },
+    {
+      id: "cluster",
+      field: shouldShowClusterSelector ? (
+        <ClusterSelector
+          variablesMetadata={variablesMetadata}
+          dataType={dataType}
+          selectedItemId={selectedItemId}
+          selectedClusterId={selectedClusterId}
+          onClusterSelect={onClusterSelect}
+        />
+      ) : null,
     },
     {
       id: "variable",
@@ -271,6 +310,7 @@ function ResultFilters({
           selectedItemId={selectedItemId}
           selectedVariable={selectedVariable}
           onVariableSelect={onVariableSelect}
+          selectedClusterId={selectedClusterId}
         />
       ) : null,
     },
@@ -294,25 +334,7 @@ function ResultFilters({
           />
         ) : null,
     },
-    {
-      id: "display",
-      field: (
-        <SelectFE
-          label={t("study.results.display")}
-          value={dataType}
-          options={[
-            { value: "values", label: "General values" },
-            { value: "details", label: "Thermal plants" },
-            { value: "details-res", label: "Ren. clusters" },
-            { value: "id", label: "RecordYears" },
-            { value: "details-STstorage", label: "ST Storages" },
-          ]}
-          size="extra-small"
-          onChange={(event) => setDataType(event?.target.value as DataType)}
-          margin="dense"
-        />
-      ),
-    },
+
     {
       id: "temporality",
       field: (
@@ -327,7 +349,7 @@ function ResultFilters({
             { value: "annual", label: "Annual" },
           ]}
           size="extra-small"
-          onChange={(event) => setTimestep(event?.target.value as Timestep)}
+          onChange={(event) => setTimestep(event.target.value)}
           margin="dense"
           sx={{ minWidth: 94 }}
         />

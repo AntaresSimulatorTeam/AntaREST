@@ -62,6 +62,7 @@ function ResultDetails() {
   const [year, setYear] = useState(-1);
   const [itemType, setItemType] = useState<OutputItemType>("areas");
   const [selectedItemId, setSelectedItemId] = useState("");
+  const [selectedClusterId, setSelectedClusterId] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
@@ -127,6 +128,8 @@ function ResultDetails() {
     timestep,
     selectedItemId,
     selectedItem,
+    dataType,
+    selectedClusterId,
   });
 
   // Auto-select first item if none selected
@@ -256,13 +259,10 @@ function ResultDetails() {
 
     const { columns } = variableViewDataRes.data;
 
-    return groupResultColumns(
-      generateCustomColumns({
-        titles: columns.map((col) => `${t("global.year")} ${col}`),
-      }),
-      isDarkMode,
-    );
-  }, [variableViewDataRes.data, isDarkMode, t]);
+    return generateCustomColumns({
+      titles: columns.map((col) => `${t("global.year")} ${col}`),
+    });
+  }, [variableViewDataRes.data, t]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -298,6 +298,10 @@ function ResultDetails() {
     },
     [searchValue],
   );
+
+  const handleClusterSelect = (clusterId: string) => {
+    setSelectedClusterId(clusterId);
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -350,6 +354,8 @@ function ResultDetails() {
           isMaterializing={isMaterializing}
           variableViewDataRes={variableViewDataRes}
           variableViewColumns={variableViewColumns}
+          selectedClusterId={selectedClusterId}
+          onClusterSelect={handleClusterSelect}
         />
       )}
     </SplitView>
