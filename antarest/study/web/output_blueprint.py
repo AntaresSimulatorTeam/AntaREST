@@ -37,6 +37,7 @@ from antarest.study.storage.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
+    OutputVariablesViewResponse,
 )
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -539,6 +540,10 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     @bp.get(
         "/studies/{uuid}/output/{output_id}/variables-views/data",
         summary="Fetches the variables view for a given output and a given configuration",
+        responses={
+            404: {"model": OutputVariablesViewResponse},
+            200: {"data": [[4], [5]], "columns": [0, 1]},
+        },
     )
     def get_output_variables_view(
         uuid: str,
