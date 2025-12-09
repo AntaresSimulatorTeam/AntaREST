@@ -25,6 +25,7 @@ MOCK_MATRIX = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a"
 
 def test_build_matrix_uri() -> None:
     assert "matrix://my-id" == build_matrix_uri("my-id")
+    assert "matrix://my-id" == build_matrix_uri("matrix://my-id")
 
 
 def test_resolve_matrix() -> None:
