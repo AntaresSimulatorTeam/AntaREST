@@ -29,7 +29,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
-from antarest.study.storage.utils import export_study_flat
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from tests.helpers import create_raw_study, with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
@@ -135,6 +135,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path, sta_mi
 @pytest.mark.parametrize("output_list", [None, [], ["20201014-1427eco"], ["20201014-1430adq-2"]])
 @pytest.mark.parametrize("denormalize", [True, False])
 def test_export_flat(
+    raw_study_service: RawStudyService,
     tmp_path: Path,
     sta_mini_zip_path: Path,
     outputs: bool,
@@ -150,10 +151,9 @@ def test_export_flat(
     with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    export_study_flat(
+    raw_study_service.export_study_flat_utils(
         path_studies / "STA-mini",
         export_path / "STA-mini-export",
-        Mock(),
         outputs,
         output_list,
         denormalize=denormalize,
