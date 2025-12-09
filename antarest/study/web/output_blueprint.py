@@ -576,7 +576,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         if isinstance(view, pd.DataFrame):
             content = view.to_dict(orient="split", index=False)
             return Response(content=to_json(content), media_type="application/json")
-        return view
+        return Response(status_code=404, content=to_json(view), media_type="application/json")
 
     @bp.post(
         "/studies/{uuid}/output/{output_id}/variables-views/materialize",

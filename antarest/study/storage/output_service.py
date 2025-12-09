@@ -28,7 +28,6 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
-from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
@@ -69,6 +68,7 @@ from antarest.study.storage.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
+    OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
 from antarest.study.storage.output_storage import IOutputStorage
@@ -776,11 +776,10 @@ class OutputService:
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
-    ) -> pd.DataFrame | Response:
+    ) -> pd.DataFrame | OutputVariablesViewResponse:
         """
         If the view is already registered in DB, updates its `last_read` value and returns it.
-        Else, returns a Response with a 404 status code.
-        The response body specifies if the view materialization is in progress or not.
+        Else, returns a pydantic model specifying if the view materialization is in progress or not.
         """
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
@@ -813,8 +812,7 @@ class OutputService:
             output_identifier, study_id, output_id, frequency
         )
         status = OutputVariablesViewStatus.IN_PROGRESS if task_id else OutputVariablesViewStatus.NOT_FOUND
-        content = {"status": status, "task_id": task_id}
-        return Response(status_code=404, content=to_json(content), media_type="application/json")
+        return OutputVariablesViewResponse(status=status, task_id=task_id)
 
     def materialize_output_variables_view(
         self,

@@ -145,3 +145,8 @@ class OutputVariablesViewsModel(Base):
 class OutputVariablesViewStatus(StrEnum):
     NOT_FOUND = "NOT_FOUND"
     IN_PROGRESS = "IN_PROGRESS"
+
+
+class OutputVariablesViewResponse(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
+    status: OutputVariablesViewStatus
+    task_id: str | None
