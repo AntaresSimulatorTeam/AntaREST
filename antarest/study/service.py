@@ -286,10 +286,22 @@ class StudyUpgraderTask:
     Task to perform a study upgrade.
     """
 
-    def __init__(self, study_id: str, target_version: StudyVersion, *, study_service: "StudyService"):
+    def __init__(
+        self,
+        study_id: str,
+        target_version: StudyVersion,
+        *,
+        repository: StudyMetadataRepository,
+        storage_service: StudyStorageService,
+        cache_service: ICache,
+        event_bus: IEventBus,
+    ):
         self._study_id = study_id
         self._target_version = target_version
-        self._study_service = study_service
+        self.repository = repository
+        self.storage_service = storage_service
+        self.cache_service = cache_service
+        self.event_bus = event_bus
 
     def _upgrade_study(self) -> None:
         """Run the task (lock the database)."""
@@ -297,20 +309,20 @@ class StudyUpgraderTask:
         target_version = self._target_version
         is_study_denormalized = False
         with db():
-            study_to_upgrade = self._study_service.repository.one(study_id)
+            study_to_upgrade = self.repository.one(study_id)
             try:
                 # sourcery skip: extract-method
                 study_path = Path(study_to_upgrade.path)
                 study_upgrader = StudyUpgrader(study_path, target_version)
                 if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
                     # We have to denormalize the study because the upgrade impacts study matrices
-                    self._study_service.storage_service.raw_study_service.denormalize_study(study_to_upgrade)
+                    self.storage_service.raw_study_service.denormalize_study(study_to_upgrade)
                     is_study_denormalized = True
                 study_upgrader.upgrade()
-                remove_from_cache(self._study_service.cache_service, study_to_upgrade.id)
+                remove_from_cache(self.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = f"{target_version:2d}"
-                self._study_service.repository.save(study_to_upgrade)
-                self._study_service.event_bus.push(
+                self.repository.save(study_to_upgrade)
+                self.event_bus.push(
                     Event(
                         type=EventType.STUDY_EDITED,
                         payload=study_to_upgrade.to_json_summary(),
@@ -319,7 +331,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    self._study_service.storage_service.raw_study_service.normalize_study(study_to_upgrade)
+                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -2195,7 +2207,14 @@ class StudyService:
         if len(study_tasks) > 0:
             raise TaskAlreadyRunning()
 
-        study_upgrader_task = StudyUpgraderTask(study_id, parsed_target_version, study_service=self)
+        study_upgrader_task = StudyUpgraderTask(
+            study_id,
+            parsed_target_version,
+            repository=self.repository,
+            storage_service=self.storage_service,
+            cache_service=self.cache_service,
+            event_bus=self.event_bus,
+        )
 
         return self.task_service.add_task(
             study_upgrader_task,
