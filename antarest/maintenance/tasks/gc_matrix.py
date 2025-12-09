@@ -154,7 +154,7 @@ def clean_matrices(
     )
 
 
-@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task")
+@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task", pydantic=True)
 def clean_matrices_task() -> GCTaskResult:
     """
     Celery task wrapper for clean_matrices.
