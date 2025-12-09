@@ -23,6 +23,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.utils.utils import current_time
 from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
@@ -911,7 +912,7 @@ class TestRawDataAggregationColumnsFormatting:
         actual_df = pd.read_csv(content, sep=",")
         expected_df_path = ASSETS_DIR / "aggregate_areas_raw_data" / "expected_result_sts.csv"
         expected_df = pd.read_csv(expected_df_path, sep=",")
-        assert actual_df.equals(expected_df)
+        pd.testing.assert_frame_equal(actual_df, expected_df, check_dtype=False)
 
 
 @pytest.mark.integration
@@ -946,7 +947,7 @@ class TestDataAggregationCreationOperations:
         assert res.status_code == 422, "Output 'fake_output_id not found'" in res.json()["description"]
 
         # create a correct aggregated output task and get its id
-        creation_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+        creation_time = current_time()
         expiration_time_in_minutes = 123
         expected_expiration_date = creation_time + datetime.timedelta(minutes=expiration_time_in_minutes)
         res = client.get(

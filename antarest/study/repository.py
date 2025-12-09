@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import datetime
 import enum
 from typing import List, Optional, Sequence, Tuple, cast
 
@@ -24,9 +23,10 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, StudyAdditionalData, Tag
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, Tag
 
 
 def escape_like(string: str, escape_char: str = "\\") -> str:
@@ -183,15 +183,12 @@ class StudyMetadataRepository:
         update_modification_date: bool = False,
     ) -> Study:
         if update_modification_date:
-            metadata.updated_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+            metadata.updated_at = current_time()
 
         session = self.session
         metadata.groups = [session.merge(g) for g in metadata.groups]
         if metadata.owner:
             metadata.owner = session.merge(metadata.owner)
-
-        if metadata.additional_data:
-            metadata.additional_data = session.merge(metadata.additional_data)
 
         session.add(metadata)
         session.commit()
@@ -233,9 +230,6 @@ class StudyMetadataRepository:
         if result is None:
             raise NoResultFound(f"Study with ID {study_id} not found")
         return result
-
-    def get_additional_data(self, study_id: str) -> Optional[StudyAdditionalData]:
-        return self.session.get(StudyAdditionalData, study_id)
 
     def get_all(
         self,
@@ -335,7 +329,6 @@ class StudyMetadataRepository:
         q = q.options(joinedload(entity.owner))
         q = q.options(joinedload(entity.groups))
         q = q.options(joinedload(entity.tags))
-        q = q.options(joinedload(entity.additional_data))
 
         if study_filter.managed is not None:
             if study_filter.managed:

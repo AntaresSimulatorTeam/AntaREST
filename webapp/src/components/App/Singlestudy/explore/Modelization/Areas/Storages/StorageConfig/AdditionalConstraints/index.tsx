@@ -27,6 +27,7 @@ import {
 } from "@/services/api/studies/areas/storages";
 import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
 import { sortByName } from "@/services/utils";
+import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { isSearchMatching } from "@/utils/stringUtils";
 import { Delete as DeleteIcon } from "@mui/icons-material";
@@ -37,10 +38,10 @@ import AddConstraintDialog from "./AddConstraintDialog";
 import ConstraintForm from "./ConstraintForm";
 
 interface Props {
-  studyId: string;
+  studyId: StudyMetadata["id"];
   areaId: string;
   storageId: string;
-  studyVersion: number;
+  studyVersion: StudyMetadata["version"];
 }
 
 function AdditionalConstraints({ studyId, areaId, storageId, studyVersion }: Props) {

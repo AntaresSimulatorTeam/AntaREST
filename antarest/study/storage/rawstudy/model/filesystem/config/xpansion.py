@@ -95,9 +95,9 @@ class XpansionSettingsFileData(AntaresBaseModel):
     log_level: int = Field(default=0, ge=0, le=3)
     separation_parameter: float = Field(default=0.5, gt=0, le=1)
     batch_size: int = Field(default=96, ge=0)
-    yearly_weights: str = Field("", alias="yearly-weights")
-    additional_constraints: str = Field("", alias="additional-constraints")
-    timelimit: int = int(1e12)
+    yearly_weights: str = Field(default="", alias="yearly-weights")
+    additional_constraints: str = Field(default="", alias="additional-constraints")
+    timelimit: int = Field(default=172800, ge=0)  # 48 hours in seconds
 
     @field_validator("max_iteration", mode="before")
     def validate_max_iteration(cls, data: Any) -> Any:

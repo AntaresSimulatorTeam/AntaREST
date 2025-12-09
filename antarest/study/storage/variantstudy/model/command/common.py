@@ -78,6 +78,7 @@ class CommandName(Enum):
     UPDATE_SCENARIO_BUILDER = "update_scenario_builder"
     GENERATE_THERMAL_CLUSTER_TIMESERIES = "generate_thermal_cluster_timeseries"
     CREATE_USER_RESOURCE = "create_user_resource"
+    REPLACE_USER_RESOURCE = "replace_user_resource"
     REMOVE_USER_RESOURCE = "remove_user_resource"
     REMOVE_XPANSION_CONFIGURATION = "remove_xpansion_configuration"
     REMOVE_XPANSION_RESOURCE = "remove_xpansion_resource"

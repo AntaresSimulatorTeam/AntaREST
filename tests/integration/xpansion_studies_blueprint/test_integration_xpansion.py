@@ -138,7 +138,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "batch_size": 96,
         "yearly-weights": "",
         "additional-constraints": "",
-        "timelimit": 1000000000000,
+        "timelimit": 172800,
         "sensitivity_config": {"epsilon": 0.0, "projection": [], "capex": False},
     }
 
@@ -157,7 +157,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "batch_size": 96,
         "yearly-weights": "",
         "additional-constraints": "",
-        "timelimit": 1000000000000,
+        "timelimit": 172800,
         "sensitivity_config": {"epsilon": 0.0, "projection": [], "capex": False},
     }
 

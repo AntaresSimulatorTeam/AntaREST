@@ -21,7 +21,6 @@ from unittest.mock import ANY
 import numpy as np
 import pandas as pd
 import pytest
-from httpx import Response
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -32,36 +31,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.
 )
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
-
-
-def _check_endpoint_response(
-    study_type: str, res: Response, client: TestClient, study_id: str, expected_msg: str, exception: str
-) -> None:
-    # The command will only fail when applied so on raw studies only.
-    # So we have to differentiate the test based on the study type.
-    if study_type == "raw":
-        assert res.status_code == 403
-        assert res.json()["exception"] == exception
-        assert expected_msg in res.json()["description"]
-    else:
-        res.raise_for_status()
-        task_id = client.put(f"/v1/studies/{study_id}/generate").json()
-        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
-        task = res.json()
-        assert task["status"] == TaskStatus.FAILED.value
-        assert not task["result"]["success"]
-        assert expected_msg in task["result"]["message"]
-        # Check the message users will see inside the front-end (GET /comments endpoint will fail)
-        res = client.get(f"/v1/studies/{study_id}/comments")
-        assert res.status_code == 417
-        response = res.json()
-        assert response["exception"] == "VariantGenerationError"
-        assert expected_msg in response["description"]
-        # We have to delete the command to make the variant "clean" again.
-        res = client.get(f"/v1/studies/{study_id}/commands")
-        cmd_id = res.json()[-1]["id"]
-        res = client.delete(f"/v1/studies/{study_id}/commands/{cmd_id}")
-        res.raise_for_status()
 
 
 class TestFetchRawData:
@@ -162,22 +131,11 @@ class TestFetchRawData:
         }
 
         # If you want to update an existing resource, you can use PUT method.
-        # But, if the resource doesn't exist, you should have a 404 Not Found error.
-        res = client.put(
-            raw_url, params={"path": "user/somewhere/something.txt"}, files={"file": io.BytesIO(b"Goodbye World!")}
-        )
-        assert res.status_code == 404, res.json()
-        assert res.json() == {
-            "description": "'somewhere' not a child of User",
-            "exception": "ChildNotFoundError",
-        }
-
-        # To create a resource, you can use PUT method and the `create_missing` flag.
         # The expected status code should be 204 No Content.
         file_to_create = "user/somewhere/something.txt"
         res = client.put(
             raw_url,
-            params={"path": file_to_create, "create_missing": True},
+            params={"path": file_to_create},
             files={"file": io.BytesIO(b"Goodbye Cruel World!")},
         )
         assert res.status_code == 204, res.json()
@@ -192,7 +150,7 @@ class TestFetchRawData:
             res = client.get(f"/v1/studies/{internal_study_id}/commands")
             commands = res.json()
             assert len(commands) == 1
-            assert commands[0]["action"] == "create_user_resource"
+            assert commands[0]["action"] == "replace_user_resource"
             assert commands[0]["args"] == {
                 "data": {
                     "path": "somewhere/something.txt",
@@ -201,11 +159,11 @@ class TestFetchRawData:
                 }
             }
 
-        # To update a resource, you can use PUT method, with or without the `create_missing` flag.
+        # To update a resource, you can use PUT method
         # The expected status code should be 204 No Content.
         res = client.put(
             raw_url,
-            params={"path": file_to_create, "create_missing": True},
+            params={"path": file_to_create},
             files={"file": io.BytesIO(b"This is the end!")},
         )
         assert res.status_code == 204, res.json()
@@ -385,7 +343,7 @@ class TestFetchRawData:
             # Creates a file / folder inside user folder.
             res = client.put(
                 f"/v1/studies/{internal_study_id}/raw",
-                params={"path": f, "create_missing": True},
+                params={"path": f},
                 files={"file": content},
             )
             assert res.status_code == 204, res.json()
@@ -435,7 +393,29 @@ class TestFetchRawData:
         # With a path that doesn't exist
         res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=user/fake_folder/fake_file.txt")
         expected_msg = "the given path doesn't exist"
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
+        if study_type == "raw":
+            assert res.status_code == 403
+            assert res.json()["exception"] == "ResourceDeletionNotAllowed"
+            assert expected_msg in res.json()["description"]
+        else:
+            res.raise_for_status()
+            task_id = client.put(f"/v1/studies/{internal_study_id}/generate").json()
+            res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+            task = res.json()
+            assert task["status"] == TaskStatus.FAILED.value
+            assert not task["result"]["success"]
+            assert expected_msg in task["result"]["message"]
+            # Check the message users will see inside the front-end (GET /comments endpoint will fail)
+            res = client.get(f"/v1/studies/{internal_study_id}/comments")
+            assert res.status_code == 417
+            response = res.json()
+            assert response["exception"] == "VariantGenerationError"
+            assert expected_msg in response["description"]
+            # We have to delete the command to make the variant "clean" again.
+            res = client.get(f"/v1/studies/{internal_study_id}/commands")
+            cmd_id = res.json()[-1]["id"]
+            res = client.delete(f"/v1/studies/{internal_study_id}/commands/{cmd_id}")
+            res.raise_for_status()
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_create_folder(
@@ -460,7 +440,7 @@ class TestFetchRawData:
         # =============================
         # NOMINAL CASES
         # =============================
-        additional_params = {"resource_type": "folder", "create_missing": True}
+        additional_params = {"resource_type": "folder"}
 
         res = client.put(raw_url, params={"path": "user/folder_1", **additional_params})
         assert res.status_code == 204
@@ -510,11 +490,52 @@ class TestFetchRawData:
         assert res.json()["exception"] == "ResourceCreationNotAllowed"
         assert expected_msg in res.json()["description"]
 
-        # try to create an already existing folder
-        existing_folder = "user/folder_1"
-        expected_msg = "the given resource already exists: folder_1"
-        res = client.put(raw_url, params={"path": existing_folder, **additional_params})
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceCreationNotAllowed")
+    def test_create_user_resource_complex_case(self, client: TestClient, user_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # create a Raw study
+        res = client.post("/v1/studies?name=MyStudy")
+        assert res.status_code == 201
+        raw_study_id = res.json()
+
+        # Create a variant from it
+        res = client.post(f"/v1/studies/{raw_study_id}/variants?name=Variant")
+        assert res.status_code == 200
+        variant_study_id = res.json()
+
+        # Create a user resource inside the variant
+        variant_content = b"OKC"
+        res = client.put(
+            f"/v1/studies/{variant_study_id}/raw",
+            params={"path": "user/test.txt"},
+            files={"file": io.BytesIO(variant_content)},
+        )
+        assert res.status_code == 204
+
+        # Ensures the variant generation succeeds.
+        task_id = client.put(f"/v1/studies/{variant_study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        task = res.json()
+        assert task["status"] == TaskStatus.COMPLETED.value
+
+        # Creates another user resource at the same path inside the parent study
+        parent_content = b"GSW"
+        res = client.put(
+            f"/v1/studies/{raw_study_id}/raw",
+            params={"path": "user/test.txt"},
+            files={"file": io.BytesIO(parent_content)},
+        )
+        assert res.status_code == 204
+
+        # Ensures the variant generation still succeeds.
+        task_id = client.put(f"/v1/studies/{variant_study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        task = res.json()
+        assert task["status"] == TaskStatus.COMPLETED.value
+
+        # Checks the file content. It should be `variant_content` and not `parent_content`
+        res = client.get(f"/v1/studies/{variant_study_id}/raw?path=user/test.txt")
+        assert res.content == variant_content
 
     def test_retrieve_from_archive(self, client: TestClient, user_access_token: str) -> None:
         # client headers

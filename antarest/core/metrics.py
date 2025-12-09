@@ -13,6 +13,7 @@
 import logging
 import os
 import time
+from http import HTTPStatus
 from typing import Any
 
 import prometheus_client
@@ -27,7 +28,7 @@ from prometheus_client import (
 )
 from sqlalchemy import Engine, Pool, PoolProxiedConnection
 from sqlalchemy.event import listens_for
-from sqlalchemy.orm import Session, SessionTransaction, sessionmaker
+from sqlalchemy.orm import ORMExecuteState, Session, SessionTransaction, sessionmaker
 from sqlalchemy.pool import ConnectionPoolEntry
 from starlette.requests import Request
 from typing_extensions import override
@@ -195,8 +196,13 @@ def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessio
             transaction_duration_histo.labels(WORKER_ID).observe(time.time() - session.info["start_time"])
             del session.info["start_time"]
 
+    @listens_for(target, "do_orm_execute")
+    def on_select(orm_execute_state: ORMExecuteState) -> None:
+        if orm_execute_state.is_select:
+            events_counter.labels(WORKER_ID, "select").inc()
 
-def _add_metrics_middleware(application: FastAPI) -> None:
+
+def _add_metrics_middleware(registry: CollectorRegistry, application: FastAPI) -> None:
     """
     Registers an HTTP middleware to report metrics about requests count and duration
     """
@@ -205,30 +211,51 @@ def _add_metrics_middleware(application: FastAPI) -> None:
         "http_requests",
         "HTTP requests count",
         ["worker_id", "method", "endpoint", "http_status"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
     )
     request_duration_histo = Histogram(
         "http_requests_duration_seconds",
         "HTTP requests duration",
         ["worker_id", "method", "endpoint", "http_status"],
-        registry=prometheus_client.REGISTRY,
+        registry=registry,
+    )
+    current_requests_gauge = Gauge(
+        "http_requests_current",
+        "Requests currently executing",
+        ["worker_id", "method"],
+        multiprocess_mode="liveall",
+        registry=registry,
     )
 
     @application.middleware("http")
     async def add_metrics(request: Request, call_next: Any) -> Any:
+        # Unfortunately we cannot get the route here because it has not yet been determined by fastapi,
+        # so we only have a global gauge for all endpoints.
+        current_requests_gauge.labels(WORKER_ID, request.method).inc()
+
         start_time = time.time()
-        response = await call_next(request)
-        process_time = time.time() - start_time
+        status_code = None
 
-        if "route" in request.scope:
-            request_path = request.scope["root_path"] + request.scope["route"].path
-        else:
-            request_path = request.url.path
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+        finally:
+            # starlette/fastapi handles exception first, so we should already get a proper response with a status here,
+            # except for "unhandled" exceptions, which are handled at the outermost level and translated to 500
+            status_code = status_code or HTTPStatus.INTERNAL_SERVER_ERROR.value
 
-        request_counter.labels(WORKER_ID, request.method, request_path, response.status_code).inc()
-        request_duration_histo.labels(WORKER_ID, request.method, request_path, response.status_code).observe(
-            process_time
-        )
+            if "route" in request.scope:
+                endpoint = request.scope["root_path"] + request.scope["route"].path
+            else:
+                # We avoid to create an arbitrary number of metrics, by using for example the request path
+                endpoint = "others"
+
+            process_time = time.time() - start_time
+
+            current_requests_gauge.labels(WORKER_ID, request.method).dec()
+
+            request_counter.labels(WORKER_ID, request.method, endpoint, status_code).inc()
+            request_duration_histo.labels(WORKER_ID, request.method, endpoint, status_code).observe(process_time)
         return response
 
 
@@ -254,7 +281,7 @@ def add_metrics(application: FastAPI, config: Config) -> None:
     metrics_app = make_asgi_app(registry=global_registry)
     application.mount("/metrics", metrics_app)
 
-    _add_metrics_middleware(application)
+    _add_metrics_middleware(prometheus_client.REGISTRY, application)
 
 
 def _task_labels(task_type: TaskType, status: TaskStatus | None = None) -> list[str]:

@@ -16,7 +16,6 @@ import logging
 import tempfile
 import zipfile
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
 
@@ -36,7 +35,7 @@ from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
@@ -265,7 +264,7 @@ class MatrixService(ISimpleMatrixService):
             return matrix_id
         else:
             with db():
-                created_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                created_at = current_time()
                 matrix = Matrix(
                     id=matrix_id, width=data.shape[1], height=data.shape[0], created_at=created_at, version=2
                 )
@@ -350,7 +349,7 @@ class MatrixService(ISimpleMatrixService):
         user = require_current_user()
 
         groups = [self.user_service.get_group(group_id) for group_id in dataset_info.groups]
-        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        now_utc = current_time()
         dataset = MatrixDataSet(
             name=dataset_info.name,
             public=dataset_info.public,
@@ -377,7 +376,7 @@ class MatrixService(ISimpleMatrixService):
             name=dataset_info.name,
             public=dataset_info.public,
             groups=groups,
-            updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            updated_at=current_time(),
         )
         return self.repo_dataset.save(updated_dataset)
 
@@ -568,7 +567,7 @@ class MatrixService(ISimpleMatrixService):
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
 
     def get_used_matrices(self) -> Iterable[MatrixReference]:
-        """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
+        """Return all matrices used in raw studies, variant studies, constants hashes, variables views and datasets"""
         for provider in self.usage_providers:
             yield from provider.get_matrix_usage()
 

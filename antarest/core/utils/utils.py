@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import base64
+import datetime
 import glob
 import http
 import logging
@@ -175,3 +176,7 @@ def suppress_exception(
     except Exception as e:
         logger_(e)
         return None
+
+
+def current_time() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)

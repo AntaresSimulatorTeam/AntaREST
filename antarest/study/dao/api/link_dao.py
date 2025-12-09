@@ -13,6 +13,8 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
+import pandas as pd
+
 from antarest.study.business.model.link_model import Link
 
 
@@ -27,6 +29,18 @@ class ReadOnlyLinkDao(ABC):
 
     @abstractmethod
     def link_exists(self, area1_id: str, area2_id: str) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
         raise NotImplementedError()
 
 

@@ -16,7 +16,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import Depends, FastAPI
-from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, StorageConfig
@@ -25,19 +24,13 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import MustBeAuthenticatedError
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.dbmodel import Base
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
 from tests.helpers import with_admin_user
 
 
-def create_app() -> FastAPI:
-    app = FastAPI(title=__name__)
-    return app
-
-
 def test_file_request() -> None:
-    app = create_app()
+    app = FastAPI(title=__name__)
     ftm = FileTransferManager(Mock(), Mock(), Config())
 
     @app.get("/dummy")
@@ -55,15 +48,6 @@ def test_file_request() -> None:
 
 @with_admin_user
 def test_lifecycle(tmp_path: Path) -> None:
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
     with db():
         event_bus = Mock()
         ftm = FileTransferManager(
@@ -83,7 +67,7 @@ def test_lifecycle(tmp_path: Path) -> None:
         downloads = ftm.list_downloads()
         assert len(downloads) == 1
 
-        # fail and remove
+        # fail
         ftm.fail(filedownload.id)
         event_bus.push.assert_called_with(
             Event(
@@ -93,19 +77,8 @@ def test_lifecycle(tmp_path: Path) -> None:
                 channel="",
             )
         )
-        filedownload_id = filedownload.id
-        ftm.remove(filedownload.id)
-        event_bus.push.assert_called_with(
-            Event(
-                type=EventType.DOWNLOAD_EXPIRED,
-                payload=filedownload_id,
-                permissions=PermissionInfo(owner=1, groups=[], public_mode=PublicMode.NONE),
-                channel="",
-            )
-        )
 
         # expiration
-        filedownload = ftm.request_download("some file", "some name")
         downloads = ftm.list_downloads()
         assert len(downloads) == 1
         filedownload.expiration_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)

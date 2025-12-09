@@ -90,7 +90,7 @@ function CandidateForm(props: PropType) {
           <Title>{t("global.general")}</Title>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Button
-              variant="outlined"
+              variant="contained"
               color="primary"
               sx={{
                 display: "flex",
@@ -127,6 +127,7 @@ function CandidateForm(props: PropType) {
               list={tabLinks}
               data={currentCandidate?.link || ""}
               handleChange={handleChange}
+              variant="outlined"
               sx={{
                 minWidth: "100%",
               }}
@@ -234,6 +235,7 @@ function CandidateForm(props: PropType) {
                     })}
                     data={currentCandidate?.["direct-link-profile"] || ""}
                     handleChange={handleChange}
+                    variant="outlined"
                     sx={{
                       minWidth: "100%",
                     }}
@@ -255,6 +257,7 @@ function CandidateForm(props: PropType) {
                     })}
                     data={currentCandidate?.["indirect-link-profile"] || ""}
                     handleChange={handleChange}
+                    variant="outlined"
                     sx={{
                       minWidth: "100%",
                     }}
@@ -278,6 +281,7 @@ function CandidateForm(props: PropType) {
                     })}
                     data={currentCandidate?.["direct-already-installed-link-profile"] || ""}
                     handleChange={handleChange}
+                    variant="outlined"
                     sx={{
                       minWidth: "100%",
                     }}
@@ -299,6 +303,7 @@ function CandidateForm(props: PropType) {
                     })}
                     data={currentCandidate?.["indirect-already-installed-link-profile"] || ""}
                     handleChange={handleChange}
+                    variant="outlined"
                     sx={{
                       minWidth: "100%",
                     }}
@@ -324,6 +329,7 @@ function CandidateForm(props: PropType) {
                   })}
                   data={currentCandidate?.["link-profile"] || ""}
                   handleChange={handleChange}
+                  variant="outlined"
                   sx={{
                     minWidth: "100%",
                   }}
@@ -345,6 +351,7 @@ function CandidateForm(props: PropType) {
                   })}
                   data={currentCandidate?.["already-installed-link-profile"] || ""}
                   handleChange={handleChange}
+                  variant="outlined"
                   sx={{
                     minWidth: "100%",
                   }}

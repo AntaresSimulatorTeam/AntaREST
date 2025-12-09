@@ -17,7 +17,6 @@ Fixtures in this module are used to set up and provide instances of different cl
 and services required during testing.
 """
 
-import datetime
 import typing as t
 import uuid
 from pathlib import Path
@@ -34,6 +33,7 @@ from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
@@ -110,7 +110,7 @@ class SynchTaskService(ITaskService):
             name="mock",
             owner=None,
             status=TaskStatus.COMPLETED,
-            creation_date_utc=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(" "),
+            creation_date_utc=current_time().isoformat(" "),
             completion_date_utc=None,
             result=self._task_result,
             logs=None,

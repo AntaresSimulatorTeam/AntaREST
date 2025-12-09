@@ -23,9 +23,6 @@ import uvicorn.config
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from ratelimit import RateLimitMiddleware  # type: ignore
-from ratelimit.backends.redis import RedisBackend  # type: ignore
-from ratelimit.backends.simple import MemoryBackend  # type: ignore
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -38,9 +35,7 @@ from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filesystem_blueprint import create_file_system_blueprint
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.metrics import add_metrics
-from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
-from antarest.core.tasks.model import cancel_orphan_tasks
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
@@ -99,72 +94,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def fastapi_app(
-    config_file: Path,
-    resource_path: Optional[Path] = None,
-    mount_front: bool = True,
-    auto_upgrade_db: bool = False,
-) -> Tuple[FastAPI, Services]:
-    res = resource_path or get_local_path() / "resources"
-    config = Config.from_yaml_file(res=res, file=config_file)
-    configure_logger(config)
-
-    logger.info("Initiating application")
-
-    @asynccontextmanager
-    async def set_default_executor(app: FastAPI) -> AsyncGenerator[None, None]:
-        import asyncio
-        from concurrent.futures import ThreadPoolExecutor
-
-        loop = asyncio.get_running_loop()
-        loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
-        yield
-
-    application = FastAPI(
-        title="AntaREST",
-        version=__version__,
-        docs_url=None,
-        root_path=config.root_path,
-        openapi_tags=tags_metadata,
-        lifespan=set_default_executor,
-        openapi_url=f"{config.api_prefix}/openapi.json",
-    )
-
-    api_root = APIRouter(prefix=config.api_prefix)
-
-    app_ctxt = AppBuildContext(application, api_root)
-
-    # Database
-    engine = init_db_engine(config_file, config, auto_upgrade_db)
-    application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
-    # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
-    # But we need to instantiate this middleware as it's needed for the study service.
-    # So we manually instantiate it here.
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
-
-    application.add_middleware(LoggingMiddleware)
-
-    # TODO move that elsewhere
-    @AuthJWT.load_config  # type: ignore
-    def get_config() -> JwtSettings:
-        return JwtSettings(
-            authjwt_secret_key=config.security.jwt_key,
-            authjwt_token_location=("headers", "cookies"),
-            authjwt_access_token_expires=Auth.ACCESS_TOKEN_DURATION,
-            authjwt_refresh_token_expires=Auth.REFRESH_TOKEN_DURATION,
-            authjwt_cookie_csrf_protect=False,
-        )
-
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    api_root.include_router(create_utils_routes(config))
-    api_root.include_router(create_file_system_blueprint(config))
-
+def add_exception_handlers(application: FastAPI) -> None:
     # noinspection PyUnusedLocal
     @application.exception_handler(HTTPException)
     def handle_http_exception(request: Request, exc: HTTPException) -> Any:
@@ -250,7 +180,9 @@ def fastapi_app(
         Returns:
             The JSON response containing error details.
         """
-        logger.error("Unexpected Exception", exc_info=exc)
+
+        # Note: we don't log here, because the exception is supposed to be already logged by the logging
+        # middleware, with more context
         return JSONResponse(
             content={
                 "description": f"Unexpected server error: {exc}",
@@ -259,18 +191,72 @@ def fastapi_app(
             status_code=500,
         )
 
-    # rate limiter
-    auth_manager = Auth(config)
-    application.add_middleware(
-        RateLimitMiddleware,
-        authenticate=auth_manager.create_auth_function(),
-        backend=(
-            MemoryBackend()
-            if config.redis is None
-            else RedisBackend(config.redis.host, config.redis.port, 1, config.redis.password)
-        ),
-        config=RATE_LIMIT_CONFIG,
+
+def fastapi_app(
+    config_file: Path,
+    resource_path: Optional[Path] = None,
+    mount_front: bool = True,
+    auto_upgrade_db: bool = False,
+) -> Tuple[FastAPI, Services]:
+    res = resource_path or get_local_path() / "resources"
+    config = Config.from_yaml_file(res=res, file=config_file)
+    configure_logger(config)
+
+    logger.info("Initiating application")
+
+    @asynccontextmanager
+    async def set_default_executor(app: FastAPI) -> AsyncGenerator[None, None]:
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+
+        loop = asyncio.get_running_loop()
+        loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
+        yield
+
+    application = FastAPI(
+        title="AntaREST",
+        version=__version__,
+        docs_url=None,
+        root_path=config.root_path,
+        openapi_tags=tags_metadata,
+        lifespan=set_default_executor,
+        openapi_url=f"{config.api_prefix}/openapi.json",
     )
+
+    api_root = APIRouter(prefix=config.api_prefix)
+
+    app_ctxt = AppBuildContext(application, api_root)
+
+    # Database
+    engine = init_db_engine(config_file, config, auto_upgrade_db)
+    application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
+    # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
+    # But we need to instantiate this middleware as it's needed for the study service.
+    # So we manually instantiate it here.
+    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+
+    # TODO move that elsewhere
+    @AuthJWT.load_config  # type: ignore
+    def get_config() -> JwtSettings:
+        return JwtSettings(
+            authjwt_secret_key=config.security.jwt_key,
+            authjwt_token_location=("headers", "cookies"),
+            authjwt_access_token_expires=Auth.ACCESS_TOKEN_DURATION,
+            authjwt_refresh_token_expires=Auth.REFRESH_TOKEN_DURATION,
+            authjwt_cookie_csrf_protect=False,
+        )
+
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    api_root.include_router(create_utils_routes(config))
+    api_root.include_router(create_file_system_blueprint(config))
+
+    add_exception_handlers(application)
 
     init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
     services = create_services(config, app_ctxt)
@@ -303,7 +289,10 @@ def fastapi_app(
         def home(request: Request) -> Any:
             return ""
 
-    cancel_orphan_tasks(engine=engine, session_args=SESSION_ARGS)
+    # It's important to add the logging middleware last, so that any log written or exception thrown
+    # by inner middlewares are correctly logged with the context of the request.
+    application.add_middleware(LoggingMiddleware)
+
     return application, services
 
 

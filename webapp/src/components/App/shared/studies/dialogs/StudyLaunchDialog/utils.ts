@@ -14,68 +14,78 @@
 
 import { getStudiesById } from "@/redux/selectors";
 import store from "@/redux/store";
+import { getLaunchersConfig } from "@/services/api/launcher/index";
 import { getSolverPresets } from "@/services/api/launcher/solverPresets";
-import { getLaunchersConfig, getStudyOutputs, type Launcher } from "@/services/api/study";
+import type { LauncherDTO } from "@/services/api/launcher/types";
+import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
+import {
+  getHighestVersion,
+  getSemanticVersionOptions,
+  MAX_SEMVER,
+  ZERO_SEMVER,
+} from "@/utils/versionUtils";
 import * as R from "ramda";
+import semver from "semver";
 
 export const XPRESS_OPTION = "xpress" as const;
 
-// TODO: utils to formalize versions format from API
-// Convert version format from '[major].[minor]' to number '[major][minor][patch]'
-const formalizeVersion = (version: string): number => {
-  return Number(version.replace(".", "").padEnd(3, "0"));
-};
-
-export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => {
+export async function getDefaultValues(studyIds: Array<StudyMetadata["id"]>) {
   const { launchers, defaultLauncher: defaultLauncherId } = await getLaunchersConfig();
 
   const launchersById = R.indexBy(R.prop("id"), launchers);
   const defaultLauncher = launchersById[defaultLauncherId];
 
-  // Launcher field
+  /* Launcher field */
 
   const launcherOptions = launchers.map(({ id, name }) => ({
     value: id,
     label: name,
   }));
 
-  // Version field
+  /* Version field */
 
   const studiesById = getStudiesById(store.getState());
   const studies = studyIds.map((id) => studiesById[id]).filter(Boolean);
-  // The version format of `study.version` is '[major][minor][patch]' as string
-  const maxStudyVersion = Math.max(...studies.map((study) => Number(study.version)));
-  const defaultVersion = (maxStudyVersion / 100).toString();
+  const highestStudyVersion = getHighestVersion(studies.map(({ version }) => version));
 
-  const getVersionOptionsForLauncher = (launcherId: Launcher["id"]) => {
-    const versions = launchersById[launcherId].versions;
-    return versions.filter((version) => formalizeVersion(version) >= maxStudyVersion);
+  const getVersionOptionsForLauncher = (launcherId: LauncherDTO["id"]) => {
+    const { versions } = launchersById[launcherId];
+
+    if (!highestStudyVersion) {
+      return [];
+    }
+
+    return getSemanticVersionOptions(
+      versions.filter((version) => semver.gte(version, highestStudyVersion)),
+    );
   };
 
-  // Configuration field
+  const defaultVersion = getVersionOptionsForLauncher(defaultLauncher.id)[0]?.value || "";
+
+  /* Configuration field */
 
   const solverPresets = await getSolverPresets();
   const solverPresetsById = R.indexBy(R.prop("id"), solverPresets);
 
-  const getConfigurationsOptionsForVersion = (version: string) => {
-    const formalizedVersion = formalizeVersion(version);
+  const getConfigurationOptionsForVersion = (version: string) => {
+    if (!version) {
+      return [];
+    }
 
     return solverPresets
       .filter(({ minAntaresVersion, maxAntaresVersion }) => {
-        const formalizedMinVersion = minAntaresVersion ? formalizeVersion(minAntaresVersion) : 0;
-        const formalizedMaxVersion = maxAntaresVersion
-          ? formalizeVersion(maxAntaresVersion)
-          : Infinity;
-
         return (
-          formalizedVersion >= formalizedMinVersion && formalizedVersion <= formalizedMaxVersion
+          semver.gte(version, minAntaresVersion || ZERO_SEMVER) &&
+          semver.lte(version, maxAntaresVersion || MAX_SEMVER)
         );
       })
       .map(({ id, name }) => ({ value: id, label: name }));
   };
 
-  // Output field
+  const defaultConfiguration = getConfigurationOptionsForVersion(defaultVersion)[0]?.value || "";
+
+  /* Output field */
 
   const isSingleStudy = studyIds.length === 1;
   const studyOutputs = isSingleStudy ? await getStudyOutputs(studyIds[0]) : [];
@@ -85,7 +95,7 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
     name: "",
     autoUnzip: true,
     version: defaultVersion,
-    configuration: getConfigurationsOptionsForVersion(defaultVersion)[0]?.value,
+    configuration: defaultConfiguration,
     otherOptions: "",
     xpansion: false,
     adequacyCriterion: false,
@@ -101,19 +111,19 @@ export const getDefaultValues = async (studyIds: Array<StudyMetadata["id"]>) => 
       solverPresetsById,
       launcherOptions,
       getVersionOptionsForLauncher,
-      getConfigurationsOptionsForVersion,
+      getConfigurationOptionsForVersion,
       outputOptions,
       isSingleStudy,
     },
   };
-};
+}
 
 export type FormValues = Awaited<ReturnType<typeof getDefaultValues>>;
 
-export const otherOptionsToArray = (otherOptions: string): string[] => {
+export function otherOptionsToArray(otherOptions: string): string[] {
   return otherOptions.trim() === "" ? [] : otherOptions.split(/\s+/);
-};
+}
 
-export const isXpressAvailableForVersion = (version: FormValues["version"]) => {
-  return formalizeVersion(version) >= 830;
-};
+export function isXpressAvailableForVersion(version: FormValues["version"]) {
+  return semver.gte(version, "8.3.0");
+}

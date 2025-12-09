@@ -30,6 +30,7 @@ from antarest.core.config import (
     SlurmConfig,
     TimeLimitConfig,
 )
+from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     LOG_DIR_NAME,
     WORKSPACE_LOCK_FILE_NAME,
@@ -272,6 +273,7 @@ def test_run_study(
     version: int,
     launcher_called: bool,
     job_status: JobStatus,
+    admin_user: JWTUser,
 ) -> None:
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
@@ -307,7 +309,7 @@ def test_run_study(
 
     # When the launcher is called
     study_uuid = str(uuid.uuid4())
-    slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), SolverVersion.parse(version))
+    slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), SolverVersion.parse(version), admin_user)
 
     # Check the results
     assert (

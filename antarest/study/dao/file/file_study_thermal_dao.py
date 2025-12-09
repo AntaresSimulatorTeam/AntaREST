@@ -24,7 +24,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     serialize_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -94,38 +93,23 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @override
     def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(["input", "thermal", "prepro", area_id, thermal_id, "data"])
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
+        return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "data"])
 
     @override
     def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
+        return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
 
     @override
     def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(["input", "thermal", "series", area_id, thermal_id, "series"])
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
+        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "series"])
 
     @override
     def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
+        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
 
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
+        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:

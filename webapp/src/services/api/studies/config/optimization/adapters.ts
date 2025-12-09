@@ -13,11 +13,12 @@
  */
 
 import { booleanToString, isBooleanString, stringToBoolean } from "@/utils/booleanUtils";
+import semver from "semver";
 import type { OptimizationDTO, OptimizationForm } from "./types";
 
 export function adaptOptimizationDtoToForm(
   dto: OptimizationDTO,
-  studyVersion: number,
+  studyVersion: string,
 ): OptimizationForm {
   const { transmissionCapacities, exportMps, ...rest } = dto;
 
@@ -28,7 +29,7 @@ export function adaptOptimizationDtoToForm(
         ? booleanToString(transmissionCapacities)
         : transmissionCapacities,
     exportMps:
-      typeof exportMps === "boolean" && studyVersion >= 830
+      typeof exportMps === "boolean" && semver.gte(studyVersion, "8.3.0")
         ? exportMps
           ? "both-optims"
           : "none"

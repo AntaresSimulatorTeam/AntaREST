@@ -17,6 +17,7 @@ import { validateString } from "@/utils/validation/string";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import semver from "semver";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
@@ -47,11 +48,10 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
-  const studyVersion = Number(study.version);
 
   const defaultValues = {
     name: "",
-    group: studyVersion >= 870 ? "default" : undefined,
+    group: semver.gte(study.version, "8.7.0") ? "default" : undefined,
     enabled: true,
     timeStep: TimeStep.HOURLY,
     operator: BindingConstraintOperator.LESS,
@@ -132,7 +132,7 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
                 }),
             }}
           />
-          {studyVersion >= 870 && (
+          {semver.gte(study.version, "8.7.0") && (
             <StringFE
               name="group"
               label={t("global.group")}

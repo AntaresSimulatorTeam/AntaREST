@@ -25,7 +25,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
@@ -190,7 +190,7 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
         version="720",
         created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
         updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-        additional_data=StudyAdditionalData(author="john.doe"),
+        author="john.doe",
     )
     md = study_service.create(metadata)
 
@@ -226,7 +226,7 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
             version=version,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
-            additional_data=StudyAdditionalData(author="john.doe"),
+            author="john.doe",
         )
         return study_service.create(metadata)
 
@@ -395,7 +395,6 @@ def test_copy_study(tmp_path: Path) -> None:
         id=source_name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_study),
-        additional_data=StudyAdditionalData(),
         version="700",
         groups=groups,
     )
@@ -494,32 +493,7 @@ def test_delete_study(tmp_path: Path) -> None:
     assert not study_path.exists()
 
 
-def test_initialize_additional_data(tmp_path: Path) -> None:
-    name = "my-study"
-    study_path = tmp_path / name
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
-
-    study_additional_data = StudyAdditionalData(horizon=10, author="foo")
-
-    cache = Mock()
-
-    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path))
-    study_factory = Mock()
-    study_factory.create_from_fs.return_value = FileStudy(Mock(), raw_study)
-
-    study_service = RawStudyService(
-        config=build_config(tmp_path, workspace_name="foo"),
-        cache=cache,
-        study_factory=study_factory,
-    )
-
-    assert not study_service.initialize_additional_data(raw_study)
-
-    study_service._read_additional_data_from_files = Mock(return_value=study_additional_data)
-    assert study_service.initialize_additional_data(raw_study)
-
-
+@pytest.mark.unit_test
 def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name

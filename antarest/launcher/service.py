@@ -13,7 +13,6 @@ import functools
 import logging
 import os
 import shutil
-from datetime import datetime, timezone
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional, cast
@@ -34,7 +33,7 @@ from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str
+from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
@@ -201,7 +200,7 @@ class LauncherService:
                 job_result.output_id = output_id
                 final_status = status in [JobStatus.SUCCESS, JobStatus.FAILED]
                 if final_status:
-                    job_result.completion_date = datetime.now(timezone.utc).replace(tzinfo=None)
+                    job_result.completion_date = current_time()
                 self.job_result_repository.save(job_result)
                 self.event_bus.push(
                     Event(

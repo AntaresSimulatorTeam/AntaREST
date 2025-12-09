@@ -16,23 +16,23 @@ import typing as t
 from abc import abstractmethod
 from typing import Any, Dict, List
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
-from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_2,
-    STUDY_VERSION_8_3,
     STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if t.TYPE_CHECKING:
@@ -146,6 +146,26 @@ class FileStudyAreaDao(AreaDao):
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
 
     @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "load", "series", f"load_{area_id}"])
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "misc-gen", f"miscgen-{area_id}"])
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "reserves", area_id])
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "solar", "series", f"solar_{area_id}"])
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        return self.get_impl().get_matrix(["input", "wind", "series", f"wind_{area_id}"])
+
+    @override
     def save_area(self, area_name: str) -> None:
         """
         Create a new area in the study with all necessary files and configurations.
@@ -168,195 +188,46 @@ class FileStudyAreaDao(AreaDao):
             filters_year=[],
         )
 
-        version = config.version
-
-        # Update hydro configuration
-        hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
-        hydro_config.setdefault("inter-daily-breakdown", {})[area_id] = 1
-        hydro_config.setdefault("intra-daily-modulation", {})[area_id] = 24
-        hydro_config.setdefault("inter-monthly-breakdown", {})[area_id] = 1
-
-        # Get matrix constants from the DAO
-        generator_matrix_constants = self.get_impl()._generator_matrix_constants
-        if generator_matrix_constants is None:
-            raise ValueError("Generator matrix constants not available in DAO")
-        null_matrix = generator_matrix_constants.get_null_matrix()
-
         # Build the new area data structure
-
-        new_area_data: JSON = self._build_area_data_structure(
-            area_id=area_id,
-            config=config,
-            version=version,
-            hydro_config=hydro_config,
-            null_matrix=null_matrix,
-        )
+        new_area_data: JSON = self._build_area_data_structure(area_id=area_id, config=config)
 
         # Save to filesystem
         study_data.tree.save(new_area_data)
 
-    def _build_area_data_structure(
-        self,
-        area_id: str,
-        config: Any,
-        version: Any,
-        hydro_config: Dict[str, Any],
-        null_matrix: str,
-    ) -> JSON:
-        """Helper method to build the complete area data structure."""
-        # Import here to avoid circular import
-        from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
-
-        study_data = self.get_file_study()
+    def _build_area_data_structure(self, area_id: str, config: FileStudyTreeConfig) -> JSON:
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
         if generator_matrix_constants is None:
             raise ValueError("Generator matrix constants not available in DAO")
-
-        # Use AreaProperties defaults for area initialization
-        default_props = AreaProperties()
-
-        # Generate thermal areas ini
-        thermal_areas_ini = study_data.tree.get(["input", "thermal", "areas"])
-        thermal_areas_ini.setdefault("unserverdenergycost", {})[area_id] = default_props.energy_cost_unsupplied
-        thermal_areas_ini.setdefault("spilledenergycost", {})[area_id] = default_props.energy_cost_spilled
-
-        # Ensure the "annual" key exists in the hydro correlation configuration
-        new_correlation = study_data.tree.get(["input", "hydro", "prepro", "correlation"])
-        new_correlation.setdefault("annual", {})
+        null_matrix = generator_matrix_constants.get_null_matrix()
+        prepro_data = {
+            area_id: {
+                "conversion": generator_matrix_constants.get_prepro_conversion(),
+                "data": generator_matrix_constants.get_prepro_data(),
+                "k": null_matrix,
+                "settings": {},
+                "translation": null_matrix,
+            }
+        }
 
         new_area_data: JSON = {
             "input": {
-                "areas": {
-                    "list": [area.name for area in config.areas.values()],
-                    area_id: {
-                        "optimization": {
-                            "nodal optimization": {
-                                "non-dispatchable-power": default_props.non_dispatch_power,
-                                "dispatchable-hydro-power": default_props.dispatch_hydro_power,
-                                "other-dispatchable-power": default_props.other_dispatch_power,
-                                "spread-unsupplied-energy-cost": default_props.spread_unsupplied_energy_cost,
-                                "spread-spilled-energy-cost": default_props.spread_spilled_energy_cost,
-                            },
-                            "filtering": {
-                                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
-                                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
-                            },
-                        },
-                        "ui": {
-                            "ui": {
-                                "x": 0,
-                                "y": 0,
-                                "color_r": 230,
-                                "color_g": 108,
-                                "color_b": 44,
-                                "layers": 0,
-                            },
-                            "layerX": {"0": 0},
-                            "layerY": {"0": 0},
-                            "layerColor": {"0": "230 , 108 , 44"},
-                        },
-                    },
-                },
-                "hydro": {
-                    "hydro": hydro_config,
-                    "allocation": {area_id: {"[allocation]": {area_id: 1}}},
-                    "common": {
-                        "capacity": {
-                            f"maxpower_{area_id}": generator_matrix_constants.get_hydro_max_power(version=version),
-                            f"reservoir_{area_id}": generator_matrix_constants.get_hydro_reservoir(version=version),
-                        }
-                    },
-                    "prepro": {
-                        area_id: {
-                            "energy": null_matrix,
-                            "prepro": {"prepro": {"intermonthly-correlation": 0.5}},
-                        },
-                        "correlation": new_correlation,
-                    },
-                    "series": {
-                        area_id: {
-                            "mod": null_matrix,
-                            "ror": null_matrix,
-                        },
-                    },
-                },
+                "areas": {"list": [area.name for area in config.areas.values()]},
                 "links": {area_id: {"properties": {}}},
-                "load": {
-                    "prepro": {
-                        area_id: {
-                            "conversion": generator_matrix_constants.get_prepro_conversion(),
-                            "data": generator_matrix_constants.get_prepro_data(),
-                            "k": null_matrix,
-                            "settings": {},
-                            "translation": null_matrix,
-                        }
-                    },
-                    "series": {
-                        f"load_{area_id}": generator_matrix_constants.get_null_scenario_matrix(),
-                    },
-                },
-                "misc-gen": {f"miscgen-{area_id}": generator_matrix_constants.get_default_miscgen()},
-                "reserves": {area_id: generator_matrix_constants.get_default_reserves()},
-                "solar": {
-                    "prepro": {
-                        area_id: {
-                            "conversion": generator_matrix_constants.get_prepro_conversion(),
-                            "data": generator_matrix_constants.get_prepro_data(),
-                            "k": null_matrix,
-                            "settings": {},
-                            "translation": null_matrix,
-                        }
-                    },
-                    "series": {
-                        f"solar_{area_id}": generator_matrix_constants.get_null_scenario_matrix(),
-                    },
-                },
-                "thermal": {
-                    "clusters": {area_id: {"list": {}}},
-                    "areas": thermal_areas_ini,
-                },
-                "wind": {
-                    "prepro": {
-                        area_id: {
-                            "conversion": generator_matrix_constants.get_prepro_conversion(),
-                            "data": generator_matrix_constants.get_prepro_data(),
-                            "k": null_matrix,
-                            "settings": {},
-                            "translation": null_matrix,
-                        }
-                    },
-                    "series": {f"wind_{area_id}": generator_matrix_constants.get_null_scenario_matrix()},
-                },
+                "load": {"prepro": prepro_data},
+                "solar": {"prepro": prepro_data},
+                "thermal": {"clusters": {area_id: {"list": {}}}},
+                "wind": {"prepro": prepro_data},
             }
         }
 
         # Version-specific additions
-        if version > STUDY_VERSION_6_5:
-            hydro_config.setdefault("initialize reservoir date", {})[area_id] = 0
-            hydro_config.setdefault("leeway low", {})[area_id] = 1
-            hydro_config.setdefault("leeway up", {})[area_id] = 1
-            hydro_config.setdefault("pumping efficiency", {})[area_id] = 1
-
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
-                generator_matrix_constants.get_hydro_credit_modulations()
-            )
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
-                generator_matrix_constants.get_hydro_inflow_pattern()
-            )
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
-
+        version = config.version
         has_renewables = version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         if has_renewables:
             new_area_data["input"]["renewables"] = {"clusters": {area_id: {"list": {}}}}
 
-        if version >= STUDY_VERSION_8_3:
-            new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {
-                "adequacy-patch": {"adequacy-patch-mode": "outside"}
-            }
-
         if version >= STUDY_VERSION_8_6:
             new_area_data["input"]["st-storage"] = {"clusters": {area_id: {"list": {}}}}
-            new_area_data["input"]["hydro"]["series"][area_id]["mingen"] = null_matrix
 
         return new_area_data
 
@@ -434,6 +305,14 @@ class FileStudyAreaDao(AreaDao):
             study_data.tree.delete(["input", "hydro", "hydro", "leeway low", area_id])
             study_data.tree.delete(["input", "hydro", "hydro", "leeway up", area_id])
             study_data.tree.delete(["input", "hydro", "hydro", "pumping efficiency", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "reservoir", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "reservoir capacity", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "follow load", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "use water", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "hard bounds", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "use heuristic", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "power to level", area_id])
+            study_data.tree.delete(["input", "hydro", "hydro", "use leeway", area_id])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"])
             study_data.tree.delete(["input", "hydro", "common", "capacity", f"waterValues_{area_id}"])
@@ -446,6 +325,9 @@ class FileStudyAreaDao(AreaDao):
         if study_version >= STUDY_VERSION_8_6:
             study_data.tree.delete(["input", "st-storage", "clusters", area_id])
             study_data.tree.delete(["input", "st-storage", "series", area_id])
+
+        if study_version > STUDY_VERSION_9_2:
+            study_data.tree.delete(["input", "hydro", "hydro", "overflow spilled cost difference", area_id])
 
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
@@ -551,6 +433,12 @@ class FileStudyAreaDao(AreaDao):
         current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
         layer_int = int(layer)
 
+        # Initialize sections if missing (happens when creating the area)
+        for section in ["layerX", "layerY", "layerColor"]:
+            current_area.setdefault(section, {})
+        if "ui" not in current_area:
+            current_area["ui"] = {"layers": 0}
+
         # Save all UI properties
         current_area["layerX"][layer] = area_ui.x
         if layer_int == 0:
@@ -626,3 +514,28 @@ class FileStudyAreaDao(AreaDao):
         # Save all modified areas
         for area in to_remove_areas + to_add_areas:
             study_data.tree.save(areas_ui[area], ["input", "areas", area, "ui"])
+
+    @override
+    def save_load(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "load", "series", f"load_{area_id}"])
+
+    @override
+    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "misc-gen", f"miscgen-{area_id}"])
+
+    @override
+    def save_reserves(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "reserves", area_id])
+
+    @override
+    def save_solar(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "solar", "series", f"solar_{area_id}"])
+
+    @override
+    def save_wind(self, area_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "wind", "series", f"wind_{area_id}"])

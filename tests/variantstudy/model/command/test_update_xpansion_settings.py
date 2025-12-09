@@ -39,7 +39,7 @@ class TestUpdateXpansionSettings:
                             "log_level": 0,
                             "separation_parameter": 0.5,
                             "batch_size": 96,
-                            "timelimit": 1000000000000,
+                            "timelimit": 172800,
                         },
                         "candidates": {},
                     }

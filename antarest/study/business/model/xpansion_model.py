@@ -110,8 +110,7 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     batch_size: int = Field(default=96, ge=0)
     yearly_weights: str = Field(default="", alias="yearly-weights")
     additional_constraints: str = Field(default="", alias="additional-constraints")
-    # (deprecated field)
-    timelimit: int = int(1e12)
+    timelimit: int = Field(default=172800, ge=0)  # 48 hours in seconds
     sensitivity_config: XpansionSensitivitySettings = XpansionSensitivitySettings()
 
 
@@ -137,7 +136,7 @@ class XpansionSettingsUpdate(AntaresBaseModel, extra="ignore", validate_assignme
     batch_size: int | None = Field(default=None, ge=0)
     yearly_weights: str | None = Field(None, alias="yearly-weights")
     additional_constraints: str | None = Field(None, alias="additional-constraints")
-    timelimit: int | None = None
+    timelimit: int | None = Field(default=None, ge=0)
     sensitivity_config: XpansionSensitivitySettingsUpdate | None = None
 
 

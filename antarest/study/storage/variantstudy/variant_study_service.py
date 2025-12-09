@@ -13,8 +13,7 @@
 import logging
 import re
 import shutil
-import typing as t
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from functools import reduce
 from pathlib import Path, PurePosixPath
 from typing import Callable, Dict, List, Optional, Sequence, cast
@@ -45,13 +44,12 @@ from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this, suppress_exception
+from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     RawStudy,
     Study,
-    StudyAdditionalData,
     StudyMetadataDTO,
     StudySimResultDTO,
 )
@@ -118,8 +116,7 @@ class VariantStudyService(AbstractStorageService):
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = self._get_current_user_name()
-        study.additional_data = study.additional_data or StudyAdditionalData()
-        study.additional_data.editor = user_name
+        study.editor = user_name
         self.repository.save(study)
 
     def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
@@ -223,7 +220,7 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_impersonator(),
-                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                updated_at=current_time(),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -260,7 +257,7 @@ class VariantStudyService(AbstractStorageService):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=get_user_id(),
-                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                updated_at=current_time(),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -631,16 +628,8 @@ class VariantStudyService(AbstractStorageService):
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
         user_name = self._get_current_user_name()
-        if study.additional_data is None:
-            additional_data = StudyAdditionalData(editor=user_name)
-        else:
-            additional_data = StudyAdditionalData(
-                horizon=study.additional_data.horizon,
-                author=study.additional_data.author,
-                editor=user_name,
-            )
 
-        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        now_utc = current_time()
         variant_study = VariantStudy(
             id=new_id,
             name=name,
@@ -650,11 +639,13 @@ class VariantStudyService(AbstractStorageService):
             created_at=now_utc,
             updated_at=now_utc,
             version=study.version,
+            author=study.author,
+            editor=user_name,
+            horizon=study.horizon,
             folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
             owner_id=require_current_user().impersonator,
             snapshot=None,
-            additional_data=additional_data,
         )
         self.repository.save(variant_study)
         self.event_bus.push(
@@ -741,14 +732,6 @@ class VariantStudyService(AbstractStorageService):
             raise NoParentStudyError(variant_study_id)
 
         return self.generate_task(variant_study, denormalize, from_scratch=from_scratch)
-
-    def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> t.List[t.List[ICommand]]:
-        commands: List[List[ICommand]] = [
-            self.command_factory.to_command(command_block.to_dto())
-            for index, command_block in enumerate(metadata.commands)
-            if from_index <= index
-        ]
-        return commands
 
     def get_study_task(self, study_id: str) -> TaskDTO:
         """
@@ -866,17 +849,6 @@ class VariantStudyService(AbstractStorageService):
             # raise a EXPECTATION_FAILED error (417)
             logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
             raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
-
-    @staticmethod
-    def _get_snapshot_last_executed_command_index(
-        study: VariantStudy,
-    ) -> Optional[int]:
-        if study.snapshot and study.snapshot.last_executed_command:
-            last_executed_command_index = [command.id for command in study.commands].index(
-                study.snapshot.last_executed_command
-            )
-            return last_executed_command_index if last_executed_command_index >= 0 else None
-        return None
 
     @override
     def get_raw(
@@ -1006,27 +978,6 @@ class VariantStudyService(AbstractStorageService):
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
-    @override
-    def initialize_additional_data(self, variant_study: Study) -> bool:
-        try:
-            if self.exists(variant_study):
-                study = self.study_factory.create_from_fs(
-                    self.get_study_path(variant_study),
-                    is_managed(variant_study),
-                    study_id=variant_study.id,
-                    output_path=Path(variant_study.path) / OUTPUT_RELATIVE_PATH,
-                )
-                variant_study.additional_data = self._read_additional_data_from_files(study)
-            else:
-                variant_study.additional_data = StudyAdditionalData()
-            return True
-        except Exception as e:
-            logger.error(
-                f"Error while reading additional data for study {variant_study.id}",
-                exc_info=e,
-            )
-            return False
-
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """
         Admin command that clear all variant snapshots older than `retention_hours` (in hours).
@@ -1080,7 +1031,7 @@ class SnapshotCleanerTask:
             )
             for variant in variant_list:
                 assert isinstance(variant, VariantStudy)
-                now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+                now_utc = current_time()
                 if variant.updated_at and variant.updated_at < now_utc - self._retention_time:
                     if variant.last_access and variant.last_access < now_utc - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)

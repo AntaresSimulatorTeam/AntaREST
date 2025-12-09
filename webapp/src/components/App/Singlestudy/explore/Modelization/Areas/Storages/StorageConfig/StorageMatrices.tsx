@@ -16,6 +16,7 @@ import TabsView from "@/components/common/TabsView";
 import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import Matrix from "../../../../../../../common/Matrix";
 import SplitView from "../../../../../../../common/SplitView";
 import type { Storage } from "../utils";
@@ -23,7 +24,7 @@ import type { Storage } from "../utils";
 interface Props {
   areaId: StudyMetadata["id"];
   storageId: Storage["id"];
-  studyVersion: number;
+  studyVersion: StudyMetadata["version"];
 }
 
 // !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
@@ -96,7 +97,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
         <Matrix
           url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
           // Since v9.3 this matrix supports the resize functionality
-          {...(studyVersion < 930 && {
+          {...(semver.lt(studyVersion, "9.3.0") && {
             isTimeSeries: false,
             customColumns: ["TS 1"],
             enableFilters: true,
@@ -178,7 +179,11 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
   ];
 
-  return <TabsView items={[...matricesAllVersions, ...(studyVersion >= 920 ? matrices920 : [])]} />;
+  return (
+    <TabsView
+      items={[...matricesAllVersions, ...(semver.gte(studyVersion, "9.2.0") ? matrices920 : [])]}
+    />
+  );
 }
 
 export default StorageMatrices;

@@ -14,7 +14,7 @@ import json
 import math
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Union
 from unittest.mock import Mock, call
@@ -40,6 +40,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
 from antarest.launcher.model import (
@@ -67,6 +68,9 @@ from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import with_admin_user
 
 
@@ -227,9 +231,11 @@ class TestLauncherService:
 
         assert launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
 
-    def test_service_get_jobs_from_database(self, db_session: DBSessionMiddleware) -> None:
+    def test_service_get_jobs_from_database(
+        self, db_session: DBSessionMiddleware, command_context: CommandContext
+    ) -> None:
         launcher_mock = Mock()
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = current_time()
         identity_instance = Identity(id=1)
         fake_execution_result = [
             JobResult(
@@ -287,6 +293,15 @@ class TestLauncherService:
         db_session.add_all(fake_execution_result)
         db_session.add_all(all_faked_execution_results)
         db_session.commit()
+
+        # Initialize the Mocks to have a command_context to avoid OutputService initialization to fail
+        storage_service = Mock()
+        variant_study_service = Mock(spec=VariantStudyService)
+        storage_service.variant_study_service = variant_study_service
+        study_service.storage_service = storage_service
+        variant_study_service.command_factory = Mock(spec=CommandFactory)
+        variant_study_service.command_factory.command_context = command_context
+        study_service.storage_service.variant_study_service = variant_study_service
 
         launcher_service = LauncherService(
             config=Config(),

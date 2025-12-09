@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+/* eslint-disable vitest/no-conditional-expect */
+
 import { Column, TIME_FREQUENCY_CONFIG, TimeFrequency } from "../constants";
 import {
   calculateMatrixAggregates,

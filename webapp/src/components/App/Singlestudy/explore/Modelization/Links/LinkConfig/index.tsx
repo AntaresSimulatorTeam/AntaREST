@@ -15,6 +15,7 @@
 import { Chip, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import semver from "semver";
 import type { LinkElement, StudyMetadata } from "../../../../../../../types/types";
 import LinkForm from "./LinkForm";
 import LinkMatrices from "./LinkMatrices";
@@ -26,8 +27,7 @@ interface Props {
 function LinkConfig({ link }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
-  const isOldStudy = studyVersion < 820;
+  const isOldStudy = semver.lt(study.version, "8.2.0");
 
   ////////////////////////////////////////////////////////////////
   // JSX

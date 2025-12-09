@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import datetime
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -41,7 +40,7 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import retry
+from antarest.core.utils.utils import current_time, retry
 from antarest.login.utils import get_current_user, require_current_user
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
@@ -461,13 +460,13 @@ class TaskJobService(ITaskService):
     ) -> None:
         # We need to catch all exceptions so that the calling thread is guaranteed
         # to not die
-        try:
-            status = TaskStatus.FAILED
-            for listener in self._listeners:
-                listener.on_task_start(task_id, task_type)
+        with task_context(task_id=task_id, user=jwt_user):
+            try:
+                status = TaskStatus.FAILED
+                for listener in self._listeners:
+                    listener.on_task_start(task_id, task_type)
 
-            # attention: this function is executed in a thread, not in the main process
-            with task_context(task_id=task_id, user=jwt_user):
+                # attention: this function is executed in a thread, not in the main process
                 with db():
                     # Important to keep this retry for now,
                     # in case commit is not visible (read from replica ...)
@@ -508,9 +507,7 @@ class TaskJobService(ITaskService):
 
                 with db():
                     # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                    completion_date = (
-                        datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) if status.is_final() else None
-                    )
+                    completion_date = current_time() if status.is_final() else None
                     stmt = (
                         update(TaskJob)
                         .where(TaskJob.id == task_id)
@@ -544,48 +541,48 @@ class TaskJobService(ITaskService):
                         channel=EventChannelDirectory.TASK + task_id,
                     )
                 )
-        except Exception as exc:
-            err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
-            logger.error(err_msg, exc_info=exc)
+            except Exception as exc:
+                err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
+                logger.error(err_msg, exc_info=exc)
 
-            try:
-                with db():
-                    stmt = (
-                        update(TaskJob)
-                        .where(TaskJob.id == task_id)
-                        .values(
-                            status=TaskStatus.FAILED.value,
-                            result_msg=str(exc),
-                            result_status=False,
-                            completion_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                try:
+                    with db():
+                        stmt = (
+                            update(TaskJob)
+                            .where(TaskJob.id == task_id)
+                            .values(
+                                status=TaskStatus.FAILED.value,
+                                result_msg=str(exc),
+                                result_status=False,
+                                completion_date=current_time(),
+                            )
+                        )
+                        db.session.execute(stmt)
+                        db.session.commit()
+
+                    message = err_msg if custom_event_messages is None else custom_event_messages.end
+                    self.event_bus.push(
+                        Event(
+                            type=EventType.TASK_FAILED,
+                            payload=TaskEventPayload(
+                                id=task_id, message=message, type=task_type, study_id=study_id
+                            ).model_dump(),
+                            permissions=PermissionInfo(public_mode=PublicMode.READ),
+                            channel=EventChannelDirectory.TASK + task_id,
                         )
                     )
-                    db.session.execute(stmt)
-                    db.session.commit()
-
-                message = err_msg if custom_event_messages is None else custom_event_messages.end
-                self.event_bus.push(
-                    Event(
-                        type=EventType.TASK_FAILED,
-                        payload=TaskEventPayload(
-                            id=task_id, message=message, type=task_type, study_id=study_id
-                        ).model_dump(),
-                        permissions=PermissionInfo(public_mode=PublicMode.READ),
-                        channel=EventChannelDirectory.TASK + task_id,
+                except Exception as inner_exc:
+                    logger.error(
+                        f"An exception occurred while handling execution error of task {task_id}: {inner_exc}",
+                        exc_info=inner_exc,
                     )
-                )
-            except Exception as inner_exc:
-                logger.error(
-                    f"An exception occurred while handling execution error of task {task_id}: {inner_exc}",
-                    exc_info=inner_exc,
-                )
-        finally:
-            for listener in self._listeners:
-                listener.on_task_end(task_id, task_type, status)
+            finally:
+                for listener in self._listeners:
+                    listener.on_task_end(task_id, task_type, status)
 
-            # Task has been updated in database, we can safely remove it from running tasks
-            if task_id in self.tasks:
-                del self.tasks[task_id]
+                # Task has been updated in database, we can safely remove it from running tasks
+                if task_id in self.tasks:
+                    del self.tasks[task_id]
 
     def get_task_progress(self, task_id: str) -> Optional[int]:
         task = self.repo.get_or_raise(task_id)

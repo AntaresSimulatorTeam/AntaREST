@@ -33,7 +33,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
     Study,
-    StudyAdditionalData,
     StudyMetadataDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
@@ -67,21 +66,21 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         study: Study,
         folder_path: Optional[str] = None,
     ) -> StudyMetadataDTO:
-        additional_data = study.additional_data or StudyAdditionalData()
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
 
         owner_info = (
             OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
-            else OwnerInfo(name=additional_data.author or "Unknown")
+            else OwnerInfo(name=study.author or "Unknown")
         )
 
+        # replaced mentions of additional data by study."author/editor/horizon"
         return StudyMetadataDTO(
             id=study.id,
             name=study.name,
             version=study.version,
-            author=additional_data.author,
-            editor=additional_data.editor,
+            author=study.author,
+            editor=study.editor,
             created=str(study.created_at),
             updated=str(study.updated_at),
             workspace=study_workspace,
@@ -91,11 +90,25 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             owner=owner_info,
             groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
             public_mode=study.public_mode or PublicMode.NONE,
-            horizon=additional_data.horizon,
+            horizon=study.horizon,
             folder=folder_path or study.folder,
             tags=[tag.label for tag in study.tags],
             directory_id=study.directory_id,
+            parent_id=study.parent_id,
         )
+
+    def _update_study_data_from_files(self, file_study: FileStudy, metadata: Study) -> None:
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
+        assert isinstance(author, str)
+        assert isinstance(editor, str)
+        assert isinstance(horizon, (str, int))
+        metadata.horizon = horizon
+        metadata.author = author
+        metadata.editor = editor
 
     @override
     def get(
@@ -335,18 +348,6 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         if not path_output_zip.exists():
             archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
         stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {metadata.path} exported in {x}s"))
-
-    def _read_additional_data_from_files(self, file_study: FileStudy) -> StudyAdditionalData:
-        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        study_antares = file_study.tree.get(url=["study", "antares"])
-        author = study_antares.get("author")
-        editor = study_antares.get("editor", author)
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, editor=editor)
-        return study_additional_data
 
     @override
     def archive_study_output(self, study: Study, output_id: str) -> bool:

@@ -17,7 +17,8 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from pandas.errors import EmptyDataError
+import polars as pl
+from polars.exceptions import ComputeError, NoDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -69,13 +70,14 @@ class InputSeriesMatrix(MatrixNode):
                 matrix = self.matrix_mapper.get_matrix(link_content)
             else:
                 try:
-                    matrix = pd.read_csv(
-                        file_path,
-                        sep="\t",
-                        dtype=float,
-                        header=None,
-                        float_precision="legacy",
-                    )
+                    polars_df = pl.read_csv(file_path, n_threads=1, separator="\t", has_header=False)
+                except ComputeError:
+                    # Happens for file `conversion.txt` as polars infer the data as int64, but the value is too big.
+                    # In such cases, we'll read the data as a string and convert it in float64 afterward
+                    polars_df = pl.read_csv(
+                        file_path, n_threads=1, separator="\t", has_header=False, infer_schema=False
+                    ).with_columns(pl.all().cast(pl.Float64))
+
                 except FileNotFoundError as e:
                     # Some matrices are optional and not required by the Simulator
                     # If so, we shouldn't raise but just return the `default_empty` value
@@ -86,12 +88,15 @@ class InputSeriesMatrix(MatrixNode):
                     study_id = self.config.study_id
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
+
+                matrix = polars_df.to_pandas()
+                matrix.columns = pd.RangeIndex(len(matrix.columns))  # type: ignore
+
             stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
-            final_matrix = matrix.dropna(how="any", axis=1)
-            if final_matrix.empty:
-                raise EmptyDataError
-            return final_matrix
-        except EmptyDataError:
+            if matrix.empty:
+                raise NoDataError
+            return matrix
+        except NoDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
             final_matrix = pd.DataFrame()
             if self.default_empty is not None:
@@ -103,7 +108,7 @@ class InputSeriesMatrix(MatrixNode):
         # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
         # This way, we can write the content quicker, and the file takes less place on the fs.
         if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):
-            self.config.path.touch(exist_ok=True)
+            self.config.path.write_text("")
         else:
             write_dataframe_in_tsv_format(df, self.config.path)
 

@@ -14,10 +14,9 @@
 
 import { createLinkId } from "@/services/api/studies/links/utils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import * as R from "ramda";
 import { F } from "ts-toolbelt";
 import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
-import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
+import { isGroupAdmin, isUserAdmin } from "../services/utils";
 import type {
   AllClustersAndLinks,
   Area,
@@ -41,6 +40,7 @@ import {
 import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
 import type { UIState } from "./ducks/ui";
 import type { UsersState } from "./ducks/users";
+import { getHighestVersion } from "@/utils/versionUtils";
 
 // TODO resultEqualityCheck
 
@@ -126,11 +126,9 @@ export const getStudyVersions = (state: AppState): StudiesState["versionList"] =
   return getStudiesState(state).versionList;
 };
 
-export const getLatestStudyVersion = (state: AppState): StudyMetadata["version"] | null => {
-  return R.last(getStudyVersions(state)) ?? null;
-};
-
-export const getStudyVersionsFormatted = createSelector(getStudyVersions, convertVersions);
+export const getLatestStudyVersion = createSelector(getStudyVersions, (versions) =>
+  getHighestVersion(versions),
+);
 
 export const getCurrentStudyId = (state: AppState): StudiesState["current"] => {
   return getStudiesState(state).current;
@@ -142,6 +140,39 @@ export const getCurrentStudy = createSelector(
   (studies, current) => studies[current],
 );
 
+/**
+ * Returns a mapping of study IDs to their children study IDs.
+ *
+ * @param state The application state.
+ * @returns Example: { "parentStudyId": ["childStudyId1", "childStudyId2"], ... }
+ */
+export const getVariantsIdsByParent = createSelector(getStudies, (studies) => {
+  return studies.reduce(
+    (acc, { id, parentId }) => {
+      if (!parentId) {
+        return acc;
+      }
+      acc[parentId] ??= [];
+      acc[parentId].push(id);
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
+});
+
+export const getDeepVariantsIds = createSelector(
+  getVariantsIdsByParent,
+  (state: AppState, parentId: string) => parentId,
+  (variantsIdsByParent, parentId) => getDeepVariantsIdsRec(variantsIdsByParent, parentId),
+);
+
+function getDeepVariantsIdsRec(
+  variantsIdsByParent: Record<string, string[]>,
+  parentId: string,
+): string[] {
+  const children = variantsIdsByParent[parentId] ?? [];
+  return children.flatMap((child) => [child, ...getDeepVariantsIdsRec(variantsIdsByParent, child)]);
+}
 ////////////////////////////////////////////////////////////////
 // Users
 ////////////////////////////////////////////////////////////////
