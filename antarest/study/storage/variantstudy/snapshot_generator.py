@@ -113,7 +113,7 @@ class SnapshotGenerator:
             results = self._apply_commands(file_study, variant_study, cmd_blocks, listener)
             if denormalize:
                 logger.info(f"Denormalizing variant study {variant_study_id}")
-                self.raw_study_service.denormalize_study(variant_study)
+                self.raw_study_service.denormalize_study(file_study)
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
