@@ -33,6 +33,8 @@ def extract_matrix_id(uri: str) -> str:
 
 
 def build_matrix_uri(id: str) -> str:
+    if id.startswith(MATRIX_PROTOCOL_PREFIX):
+        return id
     return f"{MATRIX_PROTOCOL_PREFIX}{id}"
 
 
