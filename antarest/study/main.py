@@ -19,6 +19,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
@@ -97,7 +98,8 @@ def build_study_service(
 
     if not generator_matrix_constants:
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service=matrix_service)
-        generator_matrix_constants.init_constant_matrices()
+        with db():  # Needed to create matrices in DB at the app start
+            generator_matrix_constants.init_constant_matrices()
     command_factory = CommandFactory(
         generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
