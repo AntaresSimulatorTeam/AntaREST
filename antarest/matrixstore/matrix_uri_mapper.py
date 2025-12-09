@@ -78,7 +78,7 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def get_matrices(self, uris: Sequence[str]) -> Iterator[pd.DataFrame]:
+    def get_matrices(self, uris: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
         pass
 
     @abstractmethod
@@ -134,9 +134,10 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         pass
 
     @override
-    def get_matrices(self, uris: Sequence[str]) -> Iterator[pd.DataFrame]:
-        sanitized_uris = [extract_matrix_id(uri) for uri in uris]
-        return self._matrix_service.yield_matrices(sanitized_uris)
+    def get_matrices(self, uris: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
+        sanitized_uris = list({extract_matrix_id(uri) for uri in uris})
+        for matrix_id, dataframe in self._matrix_service.yield_matrices(sanitized_uris):
+            yield build_matrix_uri(matrix_id), dataframe
 
     @override
     def save_matrices(self, nodes: Sequence[MatrixNode]) -> list[str]:

@@ -61,9 +61,9 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         raise NotImplementedError()
 
     @override
-    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[pd.DataFrame]:
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
         for matrix_id in matrix_ids:
-            yield self.get(matrix_id)
+            yield matrix_id, self.get(matrix_id)
 
     @override
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:

@@ -553,15 +553,16 @@ class RawStudyService(AbstractStorageService):
         if not matrix_nodes:
             return
 
-        matrices_ids = []
+        matrices_mapping: dict[str, list[MatrixNode]] = {}
         for node in matrix_nodes:
             link_content = node.matrix_mapper.get_link_content(node)
             assert link_content is not None
-            matrices_ids.append(link_content)
+            matrices_mapping.setdefault(link_content, []).append(node)
 
         matrix_mapper = matrix_nodes[0].matrix_mapper
-        for k, dataframe in enumerate(matrix_mapper.get_matrices(matrices_ids)):
-            matrix_nodes[k].write_dataframe(dataframe)
+        for matrix_id, dataframe in matrix_mapper.get_matrices(list(matrices_mapping.keys())):
+            for node in matrices_mapping[matrix_id]:
+                node.write_dataframe(dataframe)
 
     def export_study_flat_utils(
         self,
