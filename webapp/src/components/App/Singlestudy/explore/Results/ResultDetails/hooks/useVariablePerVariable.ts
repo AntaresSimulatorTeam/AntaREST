@@ -80,6 +80,64 @@ interface UseVariablePerVariableProps {
   selectedClusterId: string;
 }
 
+function buildVariableViewParams(
+  itemType: OutputItemType,
+  dataType: string,
+  selectedClusterId: string,
+  selectedItemId: string,
+  selectedItem: (Area & { id: string }) | LinkElement,
+  selectedVariable: string,
+  timestep: Timestep,
+): VariableViewParams {
+  if (itemType === "areas") {
+    // Cluster/storage params
+    if (dataType === "details" && selectedClusterId) {
+      return {
+        type: "thermal",
+        variableName: selectedVariable,
+        frequency: timestep,
+        areaId: selectedItemId,
+        clusterId: selectedClusterId,
+      };
+    }
+    if (dataType === "details-res" && selectedClusterId) {
+      return {
+        type: "renewable",
+        variableName: selectedVariable,
+        frequency: timestep,
+        areaId: selectedItemId,
+        clusterId: selectedClusterId,
+      };
+    }
+    if (dataType === "details-STstorage" && selectedClusterId) {
+      return {
+        type: "st_storage",
+        variableName: selectedVariable,
+        frequency: timestep,
+        areaId: selectedItemId,
+        clusterId: selectedClusterId,
+      };
+    }
+
+    // Area params
+    return {
+      type: "area",
+      variableName: selectedVariable,
+      frequency: timestep,
+      areaId: selectedItemId,
+    };
+  }
+
+  // Link params
+  return {
+    type: "link",
+    variableName: selectedVariable,
+    frequency: timestep,
+    areaFromId: (selectedItem as LinkElement).area1,
+    areaToId: (selectedItem as LinkElement).area2,
+  };
+}
+
 export function useVariablePerVariable({
   studyId,
   outputId,
@@ -116,58 +174,21 @@ export function useVariablePerVariable({
     { deps: [studyId, outputId, isEnabled] },
   );
 
-  // TODO: Refactor variables data retrieval logic
   const variableViewDataRes = usePromise(
     async () => {
       if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {
         return null;
       }
 
-      let params: VariableViewParams;
-
-      if (itemType === "areas") {
-        // Check if we're dealing with cluster data
-        if (dataType === "details" && selectedClusterId) {
-          params = {
-            type: "thermal",
-            variableName: selectedVariable,
-            frequency: timestep,
-            areaId: selectedItemId,
-            clusterId: selectedClusterId,
-          };
-        } else if (dataType === "details-res" && selectedClusterId) {
-          params = {
-            type: "renewable",
-            variableName: selectedVariable,
-            frequency: timestep,
-            areaId: selectedItemId,
-            clusterId: selectedClusterId,
-          };
-        } else if (dataType === "details-STstorage" && selectedClusterId) {
-          params = {
-            type: "st_storage",
-            variableName: selectedVariable,
-            frequency: timestep,
-            areaId: selectedItemId,
-            clusterId: selectedClusterId,
-          };
-        } else {
-          params = {
-            type: "area",
-            variableName: selectedVariable,
-            frequency: timestep,
-            areaId: selectedItemId,
-          };
-        }
-      } else {
-        params = {
-          type: "link",
-          variableName: selectedVariable,
-          frequency: timestep,
-          areaFromId: (selectedItem as LinkElement).area1,
-          areaToId: (selectedItem as LinkElement).area2,
-        };
-      }
+      const params = buildVariableViewParams(
+        itemType,
+        dataType,
+        selectedClusterId,
+        selectedItemId,
+        selectedItem,
+        selectedVariable,
+        timestep,
+      );
 
       const data = await getVariableViewData(studyId, outputId, params);
       return data;
@@ -217,51 +238,15 @@ export function useVariablePerVariable({
     try {
       setIsMaterializing(true);
 
-      let params: VariableViewParams;
-
-      if (itemType === "areas") {
-        // Check if we're dealing with cluster data
-        if (dataType === "details" && selectedClusterId) {
-          params = {
-            type: "thermal",
-            variableName: selectedVariable,
-            frequency: timestep,
-            areaId: selectedItemId,
-            clusterId: selectedClusterId,
-          };
-        } else if (dataType === "details-res" && selectedClusterId) {
-          params = {
-            type: "renewable",
-            variableName: selectedVariable,
-            frequency: timestep,
-            areaId: selectedItemId,
-            clusterId: selectedClusterId,
-          };
-        } else if (dataType === "details-STstorage" && selectedClusterId) {
-          params = {
-            type: "st_storage",
-            variableName: selectedVariable,
-            frequency: timestep,
-            areaId: selectedItemId,
-            clusterId: selectedClusterId,
-          };
-        } else {
-          params = {
-            type: "area",
-            variableName: selectedVariable,
-            frequency: timestep,
-            areaId: selectedItemId,
-          };
-        }
-      } else {
-        params = {
-          type: "link",
-          variableName: selectedVariable,
-          frequency: timestep,
-          areaFromId: (selectedItem as LinkElement).area1,
-          areaToId: (selectedItem as LinkElement).area2,
-        };
-      }
+      const params = buildVariableViewParams(
+        itemType,
+        dataType,
+        selectedClusterId,
+        selectedItemId,
+        selectedItem,
+        selectedVariable,
+        timestep,
+      );
 
       const taskId = await materializeVariableView(studyId, outputId, params);
       setMaterializationTaskId(taskId);

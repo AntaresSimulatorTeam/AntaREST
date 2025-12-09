@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { VariableViewParams } from "./types";
+import type { VariableViewParams, VariableViewParamsDTO } from "./types";
 
 /**
  * Adapts VariableViewParams to a DTO format suitable for query parameters.
@@ -22,34 +22,46 @@ import type { VariableViewParams } from "./types";
  * @param params - The variable view parameters to adapt
  * @returns A record of query parameter key-value pairs in DTO format
  */
-export function adaptVariableViewParamsToDto(params: VariableViewParams): Record<string, string> {
-  const queryParams: Record<string, string> = {
-    type: params.type,
+export function adaptVariableViewParamsToDto(params: VariableViewParams): VariableViewParamsDTO {
+  const baseParams = {
     variable_name: params.variableName,
     frequency: params.frequency,
   };
 
   switch (params.type) {
     case "area":
-      queryParams.area_id = params.areaId;
-      break;
+      return {
+        ...baseParams,
+        type: "area",
+        area_id: params.areaId,
+      };
     case "link":
-      queryParams.area_from_id = params.areaFromId;
-      queryParams.area_to_id = params.areaToId;
-      break;
+      return {
+        ...baseParams,
+        type: "link",
+        area_from_id: params.areaFromId,
+        area_to_id: params.areaToId,
+      };
     case "thermal":
-      queryParams.area_id = params.areaId;
-      queryParams.thermal_id = params.clusterId;
-      break;
+      return {
+        ...baseParams,
+        type: "thermal",
+        area_id: params.areaId,
+        thermal_id: params.clusterId,
+      };
     case "renewable":
-      queryParams.area_id = params.areaId;
-      queryParams.renewable_id = params.clusterId;
-      break;
+      return {
+        ...baseParams,
+        type: "renewable",
+        area_id: params.areaId,
+        renewable_id: params.clusterId,
+      };
     case "st_storage":
-      queryParams.area_id = params.areaId;
-      queryParams.storage_id = params.clusterId;
-      break;
+      return {
+        ...baseParams,
+        type: "st_storage",
+        area_id: params.areaId,
+        storage_id: params.clusterId,
+      };
   }
-
-  return queryParams;
 }

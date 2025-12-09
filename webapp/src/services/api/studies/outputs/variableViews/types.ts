@@ -85,47 +85,26 @@ export interface MaterializationTaskDTO {
   taskId: string;
 }
 
-////////////////////////////////////////////////////////////////
-// Request Params
-////////////////////////////////////////////////////////////////
-
 interface VariableViewBaseParams {
   variableName: string;
   frequency: VariableViewFrequency;
 }
 
-export interface AreaVariableViewParams extends VariableViewBaseParams {
-  type: "area";
-  areaId: string;
-}
-
-export interface LinkVariableViewParams extends VariableViewBaseParams {
-  type: "link";
-  areaFromId: string;
-  areaToId: string;
-}
-
-export interface ThermalClusterVariableViewParams extends VariableViewBaseParams {
-  type: "thermal";
-  areaId: string;
-  clusterId: string;
-}
-
-export interface RenewableClusterVariableViewParams extends VariableViewBaseParams {
-  type: "renewable";
-  areaId: string;
-  clusterId: string;
-}
-
-export interface ShortTermStorageVariableViewParams extends VariableViewBaseParams {
-  type: "st_storage";
-  areaId: string;
-  clusterId: string;
-}
-
 export type VariableViewParams =
-  | AreaVariableViewParams
-  | LinkVariableViewParams
-  | ThermalClusterVariableViewParams
-  | RenewableClusterVariableViewParams
-  | ShortTermStorageVariableViewParams;
+  | (VariableViewBaseParams & { type: "area"; areaId: string })
+  | (VariableViewBaseParams & { type: "link"; areaFromId: string; areaToId: string })
+  | (VariableViewBaseParams & { type: "thermal"; areaId: string; clusterId: string })
+  | (VariableViewBaseParams & { type: "renewable"; areaId: string; clusterId: string })
+  | (VariableViewBaseParams & { type: "st_storage"; areaId: string; clusterId: string });
+
+interface VariableViewBaseParamsDTO {
+  variable_name: string;
+  frequency: VariableViewFrequency;
+}
+
+export type VariableViewParamsDTO =
+  | (VariableViewBaseParamsDTO & { type: "area"; area_id: string })
+  | (VariableViewBaseParamsDTO & { type: "link"; area_from_id: string; area_to_id: string })
+  | (VariableViewBaseParamsDTO & { type: "thermal"; area_id: string; thermal_id: string })
+  | (VariableViewBaseParamsDTO & { type: "renewable"; area_id: string; renewable_id: string })
+  | (VariableViewBaseParamsDTO & { type: "st_storage"; area_id: string; storage_id: string });
