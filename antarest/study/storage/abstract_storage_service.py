@@ -301,7 +301,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
 
     @override
     def export_study(
-        self, metadata: Study, target: Path, outputs: bool = True, archive_format: Optional[ArchiveFormat] = None
+        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
     ) -> Path:
         """
         Export and compress the study inside a 7zip file.

@@ -150,7 +150,7 @@ class IStudyStorage(ABC):
 
     @abstractmethod
     def export_study(
-        self, metadata: Study, target: Path, outputs: bool = True, archive_format: Optional[ArchiveFormat] = None
+        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
     ) -> Path:
         """
         Export and compress a study to a ZIP file.
