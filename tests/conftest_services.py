@@ -32,7 +32,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
@@ -138,7 +138,8 @@ def command_context_fixture(matrix_service: MatrixService, blob_service: BlobSer
     """
     # sourcery skip: inline-immediately-returned-variable
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
-    generator_matrix_constants.init_constant_matrices()
+    with db():
+        generator_matrix_constants.init_constant_matrices()
     command_context = CommandContext(
         generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
