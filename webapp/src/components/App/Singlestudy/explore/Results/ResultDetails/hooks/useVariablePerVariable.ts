@@ -166,7 +166,7 @@ export function useVariablePerVariable({
   const { data: variablesMetadata } = usePromise(
     () => {
       if (outputId && isEnabled) {
-        return getVariablesList(studyId, outputId);
+        return getVariablesList({ studyId, outputId });
       }
 
       return Promise.resolve(null);
@@ -190,7 +190,7 @@ export function useVariablePerVariable({
         timestep,
       );
 
-      const data = await getVariableViewData(studyId, outputId, params);
+      const data = await getVariableViewData({ studyId, outputId, params });
       return data;
     },
     {
@@ -248,7 +248,7 @@ export function useVariablePerVariable({
         timestep,
       );
 
-      const taskId = await materializeVariableView(studyId, outputId, params);
+      const taskId = await materializeVariableView({ studyId, outputId, params });
       setMaterializationTaskId(taskId);
 
       // Store the current view params to check later if user is still on this view

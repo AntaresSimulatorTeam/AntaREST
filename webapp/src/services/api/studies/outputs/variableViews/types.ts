@@ -108,3 +108,26 @@ export type VariableViewParamsDTO =
   | (VariableViewBaseParamsDTO & { type: "thermal"; area_id: string; thermal_id: string })
   | (VariableViewBaseParamsDTO & { type: "renewable"; area_id: string; renewable_id: string })
   | (VariableViewBaseParamsDTO & { type: "st_storage"; area_id: string; storage_id: string });
+
+export interface GetVariablesListParams {
+  studyId: string;
+  outputId: string;
+}
+
+export interface GetTimeIndexParams {
+  studyId: string;
+  outputId: string;
+  frequency: VariableViewFrequency;
+}
+
+export interface GetVariableViewDataParams {
+  studyId: string;
+  outputId: string;
+  params: VariableViewParams;
+}
+
+export interface MaterializeVariableViewParams {
+  studyId: string;
+  outputId: string;
+  params: VariableViewParams;
+}

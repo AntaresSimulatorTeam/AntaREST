@@ -15,18 +15,20 @@
 import client from "@/services/api/client";
 import { adaptVariableViewParamsToDto } from "./adapters";
 import type {
+  GetTimeIndexParams,
+  GetVariableViewDataParams,
+  GetVariablesListParams,
+  MaterializeVariableViewParams,
   TimeIndexDTO,
   VariablesListDTO,
-  VariableViewFrequency,
   VariableViewMatrixDTO,
-  VariableViewParams,
 } from "./types";
 
 ////////////////////////////////////////////////////////////////
 // Variables List
 ////////////////////////////////////////////////////////////////
 
-export async function getVariablesList(studyId: string, outputId: string) {
+export async function getVariablesList({ studyId, outputId }: GetVariablesListParams) {
   const { data } = await client.get<VariablesListDTO>(
     `/v1/studies/${studyId}/output/${outputId}/variables-list`,
   );
@@ -37,11 +39,7 @@ export async function getVariablesList(studyId: string, outputId: string) {
 // Variable View Data
 ////////////////////////////////////////////////////////////////
 
-export async function getTimeIndex(
-  studyId: string,
-  outputId: string,
-  frequency: VariableViewFrequency,
-) {
+export async function getTimeIndex({ studyId, outputId, frequency }: GetTimeIndexParams) {
   const { data } = await client.get<TimeIndexDTO>(
     `/v1/studies/${studyId}/output/${outputId}/time-index`,
     { params: { frequency } },
@@ -49,11 +47,11 @@ export async function getTimeIndex(
   return data;
 }
 
-export async function getVariableViewData(
-  studyId: string,
-  outputId: string,
-  params: VariableViewParams,
-) {
+export async function getVariableViewData({
+  studyId,
+  outputId,
+  params,
+}: GetVariableViewDataParams) {
   const queryParams = adaptVariableViewParamsToDto(params);
   const { data } = await client.get<VariableViewMatrixDTO>(
     `/v1/studies/${studyId}/output/${outputId}/variables-views/data`,
@@ -66,11 +64,11 @@ export async function getVariableViewData(
 // Materialization
 ////////////////////////////////////////////////////////////////
 
-export async function materializeVariableView(
-  studyId: string,
-  outputId: string,
-  params: VariableViewParams,
-) {
+export async function materializeVariableView({
+  studyId,
+  outputId,
+  params,
+}: MaterializeVariableViewParams) {
   const queryParams = adaptVariableViewParamsToDto(params);
   const { data } = await client.post<string>(
     `/v1/studies/${studyId}/output/${outputId}/variables-views/materialize`,
