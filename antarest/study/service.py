@@ -300,13 +300,11 @@ class StudyUpgraderTask:
             study_to_upgrade = self._study_service.repository.one(study_id)
             try:
                 # sourcery skip: extract-method
-                storage_service = self._study_service.storage_service
                 study_path = Path(study_to_upgrade.path)
                 study_upgrader = StudyUpgrader(study_path, target_version)
                 if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
                     # We have to denormalize the study because the upgrade impacts study matrices
-                    file_study = storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
-                    file_study.tree.denormalize()
+                    self._study_service.storage_service.raw_study_service.denormalize_study(study_to_upgrade)
                     is_study_denormalized = True
                 study_upgrader.upgrade()
                 remove_from_cache(self._study_service.cache_service, study_to_upgrade.id)
@@ -321,7 +319,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    self._study_service.normalize_study(study_to_upgrade)
+                    self._study_service.storage_service.raw_study_service.normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -1178,7 +1176,7 @@ class StudyService:
             study.groups = groups
 
             self._save_study(study)
-            self.normalize_study(study)
+            self.storage_service.raw_study_service.normalize_study(study)
 
             # Copying all jobs associated with the study
             jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
@@ -1401,7 +1399,7 @@ class StudyService:
         study.updated_at = current_time()
 
         self._save_study(study)
-        self.normalize_study(study)
+        self.storage_service.raw_study_service.normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -2392,41 +2390,7 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
-        self.normalize_study(study)
-
-    def normalize_study(self, study: Study) -> None:
-        """
-        Method used to normalize a study.
-        It will put every matrix in the study in the matrix-store.
-        """
-        matrix_nodes = cast(list[MatrixNode], self.storage_service.get_storage(study).get_raw(study).tree.normalize())
-        if not matrix_nodes:
-            return
-
-        matrix_service = self.storage_service.variant_study_service.command_factory.command_context.matrix_service
-        matrix_ids = matrix_service.create_batch((node.parse_as_dataframe() for node in matrix_nodes))
-
-        for k, node in enumerate(matrix_nodes):
-            node.matrix_mapper.save_matrix(node, matrix_ids[k])
-
-    def denormalize_study(self, study: Study) -> None:
-        """
-        Method used to denormalize a study.
-        It will replace every `.link` file in the study with its content stored in the matrix-store.
-        """
-        matrix_nodes = cast(list[MatrixNode], self.storage_service.get_storage(study).get_raw(study).tree.denormalize())
-        if not matrix_nodes:
-            return
-
-        matrices_ids = []
-        for node in matrix_nodes:
-            link_content = node.matrix_mapper.get_link_content(node)
-            assert link_content is not None
-            matrices_ids.append(link_content)
-
-        matrix_mapper = matrix_nodes[0].matrix_mapper
-        for k, dataframe in enumerate(matrix_mapper.get_matrices(matrices_ids)):
-            matrix_nodes[k].write_dataframe(dataframe)
+        self.storage_service.raw_study_service.normalize_study(study)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """

@@ -16,7 +16,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from threading import Thread
-from typing import BinaryIO, List, Optional, Sequence
+from typing import BinaryIO, List, Optional, Sequence, cast
 from uuid import uuid4
 
 from antares.study.version import StudyVersion
@@ -36,6 +36,7 @@ from antarest.study.storage.abstract_storage_service import AbstractStorageServi
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
     create_new_empty_study,
@@ -526,3 +527,37 @@ class RawStudyService(AbstractStorageService):
                 hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
                 if hydro_pmax_value == "hourly":
                     raise NotImplementedError("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
+
+    def normalize_study(self, study: Study) -> None:
+        """
+        Method used to normalize a study.
+        It will put every matrix in the study in the matrix-store.
+        """
+        matrix_nodes = cast(list[MatrixNode], self.get_raw(study).tree.normalize())
+        if not matrix_nodes:
+            return
+
+        matrix_mapper = matrix_nodes[0].matrix_mapper
+        matrix_ids = matrix_mapper.save_matrices(matrix_nodes)
+
+        for k, node in enumerate(matrix_nodes):
+            node.matrix_mapper.save_matrix(node, matrix_ids[k])
+
+    def denormalize_study(self, study: Study) -> None:
+        """
+        Method used to denormalize a study.
+        It will replace every `.link` file in the study with its content stored in the matrix-store.
+        """
+        matrix_nodes = cast(list[MatrixNode], self.get_raw(study).tree.denormalize())
+        if not matrix_nodes:
+            return
+
+        matrices_ids = []
+        for node in matrix_nodes:
+            link_content = node.matrix_mapper.get_link_content(node)
+            assert link_content is not None
+            matrices_ids.append(link_content)
+
+        matrix_mapper = matrix_nodes[0].matrix_mapper
+        for k, dataframe in enumerate(matrix_mapper.get_matrices(matrices_ids)):
+            matrix_nodes[k].write_dataframe(dataframe)

@@ -84,6 +84,10 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
+    def save_matrices(self, nodes: Sequence[MatrixNode]) -> list[str]:
+        pass
+
+    @abstractmethod
     def get_matrices(self, uris: Sequence[str]) -> Iterator[pd.DataFrame]:
         pass
 
@@ -151,6 +155,10 @@ class BaseMatrixUriMapper(MatrixUriMapper):
     def get_matrices(self, uris: Sequence[str]) -> Iterator[pd.DataFrame]:
         sanitized_uris = [extract_matrix_id(uri) for uri in uris]
         return self._matrix_service.yield_matrices(sanitized_uris)
+
+    @override
+    def save_matrices(self, nodes: Sequence[MatrixNode]) -> list[str]:
+        return self._matrix_service.create_batch((node.parse_as_dataframe() for node in nodes))
 
     @override
     def denormalize(self, node: MatrixNode) -> None:
