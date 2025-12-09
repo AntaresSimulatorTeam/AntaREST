@@ -21,7 +21,6 @@ import { useTranslation } from "react-i18next";
 import type { TimeSeriesConfigValues } from "../utils";
 import TypeConfigFields from "./TypeConfigFields";
 
-
 function Fields() {
   const { control } = useFormContextPlus<TimeSeriesConfigValues>();
   const { t } = useTranslation();
