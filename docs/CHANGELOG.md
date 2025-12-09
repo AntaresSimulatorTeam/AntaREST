@@ -25,7 +25,7 @@ v2.27.0 (2025-12-09)
 
 ### Bug Fixes
 
-* **study**: bug that would create a study even if the user has [`#2834`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2834)
+* **study**: bug that would create a study even if the user does not belong to group [`#2834`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2834)
 * **tasks**: task status update on restart must be done only once [`#2828`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2828)
 * **ui-studies**: prevent study name truncation to avoid user errors [`#2836`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2836)
 * **variables**: fix path concatenation for relative paths [`#2850`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2850)
