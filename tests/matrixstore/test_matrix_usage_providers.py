@@ -338,6 +338,7 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
             }
 
 
+@with_db_context
 def test_output_variables_matrix_usage_provider(matrix_service: MatrixService) -> None:
     # Create a matrix to avoid ForeignKey issue
     matrix_id = matrix_service.create(pd.DataFrame([0]))
