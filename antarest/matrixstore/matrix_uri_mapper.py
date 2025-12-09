@@ -140,7 +140,8 @@ class BaseMatrixUriMapper(MatrixUriMapper):
 
     @override
     def save_matrices(self, nodes: Sequence[MatrixNode]) -> list[str]:
-        return self._matrix_service.create_batch((node.parse_as_dataframe() for node in nodes))
+        matrix_ids = self._matrix_service.create_batch((node.parse_as_dataframe() for node in nodes))
+        return [build_matrix_uri(matrix_id) for matrix_id in matrix_ids]
 
     @override
     def delete(self, node: MatrixNode, url: Optional[List[str]] = None) -> None:
