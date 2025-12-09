@@ -130,10 +130,6 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.exists(extract_matrix_id(uri))
 
     @override
-    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
-        pass
-
-    @override
     def get_matrices(self, uris: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
         sanitized_uris = list({extract_matrix_id(uri) for uri in uris})
         for matrix_id, dataframe in self._matrix_service.yield_matrices(sanitized_uris):
