@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+import numpy as np
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -162,15 +163,16 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
 
     # Areas
     query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
-    # Ensures asking for the data before it was materialized raises an exception
+    # Ensures asking for the data before it was materialized returns a HTTP 404 with a status `NOT_FOUND`
     res = client.get(f"{url}/data", params=query_params)
-    assert res.json() == {
-        "description": "The output variables view is not materialized in DB yet",
-        "exception": "HTTPException",
-    }
+    assert res.json() == {"status": "NOT_FOUND", "task_id": None}
     assert res.status_code == 404
     # Materialize the data
     task_id = client.post(f"{url}/materialize", params=query_params).json()
+    # Ask for data with materializing in process -> Should return a 404 with a status `IN_PROGRESS`
+    res = client.get(f"{url}/data", params=query_params)
+    assert res.json() == {"status": "IN_PROGRESS", "task_id": task_id}
+    # Wait for materializing to end
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
     # Asks for the data. This time, it should succeed.
@@ -239,3 +241,19 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         assert third_view.area_to_id == "fr"
         assert third_view.frequency == MatrixFrequency.HOURLY
         assert third_view.variable_name == "FLOW LIN."
+
+    # Ensures we return `NaN` and not `null` inside the endpoint
+    query_params = {"type": "area", "variable_name": "H. LEV", "frequency": "weekly", "area_id": "de"}
+    task_id = client.post(f"{url}/materialize", params=query_params).json()
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+    res = client.get(f"{url}/data", params=query_params)
+    assert np.isnan(np.array(res.json()["data"])).all()
+
+    # Ensures we raise before running the task when asking for materializing wrong data.
+    query_params = {"type": "area", "variable_name": "H. LEV", "frequency": "weekly", "area_id": "FAKE_AREA"}
+    res = client.post(f"{url}/materialize", params=query_params).json()
+    assert res == {
+        "description": "Could not retrieve variables view for output '20201014-1425eco-goodbye' : The variable 'H. LEV' does not exist for area 'FAKE_AREA' and type 'area'.",
+        "exception": "OutputVariablesViewError",
+    }

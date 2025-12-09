@@ -15,11 +15,13 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Annotated, Any, Sequence
 
+import pandas as pd
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -35,6 +37,7 @@ from antarest.study.storage.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
+    OutputVariablesViewResponse,
 )
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -537,6 +540,10 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     @bp.get(
         "/studies/{uuid}/output/{output_id}/variables-views/data",
         summary="Fetches the variables view for a given output and a given configuration",
+        responses={
+            404: {"model": OutputVariablesViewResponse},
+            200: {"data": [[4], [5]], "columns": [0, 1]},
+        },
     )
     def get_output_variables_view(
         uuid: str,
@@ -553,12 +560,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     ) -> Response:
         """
         Fetches the variables view for a given output and a given configuration.
-        If the view does not exist in DB yet, raises an HTTP 404 error.
+        If the view does not exist in DB yet, returns an HTTP 404 response.
         The user will have to use the endpoint `POST /variables-views/materialize` with the same configuration first.
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        dataframe = output_service.get_output_variables_view(
+        view = output_service.get_output_variables_view(
             uuid,
             output_id,
             type,
@@ -571,8 +578,10 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             renewable_id,
             st_storage_id,
         )
-        content = dataframe.to_json(orient="split", index=False)
-        return Response(content=content, media_type="application/json")
+        if isinstance(view, pd.DataFrame):
+            content = view.to_dict(orient="split", index=False)
+            return Response(content=to_json(content), media_type="application/json")
+        return Response(status_code=404, content=to_json(view), media_type="application/json")
 
     @bp.post(
         "/studies/{uuid}/output/{output_id}/variables-views/materialize",
