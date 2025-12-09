@@ -304,7 +304,7 @@ class MatrixService(ISimpleMatrixService):
             matrix_id, matrix_model = self._create(df)
             if matrix_model is not None:
                 matrices.append(matrix_model)
-                matrices_ids.append(matrix_id)
+            matrices_ids.append(matrix_id)
         self.repo.save_batch(matrices)
         return matrices_ids
 
