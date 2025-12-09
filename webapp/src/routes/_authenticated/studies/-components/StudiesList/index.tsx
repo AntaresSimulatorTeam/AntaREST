@@ -22,7 +22,7 @@ import { Box } from "@mui/material";
 import { useCallback, useState } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
-import StudyLaunchDialog from "../../../../-App/shared/studies/dialogs/StudyLaunchDialog";
+import StudyLaunchDialog from "../../../../-shared/components/studies/dialogs/StudyLaunchDialog";
 import Header from "./Header";
 import StudyCardCell, { type StudyCardCellProps } from "./StudyCardCell";
 

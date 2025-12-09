@@ -13,6 +13,14 @@
  */
 
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { PromiseStatus } from "@/hooks/usePromise";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getAreas, getLinks } from "@/redux/selectors";
+import { editComments, getComments, getStudyDiskUsage } from "@/services/api/study";
+import type { StudyMetadata } from "@/types/types";
 import EditIcon from "@mui/icons-material/Edit";
 import HubIcon from "@mui/icons-material/Hub";
 import LinearScaleIcon from "@mui/icons-material/LinearScale";
@@ -25,14 +33,6 @@ import "draft-js/dist/Draft.css";
 import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { PromiseStatus } from "../../../../../../hooks/usePromise";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
-import { getAreas, getLinks } from "../../../../../../redux/selectors";
-import { editComments, getComments, getStudyDiskUsage } from "../../../../../../services/api/study";
-import type { StudyMetadata } from "../../../../../../types/types";
 import DetailsList from "./DetailsList";
 import NoteEditorModal from "./NodeEditorModal";
 import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";

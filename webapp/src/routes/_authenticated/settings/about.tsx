@@ -13,7 +13,7 @@
  */
 
 import CopyButton from "@/components/buttons/CopyButton";
-import { GITHUB_URL } from "@/routes/-App/shared/constants";
+import { GITHUB_URL } from "@/routes/-shared/constants";
 import { getConfig } from "@/services/config";
 import LaunchIcon from "@mui/icons-material/Launch";
 import { IconButton, List, ListItem, ListItemButton, ListItemText } from "@mui/material";

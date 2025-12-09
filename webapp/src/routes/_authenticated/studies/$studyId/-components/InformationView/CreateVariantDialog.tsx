@@ -17,14 +17,14 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { createVariant } from "@/services/api/variant";
+import { createListFromTree } from "@/services/utils";
+import type { VariantTree } from "@/types/types";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
-import { createVariant } from "../../../../../services/api/variant";
-import { createListFromTree } from "../../../../../services/utils";
-import type { VariantTree } from "../../../../../types/types";
 
 interface Props {
   parentId: string;
@@ -61,7 +61,7 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
     variantId: string,
   ) => {
     onClose();
-    navigate(`/studies/${variantId}`);
+    navigate({ to: `/studies/${variantId}` });
   };
 
   ////////////////////////////////////////////////////////////////

@@ -14,6 +14,9 @@
 
 import { createRouter, type LinkProps } from "@tanstack/react-router";
 import type { U } from "ts-toolbelt";
+import SimpleLoader from "./components/loaders/SimpleLoader";
+import EmptyView from "./components/page/EmptyView";
+import store from "./redux/store";
 import { routeTree } from "./routeTree.gen";
 
 const context = {
@@ -22,11 +25,17 @@ const context = {
     isLoading: true,
     isRejected: false,
   },
+  store,
 };
 
 export type RouterContext = typeof context;
 
-const router = createRouter({ routeTree, context });
+const router = createRouter({
+  routeTree,
+  context,
+  defaultPendingComponent: SimpleLoader,
+  defaultErrorComponent: ({ error }) => <EmptyView title={error.toString()} />,
+});
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {

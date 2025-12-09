@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import MatrixDialog from "@/routes/_authenticated/data/-components/MatrixDialog";
 import { Box, Button } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import MatrixDialog from "../../../../../Data/MatrixDialog";
 import { CommandEnum, type CommandItem } from "../../commandTypes";
 
 interface PropTypes {

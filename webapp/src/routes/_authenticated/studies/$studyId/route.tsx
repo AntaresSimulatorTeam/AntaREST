@@ -14,37 +14,33 @@
 
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
+import { fetchStudyVersions, setCurrentStudy } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { getStudyMetadata } from "@/services/api/study";
+import { getVariantParents, getVariantTree } from "@/services/api/variant";
 import { countDescendants, findNodeInTree } from "@/services/utils";
 import { WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
+import { addWsEventListener } from "@/services/webSocket/ws";
 import { Box, Divider } from "@mui/material";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
-import { fetchStudyVersions, setCurrentStudy } from "../../../redux/ducks/studies";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { getStudyMetadata } from "../../../services/api/study";
-import { getVariantParents, getVariantTree } from "../../../services/api/variant";
-import { addWsEventListener } from "../../../services/webSocket/ws";
-import TabWrapper from "./explore/TabWrapper";
-import FreezeStudy from "./FreezeStudy";
-import HomeView from "./HomeView";
-import NavHeader from "./NavHeader";
+import FreezeStudy from "./-components/FreezeStudy";
+import NavHeader from "./-components/NavHeader";
+import { Route as StudyRootRoute } from "./index";
 
-interface Props {
-  isExplorer?: boolean;
-}
+export const Route = createFileRoute("/_authenticated/studies/$studyId")({
+  component: StudyLayout,
+});
 
-function SingleStudy({ isExplorer }: Props) {
-  const { studyId } = useParams();
+function StudyLayout() {
+  const { studyId } = Route.useParams();
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
+  const isExplorer = !!StudyRootRoute.useMatch();
 
   const res = usePromise(async () => {
-    if (!studyId) {
-      throw new Error("No study ID provided");
-    }
-
     const study = await getStudyMetadata(studyId);
 
     const parents = await getVariantParents(studyId);
@@ -56,7 +52,7 @@ function SingleStudy({ isExplorer }: Props) {
     const tree = findNodeInTree(study.id, variantTree);
     const variantNb = tree ? countDescendants(tree) : 0;
 
-    return { study, parentStudy, variantTree, variantNb };
+    return { study, parentStudy, variantNb };
   }, [studyId]);
 
   useEffect(() => {
@@ -102,7 +98,7 @@ function SingleStudy({ isExplorer }: Props) {
     <UsePromiseCond
       response={res}
       keepLastResolvedOnReload
-      ifFulfilled={({ study, parentStudy, variantTree, variantNb }) => (
+      ifFulfilled={({ study, parentStudy, variantNb }) => (
         <Box
           width="100%"
           height="100%"
@@ -131,7 +127,7 @@ function SingleStudy({ isExplorer }: Props) {
             overflow="hidden"
             position="relative"
           >
-            {isExplorer === true ? (
+            {/* {isExplorer === true ? (
               <TabWrapper
                 study={study}
                 divider
@@ -162,7 +158,8 @@ function SingleStudy({ isExplorer }: Props) {
               />
             ) : (
               <HomeView study={study} variantTree={variantTree} />
-            )}
+            )} */}
+            <Outlet />
             <FreezeStudy studyId={study.id} />
           </Box>
         </Box>
@@ -170,5 +167,3 @@ function SingleStudy({ isExplorer }: Props) {
     />
   );
 }
-
-export default SingleStudy;

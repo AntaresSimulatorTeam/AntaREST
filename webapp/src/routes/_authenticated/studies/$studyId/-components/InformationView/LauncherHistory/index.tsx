@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { getJobProgress } from "@/services/api/launcher";
 import { getJobs } from "@/services/api/launcher/jobs";
 import { adaptJobDtoToJob } from "@/services/api/launcher/jobs/adapters";
 import type { Job } from "@/services/api/launcher/jobs/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
+import { addWsEventListener, subscribeWsChannels } from "@/services/webSocket/ws";
+import type { LaunchJobsProgress, StudyMetadata } from "@/types/types";
 import HistoryIcon from "@mui/icons-material/History";
 import { Paper, Typography } from "@mui/material";
 import type { AxiosError } from "axios";
 import moment from "moment";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getJobProgress } from "../../../../../../services/api/launcher";
-import { addWsEventListener, subscribeWsChannels } from "../../../../../../services/webSocket/ws";
-import type { LaunchJobsProgress, StudyMetadata } from "../../../../../../types/types";
 import JobStepper from "./JobStepper";
 
 interface Props {

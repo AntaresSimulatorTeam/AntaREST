@@ -28,7 +28,7 @@ import type { StudyMetadata } from "../../../../../../types/types";
 import {
   BindingConstraintOperator,
   TimeStep,
-} from "../../../CommandsDrawer/EditionView/commandTypes";
+} from "../../../../../_authenticated/studies/$studyId/-components/NavHeader/CommandsDrawer/EditionView/commandTypes";
 import {
   type BindingConstraint,
   OPERATOR_OPTIONS,

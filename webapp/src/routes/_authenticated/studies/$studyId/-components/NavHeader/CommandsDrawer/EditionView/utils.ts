@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import type { CommandDTO, CommandResultDTO } from "../../../../../types/types";
-import { TaskStatus } from "../../../../../services/api/tasks/constants";
-import type { TaskDTO } from "../../../../../services/api/tasks/types";
+import { TaskStatus } from "../../../../../../../../services/api/tasks/constants";
+import type { TaskDTO } from "../../../../../../../../services/api/tasks/types";
+import type { CommandDTO, CommandResultDTO } from "../../../../../../../../types/types";
 import { CommandEnum, type CommandItem, type JsonCommandItem } from "./commandTypes";
 
 export const CommandList = [

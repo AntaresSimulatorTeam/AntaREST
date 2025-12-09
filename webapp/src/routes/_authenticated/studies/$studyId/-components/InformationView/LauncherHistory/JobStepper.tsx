@@ -15,6 +15,7 @@
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import DigestDialog from "@/components/dialogs/DigestDialog";
 import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import type { Job, JobStatus } from "@/services/api/launcher/jobs/types";
 import { getStudyOutputs, killStudy } from "@/services/api/study";
@@ -31,7 +32,6 @@ import moment from "moment";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import LaunchJobLogView from "../../../../../tasks/-components/LaunchJobLogView";
 import {
   CancelContainer,

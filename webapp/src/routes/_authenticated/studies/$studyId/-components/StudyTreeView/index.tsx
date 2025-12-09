@@ -13,9 +13,9 @@
  */
 
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import type { StudyMetadata, VariantTree } from "@/types/types";
 import { Box, styled } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
-import type { StudyMetadata, VariantTree } from "../../../../../types/types";
 import {
   CIRCLE_RADIUS,
   colors,

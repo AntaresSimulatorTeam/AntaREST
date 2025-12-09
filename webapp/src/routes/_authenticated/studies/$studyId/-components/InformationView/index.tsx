@@ -13,16 +13,16 @@
  */
 
 import ViewWrapper from "@/components/page/ViewWrapper";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { copyStudy } from "@/services/api/studies";
+import { unarchiveStudy as callUnarchiveStudy } from "@/services/api/study";
+import type { StudyMetadata, VariantTree } from "@/types/types";
 import { Box, Button, Divider } from "@mui/material";
+import { useNavigate } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { unarchiveStudy as callUnarchiveStudy } from "../../../../../services/api/study";
-import type { StudyMetadata, VariantTree } from "../../../../../types/types";
-import StudyLaunchDialog from "../../../shared/studies/dialogs/StudyLaunchDialog";
+import StudyLaunchDialog from "../../../../../-shared/components/studies/dialogs/StudyLaunchDialog";
 import CreateVariantDialog from "./CreateVariantDialog";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
@@ -80,7 +80,7 @@ function InformationView({ study, variantTree }: Props) {
           <Button
             variant="contained"
             onClick={() => {
-              navigate(`/studies/${study.id}/explore`);
+              navigate({ to: `/studies/${study.id}/explore` });
             }}
           >
             {t("global.open")}

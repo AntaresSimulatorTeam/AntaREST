@@ -25,10 +25,10 @@ import { Box, Button, Chip, Divider, IconButton, Tooltip } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import FavoriteStudyToggle from "../../shared/studies/FavoriteStudyToggle";
-import StudyActionsMenu from "../../shared/studies/StudyActionsMenu";
-import CommandsDrawer from "../CommandsDrawer";
+import FavoriteStudyToggle from "../../../../../-shared/components/studies/FavoriteStudyToggle";
+import StudyActionsMenu from "../../../../../-shared/components/studies/StudyActionsMenu";
 import Breadcrumb from "./Breadcrumb";
+import CommandsDrawer from "./CommandsDrawer";
 
 export type DialogType = "commands";
 

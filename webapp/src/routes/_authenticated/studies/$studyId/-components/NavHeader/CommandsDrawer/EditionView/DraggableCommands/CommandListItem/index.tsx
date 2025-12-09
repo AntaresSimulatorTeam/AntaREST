@@ -29,7 +29,7 @@ import {
 import { useState } from "react";
 import type { DraggableProvided } from "react-beautiful-dnd";
 import ReactJson, { type InteractionProps } from "react-json-view";
-import type { CommandResultDTO } from "../../../../../../../types/types";
+import type { CommandResultDTO } from "../../../../../../../../../../types/types";
 import type { CommandItem } from "../../commandTypes";
 import CommandImportButton from "../CommandImportButton";
 import CommandDetails from "./CommandDetails";

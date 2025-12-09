@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
-import type { StudyMetadata } from "../../../../types/types";
 import Actions from "./Actions";
 import Details from "./Details";
 

@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { Divider, Toolbar, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { Toolbar, Divider, Typography } from "@mui/material";
-import { Root, TitleContainer } from "./style";
 import EditionView from "./EditionView";
+import { Root, TitleContainer } from "./style";
 
 interface Props {
   open: boolean;

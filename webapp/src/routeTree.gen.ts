@@ -21,6 +21,8 @@ import { Route as AuthenticatedApidocIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSettingsMaintenanceRouteImport } from './routes/_authenticated/settings/maintenance'
 import { Route as AuthenticatedSettingsGeneralRouteImport } from './routes/_authenticated/settings/general'
 import { Route as AuthenticatedSettingsAboutRouteImport } from './routes/_authenticated/settings/about'
+import { Route as AuthenticatedStudiesStudyIdRouteRouteImport } from './routes/_authenticated/studies/$studyId/route'
+import { Route as AuthenticatedStudiesStudyIdIndexRouteImport } from './routes/_authenticated/studies/$studyId/index'
 import { Route as AuthenticatedSettingsUsersIndexRouteImport } from './routes/_authenticated/settings/users/index'
 import { Route as AuthenticatedSettingsTokensIndexRouteImport } from './routes/_authenticated/settings/tokens/index'
 import { Route as AuthenticatedSettingsGroupsIndexRouteImport } from './routes/_authenticated/settings/groups/index'
@@ -91,6 +93,18 @@ const AuthenticatedSettingsAboutRoute =
     path: '/about',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedStudiesStudyIdRouteRoute =
+  AuthenticatedStudiesStudyIdRouteRouteImport.update({
+    id: '/studies/$studyId',
+    path: '/studies/$studyId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedStudiesStudyIdIndexRoute =
+  AuthenticatedStudiesStudyIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedStudiesStudyIdRouteRoute,
+  } as any)
 const AuthenticatedSettingsUsersIndexRoute =
   AuthenticatedSettingsUsersIndexRouteImport.update({
     id: '/users/',
@@ -114,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginIndexRoute
+  '/studies/$studyId': typeof AuthenticatedStudiesStudyIdRouteRouteWithChildren
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/general': typeof AuthenticatedSettingsGeneralRoute
   '/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
@@ -125,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/settings/groups': typeof AuthenticatedSettingsGroupsIndexRoute
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
+  '/studies/$studyId/': typeof AuthenticatedStudiesStudyIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
@@ -140,6 +156,7 @@ export interface FileRoutesByTo {
   '/settings/groups': typeof AuthenticatedSettingsGroupsIndexRoute
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
+  '/studies/$studyId': typeof AuthenticatedStudiesStudyIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -147,6 +164,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/login/': typeof LoginIndexRoute
+  '/_authenticated/studies/$studyId': typeof AuthenticatedStudiesStudyIdRouteRouteWithChildren
   '/_authenticated/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/_authenticated/settings/general': typeof AuthenticatedSettingsGeneralRoute
   '/_authenticated/settings/maintenance': typeof AuthenticatedSettingsMaintenanceRoute
@@ -158,6 +176,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/groups/': typeof AuthenticatedSettingsGroupsIndexRoute
   '/_authenticated/settings/tokens/': typeof AuthenticatedSettingsTokensIndexRoute
   '/_authenticated/settings/users/': typeof AuthenticatedSettingsUsersIndexRoute
+  '/_authenticated/studies/$studyId/': typeof AuthenticatedStudiesStudyIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -165,6 +184,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/login'
+    | '/studies/$studyId'
     | '/settings/about'
     | '/settings/general'
     | '/settings/maintenance'
@@ -176,6 +196,7 @@ export interface FileRouteTypes {
     | '/settings/groups'
     | '/settings/tokens'
     | '/settings/users'
+    | '/studies/$studyId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -191,12 +212,14 @@ export interface FileRouteTypes {
     | '/settings/groups'
     | '/settings/tokens'
     | '/settings/users'
+    | '/studies/$studyId'
   id:
     | '__root__'
     | '/_authenticated'
     | '/_authenticated/settings'
     | '/_authenticated/'
     | '/login/'
+    | '/_authenticated/studies/$studyId'
     | '/_authenticated/settings/about'
     | '/_authenticated/settings/general'
     | '/_authenticated/settings/maintenance'
@@ -208,6 +231,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/groups/'
     | '/_authenticated/settings/tokens/'
     | '/_authenticated/settings/users/'
+    | '/_authenticated/studies/$studyId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -301,6 +325,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAboutRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/studies/$studyId': {
+      id: '/_authenticated/studies/$studyId'
+      path: '/studies/$studyId'
+      fullPath: '/studies/$studyId'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/studies/$studyId/': {
+      id: '/_authenticated/studies/$studyId/'
+      path: '/'
+      fullPath: '/studies/$studyId/'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdRouteRoute
+    }
     '/_authenticated/settings/users/': {
       id: '/_authenticated/settings/users/'
       path: '/users'
@@ -354,9 +392,25 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
+interface AuthenticatedStudiesStudyIdRouteRouteChildren {
+  AuthenticatedStudiesStudyIdIndexRoute: typeof AuthenticatedStudiesStudyIdIndexRoute
+}
+
+const AuthenticatedStudiesStudyIdRouteRouteChildren: AuthenticatedStudiesStudyIdRouteRouteChildren =
+  {
+    AuthenticatedStudiesStudyIdIndexRoute:
+      AuthenticatedStudiesStudyIdIndexRoute,
+  }
+
+const AuthenticatedStudiesStudyIdRouteRouteWithChildren =
+  AuthenticatedStudiesStudyIdRouteRoute._addFileChildren(
+    AuthenticatedStudiesStudyIdRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedStudiesStudyIdRouteRoute: typeof AuthenticatedStudiesStudyIdRouteRouteWithChildren
   AuthenticatedApidocIndexRoute: typeof AuthenticatedApidocIndexRoute
   AuthenticatedDataIndexRoute: typeof AuthenticatedDataIndexRoute
   AuthenticatedStudiesIndexRoute: typeof AuthenticatedStudiesIndexRoute
@@ -366,6 +420,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedStudiesStudyIdRouteRoute:
+    AuthenticatedStudiesStudyIdRouteRouteWithChildren,
   AuthenticatedApidocIndexRoute: AuthenticatedApidocIndexRoute,
   AuthenticatedDataIndexRoute: AuthenticatedDataIndexRoute,
   AuthenticatedStudiesIndexRoute: AuthenticatedStudiesIndexRoute,

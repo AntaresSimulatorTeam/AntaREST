@@ -30,9 +30,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { DropResult } from "react-beautiful-dnd";
 import { useTranslation } from "react-i18next";
 import { useMountedState } from "react-use";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { getTask } from "../../../../../services/api/tasks";
-import { TaskStatus } from "../../../../../services/api/tasks/constants";
+import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import { getTask } from "../../../../../../../../services/api/tasks";
+import { TaskStatus } from "../../../../../../../../services/api/tasks/constants";
 import {
   applyCommands,
   deleteCommand,
@@ -43,9 +43,12 @@ import {
   moveCommand,
   replaceCommands,
   updateCommand,
-} from "../../../../../services/api/variant";
-import { addWsEventListener, subscribeWsChannels } from "../../../../../services/webSocket/ws";
-import type { CommandResultDTO } from "../../../../../types/types";
+} from "../../../../../../../../services/api/variant";
+import {
+  addWsEventListener,
+  subscribeWsChannels,
+} from "../../../../../../../../services/webSocket/ws";
+import type { CommandResultDTO } from "../../../../../../../../types/types";
 import type { CommandItem, JsonCommandItem } from "./commandTypes";
 import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import CommandListView from "./DraggableCommands/CommandListView";

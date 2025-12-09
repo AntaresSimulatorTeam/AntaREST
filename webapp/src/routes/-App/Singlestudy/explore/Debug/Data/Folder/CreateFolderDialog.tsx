@@ -16,7 +16,7 @@ import FormDialog from "@/components/dialogs/FormDialog";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import StudyPathFE from "@/routes/-App/shared/studies/StudyPathFE";
+import StudyPathFE from "@/routes/-shared/components/studies/StudyPathFE";
 import { createFolder } from "@/services/api/studies/raw";
 import type { StudyMetadata } from "@/types/types";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";

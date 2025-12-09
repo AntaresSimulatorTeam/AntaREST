@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Breadcrumbs } from "@mui/material";
-import { useNavigate } from "react-router";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import type { StudyMetadata } from "@/types/types";
+import { Box, Breadcrumbs } from "@mui/material";
+import { useNavigate } from "@tanstack/react-router";
 import { buildBreadcrumbPath } from "../utils";
 import BreadcrumbLink from "./BreadcrumbLink";
 
@@ -41,12 +41,12 @@ function Breadcrumb({ study }: BreadcrumbProps) {
     if (isLastSegment) {
       // Navigate to the specific study's detail page when clicking the study name
       // This allows users to go back to the study overview from any sub-page
-      navigate(`/studies/${study.id}`);
+      navigate({ to: `/studies/${study.id}` });
     } else {
       // Navigate to studies list with folder filter when clicking folder segments
       // This allows users to browse other studies in the same folder hierarchy
       dispatch(updateStudyFilters({ folder: `/${folderPath}` }));
-      navigate("/studies");
+      navigate({ to: "/studies" });
     }
   };
 
