@@ -163,15 +163,16 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
 
     # Areas
     query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
-    # Ensures asking for the data before it was materialized raises an exception
+    # Ensures asking for the data before it was materialized returns a HTTP 404 with a status `NOT_FOUND`
     res = client.get(f"{url}/data", params=query_params)
-    assert res.json() == {
-        "description": "The output variables view is not materialized in DB yet",
-        "exception": "HTTPException",
-    }
+    assert res.json() == {"status": "NOT_FOUND", "task_id": None}
     assert res.status_code == 404
     # Materialize the data
     task_id = client.post(f"{url}/materialize", params=query_params).json()
+    # Ask for data with materializing in process -> Should return a 404 with a status `IN_PROGRESS`
+    res = client.get(f"{url}/data", params=query_params)
+    assert res.json() == {"status": "IN_PROGRESS", "task_id": task_id}
+    # Wait for materializing to end
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
     # Asks for the data. This time, it should succeed.

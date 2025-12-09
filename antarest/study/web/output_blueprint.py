@@ -15,6 +15,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Annotated, Any, Sequence
 
+import pandas as pd
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
 from starlette.responses import FileResponse, Response
 
@@ -554,12 +555,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     ) -> Response:
         """
         Fetches the variables view for a given output and a given configuration.
-        If the view does not exist in DB yet, raises an HTTP 404 error.
+        If the view does not exist in DB yet, returns an HTTP 404 response.
         The user will have to use the endpoint `POST /variables-views/materialize` with the same configuration first.
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        dataframe = output_service.get_output_variables_view(
+        view = output_service.get_output_variables_view(
             uuid,
             output_id,
             type,
@@ -572,8 +573,10 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             renewable_id,
             st_storage_id,
         )
-        content = dataframe.to_dict(orient="split", index=False)
-        return Response(content=to_json(content), media_type="application/json")
+        if isinstance(view, pd.DataFrame):
+            content = view.to_dict(orient="split", index=False)
+            return Response(content=to_json(content), media_type="application/json")
+        return view
 
     @bp.post(
         "/studies/{uuid}/output/{output_id}/variables-views/materialize",
