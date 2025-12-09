@@ -76,7 +76,7 @@ else
   case "$1" in
     celery-beat)
       echo "Starting Celery Beat scheduler..."
-      exec celery -A antarest.celery.app:celery_app beat \
+      exec celery -A antarest.maintenance.app:celery_app beat \
         --loglevel=info \
         --pidfile=/tmp/celerybeat.pid
       ;;
@@ -84,7 +84,7 @@ else
       echo "Starting Celery Worker..."
       CONCURRENCY="${CELERY_CONCURRENCY:-1}"
       POOL="${CELERY_POOL:-solo}"
-      exec celery -A antarest.celery.app:celery_app worker \
+      exec celery -A antarest.maintenance.app:celery_app worker \
         --loglevel=info \
         --concurrency=$CONCURRENCY \
         --pool=$POOL \

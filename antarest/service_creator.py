@@ -43,6 +43,7 @@ from antarest.launcher.service import LauncherService
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
+from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
@@ -75,6 +76,7 @@ This mapping can be used to instantiate a new session, for example:
 class Module(StrEnum):
     APP = "app"
     WATCHER = "watcher"
+    MATRIX_GC = "matrix_gc"
     ARCHIVE_WORKER = "archive_worker"
     AUTO_ARCHIVER = "auto_archiver"
     BLOB_GC = "blob_gc"
@@ -196,6 +198,15 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     )
 
 
+def create_matrix_gc(config: Config, matrix_service: MatrixService) -> MatrixGarbageCollector:
+    return MatrixGarbageCollector(
+        matrix_service=matrix_service,
+        sleeping_time=config.storage.matrix_gc_sleeping_time,
+        dry_run=config.storage.matrix_gc_dry_run,
+        retention_time=config.storage.matrix_gc_retention_time,
+    )
+
+
 def create_blob_gc(config: Config, blob_service: BlobService) -> BlobGarbageCollector:
     return BlobGarbageCollector(
         blob_service=blob_service,
@@ -259,6 +270,7 @@ class Services:
     cache: ICache
     maintenance: MaintenanceService
     launcher: Optional[LauncherService] = None
+    matrix_gc: Optional[MatrixGarbageCollector] = None
     auto_archiver: Optional[AutoArchiveService] = None
     blob_gc: Optional[BlobGarbageCollector] = None
 
@@ -285,6 +297,10 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     watcher = create_watcher(config=config, app_ctxt=app_ctxt, study_service=core_services.study_service)
     explorer_service = create_explorer(config=config, app_ctxt=app_ctxt)
 
+    matrix_garbage_collector = None
+    if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
+        matrix_garbage_collector = create_matrix_gc(config, core_services.matrix_service)
+
     blob_garbage_collector = None
     if config.server.services and Module.BLOB_GC.value in config.server.services or create_all:
         blob_garbage_collector = create_blob_gc(config, core_services.blob_service)
@@ -303,6 +319,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         cache=core_services.cache,
         maintenance=maintenance_service,
         launcher=launcher,
+        matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,
         blob_gc=blob_garbage_collector,
     )
