@@ -18,7 +18,7 @@ import pytest
 from checksumdir import dirhash
 from py7zr import SevenZipFile, py7zr
 
-from antarest.core.config import Config, StorageConfig
+from antarest.core.config import Config
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
@@ -29,7 +29,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from tests.helpers import create_raw_study
 
 
-def test_export_nominal_case(
+def test_export(
     empty_study_930: FileStudy, raw_study_service: RawStudyService, command_context: CommandContext
 ) -> None:
     # Use the in memory command context inside the raw study_service
@@ -74,17 +74,19 @@ def test_export_archived_study(empty_study_930: FileStudy, raw_study_service: Ra
         assert ("output/results1/file.txt" in szf_files) == outputs
 
 
-def test_export_flat(tmp_path: Path) -> None:
-    root = tmp_path / "folder-with-output"
-    root.mkdir()
-    (root / "test").mkdir()
-    (root / "test/file.txt").write_text("Bonjour")
-    (root / "test/output").mkdir()
-    (root / "test/output/file.txt").write_text("Test")
-    (root / "file.txt").write_text("Hello, World")
-    (root / "output/result1").mkdir(parents=True)
-    (root / "output/result1/file.txt").write_text("42")
+def test_export_flat(empty_study_930: FileStudy, raw_study_service: RawStudyService) -> None:
+    study_path = empty_study_930.config.study_path
+    tmp_path = study_path.parent
 
+    root_hash = dirhash(study_path, "md5")
+
+    # Export without outputs should be the exact same folder as the one we had
+    study = create_raw_study(id=empty_study_930.config.study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
+    raw_study_service.export_study_flat(study, tmp_path / "copy_with_output", outputs=True)
+    copy_with_output_hash = dirhash(tmp_path / "copy_with_output", "md5")
+    assert root_hash == copy_with_output_hash
+
+    # Build a fake study with a non-empty output folder
     root_without_output = tmp_path / "folder-without-output"
     root_without_output.mkdir()
     (root_without_output / "test").mkdir()
@@ -92,32 +94,12 @@ def test_export_flat(tmp_path: Path) -> None:
     (root_without_output / "test/output").mkdir()
     (root_without_output / "test/output/file.txt").write_text("Test")
     (root_without_output / "file.txt").write_text("Hello, World")
-
-    root_hash = dirhash(root, "md5")
     root_without_output_hash = dirhash(root_without_output, "md5")
+    study = create_raw_study(id="2", workspace=DEFAULT_WORKSPACE_NAME, path=str(root_without_output))
 
-    study_factory = Mock()
-
-    study_service = RawStudyService(
-        config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
-        study_factory=study_factory,
-        cache=Mock(),
-    )
-    study_tree = Mock()
-    study_factory.create_from_fs.return_value = study_tree
-
-    study = create_raw_study(id="id", path=root)
-
-    study_service.export_study_flat(study, tmp_path / "copy_with_output", outputs=True)
-
-    copy_with_output_hash = dirhash(tmp_path / "copy_with_output", "md5")
-
-    assert root_hash == copy_with_output_hash
-
-    study_service.export_study_flat(study, tmp_path / "copy_without_output", outputs=False)
-
+    # The output folder should also be the same as it was previously
+    raw_study_service.export_study_flat(study, tmp_path / "copy_without_output", outputs=False)
     copy_without_output_hash = dirhash(tmp_path / "copy_without_output", "md5")
-
     assert root_without_output_hash == copy_without_output_hash
 
 
