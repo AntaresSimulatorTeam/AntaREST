@@ -62,6 +62,13 @@ function ConfigurationLayout() {
             params: { studyId: study.id },
           },
         },
+        {
+          label: "Optimization",
+          linkOptions: {
+            to: "/studies/$studyId/explore/configuration/optimization",
+            params: { studyId: study.id },
+          },
+        },
       ]}
       renderPanel={({ children }) => <ViewWrapper>{children}</ViewWrapper>}
     />

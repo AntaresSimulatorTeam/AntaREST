@@ -22,20 +22,26 @@ import {
   setOptimizationForm,
 } from "@/services/api/studies/config/optimization";
 import type { OptimizationForm } from "@/services/api/studies/config/optimization/types";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../types/types";
+import useStudy from "../../../-hooks/useStudy";
 import {
   EXPORT_MPS_OPTIONS,
   LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,
   SIMPLEX_OPTIMIZATION_RANGE_OPTIONS,
   TRANSMISSION_CAPACITIES_OPTIONS,
   UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS,
-} from "./constants";
+} from "./-constants";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/configuration/optimization/",
+)({
+  component: Optimization,
+});
 
 function Optimization() {
   const { t } = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
@@ -157,5 +163,3 @@ function Optimization() {
     </Form>
   );
 }
-
-export default Optimization;

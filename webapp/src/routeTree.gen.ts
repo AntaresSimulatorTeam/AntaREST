@@ -33,6 +33,7 @@ import { Route as AuthenticatedStudiesStudyIdExploreTablemodeIndexRouteImport } 
 import { Route as AuthenticatedStudiesStudyIdExploreDebugIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/debug/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/ts-generation/index'
+import { Route as AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/optimization/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/general/index'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -177,6 +178,15 @@ const AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute =
         AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute,
     } as any,
   )
+const AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute =
+  AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRouteImport.update(
+    {
+      id: '/optimization/',
+      path: '/optimization/',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute =
   AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRouteImport.update(
     {
@@ -211,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/debug': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
   '/studies/$studyId/explore/configuration/general': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute
+  '/studies/$studyId/explore/configuration/optimization': typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute
   '/studies/$studyId/explore/configuration/ts-generation': typeof AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute
 }
 export interface FileRoutesByTo {
@@ -233,6 +244,7 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/debug': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
   '/studies/$studyId/explore/configuration/general': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute
+  '/studies/$studyId/explore/configuration/optimization': typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute
   '/studies/$studyId/explore/configuration/ts-generation': typeof AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute
 }
 export interface FileRoutesById {
@@ -261,6 +273,7 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/debug/': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/_authenticated/studies/$studyId/explore/tablemode/': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/general/': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute
+  '/_authenticated/studies/$studyId/explore/configuration/optimization/': typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/ts-generation/': typeof AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute
 }
 export interface FileRouteTypes {
@@ -289,6 +302,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/debug'
     | '/studies/$studyId/explore/tablemode'
     | '/studies/$studyId/explore/configuration/general'
+    | '/studies/$studyId/explore/configuration/optimization'
     | '/studies/$studyId/explore/configuration/ts-generation'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -311,6 +325,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/debug'
     | '/studies/$studyId/explore/tablemode'
     | '/studies/$studyId/explore/configuration/general'
+    | '/studies/$studyId/explore/configuration/optimization'
     | '/studies/$studyId/explore/configuration/ts-generation'
   id:
     | '__root__'
@@ -338,6 +353,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/debug/'
     | '/_authenticated/studies/$studyId/explore/tablemode/'
     | '/_authenticated/studies/$studyId/explore/configuration/general/'
+    | '/_authenticated/studies/$studyId/explore/configuration/optimization/'
     | '/_authenticated/studies/$studyId/explore/configuration/ts-generation/'
   fileRoutesById: FileRoutesById
 }
@@ -516,6 +532,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/configuration/optimization/': {
+      id: '/_authenticated/studies/$studyId/explore/configuration/optimization/'
+      path: '/optimization'
+      fullPath: '/studies/$studyId/explore/configuration/optimization'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute
+    }
     '/_authenticated/studies/$studyId/explore/configuration/general/': {
       id: '/_authenticated/studies/$studyId/explore/configuration/general/'
       path: '/general'
@@ -558,6 +581,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreConfigurationIndexRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationIndexRoute
   AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute
+  AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute
   AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute
 }
 
@@ -567,6 +591,8 @@ const AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteChildren: Authent
       AuthenticatedStudiesStudyIdExploreConfigurationIndexRoute,
     AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute:
       AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute,
+    AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute:
+      AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute,
     AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute:
       AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute,
   }
