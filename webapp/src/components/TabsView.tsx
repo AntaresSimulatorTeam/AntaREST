@@ -23,6 +23,7 @@ import { useState } from "react";
 interface BaseTab {
   label: string;
   disabled?: boolean;
+  id?: string;
 }
 
 interface RouteTab extends BaseTab {
@@ -39,7 +40,7 @@ export interface TabsViewProps {
   items: RouteTab[] | ContentTab[];
   onChange?: TabListProps["onChange"];
   onBack?: VoidFunction;
-  renderPanel?: (props: { children: React.ReactNode }) => React.ReactNode;
+  renderPanel?: (props: { children: React.ReactNode }, tabId?: string) => React.ReactNode;
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
@@ -167,7 +168,7 @@ function TabsView({
               disableGutters && { px: 0 },
             ]}
           >
-            {renderPanel({ children: hasRouteTabs ? <Outlet /> : tab.content })}
+            {renderPanel({ children: hasRouteTabs ? <Outlet /> : tab.content }, tab.id)}
           </TabPanel>
         ))}
       </TabContext>

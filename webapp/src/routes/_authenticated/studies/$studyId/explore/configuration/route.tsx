@@ -14,13 +14,15 @@
 
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TabsView from "@/components/TabsView";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/configuration")({
   component: ConfigurationLayout,
 });
+
+const ADEQUACY_PATCH_TAB_ID = "adequacy-patch";
 
 function ConfigurationLayout() {
   const study = useStudy();
@@ -50,27 +52,37 @@ function ConfigurationLayout() {
       items={[
         {
           label: "General",
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/general",
             params: { studyId: study.id },
-          },
+          }),
         },
         {
           label: "Time-Series Generation",
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/ts-generation",
             params: { studyId: study.id },
-          },
+          }),
         },
         {
           label: "Optimization",
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/optimization",
             params: { studyId: study.id },
-          },
+          }),
         },
-      ]}
-      renderPanel={({ children }) => <ViewWrapper>{children}</ViewWrapper>}
+        Number(study.version) >= 830 && {
+          label: "Adequacy Patch",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/configuration/adequacy-patch",
+            params: { studyId: study.id },
+          }),
+          id: ADEQUACY_PATCH_TAB_ID,
+        },
+      ].filter(Boolean)}
+      renderPanel={({ children }, tabId) =>
+        tabId === ADEQUACY_PATCH_TAB_ID ? children : <ViewWrapper>{children}</ViewWrapper>
+      }
     />
     // <SplitView splitId="configuration">
     //   {/* Left */}

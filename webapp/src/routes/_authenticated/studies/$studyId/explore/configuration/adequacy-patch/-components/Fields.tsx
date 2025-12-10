@@ -20,14 +20,13 @@ import { useFormContextPlus } from "@/components/Form";
 import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../types/types";
-import { PRICE_TAKING_ORDER_OPTIONS, type AdequacyPatchFormFields } from "./utils";
+import { PRICE_TAKING_ORDER_OPTIONS, type AdequacyPatchFormFields } from "../-utils";
+import useStudy from "../../../../-hooks/useStudy";
 
 function Fields() {
   const { t } = useTranslation();
   const { control } = useFormContextPlus<AdequacyPatchFormFields>();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const studyVersion = Number(study.version);
 
   return (

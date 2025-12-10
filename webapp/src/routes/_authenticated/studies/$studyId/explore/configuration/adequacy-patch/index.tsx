@@ -16,25 +16,31 @@ import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import TableMode from "@/components/TableMode";
 import TabsView from "@/components/TabsView";
-import type { StudyMetadata } from "@/types/types";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import Fields from "./Fields";
+import useStudy from "../../../-hooks/useStudy";
+import Fields from "./-components/Fields";
 import {
   getAdequacyPatchFormFields,
   setAdequacyPatchFormFields,
   type AdequacyPatchFormFields,
-} from "./utils";
+} from "./-utils";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/",
+)({
+  component: AdequacyPatch,
+});
 
 function AdequacyPatch() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus<AdequacyPatchFormFields>) => {
+  const handleSubmit = (data: SubmitHandlerPlus<AdequacyPatchFormFields>) => {
     return setAdequacyPatchFormFields(study.id, data.dirtyValues);
   };
 
@@ -68,5 +74,3 @@ function AdequacyPatch() {
     />
   );
 }
-
-export default AdequacyPatch;
