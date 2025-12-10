@@ -133,6 +133,14 @@ function ResultDetails() {
     selectedClusterId,
   });
 
+  // Reset variable and cluster selections when dataType changes in variable-per-variable mode
+  useEffect(() => {
+    if (isVariablePerVariable) {
+      setSelectedVariable("");
+      setSelectedClusterId("");
+    }
+  }, [dataType, isVariablePerVariable, setSelectedVariable]);
+
   // Auto-select first item if none selected
   // biome-ignore lint/correctness/useExhaustiveDependencies: <Using length to avoid reference issues>
   useEffect(() => {
