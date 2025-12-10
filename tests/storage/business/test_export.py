@@ -16,7 +16,9 @@ from zipfile import ZipFile
 
 import pytest
 from checksumdir import dirhash
+from db_statement_recorder import DBStatementRecorder
 from py7zr import SevenZipFile, py7zr
+from sqlalchemy.orm import Session
 
 from antarest.core.config import Config
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
@@ -104,7 +106,7 @@ def test_export_flat(empty_study_930: FileStudy, raw_study_service: RawStudyServ
 
 
 def test_normalize_denormalized_methods(
-    empty_study_930: FileStudy, raw_study_service: RawStudyService, command_context: CommandContext
+    empty_study_930: FileStudy, raw_study_service: RawStudyService, command_context: CommandContext, db_session: Session
 ) -> None:
     # Use the in memory command context inside the raw study_service
     raw_study_service.study_factory = StudyFactory(
@@ -140,6 +142,12 @@ def test_normalize_denormalized_methods(
     raw_study_service.normalize_study(empty_study_930)
     assert normalized_path.exists()
     assert not denormalized_path.exists()
+
+    # test db requests
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        raw_study_service.denormalize_study(empty_study_930)
+        raw_study_service.normalize_study(empty_study_930)
+        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 def test_export_output(tmp_path: Path) -> None:
