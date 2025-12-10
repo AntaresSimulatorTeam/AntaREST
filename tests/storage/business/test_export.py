@@ -16,65 +16,63 @@ from zipfile import ZipFile
 
 import pytest
 from checksumdir import dirhash
-from py7zr import SevenZipFile
+from py7zr import SevenZipFile, py7zr
 
 from antarest.core.config import Config, StorageConfig
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import create_raw_study
 
 
-def test_export_file(tmp_path: Path) -> None:
-    name = "my-study"
-    study_path = tmp_path / name
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
-
-    study_service = RawStudyService(
-        config=Config(),
-        study_factory=Mock(),
-        cache=Mock(),
+def test_export_nominal_case(
+    empty_study_930: FileStudy, raw_study_service: RawStudyService, tmp_path: Path, command_context: CommandContext
+) -> None:
+    # Use the in memory command context inside the raw study_service
+    raw_study_service.study_factory = StudyFactory(
+        matrix_mapper_factory=MatrixUriMapperFactory(command_context.matrix_service), cache=Mock()
     )
-    study_service.check_study_exist = Mock()
-    study_service.check_study_exist.return_value = None
-    study_service.export_file = Mock()
-    study_service.export_file.return_value = b"Hello"
-
-    # Test good study
-    md = create_raw_study(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=study_path)
+    # Create an area to ensure the matrices are denormalized afterward
+    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=empty_study_930.config.version)
+    output = cmd.apply(empty_study_930)
+    assert output.status
+    # Export the study
+    study_id = empty_study_930.config.study_id
+    study_path = empty_study_930.config.study_path
+    study = create_raw_study(id=study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
     export_path = tmp_path / "export.7z"
-    study_service.export_study(md, export_path)
+    assert not export_path.exists()
+    raw_study_service.export_study(study, export_path)
+    # Ensures the .7z file exists
+    assert export_path.exists()
+    # Unarchive it to check if the matrix was denormalized well
+    extracted_dir_path = export_path.parent / "unarchived_study"
+    with py7zr.SevenZipFile(export_path, "r") as szf:
+        szf.extractall(path=extracted_dir_path)
+    export_path.unlink()
+    assert (extracted_dir_path / "input" / "load" / "series" / "load_fr.txt").exists()
+    assert not (extracted_dir_path / "input" / "load" / "series" / "load_fr.txt.link").exists()
 
 
 @pytest.mark.parametrize("outputs", [True, False])
-def test_export_archived_study(tmp_path: Path, outputs: bool) -> None:
-    root = tmp_path / "folder"
-    root.mkdir()
-    (root / "test").mkdir()
-    (root / "test/file.txt").write_text("Bonjour")
-    (root / "file.txt").write_text("Hello, World")
-    (root / "output/results1").mkdir(parents=True)
-    (root / "output/results1/file.txt").write_text("42")
+def test_export_archived_study(
+    empty_study_930: FileStudy, raw_study_service: RawStudyService, tmp_path: Path, outputs: bool
+) -> None:
+    study_path = empty_study_930.config.study_path
+    (study_path / "output/results1").mkdir(parents=True)
+    (study_path / "output/results1/file.txt").write_text("42")
 
     export_path = tmp_path / "study.7z"
 
-    study_factory = Mock()
-    study_service = RawStudyService(
-        config=Config(),
-        study_factory=study_factory,
-        cache=Mock(),
-    )
+    study = create_raw_study(id=empty_study_930.config.study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
 
-    study = create_raw_study(id="Yo", path=root)
-    study_tree = Mock()
-    study_factory.create_from_fs.return_value = study_tree
-
-    study_service.export_study(study, export_path, outputs=outputs)
+    raw_study_service.export_study(study, export_path, outputs=outputs)
     with SevenZipFile(export_path) as szf:
         szf_files = set(szf.getnames())
-        assert "file.txt" in szf_files
-        assert "test/file.txt" in szf_files
         assert ("output/results1/file.txt" in szf_files) == outputs
 
 
