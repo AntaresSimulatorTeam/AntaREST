@@ -86,6 +86,13 @@ function ConfigurationLayout() {
             params: { studyId: study.id },
           }),
         },
+        {
+          label: t("study.configuration.economicOpt"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/configuration/eco-options",
+            params: { studyId: study.id },
+          }),
+        },
       ].filter(Boolean)}
       renderPanel={({ children }, tabId) =>
         tabId === ADEQUACY_PATCH_TAB_ID ? children : <ViewWrapper>{children}</ViewWrapper>
