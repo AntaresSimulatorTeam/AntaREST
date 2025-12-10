@@ -19,20 +19,20 @@ import TabsView from "@/components/TabsView";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../../-hooks/useStudy";
-import Fields from "./-components/Fields";
 import {
   getAdequacyPatchFormFields,
   setAdequacyPatchFormFields,
   type AdequacyPatchFormFields,
-} from "./-utils";
+} from "./general/-utils";
+import Fields from "./general/Fields";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/adequacy-patch",
 )({
-  component: AdequacyPatch,
+  component: AdequacyPatchLayout,
 });
 
-function AdequacyPatch() {
+function AdequacyPatchLayout() {
   const study = useStudy();
   const { t } = useTranslation();
 
