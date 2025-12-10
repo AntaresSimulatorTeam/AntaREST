@@ -15,7 +15,11 @@
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { EnhancedGridColumn } from "@/components/common/Matrix/shared/types";
+import type {
+  DateTimeMetadataDTO,
+  DateTimes,
+  EnhancedGridColumn,
+} from "@/components/common/Matrix/shared/types";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
 import type {
   VariablesListDTO,
@@ -42,6 +46,8 @@ interface VariableMatrixProps {
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
   resultColumns: EnhancedGridColumn[];
   matrixGridRef: React.RefObject<FilterableMatrixGridHandle>;
+  dateTime?: DateTimes;
+  dateTimeMetadata?: DateTimeMetadataDTO;
 }
 
 function hasVariablesForItem(
@@ -76,6 +82,8 @@ function VariableMatrix({
   variableViewDataRes,
   resultColumns,
   matrixGridRef,
+  dateTime,
+  dateTimeMetadata,
 }: VariableMatrixProps) {
   const { t } = useTranslation();
 
@@ -107,6 +115,8 @@ function VariableMatrix({
             data={matrix.data}
             rows={matrix.data.length}
             columns={resultColumns}
+            dateTime={dateTime}
+            timeFrequency={dateTimeMetadata?.level}
             readOnly
           />
         );

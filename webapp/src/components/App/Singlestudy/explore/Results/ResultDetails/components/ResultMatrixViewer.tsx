@@ -14,6 +14,7 @@
 
 import { Box } from "@mui/material";
 import type {
+  DateTimeMetadataDTO,
   DateTimes,
   EnhancedGridColumn,
   ResultMatrixDTO,
@@ -69,6 +70,8 @@ interface ResultMatrixViewerProps {
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
   variableViewColumns: EnhancedGridColumn[];
+  variableViewDateTime: DateTimes | undefined;
+  variableViewTimeIndexMetadata: DateTimeMetadataDTO | undefined;
   selectedClusterId: string;
   onClusterSelect: (clusterId: string) => void;
 }
@@ -104,6 +107,8 @@ function ResultMatrixViewer({
   isMaterializing,
   variableViewDataRes,
   variableViewColumns,
+  variableViewDateTime,
+  variableViewTimeIndexMetadata,
   selectedClusterId,
   onClusterSelect,
 }: ResultMatrixViewerProps) {
@@ -158,6 +163,8 @@ function ResultMatrixViewer({
               variableViewDataRes={variableViewDataRes}
               resultColumns={variableViewColumns}
               matrixGridRef={matrixGridRef}
+              dateTime={variableViewDateTime}
+              dateTimeMetadata={variableViewTimeIndexMetadata}
             />
           ) : (
             <ResultMatrix
