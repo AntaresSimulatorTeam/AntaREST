@@ -18,17 +18,22 @@ import pytest
 from checksumdir import dirhash
 from db_statement_recorder import DBStatementRecorder
 from py7zr import SevenZipFile, py7zr
-from sqlalchemy.orm import Session
 
-from antarest.core.config import Config
+from antarest.blobstore.service import BlobService
+from antarest.core.config import Config, InternalMatrixFormat
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
-from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepository
+from antarest.matrixstore.service import MatrixService
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import create_raw_study
+from tests.conftest import empty_study_fixture
+from tests.helpers import create_raw_study, with_db_context
 
 
 def test_export(
@@ -105,49 +110,74 @@ def test_export_flat(empty_study_930: FileStudy, raw_study_service: RawStudyServ
     assert root_without_output_hash == copy_without_output_hash
 
 
-def test_normalize_denormalized_methods(
-    empty_study_930: FileStudy, raw_study_service: RawStudyService, command_context: CommandContext, db_session: Session
-) -> None:
-    # Use the in memory command context inside the raw study_service
-    raw_study_service.study_factory = StudyFactory(
-        matrix_mapper_factory=MatrixUriMapperFactory(command_context.matrix_service), cache=Mock()
+@with_db_context
+def test_normalize_denormalized_methods(raw_study_service: RawStudyService, tmp_path: Path) -> None:
+    # Create a real matrix_service with a db connection to test DB queries
+    db_session = db.session
+    buket_dir = tmp_path / "matrixstore_bucket"
+    repo = MatrixRepository(db_session)
+    content_repo = MatrixContentRepository(buket_dir, InternalMatrixFormat.FEATHER)
+    matrix_service = MatrixService(repo, Mock(), content_repo, Mock(), Mock(), Mock(), Mock())
+
+    # Create a study with this matrix_service
+    study = empty_study_fixture(STUDY_VERSION_8_8, matrix_service, tmp_path)
+
+    # Use this matrix_service in the raw_study_service and in the command_context
+    matrix_constants = GeneratorMatrixConstants(matrix_service)
+    matrix_constants.init_constant_matrices()
+    blob_service = Mock(spec=BlobService)
+    command_context = CommandContext(
+        generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
-    # Create an area to ensure the matrices are normalized correctly afterward
-    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=empty_study_930.config.version)
-    output = cmd.apply(empty_study_930)
+    factory = MatrixUriMapperFactory(command_context.matrix_service)
+    raw_study_service.study_factory = StudyFactory(matrix_mapper_factory=factory, cache=Mock())
+
+    # Create an area to have matrices in our study
+    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=study.config.version)
+    output = cmd.apply(study)
     assert output.status
+
     # Ensures the matrix is normalized for now
-    study_path = empty_study_930.config.study_path
+    study_path = study.config.study_path
     normalized_path = study_path / "input" / "load" / "series" / "load_fr.txt.link"
     denormalized_path = study_path / "input" / "load" / "series" / "load_fr.txt"
     assert normalized_path.exists()
     content = normalized_path.read_text()
     assert not denormalized_path.exists()
-    # Ensures normalization did nothing
-    raw_study_service.normalize_study(empty_study_930)
+
+    # Normalize the study
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        raw_study_service.normalize_study(study)
+        assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
+
     assert normalized_path.read_text() == content
     assert not denormalized_path.exists()
+
     # Denormalize the study
-    raw_study_service.denormalize_study(empty_study_930)
-    # Checks the matrix
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        raw_study_service.denormalize_study(study)
+        assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
+
     assert not normalized_path.exists()
     assert denormalized_path.exists()
     dataframe = denormalized_path.read_bytes()
-    # Ensures denormalizing again does nothing
-    raw_study_service.denormalize_study(empty_study_930)
+
+    # Denormalize again
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        raw_study_service.denormalize_study(study)
+        assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
+
     assert not normalized_path.exists()
     assert denormalized_path.exists()
     assert denormalized_path.read_bytes() == dataframe
+
     # Normalize the study to come back to the initial point
-    raw_study_service.normalize_study(empty_study_930)
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        raw_study_service.normalize_study(study)
+        assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
+
     assert normalized_path.exists()
     assert not denormalized_path.exists()
-
-    # test db requests
-    with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(empty_study_930)
-        raw_study_service.normalize_study(empty_study_930)
-        assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 def test_export_output(tmp_path: Path) -> None:
