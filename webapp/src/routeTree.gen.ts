@@ -33,12 +33,17 @@ import { Route as AuthenticatedStudiesStudyIdExploreTablemodeIndexRouteImport } 
 import { Route as AuthenticatedStudiesStudyIdExploreDebugIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/debug/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/eco-options'
+import { Route as AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/geo-trimming/route'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/route'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/ts-generation/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/optimization/index'
+import { Route as AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/geo-trimming/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/general/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationAdvancedParamsIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/advanced-params/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/index'
+import { Route as AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/geo-trimming/links'
+import { Route as AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/geo-trimming/binding-constraints'
+import { Route as AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/geo-trimming/areas'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchPerimeterRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/perimeter'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchGeneralIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/general/index'
 
@@ -182,6 +187,15 @@ const AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRoute =
     getParentRoute: () =>
       AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute,
   } as any)
+const AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute =
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteImport.update(
+    {
+      id: '/geo-trimming',
+      path: '/geo-trimming',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRoute =
   AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteImport.update(
     {
@@ -209,6 +223,15 @@ const AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute =
         AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute,
     } as any,
   )
+const AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRoute =
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRouteImport.update(
+    {
+      id: '/',
+      path: '/',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute =
   AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRouteImport.update(
     {
@@ -234,6 +257,33 @@ const AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchIndexRoute =
       path: '/',
       getParentRoute: () =>
         AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRoute =
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRouteImport.update(
+    {
+      id: '/links',
+      path: '/links',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRoute =
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRouteImport.update(
+    {
+      id: '/binding-constraints',
+      path: '/binding-constraints',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute =
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRouteImport.update(
+    {
+      id: '/areas',
+      path: '/areas',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute,
     } as any,
   )
 const AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchPerimeterRoute =
@@ -276,14 +326,19 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/configuration': typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteWithChildren
   '/studies/$studyId/explore/': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
   '/studies/$studyId/explore/configuration/adequacy-patch': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteWithChildren
+  '/studies/$studyId/explore/configuration/geo-trimming': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteWithChildren
   '/studies/$studyId/explore/configuration/eco-options': typeof AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRoute
   '/studies/$studyId/explore/configuration/': typeof AuthenticatedStudiesStudyIdExploreConfigurationIndexRoute
   '/studies/$studyId/explore/debug': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
   '/studies/$studyId/explore/configuration/adequacy-patch/perimeter': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchPerimeterRoute
+  '/studies/$studyId/explore/configuration/geo-trimming/areas': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute
+  '/studies/$studyId/explore/configuration/geo-trimming/binding-constraints': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRoute
+  '/studies/$studyId/explore/configuration/geo-trimming/links': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRoute
   '/studies/$studyId/explore/configuration/adequacy-patch/': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchIndexRoute
   '/studies/$studyId/explore/configuration/advanced-params': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdvancedParamsIndexRoute
   '/studies/$studyId/explore/configuration/general': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute
+  '/studies/$studyId/explore/configuration/geo-trimming/': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRoute
   '/studies/$studyId/explore/configuration/optimization': typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute
   '/studies/$studyId/explore/configuration/ts-generation': typeof AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute
   '/studies/$studyId/explore/configuration/adequacy-patch/general': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchGeneralIndexRoute
@@ -309,9 +364,13 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/debug': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
   '/studies/$studyId/explore/configuration/adequacy-patch/perimeter': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchPerimeterRoute
+  '/studies/$studyId/explore/configuration/geo-trimming/areas': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute
+  '/studies/$studyId/explore/configuration/geo-trimming/binding-constraints': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRoute
+  '/studies/$studyId/explore/configuration/geo-trimming/links': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRoute
   '/studies/$studyId/explore/configuration/adequacy-patch': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchIndexRoute
   '/studies/$studyId/explore/configuration/advanced-params': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdvancedParamsIndexRoute
   '/studies/$studyId/explore/configuration/general': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute
+  '/studies/$studyId/explore/configuration/geo-trimming': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRoute
   '/studies/$studyId/explore/configuration/optimization': typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute
   '/studies/$studyId/explore/configuration/ts-generation': typeof AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute
   '/studies/$studyId/explore/configuration/adequacy-patch/general': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchGeneralIndexRoute
@@ -339,14 +398,19 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/configuration': typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteWithChildren
+  '/_authenticated/studies/$studyId/explore/configuration/geo-trimming': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/configuration/eco-options': typeof AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRoute
   '/_authenticated/studies/$studyId/explore/configuration/': typeof AuthenticatedStudiesStudyIdExploreConfigurationIndexRoute
   '/_authenticated/studies/$studyId/explore/debug/': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/_authenticated/studies/$studyId/explore/tablemode/': typeof AuthenticatedStudiesStudyIdExploreTablemodeIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/perimeter': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchPerimeterRoute
+  '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/areas': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute
+  '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/binding-constraints': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRoute
+  '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/links': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRoute
   '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/advanced-params/': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdvancedParamsIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/general/': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeneralIndexRoute
+  '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/optimization/': typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/ts-generation/': typeof AuthenticatedStudiesStudyIdExploreConfigurationTsGenerationIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/general/': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchGeneralIndexRoute
@@ -374,14 +438,19 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/configuration'
     | '/studies/$studyId/explore/'
     | '/studies/$studyId/explore/configuration/adequacy-patch'
+    | '/studies/$studyId/explore/configuration/geo-trimming'
     | '/studies/$studyId/explore/configuration/eco-options'
     | '/studies/$studyId/explore/configuration/'
     | '/studies/$studyId/explore/debug'
     | '/studies/$studyId/explore/tablemode'
     | '/studies/$studyId/explore/configuration/adequacy-patch/perimeter'
+    | '/studies/$studyId/explore/configuration/geo-trimming/areas'
+    | '/studies/$studyId/explore/configuration/geo-trimming/binding-constraints'
+    | '/studies/$studyId/explore/configuration/geo-trimming/links'
     | '/studies/$studyId/explore/configuration/adequacy-patch/'
     | '/studies/$studyId/explore/configuration/advanced-params'
     | '/studies/$studyId/explore/configuration/general'
+    | '/studies/$studyId/explore/configuration/geo-trimming/'
     | '/studies/$studyId/explore/configuration/optimization'
     | '/studies/$studyId/explore/configuration/ts-generation'
     | '/studies/$studyId/explore/configuration/adequacy-patch/general'
@@ -407,9 +476,13 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/debug'
     | '/studies/$studyId/explore/tablemode'
     | '/studies/$studyId/explore/configuration/adequacy-patch/perimeter'
+    | '/studies/$studyId/explore/configuration/geo-trimming/areas'
+    | '/studies/$studyId/explore/configuration/geo-trimming/binding-constraints'
+    | '/studies/$studyId/explore/configuration/geo-trimming/links'
     | '/studies/$studyId/explore/configuration/adequacy-patch'
     | '/studies/$studyId/explore/configuration/advanced-params'
     | '/studies/$studyId/explore/configuration/general'
+    | '/studies/$studyId/explore/configuration/geo-trimming'
     | '/studies/$studyId/explore/configuration/optimization'
     | '/studies/$studyId/explore/configuration/ts-generation'
     | '/studies/$studyId/explore/configuration/adequacy-patch/general'
@@ -436,14 +509,19 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/configuration'
     | '/_authenticated/studies/$studyId/explore/'
     | '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch'
+    | '/_authenticated/studies/$studyId/explore/configuration/geo-trimming'
     | '/_authenticated/studies/$studyId/explore/configuration/eco-options'
     | '/_authenticated/studies/$studyId/explore/configuration/'
     | '/_authenticated/studies/$studyId/explore/debug/'
     | '/_authenticated/studies/$studyId/explore/tablemode/'
     | '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/perimeter'
+    | '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/areas'
+    | '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/binding-constraints'
+    | '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/links'
     | '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/'
     | '/_authenticated/studies/$studyId/explore/configuration/advanced-params/'
     | '/_authenticated/studies/$studyId/explore/configuration/general/'
+    | '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/'
     | '/_authenticated/studies/$studyId/explore/configuration/optimization/'
     | '/_authenticated/studies/$studyId/explore/configuration/ts-generation/'
     | '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/general/'
@@ -624,6 +702,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/configuration/geo-trimming': {
+      id: '/_authenticated/studies/$studyId/explore/configuration/geo-trimming'
+      path: '/geo-trimming'
+      fullPath: '/studies/$studyId/explore/configuration/geo-trimming'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute
+    }
     '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch': {
       id: '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch'
       path: '/adequacy-patch'
@@ -645,6 +730,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationOptimizationIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/': {
+      id: '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/'
+      path: '/'
+      fullPath: '/studies/$studyId/explore/configuration/geo-trimming/'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute
+    }
     '/_authenticated/studies/$studyId/explore/configuration/general/': {
       id: '/_authenticated/studies/$studyId/explore/configuration/general/'
       path: '/general'
@@ -665,6 +757,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/studies/$studyId/explore/configuration/adequacy-patch/'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/links': {
+      id: '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/links'
+      path: '/links'
+      fullPath: '/studies/$studyId/explore/configuration/geo-trimming/links'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/binding-constraints': {
+      id: '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/binding-constraints'
+      path: '/binding-constraints'
+      fullPath: '/studies/$studyId/explore/configuration/geo-trimming/binding-constraints'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/areas': {
+      id: '/_authenticated/studies/$studyId/explore/configuration/geo-trimming/areas'
+      path: '/areas'
+      fullPath: '/studies/$studyId/explore/configuration/geo-trimming/areas'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/perimeter': {
       id: '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/perimeter'
@@ -733,8 +846,33 @@ const AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteWith
     AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteChildren,
   )
 
+interface AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteChildren {
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRoute
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRoute
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRoute
+}
+
+const AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteChildren: AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteChildren =
+  {
+    AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute:
+      AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute,
+    AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRoute:
+      AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingBindingConstraintsRoute,
+    AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRoute:
+      AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingLinksRoute,
+    AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRoute:
+      AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingIndexRoute,
+  }
+
+const AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteWithChildren =
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute._addFileChildren(
+    AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteChildren,
+  )
+
 interface AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteWithChildren
+  AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteWithChildren
   AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRoute
   AuthenticatedStudiesStudyIdExploreConfigurationIndexRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationIndexRoute
   AuthenticatedStudiesStudyIdExploreConfigurationAdvancedParamsIndexRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationAdvancedParamsIndexRoute
@@ -747,6 +885,8 @@ const AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteChildren: Authent
   {
     AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRoute:
       AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteWithChildren,
+    AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRoute:
+      AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRouteRouteWithChildren,
     AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRoute:
       AuthenticatedStudiesStudyIdExploreConfigurationEcoOptionsRoute,
     AuthenticatedStudiesStudyIdExploreConfigurationIndexRoute:

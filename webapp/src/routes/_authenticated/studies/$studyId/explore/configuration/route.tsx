@@ -22,30 +22,12 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/c
   component: ConfigurationLayout,
 });
 
-const ADEQUACY_PATCH_TAB_ID = "adequacy-patch";
+const ADEQUACY_PATCH_TAB_ID = "adequacy-patch" as const;
+const GEO_TRIMMING_TAB_ID = "geographic-trimming" as const;
 
 function ConfigurationLayout() {
   const study = useStudy();
   const { t } = useTranslation();
-
-  // const tabList = useMemo(
-  //   () =>
-  //     [
-  //       { id: 0, name: "General" },
-  //       { id: 1, name: "Time-series management" },
-  //       { id: 2, name: "Optimization preferences" },
-  //       Number(study.version) >= 830 && { id: 3, name: "Adequacy Patch" },
-  //       { id: 4, name: "Advanced parameters" },
-  //       { id: 5, name: t("study.configuration.economicOpt") },
-  //       { id: 6, name: t("study.configuration.geographicTrimmingAreas") },
-  //       { id: 7, name: t("study.configuration.geographicTrimmingLinks") },
-  //       {
-  //         id: 8,
-  //         name: t("study.configuration.geographicTrimmingBindingConstraints"),
-  //       },
-  //     ].filter(Boolean),
-  //   [study.version, t],
-  // );
 
   return (
     <TabsView
@@ -93,82 +75,21 @@ function ConfigurationLayout() {
             params: { studyId: study.id },
           }),
         },
+        {
+          label: t("study.configuration.geographicTrimming"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/configuration/geo-trimming",
+            params: { studyId: study.id },
+          }),
+          id: GEO_TRIMMING_TAB_ID,
+        },
       ].filter(Boolean)}
-      renderPanel={({ children }, tabId) =>
-        tabId === ADEQUACY_PATCH_TAB_ID ? children : <ViewWrapper>{children}</ViewWrapper>
-      }
+      renderPanel={({ children }, tabId) => {
+        if (tabId && [ADEQUACY_PATCH_TAB_ID, GEO_TRIMMING_TAB_ID].includes(tabId)) {
+          return children;
+        }
+        return <ViewWrapper>{children}</ViewWrapper>;
+      }}
     />
-    // <SplitView splitId="configuration">
-    //   {/* Left */}
-    //   <PropertiesView
-    //     mainContent={
-    //       <ListElement
-    //         list={tabList}
-    //         currentElement={tabList[currentTabIndex].name}
-    //         setSelectedItem={(_, index) => {
-    //           setCurrentTabIndex(index);
-    //         }}
-    //       />
-    //     }
-    //   />
-    //   {/* Right */}
-    //   <ViewWrapper>
-    //     {R.cond([
-    //       [R.equals(0), () => <General />],
-    //       [R.equals(1), () => <TimeSeriesManagement />],
-    //       [R.equals(2), () => <Optimization />],
-    //       [R.equals(3), () => <AdequacyPatch />],
-    //       [R.equals(4), () => <AdvancedParameters />],
-    //       [
-    //         R.equals(5),
-    //         () => (
-    //           <TableMode
-    //             studyId={study.id}
-    //             type="areas"
-    //             columns={[
-    //               "energyCostUnsupplied",
-    //               "spreadUnsuppliedEnergyCost",
-    //               "energyCostSpilled",
-    //               "spreadSpilledEnergyCost",
-    //               "nonDispatchPower",
-    //               "dispatchHydroPower",
-    //               "otherDispatchPower",
-    //             ]}
-    //           />
-    //         ),
-    //       ],
-    //       [
-    //         R.equals(6),
-    //         () => (
-    //           <TableMode
-    //             studyId={study.id}
-    //             type="areas"
-    //             columns={["filterByYear", "filterSynthesis"]}
-    //           />
-    //         ),
-    //       ],
-    //       [
-    //         R.equals(7),
-    //         () => (
-    //           <TableMode
-    //             studyId={study.id}
-    //             type="links"
-    //             columns={["filterYearByYear", "filterSynthesis"]}
-    //           />
-    //         ),
-    //       ],
-    //       [
-    //         R.equals(8),
-    //         () => (
-    //           <TableMode
-    //             studyId={study.id}
-    //             type="binding-constraints"
-    //             columns={["filterYearByYear", "filterSynthesis"]}
-    //           />
-    //         ),
-    //       ],
-    //     ])(tabList[currentTabIndex].id)}
-    //   </ViewWrapper>
-    // </SplitView>
   );
 }
