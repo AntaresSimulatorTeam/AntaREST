@@ -103,6 +103,45 @@ def test_export_flat(empty_study_930: FileStudy, raw_study_service: RawStudyServ
     assert root_without_output_hash == copy_without_output_hash
 
 
+def test_normalize_denormalized_methods(
+    empty_study_930: FileStudy, raw_study_service: RawStudyService, command_context: CommandContext
+) -> None:
+    # Use the in memory command context inside the raw study_service
+    raw_study_service.study_factory = StudyFactory(
+        matrix_mapper_factory=MatrixUriMapperFactory(command_context.matrix_service), cache=Mock()
+    )
+    # Create an area to ensure the matrices are normalized correctly afterward
+    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=empty_study_930.config.version)
+    output = cmd.apply(empty_study_930)
+    assert output.status
+    # Ensures the matrix is normalized for now
+    study_path = empty_study_930.config.study_path
+    normalized_path = study_path / "input" / "load" / "series" / "load_fr.txt.link"
+    denormalized_path = study_path / "input" / "load" / "series" / "load_fr.txt"
+    assert normalized_path.exists()
+    content = normalized_path.read_text()
+    assert not denormalized_path.exists()
+    # Ensures normalization did nothing
+    raw_study_service.normalize_study(empty_study_930)
+    assert normalized_path.read_text() == content
+    assert not denormalized_path.exists()
+    # Denormalize the study
+    raw_study_service.denormalize_study(empty_study_930)
+    # Checks the matrix
+    assert not normalized_path.exists()
+    assert denormalized_path.exists()
+    dataframe = denormalized_path.read_bytes()
+    # Ensures denormalizing again does nothing
+    raw_study_service.denormalize_study(empty_study_930)
+    assert not normalized_path.exists()
+    assert denormalized_path.exists()
+    assert denormalized_path.read_bytes() == dataframe
+    # Normalize the study to come back to the initial point
+    raw_study_service.normalize_study(empty_study_930)
+    assert normalized_path.exists()
+    assert not denormalized_path.exists()
+
+
 def test_export_output(tmp_path: Path) -> None:
     output_id = "output_id"
     root = tmp_path / "folder"
