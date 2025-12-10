@@ -30,7 +30,7 @@ from tests.helpers import create_raw_study
 
 
 def test_export_nominal_case(
-    empty_study_930: FileStudy, raw_study_service: RawStudyService, tmp_path: Path, command_context: CommandContext
+    empty_study_930: FileStudy, raw_study_service: RawStudyService, command_context: CommandContext
 ) -> None:
     # Use the in memory command context inside the raw study_service
     raw_study_service.study_factory = StudyFactory(
@@ -44,7 +44,7 @@ def test_export_nominal_case(
     study_id = empty_study_930.config.study_id
     study_path = empty_study_930.config.study_path
     study = create_raw_study(id=study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
-    export_path = tmp_path / "export.7z"
+    export_path = study_path.parent / "export.7z"
     assert not export_path.exists()
     raw_study_service.export_study(study, export_path)
     # Ensures the .7z file exists
@@ -59,14 +59,12 @@ def test_export_nominal_case(
 
 
 @pytest.mark.parametrize("outputs", [True, False])
-def test_export_archived_study(
-    empty_study_930: FileStudy, raw_study_service: RawStudyService, tmp_path: Path, outputs: bool
-) -> None:
+def test_export_archived_study(empty_study_930: FileStudy, raw_study_service: RawStudyService, outputs: bool) -> None:
     study_path = empty_study_930.config.study_path
     (study_path / "output/results1").mkdir(parents=True)
     (study_path / "output/results1/file.txt").write_text("42")
 
-    export_path = tmp_path / "study.7z"
+    export_path = study_path.parent / "study.7z"
 
     study = create_raw_study(id=empty_study_930.config.study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
 
