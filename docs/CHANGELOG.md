@@ -1,6 +1,66 @@
 Antares Web Changelog
 =====================
 
+v2.27.0 (2025-12-09)
+--------------------
+
+### Features
+
+* **output**: add first variables view endpoint [`#2833`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2833)
+* **output**: save variables views inside db [`#2847`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2847)
+* **metrics**: add current requests gauge, fix exception handling [`#2851`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2851)
+* **metrics**: add workspaces disk usage metrics [`#2852`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2852)
+* **metrics,db**: add select event type [`#2866`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2866)
+* **metrics**: avoid arbitrary metrics creation [`#2873`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2873)
+
+### Performances
+
+* **output**: use Response instead of Pydantic object inside variables endpoint [`#2865`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2865)
+* **matrix**: use `polars` library [`#2880`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2880)
+* **output**: use polar inside aggregation [`#2884`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2884)
+
+### Documentation
+
+* **readme**: re-write readme and add contributing instructions [`#2841`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2841)
+
+### Bug Fixes
+
+* **study**: bug that would create a study even if the user does not belong to group [`#2834`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2834)
+* **tasks**: task status update on restart must be done only once [`#2828`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2828)
+* **ui-studies**: prevent study name truncation to avoid user errors [`#2836`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2836)
+* **variables**: fix path concatenation for relative paths [`#2850`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2850)
+* **launcher**: permission-denied-at-variant-simulation-launch [`#2845`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2845)
+* **matrix**: use open with truncate instead of touch [`#2853`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2853)
+* **db,metrics**: always explicitly close transactions on session exit [`#2861`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2861)
+* **db**: remove nested sessions [`#2863`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2863)
+* **study-ui**: rely on parent id to clean stale variants map and synthesis [`#2856`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2856)
+* **study-ui**: remove double fetch study call [`#2869`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2869)
+* **user**: always override data inside user folder [`#2864`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2864)
+
+### Refactorings
+
+* **output**: do not use download mechanism inside variables endpoint [`#2846`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2846)
+* **ui-launcher**: auto modification of field values related to launcher selection [`#2849`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2849)
+* **dao**: add several missing methods [`#2825`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2825)
+* **ui-xpansion**: update UI labels with explicit units and improve layout consistency [`#2858`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2858)
+* **study**: remove study additional data [`#2838`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2838)
+* **ui-xpansion**: update save button color for consistency [`#2867`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2867)
+* **ui-xpansion**: update save button color for consistency [`#2875`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2875)
+* **ui,api**: use semver library to compare versions on the front-end [`#2854`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2854)
+
+### Miscellaneous
+
+* **web**: remove rate limiter [`#2848`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2848)
+* **datetime**: introduce an utils method to get current datetime [`#2855`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2855)
+* **metrics**: simplify exception handling [`#2860`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2860)
+* **logging**: log server errors with request or task context [`#2862`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2862)
+* **alembic**: add a test for alembic migrations [`#2872`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2872)
+* **utils**: remove unused methods and classes [`#2876`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2876)
+
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.26.0...v2.27.0
+
+
 v2.26.0 (2025-11-07)
 --------------------
 
@@ -62,7 +122,7 @@ v2.26.0 (2025-11-07)
 * **output**: adapt `/variables` endpoint to use new code [`2791`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2791)
 * **launcher**: add integration test solver presets [`2820`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2820)
 
-###  Miscellaneous
+### Miscellaneous
 * **deps**: upgrade dependencies and refactor optional field handling [`2754`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2754)
 * **version**: bump default study version to 9.3 inside back-end [`2758`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2758)
 * **sts**: remove unused endpoints [`2771`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2771) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)

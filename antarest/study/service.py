@@ -2042,7 +2042,7 @@ class StudyService:
     # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions() -> List[str]:
-        return sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])
+        return sorted([str(v) for v in STUDY_REFERENCE_TEMPLATES])
 
     def create_xpansion_configuration(
         self,

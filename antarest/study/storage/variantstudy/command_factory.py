@@ -243,18 +243,3 @@ class CommandFactory:
                 for argument in args
             ]
         raise NotImplementedError()
-
-    def to_commands(self, cmd_dto_list: List[CommandDTO]) -> List[ICommand]:
-        """
-        Convert a list of CommandDTO to a list of ICommand.
-
-        Args:
-            cmd_dto_list: The CommandDTO objects to convert.
-
-        Returns:
-            List: A list of ICommand instances.
-
-        Raises:
-            NotImplementedError: If the argument type is not implemented.
-        """
-        return [cmd for dto in cmd_dto_list for cmd in self.to_command(dto)]

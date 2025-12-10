@@ -13,13 +13,19 @@
  */
 
 import type { StudyMetadata } from "@/types/types";
-import type { Launcher } from "../study";
 
 export interface XpansionParamsDTO {
   enabled?: boolean;
-  sensitivity_mode?: boolean;
   output_id?: string;
+  sensitivity_mode?: boolean;
   adequacy_criterion?: boolean;
+}
+
+interface XpansionParams {
+  enabled?: boolean;
+  outputId?: string;
+  sensitivityMode?: boolean;
+  adequacyCriterion?: boolean;
 }
 
 export interface LauncherParamsDTO {
@@ -35,31 +41,54 @@ export interface LauncherParamsDTO {
   other_options?: string;
 }
 
-interface XpansionConfig {
-  enabled?: boolean;
-  adequacyCriterion?: boolean;
-  sensitivityMode?: boolean;
-  outputId?: string;
-}
-
-export interface LauncherConfig {
+export interface LauncherParams {
+  nbCores?: number;
+  xpansion?: XpansionParams;
   outputSuffix?: string;
   otherOptions?: string;
   autoUnzip?: boolean;
-  xpansion?: XpansionConfig;
-  nbCores?: number;
 }
+
+interface RangeWithDefault {
+  min: number;
+  max: number;
+  default: number;
+}
+
+export interface LauncherDTO {
+  id: string;
+  name: string;
+  nbCores: RangeWithDefault;
+  timeLimit: RangeWithDefault;
+  versions: string[];
+}
+
+// This type uses semantic versioning (see `adaptLaunchersConfigDtoToLaunchersConfig()` function)
+export type Launcher = LauncherDTO;
+
+export interface LaunchersConfigDTO {
+  launchers: LauncherDTO[];
+  defaultLauncher: string;
+}
+
+export interface LaunchersConfig extends LaunchersConfigDTO {
+  launchers: Launcher[];
+}
+
+////////////////////////////////////////////////////////////////
+// Function Types
+////////////////////////////////////////////////////////////////
 
 export interface LaunchStudyParams {
   studyId: StudyMetadata["id"];
-  launcherId: Launcher["id"];
+  launcherId: LauncherDTO["id"];
   version: StudyMetadata["version"];
   solverPresetsId?: string;
-  config?: LauncherConfig;
+  launcherParams?: LauncherParams;
 }
 
 export interface GetLauncherVersionsParams {
-  launcherId?: Launcher["id"]; // If not specified, retrieve the versions of the default launcher
+  launcherId?: LauncherDTO["id"]; // If not specified, retrieve the versions of the default launcher
 }
 
 export interface JobCreationDTO {

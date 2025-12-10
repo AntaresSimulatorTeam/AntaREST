@@ -16,6 +16,7 @@ import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import semver from "semver";
 import type { StudyMetadata } from "../../../../../../../types/types";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
@@ -27,7 +28,6 @@ function Fields() {
   const { t } = useTranslation();
   const { control } = useFormContextPlus<PropertiesFormFields>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const studyVersion = Number(study.version);
 
   const filterOptions = useMemo(
     () =>
@@ -79,7 +79,7 @@ function Fields() {
           control={control}
         />
       </Fieldset>
-      {studyVersion >= 830 && (
+      {semver.gte(study.version, "8.3.0") && (
         <Fieldset legend="Adequacy patch">
           <SelectFE
             name="adequacyPatchMode"

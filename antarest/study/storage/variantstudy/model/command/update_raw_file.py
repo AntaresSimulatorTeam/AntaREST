@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import base64
-from typing import List, Optional
+from typing import Optional
 
 from typing_extensions import override
 
@@ -71,7 +71,3 @@ class UpdateRawFile(ICommand):
             args={"target": self.target, "b64Data": self.b64Data},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

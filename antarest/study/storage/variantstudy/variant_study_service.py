@@ -13,7 +13,6 @@
 import logging
 import re
 import shutil
-import typing as t
 from datetime import timedelta
 from functools import reduce
 from pathlib import Path, PurePosixPath
@@ -349,7 +348,7 @@ class VariantStudyService(AbstractStorageService):
             for command in study.commands
             for matrix in suppress_exception(
                 lambda: reduce(
-                    lambda m, c: m + c.get_inner_matrices(),
+                    lambda m, c: m + c.get_inner_matrices().matrices,
                     self.command_factory.to_command(command.to_dto()),
                     cast(List[str], []),
                 ),
@@ -734,14 +733,6 @@ class VariantStudyService(AbstractStorageService):
 
         return self.generate_task(variant_study, denormalize, from_scratch=from_scratch)
 
-    def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> t.List[t.List[ICommand]]:
-        commands: List[List[ICommand]] = [
-            self.command_factory.to_command(command_block.to_dto())
-            for index, command_block in enumerate(metadata.commands)
-            if from_index <= index
-        ]
-        return commands
-
     def get_study_task(self, study_id: str) -> TaskDTO:
         """
         Get the generation task ID of a variant study.
@@ -858,17 +849,6 @@ class VariantStudyService(AbstractStorageService):
             # raise a EXPECTATION_FAILED error (417)
             logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
             raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
-
-    @staticmethod
-    def _get_snapshot_last_executed_command_index(
-        study: VariantStudy,
-    ) -> Optional[int]:
-        if study.snapshot and study.snapshot.last_executed_command:
-            last_executed_command_index = [command.id for command in study.commands].index(
-                study.snapshot.last_executed_command
-            )
-            return last_executed_command_index if last_executed_command_index >= 0 else None
-        return None
 
     @override
     def get_raw(

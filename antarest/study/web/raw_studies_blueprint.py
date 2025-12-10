@@ -18,6 +18,7 @@ from typing import Annotated, Any
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
@@ -92,7 +93,7 @@ class MatrixFormat(EnumIgnoreCase):
             if dataframe.empty:
                 return Response(content=b"", media_type="application/octet-stream")
             string_buffer = io.StringIO()
-            dataframe.to_csv(string_buffer, sep="\t", header=False, index=False)
+            pl.from_pandas(dataframe).write_csv(string_buffer, separator="\t", include_header=False)
             return Response(content=string_buffer.getvalue(), media_type="text/csv")
 
         buffer = io.BytesIO()

@@ -22,6 +22,7 @@ import {
 import type { OptimizationForm } from "@/services/api/studies/config/optimization/types";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import semver from "semver";
 import type { StudyMetadata } from "../../../../../../types/types";
 import Form from "../../../../../common/Form";
 import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
@@ -36,7 +37,6 @@ import {
 function Optimization() {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -46,7 +46,7 @@ function Optimization() {
     return setOptimizationForm({
       studyId: study.id,
       values: dirtyValues,
-      studyVersion,
+      studyVersion: study.version,
     });
   };
 
@@ -57,7 +57,10 @@ function Optimization() {
   return (
     <Form
       key={study.id}
-      config={{ defaultValues: () => getOptimizationForm({ studyId: study.id, studyVersion }) }}
+      config={{
+        defaultValues: () =>
+          getOptimizationForm({ studyId: study.id, studyVersion: study.version }),
+      }}
       onSubmit={handleSubmit}
       enableUndoRedo
     >
@@ -76,7 +79,7 @@ function Optimization() {
               name="simplexOptimizationRange"
               control={control}
             />
-            {studyVersion >= 830 ? (
+            {semver.gte(study.version, "8.3.0") ? (
               <SelectFE
                 label={t("study.configuration.optimization.exportMps")}
                 options={EXPORT_MPS_OPTIONS}
@@ -102,7 +105,7 @@ function Optimization() {
             />
           </Fieldset>
           <Fieldset legend={t("study.configuration.optimization.legend.links")}>
-            {studyVersion >= 840 ? (
+            {semver.gte(study.version, "8.4.0") ? (
               <SelectFE
                 label={t("study.configuration.optimization.transmissionCapacities")}
                 options={TRANSMISSION_CAPACITIES_OPTIONS}

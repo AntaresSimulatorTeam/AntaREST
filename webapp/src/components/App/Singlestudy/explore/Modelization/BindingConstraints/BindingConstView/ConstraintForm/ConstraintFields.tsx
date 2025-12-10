@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateString } from "@/utils/validation/string";
+import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import semver from "semver";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
@@ -35,7 +36,6 @@ interface Props {
 function ConstraintFields({ study }: Props) {
   const { t } = useTranslation();
   const { control } = useFormContextPlus<BindingConstraint>();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -61,7 +61,7 @@ function ConstraintFields({ study }: Props) {
           control={control}
           rules={{ validate: (v) => validateString(v) }}
         />
-        {studyVersion >= 870 && (
+        {semver.gte(study.version, "8.7.0") && (
           <StringFE
             name="group"
             label={t("global.group")}
@@ -95,7 +95,7 @@ function ConstraintFields({ study }: Props) {
           sx={{ minWidth: 100 }}
         />
         <Box sx={{ display: "flex", gap: 1, mt: 1, width: 1 }}>
-          {studyVersion >= 830 && (
+          {semver.gte(study.version, "8.3.0") && (
             <>
               <SelectFE
                 name="filterYearByYear"

@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import io
 import itertools
 import shutil
 import textwrap
@@ -60,20 +59,12 @@ class TestInputSeriesMatrix:
         expected = {
             "columns": [0, 1, 2, 3, 4, 5, 6, 7],
             "data": [
-                [100000.0, 100000.0, 0.01, 0.01, 0.0, 0.0, 0.0, 3.14],
-                [100000.0, 100000.0, 0.01, 0.01, 0.0, 0.0, 0.0, 6.28],
+                [100000, 100000, 0.01, 0.01, 0, 0, 0, 3.14],
+                [100000, 100000, 0.01, 0.01, 0, 0, 0, 6.28],
             ],
             "index": [0, 1],
         }
         assert actual == expected
-
-        # checks binary response
-        # We cannot check the content as is as we're applying a transformation to the data
-        df_binary = pd.DataFrame(data=expected["data"])
-        buffer = io.BytesIO()
-        df_binary.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
-        actual_binary = node.load(formatted=False)
-        assert actual_binary == buffer.getvalue()
 
     @pytest.mark.parametrize("link", [True, False])
     def test_load_empty_file(self, my_study_config: FileStudyTreeConfig, link: bool) -> None:
@@ -96,12 +87,6 @@ class TestInputSeriesMatrix:
         actual = node.load(formatted=True)
         expected = {"index": [0, 1], "columns": [0, 1], "data": node.default_empty.tolist()}
         assert actual == expected
-
-        # checks binary response
-        actual = node.load(formatted=False)
-        buffer = io.BytesIO()
-        pd.DataFrame(default_matrix).to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
-        assert actual == buffer.getvalue()
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         mapper = Mock(spec=MatrixUriMapper)

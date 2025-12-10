@@ -25,7 +25,7 @@ import {
   getUserIds,
   getUsersById,
 } from "@/redux/selectors";
-import { displayVersionName } from "@/services/utils";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import { Box, Button, Drawer, Toolbar, Typography } from "@mui/material";
 import { useId } from "react";
@@ -144,7 +144,7 @@ function FiltersDrawer(props: Props) {
                 control={control}
                 label={t("global.versions")}
                 options={versions}
-                getOptionLabel={displayVersionName}
+                getOptionLabel={compactSemanticVersion}
               />
               <CheckboxesTagsFE
                 name="users"

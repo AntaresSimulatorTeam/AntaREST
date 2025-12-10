@@ -497,11 +497,3 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
         except (PermissionError, OSError):
             logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
     return False
-
-
-def is_non_study_folder(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
-    if is_study_folder(path):
-        return False
-    if should_ignore_folder_for_scan(path, filter_in, filter_out):
-        return False
-    return True

@@ -42,8 +42,6 @@ logger = logging.getLogger(__name__)
 
 
 class FileTransferManager:
-    _instance: Optional["FileTransferManager"] = None
-
     def __init__(
         self,
         repository: FileDownloadRepository,
@@ -135,18 +133,6 @@ class FileTransferManager:
                     if download.owner
                     else PermissionInfo(public_mode=PublicMode.READ)
                 ),
-            )
-        )
-
-    def remove(self, download_id: str) -> None:
-        download = self.repository.get(download_id)
-        owner = download.owner if download else None
-        self.repository.delete(download_id)
-        self.event_bus.push(
-            Event(
-                type=EventType.DOWNLOAD_EXPIRED,
-                payload=download_id,
-                permissions=PermissionInfo(owner=owner) if owner else PermissionInfo(public_mode=PublicMode.READ),
             )
         )
 
