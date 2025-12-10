@@ -62,7 +62,6 @@ function Optimization() {
 
   return (
     <Form
-      key={study.id}
       config={{ defaultValues: () => getOptimizationForm({ studyId: study.id, studyVersion }) }}
       onSubmit={handleSubmit}
       enableUndoRedo

@@ -55,7 +55,6 @@ function General() {
 
   return (
     <Form
-      key={study.id}
       config={{
         defaultValues: () => getAdequacyPatchFormFields(study.id),
       }}

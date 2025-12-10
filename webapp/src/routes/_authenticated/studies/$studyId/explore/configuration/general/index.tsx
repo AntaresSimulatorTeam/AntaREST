@@ -57,7 +57,6 @@ function General() {
 
   return (
     <Form
-      key={study.id}
       config={{ defaultValues: () => getGeneralFormFields(study.id) }}
       onSubmit={handleSubmit}
       enableUndoRedo

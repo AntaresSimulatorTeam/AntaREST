@@ -81,7 +81,6 @@ function TimeSeriesGeneration() {
 
   return (
     <Form
-      key={study.id}
       config={{
         defaultValues,
         disabled: isLaunchTaskInProgress,

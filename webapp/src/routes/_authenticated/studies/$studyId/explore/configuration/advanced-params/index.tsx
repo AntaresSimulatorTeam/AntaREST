@@ -14,19 +14,25 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { useOutletContext } from "react-router";
-import { updateStudySynthesis } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import type { StudyMetadata } from "../../../../../../types/types";
-import Fields from "./Fields";
+import { updateStudySynthesis } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { createFileRoute } from "@tanstack/react-router";
+import useStudy from "../../../-hooks/useStudy";
+import Fields from "./-components/Fields";
 import {
   getAdvancedParamsFormFields,
   setAdvancedParamsFormFields,
   type AdvancedParamsFormFields,
-} from "./utils";
+} from "./-utils";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/configuration/advanced-params/",
+)({
+  component: AdvancedParameters,
+});
 
 function AdvancedParameters() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const dispatch = useAppDispatch();
 
   ////////////////////////////////////////////////////////////////
@@ -56,7 +62,6 @@ function AdvancedParameters() {
 
   return (
     <Form
-      key={study.id}
       config={{
         defaultValues: () => getAdvancedParamsFormFields(study.id),
       }}
@@ -68,5 +73,3 @@ function AdvancedParameters() {
     </Form>
   );
 }
-
-export default AdvancedParameters;

@@ -19,8 +19,6 @@ import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/components/Form";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../types/types";
 import {
   HYDRO_HEURISTIC_POLICY_OPTIONS,
   HYDRO_PRICING_MODE_OPTIONS,
@@ -35,12 +33,13 @@ import {
   UNIT_COMMITMENT_MODE_OPTIONS,
   UnitCommitmentMode,
   type AdvancedParamsFormFields,
-} from "./utils";
+} from "../-utils";
+import useStudy from "../../../../-hooks/useStudy";
 
 function Fields() {
   const [t] = useTranslation();
   const { control } = useFormContextPlus<AdvancedParamsFormFields>();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////

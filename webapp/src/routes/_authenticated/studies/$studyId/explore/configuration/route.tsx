@@ -79,6 +79,13 @@ function ConfigurationLayout() {
           }),
           id: ADEQUACY_PATCH_TAB_ID,
         },
+        {
+          label: "Advanced Parameters",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/configuration/advanced-params",
+            params: { studyId: study.id },
+          }),
+        },
       ].filter(Boolean)}
       renderPanel={({ children }, tabId) =>
         tabId === ADEQUACY_PATCH_TAB_ID ? children : <ViewWrapper>{children}</ViewWrapper>
