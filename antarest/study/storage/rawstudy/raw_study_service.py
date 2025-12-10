@@ -527,12 +527,14 @@ class RawStudyService(AbstractStorageService):
                 if hydro_pmax_value == "hourly":
                     raise NotImplementedError("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
 
-    def normalize_study(self, study: Study) -> None:
+    def normalize_study(self, study: Study | FileStudy) -> None:
         """
         Method used to normalize a study.
         It will put every matrix in the study in the matrix-store.
         """
-        matrix_nodes = cast(list[MatrixNode], self.get_raw(study).tree.normalize())
+        if isinstance(study, Study):
+            study = self.get_raw(study)
+        matrix_nodes = cast(list[MatrixNode], study.tree.normalize())
         if not matrix_nodes:
             return
 
