@@ -18,7 +18,7 @@ import type { TimeSeriesTypeValue } from "@/services/api/studies/timeseries/type
 import { validateNumber } from "@/utils/validation/number";
 import { TableCell } from "@mui/material";
 import { useWatch } from "react-hook-form";
-import type { TimeSeriesConfigValues } from "../utils";
+import type { TimeSeriesConfigValues } from "../-utils";
 
 interface Props {
   type: TimeSeriesTypeValue;

@@ -15,6 +15,7 @@
 import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import ListElement from "../../../../../../../components/ListElement";
 import type { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
 import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
@@ -22,7 +23,6 @@ import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLink, getCurrentStudyMapNode } from "../../../../../../../redux/selectors";
 import type { StudyMetadata, UpdateAreaUi } from "../../../../../../../types/types";
 import { isSearchMatching } from "../../../../../../../utils/stringUtils";
-import ListElement from "../../../common/ListElement";
 import AreaConfig from "./AreaConfig";
 import { AreasContainer } from "./style";
 

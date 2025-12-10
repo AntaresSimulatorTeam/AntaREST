@@ -21,7 +21,7 @@ import type {
 } from "@/services/api/studies/config/scenarioBuilder/types";
 import { Box } from "@mui/material";
 import { useEffect, useState } from "react";
-import ListElement from "../../../../../../../../../-App/Singlestudy/explore/common/ListElement";
+import ListElement from "../../../../../../../../../../components/ListElement";
 import { hasAreaSelection, isLevel1Display, isLevel2Display, isLevel3Display } from "./types";
 import { requiresAreaSelection } from "./utils";
 

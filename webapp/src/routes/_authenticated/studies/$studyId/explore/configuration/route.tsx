@@ -55,6 +55,13 @@ function ConfigurationLayout() {
             params: { studyId: study.id },
           },
         },
+        {
+          label: "Time-Series Generation",
+          linkOptions: {
+            to: "/studies/$studyId/explore/configuration/ts-generation",
+            params: { studyId: study.id },
+          },
+        },
       ]}
       renderPanel={({ children }) => <ViewWrapper>{children}</ViewWrapper>}
     />

@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import type { IdType } from "@/types/types";
+import { mergeSxProp } from "@/utils/muiUtils";
+import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
 import {
   Box,
   ListItemButton,
@@ -21,9 +24,6 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
-import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
-import type { IdType } from "../../../../../types/types";
-import { mergeSxProp } from "../../../../../utils/muiUtils";
 
 interface Props<T> {
   list: T[];

@@ -17,7 +17,7 @@ import BooleanFE from "@/components/fieldEditors/BooleanFE";
 import { TimeSeriesType } from "@/services/api/studies/timeseries/constants";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { TimeSeriesConfigValues } from "../utils";
+import type { TimeSeriesConfigValues } from "../-utils";
 import TypeConfigFields from "./TypeConfigFields";
 
 function Fields() {

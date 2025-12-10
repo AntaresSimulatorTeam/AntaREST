@@ -14,11 +14,11 @@
 
 import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useState } from "react";
+import ListElement from "../../../../../../components/ListElement";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../redux/selectors";
 import { nameToId } from "../../../../../../services/utils";
 import type { Area } from "../../../../../../types/types";
-import ListElement from "../../common/ListElement";
 
 interface PropsType {
   studyId: string;

@@ -14,7 +14,7 @@
 
 import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useMemo, useState } from "react";
-import ListElement from "../../common/ListElement";
+import ListElement from "../../../../../../components/ListElement";
 import AddDialog from "./AddDialog";
 import type { BindingConstraint } from "./BindingConstView/utils";
 

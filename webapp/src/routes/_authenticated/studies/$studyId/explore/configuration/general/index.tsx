@@ -66,5 +66,3 @@ function General() {
     </Form>
   );
 }
-
-export default General;

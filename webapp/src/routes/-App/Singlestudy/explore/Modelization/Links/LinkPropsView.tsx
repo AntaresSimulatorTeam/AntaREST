@@ -14,10 +14,10 @@
 
 import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useState } from "react";
+import ListElement from "../../../../../../components/ListElement";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLinkId, getLinks } from "../../../../../../redux/selectors";
 import type { LinkElement } from "../../../../../../types/types";
-import ListElement from "../../common/ListElement";
 
 interface PropsType {
   studyId: string;

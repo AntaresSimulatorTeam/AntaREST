@@ -27,7 +27,7 @@ import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
 import { v4 as uuidv4 } from "uuid";
 import useStudy from "../../-hooks/useStudy";
-import ListElement from "../../../../../-App/Singlestudy/explore/common/ListElement";
+import ListElement from "../../../../../../components/ListElement";
 import storage, { StorageKey } from "../../../../../../services/utils/localStorage";
 import CreateTemplateTableDialog from "./-components/dialogs/CreateTemplateTableDialog";
 import UpdateTemplateTableDialog from "./-components/dialogs/UpdateTemplateTableDialog";

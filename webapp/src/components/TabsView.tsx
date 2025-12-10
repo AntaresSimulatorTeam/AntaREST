@@ -50,12 +50,6 @@ function isRouteTabs(tabs: RouteTab[] | ContentTab[]): tabs is RouteTab[] {
 }
 
 function buildHrefOnRouteTabs(items: RouteTab[]): Array<RouteTab & { href: string }> {
-  console.log(
-    items.map((item) => ({
-      ...item,
-      href: router.buildLocation(item.linkOptions).href,
-    })),
-  );
   return items.map((item) => ({
     ...item,
     href: router.buildLocation(item.linkOptions).href,
