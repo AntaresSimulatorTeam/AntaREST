@@ -63,7 +63,6 @@ import type {
  * formatGridNumber({ value: 1234567.89, maxDecimals: 2 }) // "1 234 567.89"
  * formatGridNumber({ value: 0, maxDecimals: 6 }) // "0"
  * formatGridNumber({ value: undefined }) // ""
- * formatGridNumber({ value: null }) // ""
  * formatGridNumber({ value: NaN }) // ""
  * formatGridNumber({ value: "1234.56", maxDecimals: 1 }) // "1 234.5"
  * ```
@@ -73,7 +72,7 @@ import type {
  * @returns A formatted string representation of the number with proper separators.
  */
 export function formatGridNumber({ value, maxDecimals = 0 }: FormatGridNumberOptions): string {
-  if (value === undefined || value === null) {
+  if (value === undefined) {
     return "";
   }
 

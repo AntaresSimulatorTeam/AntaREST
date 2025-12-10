@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { VariableViewParams, VariableViewParamsDTO } from "./types";
+import type { VariableViewMatrixDTO, VariableViewParams, VariableViewParamsDTO } from "./types";
 
 /**
  * Adapts VariableViewParams to a DTO format suitable for query parameters.
@@ -64,4 +64,31 @@ export function adaptVariableViewParamsToDto(params: VariableViewParams): Variab
         storage_id: params.clusterId,
       };
   }
+}
+
+/**
+ * Sanitizes JSON response containing invalid NaN literals.
+ *
+ * The backend serializes NaN as literal tokens (e.g., {"value": NaN})
+ * using Pydantic's ser_json_inf_nan="constants" configuration. This is invalid JSON
+ * and causes JSON.parse() to fail.
+ *
+ * This function converts these literals to valid JSON strings before parsing:
+ * - NaN → "NaN" (later handled by formatGridNumber to display as empty cell)
+ *
+ * @param response - Raw response data from axios (string or already parsed object)
+ * @returns Properly parsed VariableViewMatrixDTO object
+ */
+export function sanitizeNaNResponse(
+  response: string | VariableViewMatrixDTO,
+): VariableViewMatrixDTO {
+  // If already parsed as an object, return as-is
+  if (typeof response === "object") {
+    return response;
+  }
+
+  // Replace invalid JSON literals with valid JSON strings
+  const sanitized = response.replace(/NaN/g, '"NaN"');
+
+  return JSON.parse(sanitized);
 }

@@ -13,11 +13,11 @@
  */
 
 import client from "@/services/api/client";
-import { adaptVariableViewParamsToDto } from "./adapters";
+import { adaptVariableViewParamsToDto, sanitizeNaNResponse } from "./adapters";
 import type {
   GetTimeIndexParams,
-  GetVariableViewDataParams,
   GetVariablesListParams,
+  GetVariableViewDataParams,
   MaterializeVariableViewParams,
   TimeIndexDTO,
   VariablesListDTO,
@@ -55,7 +55,12 @@ export async function getVariableViewData({
   const queryParams = adaptVariableViewParamsToDto(params);
   const { data } = await client.get<VariableViewMatrixDTO>(
     `/v1/studies/${studyId}/output/${outputId}/variables-views/data`,
-    { params: queryParams },
+    {
+      params: queryParams,
+      // Custom transformer to handle NaN values from backend
+      // The backend sends invalid JSON with literal NaN tokens that must be sanitized
+      transformResponse: [(data) => sanitizeNaNResponse(data)],
+    },
   );
   return data;
 }
