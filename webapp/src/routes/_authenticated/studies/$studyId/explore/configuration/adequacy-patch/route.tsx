@@ -27,7 +27,7 @@ import {
 } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/",
+  "/_authenticated/studies/$studyId/explore/configuration/adequacy-patch",
 )({
   component: AdequacyPatch,
 });
