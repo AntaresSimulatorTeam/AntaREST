@@ -399,7 +399,8 @@ function ResultFilters({
                 <FilterListIcon />
               </IconButton>
             </Tooltip>
-            <DownloadMatrixButton studyId={studyId} path={path} />
+            {/* TODO: Export functionality for variable per variable mode will be implemented later */}
+            {!isVariablePerVariable && <DownloadMatrixButton studyId={studyId} path={path} />}
           </Box>
         </Box>
       </CustomScrollbar>
