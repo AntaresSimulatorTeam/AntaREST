@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import os
 import shutil
+import time
 import typing as t
 import uuid
 import zipfile
@@ -26,11 +27,14 @@ from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, ExternalAuthConfig, SecurityConfig
+from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.dbmodel import Base
 from antarest.login.model import init_admin_user
 from antarest.main import _fastapi_app
 from antarest.service_creator import SESSION_ARGS, Services, create_services, init_db_engine
+from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
 
@@ -81,7 +85,7 @@ def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
 
 
 @pytest.fixture
-def services(tmp_path: Path, initial_db_file: Path) -> Iterable[Services]:
+def services(tmp_path: Path, initial_db_file: Path, services_supplier: ServicesSupplier) -> Iterable[Services]:
     # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
@@ -143,6 +147,13 @@ def services(tmp_path: Path, initial_db_file: Path) -> Iterable[Services]:
     # Services creation and starting
     services = create_services(config)
     services_supplier.services = services
+    studies = []
+    with db():
+        while len(studies) != 1:
+            studies = services.study.get_studies_information(
+                StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))
+            )
+            time.sleep(0.01)
     yield services
     services.watcher.stop()
     services_supplier.services = None
