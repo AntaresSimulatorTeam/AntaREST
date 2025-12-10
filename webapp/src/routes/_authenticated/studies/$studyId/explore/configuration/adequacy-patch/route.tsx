@@ -12,19 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import Form from "@/components/Form";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
-import TableMode from "@/components/TableMode";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import TabsView from "@/components/TabsView";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../../-hooks/useStudy";
-import {
-  getAdequacyPatchFormFields,
-  setAdequacyPatchFormFields,
-  type AdequacyPatchFormFields,
-} from "./general/-utils";
-import Fields from "./general/Fields";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/adequacy-patch",
@@ -36,41 +28,25 @@ function AdequacyPatchLayout() {
   const study = useStudy();
   const { t } = useTranslation();
 
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleSubmit = (data: SubmitHandlerPlus<AdequacyPatchFormFields>) => {
-    return setAdequacyPatchFormFields(study.id, data.dirtyValues);
-  };
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
   return (
     <TabsView
       items={[
         {
           label: t("study.configuration.adequacyPatch.tab.general"),
-          content: (
-            <Form
-              key={study.id}
-              config={{
-                defaultValues: () => getAdequacyPatchFormFields(study.id),
-              }}
-              onSubmit={handleSubmit}
-              enableUndoRedo
-            >
-              <Fields />
-            </Form>
-          ),
+          linkOptions: {
+            to: "/studies/$studyId/explore/configuration/adequacy-patch/general",
+            params: { studyId: study.id },
+          },
         },
         {
           label: t("study.configuration.adequacyPatch.tab.perimeter"),
-          content: <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />,
+          linkOptions: {
+            to: "/studies/$studyId/explore/configuration/adequacy-patch/perimeter",
+            params: { studyId: study.id },
+          },
         },
       ]}
+      renderPanel={({ children }) => <ViewWrapper>{children}</ViewWrapper>}
     />
   );
 }
