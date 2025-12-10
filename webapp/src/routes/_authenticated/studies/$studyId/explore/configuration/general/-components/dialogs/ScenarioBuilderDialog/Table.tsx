@@ -15,6 +15,7 @@
 import DataGridForm from "@/components/DataGridForm";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import EmptyView from "@/components/page/EmptyView";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type {
   Level1Display,
@@ -24,10 +25,8 @@ import { GridCellKind, type GridColumn, type Item } from "@glideapps/glide-data-
 import * as R from "ramda";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import type { StudyMetadata } from "../../../../../../../../types/types";
-import { toError } from "../../../../../../../../utils/fnUtils";
+import useEnqueueErrorSnackbar from "../../../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import { toError } from "../../../../../../../../../../utils/fnUtils";
 
 interface Props {
   config: Level1Display;
@@ -38,7 +37,7 @@ interface Props {
 function Table({ config, type, areaId }: Props) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
 
   const rowNames = useMemo(() => R.keys(config), [config]);
 

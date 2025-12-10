@@ -144,5 +144,3 @@ function Debug() {
     </DebugContext.Provider>
   );
 }
-
-export default Debug;

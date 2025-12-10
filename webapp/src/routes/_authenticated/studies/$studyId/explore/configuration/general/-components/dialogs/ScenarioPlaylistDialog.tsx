@@ -35,8 +35,8 @@ import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import usePromise from "../../../../../../../hooks/usePromise";
-import type { StudyMetadata } from "../../../../../../../types/types";
+import usePromise from "../../../../../../../../../hooks/usePromise";
+import type { StudyMetadata } from "../../../../../../../../../types/types";
 
 interface Props {
   study: StudyMetadata;

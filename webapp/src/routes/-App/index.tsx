@@ -14,7 +14,7 @@
 
 import { Navigate, Outlet, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import SingleStudy from "../_authenticated/studies/$studyId";
-import Configuration from "./Singlestudy/explore/Configuration";
+import Configuration from "../_authenticated/studies/$studyId/explore/configuration/route";
 import Modelization from "./Singlestudy/explore/Modelization";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";

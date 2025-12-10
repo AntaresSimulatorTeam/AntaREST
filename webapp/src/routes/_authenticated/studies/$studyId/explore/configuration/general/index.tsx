@@ -14,19 +14,25 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../types/types";
-import Fields from "./Fields";
+import { createFileRoute } from "@tanstack/react-router";
+import useStudy from "../../../-hooks/useStudy";
+import Fields from "./-components/Fields";
 import {
   getGeneralFormFields,
   hasDayField,
   pickDayFields,
   setGeneralFormFields,
   type GeneralFormFields,
-} from "./utils";
+} from "./-utils";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/configuration/general/",
+)({
+  component: General,
+});
 
 function General() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

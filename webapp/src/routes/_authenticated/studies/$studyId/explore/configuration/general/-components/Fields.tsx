@@ -28,10 +28,6 @@ import * as RA from "ramda-adjunct";
 import { useEffect, useState } from "react";
 import type { Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
-import ScenarioPlaylistDialog from "./dialogs/ScenarioPlaylistDialog";
-import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
-import { FieldWithButton } from "./styles";
 import {
   BUILDING_MODE_OPTIONS,
   BuildingMode,
@@ -39,7 +35,11 @@ import {
   MODE_OPTIONS,
   type GeneralFormFields,
   type SetDialogStateType,
-} from "./utils";
+} from "../-utils";
+import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
+import ScenarioPlaylistDialog from "./dialogs/ScenarioPlaylistDialog";
+import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
+import { FieldWithButton } from "./styles";
 
 interface Props {
   study: StudyMetadata;

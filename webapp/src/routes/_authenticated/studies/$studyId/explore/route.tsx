@@ -60,6 +60,13 @@ function StudyExploreLayout() {
     <TabsView
       items={[
         {
+          label: t("study.configuration"),
+          linkOptions: {
+            to: "/studies/$studyId/explore/configuration",
+            params: { studyId: study.id },
+          },
+        },
+        {
           label: t("study.tableMode"),
           linkOptions: {
             to: "/studies/$studyId/explore/tablemode",

@@ -39,6 +39,7 @@ export interface TabsViewProps {
   items: RouteTab[] | ContentTab[];
   onChange?: TabListProps["onChange"];
   onBack?: VoidFunction;
+  renderPanel?: (props: { children: React.ReactNode }) => React.ReactNode;
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
@@ -49,6 +50,12 @@ function isRouteTabs(tabs: RouteTab[] | ContentTab[]): tabs is RouteTab[] {
 }
 
 function buildHrefOnRouteTabs(items: RouteTab[]): Array<RouteTab & { href: string }> {
+  console.log(
+    items.map((item) => ({
+      ...item,
+      href: router.buildLocation(item.linkOptions).href,
+    })),
+  );
   return items.map((item) => ({
     ...item,
     href: router.buildLocation(item.linkOptions).href,
@@ -59,6 +66,7 @@ function TabsView({
   items,
   onChange,
   onBack,
+  renderPanel = ({ children }) => children,
   divider = false,
   disablePadding = false,
   disableGutters = false,
@@ -98,12 +106,15 @@ function TabsView({
     return hasRouteTabs ? tabs[tabIndex].href : tabIndex;
   };
 
-  const getTabProps = (tabIndex: number): TabProps & { href?: string } => {
+  const getTabProps = (tabIndex: number): TabProps => {
     if (hasRouteTabs) {
       return {
         value: getTabValue(tabIndex),
         LinkComponent: Link,
-        href: tabs[tabIndex].href,
+        // With MUI Tabs + router Link, providing `href` causes every Tab
+        // to inherit the current tab `href` in the DOM, even though clicks work.
+        // The router Link must be responsible for generating the href.
+        ...items[tabIndex].linkOptions,
       };
     }
 
@@ -153,7 +164,7 @@ function TabsView({
                 p: 2,
                 position: "relative",
                 overflow: "auto",
-                ":has(> .TabsView:first-child), :has(> .TabWrapper:first-child), :has(> .SplitView:first-child)":
+                ":has(> .TabsView:first-child), :has(> .TabWrapper:first-child), :has(> .SplitView:first-child), :has(> .ViewWrapper:first-child)":
                   {
                     p: 0,
                   },
@@ -162,7 +173,7 @@ function TabsView({
               disableGutters && { px: 0 },
             ]}
           >
-            {hasRouteTabs ? <Outlet /> : tab.content}
+            {renderPanel({ children: hasRouteTabs ? <Outlet /> : tab.content })}
           </TabPanel>
         ))}
       </TabContext>
