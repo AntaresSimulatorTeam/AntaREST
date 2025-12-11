@@ -22,9 +22,6 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/c
   component: ConfigurationLayout,
 });
 
-const ADEQUACY_PATCH_TAB_ID = "adequacy-patch" as const;
-const GEO_TRIMMING_TAB_ID = "geographic-trimming" as const;
-
 function ConfigurationLayout() {
   const study = useStudy();
   const { t } = useTranslation();
@@ -59,7 +56,7 @@ function ConfigurationLayout() {
             to: "/studies/$studyId/explore/configuration/adequacy-patch",
             params: { studyId: study.id },
           }),
-          id: ADEQUACY_PATCH_TAB_ID,
+          id: "adequacy-patch" as const,
         },
         {
           label: "Advanced Parameters",
@@ -81,14 +78,11 @@ function ConfigurationLayout() {
             to: "/studies/$studyId/explore/configuration/geo-trimming",
             params: { studyId: study.id },
           }),
-          id: GEO_TRIMMING_TAB_ID,
+          id: "geographic-trimming" as const,
         },
       ].filter(Boolean)}
       renderPanel={({ children }, tabId) => {
-        if (tabId && [ADEQUACY_PATCH_TAB_ID, GEO_TRIMMING_TAB_ID].includes(tabId)) {
-          return children;
-        }
-        return <ViewWrapper>{children}</ViewWrapper>;
+        return tabId ? children : <ViewWrapper>{children}</ViewWrapper>;
       }}
     />
   );

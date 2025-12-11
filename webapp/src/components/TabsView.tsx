@@ -20,30 +20,30 @@ import { Outlet, useMatchRoute, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import RouterLink from "./router/RouterLink";
 
-interface BaseTab {
+interface BaseTab<TId extends string> {
   label: string;
   disabled?: boolean;
   // Optional ID to use as tab value instead of generated one.
   // Useful with content tabs to have a stable tab value across renders when tab order can change.
   // Also used in `renderPanel()` callback to identify the tab.
-  id?: string;
+  id?: TId;
 }
 
-interface RouteTab extends BaseTab {
+interface RouteTab<TId extends string = string> extends BaseTab<TId> {
   linkOptions: ToOptions;
   content?: never;
 }
 
-interface ContentTab extends BaseTab {
+interface ContentTab<TId extends string = string> extends BaseTab<TId> {
   linkOptions?: never;
   content: React.ReactNode;
 }
 
-export interface TabsViewProps {
-  tabs: RouteTab[] | ContentTab[];
+export interface TabsViewProps<TId extends string = string> {
+  tabs: Array<RouteTab<TId>> | Array<ContentTab<TId>>;
   onChange?: TabListProps["onChange"];
   onBack?: VoidFunction;
-  renderPanel?: (props: { children: React.ReactNode }, tabId?: string) => React.ReactNode;
+  renderPanel?: (props: { children: React.ReactNode }, tabId?: TId) => React.ReactNode;
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
@@ -72,7 +72,7 @@ function getTabValue(tab: RouteTab | ContentTab, tabIndex: number) {
   return getContentTabValue(tab, tabIndex);
 }
 
-function TabsView({
+function TabsView<TId extends string>({
   tabs,
   onChange,
   onBack,
@@ -80,7 +80,7 @@ function TabsView({
   divider = false,
   disablePadding = false,
   disableGutters = false,
-}: TabsViewProps) {
+}: TabsViewProps<TId>) {
   const hasRouteTabs = isRouteTabs(tabs);
 
   const [activeContentTabValue, setActiveContentTabValue] = useState(() =>

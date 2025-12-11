@@ -46,7 +46,7 @@ function AdequacyPatchLayout() {
           },
         },
       ]}
-      renderPanel={({ children }) => <ViewWrapper>{children}</ViewWrapper>}
+      renderPanel={ViewWrapper}
     />
   );
 }

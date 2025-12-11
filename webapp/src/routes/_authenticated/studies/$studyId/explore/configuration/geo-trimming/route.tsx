@@ -53,7 +53,7 @@ function GeographicTrimmingLayout() {
           },
         },
       ]}
-      renderPanel={({ children }) => <ViewWrapper>{children}</ViewWrapper>}
+      renderPanel={ViewWrapper}
     />
   );
 }
