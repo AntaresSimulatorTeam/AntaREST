@@ -12,19 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import HomeIcon from "@mui/icons-material/Home";
-import { Link, Tooltip } from "@mui/material";
-import { useLayoutEffect, useRef, useState } from "react";
+import RouterLink from "@/components/router/RouterLink";
+import { isTextTruncated } from "@/utils/domUtils";
+import { Tooltip } from "@mui/material";
+import { type ToOptions } from "@tanstack/react-router";
+import React, { useLayoutEffect, useRef, useState } from "react";
 
 interface BreadcrumbLinkProps {
-  folderName: string;
-  isFirstSegment: boolean;
-  /**
-   * Indicates if this is the study name (last segment).
-   * Study names are never truncated to prevent users from accidentally
-   * working with the wrong study due to similar truncated names.
-   */
-  isLastSegment?: boolean;
+  label: string;
+  icon: React.ReactNode;
+  truncate?: boolean;
+  linkOptions: ToOptions;
   onClick: () => void;
 }
 
@@ -38,50 +36,53 @@ const truncatedTextStyle = {
 const linkStyle = {
   display: "flex",
   alignItems: "center",
-  cursor: "pointer",
   transition: "color 0.15s ease",
   "&:hover": {
-    color: "info.main",
+    color: "secondary.main",
   },
 } as const;
 
 function BreadcrumbLink({
-  folderName,
-  isFirstSegment,
-  isLastSegment,
+  label,
+  icon,
+  truncate = false,
+  linkOptions,
   onClick,
 }: BreadcrumbLinkProps) {
   const textRef = useRef<HTMLSpanElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
-  // Study names (last segment) are never truncated to avoid user confusion
-  const shouldTruncate = !isLastSegment;
-
   useLayoutEffect(() => {
-    if (!shouldTruncate) {
+    if (!truncate || !textRef.current) {
+      setIsTruncated(false);
       return;
     }
-
-    const element = textRef.current;
-    if (element) {
-      setIsTruncated(element.scrollWidth > element.clientWidth);
-    }
-  }, [shouldTruncate]);
+    setIsTruncated(isTextTruncated(textRef.current));
+  }, [truncate]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   const linkContent = (
-    <Link underline="hover" color="inherit" onClick={onClick} sx={linkStyle}>
-      {isFirstSegment && <HomeIcon fontSize="inherit" sx={{ mr: 1 }} />}
-      <span ref={textRef} style={shouldTruncate ? truncatedTextStyle : undefined}>
-        {folderName}
+    <RouterLink
+      ref={(e) => {
+        //
+      }}
+      underline="hover"
+      color="inherit"
+      onClick={onClick}
+      sx={linkStyle}
+      {...linkOptions}
+    >
+      {icon}
+      <span ref={textRef} style={truncate ? truncatedTextStyle : undefined}>
+        {label}
       </span>
-    </Link>
+    </RouterLink>
   );
 
-  return isTruncated ? <Tooltip title={folderName}>{linkContent}</Tooltip> : linkContent;
+  return isTruncated ? <Tooltip title={label}>{linkContent}</Tooltip> : linkContent;
 }
 
 export default BreadcrumbLink;

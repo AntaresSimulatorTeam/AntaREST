@@ -15,10 +15,10 @@
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import type { StudyMetadata } from "@/types/types";
+import HomeIcon from "@mui/icons-material/Home";
 import { Box, Breadcrumbs } from "@mui/material";
-import { useNavigate } from "@tanstack/react-router";
-import { buildBreadcrumbPath } from "../utils";
 import BreadcrumbLink from "./BreadcrumbLink";
+import { buildBreadcrumbPath } from "./utils";
 
 interface BreadcrumbProps {
   study: StudyMetadata;
@@ -26,29 +26,12 @@ interface BreadcrumbProps {
 
 function Breadcrumb({ study }: BreadcrumbProps) {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+
   const breadcrumbPath = buildBreadcrumbPath({
     folderPath: study.folder,
     workspaceName: study.workspace,
     studyName: study.name,
   });
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleBreadcrumbClick = (folderPath: string, isLastSegment: boolean) => {
-    if (isLastSegment) {
-      // Navigate to the specific study's detail page when clicking the study name
-      // This allows users to go back to the study overview from any sub-page
-      navigate({ to: "/studies/$studyId", params: { studyId: study.id } });
-    } else {
-      // Navigate to studies list with folder filter when clicking folder segments
-      // This allows users to browse other studies in the same folder hierarchy
-      dispatch(updateStudyFilters({ folder: `/${folderPath}` }));
-      navigate({ to: "/studies" });
-    }
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -58,17 +41,29 @@ function Breadcrumb({ study }: BreadcrumbProps) {
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Breadcrumbs maxItems={5} sx={{ fontSize: 15 }}>
         {breadcrumbPath.map((folderName, index) => {
-          const path = breadcrumbPath.slice(0, index + 1).join("/");
+          const folderPath = `/${breadcrumbPath.slice(0, index + 1).join("/")}`;
           const isFirstSegment = index === 0;
           const isLastSegment = index === breadcrumbPath.length - 1;
 
           return (
             <BreadcrumbLink
-              key={path}
-              folderName={folderName}
-              isFirstSegment={isFirstSegment}
-              isLastSegment={isLastSegment}
-              onClick={() => handleBreadcrumbClick(path, isLastSegment)}
+              key={folderPath}
+              label={folderName}
+              icon={isFirstSegment ? <HomeIcon fontSize="inherit" sx={{ mr: 1 }} /> : null}
+              // Study names (last segment) are never truncated to prevent users from accidentally
+              // working with the wrong study due to similar truncated names.
+              truncate={!isLastSegment}
+              linkOptions={
+                isLastSegment
+                  ? { to: "/studies/$studyId", params: { studyId: study.id } }
+                  : { to: "/studies" }
+              }
+              onClick={() => {
+                if (!isLastSegment) {
+                  // This allows users to browse other studies in the same folder hierarchy
+                  dispatch(updateStudyFilters({ folder: folderPath }));
+                }
+              }}
             />
           );
         })}

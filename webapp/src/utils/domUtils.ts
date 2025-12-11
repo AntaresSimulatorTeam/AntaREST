@@ -63,3 +63,15 @@ export function measureTextWidth(text: string, font?: string) {
   }
   return 0;
 }
+
+/**
+ * Determines whether the text content of the given HTML element is truncated.
+ *
+ * @see https://css-tricks.com/snippets/css/truncate-string-with-ellipsis/
+ *
+ * @param element - The HTML element to check for text truncation.
+ * @returns `true` if the text content is truncated; `false` otherwise.
+ */
+export function isTextTruncated(element: HTMLElement) {
+  return element.scrollWidth > element.clientWidth;
+}
