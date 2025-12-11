@@ -76,7 +76,7 @@ function SettingsForm(props: PropType) {
         <Box display="flex" justifyContent="space-between" alignItems="flex-end">
           <Title>{t("xpansion.optimization")}</Title>
           <Button
-            variant="outlined"
+            variant="contained"
             color="primary"
             sx={{
               display: "flex",
@@ -108,6 +108,7 @@ function SettingsForm(props: PropType) {
               label={t("xpansion.ucType")}
               data={currentSettings.uc_type}
               handleChange={handleChange}
+              variant="outlined"
               sx={{
                 minWidth: "100%",
               }}
@@ -122,6 +123,7 @@ function SettingsForm(props: PropType) {
               label={t("xpansion.master")}
               data={currentSettings.master}
               handleChange={handleChange}
+              variant="outlined"
               sx={{
                 minWidth: "100%",
               }}
@@ -168,24 +170,12 @@ function SettingsForm(props: PropType) {
               label={t("xpansion.solver")}
               data={currentSettings.solver}
               handleChange={handleChange}
+              variant="outlined"
               sx={{
                 minWidth: "100%",
               }}
             />
           </SelectFields>
-          {/* <TextField
-            type="number"
-            label={t("xpansion.timeLimit")}
-            
-            value={Math.round((currentSettings.timelimit || 1e12) / 3600)}
-            onChange={(e) =>
-              handleChange(
-                "timelimit",
-                Math.round(parseFloat(e.target.value) * 3600),
-              )
-            }
-            sx={{ mb: 1 }}
-          /> */}
           <TextField
             type="number"
             label={t("xpansion.separationParameter")}
@@ -195,6 +185,16 @@ function SettingsForm(props: PropType) {
             }
             sx={{ mb: 1 }}
             inputProps={{ min: 0, max: 1, step: 0.05 }}
+          />
+          <TextField
+            type="number"
+            label={t("xpansion.timeLimit")}
+            value={Math.round(currentSettings.timelimit / 3600)}
+            onChange={(e) =>
+              handleChange("timelimit", Math.round(parseFloat(e.target.value) * 3600))
+            }
+            sx={{ mb: 1 }}
+            inputProps={{ min: 0 }}
           />
           <TextField
             type="number"
@@ -215,22 +215,10 @@ function SettingsForm(props: PropType) {
         </Fields>
       </Box>
       <Box>
-        <Title>{t("xpansion.extra")}</Title>
+        <Title>{t("xpansion.modelingAddons")}</Title>
         <Divider sx={{ mt: 1, mb: 2 }} />
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            width: "100%",
-            mb: 2,
-            "&> div": {
-              mr: 2,
-              mb: 2,
-            },
-          }}
-        >
-          <SelectFields>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             <SelectSingle
               name="yearly-weights"
               list={weights.map((item) => {
@@ -239,8 +227,9 @@ function SettingsForm(props: PropType) {
               label={t("xpansion.yearlyWeight")}
               data={currentSettings["yearly-weights"] || ""}
               handleChange={handleChange}
+              variant="outlined"
               sx={{
-                minWidth: "100%",
+                minWidth: 270,
               }}
               optional
             />
@@ -250,8 +239,8 @@ function SettingsForm(props: PropType) {
                 onRead(XpansionResourceType.weights, currentSettings["yearly-weights"] || "")
               }
             />
-          </SelectFields>
-          <SelectFields>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             <SelectSingle
               name="additional-constraints"
               list={constraints.map((item) => {
@@ -260,8 +249,9 @@ function SettingsForm(props: PropType) {
               label={t("xpansion.additionalConstraints")}
               data={currentSettings["additional-constraints"] || ""}
               handleChange={handleChange}
+              variant="outlined"
               sx={{
-                minWidth: "100%",
+                minWidth: 270,
               }}
               optional
             />
@@ -274,25 +264,13 @@ function SettingsForm(props: PropType) {
                 )
               }
             />
-          </SelectFields>
+          </Box>
         </Box>
       </Box>
       <Box>
         <Title>{t("xpansion.sensitivity")}</Title>
         <Divider sx={{ mt: 1, mb: 2 }} />
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            width: "100%",
-            mb: 2,
-            "&> div": {
-              mr: 2,
-              mb: 2,
-            },
-          }}
-        >
+        <Fields>
           <NumberFE
             value={currentSettings.sensitivity_config?.epsilon}
             label={t("xpansion.epsilon")}
@@ -300,21 +278,28 @@ function SettingsForm(props: PropType) {
               handleObjectChange("sensitivity_config", "epsilon", parseFloat(e.target.value))
             }
             inputProps={{ min: 0 }}
+            sx={{ minWidth: 270 }}
           />
+
           <SwitchFE
             value={currentSettings.sensitivity_config?.capex}
             label={t("xpansion.capex")}
             onChange={(e, checked) => handleObjectChange("sensitivity_config", "capex", checked)}
           />
-          <SelectFE
-            sx={{ minWidth: "200px" }}
-            label={t("xpansion.projection")}
-            multiple
-            value={currentSettings.sensitivity_config?.projection || []}
-            onChange={(e) => handleObjectChange("sensitivity_config", "projection", e.target.value)}
-            options={candidates}
-          />
-        </Box>
+        </Fields>
+        <SelectFE
+          label={t("xpansion.projection")}
+          variant="outlined"
+          multiple
+          value={currentSettings.sensitivity_config?.projection || []}
+          onChange={(e) => handleObjectChange("sensitivity_config", "projection", e.target.value)}
+          options={candidates}
+          onSelectAllOptions={(allCandidates) =>
+            handleObjectChange("sensitivity_config", "projection", allCandidates)
+          }
+          onDeselectAllOptions={() => handleObjectChange("sensitivity_config", "projection", [])}
+          sx={{ width: 270 }}
+        />
       </Box>
     </Box>
   );

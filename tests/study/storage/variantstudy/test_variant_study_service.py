@@ -24,12 +24,12 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import sanitize_uuid
+from antarest.core.utils.utils import current_time, sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
-from antarest.study.model import StudyAdditionalData
+from antarest.study.model import Study
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -156,12 +156,11 @@ class TestVariantStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            last_access=current_time(),
             public_mode=PublicMode.FULL,
             owner=user,
             groups=[group],
             path=str(raw_study_path),
-            additional_data=StudyAdditionalData(author="John Smith"),
         )
         db.session.add(raw_study)
         db.session.commit()
@@ -243,30 +242,7 @@ class TestVariantStudyService:
         - Test return value in case the user give a bad argument (negative
         integer or other type than integer)
         - Test deletion of an old snapshot and a recent one
-
-        In order to test date and time of objects, a FakeDateTime class is defined and used
-        by a monkeypatch context
         """
-
-        from typing import Optional
-
-        class FakeDatetime:
-            """
-            Class that handle fake timestamp creation/update of variant
-            """
-
-            fake_time: datetime.datetime
-
-            @classmethod
-            def now(cls, tz: Optional[datetime.timezone] = None) -> datetime.datetime:
-                """Method used to get the custom timestamp.
-                Returns naive datetime regardless of tz parameter to match database behavior."""
-                return datetime.datetime(2023, 12, 31)
-
-            @classmethod
-            def utcnow(cls) -> datetime.datetime:
-                """Method used while a variant is created"""
-                return cls.now()
 
         # =============================
         #  SET UP
@@ -301,12 +277,11 @@ class TestVariantStudyService:
             author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            last_access=current_time(),
             public_mode=PublicMode.FULL,
             owner=admin_user,
             groups=[group],
             path=str(raw_study_path),
-            additional_data=StudyAdditionalData(author="John Smith"),
         )
 
         db.session.add(raw_study)
@@ -319,20 +294,22 @@ class TestVariantStudyService:
         variant_list = []
 
         # For each variant created
-        with monkeypatch.context() as m:
-            # Set the system date older to create older variants
-            m.setattr("antarest.study.storage.variantstudy.variant_study_service.datetime", FakeDatetime)
-            m.setattr("antarest.study.service.datetime", FakeDatetime)
+        for index in range(3):
+            with current_user_context(DEFAULT_ADMIN_USER):
+                variant_study = variant_study_service.create_variant_study(raw_study.id, "Variant{}".format(str(index)))
+                variant_list.append(variant_study)
+                # Generate a snapshot for each variant
+                variant_study_service.generate(sanitize_uuid(variant_list[index].id), False, False)
 
-            for index in range(3):
-                with current_user_context(DEFAULT_ADMIN_USER):
-                    variant_list.append(
-                        variant_study_service.create_variant_study(raw_study.id, "Variant{}".format(str(index)))
-                    )
-                    # Generate a snapshot for each variant
-                    variant_study_service.generate(sanitize_uuid(variant_list[index].id), False, False)
+                # Modify the `created_at` and `updated_at` attributes in DB.
+                with db():
+                    variant = db.session.query(Study).get(variant_study.id)
+                    variant.last_access = datetime.datetime(2023, 12, 31)
+                    variant.updated_at = datetime.datetime(2023, 12, 31)
+                    db.session.merge(variant)
+                    db.session.commit()
 
-                variant_study_service.get(variant_list[index])
+            variant_study_service.get(variant_list[index])
 
         variant_study_path = Path(tmp_path).joinpath("internal_studies")
 

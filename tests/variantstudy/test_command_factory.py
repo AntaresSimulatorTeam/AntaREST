@@ -794,21 +794,22 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
-            args=[{}],
+            args=[{"thermal_outage_details": False}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="generate_thermal_cluster_timeseries_list",
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.CREATE_USER_RESOURCE.value,
+            action=CommandName.REPLACE_USER_RESOURCE.value,
             args=[{"data": {"path": "folder_1", "resource_type": "folder"}}],
             study_version=STUDY_VERSION_8_8,
             version=2,
         ),
         None,
-        id="create_user_resource_list",
+        id="replace_user_resource_list",
     ),
     pytest.param(
         CommandDTO(
@@ -1250,6 +1251,21 @@ def test_parse_create_link_dto_v1(command_factory: CommandFactory) -> None:
             assert dto.args["parameters"]["linkWidth"] == 0.56
 
 
+def test_parse_generate_thermal_cluster_timeseries_dto_v1(command_factory: CommandFactory) -> None:
+    dto = CommandDTO(
+        action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
+        args={},
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 2
+    assert dto.args == {"thermal_outage_details": False}
+
+
 def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:
     dto = CommandDTO(
         action=CommandName.CREATE_BINDING_CONSTRAINT.value,
@@ -1594,7 +1610,8 @@ def test_parse_legacy_create_user_resource_command(command_factory: CommandFacto
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
-    assert dto.action == "create_user_resource"
+    # Ensures the command is renamed with the new naming
+    assert dto.action == "replace_user_resource"
     assert dto.version == 2
     # Ensures the content was transformed into a blob_id when saving it inside the blob store.
     assert dto.args == {"data": {"blob_id": "created_blob_id", "path": "folder_1", "resource_type": "file"}}

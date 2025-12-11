@@ -22,6 +22,7 @@ from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.service import IService
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.utils import current_user_context
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -45,9 +46,7 @@ class AutoArchiveService(IService):
         Archive old studies
         Clear old variant snapshots
         """
-        old_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
-            days=self.config.storage.auto_archive_threshold_days
-        )
+        old_date = current_time() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
         with db():
             # in this part full `Read` rights over studies are granted to this function
             studies: Sequence[Study] = self.study_service.repository.get_all(

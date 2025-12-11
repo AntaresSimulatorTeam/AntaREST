@@ -16,6 +16,7 @@ from typing import List, Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
+from antarest.core.utils.archives import ArchiveFormat
 from antarest.study.model import Study, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -148,7 +149,9 @@ class IStudyStorage(ABC):
             raise StudyNotFoundError(f"Study with the uuid {metadata.id} does not exist.")
 
     @abstractmethod
-    def export_study(self, metadata: Study, target: Path, outputs: bool = True) -> Path:
+    def export_study(
+        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
+    ) -> Path:
         """
         Export and compress a study to a ZIP file.
 
@@ -156,6 +159,7 @@ class IStudyStorage(ABC):
             metadata: The study metadata.
             target: The path of the ZIP file to export to.
             outputs: Whether to include the output folder inside the exportation.
+            archive_format:
 
         Returns:
             Path: The path to the created ZIP file containing the study files.
@@ -190,7 +194,3 @@ class IStudyStorage(ABC):
         Returns: FileStudyTreeConfigDTO
 
         """
-
-    @abstractmethod
-    def initialize_additional_data(self, study: Study) -> bool:
-        """Initialize additional data for a study."""

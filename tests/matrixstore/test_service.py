@@ -29,6 +29,7 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
@@ -81,11 +82,11 @@ class TestMatrixService:
         # A matrix object is stored in the database
         with db():
             obj = matrix_service.repo.get(matrix_id)
-        assert obj is not None, f"Missing Matrix object {matrix_id}"
-        assert obj.width == len(data[0])
-        assert obj.height == len(data)
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+            assert obj is not None, f"Missing Matrix object {matrix_id}"
+            assert obj.width == len(data[0])
+            assert obj.height == len(data)
+            now = current_time()
+            assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
     def test_create__side_effect(self, matrix_service: MatrixService) -> None:
         """Creates a new matrix object with the specified data, but fail during saving."""
@@ -137,54 +138,55 @@ class TestMatrixService:
             parent / "test-07-all.result.tsv",
             parent / "test-08-all.result.tsv",
         ]
+        now = current_time()
         expected_matrices = [
             MatrixMetadataDTO(
                 id="ff7589e7632c1f8304949a27fa3ac86107d8ecf198980e67ae7ca062f9036789",
                 width=1,
                 height=14,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=now,
                 version=2,
             ),
             MatrixMetadataDTO(
                 id="539119504d34d284af5a0d0f7d3d28976969aabcdf97cbcbf38f50246d96b6f0",
                 width=1,
                 height=9,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=now,
                 version=2,
             ),
             MatrixMetadataDTO(
                 id="87e70e8b6af459b33be2dbd65d5c814a9225ae77112c9ea791d3abe92379334c",
                 width=1,
                 height=14,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=now,
                 version=2,
             ),
             MatrixMetadataDTO(
                 id="e042c928e846ed944751d1d82edec4be25ee606816e7aefc4b64c9cb6808f2a5",
                 width=1,
                 height=2,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=now,
                 version=2,
             ),
             MatrixMetadataDTO(
                 id="d6b4ecdc42135e48eaa1d868ef535d396bc3953b7c3bf4f802d83964db58af77",
                 width=1,
                 height=14,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=now,
                 version=2,
             ),
             MatrixMetadataDTO(
                 id="2d62ca219846080b38e2ddf8d0f8f46a9fdeb7854234bfc751519b7502708b93",
                 width=1,
                 height=14,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=now,
                 version=2,
             ),
             MatrixMetadataDTO(
                 id="63c37aca761a6eecc11fc8c6db06f720e72a7c9f7064d8ea3f553ab643468685",
                 width=1,
                 height=18,
-                created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                created_at=now,
                 version=2,
             ),
         ]
@@ -334,11 +336,11 @@ class TestMatrixService:
         # A matrix object is stored in the database
         with db():
             obj = matrix_service.repo.get(info.id)
-        assert obj is not None, f"Missing Matrix object {info.id}"
-        assert obj.width == matrix.shape[1]
-        assert obj.height == matrix.shape[0]
-        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+            assert obj is not None, f"Missing Matrix object {info.id}"
+            assert obj.width == matrix.shape[1]
+            assert obj.height == matrix.shape[0]
+            now = current_time()
+            assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
     @pytest.mark.parametrize("content_type", ["application/json", "text/plain"])
     def test_create_by_importation__zip_file(self, matrix_service: MatrixService, content_type: str) -> None:
@@ -403,11 +405,11 @@ class TestMatrixService:
             # A matrix object is stored in the database
             with db():
                 obj = matrix_service.repo.get(info.id)
-            assert obj is not None, f"Missing Matrix object {info.id}"
-            assert obj.width == (matrix.shape[1] if matrix.size else 0)
-            assert obj.height == matrix.shape[0]
-            now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
-            assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
+                assert obj is not None, f"Missing Matrix object {info.id}"
+                assert obj.width == (matrix.shape[1] if matrix.size else 0)
+                assert obj.height == matrix.shape[0]
+                now = current_time()
+                assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
 
 def test_dataset_lifecycle() -> None:
@@ -472,7 +474,7 @@ def test_dataset_lifecycle() -> None:
         MatrixDataSetRelation(name="B", matrix_id="m2"),
     ]
 
-    somedate = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    somedate = current_time()
     dataset_repo.query.return_value = [
         MatrixDataSet(
             id="some id",

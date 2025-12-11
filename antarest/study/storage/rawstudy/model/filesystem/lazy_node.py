@@ -11,13 +11,14 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple
 from zipfile import ZipFile
 
 from typing_extensions import override
 
+from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
@@ -64,7 +65,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
                 with ZipFile(file=self.config.archive_path) as zip_file:
                     LazyNode.ZIP_FILELIST_CACHE[str_zipped_path] = SimpleCache(
                         value=zip_file.namelist(),
-                        expiration_date=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=2),
+                        expiration_date=current_time() + timedelta(hours=2),
                     )
             return str_inside_zip_path in LazyNode.ZIP_FILELIST_CACHE[str_zipped_path].value
         else:

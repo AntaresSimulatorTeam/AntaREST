@@ -33,7 +33,6 @@ import * as linksApi from "../../services/api/studies/links";
 import * as studyApi from "../../services/api/study";
 import * as studyDataApi from "../../services/api/studydata";
 import type {
-  Area,
   AreaLayerColor,
   AreaLayerPosition,
   LinkElement,
@@ -235,10 +234,11 @@ async function getNodes(state: AppState, studyId: StudyMap["studyId"]): Promise<
     (acc, areaId) => {
       const { ui, layerColor = {}, layerX = {}, layerY = {} } = areaPositions[areaId];
       const rgb = [ui.color_r, ui.color_g, ui.color_b];
-      const area = getArea(state, studyId, areaId) as Area;
+      const area = getArea(state, studyId, areaId);
+
       acc[areaId] = {
         id: areaId,
-        name: area.name,
+        name: area?.name || areaId,
         x: ui.x,
         y: ui.y,
         color: `rgb(${rgb.join(", ")})`,
@@ -248,6 +248,7 @@ async function getNodes(state: AppState, studyId: StudyMap["studyId"]): Promise<
         layerY,
         layerColor,
       };
+
       return acc;
     },
     {} as StudyMap["nodes"],
@@ -351,6 +352,14 @@ export const setStudyMap = createAsyncThunk<StudyMap, StudyMap["studyId"], AppAs
     }
   },
 );
+
+export const deleteStudyMap = createAsyncThunk<
+  StudyMap["studyId"],
+  StudyMap["studyId"],
+  AppAsyncThunkConfig
+>(n("DELETE_STUDY_MAP"), (id) => {
+  return id;
+});
 
 export const createStudyMapLink = createAsyncThunk<
   void, // WebSocket will update it
@@ -571,6 +580,7 @@ export default createReducer(initialState, (builder) => {
   builder
     .addCase(createStudyMap.fulfilled, studyMapsAdapter.addOne)
     .addCase(setStudyMap.fulfilled, studyMapsAdapter.setOne)
+    .addCase(deleteStudyMap.fulfilled, studyMapsAdapter.removeOne)
     .addCase(createStudyMapNode.fulfilled, (draftState, action) => {
       const { studyId, newNode, currentLayerId } = action.payload;
       const entity = draftState.entities[studyId];

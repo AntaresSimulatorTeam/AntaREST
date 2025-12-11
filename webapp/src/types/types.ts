@@ -23,8 +23,8 @@ export interface IdentityDTO<T extends IdType = string> {
 
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 
-export interface GenericInfo {
-  id: IdType;
+export interface GenericInfo<T extends IdType = IdType> {
+  id: T;
   name: string;
 }
 
@@ -58,6 +58,7 @@ export interface StudyMetadataDTO extends IdentityDTO {
   folder?: string;
   horizon?: string;
   tags?: string[];
+  parent_id?: string;
 }
 
 export interface StudyMetadata {
@@ -78,6 +79,7 @@ export interface StudyMetadata {
   folder?: string;
   horizon?: string;
   tags?: string[];
+  parentId?: string;
 }
 
 export interface StudyMetadataPatchDTO {
@@ -501,6 +503,12 @@ export interface UpdateAreaUi {
   layerColor: AreaLayerColor;
 }
 
+export interface AreaUIUpdatePayload {
+  x: number;
+  y: number;
+  color_rgb: number[];
+}
+
 export interface AreaCreationDTO {
   name: string;
   type: object;
@@ -522,6 +530,7 @@ export interface TaskView {
   type: TaskTypeValue | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
   userName?: string;
+  launcher?: string;
 }
 
 export type ValidationReturn = string | true;

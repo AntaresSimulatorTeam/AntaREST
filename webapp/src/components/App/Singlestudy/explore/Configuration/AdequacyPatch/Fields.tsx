@@ -17,6 +17,7 @@ import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import semver from "semver";
 import type { StudyMetadata } from "../../../../../../types/types";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
@@ -28,7 +29,6 @@ function Fields() {
   const { t } = useTranslation();
   const { control } = useFormContextPlus<AdequacyPatchFormFields>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const studyVersion = Number(study.version);
 
   return (
     <Box>
@@ -59,7 +59,7 @@ function Fields() {
           control={control}
         />
       </Fieldset>
-      {studyVersion >= 850 && (
+      {semver.gte(study.version, "8.5.0") && (
         <>
           <Fieldset
             legend={
@@ -156,7 +156,7 @@ function Fields() {
                 />
               </span>
             </Tooltip>
-            {studyVersion >= 930 && (
+            {semver.gte(study.version, "9.3.0") && (
               <SwitchFE
                 label={t("study.configuration.adequacyPatch.redispatch")}
                 sx={{ textWrap: "nowrap" }}

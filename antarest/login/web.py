@@ -12,7 +12,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Any, List, Optional, Union
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -74,21 +74,17 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         user endpoints
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.users], dependencies=[auth.required()])
 
-    @bp.get(
-        "/users",
-        tags=[APITag.users],
-        response_model=List[Union[IdentityDTO, UserInfo]],
-    )
-    def users_get_all(details: bool = False) -> Any:
+    @bp.get("/users")
+    def users_get_all(details: bool = False) -> list[IdentityDTO | UserInfo]:
         logger.info("Fetching users list")
         return service.get_all_users(details)
 
-    @bp.get("/users/{id}", tags=[APITag.users], response_model=Union[IdentityDTO, UserInfo])
-    def users_get_id(id: int, details: bool = False) -> Any:
+    @bp.get("/users/{id}")
+    def users_get_id(id: int, details: bool = False) -> IdentityDTO | UserInfo:
         logger.info(f"Fetching user info for {id}")
-        u: Any = None
+        u: IdentityDTO | UserInfo | None = None
         if details:
             u = service.get_user_info(id)
         else:
@@ -100,14 +96,14 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         else:
             raise HTTPException(status_code=404)
 
-    @bp.post("/users", tags=[APITag.users], response_model=UserInfo)
-    def users_create(create_user: UserCreateDTO) -> Any:
+    @bp.post("/users")
+    def users_create(create_user: UserCreateDTO) -> UserInfo:
         logger.info(f"Creating new user '{create_user.name}'")
 
         return service.create_user(create_user).to_dto()
 
-    @bp.put("/users/{id}", tags=[APITag.users], response_model=UserInfo)
-    def users_update(id: int, user_info: UserInfo) -> Any:
+    @bp.put("/users/{id}")
+    def users_update(id: int, user_info: UserInfo) -> UserInfo:
         logger.info(f"Updating user {id}")
 
         if id != user_info.id:
@@ -115,31 +111,27 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
 
         return service.save_user(User.from_dto(user_info)).to_dto()
 
-    @bp.delete("/users/{id}", tags=[APITag.users])
-    def users_delete(id: int) -> Any:
+    @bp.delete("/users/{id}")
+    def users_delete(id: int) -> None:
         logger.info(f"Removing user {id}")
         service.delete_user(id)
-        return id
 
-    @bp.delete("/users/roles/{id}", tags=[APITag.users])
-    def roles_delete_by_user(id: int) -> Any:
+    @bp.delete("/users/roles/{id}")
+    def roles_delete_by_user(id: int) -> None:
         logger.info(f"Removing user {id} roles")
         service.delete_all_roles_from_user(id)
-        return id
 
     @bp.get(
         "/groups",
-        tags=[APITag.users],
-        response_model=List[Union[GroupDetailDTO, GroupDTO]],
     )
-    def groups_get_all(details: bool = False) -> Any:
+    def groups_get_all(details: bool = False) -> list[GroupDetailDTO | GroupDTO]:
         logger.info("Fetching groups list")
         return service.get_all_groups(details)
 
-    @bp.get("/groups/{id}", tags=[APITag.users], response_model=Union[GroupDetailDTO, GroupDTO])
-    def groups_get_id(id: str, details: bool = False) -> Any:
+    @bp.get("/groups/{id}")
+    def groups_get_id(id: str, details: bool = False) -> GroupDetailDTO | GroupDTO:
         logger.info(f"Fetching group {id} info")
-        group: Any = None
+        group: GroupDetailDTO | GroupDTO | None = None
         if details:
             group = service.get_group_info(id)
         else:
@@ -149,9 +141,9 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         if group:
             return group
         else:
-            return HTTPException(status_code=404, detail=f"Group {id} not found")
+            raise HTTPException(status_code=404, detail=f"Group {id} not found")
 
-    @bp.post("/groups", tags=[APITag.users])
+    @bp.post("/groups")
     def groups_create(group_dto: GroupCreationDTO) -> GroupDTO:
         logger.info(f"Creating new group '{group_dto.name}'")
         group = Group(
@@ -160,44 +152,35 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         )
         return service.save_group(group).to_dto()
 
-    @bp.delete("/groups/{id}", tags=[APITag.users], response_model=str)
-    def groups_delete(id: str) -> Any:
+    @bp.delete("/groups/{id}")
+    def groups_delete(id: str) -> None:
         logger.info(f"Removing group {id}")
         service.delete_group(id)
-        return id
 
-    @bp.get(
-        "/roles/group/{group}",
-        tags=[APITag.users],
-        response_model=List[RoleDetailDTO],
-    )
-    def roles_get_all(group: str) -> Any:
+    @bp.get("/roles/group/{group}")
+    def roles_get_all(group: str) -> list[RoleDetailDTO]:
         logger.info(f"Fetching roles for group {group}")
         return [r.to_dto() for r in service.get_all_roles_in_group(group=group)]
 
-    @bp.post("/roles", tags=[APITag.users], response_model=RoleDetailDTO)
-    def role_create(role: RoleCreationDTO) -> Any:
+    @bp.post("/roles")
+    def role_create(role: RoleCreationDTO) -> RoleDetailDTO:
         logger.info(f"Creating new role ({role.group_id},{role.type}) for {role.identity_id}")
         return service.save_role(role).to_dto()
 
-    @bp.delete(
-        "/roles/{group}/{user}",
-        tags=[APITag.users],
-    )
-    def roles_delete(user: int, group: str) -> Any:
+    @bp.delete("/roles/{group}/{user}")
+    def roles_delete(user: int, group: str) -> None:
         logger.info(f"Remove role in group {group} for {user}")
         service.delete_role(user, group)
-        return user, group
 
-    @bp.post("/bots", tags=[APITag.users], summary="Create bot token")
-    def bots_create(create: BotCreateDTO, jwt_manager: AuthJWT = Depends()) -> Any:
+    @bp.post("/bots", summary="Create bot token")
+    def bots_create(create: BotCreateDTO, jwt_manager: AuthJWT = Depends()) -> str:
         logger.info(f"Creating new bot '{create.name}'")
         bot = service.save_bot(create)
         groups = []
         for role in create.roles:
             group = service.get_group(role.group)
             if not group:
-                return UserHasNotPermissionError()
+                raise UserHasNotPermissionError()
             jwt_group = JWTGroup(
                 id=group.id,
                 name=group.name,
@@ -214,21 +197,19 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         tokens = _generate_tokens(jwt, jwt_manager, expire=timedelta(days=368 * 200))
         return tokens.access_token
 
-    @bp.get("/bots/{id}", tags=[APITag.users], response_model=Union[BotIdentityDTO, BotDTO])
-    def get_bot(id: int, verbose: Optional[int] = None) -> Any:
+    @bp.get("/bots/{id}")
+    def get_bot(id: int, verbose: Optional[int] = None) -> BotIdentityDTO | BotDTO:
         logger.info(f"Fetching bot {id}")
         bot = service.get_bot_info(id) if verbose else service.get_bot(id).to_dto()
         if not bot:
-            return UserHasNotPermissionError()
+            raise UserHasNotPermissionError()
         return bot
 
     @bp.get(
         "/bots",
-        tags=[APITag.users],
         summary="List all bots",
-        response_model=List[BotDTO],
     )
-    def get_all_bots(owner: Optional[int] = None) -> Any:
+    def get_all_bots(owner: Optional[int] = None) -> list[BotDTO]:
         logger.info(f"Fetching bot list for {owner or get_user_id()}")
 
         bots = service.get_all_bots_by_owner(owner) if owner else service.get_all_bots()
@@ -236,14 +217,11 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
 
     @bp.delete(
         "/bots/{id}",
-        tags=[APITag.users],
         summary="Revoke bot token",
-        response_model=int,
     )
-    def bots_delete(id: int) -> Any:
+    def bots_delete(id: int) -> None:
         logger.info(f"Removing bot {id}")
         service.delete_bot(id)
-        return id
 
     @bp.get("/auth", include_in_schema=False)
     def auth_needed() -> bool:
@@ -262,18 +240,13 @@ def create_login_api(service: LoginService) -> APIRouter:
     Returns:
         login endpoints
     """
-    bp = APIRouter(prefix="/v1")
+    bp = APIRouter(prefix="/v1", tags=[APITag.users])
 
-    @bp.post(
-        "/login",
-        tags=[APITag.users],
-        summary="Login",
-        response_model=CredentialsDTO,
-    )
+    @bp.post("/login", summary="Login")
     def login(
         credentials: UserCredentials,
         jwt_manager: AuthJWT = Depends(),
-    ) -> Any:
+    ) -> CredentialsDTO:
         logger.info(f"New login for {credentials.username}")
         user = service.authenticate(credentials.username, credentials.password)
         if not user:
@@ -286,11 +259,9 @@ def create_login_api(service: LoginService) -> APIRouter:
 
     @bp.post(
         "/refresh",
-        tags=[APITag.users],
         summary="Refresh access token",
-        response_model=CredentialsDTO,
     )
-    def refresh(jwt_manager: AuthJWT = Depends()) -> Any:
+    def refresh(jwt_manager: AuthJWT = Depends()) -> CredentialsDTO:
         jwt_manager.jwt_refresh_token_required()
         identity = from_json(jwt_manager.get_jwt_subject())
         logger.debug(f"Refreshing access token for {identity['id']}")

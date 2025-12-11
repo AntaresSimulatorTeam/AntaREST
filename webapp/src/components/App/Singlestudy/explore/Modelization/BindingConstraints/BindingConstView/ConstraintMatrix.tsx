@@ -17,6 +17,7 @@ import usePromise from "@/hooks/usePromise";
 import { getBindingConstraint } from "@/services/api/studydata";
 import { Box, Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import type { StudyMetadata } from "../../../../../../../types/types";
 import Matrix from "../../../../../../common/Matrix";
 import SplitView from "../../../../../../common/SplitView";
@@ -30,7 +31,6 @@ const URL_BASE = "input/bindingconstraints/" as const;
 
 function ConstraintMatrix({ study, constraintId }: Props) {
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
 
   const constraintRes = usePromise(
     () => getBindingConstraint(study.id, constraintId),
@@ -41,7 +41,7 @@ function ConstraintMatrix({ study, constraintId }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (studyVersion < 870) {
+  if (semver.lt(study.version, "8.7.0")) {
     return (
       <Matrix
         title={t("global.matrix")}

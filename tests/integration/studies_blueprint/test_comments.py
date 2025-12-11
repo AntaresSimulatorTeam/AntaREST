@@ -17,6 +17,7 @@ from xml.etree import ElementTree
 from starlette.testclient import TestClient
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
+from tests.integration.utils import duration_threshold
 from tests.xml_compare import compare_elements
 
 
@@ -52,7 +53,7 @@ class TestStudyComments:
         res = client.get(f"/v1/studies/{internal_study_id}/comments")
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        assert 0 <= duration <= 0.1, f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.1), f"Duration is {duration} seconds"
 
         # Update the comments of the study
         res = client.put(
@@ -105,7 +106,7 @@ class TestStudyComments:
         res = client.get(f"/v1/studies/{variant_id}/comments")
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        assert 0 <= duration <= 0.3, f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.3), f"Duration is {duration} seconds"
 
         # Update the comments of the study
         res = client.put(

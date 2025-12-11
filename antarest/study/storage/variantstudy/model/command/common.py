@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -78,6 +78,7 @@ class CommandName(Enum):
     UPDATE_SCENARIO_BUILDER = "update_scenario_builder"
     GENERATE_THERMAL_CLUSTER_TIMESERIES = "generate_thermal_cluster_timeseries"
     CREATE_USER_RESOURCE = "create_user_resource"
+    REPLACE_USER_RESOURCE = "replace_user_resource"
     REMOVE_USER_RESOURCE = "remove_user_resource"
     REMOVE_XPANSION_CONFIGURATION = "remove_xpansion_configuration"
     REMOVE_XPANSION_RESOURCE = "remove_xpansion_resource"
@@ -98,3 +99,10 @@ class CommandName(Enum):
     UPDATE_TIMESERIES_CONFIG = "update_time"
     REPLACE_HYDRO_ALLOCATION = "replace_hydro_allocation"
     REPLACE_HYDRO_CORRELATION = "replace_hydro_correlation"
+
+
+@dataclass(frozen=True)
+class InnerMatrices:
+    matrices: list[str] = field(default_factory=list)
+    # If the command generates matrices at the runtime, it cannot return them in the `matrices` attribute. If so, we should check the variant snapshot.
+    generates_matrices_at_run_time: bool = False

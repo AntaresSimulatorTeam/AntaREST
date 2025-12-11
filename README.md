@@ -1,154 +1,248 @@
+<div align="center">
+
 # Antares Web
+
+**A modern web application for managing and editing [Antares Simulator](https://antares-simulator.org) studies**
 
 [![CI](https://github.com/AntaresSimulatorTeam/AntaREST/workflows/main/badge.svg)](https://github.com/AntaresSimulatorTeam/AntaREST/actions?query=workflow%3Amain)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=AntaresSimulatorTeam_api-iso-antares&metric=coverage)](https://sonarcloud.io/dashboard?id=AntaresSimulatorTeam_api-iso-antares)
-[![Licence](https://img.shields.io/github/license/AntaresSimulatorTeam/AntaREST)](https://www.apache.org/licenses/LICENSE-2.0)
+[![License](https://img.shields.io/github/license/AntaresSimulatorTeam/AntaREST)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![React](https://img.shields.io/badge/react-18.x-blue.svg)](https://reactjs.org/)
+
+[Documentation](https://antares-web.readthedocs.io/) • [Installation](#installation) • [Contributing](./CONTRIBUTING.md) • [Issues](https://github.com/AntaresSimulatorTeam/AntaREST/issues)
+
+</div>
 
 ![Screenshot](./docs/assets/media/img/readme_screenshot.png)
 
-## Documentation
+---
 
-The full project documentation can be found in the [readthedocs website](https://antares-web.readthedocs.io/en/latest).
+## About
 
-## Build the API
+**Antares Web** is a web platform developed by RTE to manage, configure, and interact with Antares Simulator, RTE’s adequacy simulation software for power system studies, [Antares Simulator](https://antares-simulator.org). Antares Simulator is an open-source power system simulator that enables detailed modeling of energy consumption, generation, and transportation, performing probabilistic simulations across year-long scenarios with 8760 hourly time-frames.
 
-First clone the projet:
+Antares Web provides a modern REST API and web interface for managing Antares Simulator studies, adding powerful features for collaboration, storage optimization, and advanced editing capabilities.
 
-```shell script
-git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
-cd AntaREST
-```
+### Key Features
 
-Install back-end dependencies
+- **RESTful API**: Complete API for programmatic access to studies and simulations
+- **Modern Web Interface**: React-based UI for intuitive study management and editing
+- **Application Interoperability**: Unique study IDs and standardized endpoints for easy integration
+- **Optimized Storage**: Matrix data extraction and sharing between studies, with archive mode support
+- **Variant Management**: Advanced editing description language and generation tools
+- **User Management**: Complete user accounts and permission system
+- **Multi-mode Deployment**: Run as a web server, desktop application, or Docker container
 
-```shell script
-python -m pip install --upgrade pip
-pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
-```
+---
 
-Install the front-end dependencies:
+## Table of Contents
 
-```shell script
-cd webapp
-npm install
-cd ..
-```
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+  - [Quick Start (Development)](#quick-start-development)
+  - [Using Docker](#using-docker)
+  - [Building a Desktop Application](#building-a-desktop-application)
+- [Usage](#usage)
+  - [Running the Application](#running-the-application)
+  - [API Documentation](#api-documentation)
+- [Development](#development)
+  - [Running Tests](#running-tests)
+  - [Code Quality](#code-quality)
+- [Documentation](#documentation)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
 
-Then build the front-end application:
- - for use with pyinstaller:
-```shell
-NODE_OPTIONS="--max-old-space-size=8192" ./scripts/build-front.sh
-```
- - for other uses (docker deployement, ...):
-```shell
-cd webapp
-npm run build
-cd ..
-```
+---
 
+## Prerequisites
 
-### Using pyinstaller
+Before you begin, ensure you have the following installed:
 
-Linux system:
+- **Python**: 3.11.x ([Download](https://www.python.org/downloads/))
+- **Node.js**: 22.13.0 ([Download](https://nodejs.org/))
+- **Git**: Latest version ([Download](https://git-scm.com/))
 
-```shell script
-git log -1 HEAD --format=%H > ./resources/commit_id
-pyinstaller AntaresWebLinux.spec
-```
+Optional (for specific deployment modes):
+- **Docker**: For containerized deployment
+- **PostgreSQL**: For production database (SQLite used by default for development)
+- **Redis**: For production caching
 
-Windows system:
+---
 
-```shell script
-git log -1 HEAD --format=%H > .\resources\commit_id
-pyinstaller AntaresWebWin.spec
-```
+## Installation
 
-You can test the build is ok using:
+### Quick Start (Development)
 
-```shell script
-dist/AntaresWeb/AntaresWebServer -v       # Linux based system
-dist\AntaresWeb\AntaresWebServer.exe -v   # Windows system
-```
+1. **Clone the repository**
 
-### Using docker
+   ```bash
+   git clone https://github.com/AntaresSimulatorTeam/AntaREST.git
+   cd AntaREST
+   ```
 
-To build the docker image, use the following command:
+2. **Set up Python environment**
 
-```shell script
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python3 -m pip install --upgrade pip
+   ```
+
+3. **Install Python dependencies**
+
+   ```bash
+   pip install -e .                     # Install package in editable mode
+   pip install -r requirements-dev.txt  # Install development dependencies
+   ```
+
+4. **Install frontend dependencies**
+
+   ```bash
+   cd webapp
+   npm install
+   cd ..
+   ```
+
+5. **Run the application**
+
+   See the [Running the Application](#running-the-application) section below for detailed instructions on running in development, production, or desktop mode.
+
+### Using Docker
+
+Build the Docker image:
+
+```bash
 docker build --tag antarest .
 ```
 
-## Run the API
+Run with default configuration:
 
-### Using binary built with pyinstaller
-
-```shell script
-dist/AntaresWeb/AntaresWebServer -c </path/to/config.yaml>  # Linux based system
-dist\AntaresWeb\AntaresWebServer.exe -c </path/to/config.yaml>    # Windows system
+```bash
+docker run -p 8080:5000 -e GUNICORN_WORKERS=1 antarest
 ```
 
-### Using docker image
+For production deployment with external database and Redis, see the [deployment documentation](https://antares-web.readthedocs.io/en/latest/developer-guide/install/2-DEPLOY.html).
 
-You may run the back-end with default configuration using the following command:
-```shell script
-docker run \
-  -p 80:5000 \
-  -e GUNICORN_WORKERS=1 \
-  antarest
+## Usage
+
+### Running the Application
+
+**Development mode (with auto-reload):**
+
+Run both backend and frontend in separate terminals:
+
+```bash
+# Terminal 1 - Backend
+python antarest/main.py -c resources/application.yaml --auto-upgrade-db --no-front
+
+# Terminal 2 - Frontend
+cd webapp
+npm run dev
 ```
 
-However, for a complete deployment including the front-end application, and the use of an external database
-and an external REDIS instance, please refer to the deployement instructions on [readthedocs website](https://antares-web.readthedocs.io/en/latest)
+The API will be available at `http://localhost:8080` and the frontend at `http://localhost:3000`
 
-
-### Using python directly
-
-#### Using uvicorn
-
-```shell script
-pip install -e .
-
-python ./antarest/main.py -c resources/application.yaml
-```
-
-#### Using gunicorn wsgi server with uvicorn workers
-
-```shell script
-pip install -e .
-
+**Production mode (with Gunicorn):**
+```bash
 export ANTAREST_CONF=resources/application.yaml
 export GUNICORN_WORKERS=4
 gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 ```
 
-## Examples
+**Note**: In production, we now use an alternative deployment mode where Gunicorn is not used for load balancing. Instead, we start multiple independent workers on different ports, allowing upstream load balancing to be handled by tools like nginx.
 
-Once you started the server, you have access to the API.
-The address (the port mostly) depends of the way you started the server. If you start the server
-* via python use: **http://0.0.0.0:8080**
-* via gunicorn use: **http://0.0.0.0:5000**
-* via docker use: **http://0.0.0.0:80** (if you use the parameter *-p 80:5000*)
+### API Documentation
 
-To test the server, you can list the available studies in your workspace using:
+Once the server is running, you can access:
 
-```shell script
+- **Interactive API documentation (Swagger)**: `http://localhost:3000/apidoc`
+- **OpenAPI specification**: `http://localhost:8080/openapi.json`
+
+**Example API calls:**
+
+```bash
+# List all studies
 curl http://localhost:8080/v1/studies
-```
 
-Or data of a specific study using:
-
-```shell script
+# Get specific study details
 curl http://localhost:8080/v1/studies/{study_uuid}
+
+# Create a new study
+curl -X POST http://localhost:8080/v1/studies \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Study", "version": "860"}'
 ```
 
-The current API handle hundreds of html end point (get and post) to manipulate your studies.
-The best way to discover the API is using it's swagger documentation (see below).
+---
 
-## Swagger
+## Development
 
-The ANTARES API doc is available within the application (open your browser to `http://localhost:8080`)
-You can also fetch the raw open api spec :
+### Running Tests
 
-```shell script
-curl http://localhost:8080/openapi.json > swagger.json
+The project uses `pytest` for testing:
+
+```bash
+# Run all tests in parallel
+pytest -n auto
 ```
+
+### Code Quality
+
+**Linting and formatting (with Ruff):**
+```bash
+# Check and fix code style
+ruff check antarest/ tests/ --fix
+
+# Format code
+ruff format antarest/ tests/
+```
+
+**Type checking (with mypy):**
+```bash
+mypy
+```
+
+---
+
+## Documentation
+
+- **Full Documentation**: [antares-web.readthedocs.io](https://antares-web.readthedocs.io/)
+- **Antares Simulator**: [antares-simulator.readthedocs.io](https://antares-simulator.readthedocs.io/)
+
+---
+
+## Contributing
+
+We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+
+Please read our [Contributing Guide](./CONTRIBUTING.md) to learn about:
+- Setting up your development environment
+- Code style and standards
+- Submitting pull requests
+- Reporting issues
+
+---
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+Copyright © 2007-2025 RTE (https://www.rte-france.com)
+
+---
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/AntaresSimulatorTeam/AntaREST/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/AntaresSimulatorTeam/AntaREST/discussions)
+
+---
+
+<div align="center">
+
+**[⬆ back to top](#antares-web)**
+
+</div>

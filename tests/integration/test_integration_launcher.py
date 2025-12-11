@@ -37,13 +37,13 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert res1.status_code == 200
     data1 = res1.json()
     assert data1["name"] == "test-xpress-config"
-    assert data1["linear_solver"] == "xpress"
+    assert data1["linearSolver"] == "xpress"
     assert "id" in data1
-    assert data1["min_antares_version"] == "9.2"
-    assert data1["linear_solver_param"] == {"DEFAULTALG": "4"}
-    assert data1["linear_solver_param_optim_1"] == {"THREADS": "4", "PRESOLVE": "1"}
-    assert data1["linear_solver_param_optim_2"] == {"MIPRELSTOP": "0.01"}
-    assert data1["use_optim_1_basis_optim_2"] is False
+    assert data1["minAntaresVersion"] == "9.2"
+    assert data1["linearSolverParam"] == {"DEFAULTALG": "4"}
+    assert data1["linearSolverParamOptim1"] == {"THREADS": "4", "PRESOLVE": "1"}
+    assert data1["linearSolverParamOptim2"] == {"MIPRELSTOP": "0.01"}
+    assert data1["useOptim1BasisOptim2"] is False
 
     # Test creating solver presets with minimal required fields
     payload2 = {
@@ -60,9 +60,9 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert res2.status_code == 200
     data2 = res2.json()
     assert data2["name"] == "minimal-config"
-    assert data2["linear_solver"] == "sirius"
-    assert data2["use_optim_1_basis_next_week"] is True
-    assert data2["use_optim_1_basis_optim_2"] is True
+    assert data2["linearSolver"] == "sirius"
+    assert data2["useOptim1BasisNextWeek"] is True
+    assert data2["useOptim1BasisOptim2"] is True
 
     # Test retrieving a solver presets by ID
     # First create one
@@ -90,8 +90,8 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     data3 = res3.json()
     assert data3["id"] == config_id3
     assert data3["name"] == "retrieve-test"
-    assert data3["linear_solver"] == "coin"
-    assert data3["linear_solver_param"] == {"THREADS": "2"}
+    assert data3["linearSolver"] == "coin"
+    assert data3["linearSolverParam"] == {"THREADS": "2"}
 
     # Test creating solver presets with empty name
     invalid_payload4 = {
@@ -176,8 +176,8 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
 
     assert res8_verify.status_code == 200
     data8_verify = res8_verify.json()
-    assert data8_verify["min_antares_version"] == "9.3"
-    assert data8_verify["linear_solver"] == "xpress"  # unchanged although not in update payload
+    assert data8_verify["minAntaresVersion"] == "9.3"
+    assert data8_verify["linearSolver"] == "xpress"  # unchanged although not in update payload
 
     # Test that we can't update to version < 9.2 if optim params are defined
     update_payload9 = {
@@ -243,9 +243,9 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
 
     assert res10_verify.status_code == 200
     data10_verify = res10_verify.json()
-    assert data10_verify["min_antares_version"] == "8.0"
-    assert data10_verify["linear_solver_param_optim_1"] == {}
-    assert data10_verify["linear_solver_param_optim_2"] == {}
+    assert data10_verify["minAntaresVersion"] == "8.0"
+    assert data10_verify["linearSolverParamOptim1"] == {}
+    assert data10_verify["linearSolverParamOptim2"] == {}
 
     # Test deleting solver presets
     res_delete = client.delete(

@@ -12,6 +12,7 @@
 
 from checksumdir import dirhash
 
+from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -277,6 +278,12 @@ class TestRemoveArea:
             output = remove_area_command.apply(study_data=empty_study)
             assert output.status, output.message
             assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
+
+            # Ensures there's not any mention of area2 inside the hydro.ini file
+            ini_path = empty_study.config.study_path / "input" / "hydro" / "hydro.ini"
+            content = IniReader().read(ini_path)
+            for value in content.values():
+                assert list(value.keys()) == ["area"]
 
             actual_cfg = empty_study.tree.get(depth=999)
             assert actual_cfg == empty_study_cfg

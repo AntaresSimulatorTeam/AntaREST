@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -18,6 +17,7 @@ import pytest
 from antarest.core.config import WorkspaceConfig
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
+from antarest.core.utils.utils import current_time
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -81,12 +81,8 @@ def test_update_antares_info_version(tmp_path: Path, version: str, expected_vers
     antares_study_path = study_path / "study.antares"
     write_ini_file(antares_study_path, {"antares": {"version": "700"}})
 
-    metadata = create_study(
-        name="my-study",
-        version=version,
-        created_at=datetime.now(timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
-    )
+    now = current_time()
+    metadata = create_study(name="my-study", version=version, created_at=now, updated_at=now)
     update_antares_info(metadata, tree, update_author=False)
     updated = read_ini(antares_study_path)
     assert str(updated["antares"]["version"]) == expected_version

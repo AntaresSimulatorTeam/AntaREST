@@ -21,6 +21,9 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
+from antarest.study.model import Study
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_task_completion
 
@@ -58,23 +61,6 @@ def generate_snapshot_fixture(
 ) -> t.List[str]:
     """Generate some snapshots with different date of update and last access"""
 
-    class FakeDatetime:
-        """
-        Class that handle fake timestamp creation/update of variant
-        """
-
-        fake_time: datetime.datetime
-
-        @classmethod
-        def now(cls, tz: t.Optional[datetime.timezone] = None) -> datetime.datetime:
-            """Method used to get the custom timestamp"""
-            return cls.fake_time
-
-        @classmethod
-        def utcnow(cls) -> datetime.datetime:
-            """Method used while a variant is created"""
-            return cls.now()
-
     # Initialize variant_ids list
     variant_ids = []
 
@@ -82,35 +68,29 @@ def generate_snapshot_fixture(
 
     with caplog.at_level(level=logging.WARNING):
         # Generate three different timestamp
-        older_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
-            hours=25
-        )  # older than the default value which is 24
-        old_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
-            hours=8
-        )  # older than 6 hours
-        recent_time = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) - datetime.timedelta(
-            hours=2
-        )  # older than 0 hours
+        now = current_time()
+        older_time = now - datetime.timedelta(hours=25)  # older than the default value which is 24
+        old_time = now - datetime.timedelta(hours=8)  # older than 6 hours
+        recent_time = now - datetime.timedelta(hours=2)  # older than 0 hours
 
-        with monkeypatch.context() as m:
-            # Patch the datetime import instance of the variant_study_service package to hack
-            # the `created_at` and `updated_at` fields
-            # useful when a variant is created
-            m.setattr("antarest.study.storage.variantstudy.variant_study_service.datetime", FakeDatetime)
-            # useful when a study is accessed
-            m.setattr("antarest.study.service.datetime", FakeDatetime)
+        for index, different_time in enumerate([older_time, old_time, recent_time]):
+            res = client.post(f"/v1/studies/{base_study_id}/variants?name=variant{index}", headers=admin_headers)
+            variant_id = res.json()
+            variant_ids.append(variant_id)
 
-            for index, different_time in enumerate([older_time, old_time, recent_time]):
-                FakeDatetime.fake_time = different_time
-                res = client.post(f"/v1/studies/{base_study_id}/variants?name=variant{index}", headers=admin_headers)
-                variant_ids.append(res.json())
+            # Generate snapshot for each variant
+            task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
+            wait_task_completion(client, admin_access_token, task_id.json())  # wait for the filesystem to be updated
+            client.get(f"v1/studies/{variant_ids[index]}", headers=admin_headers)
 
-                # Generate snapshot for each variant
-                task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
-                wait_task_completion(
-                    client, admin_access_token, task_id.json()
-                )  # wait for the filesystem to be updated
-                client.get(f"v1/studies/{variant_ids[index]}", headers=admin_headers)
+            # Modify the `created_at` and `updated_at` attributes in DB.
+            with db():
+                variant = db.session.query(Study).get(variant_id)
+                variant.last_access = different_time
+                variant.updated_at = different_time
+                db.session.merge(variant)
+                db.session.commit()
+
     return t.cast(t.List[str], variant_ids)
 
 

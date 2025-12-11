@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable, Dict, List, NamedTuple, Optional, Protocol
@@ -22,24 +21,6 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
-
-
-class LauncherInitException(Exception):
-    """
-    Exception raised during local or SLURM launcher initialisation
-    when a required parameter is not set in the application configuration.
-
-    In Docker environment, the configuration path is `/resources/application.yaml`.
-    """
-
-    def __init__(self, reason: str) -> None:
-        from antarest.core.utils import utils
-
-        if config_path := (os.getenv("ANTAREST_CONF") or utils.get_default_config_path()):
-            msg = f"Invalid configuration '{config_path}': {reason}"
-        else:
-            msg = f"Invalid configuration: {reason}"
-        super().__init__(msg)
 
 
 class ImportCallBack(Protocol):

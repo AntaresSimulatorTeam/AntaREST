@@ -30,6 +30,7 @@ import {
 } from "../../redux/ducks/ui";
 import type { AppDispatch } from "../../redux/store";
 import type { UserInfo } from "../../types/types";
+import { adaptJobDtoToJob } from "../api/launcher/jobs/adapters";
 import type { JobDTO } from "../api/launcher/jobs/types";
 import { TaskType } from "../api/tasks/constants";
 import { getConfig } from "../config";
@@ -228,7 +229,7 @@ function makeStudyJobStatusListener(dispatch: AppDispatch): WsEventListener {
       }
       case WsEventType.StudyJobCompleted:
         unsubscribeById[e.payload.id]?.();
-        dispatch(refreshStudySynthesis(e.payload));
+        dispatch(refreshStudySynthesis(adaptJobDtoToJob(e.payload)));
         break;
     }
   };

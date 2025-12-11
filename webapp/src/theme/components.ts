@@ -59,6 +59,19 @@ export default {
         },
       },
     },
+    variants: [
+      {
+        props: { size: "extra-small" },
+        style: {
+          ".MuiInputBase-root": {
+            padding: "0 9px",
+            ".MuiAutocomplete-input": {
+              padding: "4px 0",
+            },
+          },
+        },
+      },
+    ],
   },
   MuiButton: {
     defaultProps: {

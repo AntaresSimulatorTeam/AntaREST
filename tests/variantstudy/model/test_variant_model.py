@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import datetime
 import typing as t
 import uuid
@@ -25,7 +24,6 @@ from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
-from antarest.study.model import StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -78,7 +76,7 @@ class TestVariantStudyService:
             version="860",
             created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
             updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            additional_data=StudyAdditionalData(author="john.doe"),
+            author="john.doe",
             owner_id=jwt_user.id,
             public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,
         )
@@ -350,8 +348,8 @@ class TestVariantStudyService:
         assert study is not None
         assert study.id == saved_id
         assert study.parent_id == root_study_id
-        assert study.additional_data.author == "john.doe"
-        assert study.additional_data.editor == "john.doe"  # editor is the user who created the study
+        assert study.author == "john.doe"
+        assert study.editor == "john.doe"  # editor is the user who created the study
 
         # creating area by the author, making him the editor of the study
         command_1 = CommandDTO(action="create_area", args={"area_name": "area_be"}, study_version=study_version)
@@ -361,8 +359,8 @@ class TestVariantStudyService:
             variant_study_service.append_commands(variant_study.id, [command_1, command_2])
 
         study = variant_study_service.repository.get(saved_id)
-        assert study.additional_data.author == "john.doe"
-        assert study.additional_data.editor == "john.doe"
+        assert study.author == "john.doe"
+        assert study.editor == "john.doe"
         # end creating area
 
         # creating a link between two areas with another user, making him the editor
@@ -374,8 +372,8 @@ class TestVariantStudyService:
             variant_study_service.append_command(variant_study.id, command_3)
 
         study_db = db.session.get(VariantStudy, variant_study.id)
-        assert study_db.additional_data.author == "john.doe"
-        assert study_db.additional_data.editor == "jane.editor"
+        assert study_db.author == "john.doe"
+        assert study_db.editor == "jane.editor"
         # end creating link
 
         # deleting an area with the author, making him the editor, again
@@ -385,6 +383,6 @@ class TestVariantStudyService:
             variant_study_service.append_command(variant_study.id, command_4)
 
         study_db = db.session.get(VariantStudy, variant_study.id)
-        assert study_db.additional_data.author == "john.doe"
-        assert study_db.additional_data.editor == "john.doe"
+        assert study_db.author == "john.doe"
+        assert study_db.editor == "john.doe"
         # end deleting area

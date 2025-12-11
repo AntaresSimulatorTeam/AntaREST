@@ -12,13 +12,14 @@
 
 import logging
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
@@ -57,27 +58,25 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.matrix], dependencies=[auth.required()])
 
-    @bp.post("/matrix", tags=[APITag.matrix], description="Upload a new matrix")
+    @bp.post("/matrix", description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
         logger.info("Creating new matrix")
         return service.create(pd.DataFrame(matrix))
 
     @bp.post(
         "/matrix/_import",
-        tags=[APITag.matrix],
         description="Import a new matrix or zip matrices",
-        response_model=List[MatrixInfoDTO],
     )
     def create_by_importation(
         json: bool = False,
         file: UploadFile = File(...),
-    ) -> Any:
+    ) -> list[MatrixInfoDTO]:
         logger.info("Importing new matrix dataset")
         return service.create_by_importation(file, is_json=json)
 
-    @bp.get("/matrix", tags=[APITag.matrix], description="Return a list of matrices metadata")
+    @bp.get("/matrix", description="Return a list of matrices metadata")
     def get_matrices() -> list[MatrixMetadataDTO]:
         logger.info("Fetching matrices metadatas")
         user = require_current_user()
@@ -87,7 +86,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
         return service.get_matrices()
 
-    @bp.get("/matrix/{id}", tags=[APITag.matrix])
+    @bp.get("/matrix/{id}")
     def get(id: str) -> MatrixDTO:
         logger.info("Fetching matrix")
         df = service.get(id)
@@ -100,7 +99,6 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     @bp.get(
         "/matrix/_references/",
-        tags=[APITag.matrix],
         description="Fetching a list of matrices statistics",
         response_model_exclude_none=True,
     )
@@ -116,47 +114,43 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
         return service.get_matrices_references(disk_usage)
 
-    @bp.post("/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO)
-    def create_dataset(metadata: MatrixDataSetUpdateDTO = Body(...), matrices: List[MatrixInfoDTO] = Body(...)) -> Any:
+    @bp.post("/matrixdataset")
+    def create_dataset(
+        metadata: MatrixDataSetUpdateDTO = Body(...), matrices: List[MatrixInfoDTO] = Body(...)
+    ) -> MatrixDataSetDTO:
         logger.info(f"Creating new matrix dataset metadata {metadata.name}")
         return service.create_dataset(metadata, matrices).to_dto()
 
     @bp.put(
         "/matrixdataset/{id}/metadata",
-        tags=[APITag.matrix],
-        response_model=MatrixDataSetDTO,
     )
-    def update_dataset_metadata(id: str, metadata: MatrixDataSetUpdateDTO) -> Any:
+    def update_dataset_metadata(id: str, metadata: MatrixDataSetUpdateDTO) -> MatrixDataSetDTO:
         logger.info(f"Updating matrix dataset metadata {id}")
         return service.update_dataset(id, metadata).to_dto()
 
     @bp.get(
         "/matrixdataset/_search",
-        tags=[APITag.matrix],
-        response_model=List[MatrixDataSetDTO],
     )
-    def query_datasets(name: Optional[str], filter_own: bool = False) -> Any:
+    def query_datasets(name: Optional[str], filter_own: bool = False) -> List[MatrixDataSetDTO]:
         logger.info("Searching matrix dataset metadata")
         return service.list(name, filter_own)
 
     @bp.get(
         "/matrixdataset/{dataset_id}/download",
-        tags=[APITag.study_outputs],
-        summary="Get outputs data",
+        summary="Download dataset",
     )
-    def download_dataset(dataset_id: str) -> Any:
+    def download_dataset(dataset_id: str) -> FileDownloadTaskDTO:
         logger.info(f"Download {dataset_id} matrix dataset")
         return service.download_dataset(dataset_id)
 
     @bp.get(
         "/matrix/{matrix_id}/download",
-        tags=[APITag.study_outputs],
-        summary="Get outputs data",
+        summary="Download matrix content",
     )
     def download_matrix(
         matrix_id: str,
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
-    ) -> Any:
+    ) -> FileResponse:
         logger.info(f"Download {matrix_id} matrix")
         service.download_matrix(matrix_id, tmp_export_file)
         return FileResponse(
@@ -165,8 +159,8 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
             media_type="text/plain",
         )
 
-    @bp.delete("/matrixdataset/{id}", tags=[APITag.matrix])
-    def delete_datasets(id: str) -> Any:
+    @bp.delete("/matrixdataset/{id}")
+    def delete_datasets(id: str) -> None:
         logger.info(f"Removing matrix dataset metadata {id}")
         service.delete_dataset(id)
 

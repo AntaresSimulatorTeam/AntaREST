@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import datetime
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Union
@@ -26,6 +25,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.model import JSON
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
+from antarest.core.utils.utils import current_time
 
 
 @pytest.fixture
@@ -292,7 +292,7 @@ class SimpleSyncTaskService(ITaskService):
             name="mock",
             owner=None,
             status=TaskStatus.COMPLETED,
-            creation_date_utc=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(" "),
+            creation_date_utc=current_time().isoformat(" "),
             completion_date_utc=None,
             result=None,
             logs=None,

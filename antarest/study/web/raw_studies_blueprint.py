@@ -18,6 +18,7 @@ from typing import Annotated, Any
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
@@ -92,7 +93,7 @@ class MatrixFormat(EnumIgnoreCase):
             if dataframe.empty:
                 return Response(content=b"", media_type="application/octet-stream")
             string_buffer = io.StringIO()
-            dataframe.to_csv(string_buffer, sep="\t", header=False, index=False)
+            pl.from_pandas(dataframe).write_csv(string_buffer, separator="\t", include_header=False)
             return Response(content=string_buffer.getvalue(), media_type="text/csv")
 
         buffer = io.BytesIO()
@@ -123,11 +124,10 @@ def create_raw_study_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[auth.required()])
 
     @bp.get(
         "/studies/{uuid}/raw",
-        tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
     def get_study_data(
@@ -215,10 +215,9 @@ def create_raw_study_routes(
 
     @bp.get(
         "/studies/{uuid}/raw/original-file",
-        tags=[APITag.study_raw_data],
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Any:
+    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Response:
         """
         Fetches for a file in its original format from a study folder
 
@@ -244,9 +243,7 @@ def create_raw_study_routes(
 
     @bp.delete(
         "/studies/{uuid}/raw",
-        tags=[APITag.study_raw_data],
         summary="Delete files or folders located inside the 'User' folder",
-        response_model=None,
     )
     def delete_file(
         uuid: str,
@@ -258,7 +255,7 @@ def create_raw_study_routes(
                 },
             ),
         ] = "/",
-    ) -> Any:
+    ) -> None:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
         study_service.delete_user_file_or_folder(uuid, path)
@@ -266,21 +263,12 @@ def create_raw_study_routes(
     @bp.post(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.OK,
-        tags=[APITag.study_raw_data],
         summary="Update study by posting formatted data",
     )
     def edit_study(uuid: str, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
         """
-        Updates raw data for a study by posting formatted data.
-
-        > NOTE: use the PUT endpoint to upload a file.
-
-        Parameters:
-
-        - `uuid`: The UUID of the study.
-        - `path`: The path to the data to update. Defaults to "/".
-        - `data`: The formatted data to be posted. Could be a JSON object, or a string. Defaults to an empty string.
-
+        Same endpoint as the PUT one.
+        Only difference is that it cannot create an empty folder.
         """
         logger.info(f"Editing data at {path} for study {uuid}")
         path = sanitize_string(path)
@@ -289,17 +277,13 @@ def create_raw_study_routes(
     @bp.put(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.NO_CONTENT,
-        tags=[APITag.study_raw_data],
         summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
         uuid: str,
         path: PATH_TYPE = "/",
         file: bytes = File(default=None),
-        create_missing: bool = Query(
-            False,
-            description="Create file or parent directories if missing.",
-        ),  # type: ignore
+        create_missing: bool = Query(default=True, deprecated=True),  # type: ignore
         resource_type: ResourceType = ResourceType.FILE,
     ) -> None:
         """
@@ -310,8 +294,7 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
         - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
-        - `create_missing`: Flag to indicate whether to create file and parent directories if missing.
-        - `resource_type`: When set to "folder" and `create_missing` is True, creates a folder. Else (default value), it's ignored.
+        - `resource_type`: When set to "folder", creates a folder. Else (default value), it's ignored.
 
         """
         if file is not None and resource_type == ResourceType.FOLDER:
@@ -320,17 +303,16 @@ def create_raw_study_routes(
             raise HTTPException(status_code=422, detail="Argument mismatch: Must give a content to create a file")
 
         path = sanitize_string(path)
-        if resource_type == ResourceType.FOLDER and create_missing:  # type: ignore
+        if resource_type == ResourceType.FOLDER:  # type: ignore
             logger.info(f"Creating folder {path} for study {uuid}")
             study_service.create_user_folder(uuid, path)
         else:
             logger.info(f"Uploading new data file at {path} for study {uuid}")
-            study_service.edit_study(uuid, path, file, create_missing=create_missing)
+            study_service.edit_study(uuid, path, file)
 
     @bp.get(
         "/studies/{uuid}/raw/download",
         summary="Download a matrix in a given format",
-        tags=[APITag.study_raw_data],
     )
     def get_matrix(
         uuid: str,

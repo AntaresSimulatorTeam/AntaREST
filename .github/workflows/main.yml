@@ -47,7 +47,7 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Test with pytest
         run: |
-          pytest --cov antarest --cov-report xml -n auto --dist=worksteal
+          pytest --cov antarest --cov-report xml -n 4 --dist=worksteal
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4

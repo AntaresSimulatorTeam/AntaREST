@@ -91,7 +91,7 @@ interface StudyEvent {
 
 interface StudyDataEvent {
   type: typeof WsEventType.StudyDataEdited;
-  payload: GenericInfo;
+  payload: GenericInfo<string>;
 }
 
 interface MaintenanceModeEvent {

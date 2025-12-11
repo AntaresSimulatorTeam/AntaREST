@@ -31,7 +31,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     serialize_st_storage_additional_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -101,66 +100,45 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        return self._get_matrix(area_id, storage_id, "pmax_injection")
+        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "pmax_injection"])
 
     @override
     def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        return self._get_matrix(area_id, storage_id, "pmax_withdrawal")
+        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "pmax_withdrawal"])
 
     @override
     def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        return self._get_matrix(area_id, storage_id, "lower_rule_curve")
+        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "lower_rule_curve"])
 
     @override
     def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        return self._get_matrix(area_id, storage_id, "upper_rule_curve")
+        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "upper_rule_curve"])
 
     @override
     def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        return self._get_matrix(area_id, storage_id, "inflows")
+        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "inflows"])
 
     @override
     def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        study_version = self.get_file_study().config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(
-                f"costInjection matrix is supported since version 9.2 and your study is in {study_version}"
-            )
-        return self._get_matrix(area_id, storage_id, "cost_injection")
+        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_injection"])
 
     @override
     def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        study_version = self.get_file_study().config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(
-                f"costWithdrawal matrix is supported since version 9.2 and your study is in {study_version}"
-            )
-        return self._get_matrix(area_id, storage_id, "cost_withdrawal")
+        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_withdrawal"])
 
     @override
     def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        study_version = self.get_file_study().config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(f"costLevel matrix is supported since version 9.2 and your study is in {study_version}")
-        return self._get_matrix(area_id, storage_id, "cost_level")
+        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_level"])
 
     @override
     def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        study_version = self.get_file_study().config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(
-                f"costVariationInjection matrix is supported since version 9.2 and your study is in {study_version}"
-            )
-        return self._get_matrix(area_id, storage_id, "cost_variation_injection")
+        url = ["input", "st-storage", "series", area_id, storage_id, "cost_variation_injection"]
+        return self.get_impl().get_matrix(url)
 
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        study_version = self.get_file_study().config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(
-                f"costVariationWithdrawal matrix is supported since version 9.2 and your study is in {study_version}"
-            )
-        return self._get_matrix(area_id, storage_id, "cost_variation_withdrawal")
+        url = ["input", "st-storage", "series", area_id, storage_id, "cost_variation_withdrawal"]
+        return self.get_impl().get_matrix(url)
 
     @override
     def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
@@ -211,39 +189,21 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     @override
     def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(
-                f"costInjection matrix is supported since version 9.2 and your study is in {study_version}"
-            )
         study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_injection"])
 
     @override
     def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(
-                f"costWithdrawal matrix is supported since version 9.2 and your study is in {study_version}"
-            )
         study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_withdrawal"])
 
     @override
     def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(f"costLevel matrix is supported since version 9.2 and your study is in {study_version}")
         study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_level"])
 
     @override
     def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(
-                f"costVariationInjection matrix is supported since version 9.2 and your study is in {study_version}"
-            )
         study_data.tree.save(
             series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_variation_injection"]
         )
@@ -251,11 +211,6 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     @override
     def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_9_2:
-            raise ValueError(
-                f"costVariationWithdrawal matrix is supported since version 9.2 and your study is in {study_version}"
-            )
         study_data.tree.save(
             series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_variation_withdrawal"]
         )
@@ -383,12 +338,6 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             raise AreaNotFound(area_id) from None
         except KeyError:
             raise STStorageConfigNotFound(path, area_id) from None
-
-    def _get_matrix(self, area_id: str, storage_id: str, ts_name: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(["input", "st-storage", "series", area_id, storage_id, ts_name])
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
 
     def _update_st_storage_config(self, area_id: str, storage: STStorage) -> None:
         study_data = self.get_file_study().config

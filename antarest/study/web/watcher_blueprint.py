@@ -44,13 +44,11 @@ def create_watcher_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[auth.required()])
 
     @bp.post(
         "/watcher/_scan",
         summary="Launch scan in selected directory",
-        tags=[APITag.study_raw_data],
-        response_model=str,
     )
     def scan_dir(path: str, recursive: bool = True) -> str:
         if path:

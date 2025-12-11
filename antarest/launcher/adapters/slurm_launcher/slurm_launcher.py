@@ -33,7 +33,7 @@ from typing_extensions import override
 from antarest.core.config import NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
@@ -44,7 +44,7 @@ from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
 from antarest.launcher.ssh_client import calculates_slurm_load
 from antarest.launcher.ssh_config import SSHConfigDTO
-from antarest.login.utils import current_user_context
+from antarest.login.utils import current_user_context, require_current_user
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -57,10 +57,6 @@ STUDIES_OUTPUT_DIR_NAME = "OUTPUT"
 
 
 class VersionNotSupportedError(Exception):
-    pass
-
-
-class JobIdNotFound(Exception):
     pass
 
 
@@ -499,62 +495,66 @@ class SlurmLauncher(AbstractLauncher):
         launch_uuid: str,
         launcher_params: LauncherParametersDTO,
         version: SolverVersion,
+        jwt_user: JWTUser,
     ) -> None:
-        study_path = Path(self.launcher_args.studies_in) / launch_uuid
+        with current_user_context(jwt_user):
+            study_path = Path(self.launcher_args.studies_in) / launch_uuid
 
-        # `append_log` is a function alias for readability ;-)
-        append_log = self.callbacks.append_before_log
+            # `append_log` is a function alias for readability ;-)
+            append_log = self.callbacks.append_before_log
 
-        with self.antares_launcher_lock:
-            # noinspection PyBroadException
-            try:
-                # export study
-                append_log(launch_uuid, "Exporting study...")
-                self.callbacks.export_study(launch_uuid, study_uuid, study_path, launcher_params)
+            with self.antares_launcher_lock:
+                # noinspection PyBroadException
+                try:
+                    # export study
+                    append_log(launch_uuid, "Exporting study...")
+                    self.callbacks.export_study(launch_uuid, study_uuid, study_path, launcher_params)
 
-                append_log(launch_uuid, "Checking study version...")
-                available_versions = self.slurm_config.antares_versions_on_remote_server
-                if f"{version:ddd}" not in available_versions:
-                    raise VersionNotSupportedError(
-                        f"Study version '{version}' is not supported. Currently supported versions are"
-                        f" {', '.join(available_versions)}"
-                    )
-                _override_solver_version(study_path, version)
+                    append_log(launch_uuid, "Checking study version...")
+                    available_versions = self.slurm_config.antares_versions_on_remote_server
+                    if f"{version:ddd}" not in available_versions:
+                        raise VersionNotSupportedError(
+                            f"Study version '{version}' is not supported. Currently supported versions are"
+                            f" {', '.join(available_versions)}"
+                        )
+                    _override_solver_version(study_path, version)
 
-                append_log(launch_uuid, "Submitting study to slurm launcher")
-                launcher_args = self._apply_params(launcher_params)
-                self._call_launcher(launcher_args, self.launcher_params)
+                    append_log(launch_uuid, "Submitting study to slurm launcher")
+                    launcher_args = self._apply_params(launcher_params)
+                    self._call_launcher(launcher_args, self.launcher_params)
 
-                launch_success = self._check_if_study_is_in_launcher_db(launch_uuid)
-                if launch_success:
-                    append_log(launch_uuid, "Study submitted")
-                    logger.info("Study exported and run with launcher")
-                else:
-                    self.callbacks.append_after_log(
+                    launch_success = self._check_if_study_is_in_launcher_db(launch_uuid)
+                    if launch_success:
+                        append_log(launch_uuid, "Study submitted")
+                        logger.info("Study exported and run with launcher")
+                    else:
+                        self.callbacks.append_after_log(
+                            launch_uuid,
+                            "Study not submitted. The study configuration may be incorrect",
+                        )
+                        logger.warning(
+                            f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched"
+                        )
+
+                    self.callbacks.update_status(
                         launch_uuid,
-                        "Study not submitted. The study configuration may be incorrect",
+                        JobStatus.RUNNING if launch_success else JobStatus.FAILED,
+                        None,
+                        None,
                     )
-                    logger.warning(f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched")
+                except Exception as e:
+                    stack_trace = traceback.format_exc()
+                    msg = f"Failed to launch study {study_uuid}: see stack trace below:\n{stack_trace}"
+                    self.callbacks.append_after_log(launch_uuid, msg)
+                    self.callbacks.update_status(launch_uuid, JobStatus.FAILED, msg, None)
+                    self._clean_up_study(launch_uuid)
+                    logger.error(msg, exc_info=e)
+                    raise
+                finally:
+                    self._delete_workspace_file(study_path)
 
-                self.callbacks.update_status(
-                    launch_uuid,
-                    JobStatus.RUNNING if launch_success else JobStatus.FAILED,
-                    None,
-                    None,
-                )
-            except Exception as e:
-                stack_trace = traceback.format_exc()
-                msg = f"Failed to launch study {study_uuid}: see stack trace below:\n{stack_trace}"
-                self.callbacks.append_after_log(launch_uuid, msg)
-                self.callbacks.update_status(launch_uuid, JobStatus.FAILED, msg, None)
-                self._clean_up_study(launch_uuid)
-                logger.error(msg, exc_info=e)
-                raise
-            finally:
-                self._delete_workspace_file(study_path)
-
-        if not self.thread:
-            self.start()
+            if not self.thread:
+                self.start()
 
     def _call_launcher(self, arguments: argparse.Namespace, parameters: MainParameters) -> None:
         run_with(arguments, parameters, show_banner=False)
@@ -599,9 +599,10 @@ class SlurmLauncher(AbstractLauncher):
     def run_study(
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
+        user = require_current_user()
         thread = threading.Thread(
             target=self._run_study,
-            args=(study_uuid, job_id, launcher_parameters, version),
+            args=(study_uuid, job_id, launcher_parameters, version, user),
             name=f"{self.__class__.__name__}-JobRunner",
         )
         thread.start()

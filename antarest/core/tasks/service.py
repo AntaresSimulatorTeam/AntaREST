@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-import datetime
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -42,7 +40,7 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import retry
+from antarest.core.utils.utils import current_time, retry
 from antarest.login.utils import get_current_user, require_current_user
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
@@ -50,6 +48,11 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
 """Default timeout for `await_task` in seconds."""
+
+
+class TaskNotFoundError(HTTPException):
+    def __init__(self, detail: str):
+        super().__init__(status_code=HTTPStatus.NOT_FOUND, detail=detail)
 
 
 class ITaskNotifier(ABC):
@@ -95,6 +98,12 @@ class ITaskService(ABC):
         task_id: str,
         with_logs: bool = False,
     ) -> TaskDTO:
+        """
+        Retrieves information about a task.
+
+        Raise:
+            TaskNotFoundError: if the task is not found in the database.
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -103,6 +112,12 @@ class ITaskService(ABC):
 
     @abstractmethod
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+        """
+        Waits for the completion of task for the specified time.
+
+        Raises:
+            TimeoutError: if the task is not completed before the timeout
+        """
         raise NotImplementedError()
 
 
@@ -344,30 +359,24 @@ class TaskJobService(ITaskService):
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
         async def task_event_callback(event: Event) -> None:
-            self._cancel_task(str(event.payload), dispatch=False)
+            self._do_cancel_task(str(event.payload))
 
         return task_event_callback
 
-    def cancel_task(self, task_id: str, dispatch: bool = False) -> None:
+    def cancel_task(self, task_id: str) -> None:
         task = self.repo.get_or_raise(task_id)
         user = require_current_user()
         if user.is_site_admin() or task.owner_id == user.impersonator:
-            self._cancel_task(task_id, dispatch)
+            # Since the task may be executed in another worker,
+            # we need to send a request to cancel it.
+            self._request_cancel(task_id)
         else:
             raise UserHasNotPermissionError()
 
-    def _cancel_task(self, task_id: str, dispatch: bool = False) -> None:
-        task = self.repo.get_or_raise(task_id)
+    def _request_cancel(self, task_id: str) -> None:
         if task_id in self.tasks:
-            cancelled = self.tasks[task_id].cancel()
-            task.status = TaskStatus.CANCELLED.value
-            self.repo.save(task)
-            # Only notifying listeners when the task is actually cancelled,
-            # otherwise the listeners will be notified again when the task is done.
-            if cancelled:
-                for listener in self._listeners:
-                    listener.on_task_cancel(task.id, task.get_type())
-        elif dispatch:
+            self._do_cancel_task(task_id)
+        else:
             self.event_bus.push(
                 Event(
                     type=EventType.TASK_CANCEL_REQUEST,
@@ -376,6 +385,20 @@ class TaskJobService(ITaskService):
                     permissions=PermissionInfo(public_mode=PublicMode.NONE),
                 )
             )
+
+    def _do_cancel_task(self, task_id: str) -> None:
+        task = self.repo.get_or_raise(task_id)
+        if task_id in self.tasks:
+            cancelled = self.tasks[task_id].cancel()
+            # Only updating status when the task is actually cancelled.
+            if cancelled:
+                logger.info(f"Successfully cancelled task {task_id}")
+                task.status = TaskStatus.CANCELLED.value
+                self.repo.save(task)
+                for listener in self._listeners:
+                    listener.on_task_cancel(task.id, task.get_type())
+            else:
+                logger.info(f"Failed to cancel task {task_id}")
 
     @override
     def status_task(
@@ -386,16 +409,13 @@ class TaskJobService(ITaskService):
         if task := self.repo.get(task_id):
             return task.to_dto(with_logs)
         else:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail=f"Failed to retrieve task {task_id} in db",
-            )
+            raise TaskNotFoundError(detail=f"Failed to retrieve task {task_id} in db")
 
     @override
     def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
-        return [task.to_dto() for task in self.list_db_tasks(task_filter)]
+        return [task.to_dto() for task in self._list_db_tasks(task_filter)]
 
-    def list_db_tasks(self, task_filter: TaskListFilter) -> List[TaskJob]:
+    def _list_db_tasks(self, task_filter: TaskListFilter) -> List[TaskJob]:
         current_user = require_current_user()
         user = None if current_user.is_site_admin() else current_user.impersonator
         return self.repo.list(task_filter, user)
@@ -407,6 +427,10 @@ class TaskJobService(ITaskService):
                 logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
                 self.tasks[task_id].result(timeout_sec)
                 logger.info(f"📌 Task '{task_id}' done.")
+            except TimeoutError as timeout_exc:
+                error_msg = f"Timeout while awaiting task '{task_id}'"
+                logger.warning(error_msg)
+                raise TimeoutError(error_msg) from timeout_exc
             except Exception as exc:
                 logger.critical(f"🤕 Task '{task_id}' failed: {exc}.")
                 raise
@@ -422,19 +446,9 @@ class TaskJobService(ITaskService):
                     return
                 logger.info("💤 Sleeping 2 seconds...")
                 time.sleep(2)
-
-            logger.error(f"Timeout while awaiting task '{task_id}'")
-            stmt = (
-                update(TaskJob)
-                .where(TaskJob.id == task_id)
-                .values(
-                    status=TaskStatus.TIMEOUT.value,
-                    result_msg=f"Task '{task_id}' timeout after {timeout_sec} seconds",
-                    result_status=False,
-                )
-            )
-            db.session.execute(stmt)
-            db.session.commit()
+            error_msg = f"Timeout while awaiting task '{task_id}'"
+            logger.warning(error_msg)
+            raise TimeoutError(error_msg)
 
     def _run_task(
         self,
@@ -446,13 +460,13 @@ class TaskJobService(ITaskService):
     ) -> None:
         # We need to catch all exceptions so that the calling thread is guaranteed
         # to not die
-        try:
-            status = TaskStatus.FAILED
-            for listener in self._listeners:
-                listener.on_task_start(task_id, task_type)
+        with task_context(task_id=task_id, user=jwt_user):
+            try:
+                status = TaskStatus.FAILED
+                for listener in self._listeners:
+                    listener.on_task_start(task_id, task_type)
 
-            # attention: this function is executed in a thread, not in the main process
-            with task_context(task_id=task_id, user=jwt_user):
+                # attention: this function is executed in a thread, not in the main process
                 with db():
                     # Important to keep this retry for now,
                     # in case commit is not visible (read from replica ...)
@@ -493,9 +507,7 @@ class TaskJobService(ITaskService):
 
                 with db():
                     # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                    completion_date = (
-                        datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) if status.is_final() else None
-                    )
+                    completion_date = current_time() if status.is_final() else None
                     stmt = (
                         update(TaskJob)
                         .where(TaskJob.id == task_id)
@@ -529,44 +541,48 @@ class TaskJobService(ITaskService):
                         channel=EventChannelDirectory.TASK + task_id,
                     )
                 )
-        except Exception as exc:
-            err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
-            logger.error(err_msg, exc_info=exc)
+            except Exception as exc:
+                err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
+                logger.error(err_msg, exc_info=exc)
 
-            try:
-                with db():
-                    stmt = (
-                        update(TaskJob)
-                        .where(TaskJob.id == task_id)
-                        .values(
-                            status=TaskStatus.FAILED.value,
-                            result_msg=str(exc),
-                            result_status=False,
-                            completion_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                try:
+                    with db():
+                        stmt = (
+                            update(TaskJob)
+                            .where(TaskJob.id == task_id)
+                            .values(
+                                status=TaskStatus.FAILED.value,
+                                result_msg=str(exc),
+                                result_status=False,
+                                completion_date=current_time(),
+                            )
+                        )
+                        db.session.execute(stmt)
+                        db.session.commit()
+
+                    message = err_msg if custom_event_messages is None else custom_event_messages.end
+                    self.event_bus.push(
+                        Event(
+                            type=EventType.TASK_FAILED,
+                            payload=TaskEventPayload(
+                                id=task_id, message=message, type=task_type, study_id=study_id
+                            ).model_dump(),
+                            permissions=PermissionInfo(public_mode=PublicMode.READ),
+                            channel=EventChannelDirectory.TASK + task_id,
                         )
                     )
-                    db.session.execute(stmt)
-                    db.session.commit()
-
-                message = err_msg if custom_event_messages is None else custom_event_messages.end
-                self.event_bus.push(
-                    Event(
-                        type=EventType.TASK_FAILED,
-                        payload=TaskEventPayload(
-                            id=task_id, message=message, type=task_type, study_id=study_id
-                        ).model_dump(),
-                        permissions=PermissionInfo(public_mode=PublicMode.READ),
-                        channel=EventChannelDirectory.TASK + task_id,
+                except Exception as inner_exc:
+                    logger.error(
+                        f"An exception occurred while handling execution error of task {task_id}: {inner_exc}",
+                        exc_info=inner_exc,
                     )
-                )
-            except Exception as inner_exc:
-                logger.error(
-                    f"An exception occurred while handling execution error of task {task_id}: {inner_exc}",
-                    exc_info=inner_exc,
-                )
-        finally:
-            for listener in self._listeners:
-                listener.on_task_end(task_id, task_type, status)
+            finally:
+                for listener in self._listeners:
+                    listener.on_task_end(task_id, task_type, status)
+
+                # Task has been updated in database, we can safely remove it from running tasks
+                if task_id in self.tasks:
+                    del self.tasks[task_id]
 
     def get_task_progress(self, task_id: str) -> Optional[int]:
         task = self.repo.get_or_raise(task_id)

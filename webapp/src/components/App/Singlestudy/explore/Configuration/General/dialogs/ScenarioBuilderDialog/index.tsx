@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { getScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
+import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
 import { TabContext, TabList, type TabListProps, TabPanel } from "@mui/lab";
 import { Box, Button, Skeleton, Tab } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
-import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
 import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
@@ -37,7 +37,7 @@ const EnhancedTable = withAreas(Table);
 
 function ScenarioBuilderDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
-  const availableScenarios = getAvailableScenariosForVersion(Number(study.version));
+  const availableScenarios = getAvailableScenariosForVersion(study.version);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(availableScenarios[0]);
 
   const scenarioData = usePromiseWithSnackbarError(

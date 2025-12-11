@@ -66,7 +66,10 @@ function Fieldset(props: FieldsetProps) {
             // Ignore RadioGroupFE and its children, and FieldSkeleton
             ".MuiFormControl-root:not(:has(> .MuiRadioGroup-root)):not(.MuiRadioGroup-root *), .FieldSkeleton":
               {
-                width: fullFieldWidth ? 1 : fieldWidth,
+                // If the field hasn't `fullWidth` prop activated
+                "&:not(.MuiFormControl-fullWidth)": {
+                  width: fullFieldWidth ? 1 : fieldWidth,
+                },
                 m: 0,
                 // SwitchFE
                 ".MuiFormControlLabel-root": {

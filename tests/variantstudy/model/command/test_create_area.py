@@ -74,16 +74,16 @@ class TestCreateArea:
         # Hydro
         hydro = configparser.ConfigParser()
         hydro.read(study_path / "input" / "hydro" / "hydro.ini")
-        assert int(hydro["inter-daily-breakdown"][area_id]) == 1
-        assert int(hydro["intra-daily-modulation"][area_id]) == 24
-        assert int(hydro["inter-monthly-breakdown"][area_id]) == 1
+        assert float(hydro["inter-daily-breakdown"][area_id]) == 1
+        assert float(hydro["intra-daily-modulation"][area_id]) == 24
+        assert float(hydro["inter-monthly-breakdown"][area_id]) == 1
 
         # sourcery skip: no-conditionals-in-tests
         if version > 650:
-            assert int(hydro["initialize reservoir date"][area_id]) == 0
-            assert int(hydro["leeway low"][area_id]) == 1
-            assert int(hydro["leeway up"][area_id]) == 1
-            assert int(hydro["pumping efficiency"][area_id]) == 1
+            assert float(hydro["initialize reservoir date"][area_id]) == 0
+            assert float(hydro["leeway low"][area_id]) == 1
+            assert float(hydro["leeway up"][area_id]) == 1
+            assert float(hydro["pumping efficiency"][area_id]) == 1
 
         correlation = configparser.ConfigParser()
         correlation.read(study_path / "input" / "hydro" / "prepro" / "correlation.ini")

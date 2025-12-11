@@ -53,3 +53,23 @@ class TestCreateLayer:
         link = IniReader()
         layers = link.read(empty_study.config.study_path / "layers/layers.ini")["layers"]
         assert layers == {"0": "All", "1": "Test Layer1", "2": "Test Layer2"}
+
+    def test_create_layer_with_explicit_id(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
+        empty_study = empty_study_880
+
+        # Create a layer with an explicit ID
+        command = CreateLayer(
+            parameters=LayerCreation(name="Test Layer with ID", id="5"),
+            command_context=command_context,
+            study_version=empty_study.config.version,
+        )
+
+        output = command.apply(
+            study_data=empty_study,
+        )
+
+        assert output.status
+
+        link = IniReader()
+        layers = link.read(empty_study.config.study_path / "layers/layers.ini")["layers"]
+        assert layers == {"0": "All", "5": "Test Layer with ID"}

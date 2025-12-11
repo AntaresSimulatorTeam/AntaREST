@@ -300,7 +300,6 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     @bp.get(
         "",
         summary="Get filesystems information",
-        response_model=Sequence[FilesystemDTO],
     )
     async def list_filesystems() -> Sequence[FilesystemDTO]:
         """
@@ -317,7 +316,6 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     @bp.get(
         "/{fs}",
         summary="Get information of a filesystem",
-        response_model=Sequence[MountPointDTO],
     )
     async def list_mount_points(fs: FilesystemName) -> Sequence[MountPointDTO]:
         """
@@ -346,7 +344,6 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     @bp.get(
         "/{fs}/{mount}",
         summary="Get information of a mount point",
-        response_model=MountPointDTO,
     )
     async def get_mount_point(fs: FilesystemName, mount: MountPointName) -> MountPointDTO:
         """
@@ -374,7 +371,6 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     @bp.get(
         "/{fs}/{mount}/ls",
         summary="List files in a mount point",
-        response_model=Sequence[FileInfoDTO],
     )
     async def list_files(
         fs: FilesystemName,

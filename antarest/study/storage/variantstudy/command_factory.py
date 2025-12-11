@@ -32,7 +32,6 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
     CreateSTStorageAdditionalConstraints,
 )
-from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
@@ -66,6 +65,7 @@ from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation 
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
 from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
     ReplaceXpansionAdequacyCriterion,
 )
@@ -145,7 +145,6 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,
     CommandName.UPDATE_SCENARIO_BUILDER.value: UpdateScenarioBuilder,
     CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value: GenerateThermalClusterTimeSeries,
-    CommandName.CREATE_USER_RESOURCE.value: CreateUserResource,
     CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
     CommandName.CREATE_XPANSION_CANDIDATE.value: CreateXpansionCandidate,
     CommandName.REPLACE_XPANSION_CANDIDATE.value: ReplaceXpansionCandidate,
@@ -168,6 +167,8 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_TIMESERIES_CONFIG.value: UpdateTimeSeriesConfig,
     CommandName.REPLACE_HYDRO_ALLOCATION.value: ReplaceHydroAllocation,
     CommandName.REPLACE_HYDRO_CORRELATION.value: ReplaceHydroCorrelation,
+    CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
+    CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
 }
 
 
@@ -242,18 +243,3 @@ class CommandFactory:
                 for argument in args
             ]
         raise NotImplementedError()
-
-    def to_commands(self, cmd_dto_list: List[CommandDTO]) -> List[ICommand]:
-        """
-        Convert a list of CommandDTO to a list of ICommand.
-
-        Args:
-            cmd_dto_list: The CommandDTO objects to convert.
-
-        Returns:
-            List: A list of ICommand instances.
-
-        Raises:
-            NotImplementedError: If the argument type is not implemented.
-        """
-        return [cmd for dto in cmd_dto_list for cmd in self.to_command(dto)]

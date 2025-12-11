@@ -17,7 +17,7 @@ import {
   bindingConstraintModelAdapter,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import type { StudyMapNode } from "../../redux/ducks/studyMaps";
-import type { UpdateAreaUi } from "../../types/types";
+import type { AreaUIUpdatePayload, UpdateAreaUi } from "../../types/types";
 import client from "./client";
 
 export const createArea = async (uuid: string, name: string): Promise<StudyMapNode> => {
@@ -34,7 +34,12 @@ export const updateAreaUI = async (
   layerId: string,
   areaUi: UpdateAreaUi,
 ): Promise<string> => {
-  const res = await client.put(`/v1/studies/${uuid}/areas/${areaId}/ui?layer=${layerId}`, areaUi);
+  const payload: AreaUIUpdatePayload = {
+    x: areaUi.x,
+    y: areaUi.y,
+    color_rgb: areaUi.color_rgb,
+  };
+  const res = await client.put(`/v1/studies/${uuid}/areas/${areaId}/ui?layer=${layerId}`, payload);
   return res.data;
 };
 

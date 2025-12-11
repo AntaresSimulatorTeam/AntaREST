@@ -23,7 +23,7 @@ from antares.study.version import SolverVersion
 from antarest.core.config import LocalConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
-from antarest.launcher.model import JobStatus, LauncherParametersDTO
+from antarest.launcher.model import JobStatus, LauncherParametersDTO, SolverPresets
 
 SOLVER_NAME = "solver.bat" if os.name == "nt" else "solver.sh"
 
@@ -221,6 +221,36 @@ def test_parse_xpress_dir(tmp_path: Path) -> None:
     launch_parameters = LauncherParametersDTO(other_options="xpress")
     _, env_variables = local_launcher._parse_launcher_options(launch_parameters, SolverVersion.parse("9.2"))
     assert env_variables["XPRESSDIR"] == "fake_path_for_test"
+
+
+def test_parse_solver_presets(launcher_config: LocalConfig):
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    launch_parameters = LauncherParametersDTO()
+    solver_presets = SolverPresets.model_validate(
+        {
+            "id": "id-test-xpress-config",
+            "name": "test-xpress-config",
+            "linear_solver": "xpress",
+            "min_antares_version": "9.2",
+            "linear_solver_param_optim_1": {"THREADS": "4", "PRESOLVE": "1"},
+            "linear_solver_param_optim_2": {"MIPRELSTOP": "0.01"},
+            "linear_solver_param": {"DEFAULTALG": "4"},
+            "use_optim_1_basis_next_week": True,
+            "use_optim_1_basis_optim_2": False,
+        }
+    )
+    launch_parameters.other_options = solver_presets.to_cli_options()
+    args, _ = local_launcher._parse_launcher_options(launch_parameters, SolverVersion.parse("9.2"))
+    assert args == [
+        "--linear-solver",
+        "xpress",
+        "--use-optim-1-basis-optim-2",
+        "false",
+        "--lp-solver-param-optim-1",
+        "DEFAULTALG 4 THREADS 4 PRESOLVE 1",
+        "--lp-solver-param-optim-2",
+        "DEFAULTALG 4 MIPRELSTOP 0.01",
+    ]
 
 
 def test_select_best_binary() -> None:

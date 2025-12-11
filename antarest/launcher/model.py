@@ -306,6 +306,7 @@ class LauncherInfoDTO(AntaresBaseModel):
     name: str
     nb_cores: LauncherResourceRangeDTO
     time_limit: LauncherResourceRangeDTO
+    versions: list[SolverVersionStr]
 
 
 class LauncherListDTO(AntaresBaseModel):
@@ -357,6 +358,8 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
 class SolverPresets(AntaresBaseModel):
     class Config:
         extra = "forbid"
+        alias_generator = to_camel
+        populate_by_name = True
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -371,7 +374,7 @@ class SolverPresets(AntaresBaseModel):
                 linear_solver_param={"MAXTIME": "3600"},
                 use_optim_1_basis_next_week=True,
                 use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json")
+            ).model_dump(mode="json", by_alias=True)
 
     id: str
     name: ItemName
@@ -468,6 +471,8 @@ class SolverPresets(AntaresBaseModel):
 class SolverPresetsCreation(AntaresBaseModel):
     class Config:
         extra = "forbid"
+        alias_generator = to_camel
+        populate_by_name = True
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -481,7 +486,7 @@ class SolverPresetsCreation(AntaresBaseModel):
                 linear_solver_param={"MAXTIME": "3600"},
                 use_optim_1_basis_next_week=True,
                 use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json")
+            ).model_dump(mode="json", by_alias=True)
 
     name: ItemName
     linear_solver: str
@@ -497,6 +502,8 @@ class SolverPresetsCreation(AntaresBaseModel):
 class SolverPresetsUpdate(AntaresBaseModel):
     class Config:
         extra = "forbid"
+        alias_generator = to_camel
+        populate_by_name = True
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -509,7 +516,7 @@ class SolverPresetsUpdate(AntaresBaseModel):
                 linear_solver_param={"MAXTIME": "3600"},
                 use_optim_1_basis_next_week=True,
                 use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json")
+            ).model_dump(mode="json", by_alias=True)
 
     linear_solver: Optional[str] = None
     min_antares_version: Optional[SolverVersionStr] = None

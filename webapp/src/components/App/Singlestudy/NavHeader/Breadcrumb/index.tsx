@@ -67,6 +67,7 @@ function Breadcrumb({ study }: BreadcrumbProps) {
               key={path}
               folderName={folderName}
               isFirstSegment={isFirstSegment}
+              isLastSegment={isLastSegment}
               onClick={() => handleBreadcrumbClick(path, isLastSegment)}
             />
           );

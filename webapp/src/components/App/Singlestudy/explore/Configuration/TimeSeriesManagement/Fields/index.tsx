@@ -14,6 +14,7 @@
 
 import { useFormContextPlus } from "@/components/common/Form";
 import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import { TimeSeriesType } from "@/services/api/studies/timeseries/constants";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -38,6 +39,9 @@ function Fields() {
             <TableCell align="center">
               {t("study.configuration.tsManagement.numberStochasticTs")}
             </TableCell>
+            <TableCell align="center">
+              {t("study.configuration.tsManagement.thermalOutageDetails")}
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody sx={{ "tr:last-child > *": { border: "none" } }}>
@@ -57,6 +61,15 @@ function Fields() {
                 />
               </TableCell>
               <TypeConfigFields type={type} />
+              <TableCell align="center">
+                {type === TimeSeriesType.Thermal ? (
+                  <SwitchFE
+                    name={`${type}.outageDetails` as const}
+                    control={control}
+                    size="medium"
+                  />
+                ) : null}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

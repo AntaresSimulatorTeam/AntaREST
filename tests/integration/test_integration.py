@@ -604,7 +604,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res.json() == [Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json")]
 
     res = client.post(f"/v1/studies/{study_id}/layers?name=test")
-    assert res.json() == "test"
+    assert res.json() == "1"
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
@@ -636,7 +636,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Create the layer again without areas
     res = client.post(f"/v1/studies/{study_id}/layers?name=test2")
-    assert res.json() == "test2"
+    assert res.json() == "1"
 
     # Delete the layer with no areas
     res = client.delete(f"/v1/studies/{study_id}/layers/1")

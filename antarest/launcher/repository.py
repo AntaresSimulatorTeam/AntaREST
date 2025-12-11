@@ -23,9 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class JobResultRepository:
-    def __init__(self) -> None:
-        pass
-
     def save(self, job: JobResult) -> JobResult:
         logger.debug(f"Saving JobResult {job.id}")
 

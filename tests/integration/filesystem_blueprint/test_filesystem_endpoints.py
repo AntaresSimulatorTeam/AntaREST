@@ -63,7 +63,7 @@ class AnyIsoDateTime:
 
     @override
     def __repr__(self) -> str:
-        return "<AnyDiskUsagePercent>"
+        return "<AnyISODateTime>"
 
 
 class IntegerRange:
