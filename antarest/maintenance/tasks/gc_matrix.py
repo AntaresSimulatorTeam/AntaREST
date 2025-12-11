@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 """
-Matrix garbage collection task for Celery.
+Matrix garbage collection task, agnostic from the way it is executed.
 
 This task deletes unused matrices from the matrix store based on retention time.
 """
@@ -26,8 +26,6 @@ from pydantic import BaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.app import celery_app
-from antarest.maintenance.context import MaintenanceContext
 from antarest.matrixstore.service import MatrixService
 
 
@@ -151,22 +149,4 @@ def clean_matrices(
         deleted_count=deleted_count,
         duration_seconds=duration,
         dry_run=dry_run,
-    )
-
-
-@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task", pydantic=True)
-def clean_matrices_task() -> GCTaskResult:
-    """
-    Celery task wrapper for clean_matrices.
-
-    Retrieves dependencies from the worker context and delegates to clean_matrices().
-    """
-    ctx = MaintenanceContext.get_instance()
-    if ctx.config is None:
-        raise RuntimeError("MaintenanceContext config is not initialized. Ensure worker was properly started.")
-
-    return clean_matrices(
-        matrix_service=ctx.matrix_service,
-        dry_run=ctx.config.storage.matrix_gc_dry_run,
-        retention_time=ctx.config.storage.matrix_gc_retention_time,
     )
