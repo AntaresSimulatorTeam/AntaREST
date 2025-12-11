@@ -799,9 +799,7 @@ class OutputService:
             db.session.commit()
 
             # Return the dataframe
-            dataframe = self._matrix_service.get(db_model.matrix_id)
-            dataframe.columns = pd.RangeIndex(len(dataframe.columns))  # type: ignore
-            return dataframe
+            return self._matrix_service.get(db_model.matrix_id)
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)
