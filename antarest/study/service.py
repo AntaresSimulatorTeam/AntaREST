@@ -1284,13 +1284,8 @@ class StudyService:
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
 
-        compression_format = ArchiveFormat.ZIP
-
-        if archive_format in list(map(lambda arch_format: arch_format, ArchiveFormat)):
-            compression_format = archive_format
-
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}{compression_format}", export_name
+            f"{study.name}-{uuid}{archive_format}", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -1299,7 +1294,7 @@ class StudyService:
             try:
                 target_study = self.get_study(uuid)
                 self.storage_service.get_storage(target_study).export_study(
-                    target_study, export_path, outputs, compression_format
+                    target_study, export_path, outputs, archive_format
                 )
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(success=True, message=f"Study {uuid} successfully exported")
