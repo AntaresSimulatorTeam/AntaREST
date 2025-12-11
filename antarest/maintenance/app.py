@@ -20,12 +20,13 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from celery import Celery
-from celery.signals import worker_init
+from celery.signals import setup_logging, worker_init
 
 from antarest.core.config import CeleryConfig, Config
+from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.utils import get_local_path
 from antarest.maintenance.context import MaintenanceContext
 
@@ -92,6 +93,15 @@ celery_app.conf.update(
 
 # Auto-discover tasks
 celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
+
+
+@setup_logging.connect
+def _setup_logging(**kwargs: Any) -> None:
+    """
+    Overwrites celery default logging configuration with our own.
+    """
+    if _config:
+        configure_logger(_config)
 
 
 @celery_app.on_after_configure.connect
