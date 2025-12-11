@@ -40,7 +40,7 @@ function SettingsLayout() {
     <RootPage title={t("global.settings")} titleIcon={SettingsIcon}>
       <ViewWrapper>
         <TabsView
-          items={[
+          tabs={[
             {
               label: t("global.general"),
               linkOptions: linkOptions({

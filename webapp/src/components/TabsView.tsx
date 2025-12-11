@@ -14,15 +14,18 @@
 
 import BackButton from "@/components/buttons/BackButton";
 import router from "@/router";
-import { buildKey } from "@/utils/reactUtils";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
-import { Box, Tab, type TabProps } from "@mui/material";
-import { Link, Outlet, useLocation, type ToOptions } from "@tanstack/react-router";
+import { Box, Tab } from "@mui/material";
+import { Outlet, useMatchRoute, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
+import RouterLink from "./router/RouterLink";
 
 interface BaseTab {
   label: string;
   disabled?: boolean;
+  // Optional ID to use as tab value instead of generated one.
+  // Useful with content tabs to have a stable tab value across renders when tab order can change.
+  // Also used in `renderPanel()` callback to identify the tab.
   id?: string;
 }
 
@@ -37,7 +40,7 @@ interface ContentTab extends BaseTab {
 }
 
 export interface TabsViewProps {
-  items: RouteTab[] | ContentTab[];
+  tabs: RouteTab[] | ContentTab[];
   onChange?: TabListProps["onChange"];
   onBack?: VoidFunction;
   renderPanel?: (props: { children: React.ReactNode }, tabId?: string) => React.ReactNode;
@@ -46,19 +49,31 @@ export interface TabsViewProps {
   disableGutters?: boolean;
 }
 
-function isRouteTabs(tabs: RouteTab[] | ContentTab[]): tabs is RouteTab[] {
-  return !!tabs[0]?.linkOptions;
+function isRouteTab(tab: RouteTab | ContentTab): tab is RouteTab {
+  return !!tab?.linkOptions;
 }
 
-function buildHrefOnRouteTabs(items: RouteTab[]): Array<RouteTab & { href: string }> {
-  return items.map((item) => ({
-    ...item,
-    href: router.buildLocation(item.linkOptions).href,
-  }));
+function isRouteTabs(tabs: RouteTab[] | ContentTab[]): tabs is RouteTab[] {
+  return tabs.length > 0 && isRouteTab(tabs[0]);
+}
+
+function getRouteTabValue(tab: RouteTab) {
+  return tab.id ?? router.buildLocation(tab.linkOptions).href;
+}
+
+function getContentTabValue(tab: ContentTab, tabIndex: number) {
+  return tab.id ?? tabIndex;
+}
+
+function getTabValue(tab: RouteTab | ContentTab, tabIndex: number) {
+  if (isRouteTab(tab)) {
+    return getRouteTabValue(tab);
+  }
+  return getContentTabValue(tab, tabIndex);
 }
 
 function TabsView({
-  items,
+  tabs,
   onChange,
   onBack,
   renderPanel = ({ children }) => children,
@@ -66,54 +81,30 @@ function TabsView({
   disablePadding = false,
   disableGutters = false,
 }: TabsViewProps) {
-  const location = useLocation();
-  const [currentTabIndex, setCurrentTabIndex] = useState(0);
-
-  const tabs = isRouteTabs(items) ? buildHrefOnRouteTabs(items) : items;
   const hasRouteTabs = isRouteTabs(tabs);
 
-  const currentTabValue = hasRouteTabs
-    ? tabs.find(
-        ({ href }) => location.pathname === href || location.pathname.startsWith(href + "/"),
-      )?.href || ""
-    : currentTabIndex;
+  const [activeContentTabValue, setActiveContentTabValue] = useState(() =>
+    tabs.length > 0 ? getTabValue(tabs[0], 0) : "",
+  );
+
+  const matchRoute = useMatchRoute();
+
+  const activeRouteTab = hasRouteTabs
+    ? tabs.find((tab) => matchRoute({ ...tab.linkOptions, fuzzy: true }))
+    : undefined;
+
+  const activeTabValue = activeRouteTab ? getRouteTabValue(activeRouteTab) : activeContentTabValue;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (event: React.SyntheticEvent, newTabIndex: number) => {
     if (!hasRouteTabs) {
-      setCurrentTabIndex(newValue);
+      const newTabValue = getContentTabValue(tabs[newTabIndex], newTabIndex);
+      setActiveContentTabValue(newTabValue);
     }
-    onChange?.(event, newValue);
-  };
-
-  ////////////////////////////////////////////////////////////////
-  // Tab
-  ////////////////////////////////////////////////////////////////
-
-  const getTabKey = (tabIndex: number) => {
-    return hasRouteTabs ? tabs[tabIndex].href : buildKey(tabs[tabIndex].label, tabIndex);
-  };
-
-  const getTabValue = (tabIndex: number) => {
-    return hasRouteTabs ? tabs[tabIndex].href : tabIndex;
-  };
-
-  const getTabProps = (tabIndex: number): TabProps => {
-    if (hasRouteTabs) {
-      return {
-        value: getTabValue(tabIndex),
-        LinkComponent: Link,
-        // With MUI Tabs + router Link, providing `href` causes every Tab
-        // to inherit the current tab `href` in the DOM, even though clicks work.
-        // The router Link must be responsible for generating the href.
-        ...items[tabIndex].linkOptions,
-      };
-    }
-
-    return { value: getTabValue(tabIndex) };
+    onChange?.(event, newTabIndex);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -130,7 +121,7 @@ function TabsView({
         height: 1,
       }}
     >
-      <TabContext value={currentTabValue}>
+      <TabContext value={activeTabValue}>
         <Box
           sx={[
             !!onBack && { display: "flex" },
@@ -139,38 +130,53 @@ function TabsView({
         >
           {onBack && <BackButton onClick={onBack} />}
           <TabList onChange={handleChange}>
-            {tabs.map((tab, index) => (
-              <Tab
-                key={getTabKey(index)}
-                label={tab.label}
-                disabled={tab.disabled}
-                {...getTabProps(index)}
-              />
-            ))}
+            {tabs.map((tab, index) => {
+              const value = getTabValue(tab, index);
+
+              return (
+                <Tab
+                  key={value}
+                  value={value}
+                  label={tab.label}
+                  disabled={tab.disabled}
+                  {...(isRouteTab(tab)
+                    ? {
+                        component: RouterLink,
+                        // ⚠️ Providing `href` gives wrong the same link in <a href /> elements
+                        ...tab.linkOptions,
+                      }
+                    : {})}
+                />
+              );
+            })}
           </TabList>
         </Box>
-        {tabs.map((tab, index) => (
-          <TabPanel
-            key={getTabKey(index)}
-            value={getTabValue(index)}
-            sx={[
-              {
-                flex: 1,
-                p: 2,
-                position: "relative",
-                overflow: "auto",
-                ":has(> .TabsView:first-child), :has(> .TabWrapper:first-child), :has(> .SplitView:first-child), :has(> .ViewWrapper:first-child)":
-                  {
-                    p: 0,
-                  },
-              },
-              disablePadding && { p: 0 },
-              disableGutters && { px: 0 },
-            ]}
-          >
-            {renderPanel({ children: hasRouteTabs ? <Outlet /> : tab.content }, tab.id)}
-          </TabPanel>
-        ))}
+        {tabs.map((tab, index) => {
+          const value = getTabValue(tab, index);
+
+          return (
+            <TabPanel
+              key={value}
+              value={value}
+              sx={[
+                {
+                  flex: 1,
+                  p: 2,
+                  position: "relative",
+                  overflow: "auto",
+                  ":has(> .TabsView:first-child), :has(> .TabWrapper:first-child), :has(> .SplitView:first-child), :has(> .ViewWrapper:first-child)":
+                    {
+                      p: 0,
+                    },
+                },
+                disablePadding && { p: 0 },
+                disableGutters && { px: 0 },
+              ]}
+            >
+              {renderPanel({ children: hasRouteTabs ? <Outlet /> : tab.content }, tab.id)}
+            </TabPanel>
+          );
+        })}
       </TabContext>
     </Box>
   );

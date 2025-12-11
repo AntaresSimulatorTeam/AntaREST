@@ -50,7 +50,7 @@ function LinkMatrices({ area1, area2, isOldStudy }: Props) {
   return (
     <TabsView
       disableGutters
-      items={[
+      tabs={[
         {
           label: t("study.modelization.links.matrix.parameters"),
           content: (

@@ -44,7 +44,7 @@ function DigestTabs({ matrices }: DigestTabsProps) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <TabsView items={tabItems} divider disablePadding />;
+  return <TabsView tabs={tabItems} divider disablePadding />;
 }
 
 export default DigestTabs;

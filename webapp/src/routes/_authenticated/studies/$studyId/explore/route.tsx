@@ -58,7 +58,7 @@ function StudyExploreLayout() {
 
   return (
     <TabsView
-      items={[
+      tabs={[
         {
           label: t("study.configuration"),
           linkOptions: {

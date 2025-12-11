@@ -178,7 +178,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
   ];
 
-  return <TabsView items={[...matricesAllVersions, ...(studyVersion >= 920 ? matrices920 : [])]} />;
+  return <TabsView tabs={[...matricesAllVersions, ...(studyVersion >= 920 ? matrices920 : [])]} />;
 }
 
 export default StorageMatrices;

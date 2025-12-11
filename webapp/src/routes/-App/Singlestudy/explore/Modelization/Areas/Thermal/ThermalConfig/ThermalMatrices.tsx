@@ -35,7 +35,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
   return (
     <TabsView
       disableGutters
-      items={[
+      tabs={[
         {
           label: t("study.modelization.clusters.matrix.common"),
           content: (

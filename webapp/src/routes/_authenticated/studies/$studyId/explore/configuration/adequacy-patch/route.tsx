@@ -30,7 +30,7 @@ function AdequacyPatchLayout() {
 
   return (
     <TabsView
-      items={[
+      tabs={[
         {
           label: t("study.configuration.adequacyPatch.tab.general"),
           linkOptions: {

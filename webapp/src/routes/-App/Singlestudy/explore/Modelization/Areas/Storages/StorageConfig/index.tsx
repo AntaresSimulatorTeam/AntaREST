@@ -36,7 +36,7 @@ function StorageConfig() {
     <TabsView
       onBack={() => navigate("../storages")}
       divider
-      items={[
+      tabs={[
         {
           label: t("study.modelization.storages.operatingParameters"),
           content: (

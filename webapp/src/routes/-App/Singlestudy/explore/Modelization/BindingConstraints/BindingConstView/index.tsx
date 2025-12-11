@@ -35,7 +35,7 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
   return (
     <TabsView
       divider
-      items={[
+      tabs={[
         {
           label: t("global.parameters"),
           content: (

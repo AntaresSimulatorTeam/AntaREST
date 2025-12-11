@@ -30,7 +30,7 @@ function GeographicTrimmingLayout() {
 
   return (
     <TabsView
-      items={[
+      tabs={[
         {
           label: t("study.configuration.geographicTrimming.areas"),
           linkOptions: {

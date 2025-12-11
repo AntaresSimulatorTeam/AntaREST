@@ -31,7 +31,7 @@ function ConfigurationLayout() {
 
   return (
     <TabsView
-      items={[
+      tabs={[
         {
           label: "General",
           linkOptions: linkOptions({
