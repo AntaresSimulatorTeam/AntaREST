@@ -25,18 +25,16 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   return (
-    <>
-      <ThemeProvider>
-        <SnackbarProvider
-          maxSnack={5}
-          autoHideDuration={3000}
-          action={(key) => <SnackbarCloseButton snackbarKey={key} />}
-          preventDuplicate
-        >
-          <Outlet />
-        </SnackbarProvider>
-      </ThemeProvider>
+    <ThemeProvider>
+      <SnackbarProvider
+        maxSnack={5}
+        autoHideDuration={3000}
+        action={(key) => <SnackbarCloseButton snackbarKey={key} />}
+        preventDuplicate
+      >
+        <Outlet />
+      </SnackbarProvider>
       <TanStackRouterDevtools />
-    </>
+    </ThemeProvider>
   );
 }
