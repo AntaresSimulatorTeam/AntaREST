@@ -81,6 +81,7 @@ function StudyExploreLayout() {
           },
         },
       ]}
+      divider
     />
   );
 }
