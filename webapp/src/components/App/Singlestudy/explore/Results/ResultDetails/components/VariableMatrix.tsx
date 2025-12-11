@@ -27,7 +27,6 @@ import type {
   VariableViewMatrixDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { Area, LinkElement } from "@/types/types";
-import { toError } from "../../../../../../../utils/fnUtils";
 import FilterableMatrixGrid, {
   type FilterableMatrixGridHandle,
 } from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
@@ -123,10 +122,9 @@ function VariableMatrix({
         );
       }}
       ifRejected={(err) => {
-        const error = toError(err);
-        const errorData = isAxiosError(error) ? error.response?.data : undefined;
-        const status = errorData?.status;
-        const taskId = errorData?.task_id;
+        const error = isAxiosError(err) ? err.response?.data : undefined;
+        const status = error?.status;
+        const taskId = error?.task_id;
 
         // NOT_FOUND status with no task ID means data not materialized yet
         if (status === "NOT_FOUND" && taskId === null) {
