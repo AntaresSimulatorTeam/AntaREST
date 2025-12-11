@@ -25,6 +25,7 @@ from antarest.service_creator import (
     create_archive_worker,
     create_blob_gc,
     create_core_services,
+    create_matrix_gc,
     create_watcher,
     init_db_engine,
 )
@@ -49,6 +50,10 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
     if Module.WATCHER in services_list:
         watcher = create_watcher(config=config, app_ctxt=None, study_service=core_services.study_service)
         services.append(watcher)
+
+    if Module.MATRIX_GC in services_list:
+        matrix_gc = create_matrix_gc(config, core_services.matrix_service)
+        services.append(matrix_gc)
 
     if Module.BLOB_GC in services_list:
         blob_gc = create_blob_gc(config, core_services.blob_service)
