@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -25,6 +25,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    InnerMatrices,
     command_failed,
     command_succeeded,
 )
@@ -129,6 +130,5 @@ class GenerateThermalClusterTimeSeries(ICommand):
         return CommandDTO(action=self.command_name.value, args={}, study_version=self.study_version)
 
     @override
-    def get_inner_matrices(self) -> List[str]:
-        # This is used to get used matrices and not remove them inside the garbage collector loop.
-        return []
+    def get_inner_matrices(self) -> InnerMatrices:
+        return InnerMatrices(generates_matrices_at_run_time=True)

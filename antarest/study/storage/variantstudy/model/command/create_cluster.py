@@ -34,6 +34,7 @@ from antarest.study.storage.variantstudy.business.utils import strip_matrix_prot
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    InnerMatrices,
     command_failed,
     command_succeeded,
 )
@@ -137,7 +138,7 @@ class CreateCluster(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> InnerMatrices:
         matrices: List[str] = []
         if self.prepro:
             assert_this(isinstance(self.prepro, str))
@@ -145,4 +146,4 @@ class CreateCluster(ICommand):
         if self.modulation:
             assert_this(isinstance(self.modulation, str))
             matrices.append(strip_matrix_protocol(self.modulation))
-        return matrices
+        return InnerMatrices(matrices=matrices)

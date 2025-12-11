@@ -19,7 +19,7 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
-from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.common import CommandName, InnerMatrices
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
@@ -116,7 +116,7 @@ class TestRemoveSTStorage:
             command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
         )
         actual = cmd.get_inner_matrices()
-        assert actual == []
+        assert actual == InnerMatrices()
 
     def test_error_cases(self, empty_study_920: FileStudy, command_context: CommandContext) -> None:
         # Create an area and a short-term storage inside it

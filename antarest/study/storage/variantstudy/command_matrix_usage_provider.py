@@ -10,12 +10,15 @@
 #
 # This file is part of the Antares project.
 import logging
+from pathlib import Path
 from typing import Iterable, List
 
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
+from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
@@ -39,6 +42,7 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
     @override
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in variant studies")
+        # First gets all matrices used in commands
         command_blocks: List[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
 
         def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
@@ -54,11 +58,29 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
         variant_study_commands = [
             (cmd, c.study_id) for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)
         ]
+        snapshots_to_check = set()
         for command, study_id in variant_study_commands:
-            for matrix in command.get_inner_matrices():
-                command_id = str(matrix)
+            inner_matrices = command.get_inner_matrices()
+            if inner_matrices.generates_matrices_at_run_time:
+                snapshots_to_check.add(study_id)
+            for matrix_id in inner_matrices.matrices:
                 mat_reference = MatrixReference(
-                    matrix_id=command_id,
-                    use_description=f"Used by command {command_id} from variant study {study_id}",
+                    matrix_id=matrix_id,
+                    use_description=f"Used by command {command.command_id} from variant study {study_id}",
                 )
                 yield mat_reference
+
+        # For variants with a command that generated matrices at the runtime, yield all matrices in the snapshot.
+        study_filter = StudyFilter(
+            study_ids=list(snapshots_to_check), access_permissions=AccessPermissions(is_admin=True)
+        )
+        for study in self.variant_study_repo.get_all(study_filter):
+            study_id = study.id
+            snapshot_path = Path(study.path) / "snapshot"
+            if snapshot_path.exists():
+                for f in snapshot_path.rglob("*.link"):
+                    matrix_id = extract_matrix_id(f.read_text())
+                    matrix_reference = MatrixReference(
+                        matrix_id=f"{matrix_id}", use_description=f"Used by variant study {study_id} snapshot"
+                    )
+                    yield matrix_reference
