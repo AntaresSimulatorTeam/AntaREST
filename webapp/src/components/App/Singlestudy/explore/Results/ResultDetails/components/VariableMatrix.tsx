@@ -15,6 +15,7 @@
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { isAxiosError } from "axios";
 import type {
   DateTimeMetadataDTO,
   DateTimes,
@@ -122,11 +123,15 @@ function VariableMatrix({
         );
       }}
       ifRejected={(err) => {
-        const errorMessage = toError(err).message;
-        const isNotFound = errorMessage.includes("404") || errorMessage.includes("not found");
+        const error = toError(err);
+        const errorData = isAxiosError(error) ? error.response?.data : undefined;
+        const status = errorData?.status;
+        const taskId = errorData?.task_id;
 
-        // The output variables view is not materialized in DB yet
-        if (isNotFound) {
+        // NOT_FOUND status with no task ID means data not materialized yet
+        if (status === "NOT_FOUND" && taskId === null) {
+          // TODO: update the status to "NOT_MATERIALIZED" + handle the ongoing materialization
+          // state using the taskId and the "IN_PROGRESS" status
           return (
             <EmptyView
               title={t("study.results.scanRequired")}
@@ -136,6 +141,7 @@ function VariableMatrix({
           );
         }
 
+        // Other 404 errors (variable doesn't exist, invalid data, etc.)
         return <EmptyView title={t("data.error.matrix")} icon={GridOffIcon} />;
       }}
     />
