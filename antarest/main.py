@@ -205,12 +205,11 @@ def fastapi_app(
     logger.info("Initiating application")
 
     @asynccontextmanager
-    async def set_default_executor(app: FastAPI) -> AsyncGenerator[None, None]:
-        import asyncio
-        from concurrent.futures import ThreadPoolExecutor
+    async def set_threadpool_size(app: FastAPI) -> AsyncGenerator[None, None]:
+        from anyio import to_thread
 
-        loop = asyncio.get_running_loop()
-        loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
+        to_thread.current_default_thread_limiter().total_tokens = config.server.worker_threadpool_size
+
         yield
 
     application = FastAPI(
@@ -219,7 +218,7 @@ def fastapi_app(
         docs_url=None,
         root_path=config.root_path,
         openapi_tags=tags_metadata,
-        lifespan=set_default_executor,
+        lifespan=set_threadpool_size,
         openapi_url=f"{config.api_prefix}/openapi.json",
     )
 

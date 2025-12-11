@@ -46,7 +46,7 @@ def test_export_file(tmp_path: Path) -> None:
     # Test good study
     md = create_raw_study(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=study_path)
     export_path = tmp_path / "export.7z"
-    study_service.export_study(md, export_path)
+    study_service.export_study(md, export_path, archive_format=ArchiveFormat.SEVEN_ZIP)
 
 
 @pytest.mark.parametrize("outputs", [True, False])
@@ -72,7 +72,7 @@ def test_export_archived_study(tmp_path: Path, outputs: bool) -> None:
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 
-    study_service.export_study(study, export_path, outputs=outputs)
+    study_service.export_study(study, export_path, outputs=outputs, archive_format=ArchiveFormat.SEVEN_ZIP)
     with SevenZipFile(export_path) as szf:
         szf_files = set(szf.getnames())
         assert "file.txt" in szf_files

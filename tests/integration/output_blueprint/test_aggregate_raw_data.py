@@ -1046,6 +1046,6 @@ def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token:
     actual_df = pd.read_parquet(content)
     expected_df = pd.DataFrame(
         columns=["area", "mcYear", "timeId", "CO2 EMIS."],
-        data=[["de", 1, 1, np.NaN], ["es", 1, 1, 0.0], ["fr", 1, 1, np.NaN]],
+        data=[["de", 1, 1, np.nan], ["es", 1, 1, 0.0], ["fr", 1, 1, np.nan]],
     )
     pd.testing.assert_frame_equal(actual_df, expected_df)

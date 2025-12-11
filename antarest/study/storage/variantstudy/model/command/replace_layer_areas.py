@@ -50,7 +50,3 @@ class ReplaceLayerAreas(ICommand):
             args={"layer_id": self.layer_id, "area_ids": self.area_ids},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

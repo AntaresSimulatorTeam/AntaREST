@@ -399,7 +399,7 @@ class RawStudyService(AbstractStorageService):
 
     def archive(self, study: RawStudy) -> Path:
         archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
-        new_study_path = self.export_study(study, archive_path)
+        new_study_path = self.export_study(study, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
         shutil.rmtree(study.path)
         remove_from_cache(cache=self.cache, root_id=study.id)
         self.cache.invalidate(study.id)

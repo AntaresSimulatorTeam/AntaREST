@@ -347,7 +347,7 @@ class VariantStudyService(AbstractStorageService):
             for command in study.commands
             for matrix in suppress_exception(
                 lambda: reduce(
-                    lambda m, c: m + c.get_inner_matrices(),
+                    lambda m, c: m + c.get_inner_matrices().matrices,
                     self.command_factory.to_command(command.to_dto()),
                     cast(List[str], []),
                 ),

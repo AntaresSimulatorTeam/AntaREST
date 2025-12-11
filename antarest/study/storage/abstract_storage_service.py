@@ -21,7 +21,7 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.model import JSON, PublicMode
-from antarest.core.utils.archives import archive_dir
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO, Identity
@@ -184,7 +184,9 @@ class AbstractStorageService(IStudyStorage, ABC):
         return self._get_user_name_from_id(get_user_impersonator())
 
     @override
-    def export_study(self, metadata: Study, target: Path, outputs: bool = True) -> Path:
+    def export_study(
+        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
+    ) -> Path:
         """
         Export and compress the study inside a 7zip file.
 
@@ -192,6 +194,7 @@ class AbstractStorageService(IStudyStorage, ABC):
             metadata: Study metadata object.
             target: Path of the file to export to.
             outputs: Flag to indicate whether to include the output folder inside the exportation.
+            archive_format:
 
         Returns:
             The 7zip file containing the study files compressed inside.
@@ -202,7 +205,7 @@ class AbstractStorageService(IStudyStorage, ABC):
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
-            archive_dir(tmp_study_path, target)
+            archive_dir(tmp_study_path, target, archive_format=archive_format)
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Study {path_study} exported ({target.suffix} format) in {x}s")
             )
