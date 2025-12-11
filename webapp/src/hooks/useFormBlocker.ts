@@ -38,20 +38,24 @@ export interface UseFormBlockerParams {
 function useFormBlocker({ isSubmitting, isDirty, disabled }: UseFormBlockerParams) {
   const { confirm } = useDialogManager();
   const { t } = useTranslation();
+  const shouldBlock = isSubmitting || isDirty;
 
   useBlocker({
     shouldBlockFn: async () => {
-      if (!isSubmitting && !isDirty) {
+      if (!shouldBlock) {
         return false;
       }
 
-      const shouldAllow = await confirm({
+      const isConfirmed = await confirm({
         content: isSubmitting ? t("form.submit.inProgress") : t("form.changeNotSaved"),
         alert: "warning",
       });
 
-      return !shouldAllow;
+      return !isConfirmed;
     },
+    // Even if `shouldBlockFn` returns `false`, the browser's `beforeunload` event
+    // may still be triggered on page reloads or tab closing.
+    enableBeforeUnload: shouldBlock,
     withResolver: true,
     disabled,
   });
