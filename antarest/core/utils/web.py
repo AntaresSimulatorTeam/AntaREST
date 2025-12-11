@@ -12,6 +12,7 @@
 
 
 class APITag:
+    favorite = "Favorite"
     users = "Users"
     launcher = "Launch Studies"
     study_permissions = "Manage Study Permissions"
