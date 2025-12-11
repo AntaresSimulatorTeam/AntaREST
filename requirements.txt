@@ -24,6 +24,7 @@ python-multipart~=0.0.20
 alembic~=1.16.5
 bcrypt~=5.0.0
 click~=8.3.0
+celery[redis]~=5.5.0
 contextvars~=2.4
 filelock~=3.19.1
 gunicorn~=23.0.0
