@@ -52,7 +52,7 @@ import { Filename, Menubar } from "../styles";
 import CreateFolderDialog from "./CreateFolderDialog";
 
 function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProps) {
-  const { setSelectedFile, reloadTree } = useContext(DebugContext);
+  const { setPathSearchParam, reloadTree } = useContext(DebugContext);
   const { t } = useTranslation();
   const study = useStudy();
   const replaceAction = useConfirm();
@@ -185,16 +185,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
                   }
                   disablePadding
                 >
-                  <ListItemButton
-                    onClick={() =>
-                      setSelectedFile({
-                        filename,
-                        fileType: type,
-                        filePath: path,
-                        treeData: data,
-                      })
-                    }
-                  >
+                  <ListItemButton onClick={() => setPathSearchParam(path)}>
                     <ListItemIcon>
                       <Icon />
                     </ListItemIcon>

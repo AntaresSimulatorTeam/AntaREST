@@ -14,14 +14,14 @@
 
 import { voidFn } from "@/utils/fnUtils";
 import { createContext } from "react";
-import type { FileInfo, getTreeData } from "../-utils";
+import type { getTreeData } from "../-utils";
 
-const initialDebugContextValue = {
-  setSelectedFile: voidFn<[FileInfo]>,
+const defaultDebugContextValue = {
+  setPathSearchParam: voidFn<[string]>,
   reloadTree: (): ReturnType<typeof getTreeData> => Promise.resolve({}),
   isTreeLoading: false,
 };
 
-const DebugContext = createContext(initialDebugContextValue);
+const DebugContext = createContext(defaultDebugContextValue);
 
 export default DebugContext;

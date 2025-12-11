@@ -26,7 +26,7 @@ interface Props {
 }
 
 function FileTreeItem({ name, treeData, path, disabled }: Props) {
-  const { setSelectedFile } = useContext(DebugContext);
+  const { setPathSearchParam } = useContext(DebugContext);
   const filePath = path ? `${path}/${name}` : name;
   const fileType = getFileType(treeData);
   const FileIcon = getFileIcon(fileType);
@@ -37,7 +37,7 @@ function FileTreeItem({ name, treeData, path, disabled }: Props) {
 
   const handleClick = () => {
     if (!disabled) {
-      setSelectedFile({ fileType, filename: name, filePath, treeData });
+      setPathSearchParam(filePath);
     }
   };
 

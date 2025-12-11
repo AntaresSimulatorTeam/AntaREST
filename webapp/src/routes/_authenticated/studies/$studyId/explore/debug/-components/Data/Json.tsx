@@ -20,6 +20,7 @@ import JSONEditor, {
   type JSONState,
 } from "@/components/JSONEditor";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import useFormBlocker from "@/hooks/useFormBlocker";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getRawFile } from "@/services/api/studies/raw";
 import { editStudy, getStudyData } from "@/services/api/study";
@@ -49,6 +50,8 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
     setIsDirty(false);
     setIsSaving(false);
   }, [jsonRes.data]);
+
+  useFormBlocker({ isDirty, isSubmitting: isSaving });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

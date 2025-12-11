@@ -41,39 +41,43 @@ function Debug() {
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
   // Allow to keep expanded items when the tree is reloaded with `reloadTree`
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const navigate = Route.useNavigate();
   const { path } = Route.useSearch();
+  const navigate = Route.useNavigate();
 
   const treeDataResponse = usePromiseWithSnackbarError(() => getTreeData(study.id), {
     errorMessage: t("studies.error.retrieveData"),
     deps: [study.id],
   });
 
+  const { data: treeData, isLoading: isTreeLoading, reload: reloadTree } = treeDataResponse;
+
   const contextValue = useMemo(
     () => ({
-      setSelectedFile,
-      reloadTree: treeDataResponse.reload,
-      isTreeLoading: treeDataResponse.isLoading,
+      setPathSearchParam: (path: string) => {
+        navigate({ search: { path } });
+      },
+      isTreeLoading,
+      reloadTree,
     }),
-    [treeDataResponse.reload, treeDataResponse.isLoading],
+    [navigate, isTreeLoading, reloadTree],
   );
 
-  // Update the selected file
+  // Update the selected file when the `path` URL parameter or the tree data change
   useUpdateEffect(() => {
     // Avoid updating while the tree is loading
-    if (treeDataResponse.isLoading) {
+    if (isTreeLoading) {
       return;
     }
 
     const pathSegments = path?.split("/");
     const filename = pathSegments ? R.last(pathSegments) : null;
-    const treeData = pathSegments ? R.path<TreeData>(pathSegments, treeDataResponse.data) : null;
+    const treeDataForPath = pathSegments ? R.path<TreeData>(pathSegments, treeData) : null;
 
     // Select the file corresponding to the `path` URL parameter
-    if (path && filename && treeData) {
+    if (path && filename && treeDataForPath) {
       setSelectedFile({
-        fileType: getFileType(treeData),
-        treeData,
+        fileType: getFileType(treeDataForPath),
+        treeData: treeDataForPath,
         filename,
         filePath: path,
       });
@@ -81,8 +85,8 @@ function Debug() {
       return;
     }
 
-    const firstChildName = Object.keys(treeDataResponse.data ?? {})[0];
-    const firstChildTreeData = R.path<TreeData>([firstChildName], treeDataResponse.data);
+    const firstChildName = Object.keys(treeData ?? {})[0];
+    const firstChildTreeData = R.path<TreeData>([firstChildName], treeData);
 
     // Select the first child of the tree data
     if (firstChildTreeData) {
@@ -97,20 +101,11 @@ function Debug() {
     }
 
     setSelectedFile(null);
-  }, [treeDataResponse.data, path]);
-
-  // Update the `path` URL parameter
-  useUpdateEffect(() => {
-    if (selectedFile?.filePath !== path) {
-      navigate({
-        search: { path: selectedFile?.filePath || "" },
-      });
-    }
-  }, [selectedFile?.filePath]);
+  }, [isTreeLoading, treeData, path]);
 
   // Solve a back issue when the archive status change (cf. ANT-2217)
   useUpdateEffect(() => {
-    contextValue.reloadTree();
+    reloadTree();
   }, [study.archived]);
 
   ////////////////////////////////////////////////////////////////
