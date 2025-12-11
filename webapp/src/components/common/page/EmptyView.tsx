@@ -21,9 +21,15 @@ export interface EmptyViewProps {
   title?: string;
   icon?: SvgIconComponent;
   extraActions?: React.ReactNode;
+  action?: React.ReactNode;
 }
 
-function EmptyView({ title, icon: Icon = LiveHelpRoundedIcon, extraActions }: EmptyViewProps) {
+function EmptyView({
+  title,
+  icon: Icon = LiveHelpRoundedIcon,
+  extraActions,
+  action,
+}: EmptyViewProps) {
   const { t } = useTranslation();
 
   return (
@@ -53,6 +59,7 @@ function EmptyView({ title, icon: Icon = LiveHelpRoundedIcon, extraActions }: Em
       )}
       {Icon && <Icon sx={{ height: 100, width: 100 }} />}
       <div>{title || t("common.noContent")}</div>
+      {action && <Box sx={{ mt: 2 }}>{action}</Box>}
     </Box>
   );
 }
