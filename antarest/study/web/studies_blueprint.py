@@ -24,6 +24,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
+from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -382,11 +383,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/export",
         summary="Export Study",
     )
-    def export_study(uuid: str, no_output: Optional[bool] = False) -> FileDownloadTaskDTO:
+    def export_study(
+        uuid: str, no_output: Optional[bool] = False, compression: ArchiveFormat = ArchiveFormat.ZIP
+    ) -> FileDownloadTaskDTO:
         logger.info(f"Exporting study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
 
-        return study_service.export_study(uuid_sanitized, not no_output)
+        return study_service.export_study(uuid_sanitized, not no_output, compression)
 
     @bp.delete(
         "/studies/{uuid}",
