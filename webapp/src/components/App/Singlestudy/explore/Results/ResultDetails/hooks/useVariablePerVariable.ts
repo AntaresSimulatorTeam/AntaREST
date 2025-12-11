@@ -114,6 +114,14 @@ export function useVariablePerVariable({
         return null;
       }
 
+      // For cluster-related data types, ensure clusterId is selected
+      const isClusterDataType =
+        dataType === "details" || dataType === "details-res" || dataType === "details-STstorage";
+
+      if (isClusterDataType && !selectedClusterId) {
+        return null;
+      }
+
       const params = buildVariableViewParams(
         itemType,
         dataType,
@@ -160,6 +168,14 @@ export function useVariablePerVariable({
 
   const handleMaterializeVariable = async () => {
     if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {
+      return;
+    }
+
+    // For cluster-related data types, ensure clusterId is selected
+    const isClusterDataType =
+      dataType === "details" || dataType === "details-res" || dataType === "details-STstorage";
+
+    if (isClusterDataType && !selectedClusterId) {
       return;
     }
 
