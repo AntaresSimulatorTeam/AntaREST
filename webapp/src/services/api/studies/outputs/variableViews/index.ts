@@ -19,10 +19,10 @@ import type {
   GetVariablesListParams,
   GetVariableViewDataParams,
   MaterializeVariableViewParams,
-  TimeIndexDTO,
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "./types";
+import type { DateTimeMetadataDTO } from "@/components/common/Matrix/shared/types";
 
 ////////////////////////////////////////////////////////////////
 // Variables List
@@ -40,7 +40,7 @@ export async function getVariablesList({ studyId, outputId }: GetVariablesListPa
 ////////////////////////////////////////////////////////////////
 
 export async function getTimeIndex({ studyId, outputId, frequency }: GetTimeIndexParams) {
-  const { data } = await client.get<TimeIndexDTO>(
+  const { data } = await client.get<DateTimeMetadataDTO>(
     `/v1/studies/${studyId}/output/${outputId}/time-index`,
     { params: { frequency } },
   );

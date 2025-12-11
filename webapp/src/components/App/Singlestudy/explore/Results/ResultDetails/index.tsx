@@ -115,6 +115,7 @@ function ResultDetails() {
 
   const {
     variablesMetadata,
+    timeIndexMetadata,
     selectedVariable,
     setSelectedVariable,
     isMaterializing,
@@ -131,6 +132,14 @@ function ResultDetails() {
     dataType,
     selectedClusterId,
   });
+
+  // Reset variable and cluster selections when dataType changes in variable-per-variable mode
+  useEffect(() => {
+    if (isVariablePerVariable) {
+      setSelectedVariable("");
+      setSelectedClusterId("");
+    }
+  }, [dataType, isVariablePerVariable, setSelectedVariable]);
 
   // Auto-select first item if none selected
   // biome-ignore lint/correctness/useExhaustiveDependencies: <Using length to avoid reference issues>
@@ -233,6 +242,11 @@ function ResultDetails() {
     [dateTimeMetadata],
   );
 
+  const variableViewDateTime = useMemo(
+    () => timeIndexMetadata && generateDateTime(timeIndexMetadata),
+    [timeIndexMetadata],
+  );
+
   const resultColumns = useMemo(() => {
     if (!matrixRes.data || resultColHeaders.length === 0) {
       return [];
@@ -257,11 +271,17 @@ function ResultDetails() {
       return [];
     }
 
-    const { columns } = variableViewDataRes.data;
-
-    return generateCustomColumns({
-      titles: columns.map((col) => `${t("global.year")} ${col}`),
-    });
+    return [
+      {
+        id: "date",
+        title: "Date",
+        type: Column.DateTime,
+        editable: false,
+      },
+      ...generateCustomColumns({
+        titles: variableViewDataRes.data.columns.map((col) => `${t("global.year")} ${col}`),
+      }),
+    ];
   }, [variableViewDataRes.data, t]);
 
   ////////////////////////////////////////////////////////////////
@@ -354,6 +374,8 @@ function ResultDetails() {
           isMaterializing={isMaterializing}
           variableViewDataRes={variableViewDataRes}
           variableViewColumns={variableViewColumns}
+          variableViewDateTime={variableViewDateTime}
+          variableViewTimeIndexMetadata={timeIndexMetadata}
           selectedClusterId={selectedClusterId}
           onClusterSelect={handleClusterSelect}
         />

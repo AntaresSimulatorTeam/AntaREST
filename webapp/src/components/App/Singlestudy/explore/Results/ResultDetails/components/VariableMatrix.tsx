@@ -15,14 +15,18 @@
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { EnhancedGridColumn } from "@/components/common/Matrix/shared/types";
+import { isAxiosError } from "axios";
+import type {
+  DateTimeMetadataDTO,
+  DateTimes,
+  EnhancedGridColumn,
+} from "@/components/common/Matrix/shared/types";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
 import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { Area, LinkElement } from "@/types/types";
-import { toError } from "../../../../../../../utils/fnUtils";
 import FilterableMatrixGrid, {
   type FilterableMatrixGridHandle,
 } from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
@@ -42,6 +46,8 @@ interface VariableMatrixProps {
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
   resultColumns: EnhancedGridColumn[];
   matrixGridRef: React.RefObject<FilterableMatrixGridHandle>;
+  dateTime?: DateTimes;
+  dateTimeMetadata?: DateTimeMetadataDTO;
 }
 
 function hasVariablesForItem(
@@ -76,6 +82,8 @@ function VariableMatrix({
   variableViewDataRes,
   resultColumns,
   matrixGridRef,
+  dateTime,
+  dateTimeMetadata,
 }: VariableMatrixProps) {
   const { t } = useTranslation();
 
@@ -107,16 +115,21 @@ function VariableMatrix({
             data={matrix.data}
             rows={matrix.data.length}
             columns={resultColumns}
+            dateTime={dateTime}
+            timeFrequency={dateTimeMetadata?.level}
             readOnly
           />
         );
       }}
       ifRejected={(err) => {
-        const errorMessage = toError(err).message;
-        const isNotFound = errorMessage.includes("404") || errorMessage.includes("not found");
+        const error = isAxiosError(err) ? err.response?.data : undefined;
+        const status = error?.status;
+        const taskId = error?.task_id;
 
-        // The output variables view is not materialized in DB yet
-        if (isNotFound) {
+        // NOT_FOUND status with no task ID means data not materialized yet
+        if (status === "NOT_FOUND" && taskId === null) {
+          // TODO: update the status to "NOT_MATERIALIZED" + handle the ongoing materialization
+          // state using the taskId and the "IN_PROGRESS" status
           return (
             <EmptyView
               title={t("study.results.scanRequired")}
@@ -126,6 +139,7 @@ function VariableMatrix({
           );
         }
 
+        // Other 404 errors (variable doesn't exist, invalid data, etc.)
         return <EmptyView title={t("data.error.matrix")} icon={GridOffIcon} />;
       }}
     />

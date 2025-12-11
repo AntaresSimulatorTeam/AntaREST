@@ -42,6 +42,7 @@ import {
   getVariablesList,
   getVariableViewData,
   materializeVariableView,
+  getTimeIndex,
 } from "@/services/api/studies/outputs/variableViews";
 import type { Area, LinkElement } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
@@ -91,14 +92,33 @@ export function useVariablePerVariable({
         return getVariablesList({ studyId, outputId });
       }
 
-      return Promise.resolve(null);
+      return Promise.resolve(undefined);
     },
     { deps: [studyId, outputId, isEnabled] },
+  );
+
+  const { data: timeIndexMetadata } = usePromise(
+    () => {
+      if (outputId && isEnabled) {
+        return getTimeIndex({ studyId, outputId, frequency });
+      }
+
+      return Promise.resolve(undefined);
+    },
+    { deps: [studyId, outputId, frequency, isEnabled] },
   );
 
   const variableViewDataRes = usePromise(
     async () => {
       if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {
+        return null;
+      }
+
+      // For cluster-related data types, ensure clusterId is selected
+      const isClusterDataType =
+        dataType === "details" || dataType === "details-res" || dataType === "details-STstorage";
+
+      if (isClusterDataType && !selectedClusterId) {
         return null;
       }
 
@@ -148,6 +168,14 @@ export function useVariablePerVariable({
 
   const handleMaterializeVariable = async () => {
     if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {
+      return;
+    }
+
+    // For cluster-related data types, ensure clusterId is selected
+    const isClusterDataType =
+      dataType === "details" || dataType === "details-res" || dataType === "details-STstorage";
+
+    if (isClusterDataType && !selectedClusterId) {
       return;
     }
 
@@ -207,6 +235,7 @@ export function useVariablePerVariable({
 
   return {
     variablesMetadata,
+    timeIndexMetadata,
     selectedVariable,
     setSelectedVariable,
     isMaterializing,

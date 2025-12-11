@@ -53,7 +53,7 @@ def test_export(
     study = create_raw_study(id=study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
     export_path = study_path.parent / "export.7z"
     assert not export_path.exists()
-    raw_study_service.export_study(study, export_path)
+    raw_study_service.export_study(study, export_path, archive_format=ArchiveFormat.SEVEN_ZIP)
     # Ensures the .7z file exists
     assert export_path.exists()
     # Unarchive it to check if the matrix was denormalized well
@@ -75,7 +75,7 @@ def test_export_archived_study(empty_study_930: FileStudy, raw_study_service: Ra
 
     study = create_raw_study(id=empty_study_930.config.study_id, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
 
-    raw_study_service.export_study(study, export_path, outputs=outputs)
+    raw_study_service.export_study(study, export_path, outputs=outputs, archive_format=ArchiveFormat.SEVEN_ZIP)
     with SevenZipFile(export_path) as szf:
         szf_files = set(szf.getnames())
         assert ("output/results1/file.txt" in szf_files) == outputs
