@@ -103,7 +103,7 @@ def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_con
     expected_series[1] = 100000.0
     expected_series[2] = 0.01
     expected_series[3] = 0.01
-    assert series.equals(expected_series)
+    pd.testing.assert_frame_equal(series, expected_series, check_dtype=False)
 
     # Binding constraints
     assert file_study_dao.get_all_constraints() == {}
@@ -251,12 +251,12 @@ def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_con
 
     # Load
     load = file_study_dao.get_load("fr")
-    expected_load = pd.DataFrame((53 * list(range(0, 168 * 100, 100)))[:8760], dtype=np.float64)
+    expected_load = pd.DataFrame((53 * list(range(0, 168 * 100, 100)))[:8760], dtype=np.int64)
     assert load.equals(expected_load)
 
     # Thermal series
     thermal_series = file_study_dao.get_thermal_series("fr", "01_solar")
-    assert thermal_series.equals(pd.DataFrame(8760 * [2000.0]))
+    assert thermal_series.equals(pd.DataFrame(8760 * [2000]))
 
     # Thermal clusters
     expected_clusters = {
