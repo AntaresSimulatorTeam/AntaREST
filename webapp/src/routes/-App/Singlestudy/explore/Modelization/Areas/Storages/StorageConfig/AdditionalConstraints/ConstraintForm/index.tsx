@@ -21,20 +21,22 @@ import {
   updateAdditionalConstraint,
 } from "@/services/api/studies/areas/storages";
 import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
+import type { StudyMetadata } from "@/types/types";
 import { buildKey } from "@/utils/reactUtils";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
+import semver from "semver";
 import Fields from "./Fields";
 
 interface Props {
-  studyId: string;
+  studyId: StudyMetadata["id"];
   areaId: string;
   storageId: string;
   constraintId: AdditionalConstraint["id"];
-  studyVersion: number;
+  studyVersion: StudyMetadata["version"];
   onDelete: (constraintId: AdditionalConstraint["id"]) => void;
 }
 
@@ -120,10 +122,11 @@ function ConstraintForm({
           fullScreen
         >
           <Matrix
+            studyId={studyId}
             title={t("global.timeSeries")}
             url={`input/st-storage/constraints/${areaId}/${storageId}/rhs_${constraintId}`}
             // Since v9.3 supports resize, older versions need fixed layout
-            {...(studyVersion < 930 && {
+            {...(semver.lt(studyVersion, "9.3.0") && {
               isTimeSeries: false,
               customColumns: ["TS 1"],
               enableFilters: true,

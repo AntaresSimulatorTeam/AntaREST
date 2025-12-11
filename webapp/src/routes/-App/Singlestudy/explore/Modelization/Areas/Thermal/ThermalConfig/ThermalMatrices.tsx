@@ -16,6 +16,7 @@ import Matrix from "@/components/Matrix";
 import TabsView from "@/components/TabsView";
 import type { Cluster, StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../utils";
 
 interface Props {
@@ -26,7 +27,6 @@ interface Props {
 
 function ThermalMatrices({ study, areaId, clusterId }: Props) {
   const [t] = useTranslation();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -40,6 +40,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           label: t("study.modelization.clusters.matrix.common"),
           content: (
             <Matrix
+              studyId={study.id}
               url={`input/thermal/prepro/${areaId}/${clusterId}/modulation`}
               customColumns={COMMON_MATRIX_COLS}
               isTimeSeries={false}
@@ -51,6 +52,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           label: t("study.modelization.clusters.matrix.tsGen"),
           content: (
             <Matrix
+              studyId={study.id}
               url={`input/thermal/prepro/${areaId}/${clusterId}/data`}
               customColumns={TS_GEN_MATRIX_COLS}
               isTimeSeries={false}
@@ -62,18 +64,29 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           label: t("study.modelization.clusters.matrix.availability"),
           content: (
             <Matrix
+              studyId={study.id}
               url={`input/thermal/series/${areaId}/${clusterId}/series`}
               aggregateColumns="stats" // avg, min, max
             />
           ),
         },
-        studyVersion >= 870 && {
+        semver.gte(study.version, "8.7.0") && {
           label: t("study.modelization.clusters.matrix.fuelCosts"),
-          content: <Matrix url={`input/thermal/series/${areaId}/${clusterId}/fuelCost`} />,
+          content: (
+            <Matrix
+              studyId={study.id}
+              url={`input/thermal/series/${areaId}/${clusterId}/fuelCost`}
+            />
+          ),
         },
-        studyVersion >= 870 && {
+        semver.gte(study.version, "8.7.0") && {
           label: t("study.modelization.clusters.matrix.co2Costs"),
-          content: <Matrix url={`input/thermal/series/${areaId}/${clusterId}/CO2Cost`} />,
+          content: (
+            <Matrix
+              studyId={study.id}
+              url={`input/thermal/series/${areaId}/${clusterId}/CO2Cost`}
+            />
+          ),
         },
       ].filter(Boolean)}
     />

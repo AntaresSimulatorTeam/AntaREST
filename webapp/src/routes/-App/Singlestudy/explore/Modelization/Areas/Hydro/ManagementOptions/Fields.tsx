@@ -19,6 +19,7 @@ import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/components/Form";
 import type { StudyMetadata } from "@/types/types";
 import { useOutletContext } from "react-router-dom";
+import semver from "semver";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";
 
 function Fields() {
@@ -30,7 +31,6 @@ function Fields() {
     "useHeuristic",
     "useLeeway",
   ]);
-  const studyVersion = Number(study.version);
 
   return (
     <>
@@ -84,7 +84,7 @@ function Fields() {
           disabled={!reservoirDisabled}
           sx={{ alignSelf: "center" }}
         />
-        {studyVersion >= 920 && (
+        {semver.gte(study.version, "9.2.0") && (
           <NumberFE
             name="overflowSpilledCostDifference"
             label="Overflow Spilled Cost Difference"

@@ -20,6 +20,7 @@ import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import semver from "semver";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
@@ -46,7 +47,6 @@ function Renewables() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const areaId = useAppSelector(getCurrentAreaId);
-  const studyVersion = Number(study.version);
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     RenewableClusterWithCapacity[]
@@ -142,7 +142,7 @@ function Renewables() {
       data={clustersWithCapacity}
       columns={columns}
       groups={[...RENEWABLE_GROUPS] as string[]}
-      allowNewGroups={studyVersion >= 930}
+      allowNewGroups={semver.gte(study.version, "9.3.0")}
       onCreate={handleCreate}
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}

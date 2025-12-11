@@ -13,6 +13,7 @@
  */
 
 import Matrix from "@/components/Matrix";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Box } from "@mui/material";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
@@ -24,6 +25,7 @@ interface Props {
 
 function HydroMatrix({ type }: Props) {
   const areaId = useAppSelector(getCurrentAreaId);
+  const study = useStudy();
 
   const hydroMatrix = MATRICES[type];
 
@@ -34,6 +36,7 @@ function HydroMatrix({ type }: Props) {
   return (
     <Box sx={{ width: 1, height: 1, p: 1 }}>
       <Matrix
+        studyId={study.id}
         title={hydroMatrix.title}
         url={hydroMatrix.url.replace("{areaId}", areaId)}
         customColumns={hydroMatrix.columns}

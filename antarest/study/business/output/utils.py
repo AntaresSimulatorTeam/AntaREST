@@ -10,14 +10,7 @@
 #
 # This file is part of the Antares project.
 from enum import Enum, StrEnum
-from pathlib import Path
 
-import pandas as pd
-
-from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
-    FactoryDateSerializer,
-    rename_unnamed,
-)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 """Column name for the Monte Carlo year."""
@@ -56,22 +49,36 @@ class MCAllLinksQueryFile(StrEnum):
 QueryFileType = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
 
-def parse_output_file(file_path: Path, frequency: MatrixFrequency, n_rows: int | None = None) -> pd.DataFrame:
-    csv_file = pd.read_csv(
-        file_path, sep="\t", skiprows=4, header=[0, 1, 2], na_values="N/A", float_precision="legacy", nrows=n_rows
-    )
-    date_serializer = FactoryDateSerializer.create(frequency.value, "")
-    _, body = date_serializer.extract_date(csv_file)
-    rename_unnamed(body)
-    return body
+def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
+    if mc_root == MCRoot.MC_IND:
+        return [col[0] for col in output_headers]
+    return [" ".join([col[0], col[2]]).upper().strip() for col in output_headers]
 
 
-def normalize_column_names(df: pd.DataFrame, mc_root: MCRoot) -> list[str]:
-    new_cols = []
-    for col in df.columns:
-        if mc_root == MCRoot.MC_IND:
-            name_to_consider = col[0]
+def get_start_column(frequency: MatrixFrequency) -> int:
+    if frequency == MatrixFrequency.ANNUAL:
+        return 2
+    elif frequency == MatrixFrequency.MONTHLY:
+        return 3
+    elif frequency == MatrixFrequency.WEEKLY:
+        return 2
+    elif frequency == MatrixFrequency.DAILY:
+        return 4
+    elif frequency == MatrixFrequency.HOURLY:
+        return 5
+    else:
+        raise NotImplementedError(f"Unknown frequency {frequency.value}")
+
+
+def parse_headers(content: str, start_col: int) -> list[list[str]]:
+    lines = content.splitlines()
+    header_lines = []
+    for idx, line in enumerate(lines[4:7]):
+        cols = line.split("\t")[start_col:]
+        if idx == 0:
+            header_lines = [[col] for col in cols]
         else:
-            name_to_consider = " ".join([col[0], col[2]])
-        new_cols.append(name_to_consider.upper().strip())
-    return new_cols
+            for k, col in enumerate(cols):
+                header_lines[k].append(col)
+
+    return header_lines

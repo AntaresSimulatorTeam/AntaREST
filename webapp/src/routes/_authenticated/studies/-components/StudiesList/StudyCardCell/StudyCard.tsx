@@ -18,9 +18,10 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudy } from "@/redux/selectors";
-import { buildModificationDate, convertUTCToLocalTime, displayVersionName } from "@/services/utils";
+import { buildModificationDate, convertUTCToLocalTime } from "@/services/utils";
 import { StudyType, type StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -240,7 +241,7 @@ const StudyCard = memo((props: Props) => {
             <UpdateOutlinedIcon sx={{ color: "text.secondary" }} />
             <TinyText>{buildModificationDate(study.modificationDate, t, i18n.language)}</TinyText>
             <Divider flexItem orientation="vertical" />
-            <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
+            <TinyText>{`v${compactSemanticVersion(study.version)}`}</TinyText>
           </Box>
         </Box>
         <Box
@@ -286,7 +287,11 @@ const StudyCard = memo((props: Props) => {
         </Box>
       </CardContent>
       <CardActions>
-        <Link to={`/studies/${study.id}`} style={{ textDecoration: "none" }}>
+        <Link
+          to="/studies/$studyId"
+          params={{ studyId: study.id }}
+          style={{ textDecoration: "none" }}
+        >
           <Button color="primary">{t("button.explore")}</Button>
         </Link>
         <Tooltip title={t("studies.moreActions")}>

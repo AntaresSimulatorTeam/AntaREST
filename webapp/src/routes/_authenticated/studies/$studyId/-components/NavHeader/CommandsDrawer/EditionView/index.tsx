@@ -354,14 +354,7 @@ function EditionView(props: Props) {
     init();
 
     return () => unsubscribe();
-  }, [
-    commands.length,
-    enqueueSnackbar,
-    enqueueErrorSnackbar,
-    studyId,
-    t,
-    debouncedFailureNotification,
-  ]);
+  }, [enqueueSnackbar, enqueueErrorSnackbar, studyId, t, debouncedFailureNotification]);
 
   useEffect(() => {
     return addWsEventListener(listen);

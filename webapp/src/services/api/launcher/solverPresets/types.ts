@@ -14,16 +14,12 @@
 
 type SolverParams = Record<string, string>;
 
-// Supports version formats like '[major].[minor]' or '[major].[minor].[patch]'.
-// Note: it works without adding a third number because number can be a integer or a float.
-type SolverVersionStr = `${number}.${number}`;
-
 export interface SolverPresetsDTO {
   id: string;
   name: string;
   linearSolver: string;
-  minAntaresVersion?: SolverVersionStr;
-  maxAntaresVersion?: SolverVersionStr;
+  minAntaresVersion?: string;
+  maxAntaresVersion?: string;
   linearSolverParamOptim1?: SolverParams;
   linearSolverParamOptim2?: SolverParams;
   linearSolverParam?: SolverParams;
@@ -31,19 +27,7 @@ export interface SolverPresetsDTO {
   useOptim1BasisOptim2?: boolean;
 }
 
-export interface SolverPresets {
-  id: string;
-  name: string;
-  linearSolver: string;
-  minAntaresVersion?: SolverVersionStr;
-  maxAntaresVersion?: SolverVersionStr;
-  linearSolverParamOptim1?: SolverParams;
-  linearSolverParamOptim2?: SolverParams;
-  linearSolverParam?: SolverParams;
-  useOptim1BasisNextWeek?: boolean;
-  useOptim1BasisOptim2?: boolean;
-}
-
-export type SolverPresetsCreation = Omit<SolverPresets, "id">;
+// This type uses semantic versioning (see `adaptSolverPresetsDtoToSolverPresets()` function)
+export type SolverPresets = SolverPresetsDTO;
 
 export type SolverPresetsCreationDTO = Omit<SolverPresetsDTO, "id">;

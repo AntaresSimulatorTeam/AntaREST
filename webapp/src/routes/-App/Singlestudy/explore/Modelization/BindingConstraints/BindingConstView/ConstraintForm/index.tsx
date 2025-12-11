@@ -35,6 +35,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { Button } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import type { BindingConstraint } from "../utils";
 import ConstraintFields from "./ConstraintFields";
 import ConstraintTermsFields from "./ConstraintTermsFields";
@@ -52,7 +53,6 @@ function ConstraintForm({ study, constraintId, reloadConstraintsList }: Props) {
   const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] = useState(false);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
-  const studyVersion = Number(study.version);
 
   const linksAndClusters = useStudySynthesis({
     studyId: study.id,
@@ -71,7 +71,7 @@ function ConstraintForm({ study, constraintId, reloadConstraintsList }: Props) {
   const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraint>) => {
     const { id, name, ...updatedConstraint } = values;
 
-    if (studyVersion < 830) {
+    if (semver.lt(study.version, "8.3.0")) {
       const { filterSynthesis, filterYearByYear, ...constraintWithoutFilters } = updatedConstraint;
       return updateBindingConstraint(study.id, constraintId, constraintWithoutFilters);
     } else {

@@ -33,6 +33,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
+from antarest.core.utils.archives import ArchiveFormat
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import (
@@ -315,7 +316,7 @@ def test_export_files(tmp_path: Path) -> None:
 
     assert FileDownloadTaskDTO(**result).model_dump_json() == expected.model_dump_json()
 
-    mock_storage_service.export_study.assert_called_once_with(UUID, True)
+    mock_storage_service.export_study.assert_called_once_with(UUID, True, ArchiveFormat.ZIP)
 
 
 def test_export_params(tmp_path: Path) -> None:
@@ -337,8 +338,8 @@ def test_export_params(tmp_path: Path) -> None:
     client.get(f"/v1/studies/{UUID}/export?no_output=false")
     mock_storage_service.export_study.assert_has_calls(
         [
-            call(Markup(UUID), False),
-            call(Markup(UUID), True),
+            call(Markup(UUID), False, ArchiveFormat.ZIP),
+            call(Markup(UUID), True, ArchiveFormat.ZIP),
         ]
     )
 
@@ -497,4 +498,4 @@ def test_get_study_versions(tmp_path: Path) -> None:
     client = create_test_client(Mock(), raise_server_exceptions=False)
 
     result = client.get("/v1/studies/_versions")
-    assert result.json() == sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])
+    assert result.json() == sorted([str(v) for v in STUDY_REFERENCE_TEMPLATES])

@@ -16,6 +16,7 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import TabsView from "@/components/TabsView";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import useStudy from "../../-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/configuration")({
@@ -50,7 +51,7 @@ function ConfigurationLayout() {
             params: { studyId: study.id },
           }),
         },
-        Number(study.version) >= 830 && {
+        semver.gte(study.version, "8.3.0") && {
           label: "Adequacy Patch",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/adequacy-patch",

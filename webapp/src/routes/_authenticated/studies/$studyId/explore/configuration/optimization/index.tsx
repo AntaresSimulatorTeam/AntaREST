@@ -24,6 +24,7 @@ import {
 import type { OptimizationForm } from "@/services/api/studies/config/optimization/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import useStudy from "../../../-hooks/useStudy";
 import {
   EXPORT_MPS_OPTIONS,
@@ -42,7 +43,6 @@ export const Route = createFileRoute(
 function Optimization() {
   const { t } = useTranslation();
   const study = useStudy();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -52,7 +52,7 @@ function Optimization() {
     return setOptimizationForm({
       studyId: study.id,
       values: dirtyValues,
-      studyVersion,
+      studyVersion: study.version,
     });
   };
 
@@ -62,7 +62,10 @@ function Optimization() {
 
   return (
     <Form
-      config={{ defaultValues: () => getOptimizationForm({ studyId: study.id, studyVersion }) }}
+      config={{
+        defaultValues: () =>
+          getOptimizationForm({ studyId: study.id, studyVersion: study.version }),
+      }}
       onSubmit={handleSubmit}
       enableUndoRedo
     >
@@ -81,7 +84,7 @@ function Optimization() {
               name="simplexOptimizationRange"
               control={control}
             />
-            {studyVersion >= 830 ? (
+            {semver.gte(study.version, "8.3.0") ? (
               <SelectFE
                 label={t("study.configuration.optimization.exportMps")}
                 options={EXPORT_MPS_OPTIONS}
@@ -107,7 +110,7 @@ function Optimization() {
             />
           </Fieldset>
           <Fieldset legend={t("study.configuration.optimization.legend.links")}>
-            {studyVersion >= 840 ? (
+            {semver.gte(study.version, "8.4.0") ? (
               <SelectFE
                 label={t("study.configuration.optimization.transmissionCapacities")}
                 options={TRANSMISSION_CAPACITIES_OPTIONS}

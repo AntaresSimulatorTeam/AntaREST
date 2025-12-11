@@ -19,6 +19,7 @@ import usePromise from "@/hooks/usePromise";
 import { getBindingConstraint } from "@/services/api/studydata";
 import { Box, Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import type { StudyMetadata } from "../../../../../../../types/types";
 
 interface Props {
@@ -30,7 +31,6 @@ const URL_BASE = "input/bindingconstraints/" as const;
 
 function ConstraintMatrix({ study, constraintId }: Props) {
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
 
   const constraintRes = usePromise(
     () => getBindingConstraint(study.id, constraintId),
@@ -41,9 +41,10 @@ function ConstraintMatrix({ study, constraintId }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (studyVersion < 870) {
+  if (semver.lt(study.version, "8.7.0")) {
     return (
       <Matrix
+        studyId={study.id}
         title={t("global.matrix")}
         url={`${URL_BASE}${constraintId}`}
         customColumns={["<", ">", "="]}
@@ -58,18 +59,21 @@ function ConstraintMatrix({ study, constraintId }: Props) {
         <Box sx={{ height: 1, width: 1 }}>
           {operator === "less" && (
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.bindingConst.timeSeries.less")}
               url={`${URL_BASE}${constraintId}_lt`}
             />
           )}
           {operator === "equal" && (
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.bindingConst.timeSeries.equal")}
               url={`${URL_BASE}${constraintId}_eq`}
             />
           )}
           {operator === "greater" && (
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.bindingConst.timeSeries.greater")}
               url={`${URL_BASE}${constraintId}_gt`}
             />
@@ -78,12 +82,14 @@ function ConstraintMatrix({ study, constraintId }: Props) {
             <SplitView splitId="binding-constraints-matrix" sizes={[50, 50]}>
               <Box sx={{ px: 2 }}>
                 <Matrix
+                  studyId={study.id}
                   title={t("study.modelization.bindingConst.timeSeries.less")}
                   url={`${URL_BASE}${constraintId}_lt`}
                 />
               </Box>
               <Box sx={{ px: 2 }}>
                 <Matrix
+                  studyId={study.id}
                   title={t("study.modelization.bindingConst.timeSeries.greater")}
                   url={`${URL_BASE}${constraintId}_gt`}
                 />

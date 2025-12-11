@@ -1199,16 +1199,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/timeseries/generate",
         summary="Generate timeseries",
     )
-    def generate_timeseries(uuid: str) -> str:
+    def generate_timeseries(uuid: str, outage_details: bool = Query(default=False)) -> str:
         """
         Generates time-series for thermal clusters and put them inside input data.
 
         Args:
         - `uuid`: The UUID of the study.
+        - `outage_details`: Whether to generate thermal outage details.
         """
         logger.info(f"Generating timeseries for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        return study_service.generate_timeseries(study)
+        return study_service.generate_timeseries(study, outage_details)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/properties/form",

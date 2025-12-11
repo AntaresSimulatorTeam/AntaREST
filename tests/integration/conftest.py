@@ -10,13 +10,16 @@
 #
 # This file is part of the Antares project.
 import os
+import shutil
 import typing as t
+import uuid
 import zipfile
 from pathlib import Path
 from typing import Iterable
 
 import jinja2
 import pytest
+from _pytest.tmpdir import TempPathFactory
 from fastapi import FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
@@ -34,23 +37,34 @@ RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 RUN_ON_WINDOWS = os.name == "nt"
 
 
-@pytest.fixture
-def app_and_services(tmp_path: Path) -> Iterable[tuple[FastAPI, Services]]:
-    # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
-    # because the database is created by the FastAPI application during each integration test,
-    # which doesn't apply the migrations (migrations are done by Alembic).
-    # An alternative is to use a SQLite database stored on disk, because migrations can be persisted.
-
-    db_path = tmp_path / "db.sqlite"
+@pytest.fixture(scope="session")
+def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
+    """
+    Initializing the database schema is a costly operation: we perform it only once
+    here for the test session, and then copy the database file to each integration test.
+    """
+    tmp_dir = tmp_path_factory.mktemp(basename=f"initial_db_file-{uuid.uuid4()}")
+    db_path = tmp_dir / "db.sqlite"
     db_url = f"sqlite:///{db_path}"
-
-    # ATTENTION: when setting up integration tests, be aware that creating the database
-    # tables requires a dedicated DB engine (the `engine` below).
-    # This is crucial as the FastAPI application initializes its own engine (a global object),
-    # and the DB engine used in integration tests is not the same.
     engine = create_engine(db_url, echo=False)
     Base.metadata.create_all(engine)
-    del engine  # This object won't be used anymore.
+
+    return db_path
+
+
+@pytest.fixture
+def db_path(tmp_path: Path, initial_db_file: Path) -> Path:
+    """
+    We copy the base database file to the database file dedicated to each integration test.
+    """
+    db_path = tmp_path / "db.sqlite"
+    shutil.copyfile(initial_db_file, db_path)
+    return db_path
+
+
+@pytest.fixture
+def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, Services]]:
+    db_url = f"sqlite:///{db_path}"
 
     # Prepare the directories used by the repos
     matrix_dir = tmp_path / "matrix_store"

@@ -13,11 +13,13 @@
  */
 
 import Matrix from "@/components/Matrix";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
 
 function MiscGen() {
   const currentArea = useAppSelector(getCurrentAreaId);
+  const study = useStudy();
   const url = `input/misc-gen/miscgen-${currentArea}`;
   const columns = [
     "CHP",
@@ -36,6 +38,7 @@ function MiscGen() {
 
   return (
     <Matrix
+      studyId={study.id}
       url={url}
       customColumns={columns}
       aggregateColumns={["total"]}

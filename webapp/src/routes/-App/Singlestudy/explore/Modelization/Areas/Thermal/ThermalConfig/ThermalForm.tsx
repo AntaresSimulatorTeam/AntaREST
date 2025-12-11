@@ -21,6 +21,7 @@ import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { validateNumber } from "@/utils/validation/number";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import type { Area, Cluster, StudyMetadata } from "../../../../../../../../types/types";
 import {
   COST_GENERATION_OPTIONS,
@@ -41,7 +42,6 @@ interface Props {
 
 function ThermalForm({ study, areaId, clusterId }: Props) {
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -71,7 +71,7 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
           <>
             <Fieldset legend={t("global.general")}>
               <StringFE label={t("global.name")} name="name" control={control} disabled />
-              {studyVersion < 930 ? (
+              {semver.lt(study.version, "9.3.0") ? (
                 <SelectFE
                   label={t("global.group")}
                   name="group"
@@ -152,7 +152,7 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
               />
             </Fieldset>
             <Fieldset legend={t("study.modelization.clusters.operatingCosts")}>
-              {studyVersion >= 870 && (
+              {semver.gte(study.version, "8.7.0") && (
                 <>
                   <SelectFE
                     label={t("study.modelization.clusters.costGeneration")}
@@ -223,7 +223,7 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
             <Fieldset legend={t("study.modelization.clusters.thermal.pollutants")}>
               {THERMAL_POLLUTANTS.map(
                 (name) =>
-                  (name === "co2" || studyVersion >= 860) && (
+                  (name === "co2" || semver.gte(study.version, "8.6.0")) && (
                     <NumberFE
                       key={name}
                       label={t(`study.modelization.clusters.thermal.${name}`)}

@@ -15,7 +15,7 @@
 import CustomScrollbar from "@/components/CustomScrollbar";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import { getLaunchersConfig } from "@/services/api/study";
+import { getLaunchersConfig } from "@/services/api/launcher/index";
 import { toError } from "@/utils/fnUtils";
 import { Box, Skeleton, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -24,7 +24,7 @@ import ClustersMetricsBlock from "./ClustersMetricsBlock";
 function ClustersMetrics() {
   const { t } = useTranslation();
 
-  const launchersRes = usePromiseWithSnackbarError(getLaunchersConfig, {
+  const launchersConfigRes = usePromiseWithSnackbarError(getLaunchersConfig, {
     errorMessage: t("study.error.launchLoad"),
     deps: [],
   });
@@ -42,7 +42,7 @@ function ClustersMetrics() {
         }}
       >
         <UsePromiseCond
-          response={launchersRes}
+          response={launchersConfigRes}
           ifPending={() => (
             <>
               <Skeleton variant="rectangular" width={180} height={60} sx={{ borderRadius: 1 }} />
@@ -54,9 +54,9 @@ function ClustersMetrics() {
               {t("study.error.launchLoad")}: {toError(err).message}
             </Typography>
           )}
-          ifFulfilled={(config) => (
+          ifFulfilled={({ launchers }) => (
             <>
-              {config.launchers.map((launcher) => (
+              {launchers.map((launcher) => (
                 <ClustersMetricsBlock
                   key={launcher.id}
                   launcherId={launcher.id}

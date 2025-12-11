@@ -13,11 +13,13 @@
  */
 
 import Matrix from "@/components/Matrix";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
 
 function Reserve() {
   const currentArea = useAppSelector(getCurrentAreaId);
+  const study = useStudy();
   const url = `input/reserves/${currentArea}`;
   const columns = ["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"];
 
@@ -27,6 +29,7 @@ function Reserve() {
 
   return (
     <Matrix
+      studyId={study.id}
       url={url}
       customColumns={columns}
       aggregateColumns={["total"]}

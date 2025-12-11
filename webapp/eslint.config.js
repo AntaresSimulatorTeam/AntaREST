@@ -13,6 +13,7 @@
  */
 
 import eslint from "@eslint/js";
+import vitestPlugin from "@vitest/eslint-plugin";
 import jsdocPlugin from "eslint-plugin-jsdoc";
 import licenseHeaderPlugin from "eslint-plugin-license-header";
 import prettierPluginRecommended from "eslint-plugin-prettier/recommended";
@@ -41,6 +42,7 @@ export default [
   },
   reactPlugin.configs.flat["jsx-runtime"],
   jsdocPlugin.configs["flat/recommended-typescript"],
+  vitestPlugin.configs.recommended,
   prettierPluginRecommended, // Must be the last one
   {
     languageOptions: {
@@ -102,7 +104,9 @@ export default [
           ],
         },
       ],
+      "array-callback-return": ["error", { checkForEach: true }],
       curly: "error",
+      eqeqeq: "error",
       "jsdoc/no-defaults": "off",
       "jsdoc/require-jsdoc": "off",
       "jsdoc/require-hyphen-before-param-description": "warn",
@@ -144,8 +148,8 @@ export default [
         },
       ],
       "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low
-      eqeqeq: ["error"],
-      "array-callback-return": ["error", { checkForEach: true }],
+      "vitest/consistent-test-it": ["error", { fn: "test" }],
+      "vitest/expect-expect": ["error", { assertFunctionNames: ["expect", "assert*"] }],
     },
   },
 ];

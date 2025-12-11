@@ -18,6 +18,7 @@ import {
   isLevel3Scenario,
   type ScenarioType,
 } from "@/services/api/studies/config/scenarioBuilder/types";
+import semver from "semver";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -26,7 +27,7 @@ import {
 interface ScenarioMetadata {
   level: 1 | 2 | 3;
   requiresAreaSelection: boolean;
-  minVersion?: number;
+  minVersion?: string;
 }
 
 const SCENARIO_METADATA: Record<ScenarioType, ScenarioMetadata> = {
@@ -35,18 +36,22 @@ const SCENARIO_METADATA: Record<ScenarioType, ScenarioMetadata> = {
   hydro: { level: 1, requiresAreaSelection: false },
   wind: { level: 1, requiresAreaSelection: false },
   solar: { level: 1, requiresAreaSelection: false },
-  ntc: { level: 1, requiresAreaSelection: false, minVersion: 820 },
+  ntc: { level: 1, requiresAreaSelection: false, minVersion: "8.2.0" },
   hydroInitialLevels: { level: 1, requiresAreaSelection: false },
-  bindingConstraints: { level: 1, requiresAreaSelection: false, minVersion: 870 },
-  hydroFinalLevels: { level: 1, requiresAreaSelection: false, minVersion: 920 },
+  bindingConstraints: { level: 1, requiresAreaSelection: false, minVersion: "8.7.0" },
+  hydroFinalLevels: { level: 1, requiresAreaSelection: false, minVersion: "9.2.0" },
 
   // Level 2 scenarios (area → entity → values)
   thermal: { level: 2, requiresAreaSelection: true },
-  renewable: { level: 2, requiresAreaSelection: true, minVersion: 810 },
-  shortTermStorageInflows: { level: 2, requiresAreaSelection: true, minVersion: 930 },
+  renewable: { level: 2, requiresAreaSelection: true, minVersion: "8.1.0" },
+  shortTermStorageInflows: { level: 2, requiresAreaSelection: true, minVersion: "9.3.0" },
 
   // Level 3 scenarios (area → entity → subentity → values)
-  shortTermStorageAdditionalConstraints: { level: 3, requiresAreaSelection: true, minVersion: 930 },
+  shortTermStorageAdditionalConstraints: {
+    level: 3,
+    requiresAreaSelection: true,
+    minVersion: "9.3.0",
+  },
 };
 
 ////////////////////////////////////////////////////////////////
@@ -77,20 +82,20 @@ export function getScenarioMetadata(type: ScenarioType) {
  * Check if a scenario is available for the given study version
  *
  * @param type - The scenario type to check
- * @param version - The study version (3-digit format, e.g., 930 for v9.3)
+ * @param version - The study version
  * @returns True if the scenario is available for this version, false otherwise
  */
-export function isScenarioAvailableForVersion(type: ScenarioType, version: number): boolean {
+export function isScenarioAvailableForVersion(type: ScenarioType, version: string): boolean {
   const metadata = getScenarioMetadata(type);
-  return !metadata.minVersion || version >= metadata.minVersion;
+  return !metadata.minVersion || semver.gte(version, metadata.minVersion);
 }
 
 /**
  * Filter scenarios by study version, only returning those available for the version
  *
- * @param version - The study version (3-digit format)
+ * @param version - The study version
  * @returns Array of scenario types available for this version
  */
-export function getAvailableScenariosForVersion(version: number): ScenarioType[] {
+export function getAvailableScenariosForVersion(version: string): ScenarioType[] {
   return SCENARIOS.filter((scenario) => isScenarioAvailableForVersion(scenario, version));
 }

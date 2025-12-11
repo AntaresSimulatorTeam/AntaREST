@@ -26,12 +26,13 @@ interface Props {
   isOldStudy: boolean;
 }
 
-function LinkMatrices({ area1, area2, isOldStudy }: Props) {
+function LinkMatrices({ study, area1, area2, isOldStudy }: Props) {
   const { t } = useTranslation();
 
   if (isOldStudy) {
     return (
       <Matrix
+        studyId={study.id}
         url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}`}
         customColumns={[
           t("study.modelization.links.matrix.columns.transCapaDirect"),
@@ -55,6 +56,7 @@ function LinkMatrices({ area1, area2, isOldStudy }: Props) {
           label: t("study.modelization.links.matrix.parameters"),
           content: (
             <Matrix
+              studyId={study.id}
               url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}_parameters`}
               title={t("study.modelization.links.matrix.parameters")}
               customColumns={[
@@ -80,6 +82,7 @@ function LinkMatrices({ area1, area2, isOldStudy }: Props) {
             <SplitView splitId="link-transCapaDirect-transCapaIndirect" sizes={[50, 50]}>
               <Box sx={{ pr: 2 }}>
                 <Matrix
+                  studyId={study.id}
                   url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`}
                   title={t("study.modelization.links.matrix.columns.transCapaDirect", {
                     area1,
@@ -89,6 +92,7 @@ function LinkMatrices({ area1, area2, isOldStudy }: Props) {
               </Box>
               <Box sx={{ pl: 2 }}>
                 <Matrix
+                  studyId={study.id}
                   url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_indirect`}
                   title={t("study.modelization.links.matrix.columns.transCapaIndirect", {
                     area1,

@@ -14,8 +14,9 @@
 
 import EditorIcon from "@/components/icons/EditorIcon";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
-import { buildModificationDate, convertUTCToLocalTime, displayVersionName } from "@/services/utils";
+import { buildModificationDate, convertUTCToLocalTime } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
@@ -79,7 +80,7 @@ function Details({ study, parentStudy, variantNb }: Props) {
         <TinyText>{buildModificationDate(study.modificationDate, t, i18n.language)}</TinyText>
       </Item>
       <StyledDivider />
-      <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
+      <TinyText>{`v${compactSemanticVersion(study.version)}`}</TinyText>
       <StyledDivider />
       {parentStudy && (
         <Item>

@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import semver from "semver";
 import { useFormContextPlus } from "@/components/Form";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
@@ -35,7 +36,6 @@ interface Props {
 function ConstraintFields({ study }: Props) {
   const { t } = useTranslation();
   const { control } = useFormContextPlus<BindingConstraint>();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -61,7 +61,7 @@ function ConstraintFields({ study }: Props) {
           control={control}
           rules={{ validate: (v) => validateString(v) }}
         />
-        {studyVersion >= 870 && (
+        {semver.gte(study.version, "8.7.0") && (
           <StringFE
             name="group"
             label={t("global.group")}
@@ -95,7 +95,7 @@ function ConstraintFields({ study }: Props) {
           sx={{ minWidth: 100 }}
         />
         <Box sx={{ display: "flex", gap: 1, mt: 1, width: 1 }}>
-          {studyVersion >= 830 && (
+          {semver.gte(study.version, "8.3.0") && (
             <>
               <SelectFE
                 name="filterYearByYear"

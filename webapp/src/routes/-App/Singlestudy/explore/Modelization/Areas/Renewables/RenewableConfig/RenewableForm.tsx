@@ -21,6 +21,7 @@ import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import type { Area, Cluster, StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import {
   getRenewableCluster,
   RENEWABLE_GROUPS,
@@ -37,7 +38,6 @@ interface Props {
 
 function RenewableForm({ study, areaId, clusterId }: Props) {
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -64,7 +64,7 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
         <>
           <Fieldset legend={t("global.general")}>
             <StringFE label={t("global.name")} name="name" control={control} disabled />
-            {studyVersion < 930 ? (
+            {semver.lt(study.version, "9.3.0") ? (
               <SelectFE
                 label={t("global.group")}
                 name="group"

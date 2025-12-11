@@ -22,14 +22,15 @@ import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
 import { createStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getGroups, getStudyVersionsFormatted } from "@/redux/selectors";
+import { getGroups, getLatestStudyVersion, getStudyVersions } from "@/redux/selectors";
 import type { StudyMetadata, StudyPublicMode } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
+import { getSemanticVersionOptions } from "@/utils/versionUtils";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { Button, IconButton } from "@mui/material";
 import { useNavigate } from "@tanstack/react-router";
 import { useSnackbar } from "notistack";
-import * as R from "ramda";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 interface FieldValues {
@@ -49,9 +50,12 @@ function CreateStudyDialog({ open, onClose }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
-  const versionList = useAppSelector(getStudyVersionsFormatted);
+  const versionList = useAppSelector(getStudyVersions);
+  const latestVersion = useAppSelector(getLatestStudyVersion);
   const groupList = useAppSelector(getGroups);
   const dispatch = useAppDispatch();
+
+  const versionOptions = useMemo(() => getSemanticVersionOptions(versionList), [versionList]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -107,7 +111,7 @@ function CreateStudyDialog({ open, onClose }: Props) {
       config={{
         defaultValues: {
           name: "",
-          version: R.last(versionList)?.id.toString(),
+          version: latestVersion || "",
           publicMode: "NONE",
           groups: [],
           tags: [],
@@ -125,12 +129,10 @@ function CreateStudyDialog({ open, onClose }: Props) {
             />
             <SelectFE
               label={t("global.version")}
-              options={versionList.map((ver) => ({
-                label: ver.name,
-                value: ver.id,
-              }))}
+              options={versionOptions}
               name="version"
               control={control}
+              rules={{ required: t("form.field.required") }}
             />
           </Fieldset>
           <Fieldset legend={t("global.permission")} fullFieldWidth>

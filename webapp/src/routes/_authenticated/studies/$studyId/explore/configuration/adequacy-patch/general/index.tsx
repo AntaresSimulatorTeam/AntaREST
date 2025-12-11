@@ -22,6 +22,7 @@ import { validateNumber } from "@/utils/validation/number";
 import { Tooltip } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import useStudy from "../../../../-hooks/useStudy";
 import {
   getAdequacyPatchFormFields,
@@ -39,7 +40,6 @@ export const Route = createFileRoute(
 function General() {
   const { t } = useTranslation();
   const study = useStudy();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -90,7 +90,7 @@ function General() {
               control={control}
             />
           </Fieldset>
-          {studyVersion >= 850 && (
+          {semver.gte(study.version, "8.5.0") && (
             <>
               <Fieldset
                 legend={
@@ -190,7 +190,7 @@ function General() {
                     />
                   </span>
                 </Tooltip>
-                {studyVersion >= 930 && (
+                {semver.gte(study.version, "9.3.0") && (
                   <SwitchFE
                     label={t("study.configuration.adequacyPatch.redispatch")}
                     sx={{ textWrap: "nowrap" }}

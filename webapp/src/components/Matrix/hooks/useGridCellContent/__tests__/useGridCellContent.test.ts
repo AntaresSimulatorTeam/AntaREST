@@ -12,10 +12,12 @@
  * This file is part of the Antares project.
  */
 
+/* eslint-disable vitest/no-conditional-expect */
+
 import { Column } from "../../../shared/constants";
-import { createColumn, AGGREGATE_DATA, MIXED_DATA, FORMAT_TEST_CASES } from "./fixtures";
-import { createCoordinate, renderGridCellContent } from "./utils";
 import { assertNumberCell, assertTextCell } from "./assertions";
+import { AGGREGATE_DATA, createColumn, FORMAT_TEST_CASES, MIXED_DATA } from "./fixtures";
+import { createCoordinate, renderGridCellContent } from "./utils";
 
 describe("useGridCellContent", () => {
   describe("Aggregate columns", () => {

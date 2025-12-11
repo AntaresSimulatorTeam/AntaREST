@@ -14,10 +14,10 @@
 
 import { buildStudyTree } from "@/routes/_authenticated/studies/-components/StudyTree/utils";
 import { createLinkId } from "@/services/api/studies/links/utils";
+import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import * as R from "ramda";
 import { F } from "ts-toolbelt";
-import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
+import { isGroupAdmin, isUserAdmin } from "../services/utils";
 import type {
   AllClustersAndLinks,
   Area,
@@ -122,11 +122,9 @@ export const getStudyVersions = (state: AppState): StudiesState["versionList"] =
   return getStudiesState(state).versionList;
 };
 
-export const getLatestStudyVersion = (state: AppState): StudyMetadata["version"] | null => {
-  return R.last(getStudyVersions(state)) ?? null;
-};
-
-export const getStudyVersionsFormatted = createSelector(getStudyVersions, convertVersions);
+export const getLatestStudyVersion = createSelector(getStudyVersions, (versions) =>
+  getHighestVersion(versions),
+);
 
 export const getCurrentStudyId = (state: AppState): StudiesState["current"] => {
   return getStudiesState(state).current;

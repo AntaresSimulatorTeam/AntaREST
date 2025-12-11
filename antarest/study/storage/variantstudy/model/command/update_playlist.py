@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final, List, Optional
+from typing import Any, Dict, Final, Optional
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -79,7 +79,3 @@ class UpdatePlaylist(ICommand):
             args={"playlist": self.playlist.model_dump(exclude_none=True)},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

@@ -119,6 +119,7 @@ function HydroMatrixDialog({ open, onClose, type }: Props) {
       <Box sx={{ width: 1, height: 1, p: 2 }}>
         {matrix ? (
           <Matrix
+            studyId={study.id}
             title={`${type} Matrix`}
             url=""
             customColumns={matrix.columns}

@@ -507,6 +507,7 @@ nominalcapacity = 14.0
         storage_service=study_service.storage_service,
         event_bus=study_service.event_bus,
         study_interface_supplier=study_service.get_study_interface,
+        thermal_outage_details=False,
     )
 
     task_id = study_service.task_service.add_task(
@@ -704,3 +705,37 @@ def test_memory_leak_fix(task_service: TaskJobService) -> None:
         # accessing an implementation detail, but no other way to check it
         assert task_id not in task_service.tasks
         assert task_service.status_task(task_id).status == TaskStatus.COMPLETED
+
+
+def test_task_status_parsing() -> None:
+    # Parsing multiple primitive types and TaskStatus
+
+    # Parsing an int into a TaskStatus
+    task_status_int = TaskStatus.parse(1)
+    assert task_status_int == TaskStatus.PENDING
+
+    # Parsing a string into a TaskStatus
+    task_status_str = TaskStatus.parse("COMPLETED")
+    assert task_status_str == TaskStatus.COMPLETED
+
+    # Parsing 5 (TIMEOUT) as a str into a TaskStatus
+    task_status_number_to_str = TaskStatus.parse("5")
+    assert task_status_number_to_str == TaskStatus.TIMEOUT
+
+    # Parsing a TaskStatus into a TaskStatus
+    task_status = TaskStatus.parse(TaskStatus(2))
+    assert task_status == TaskStatus.RUNNING
+
+    # Putting an invalid type (float) in the parse method
+    with pytest.raises(
+        TypeError,
+        match=f"Invalid status type: {type(4.2)}",
+    ):
+        TaskStatus.parse(4.2)
+
+    # Putting an invalid string status in the parse method
+    with pytest.raises(
+        ValueError,
+        match="Invalid status value : INVALID_STATUS",
+    ):
+        TaskStatus.parse("INVALID_STATUS")

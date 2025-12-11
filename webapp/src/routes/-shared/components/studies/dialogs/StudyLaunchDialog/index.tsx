@@ -15,7 +15,7 @@
 import FormDialog from "@/components/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { launchStudy } from "@/services/api/launcher/index";
-import type { LauncherConfig } from "@/services/api/launcher/types";
+import type { LauncherParams } from "@/services/api/launcher/types";
 import type { StudyMetadata } from "@/types/types";
 import BoltIcon from "@mui/icons-material/Bolt";
 import { useTranslation } from "react-i18next";
@@ -40,7 +40,7 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
   const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
     const hasConfig = values.configuration !== "";
 
-    const config: LauncherConfig = {
+    const launcherParams: LauncherParams = {
       outputSuffix: values.name,
       otherOptions: hasConfig ? undefined : values.otherOptions,
       autoUnzip: values.autoUnzip,
@@ -64,7 +64,7 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
           studyId: id,
           launcherId: values.launcher,
           solverPresetsId: hasConfig ? values.configuration : undefined,
-          config,
+          launcherParams,
           version: values.version,
         }),
       ),

@@ -23,6 +23,7 @@ import type { Area, StudyMetadata } from "@/types/types";
 import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import {
   convertPercentageToRatio,
   convertRatioToPercentage,
@@ -35,7 +36,7 @@ import {
 
 interface Props {
   studyId: StudyMetadata["id"];
-  studyVersion: number;
+  studyVersion: string;
   areaId: Area["name"];
   storageId: Storage["id"];
 }
@@ -82,7 +83,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
         <>
           <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
             <StringFE label={t("global.name")} name="name" control={control} disabled />
-            {studyVersion < 920 ? (
+            {semver.lt(studyVersion, "9.2.0") ? (
               <SelectFE
                 label={t("global.group")}
                 name="group"
@@ -101,7 +102,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 control={control}
               />
             )}
-            {studyVersion >= 880 && (
+            {semver.gte(studyVersion, "8.8.0") && (
               <SwitchFE label={t("global.enabled")} name="enabled" control={control} />
             )}
             <Fieldset.Break />
@@ -139,7 +140,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 width: 2,
               }}
             />
-            {studyVersion >= 930 && (
+            {semver.gte(studyVersion, "9.3.0") && (
               <SwitchFE
                 label={t("study.modelization.storages.allowOverflow")}
                 name="allowOverflow"
@@ -172,7 +173,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 validate: validateNumber({ min: 0, max: 100 }),
               }}
             />
-            {studyVersion >= 920 && (
+            {semver.gte(studyVersion, "9.2.0") && (
               <SwitchFE
                 label={t("study.modelization.storages.penalizeVariationInjection")}
                 name="penalizeVariationInjection"
@@ -197,7 +198,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 />
               </Box>
             </Tooltip>
-            {studyVersion >= 920 && (
+            {semver.gte(studyVersion, "9.2.0") && (
               <>
                 <Tooltip
                   title={t("study.modelization.storages.efficiencyWithdrawal.info")}

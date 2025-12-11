@@ -19,6 +19,7 @@ import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/components/Form";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import {
   HYDRO_HEURISTIC_POLICY_OPTIONS,
   HYDRO_PRICING_MODE_OPTIONS,
@@ -40,7 +41,6 @@ function Fields() {
   const [t] = useTranslation();
   const { control } = useFormContextPlus<AdvancedParamsFormFields>();
   const study = useStudy();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -117,7 +117,7 @@ function Fields() {
       </Fieldset>
 
       <Fieldset legend={t("study.configuration.advancedParameters.otherPreferences")}>
-        {studyVersion < 920 && (
+        {semver.lt(study.version, "9.2.0") && (
           <SelectFE
             label={t("study.configuration.advancedParameters.initialReservoirLevels")}
             options={INITIAL_RESERVOIR_OPTIONS}
@@ -146,7 +146,7 @@ function Fields() {
         <SelectFE
           label={t("study.configuration.advancedParameters.sheddingPolicy")}
           options={SHEDDING_POLICY_OPTIONS.filter(
-            (v) => v !== SheddingPolicy.AccurateShavePeaks || studyVersion >= 920,
+            (v) => v !== SheddingPolicy.AccurateShavePeaks || semver.gte(study.version, "9.2.0"),
           )}
           name="sheddingPolicy"
           control={control}
@@ -160,7 +160,7 @@ function Fields() {
         <SelectFE
           label={t("study.configuration.advancedParameters.unitCommitmentMode")}
           options={UNIT_COMMITMENT_MODE_OPTIONS.filter(
-            (v) => v !== UnitCommitmentMode.MILP || studyVersion >= 880,
+            (v) => v !== UnitCommitmentMode.MILP || semver.gte(study.version, "8.8.0"),
           ).map((v) => (v === UnitCommitmentMode.MILP ? { label: "MILP", value: v } : v))}
           name="unitCommitmentMode"
           control={control}
@@ -171,7 +171,7 @@ function Fields() {
           name="numberOfCoresMode"
           control={control}
         />
-        {studyVersion >= 810 && (
+        {semver.gte(study.version, "8.1.0") && (
           <SelectFE
             label={t("study.configuration.advancedParameters.renewableGenerationModeling")}
             options={RENEWABLE_GENERATION_OPTIONS}
@@ -179,7 +179,7 @@ function Fields() {
             control={control}
           />
         )}
-        {studyVersion >= 930 && (
+        {semver.gte(study.version, "9.3.0") && (
           <SwitchFE
             label={t(
               "study.configuration.advancedParameters.accurateShavePeaksIncludeShortTermStorage",

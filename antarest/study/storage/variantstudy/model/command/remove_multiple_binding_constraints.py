@@ -64,7 +64,3 @@ class RemoveMultipleBindingConstraints(ICommand):
             args={"ids": self.ids},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

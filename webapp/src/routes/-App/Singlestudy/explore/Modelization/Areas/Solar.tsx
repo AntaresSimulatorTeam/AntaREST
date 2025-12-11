@@ -13,18 +13,20 @@
  */
 
 import Matrix from "@/components/Matrix";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
 
 function Solar() {
   const currentArea = useAppSelector(getCurrentAreaId);
+  const study = useStudy();
   const url = `input/solar/series/solar_${currentArea}`;
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <Matrix url={url} aggregateColumns="stats" />;
+  return <Matrix studyId={study.id} url={url} aggregateColumns="stats" />;
 }
 
 export default Solar;

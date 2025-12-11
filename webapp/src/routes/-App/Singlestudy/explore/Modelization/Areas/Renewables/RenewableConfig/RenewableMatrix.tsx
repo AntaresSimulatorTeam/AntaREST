@@ -13,6 +13,7 @@
  */
 
 import Matrix from "@/components/Matrix";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { Cluster } from "@/types/types";
 
 interface Props {
@@ -21,8 +22,11 @@ interface Props {
 }
 
 function RenewableMatrix({ areaId, clusterId }: Props) {
+  const study = useStudy();
+
   return (
     <Matrix
+      studyId={study.id}
       url={`input/renewables/series/${areaId}/${clusterId}/series`}
       aggregateColumns="stats"
     />

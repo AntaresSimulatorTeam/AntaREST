@@ -15,9 +15,22 @@
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import DigestDialog from "@/components/dialogs/DigestDialog";
 import ViewWrapper from "@/components/page/ViewWrapper";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import LaunchJobLogView from "@/routes/_authenticated/tasks/-components/LaunchJobLogView";
 import { getJobs } from "@/services/api/launcher/jobs";
 import type { Job } from "@/services/api/launcher/jobs/types";
+import {
+  archiveOutput,
+  deleteOutput,
+  downloadJobOutput,
+  getStudyOutputs,
+  unarchiveOutput,
+} from "@/services/api/study";
+import { convertUTCToLocalTime } from "@/services/utils";
+import type { StudyMetadata, StudyOutput } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import type { EmptyObject } from "@/utils/tsUtils";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
@@ -44,19 +57,6 @@ import { compareDesc, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useOutletContext } from "react-router-dom";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import {
-  archiveOutput,
-  deleteOutput,
-  downloadJobOutput,
-  getStudyOutputs,
-  unarchiveOutput,
-} from "../../../../../services/api/study";
-import { convertUTCToLocalTime } from "../../../../../services/utils";
-import type { StudyMetadata, StudyOutput } from "../../../../../types/types";
-import type { EmptyObject } from "../../../../../utils/tsUtils";
-import LaunchJobLogView from "../../../../tasks/-components/LaunchJobLogView";
 
 interface OutputDetail {
   name: string;

@@ -79,10 +79,6 @@ class ReplaceUserResource(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> List[str]:
-        return []
-
-    @override
     def get_inner_blobs(self) -> List[str]:
         if self.data.blob_id:
             return [self.data.blob_id]

@@ -37,7 +37,7 @@ const EnhancedTable = withAreas(Table);
 
 function ScenarioBuilderDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
-  const availableScenarios = getAvailableScenariosForVersion(Number(study.version));
+  const availableScenarios = getAvailableScenariosForVersion(study.version);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(availableScenarios[0]);
 
   const scenarioData = usePromiseWithSnackbarError(

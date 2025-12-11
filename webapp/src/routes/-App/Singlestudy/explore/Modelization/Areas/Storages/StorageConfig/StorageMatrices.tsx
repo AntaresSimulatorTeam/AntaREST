@@ -15,15 +15,17 @@
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/SplitView";
 import TabsView from "@/components/TabsView";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import type { Storage } from "../utils";
 
 interface Props {
   areaId: StudyMetadata["id"];
   storageId: Storage["id"];
-  studyVersion: number;
+  studyVersion: StudyMetadata["version"];
 }
 
 // !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
@@ -34,6 +36,7 @@ interface Props {
 // functionality.
 function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
   const { t } = useTranslation();
+  const study = useStudy();
 
   const matricesAllVersions = [
     {
@@ -43,6 +46,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.storages.injectionModulation")}
               url={`input/st-storage/series/${areaId}/${storageId}/pmax_injection`}
               isTimeSeries={false}
@@ -53,6 +57,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.storages.withdrawalModulation")}
               url={`input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`}
               isTimeSeries={false}
@@ -70,6 +75,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.storages.lowerRuleCurve")}
               url={`input/st-storage/series/${areaId}/${storageId}/lower_rule_curve`}
               isTimeSeries={false}
@@ -80,6 +86,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.storages.upperRuleCurve")}
               url={`input/st-storage/series/${areaId}/${storageId}/upper_rule_curve`}
               isTimeSeries={false}
@@ -94,9 +101,10 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       label: t("study.modelization.storages.inflows"),
       content: (
         <Matrix
+          studyId={study.id}
           url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
           // Since v9.3 this matrix supports the resize functionality
-          {...(studyVersion < 930 && {
+          {...(semver.lt(studyVersion, "9.3.0") && {
             isTimeSeries: false,
             customColumns: ["TS 1"],
             enableFilters: true,
@@ -114,6 +122,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.storages.injectionCost")}
               url={`input/st-storage/series/${areaId}/${storageId}/cost_injection`}
               isTimeSeries={false}
@@ -124,6 +133,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.storages.withdrawalCost")}
               url={`input/st-storage/series/${areaId}/${storageId}/cost_withdrawal`}
               isTimeSeries={false}
@@ -144,6 +154,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.storages.injectionVariationCost")}
               url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_injection`}
               isTimeSeries={false}
@@ -154,6 +165,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
+              studyId={study.id}
               title={t("study.modelization.storages.withdrawalVariationCost")}
               url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_withdrawal`}
               isTimeSeries={false}
@@ -168,6 +180,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       label: t("study.modelization.storages.levelCost"),
       content: (
         <Matrix
+          studyId={study.id}
           title={t("study.modelization.storages.levelCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_level`}
           isTimeSeries={false}
@@ -178,7 +191,11 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
   ];
 
-  return <TabsView tabs={[...matricesAllVersions, ...(studyVersion >= 920 ? matrices920 : [])]} />;
+  return (
+    <TabsView
+      tabs={[...matricesAllVersions, ...(semver.gte(studyVersion, "9.2.0") ? matrices920 : [])]}
+    />
+  );
 }
 
 export default StorageMatrices;
