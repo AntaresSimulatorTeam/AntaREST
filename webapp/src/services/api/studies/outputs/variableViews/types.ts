@@ -58,13 +58,6 @@ export interface VariablesListDTO {
   mcAll: VariablesListDataDTO;
 }
 
-export interface TimeIndexDTO {
-  startDate: string;
-  steps: number;
-  firstWeekSize: number;
-  level: Frequency;
-}
-
 export interface VariableViewMatrixDTO {
   data: number[][];
   columns: string[];

@@ -115,6 +115,7 @@ function ResultDetails() {
 
   const {
     variablesMetadata,
+    timeIndexMetadata,
     selectedVariable,
     setSelectedVariable,
     isMaterializing,
@@ -233,6 +234,11 @@ function ResultDetails() {
     [dateTimeMetadata],
   );
 
+  const variableViewDateTime = useMemo(
+    () => timeIndexMetadata && generateDateTime(timeIndexMetadata),
+    [timeIndexMetadata],
+  );
+
   const resultColumns = useMemo(() => {
     if (!matrixRes.data || resultColHeaders.length === 0) {
       return [];
@@ -257,11 +263,17 @@ function ResultDetails() {
       return [];
     }
 
-    const { columns } = variableViewDataRes.data;
-
-    return generateCustomColumns({
-      titles: columns.map((col) => `${t("global.year")} ${col}`),
-    });
+    return [
+      {
+        id: "date",
+        title: "Date",
+        type: Column.DateTime,
+        editable: false,
+      },
+      ...generateCustomColumns({
+        titles: variableViewDataRes.data.columns.map((col) => `${t("global.year")} ${col}`),
+      }),
+    ];
   }, [variableViewDataRes.data, t]);
 
   ////////////////////////////////////////////////////////////////
@@ -354,6 +366,8 @@ function ResultDetails() {
           isMaterializing={isMaterializing}
           variableViewDataRes={variableViewDataRes}
           variableViewColumns={variableViewColumns}
+          variableViewDateTime={variableViewDateTime}
+          variableViewTimeIndexMetadata={timeIndexMetadata}
           selectedClusterId={selectedClusterId}
           onClusterSelect={handleClusterSelect}
         />
