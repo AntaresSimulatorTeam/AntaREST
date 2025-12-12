@@ -251,9 +251,8 @@ class AggregatorManager:
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(set(df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
 
-        tmp = df.stack(level=[0, 1], future_stack=True)
-        tmp.index.names = ["row", "cluster_id", "unit"]
-        df2 = tmp.unstack("unit")
+        tmp = df.stack(level=[CLUSTER_ID_COMPONENT, ACTUAL_COLUMN_COMPONENT], future_stack=True)
+        df2 = tmp.unstack()
         df3 = df2.reset_index()
         df3.drop(df3.columns[0], axis=1, inplace=True)
         df3.columns = pd.Index([CLUSTER_ID_COL] + actual_cols, dtype="str")
