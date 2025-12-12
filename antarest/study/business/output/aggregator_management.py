@@ -248,7 +248,7 @@ class AggregatorManager:
         if not is_details:
             return df
 
-        cluster_dummy_product_cols = set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in df.columns])
+        nb_clusters = len(set([(x[CLUSTER_ID_COMPONENT]) for x in df.columns]))
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(set(df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
 
@@ -258,7 +258,7 @@ class AggregatorManager:
         df3 = df2.reset_index()
         df3.drop(df3.columns[0], axis=1, inplace=True)
         df3.columns = pd.Index([CLUSTER_ID_COL] + actual_cols, dtype="str")
-        df3[TIME_ID_COL] = (df3.index // len(cluster_dummy_product_cols)) + 1
+        df3[TIME_ID_COL] = (df3.index // nb_clusters) + 1
 
         columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
         return df3.reindex(columns=columns_order)
