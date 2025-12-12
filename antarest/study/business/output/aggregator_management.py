@@ -248,7 +248,7 @@ class AggregatorManager:
         if not is_details:
             return df
 
-        cluster_dummy_product_cols = sorted(set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in df.columns]))
+        cluster_dummy_product_cols = set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in df.columns])
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(set(df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
 
