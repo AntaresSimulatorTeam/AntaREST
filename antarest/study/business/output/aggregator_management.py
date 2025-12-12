@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
+from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -248,29 +248,20 @@ class AggregatorManager:
         if not is_details:
             return df
 
-        # number of rows in the data frame
-        df_len = len(df)
         cluster_dummy_product_cols = sorted(set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in df.columns]))
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(set(df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
 
-        # using a dictionary to build the new data frame with the base columns (NO2, production etc.)
-        # and the cluster id and time id
-        new_obj: Dict[str, Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
+        tmp = df.stack(level=[0, 1])
+        tmp.index.names = ["row", "cluster_id", "unit"]
+        df2 = tmp.unstack("unit")
+        df3 = df2.reset_index()
+        df3.drop(df3.columns[0], axis=1, inplace=True)
+        df3.columns = pd.Index([CLUSTER_ID_COL] + actual_cols, dtype="str")
+        df3[TIME_ID_COL] = (df3.index // len(cluster_dummy_product_cols)) + 1
 
-        # loop over the cluster id to extract the values of the actual columns
-        for cluster_id, dummy_component in cluster_dummy_product_cols:
-            for actual_col in actual_cols:
-                col_values = df[(cluster_id, actual_col, dummy_component)].tolist()
-                new_obj[actual_col] += col_values
-            new_obj[CLUSTER_ID_COL] += [cluster_id for _ in range(df_len)]
-            new_obj[TIME_ID_COL] += list(range(1, df_len + 1))
-
-        # reorganize the data frame
         columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
-        final_df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
-
-        return final_df
+        return df3.reindex(columns=columns_order)
 
     def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
