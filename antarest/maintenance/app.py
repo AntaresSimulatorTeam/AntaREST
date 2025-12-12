@@ -67,6 +67,7 @@ celery_app = Celery("antarest-maintenance")
 _config = _load_config()
 if _config and _config.celery:
     _apply_celery_config(celery_app, _config.celery)
+    configure_logger(_config)
 
 celery_app.conf.update(
     # Serialization
@@ -98,10 +99,9 @@ celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
 @setup_logging.connect
 def _setup_logging(**kwargs: Any) -> None:
     """
-    Overwrites celery default logging configuration with our own.
+    Necessary so that celery does not overwrite our logging configuration.
     """
-    if _config:
-        configure_logger(_config)
+    pass
 
 
 @celery_app.on_after_configure.connect
@@ -112,6 +112,7 @@ def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None:
     This function is called automatically when Beat scheduler starts.
     It registers all periodic maintenance tasks.
     """
+
     logger.info("Setting up periodic tasks")
 
     # Import here to avoid circular imports and get the task signature
