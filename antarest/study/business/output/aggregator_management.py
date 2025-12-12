@@ -247,19 +247,21 @@ class AggregatorManager:
         if not is_details:
             return df
 
-        nb_clusters = len(set([(x[CLUSTER_ID_COMPONENT]) for x in df.columns]))
+        nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
         # actual columns without the cluster id (NODU, production etc.)
-        actual_cols = sorted(set(df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
+        actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())
 
-        tmp = df.stack(level=[CLUSTER_ID_COMPONENT, ACTUAL_COLUMN_COMPONENT], future_stack=True)
-        df2 = tmp.unstack()
-        df3 = df2.reset_index()
-        df3.drop(df3.columns[0], axis=1, inplace=True)
-        df3.columns = pd.Index([CLUSTER_ID_COL] + actual_cols, dtype="str")
-        df3[TIME_ID_COL] = (df3.index // nb_clusters) + 1
+        # First perform the stack / unstack operation to have the final shape
+        final_df = df.stack(level=[CLUSTER_ID_COMPONENT, ACTUAL_COLUMN_COMPONENT], future_stack=True).unstack()
 
-        columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
-        return df3.reindex(columns=columns_order)
+        # Reset the index, drop the first column and rename the columns accordingly
+        final_df.reset_index(inplace=True)
+        final_df.drop(final_df.columns[0], axis=1, inplace=True)
+        final_df.columns = pd.Index([CLUSTER_ID_COL] + actual_cols, dtype="str")
+
+        # Add the TIME_ID column and reindex to have the columns in the right order
+        final_df[TIME_ID_COL] = (final_df.index // nb_clusters) + 1
+        return final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))  # type: ignore
 
     def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
