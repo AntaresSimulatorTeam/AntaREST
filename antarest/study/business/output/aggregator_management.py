@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
+import warnings
 from pathlib import Path
 from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence
 
@@ -31,6 +32,10 @@ from antarest.study.business.output.utils import (
     parse_headers,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+
+# We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
+# But it logs a FutureWarning every time so we silence it here.
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
 # noinspection SpellCheckingInspection
 AREA_COL = "area"
@@ -252,7 +257,7 @@ class AggregatorManager:
         actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())
 
         # First perform the stack / unstack operation to have the final shape
-        final_df = df.stack(level=[CLUSTER_ID_COMPONENT, ACTUAL_COLUMN_COMPONENT], future_stack=True).unstack()
+        final_df = df.stack(level=[CLUSTER_ID_COMPONENT, ACTUAL_COLUMN_COMPONENT]).unstack()
 
         # Reset the index, drop the first column and rename the columns accordingly
         final_df.reset_index(inplace=True)
