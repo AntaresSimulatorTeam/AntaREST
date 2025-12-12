@@ -47,7 +47,6 @@ AREA_OR_LINK_INDEX__IND, AREA_OR_LINK_INDEX__ALL = 2, 1
 """Indexes in path parts starting from the output root `economy//mc-(ind/all)` to determine the area/link name."""
 CLUSTER_ID_COMPONENT = 0
 ACTUAL_COLUMN_COMPONENT = 1
-DUMMY_COMPONENT = 2
 
 logger = logging.getLogger(__name__)
 
