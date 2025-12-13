@@ -66,10 +66,7 @@ function getContentTabValue(tab: ContentTab, tabIndex: number) {
 }
 
 function getTabValue(tab: RouteTab | ContentTab, tabIndex: number) {
-  if (isRouteTab(tab)) {
-    return getRouteTabValue(tab);
-  }
-  return getContentTabValue(tab, tabIndex);
+  return isRouteTab(tab) ? getRouteTabValue(tab) : getContentTabValue(tab, tabIndex);
 }
 
 function TabsView<TId extends string>({
@@ -142,7 +139,7 @@ function TabsView<TId extends string>({
                   {...(isRouteTab(tab)
                     ? {
                         component: RouterLink,
-                        // ⚠️ Providing `href` gives wrong the same link in <a href /> elements
+                        // ⚠️ Providing `href` gives the same link on all <a href /> elements
                         ...tab.linkOptions,
                       }
                     : {})}
@@ -164,10 +161,9 @@ function TabsView<TId extends string>({
                   p: 2,
                   position: "relative",
                   overflow: "auto",
-                  ":has(> .TabsView:first-child), :has(> .TabWrapper:first-child), :has(> .SplitView:first-child), :has(> .ViewWrapper:first-child)":
-                    {
-                      p: 0,
-                    },
+                  ":has(> :first-child:is(.TabsView, .SplitView, .ViewWrapper))": {
+                    p: 0,
+                  },
                 },
                 disablePadding && { p: 0 },
                 disableGutters && { px: 0 },

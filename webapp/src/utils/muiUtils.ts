@@ -14,6 +14,15 @@
 
 import type { SxProps, Theme } from "@mui/material";
 
+export function truncateTextSx(maxWidth?: number) {
+  return {
+    maxWidth,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  } satisfies SxProps<Theme>;
+}
+
 /**
  * Merges two `sx` props.
  *

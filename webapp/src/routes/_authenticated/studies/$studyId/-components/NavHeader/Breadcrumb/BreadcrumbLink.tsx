@@ -14,7 +14,8 @@
 
 import RouterLink from "@/components/router/RouterLink";
 import { isTextTruncated } from "@/utils/domUtils";
-import { Tooltip } from "@mui/material";
+import { truncateTextSx } from "@/utils/muiUtils";
+import { Box, Tooltip } from "@mui/material";
 import { type ToOptions } from "@tanstack/react-router";
 import React, { useLayoutEffect, useRef, useState } from "react";
 
@@ -25,22 +26,6 @@ interface BreadcrumbLinkProps {
   linkOptions: ToOptions;
   onClick: () => void;
 }
-
-const truncatedTextStyle = {
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  maxWidth: 180,
-} as const;
-
-const linkStyle = {
-  display: "flex",
-  alignItems: "center",
-  transition: "color 0.15s ease",
-  "&:hover": {
-    color: "secondary.main",
-  },
-} as const;
 
 function BreadcrumbLink({
   label,
@@ -66,19 +51,16 @@ function BreadcrumbLink({
 
   const linkContent = (
     <RouterLink
-      ref={(e) => {
-        //
-      }}
       underline="hover"
       color="inherit"
       onClick={onClick}
-      sx={linkStyle}
+      sx={{ display: "flex", alignItems: "center" }}
       {...linkOptions}
     >
       {icon}
-      <span ref={textRef} style={truncate ? truncatedTextStyle : undefined}>
+      <Box component="span" ref={textRef} sx={[truncate && truncateTextSx(180)]}>
         {label}
-      </span>
+      </Box>
     </RouterLink>
   );
 

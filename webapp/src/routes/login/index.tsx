@@ -132,6 +132,7 @@ function Login() {
           submitButtonText={t("global.signIn")}
           submitButtonIcon={<LoginIcon />}
           hideFooterDivider
+          disableBlocker
           sx={{
             ".Form__Content": {
               width: 250,
