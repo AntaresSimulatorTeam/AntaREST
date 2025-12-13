@@ -17,7 +17,7 @@ import type {
   MatrixDataDTO,
   RowCountSource,
 } from "@/components/Matrix/shared/types";
-import type { SplitViewProps } from "@/components/SplitView";
+import type { SplitViewProps } from "@/components/page/SplitView";
 import type { SxProps, Theme } from "@mui/material";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";

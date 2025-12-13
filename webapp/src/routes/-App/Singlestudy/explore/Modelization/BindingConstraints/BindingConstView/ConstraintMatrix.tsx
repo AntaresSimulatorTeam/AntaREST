@@ -13,7 +13,7 @@
  */
 
 import Matrix from "@/components/Matrix";
-import SplitView from "@/components/SplitView";
+import SplitView from "@/components/page/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { getBindingConstraint } from "@/services/api/studydata";

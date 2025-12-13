@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import SplitView, { type SplitViewProps } from "@/components/SplitView";
+import SplitView, { type SplitViewProps } from "@/components/page/SplitView";
 import { mergeSxProp } from "@/utils/muiUtils";
 import { Box, type SxProps, type Theme } from "@mui/material";
 import HydroMatrix from "./HydroMatrix";

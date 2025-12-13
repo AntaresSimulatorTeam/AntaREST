@@ -13,8 +13,8 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
+import SplitView from "@/components/page/SplitView";
 import ViewWrapper from "@/components/page/ViewWrapper";
-import SplitView from "@/components/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";

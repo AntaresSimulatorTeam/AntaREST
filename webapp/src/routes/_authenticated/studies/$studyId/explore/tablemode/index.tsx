@@ -14,9 +14,9 @@
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import EmptyView from "@/components/page/EmptyView";
+import SplitView from "@/components/page/SplitView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import PropertiesView from "@/components/PropertiesView";
-import SplitView from "@/components/SplitView";
 import TableMode from "@/components/TableMode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";

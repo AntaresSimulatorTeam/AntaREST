@@ -13,7 +13,7 @@
  */
 
 import PropertiesView from "@/components/PropertiesView";
-import SplitView from "@/components/SplitView";
+import SplitView from "@/components/page/SplitView";
 import type {
   Level1Display,
   ScenarioDisplay,

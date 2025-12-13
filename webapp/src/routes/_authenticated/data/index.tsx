@@ -16,7 +16,7 @@ import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import FileTable from "@/components/FileTable";
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import RootPage from "@/components/page/RootPage";
-import SplitView from "@/components/SplitView";
+import SplitView from "@/components/page/SplitView";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getAuthUser } from "@/redux/selectors";

@@ -13,7 +13,7 @@
  */
 
 import Matrix from "@/components/Matrix";
-import SplitView from "@/components/SplitView";
+import SplitView from "@/components/page/SplitView";
 import TabsView from "@/components/TabsView";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";

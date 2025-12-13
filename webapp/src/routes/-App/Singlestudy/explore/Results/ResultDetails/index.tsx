@@ -21,7 +21,7 @@ import {
   generateResultColumns,
   groupResultColumns,
 } from "@/components/Matrix/shared/utils";
-import SplitView from "@/components/SplitView/index";
+import SplitView from "@/components/page/SplitView/index";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type { Area, LinkElement, MatrixIndex, StudyMetadata } from "@/types/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

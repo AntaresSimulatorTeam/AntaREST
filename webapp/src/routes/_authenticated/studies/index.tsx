@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import SplitView from "@/components/SplitView";
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import RootPage from "@/components/page/RootPage";
+import SplitView from "@/components/page/SplitView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesStatus, getStudyIdsFilteredAndSorted } from "@/redux/selectors";

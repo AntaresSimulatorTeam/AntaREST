@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import SplitView from "@/components/SplitView";
 import EmptyView from "@/components/page/EmptyView";
+import SplitView from "@/components/page/SplitView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";

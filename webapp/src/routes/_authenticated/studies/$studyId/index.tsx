@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import SplitView from "@/components/SplitView";
+import SplitView from "@/components/page/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { getVariantParents, getVariantTree } from "@/services/api/variant";
