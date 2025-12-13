@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import DialogProvider from "@/components/dialogs/DialogProvider";
 import type { RouterContext } from "@/router";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
@@ -32,7 +33,9 @@ function RootLayout() {
         action={(key) => <SnackbarCloseButton snackbarKey={key} />}
         preventDuplicate
       >
-        <Outlet />
+        <DialogProvider>
+          <Outlet />
+        </DialogProvider>
       </SnackbarProvider>
       <TanStackRouterDevtools />
     </ThemeProvider>

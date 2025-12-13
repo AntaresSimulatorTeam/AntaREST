@@ -12,15 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { useContext } from "react";
-import { DialogManagerContext } from "../components/dialogs/DialogManager/DialogManagerContext";
+import { createContext } from "react";
+import type { DialogProviderValue } from "./types";
 
-function useDialogManager() {
-  const context = useContext(DialogManagerContext);
-  if (context === undefined) {
-    throw new Error("useDialogManager must be used within a DialogManager");
-  }
-  return context;
-}
+const DialogContext = createContext<DialogProviderValue | undefined>(undefined);
 
-export default useDialogManager;
+export default DialogContext;

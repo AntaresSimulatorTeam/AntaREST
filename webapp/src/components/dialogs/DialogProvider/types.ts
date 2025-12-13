@@ -15,7 +15,7 @@
 import type { BasicDialogProps } from "../BasicDialog";
 import type { ConfirmationDialogProps } from "../ConfirmationDialog";
 
-export interface DialogManagerApi {
+export interface DialogProviderValue {
   confirm: (
     options:
       | (Omit<

@@ -16,10 +16,10 @@ import BasicDialog from "@/components/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import useOrderedState from "@/hooks/useOrderedState";
 import { useCallback } from "react";
-import { DialogManagerContext } from "./DialogManagerContext";
-import type { DialogManagerApi, SetDialogOptions } from "./types";
+import DialogContext from "./DialogContext";
+import type { DialogProviderValue, SetDialogOptions } from "./types";
 
-export interface DialogManagerProps {
+export interface DialogProviderProps {
   children: React.ReactNode;
 }
 
@@ -36,14 +36,14 @@ function getDialog(options: SetDialogOptions, key: string) {
   return <BasicDialog key={key} {...getDialogProps(options)} />;
 }
 
-function DialogManager({ children }: DialogManagerProps) {
+function DialogProvider({ children }: DialogProviderProps) {
   const { addItem, removeItem, mapItems } = useOrderedState<SetDialogOptions>();
 
   ////////////////////////////////////////////////////////////////
   // API
   ////////////////////////////////////////////////////////////////
 
-  const confirm = useCallback<DialogManagerApi["confirm"]>(
+  const confirm = useCallback<DialogProviderValue["confirm"]>(
     (options) => {
       const opts = typeof options === "string" ? { content: options } : options;
       const { content, ...rest } = opts;
@@ -72,11 +72,11 @@ function DialogManager({ children }: DialogManagerProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DialogManagerContext.Provider value={{ confirm }}>
+    <DialogContext.Provider value={{ confirm }}>
       {children}
       {mapItems(getDialog)}
-    </DialogManagerContext.Provider>
+    </DialogContext.Provider>
   );
 }
 
-export default DialogManager;
+export default DialogProvider;

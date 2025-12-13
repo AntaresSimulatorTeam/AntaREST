@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import useDialogManager from "@/hooks/useDialogManager";
+import useDialog from "@/hooks/useDialog";
 import { useBlocker } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
@@ -36,7 +36,7 @@ export interface UseFormBlockerParams {
  * @param params.disabled - If true, the hook is disabled and does not block navigation.
  */
 function useFormBlocker({ isSubmitting, isDirty, disabled }: UseFormBlockerParams) {
-  const { confirm } = useDialogManager();
+  const { confirm } = useDialog();
   const { t } = useTranslation();
   const shouldBlock = isSubmitting || isDirty;
 
