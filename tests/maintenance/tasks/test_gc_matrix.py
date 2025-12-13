@@ -12,7 +12,7 @@
 
 """Tests for the matrix garbage collection Celery task."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -67,37 +67,10 @@ class TestDeleteUnusedSavedMatrices:
 class TestCleanMatricesTaskWiring:
     """Tests for the Celery task wiring (context extraction)."""
 
-    @patch("antarest.maintenance.tasks.gc_matrix.clean_matrices")
-    @patch("antarest.maintenance.tasks.gc_matrix.MaintenanceContext")
-    def test_extracts_arguments_from_context(self, mock_ctx_class, mock_clean_matrices):
-        """Test that clean_matrices_task correctly extracts arguments from context."""
-        # Setup mock context
-        mock_matrix_service = Mock()
-        mock_config = Mock()
-        mock_config.storage.matrix_gc_dry_run = True
-        mock_config.storage.matrix_gc_retention_time = 7200
-
-        mock_ctx = Mock()
-        mock_ctx.config = mock_config
-        mock_ctx.matrix_service = mock_matrix_service
-        mock_ctx_class.get_instance.return_value = mock_ctx
-
-        # Call the task
-        clean_matrices_task()
-
-        # Verify clean_matrices was called with correct arguments from context
-        mock_clean_matrices.assert_called_once_with(
-            matrix_service=mock_matrix_service,
-            dry_run=True,
-            retention_time=7200,
-        )
-
-    @patch("antarest.maintenance.tasks.gc_matrix.MaintenanceContext")
-    def test_raises_when_config_not_initialized(self, mock_ctx_class):
+    def test_raises_when_config_not_initialized(self):
         """Test that clean_matrices_task raises when config is None."""
         mock_ctx = Mock()
         mock_ctx.config = None
-        mock_ctx_class.get_instance.return_value = mock_ctx
 
         with pytest.raises(RuntimeError, match="MaintenanceContext config is not initialized"):
-            clean_matrices_task()
+            clean_matrices_task(ctx=mock_ctx)

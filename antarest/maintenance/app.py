@@ -120,11 +120,15 @@ def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None:
 
     matrix_gc_interval = _config.storage.matrix_gc_sleeping_time if _config else 3600
 
+    # Register periodic task
     sender.add_periodic_task(
         matrix_gc_interval,
         clean_matrices_task.s(),
         name="matrix-gc",
     )
+
+    # Schedule first execution shortly after startup (60 seconds to let workers initialize)
+    clean_matrices_task.apply_async(countdown=60)
 
     logger.info(f"Periodic tasks configured successfully (matrix_gc_interval={matrix_gc_interval}s)")
 
