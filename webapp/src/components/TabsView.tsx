@@ -36,7 +36,7 @@ interface RouteTab<TId extends string = string> extends BaseTab<TId> {
 
 interface ContentTab<TId extends string = string> extends BaseTab<TId> {
   linkOptions?: never;
-  content: React.ReactNode;
+  content?: React.ReactNode;
 }
 
 export interface TabsViewProps<TId extends string = string> {

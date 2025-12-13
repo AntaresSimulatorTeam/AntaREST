@@ -83,7 +83,10 @@ function ConfigurationLayout() {
         },
       ].filter(Boolean)}
       renderPanel={({ children }, tabId) => {
-        return tabId ? children : <ViewWrapper>{children}</ViewWrapper>;
+        if (tabId === "adequacy-patch" || tabId === "geographic-trimming") {
+          return children;
+        }
+        return <ViewWrapper>{children}</ViewWrapper>;
       }}
     />
   );
