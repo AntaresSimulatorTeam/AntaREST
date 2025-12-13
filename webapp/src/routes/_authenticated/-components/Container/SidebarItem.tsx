@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import RouterListItemButton from "@/components/router/RouterListItemButton";
 import { setMenuOpen as setMainMenuOpen } from "@/redux/ducks/ui";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
@@ -25,94 +26,136 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Paper,
   Tooltip,
 } from "@mui/material";
-import { Link, useLocation } from "@tanstack/react-router";
+import { type ToOptions } from "@tanstack/react-router";
+import type { TFunction } from "i18next";
 import { Children, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-type Props = {
-  title: string;
+interface BaseProps {
+  label: string | ((t: TFunction) => string);
   icon: React.ReactNode;
-  onClick?: VoidFunction;
-  link?: string;
-  children?: React.ReactNode;
-} & (
-  | { link: string; children?: never; onClick?: never }
-  | { children?: React.ReactNode; link?: never }
-);
+}
 
-function SidebarItem({ title, icon, onClick, link, children }: Props) {
-  const location = useLocation();
+interface LinkItemProps extends BaseProps {
+  linkOptions: ToOptions | { href: string };
+  disableAutoActive?: boolean;
+  children?: never;
+  onClick?: never;
+}
+
+interface CollapsibleItemProps extends BaseProps {
+  linkOptions?: never;
+  autoActive?: never;
+  children?: React.ReactNode;
+  onClick?: VoidFunction;
+}
+
+export type SidebarItemProps = LinkItemProps | CollapsibleItemProps;
+
+function SidebarItem({
+  label,
+  icon,
+  onClick,
+  linkOptions,
+  disableAutoActive,
+  children,
+}: SidebarItemProps) {
   const [expanded, setExpanded] = useState(false);
   const isMenuOpen = useAppSelector(isMainMenuOpen);
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
   const isCollapsible = Children.toArray(children).length > 0;
-  const isExternalLink = link?.startsWith("http");
-  const isSelected = link === location.pathname;
+  const isExternalLink = !!linkOptions && "href" in linkOptions;
+  const isRouterLink = !!linkOptions && !isExternalLink;
+  const labelText = typeof label === "function" ? label(t) : label;
+
+  const listItemBtnSx = {
+    minHeight: 48,
+    px: 2.5,
+    justifyContent: isMenuOpen ? "initial" : "center",
+  };
 
   ////////////////////////////////////////////////////////////////
-  // Utils
+  // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const getButtonActionProps = () => {
-    if (link) {
-      return isExternalLink
-        ? { href: link, target: "_blank", rel: "noopener noreferrer" }
-        : { component: Link, to: link };
-    }
-
+  const handleClick = () => {
     if (isCollapsible) {
-      return {
-        onClick: () => {
-          if (isMenuOpen) {
-            setExpanded(!expanded);
-          } else {
-            dispatch(setMainMenuOpen(true));
-            setExpanded(true);
-          }
-
-          onClick?.();
-        },
-      };
+      if (isMenuOpen) {
+        setExpanded(!expanded);
+      } else {
+        dispatch(setMainMenuOpen(true));
+        setExpanded(true);
+      }
     }
 
-    return { onClick };
+    onClick?.();
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  const buttonContent = (
+    <>
+      <ListItemIcon sx={{ minWidth: 0, justifyContent: "center", mr: isMenuOpen ? 3 : "auto" }}>
+        {icon}
+      </ListItemIcon>
+      <ListItemText primary={labelText} sx={{ opacity: isMenuOpen ? 1 : 0 }} />
+      {isExternalLink && (
+        <LaunchIcon
+          fontSize="extra-small"
+          sx={[{ opacity: 0.8 }, !isMenuOpen && { display: "none" }]}
+        />
+      )}
+      {isMenuOpen && isCollapsible && (
+        <ListItemIcon sx={{ minWidth: 0, justifyContent: "center" }}>
+          {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </ListItemIcon>
+      )}
+    </>
+  );
+
   return (
     <>
-      <Tooltip title={isMenuOpen ? "" : title} placement="right-end">
+      <Tooltip title={isMenuOpen ? "" : labelText} placement="right-end">
         <ListItem disablePadding>
-          <ListItemButton
-            sx={{ minHeight: 48, px: 2.5, justifyContent: isMenuOpen ? "initial" : "center" }}
-            selected={isSelected}
-            {...getButtonActionProps()}
-          >
-            <ListItemIcon
-              sx={{ minWidth: 0, justifyContent: "center", mr: isMenuOpen ? 3 : "auto" }}
+          {isRouterLink ? (
+            <RouterListItemButton
+              {...linkOptions}
+              activeProps={disableAutoActive ? undefined : { selected: true }}
+              sx={listItemBtnSx}
             >
-              {icon}
-            </ListItemIcon>
-            <ListItemText primary={title} sx={{ opacity: isMenuOpen ? 1 : 0 }} />
-            {isExternalLink && (
-              <LaunchIcon
-                fontSize="extra-small"
-                sx={[{ opacity: 0.8 }, !isMenuOpen && { display: "none" }]}
-              />
-            )}
-            {isMenuOpen && isCollapsible && (
-              <ListItemIcon sx={{ minWidth: 0, justifyContent: "center" }}>
-                {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </ListItemIcon>
-            )}
-          </ListItemButton>
+              {buttonContent}
+            </RouterListItemButton>
+          ) : (
+            <ListItemButton
+              href={linkOptions ? linkOptions.href : ""}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleClick}
+              sx={listItemBtnSx}
+            >
+              {buttonContent}
+            </ListItemButton>
+          )}
         </ListItem>
       </Tooltip>
-      {isMenuOpen && isCollapsible && <Collapse in={expanded}>{children}</Collapse>}
+      {isMenuOpen && isCollapsible && (
+        <Collapse in={expanded}>
+          <Paper
+            sx={{
+              boxShadow: "inset 0px 1px 4px rgba(0,0,0,0.15)",
+              borderRadius: 0,
+            }}
+          >
+            {children}
+          </Paper>
+        </Collapse>
+      )}
     </>
   );
 }

@@ -14,6 +14,7 @@
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import Logo from "@/components/Logo";
+import RouterLink from "@/components/router/RouterLink";
 import { useAppMode } from "@/hooks/useAppMode";
 import { logout } from "@/redux/ducks/auth";
 import { fetchGroups } from "@/redux/ducks/groups";
@@ -33,41 +34,63 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import { Box, Divider, List, Toolbar, Tooltip, Typography, useTheme } from "@mui/material";
-import { Link } from "@tanstack/react-router";
+import { Box, Divider, List, Toolbar, Tooltip, Typography } from "@mui/material";
+import { linkOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMount } from "react-use";
 import FavoritesMenu from "./FavoritesMenu";
-import SidebarItem from "./SidebarItem";
+import SidebarItem, { type SidebarItemProps } from "./SidebarItem";
 import { StyledDrawer } from "./styles";
 import TaskIcon from "./TaskIcon";
 
-const topMenuItems = [
+const topMenuItems: SidebarItemProps[] = [
   {
-    titleKey: "studies.title",
-    link: "/studies",
+    label: (t) => t("studies.title"),
+    linkOptions: linkOptions({ to: "/studies" }),
     icon: <TravelExploreOutlinedIcon />,
   },
-  { titleKey: "tasks.title", link: "/tasks", icon: <TaskIcon /> },
-  { titleKey: "data.title", link: "/data", icon: <StorageIcon /> },
+  {
+    label: (t) => t("tasks.title"),
+    linkOptions: linkOptions({
+      to: "/tasks",
+    }),
+    icon: <TaskIcon />,
+  },
+  {
+    label: (t) => t("data.title"),
+    linkOptions: linkOptions({
+      to: "/data",
+    }),
+    icon: <StorageIcon />,
+  },
 ];
 
-const subMenuItems = [
+const subMenuItems: SidebarItemProps[] = [
   {
-    titleKey: "api.title",
-    link: "/apidoc",
+    label: (t) => t("api.title"),
+    linkOptions: linkOptions({
+      to: "/apidoc",
+    }),
     icon: <ApiIcon />,
   },
   {
-    titleKey: "documentation.title",
-    link: "https://antares-doc.readthedocs.io",
+    label: (t) => t("documentation.title"),
+    linkOptions: {
+      href: "https://antares-doc.readthedocs.io",
+    },
     icon: <ClassOutlinedIcon />,
   },
 ];
 
-const bottomMenuItems = [
-  { titleKey: "settings.title", link: "/settings", icon: <SettingsOutlinedIcon /> },
+const bottomMenuItems: SidebarItemProps[] = [
+  {
+    label: (t) => t("settings.title"),
+    linkOptions: linkOptions({
+      to: "/settings",
+    }),
+    icon: <SettingsOutlinedIcon />,
+  },
 ];
 
 interface Props {
@@ -75,7 +98,6 @@ interface Props {
 }
 
 function Container({ children }: Props) {
-  const theme = useTheme();
   const { t } = useTranslation();
   const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
   const isDrawerOpen = useAppSelector(isMenuOpen);
@@ -102,13 +124,13 @@ function Container({ children }: Props) {
         <StyledDrawer variant="permanent" open={isDrawerOpen}>
           <Toolbar disableGutters sx={[{ px: 2 }]}>
             <Tooltip title={version}>
-              <Link
+              <RouterLink
                 to="/"
-                style={{
+                underline="none"
+                sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: theme.spacing(2),
-                  textDecoration: "none",
+                  gap: 2,
                 }}
               >
                 <Logo pulse={!isWsConnected} />
@@ -124,36 +146,32 @@ function Container({ children }: Props) {
                 >
                   Antares Web
                 </Typography>
-              </Link>
+              </RouterLink>
             </Tooltip>
           </Toolbar>
           <Divider />
           <List sx={{ flex: 1 }}>
             {currentStudyId && (
               <SidebarItem
-                title={t("recentStudy.title")}
+                label={t("recentStudy.title")}
                 icon={<CenterFocusStrongIcon />}
-                link={`/studies/${currentStudyId}`}
+                linkOptions={{
+                  to: "/studies/$studyId",
+                  params: { studyId: currentStudyId },
+                }}
+                disableAutoActive
               />
             )}
             <FavoritesMenu />
-            {topMenuItems.map(({ titleKey, icon, link }) => (
-              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
-            ))}
+            {topMenuItems.map(SidebarItem)}
           </List>
-          <List>
-            {subMenuItems.map(({ titleKey, icon, link }) => (
-              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
-            ))}
-          </List>
+          <List>{subMenuItems.map(SidebarItem)}</List>
           <Divider />
           <List>
-            {bottomMenuItems.map(({ titleKey, icon, link }) => (
-              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
-            ))}
+            {bottomMenuItems.map(SidebarItem)}
             {isWebMode && (
               <SidebarItem
-                title={t("global.signOut")}
+                label={t("global.signOut")}
                 icon={<LogoutIcon />}
                 onClick={() => setOpenLogoutDialog(true)}
               />
@@ -162,7 +180,7 @@ function Container({ children }: Props) {
           <Divider />
           <List>
             <SidebarItem
-              title={t("global.reduce")}
+              label={t("global.reduce")}
               icon={isDrawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
               onClick={() => dispatch(setMenuOpen(!isDrawerOpen))}
             />

@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { Link } from "@mui/material";
+import { Button } from "@mui/material";
 import { createLink } from "@tanstack/react-router";
 
 // Tanstack Router documentation:
-// https://tanstack.com/router/latest/docs/framework/react/guide/custom-link#link
-// https://tanstack.com/router/latest/docs/framework/react/how-to/integrate-material-ui#step-1-create-typed-mui-link-component
+// https://tanstack.com/router/latest/docs/framework/react/guide/custom-link#button
+// https://tanstack.com/router/latest/docs/framework/react/how-to/integrate-material-ui#step-2-create-typed-mui-button-component
 
-const RouterLink = createLink(Link);
+const RouterButton = createLink(Button);
 
-export default RouterLink;
+export default RouterButton;

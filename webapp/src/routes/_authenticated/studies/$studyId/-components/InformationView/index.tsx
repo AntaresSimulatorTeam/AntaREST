@@ -13,12 +13,12 @@
  */
 
 import ViewWrapper from "@/components/page/ViewWrapper";
+import RouterButton from "@/components/router/RouterButton";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { copyStudy } from "@/services/api/studies";
 import { unarchiveStudy as callUnarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata, VariantTree } from "@/types/types";
 import { Box, Button, Divider } from "@mui/material";
-import { useNavigate } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -33,7 +33,6 @@ interface Props {
 }
 
 function InformationView({ study, variantTree }: Props) {
-  const navigate = useNavigate();
   const [t] = useTranslation();
   const [openVariantModal, setOpenVariantModal] = useState<boolean>(false);
   const [openLauncherModal, setOpenLauncherModal] = useState<boolean>(false);
@@ -77,14 +76,13 @@ function InformationView({ study, variantTree }: Props) {
       <Divider />
       <Box sx={{ display: "flex", gap: 2 }}>
         <Box sx={{ display: "flex", gap: 2, flex: 1 }}>
-          <Button
+          <RouterButton
             variant="contained"
-            onClick={() => {
-              navigate({ to: "/studies/$studyId/explore", params: { studyId: study.id } });
-            }}
+            to="/studies/$studyId/explore"
+            params={{ studyId: study.id }}
           >
-            {t("global.open")}
-          </Button>
+            {t("button.explore")}
+          </RouterButton>
           {!study.archived && (
             <Button
               variant="outlined"

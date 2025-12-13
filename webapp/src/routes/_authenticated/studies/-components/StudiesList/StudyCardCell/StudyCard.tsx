@@ -14,6 +14,7 @@
 
 import CopyButton from "@/components/buttons/CopyButton";
 import EditorIcon from "@/components/icons/EditorIcon";
+import RouterButton from "@/components/router/RouterButton";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import useAppSelector from "@/redux/hooks/useAppSelector";
@@ -41,7 +42,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { memo, useState } from "react";
@@ -287,13 +288,9 @@ const StudyCard = memo((props: Props) => {
         </Box>
       </CardContent>
       <CardActions>
-        <Link
-          to="/studies/$studyId"
-          params={{ studyId: study.id }}
-          style={{ textDecoration: "none" }}
-        >
-          <Button color="primary">{t("button.explore")}</Button>
-        </Link>
+        <RouterButton to="/studies/$studyId" params={{ studyId: study.id }}>
+          {t("global.open")}
+        </RouterButton>
         <Tooltip title={t("studies.moreActions")}>
           <Button
             color="primary"

@@ -19,6 +19,7 @@ import SimpleLoader from "@/components/loaders/SimpleLoader";
 import LogModal from "@/components/LogModal";
 import RootPage from "@/components/page/RootPage";
 import ViewWrapper from "@/components/page/ViewWrapper";
+import RouterLink from "@/components/router/RouterLink";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { resetTaskNotifications } from "@/redux/ducks/ui";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -49,17 +50,8 @@ import DownloadIcon from "@mui/icons-material/Download";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import InfoIcon from "@mui/icons-material/Info";
-import {
-  Box,
-  Chip,
-  CircularProgress,
-  Link as MuiLink,
-  Tooltip,
-  Typography,
-  colors,
-  useTheme,
-} from "@mui/material";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Box, Chip, CircularProgress, Tooltip, Typography, colors, useTheme } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import debug from "debug";
 import debounce from "lodash/debounce";
@@ -261,15 +253,15 @@ function Tasks() {
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Box flexGrow={0.6} display="flex" alignItems="center" width="60%">
               {renderStatus(job)}
-              <MuiLink
+              <RouterLink
                 color="inherit"
                 underline="hover"
-                component={Link}
-                to={`/studies/${encodeURI(job.studyId)}`}
+                to="/studies/$studyId"
+                params={{ studyId: job.studyId }}
               >
                 {studies.find((s) => s.id === job.studyId)?.name ||
                   `${t("global.unknown")} (${job.id})`}
-              </MuiLink>
+              </RouterLink>
               {renderTags(job)}
             </Box>
             {job.status === "running" && (

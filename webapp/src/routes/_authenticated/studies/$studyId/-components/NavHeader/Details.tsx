@@ -13,9 +13,11 @@
  */
 
 import EditorIcon from "@/components/icons/EditorIcon";
+import RouterLink from "@/components/router/RouterLink";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
 import { buildModificationDate, convertUTCToLocalTime } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";
+import { truncateTextSx } from "@/utils/muiUtils";
 import { compactSemanticVersion } from "@/utils/versionUtils";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
@@ -23,19 +25,11 @@ import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import { Box, Divider, Tooltip, Typography, styled } from "@mui/material";
-import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-
-const MAX_STUDY_TITLE_LENGTH = 45;
 
 const TinyText = styled(Typography)(({ theme }) => ({
   fontSize: 12,
   color: theme.palette.text.secondary,
-}));
-
-const LinkText = styled(Link)(({ theme }) => ({
-  fontSize: 12,
-  color: theme.palette.secondary.main,
 }));
 
 const StyledDivider = styled(Divider)(({ theme }) => ({
@@ -86,9 +80,15 @@ function Details({ study, parentStudy, variantNb }: Props) {
         <Item>
           <AltRouteOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
           <Tooltip title={parentStudy.name}>
-            <LinkText to={`/studies/${parentStudy.id}`}>
-              {`${parentStudy.name.substring(0, MAX_STUDY_TITLE_LENGTH)}...`}
-            </LinkText>
+            <RouterLink
+              to="/studies/$studyId"
+              params={{ studyId: parentStudy.id }}
+              color="text.secondary"
+              fontSize={12}
+              sx={truncateTextSx(200)}
+            >
+              {parentStudy.name}
+            </RouterLink>
           </Tooltip>
         </Item>
       )}
