@@ -13,8 +13,8 @@
  */
 
 import RootPage from "@/components/page/RootPage";
+import TabsView from "@/components/page/TabsView";
 import ViewWrapper from "@/components/page/ViewWrapper";
-import TabsView from "@/components/TabsView";
 import { useAppMode } from "@/hooks/useAppMode";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "@/redux/selectors";

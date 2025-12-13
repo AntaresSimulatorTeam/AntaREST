@@ -14,7 +14,7 @@
 
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
-import TabsView from "@/components/TabsView";
+import TabsView from "@/components/page/TabsView";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";

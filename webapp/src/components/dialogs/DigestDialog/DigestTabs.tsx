@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import TabsView from "@/components/TabsView";
+import TabsView from "@/components/page/TabsView";
 import DigestMatrix from "./DigestMatrix";
 import type { DigestData } from "./types";
 

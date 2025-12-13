@@ -13,7 +13,7 @@
  */
 
 import Matrix from "@/components/Matrix";
-import TabsView from "@/components/TabsView";
+import TabsView from "@/components/page/TabsView";
 import type { Cluster, StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import semver from "semver";

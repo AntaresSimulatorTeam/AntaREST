@@ -18,7 +18,7 @@ import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
 import { Outlet, useMatchRoute, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
-import RouterLink from "./router/RouterLink";
+import RouterLink from "../router/RouterLink";
 
 interface BaseTab<TId extends string> {
   label: string;

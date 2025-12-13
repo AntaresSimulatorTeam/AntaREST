@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import TabsView from "@/components/TabsView";
+import TabsView from "@/components/page/TabsView";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useStudy from "../-hooks/useStudy";
