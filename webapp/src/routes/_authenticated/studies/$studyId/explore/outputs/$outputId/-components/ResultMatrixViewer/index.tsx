@@ -27,14 +27,14 @@ import type {
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { Area, LinkElement, MatrixIndex } from "@/types/types";
 import { Box } from "@mui/material";
-import type { PartialStudyOutput } from "../../../-hooks/useStudyOutput";
+import type { PartialStudyOutput } from "../../-hooks/useStudyOutput";
 import {
   type DataType,
   type Frequency,
   MAX_YEAR,
   type MonteCarloMode,
   type OutputItemType,
-} from "../../../-utils";
+} from "../../-utils";
 import ResultFilters from "../ResultFilters";
 import ResultMatrix from "./ResultMatrix";
 import VariableMatrix from "./VariableMatrix";

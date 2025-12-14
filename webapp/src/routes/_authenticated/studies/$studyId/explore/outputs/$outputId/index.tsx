@@ -23,12 +23,22 @@ import {
 } from "@/components/Matrix/shared/utils";
 import SplitView from "@/components/page/SplitView/index";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { Area, LinkElement, MatrixIndex, StudyMetadata } from "@/types/types";
+import type { Area, LinkElement, MatrixIndex } from "@/types/types";
+import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext, useParams } from "react-router";
-import useStudyOutput from "../../-hooks/useStudyOutput";
-import { useVariablePerVariable } from "../../-hooks/useVariablePerVariable";
+import useStudy from "../../../-hooks/useStudy";
+import usePromise from "../../../../../../../hooks/usePromise";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { getAreas, getLinks } from "../../../../../../../redux/selectors";
+import { getStudyMatrixIndex } from "../../../../../../../services/api/matrix";
+import { getStudyData } from "../../../../../../../services/api/study";
+import { isSearchMatching } from "../../../../../../../utils/stringUtils";
+import ResultItemSelector from "./-components/ResultItemSelector";
+import ResultMatrixViewer from "./-components/ResultMatrixViewer";
+import SynthesisViewer, { type SynthesisData } from "./-components/SynthesisViewer";
+import useStudyOutput from "./-hooks/useStudyOutput";
+import { useVariablePerVariable } from "./-hooks/useVariablePerVariable";
 import {
   createPath,
   SYNTHESIS_ITEMS,
@@ -36,25 +46,22 @@ import {
   type Frequency,
   type MonteCarloMode,
   type OutputItemType,
-} from "../../-utils";
-import usePromise from "../../../../../../../../../hooks/usePromise";
-import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
-import { getAreas, getLinks } from "../../../../../../../../../redux/selectors";
-import { getStudyMatrixIndex } from "../../../../../../../../../services/api/matrix";
-import { getStudyData } from "../../../../../../../../../services/api/study";
-import { isSearchMatching } from "../../../../../../../../../utils/stringUtils";
-import ResultItemSelector from "./ResultItemSelector";
-import ResultMatrixViewer from "./ResultMatrixViewer";
-import SynthesisViewer, { type SynthesisData } from "./SynthesisViewer";
+} from "./-utils";
+
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/$outputId/")(
+  {
+    component: Output,
+  },
+);
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
-function ResultDetails() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+function Output() {
+  const study = useStudy();
   const { t } = useTranslation();
   const { isDarkMode } = useThemeColorScheme();
-  const { outputId } = useParams();
-  const navigate = useNavigate();
+  const { outputId } = Route.useParams();
+  const navigate = Route.useNavigate();
 
   const [mcMode, setMcMode] = useState<MonteCarloMode>("mc-all");
   const [dataType, setDataType] = useState<DataType>("values");
@@ -337,7 +344,7 @@ function ResultDetails() {
         selectedItemId={selectedItemId}
         onSetSelectedItemId={handleSetSelectedItemId}
         onSearchChange={handleSearchChange}
-        onNavigateBack={() => navigate("..")}
+        onNavigateBack={() => navigate({ to: ".." })}
       />
 
       {isSynthesis ? (
@@ -383,5 +390,3 @@ function ResultDetails() {
     </SplitView>
   );
 }
-
-export default ResultDetails;

@@ -13,8 +13,6 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Results from "../_authenticated/studies/$studyId/explore/outputs";
-import ResultDetails from "../_authenticated/studies/$studyId/explore/outputs/$outputId/-components/ResultDetails";
 import Modelization from "./Singlestudy/explore/Modelization";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
@@ -112,10 +110,6 @@ function App() {
           <Route path="capacities" element={<Capacities />} />
           <Route index element={<Candidates />} />
           <Route path="*" element={<Candidates />} />
-        </Route>
-        <Route path="results">
-          <Route path=":outputId" element={<ResultDetails />} />
-          <Route index element={<Results />} />
         </Route>
         <Route path="*" element={<Modelization />}>
           <Route index element={<Map />} />

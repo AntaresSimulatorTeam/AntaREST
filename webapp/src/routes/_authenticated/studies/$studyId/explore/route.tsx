@@ -74,6 +74,13 @@ function StudyExploreLayout() {
           },
         },
         {
+          label: t("study.results"),
+          linkOptions: {
+            to: "/studies/$studyId/explore/outputs",
+            params: { studyId: study.id },
+          },
+        },
+        {
           label: t("study.debug"),
           linkOptions: {
             to: "/studies/$studyId/explore/debug",

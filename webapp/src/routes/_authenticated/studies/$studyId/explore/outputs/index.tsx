@@ -15,6 +15,7 @@
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import DigestDialog from "@/components/dialogs/DigestDialog";
 import ViewWrapper from "@/components/page/ViewWrapper";
+import RouterLink from "@/components/router/RouterLink";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import LaunchJobLogView from "@/routes/_authenticated/tasks/-components/LaunchJobLogView";
@@ -28,7 +29,7 @@ import {
   unarchiveOutput,
 } from "@/services/api/study";
 import { convertUTCToLocalTime } from "@/services/utils";
-import type { StudyMetadata, StudyOutput } from "@/types/types";
+import type { StudyOutput } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import type { EmptyObject } from "@/utils/tsUtils";
 import ArchiveIcon from "@mui/icons-material/Archive";
@@ -41,7 +42,6 @@ import UnarchiveIcon from "@mui/icons-material/Unarchive";
 import {
   Box,
   CircularProgress,
-  Link as MuiLink,
   Paper,
   Skeleton,
   Table,
@@ -53,10 +53,32 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { compareDesc, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useOutletContext } from "react-router-dom";
+import useStudy from "../../-hooks/useStudy";
+
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/")({
+  // loader: ({ params: { studyId }, location }) => {
+  //   const templates = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
+  //   const sortedTemplates = sortByName(templates);
+
+  //   if (
+  //     sortedTemplates.length > 0 &&
+  //     location.pathname === `/studies/${studyId}/explore/tablemode`
+  //   ) {
+  //     throw redirect({
+  //       to: "/studies/$studyId/explore/tablemode/$tableModeId",
+  //       params: { studyId, tableModeId: sortedTemplates[0].name },
+  //       replace: true,
+  //     });
+  //   }
+
+  //   return sortedTemplates;
+  // },
+  component: Outputs,
+});
 
 interface OutputDetail {
   name: string;
@@ -86,8 +108,8 @@ const iconStyle = {
   cursor: "pointer",
 };
 
-function Results() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+function Outputs() {
+  const study = useStudy();
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [dialogState, setDialogState] = useState<DialogState>({});
@@ -318,14 +340,14 @@ function Results() {
     }
 
     return (
-      <MuiLink
+      <RouterLink
         color="inherit"
         underline="hover"
-        component={Link}
-        to={`/studies/${study.id}/explore/results/${encodeURIComponent(output.name)}`}
+        to="/studies/$studyId/explore/outputs/$outputId"
+        params={{ studyId: study.id, outputId: output.name }}
       >
         {output.name}
-      </MuiLink>
+      </RouterLink>
     );
   };
 
@@ -376,7 +398,6 @@ function Results() {
           </TableBody>
         </Table>
       </TableContainer>
-
       {/* Dialogs */}
       {dialogState.type === "confirmDelete" && (
         <ConfirmationDialog
@@ -387,7 +408,6 @@ function Results() {
           {t("results.question.deleteOutput", { outputname: dialogState.data })}
         </ConfirmationDialog>
       )}
-
       {dialogState.type === "digest" && (
         <DigestDialog
           open
@@ -399,5 +419,3 @@ function Results() {
     </ViewWrapper>
   );
 }
-
-export default Results;
