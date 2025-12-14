@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 def _mask_url_credentials(url: str) -> str:
     """Mask password in URL for safe logging."""
-    # Matches ://user:password@ and replaces password with ***
-    return re.sub(r"(://[^:]+:)[^@]+(@)", r"\1***\2", url)
+    # Matches ://user:password@ or ://:password@ and replaces password with ***
+    return re.sub(r"(://[^:]*:)[^@]+(@)", r"\1***\2", url)
 
 
 def _load_config() -> Optional[Config]:

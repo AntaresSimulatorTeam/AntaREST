@@ -51,14 +51,30 @@ logger = logging.getLogger(__name__)
 MATRIX_GC_LOCK_ID = 1001
 
 
-def _delete_unused_saved_matrices(matrix_service: MatrixService, unused_matrices: Set[str], dry_run: bool) -> None:
-    """Delete all files with the name in unused_matrices"""
+def _delete_unused_saved_matrices(matrix_service: MatrixService, unused_matrices: Set[str], dry_run: bool) -> int:
+    """
+    Delete all matrices with IDs in unused_matrices.
+
+    Args:
+        matrix_service: Service for matrix operations
+        unused_matrices: Set of matrix IDs to delete
+        dry_run: If True, only log what would be deleted
+
+    Returns:
+        Number of matrices that failed to delete
+    """
     logger.info("Deleting unused saved matrices:")
+    failures = 0
     for unused_matrix_id in unused_matrices:
         logger.info(f"Matrix {unused_matrix_id} is set to be deleted")
         if not dry_run:
-            logger.info(f"Deleting {unused_matrix_id}")
-            matrix_service.delete(unused_matrix_id)
+            try:
+                logger.info(f"Deleting {unused_matrix_id}")
+                matrix_service.delete(unused_matrix_id)
+            except Exception as e:
+                logger.error(f"Failed to delete matrix {unused_matrix_id}: {e}")
+                failures += 1
+    return failures
 
 
 def clean_matrices(
@@ -114,12 +130,12 @@ def clean_matrices(
                         if matrix_lifetime >= retention_time:
                             matrices_to_remove.add(matrix)
 
-                    deleted_count = len(matrices_to_remove)
-                    logger.info(f"Matrices to remove: {deleted_count}")
+                    logger.info(f"Matrices to remove: {len(matrices_to_remove)}")
 
-                    _delete_unused_saved_matrices(
+                    failures = _delete_unused_saved_matrices(
                         matrix_service=matrix_service, unused_matrices=matrices_to_remove, dry_run=dry_run
                     )
+                    deleted_count = len(matrices_to_remove) - failures
 
     except LockNotAcquired:
         logger.warning(
