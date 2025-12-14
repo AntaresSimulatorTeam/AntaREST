@@ -47,7 +47,7 @@ interface TypeFromKey {
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
-  [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
+  [StorageKey.StudiesModelTableModeTemplates]: TableTemplate[];
   [StorageKey.StudyTreeFolders]: FolderDTO[];
   [StorageKey.TasksFilterUser]: string;
   [StorageKey.UIMenuCollapsed]: UIState["menuOpen"];

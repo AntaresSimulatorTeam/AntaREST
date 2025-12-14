@@ -29,6 +29,10 @@ function getDialogProps<T extends SetDialogOptions>(options: T) {
 }
 
 function getDialog(options: SetDialogOptions, key: string) {
+  if (options.type === "raw") {
+    return options.element;
+  }
+
   if (options.type === "confirmation") {
     return <ConfirmationDialog key={key} {...getDialogProps(options)} />;
   }
@@ -43,6 +47,28 @@ function DialogProvider({ children }: DialogProviderProps) {
   // API
   ////////////////////////////////////////////////////////////////
 
+  const openDialog = useCallback<DialogProviderValue["openDialog"]>(
+    (options) => {
+      if (typeof options === "function") {
+        const id = addItem({
+          type: "raw",
+          element: options({ onClose: () => removeItem(id) }),
+        });
+        return;
+      }
+
+      const { content, ...rest } = options;
+
+      const id = addItem({
+        ...rest,
+        type: "basic",
+        children: content,
+        onClose: () => removeItem(id),
+      });
+    },
+    [addItem, removeItem],
+  );
+
   const confirm = useCallback<DialogProviderValue["confirm"]>(
     (options) => {
       const opts = typeof options === "string" ? { content: options } : options;
@@ -51,8 +77,8 @@ function DialogProvider({ children }: DialogProviderProps) {
       return new Promise<boolean>((resolve) => {
         const id = addItem({
           ...rest,
-          children: content,
           type: "confirmation",
+          children: content,
           onConfirm: () => {
             removeItem(id);
             resolve(true);
@@ -72,7 +98,7 @@ function DialogProvider({ children }: DialogProviderProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DialogContext.Provider value={{ confirm }}>
+    <DialogContext.Provider value={{ openDialog, confirm }}>
       {children}
       {mapItems(getDialog)}
     </DialogContext.Provider>

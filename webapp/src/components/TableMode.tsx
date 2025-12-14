@@ -22,6 +22,7 @@ import type {
 import type { StudyMetadata } from "@/types/types";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 import GridOffIcon from "@mui/icons-material/GridOff";
+import { Box, Typography } from "@mui/material";
 import startCase from "lodash/startCase";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,6 +35,7 @@ export interface TableModeProps<T extends TableModeType = TableModeType> {
   studyId: StudyMetadata["id"];
   type: T;
   columns: TableModeColumnsForType<T>;
+  name?: string;
   extraActions?: DataGridFormProps["extraActions"];
 }
 
@@ -41,6 +43,7 @@ function TableMode<T extends TableModeType>({
   studyId,
   type,
   columns,
+  name,
   extraActions,
 }: TableModeProps<T>) {
   const { t } = useTranslation();
@@ -91,27 +94,36 @@ function TableMode<T extends TableModeType>({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={res}
-      ifFulfilled={(data) =>
-        gridColumns.length > 0 ? (
-          <DataGridForm
-            defaultData={data}
-            columns={gridColumns}
-            onSubmit={handleSubmit}
-            extraActions={extraActions}
-          />
-        ) : (
-          <EmptyView
-            icon={GridOffIcon}
-            title={t("study.results.noData")}
-            extraActions={
-              typeof extraActions === "function" ? extraActions({ canSubmit: false }) : extraActions
-            }
-          />
-        )
-      }
-    />
+    <Box>
+      {name && (
+        <Typography color="textSecondary" gutterBottom noWrap>
+          {name}
+        </Typography>
+      )}
+      <UsePromiseCond
+        response={res}
+        ifFulfilled={(data) =>
+          gridColumns.length > 0 ? (
+            <DataGridForm
+              defaultData={data}
+              columns={gridColumns}
+              onSubmit={handleSubmit}
+              extraActions={extraActions}
+            />
+          ) : (
+            <EmptyView
+              icon={GridOffIcon}
+              title={t("study.results.noData")}
+              extraActions={
+                typeof extraActions === "function"
+                  ? extraActions({ canSubmit: false })
+                  : extraActions
+              }
+            />
+          )
+        }
+      />
+    </Box>
   );
 }
 

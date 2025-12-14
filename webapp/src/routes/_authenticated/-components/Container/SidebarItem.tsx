@@ -48,6 +48,7 @@ interface LinkItemProps extends BaseProps {
 
 interface CollapsibleItemProps extends BaseProps {
   linkOptions?: never;
+  disableAutoActive?: never;
   autoActive?: never;
   children?: React.ReactNode;
   onClick?: VoidFunction;

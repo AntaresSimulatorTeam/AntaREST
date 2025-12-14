@@ -20,30 +20,32 @@ import { Outlet, useMatchRoute, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import RouterLink from "../router/RouterLink";
 
-interface BaseTab<TId extends string> {
+interface BaseTab {
   label: string;
   disabled?: boolean;
   // Optional ID to use as tab value instead of generated one.
   // Useful with content tabs to have a stable tab value across renders when tab order can change.
   // Also used in `renderPanel()` callback to identify the tab.
-  id?: TId;
+  id?: string;
 }
 
-interface RouteTab<TId extends string = string> extends BaseTab<TId> {
+interface RouteTab extends BaseTab {
   linkOptions: ToOptions;
   content?: never;
 }
 
-interface ContentTab<TId extends string = string> extends BaseTab<TId> {
+interface ContentTab extends BaseTab {
   linkOptions?: never;
   content?: React.ReactNode;
 }
 
-export interface TabsViewProps<TId extends string = string> {
-  tabs: Array<RouteTab<TId>> | Array<ContentTab<TId>>;
+export interface TabsViewProps<
+  TTabs extends RouteTab[] | ContentTab[] = RouteTab[] | ContentTab[],
+> {
+  tabs: TTabs;
   onChange?: TabListProps["onChange"];
   onBack?: VoidFunction;
-  renderPanel?: (props: { children: React.ReactNode }, tabId?: TId) => React.ReactNode;
+  renderPanel?: (props: { children: React.ReactNode }, tab: TTabs[number]) => React.ReactNode;
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
@@ -69,7 +71,7 @@ function getTabValue(tab: RouteTab | ContentTab, tabIndex: number) {
   return isRouteTab(tab) ? getRouteTabValue(tab) : getContentTabValue(tab, tabIndex);
 }
 
-function TabsView<TId extends string>({
+function TabsView<TTabs extends RouteTab[] | ContentTab[]>({
   tabs,
   onChange,
   onBack,
@@ -77,7 +79,7 @@ function TabsView<TId extends string>({
   divider = false,
   disablePadding = false,
   disableGutters = false,
-}: TabsViewProps<TId>) {
+}: TabsViewProps<TTabs>) {
   const hasRouteTabs = isRouteTabs(tabs);
 
   const [activeContentTabValue, setActiveContentTabValue] = useState(() =>
@@ -169,7 +171,7 @@ function TabsView<TId extends string>({
                 disableGutters && { px: 0 },
               ]}
             >
-              {renderPanel({ children: hasRouteTabs ? <Outlet /> : tab.content }, tab.id)}
+              {renderPanel({ children: hasRouteTabs ? <Outlet /> : tab.content }, tab)}
             </TabPanel>
           );
         })}

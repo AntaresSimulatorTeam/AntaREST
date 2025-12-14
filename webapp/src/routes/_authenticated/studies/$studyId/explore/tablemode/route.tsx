@@ -12,100 +12,65 @@
  * This file is part of the Antares project.
  */
 
-import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import EmptyView from "@/components/page/EmptyView";
-import SplitView from "@/components/page/SplitView";
+import ListView from "@/components/page/ListView";
 import ViewWrapper from "@/components/page/ViewWrapper";
-import PropertiesView from "@/components/PropertiesView";
-import TableMode from "@/components/TableMode";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import useDialog from "@/hooks/useDialog";
+import { sortByName } from "@/services/utils";
+import AddIcon from "@mui/icons-material/Add";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { Button } from "@mui/material";
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, linkOptions, redirect } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useUpdateEffect } from "react-use";
-import { v4 as uuidv4 } from "uuid";
 import useStudy from "../../-hooks/useStudy";
-import ListElement from "../../../../../../components/ListElement";
 import storage, { StorageKey } from "../../../../../../services/utils/localStorage";
-import CreateTemplateTableDialog from "./-components/dialogs/CreateTemplateTableDialog";
-import UpdateTemplateTableDialog from "./-components/dialogs/UpdateTemplateTableDialog";
-import type { TableTemplate } from "./-utils";
+import TableTemplateFormDialog from "./$tableModeId/-components/TableTemplateFormDialog";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/tablemode")({
-  component: TableModeList,
+  loader: ({ params: { studyId }, location }) => {
+    const templates = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
+    const sortedTemplates = sortByName(templates);
+
+    if (
+      sortedTemplates.length > 0 &&
+      location.pathname === `/studies/${studyId}/explore/tablemode`
+    ) {
+      throw redirect({
+        to: "/studies/$studyId/explore/tablemode/$tableModeId",
+        params: { studyId, tableModeId: sortedTemplates[0].name },
+        replace: true,
+      });
+    }
+
+    return sortedTemplates;
+  },
+  component: TableModeLayout,
 });
 
-function TableModeList() {
-  const { t } = useTranslation();
-
-  const [templates, setTemplates] = useState<TableTemplate[]>(() => {
-    const list = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
-    return list.map((tp) => ({ ...tp, id: uuidv4() }));
-  });
-
-  const [selectedTemplateId, setSelectedTemplateId] = useState<TableTemplate["id"] | undefined>(
-    templates[0]?.id,
-  );
-
-  const [dialog, setDialog] = useState<{
-    type: "add" | "edit" | "delete";
-    templateId: TableTemplate["id"];
-  } | null>(null);
-
+function TableModeLayout() {
+  const templates = Route.useLoaderData();
   const study = useStudy();
-  const selectedTemplate = templates.find((tp) => tp.id === selectedTemplateId);
-  const dialogTemplate = dialog && templates.find((tp) => tp.id === dialog.templateId);
-
-  // Handle automatic selection of the first element
-  useEffect(() => {
-    if (templates.length > 0 && !selectedTemplate) {
-      setSelectedTemplateId(templates[0].id);
-    }
-  }, [templates, selectedTemplate]);
-
-  // Update local storage
-  useUpdateEffect(() => {
-    storage.setItem(
-      StorageKey.StudiesModelTableModeTemplates,
-      templates
-        // It is useless to keep template ids in local storage
-        .map(({ id, ...rest }) => rest),
-    );
-  }, [templates]);
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const closeDialog = () => setDialog(null);
+  const { t } = useTranslation();
+  const { openDialog } = useDialog();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleEditClick = () => {
-    if (selectedTemplate) {
-      setDialog({
-        type: "edit",
-        templateId: selectedTemplate.id,
-      });
-    }
-  };
-
-  const handleDeleteClick = () => {
-    if (selectedTemplate) {
-      setDialog({
-        type: "delete",
-        templateId: selectedTemplate.id,
-      });
-    }
-  };
-
-  const handleDelete = () => {
-    setTemplates((templates) => templates.filter((tp) => tp.id !== dialog?.templateId));
-    closeDialog();
+  const handleAdd = () => {
+    openDialog(({ onClose }) => (
+      <TableTemplateFormDialog
+        title={t("study.tableMode.dialog.add.title")}
+        titleIcon={AddCircleIcon}
+        defaultValues={{
+          name: "",
+          type: "areas",
+          columns: [],
+        }}
+        onCancel={onClose}
+        templates={templates}
+      />
+    ));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -113,77 +78,22 @@ function TableModeList() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <SplitView splitId="tablemode">
-        {/* Left */}
-        <PropertiesView
-          mainContent={
-            <ListElement
-              list={templates}
-              currentElement={selectedTemplate?.id}
-              currentElementKeyToTest="id"
-              setSelectedItem={({ id }) => setSelectedTemplateId(id)}
-            />
-          }
-          onAdd={() => setDialog({ type: "add", templateId: "" })}
-        />
-        {/* Right */}
-        <ViewWrapper>
-          {!templates.length && <EmptyView title={t("study.tableMode.empty")} />}
-          {selectedTemplate && (
-            <TableMode
-              studyId={study.id}
-              type={selectedTemplate.type}
-              columns={selectedTemplate.columns}
-              extraActions={
-                <>
-                  <Button variant="outlined" startIcon={<EditIcon />} onClick={handleEditClick}>
-                    {t("global.edit")}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={handleDeleteClick}
-                  >
-                    {t("global.delete")}
-                  </Button>
-                </>
-              }
-            />
-          )}
-        </ViewWrapper>
-      </SplitView>
-      {dialog?.type === "add" && (
-        <CreateTemplateTableDialog
-          templates={templates}
-          setTemplates={setTemplates}
-          onCancel={closeDialog}
-          open
-        />
-      )}
-      {dialog?.type === "edit" && dialogTemplate && (
-        <UpdateTemplateTableDialog
-          defaultValues={dialogTemplate}
-          templates={templates}
-          setTemplates={setTemplates}
-          onCancel={closeDialog}
-          open
-        />
-      )}
-      {dialog?.type === "delete" && dialogTemplate && (
-        <ConfirmationDialog
-          titleIcon={DeleteIcon}
-          alert="warning"
-          onConfirm={handleDelete}
-          onCancel={closeDialog}
-          open
-        >
-          {t("study.tableMode.dialog.delete.text", {
-            name: dialogTemplate.name,
-          })}
-        </ConfirmationDialog>
-      )}
-    </>
+    <ListView
+      list={templates.map((tp) => ({
+        id: tp.name,
+        label: tp.name,
+        linkOptions: linkOptions({
+          to: "/studies/$studyId/explore/tablemode/$tableModeId",
+          params: { studyId: study.id, tableModeId: tp.name },
+        }),
+      }))}
+      renderPanel={ViewWrapper}
+      renderEmptyPanel={() => <EmptyView title={t("study.tableMode.empty")} />}
+      actions={
+        <Button startIcon={<AddIcon />} variant="contained" onClick={handleAdd}>
+          Add
+        </Button>
+      }
+    />
   );
 }

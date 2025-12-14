@@ -57,7 +57,7 @@ function ConfigurationLayout() {
             to: "/studies/$studyId/explore/configuration/adequacy-patch",
             params: { studyId: study.id },
           }),
-          id: "adequacy-patch" as const,
+          noWrapper: true,
         },
         {
           label: "Advanced Parameters",
@@ -79,14 +79,11 @@ function ConfigurationLayout() {
             to: "/studies/$studyId/explore/configuration/geo-trimming",
             params: { studyId: study.id },
           }),
-          id: "geographic-trimming" as const,
+          noWrapper: true,
         },
       ].filter(Boolean)}
-      renderPanel={({ children }, tabId) => {
-        if (tabId === "adequacy-patch" || tabId === "geographic-trimming") {
-          return children;
-        }
-        return <ViewWrapper>{children}</ViewWrapper>;
+      renderPanel={({ children }, { noWrapper }) => {
+        return noWrapper ? children : <ViewWrapper>{children}</ViewWrapper>;
       }}
     />
   );

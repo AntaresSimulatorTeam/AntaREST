@@ -17,25 +17,30 @@ import ListFE from "@/components/fieldEditors/ListFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { TABLE_MODE_TYPES } from "@/services/api/studies/tableMode/constants";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 import { validateArray } from "@/utils/validation/array";
 import { validateString } from "@/utils/validation/string";
+import { useNavigate } from "@tanstack/react-router";
 import startCase from "lodash/startCase";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { getTableColumnsForType, type TableTemplate } from "../../-utils";
+import useStudy from "../../../../-hooks/useStudy";
 
 export interface TableTemplateFormDialogProps
-  extends Pick<
-    FormDialogProps<TableTemplate>,
-    "open" | "title" | "titleIcon" | "onSubmit" | "onCancel" | "config"
-  > {
+  extends Pick<FormDialogProps<TableTemplate>, "title" | "titleIcon" | "onCancel"> {
+  defaultValues: TableTemplate;
   templates: TableTemplate[];
 }
 
 function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
-  const { open, title, titleIcon, config, onSubmit, onCancel, templates } = props;
+  const { title, titleIcon, defaultValues, onCancel, templates } = props;
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const study = useStudy();
+  const isUpdateDialog = !!defaultValues.name;
 
   const existingTables = useMemo(() => templates.map(({ name }) => name), [templates]);
 
@@ -49,16 +54,43 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
   );
 
   ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSubmit = ({ values }: SubmitHandlerPlus<TableTemplate>) => {
+    storage.setItem(StorageKey.StudiesModelTableModeTemplates, (prev) => {
+      const currentTemplates = prev || [];
+
+      return isUpdateDialog
+        ? currentTemplates.map((template) =>
+            template.name === defaultValues.name ? values : template,
+          )
+        : [...currentTemplates, values];
+    });
+  };
+
+  const handleSubmitSuccessful = ({ values }: SubmitHandlerPlus<TableTemplate>) => {
+    navigate({
+      to: "/studies/$studyId/explore/tablemode/$tableModeId",
+      params: { studyId: study.id, tableModeId: values.name },
+      replace: isUpdateDialog ? true : false,
+    });
+
+    onCancel();
+  };
+
+  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
     <FormDialog
-      open={open}
+      open
       title={title}
       titleIcon={titleIcon}
-      config={config}
-      onSubmit={onSubmit}
+      config={{ defaultValues }}
+      onSubmit={handleSubmit}
+      onSubmitSuccessful={handleSubmitSuccessful}
       onCancel={onCancel}
     >
       {({ control, setValue, watch }) => (
@@ -71,7 +103,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             rules={{
               validate: validateString({
                 existingValues: existingTables,
-                editedValue: config?.defaultValues?.name,
+                editedValue: defaultValues?.name,
               }),
             }}
           />

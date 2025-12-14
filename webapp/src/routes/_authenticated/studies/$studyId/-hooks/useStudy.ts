@@ -14,10 +14,10 @@
 
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudy } from "@/redux/selectors";
-import { Route as StudyHomeLayout } from "../route";
+import { useParams } from "@tanstack/react-router";
 
 function useStudy() {
-  const { studyId } = StudyHomeLayout.useParams();
+  const { studyId } = useParams({ from: "/_authenticated/studies/$studyId" });
   const study = useAppSelector((state) => getStudy(state, studyId));
 
   if (!study) {

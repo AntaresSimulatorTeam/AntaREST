@@ -16,13 +16,20 @@ import type { BasicDialogProps } from "../BasicDialog";
 import type { ConfirmationDialogProps } from "../ConfirmationDialog";
 
 export interface DialogProviderValue {
+  openDialog: (
+    options:
+      | (Omit<BasicDialogProps, "open" | "children" | "content"> & {
+          content: BasicDialogProps["children"];
+        })
+      | ((props: { onClose: VoidFunction }) => React.ReactElement),
+  ) => void;
   confirm: (
     options:
       | (Omit<
           ConfirmationDialogProps,
-          "open" | "onConfirm" | "onCancel" | "children" | "content"
+          "open" | "onConfirm" | "onCancel" | "onClose" | "children" | "content"
         > & {
-          content?: React.ReactNode;
+          content: ConfirmationDialogProps["children"];
         })
       | string,
   ) => Promise<boolean>;
@@ -31,5 +38,6 @@ export interface DialogProviderValue {
 type DialogPropsOmitted = "open" | "type";
 
 export type SetDialogOptions =
+  | { type: "raw"; element: React.ReactElement }
   | ({ type: "basic" } & Omit<BasicDialogProps, DialogPropsOmitted>)
   | ({ type: "confirmation" } & Omit<ConfirmationDialogProps, DialogPropsOmitted>);
