@@ -14,7 +14,7 @@
 
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import { useTranslation } from "react-i18next";
-import type { MonteCarloMode } from "../../utils";
+import type { MonteCarloMode } from "../../../-utils";
 
 interface MonteCarloModeSelectorProps {
   value: MonteCarloMode;

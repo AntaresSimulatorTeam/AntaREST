@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { Frequency } from "@/routes/-App/Singlestudy/explore/Results/utils";
+import type { Frequency } from "@/routes/_authenticated/studies/$studyId/explore/outputs/-utils";
 
 export interface ThermalClusterVariablesDTO {
   name: string;

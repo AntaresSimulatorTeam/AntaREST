@@ -46,7 +46,7 @@ import type { Area, LinkElement } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { buildVariableViewParams, type Frequency, type OutputItemType } from "../utils";
+import { buildVariableViewParams, type Frequency, type OutputItemType } from "../-utils";
 
 interface UseVariablePerVariableProps {
   studyId: string;

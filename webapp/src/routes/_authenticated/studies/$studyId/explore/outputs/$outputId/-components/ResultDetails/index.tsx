@@ -27,14 +27,8 @@ import type { Area, LinkElement, MatrixIndex, StudyMetadata } from "@/types/type
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
-import usePromise from "../../../../../../hooks/usePromise";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getAreas, getLinks } from "../../../../../../redux/selectors";
-import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
-import { getStudyData } from "../../../../../../services/api/study";
-import { isSearchMatching } from "../../../../../../utils/stringUtils";
-import useStudyOutput from "../hooks/useStudyOutput";
-import { useVariablePerVariable } from "../hooks/useVariablePerVariable";
+import useStudyOutput from "../../-hooks/useStudyOutput";
+import { useVariablePerVariable } from "../../-hooks/useVariablePerVariable";
 import {
   createPath,
   SYNTHESIS_ITEMS,
@@ -42,7 +36,13 @@ import {
   type Frequency,
   type MonteCarloMode,
   type OutputItemType,
-} from "../utils";
+} from "../../-utils";
+import usePromise from "../../../../../../../../../hooks/usePromise";
+import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
+import { getAreas, getLinks } from "../../../../../../../../../redux/selectors";
+import { getStudyMatrixIndex } from "../../../../../../../../../services/api/matrix";
+import { getStudyData } from "../../../../../../../../../services/api/study";
+import { isSearchMatching } from "../../../../../../../../../utils/stringUtils";
 import ResultItemSelector from "./ResultItemSelector";
 import ResultMatrixViewer from "./ResultMatrixViewer";
 import SynthesisViewer, { type SynthesisData } from "./SynthesisViewer";

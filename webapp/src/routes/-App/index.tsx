@@ -13,6 +13,8 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import Results from "../_authenticated/studies/$studyId/explore/outputs";
+import ResultDetails from "../_authenticated/studies/$studyId/explore/outputs/$outputId/-components/ResultDetails";
 import Modelization from "./Singlestudy/explore/Modelization";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
@@ -39,8 +41,6 @@ import Links from "./Singlestudy/explore/Modelization/Links";
 import Map from "./Singlestudy/explore/Modelization/Map";
 import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
 import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
-import Results from "./Singlestudy/explore/Results";
-import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
 import Xpansion from "./Singlestudy/explore/Xpansion";
 import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
 import Capacities from "./Singlestudy/explore/Xpansion/Capacities";

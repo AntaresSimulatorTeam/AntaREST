@@ -33,7 +33,7 @@ import GridOffIcon from "@mui/icons-material/GridOff";
 import { Skeleton } from "@mui/material";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import type { OutputItemType } from "../../../utils";
+import type { OutputItemType } from "../../../../-utils";
 import ProcessButton from "./ProcessButton";
 
 interface VariableMatrixProps {
