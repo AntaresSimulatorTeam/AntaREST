@@ -87,7 +87,7 @@ class PostgresqlLock(DistributedLock):
         LockNotAcquired: If blocking=False and the lock is already held
     """
 
-    def __init__(self, session: Session, lock_id: int, blocking: bool = False) -> None:
+    def __init__(self, session: Session, *, lock_id: int, blocking: bool = False) -> None:
         self._session = session
         self._lock_id = lock_id
         self._blocking = blocking

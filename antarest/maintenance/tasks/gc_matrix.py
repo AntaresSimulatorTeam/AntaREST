@@ -19,7 +19,7 @@ This task deletes unused matrices from the matrix store based on retention time.
 import logging
 import time
 from enum import StrEnum
-from typing import TYPE_CHECKING, Optional, Set
+from typing import Optional, Set
 
 from pydantic import BaseModel
 
@@ -27,9 +27,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.service import MatrixService
-
-if TYPE_CHECKING:
-    from antarest.maintenance.context import MaintenanceContext
 
 
 class TaskStatus(StrEnum):
@@ -152,36 +149,4 @@ def clean_matrices(
         deleted_count=deleted_count,
         duration_seconds=duration,
         dry_run=dry_run,
-    )
-
-
-def clean_matrices_task(ctx: "Optional[MaintenanceContext]" = None) -> GCTaskResult:
-    """
-    Celery task wrapper for matrix garbage collection.
-
-    This function extracts the required arguments from the MaintenanceContext
-    and delegates to the clean_matrices function.
-
-    Args:
-        ctx: Optional context for dependency injection (used in tests).
-             If None, uses the singleton instance.
-
-    Returns:
-        GCTaskResult with execution stats
-
-    Raises:
-        RuntimeError: If MaintenanceContext config is not initialized
-    """
-    # Import here to avoid circular import
-    from antarest.maintenance.context import MaintenanceContext
-
-    if ctx is None:
-        ctx = MaintenanceContext.get_instance()
-    if ctx.config is None:
-        raise RuntimeError("MaintenanceContext config is not initialized")
-
-    return clean_matrices(
-        matrix_service=ctx.matrix_service,
-        dry_run=ctx.config.storage.matrix_gc_dry_run,
-        retention_time=ctx.config.storage.matrix_gc_retention_time,
     )

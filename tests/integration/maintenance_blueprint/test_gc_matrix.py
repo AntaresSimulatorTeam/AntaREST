@@ -12,11 +12,12 @@
 
 """Integration tests for the matrix garbage collection task."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pandas as pd
 
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.gc_matrix import (
     GCTaskResult,
     TaskStatus,
@@ -43,7 +44,7 @@ class TestCleanMatricesIntegration:
             # Artificially age the matrix by modifying its created_at
             matrix_obj = matrix_service.repo.get(matrix_id)
             assert matrix_obj is not None
-            matrix_obj.created_at = datetime.utcnow() - timedelta(hours=2)
+            matrix_obj.created_at = current_time() - timedelta(hours=2)
             db.session.commit()
 
         # Run GC with explicit arguments (no context needed)
@@ -99,7 +100,7 @@ class TestCleanMatricesIntegration:
             # Age the matrix
             matrix_obj = matrix_service.repo.get(matrix_id)
             assert matrix_obj is not None
-            matrix_obj.created_at = datetime.utcnow() - timedelta(hours=2)
+            matrix_obj.created_at = current_time() - timedelta(hours=2)
             db.session.commit()
 
         # Run GC with dry_run=True

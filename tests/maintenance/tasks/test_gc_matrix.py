@@ -16,7 +16,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.maintenance.tasks.gc_matrix import _delete_unused_saved_matrices, clean_matrices_task
+from antarest.maintenance.tasks.gc_matrix import _delete_unused_saved_matrices
+from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
 
 
 class TestDeleteUnusedSavedMatrices:
@@ -69,8 +70,6 @@ class TestCleanMatricesTaskWiring:
 
     def test_raises_when_config_not_initialized(self):
         """Test that clean_matrices_task raises when config is None."""
-        mock_ctx = Mock()
-        mock_ctx.config = None
 
         with pytest.raises(RuntimeError, match="MaintenanceContext config is not initialized"):
-            clean_matrices_task(ctx=mock_ctx)
+            clean_matrices_task()
