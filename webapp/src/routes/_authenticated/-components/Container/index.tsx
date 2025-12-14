@@ -163,12 +163,20 @@ function Container({ children }: Props) {
               />
             )}
             <FavoritesMenu />
-            {topMenuItems.map(SidebarItem)}
+            {topMenuItems.map((item, index) => (
+              <SidebarItem key={index} {...item} />
+            ))}
           </List>
-          <List>{subMenuItems.map(SidebarItem)}</List>
+          <List>
+            {subMenuItems.map((item, index) => (
+              <SidebarItem key={index} {...item} />
+            ))}
+          </List>
           <Divider />
           <List>
-            {bottomMenuItems.map(SidebarItem)}
+            {bottomMenuItems.map((item, index) => (
+              <SidebarItem key={index} {...item} />
+            ))}
             {isWebMode && (
               <SidebarItem
                 label={t("global.signOut")}

@@ -17,6 +17,20 @@ import App from "./App";
 import { initConfig } from "./services/config";
 import storage, { StorageKey } from "./services/utils/localStorage";
 
+if (process.env.NODE_ENV === "development") {
+  // Remove message from Emotion library about unsafe usage in SSR
+  const originalError = console.error;
+  console.error = (message, ...rest) => {
+    if (
+      typeof message === "string" &&
+      message.includes("unsafe when doing server-side rendering")
+    ) {
+      return;
+    }
+    originalError(message, ...rest);
+  };
+}
+
 initConfig().then((config) => {
   const versionInstalled = storage.getItem(StorageKey.Version);
   storage.setItem(StorageKey.Version, config.versionInfo.gitcommit);
