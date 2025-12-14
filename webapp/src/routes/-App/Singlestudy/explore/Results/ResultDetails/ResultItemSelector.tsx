@@ -16,7 +16,7 @@ import ButtonBack from "@/components/ButtonBack";
 import PropertiesView from "@/components/PropertiesView";
 import { Box, Tab, Tabs } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import ListElement from "../../../../../../../components/ListElement";
+import ListElement from "../../../../../../components/ListElement";
 import type { PartialStudyOutput } from "../hooks/useStudyOutput";
 import type { OutputItemType } from "../utils";
 

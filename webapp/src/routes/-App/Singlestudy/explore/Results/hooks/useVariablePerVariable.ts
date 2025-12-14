@@ -33,19 +33,19 @@
  * primarily consumes mcInd for variable-per-variable features.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromise from "@/hooks/usePromise";
 import { useTaskMonitor } from "@/hooks/useTaskMonitor";
 import {
+  getTimeIndex,
   getVariablesList,
   getVariableViewData,
   materializeVariableView,
-  getTimeIndex,
 } from "@/services/api/studies/outputs/variableViews";
 import type { Area, LinkElement } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { buildVariableViewParams, type Frequency, type OutputItemType } from "../utils";
 
 interface UseVariablePerVariableProps {

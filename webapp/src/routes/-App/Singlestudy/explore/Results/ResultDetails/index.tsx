@@ -33,11 +33,8 @@ import { getAreas, getLinks } from "../../../../../../redux/selectors";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
 import { getStudyData } from "../../../../../../services/api/study";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
-import ResultItemSelector from "./components/ResultItemSelector";
-import ResultMatrixViewer from "./components/ResultMatrixViewer";
-import SynthesisViewer, { type SynthesisData } from "./components/SynthesisViewer";
-import useStudyOutput from "./hooks/useStudyOutput";
-import { useVariablePerVariable } from "./hooks/useVariablePerVariable";
+import useStudyOutput from "../hooks/useStudyOutput";
+import { useVariablePerVariable } from "../hooks/useVariablePerVariable";
 import {
   createPath,
   SYNTHESIS_ITEMS,
@@ -45,7 +42,10 @@ import {
   type Frequency,
   type MonteCarloMode,
   type OutputItemType,
-} from "./utils";
+} from "../utils";
+import ResultItemSelector from "./ResultItemSelector";
+import ResultMatrixViewer from "./ResultMatrixViewer";
+import SynthesisViewer, { type SynthesisData } from "./SynthesisViewer";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
