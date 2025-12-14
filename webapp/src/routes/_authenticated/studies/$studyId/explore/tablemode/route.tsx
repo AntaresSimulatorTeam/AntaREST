@@ -33,7 +33,7 @@ import CreateTemplateTableDialog from "./-components/dialogs/CreateTemplateTable
 import UpdateTemplateTableDialog from "./-components/dialogs/UpdateTemplateTableDialog";
 import type { TableTemplate } from "./-utils";
 
-export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/tablemode/")({
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/tablemode")({
   component: TableModeList,
 });
 
