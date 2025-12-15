@@ -14,7 +14,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 from typing_extensions import override
@@ -76,10 +76,6 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def save_matrices(self, nodes: Sequence[MatrixNode]) -> list[str]:
-        pass
-
-    @abstractmethod
     def delete(self, node: MatrixNode) -> None:
         pass
 
@@ -126,11 +122,6 @@ class BaseMatrixUriMapper(MatrixUriMapper):
     @override
     def matrix_exists(self, uri: str) -> bool:
         return self._matrix_service.exists(extract_matrix_id(uri))
-
-    @override
-    def save_matrices(self, nodes: Sequence[MatrixNode]) -> list[str]:
-        matrix_ids = self._matrix_service.create_batch((node.parse_as_dataframe() for node in nodes))
-        return [build_matrix_uri(matrix_id) for matrix_id in matrix_ids]
 
     @override
     def delete(self, node: MatrixNode, url: Optional[List[str]] = None) -> None:
