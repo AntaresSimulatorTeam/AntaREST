@@ -18,7 +18,7 @@ from antarest.core.config import Config, RemoteWorkerConfig
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.remote.remote_executor import RemoteWorkerExecutor
-from antarest.core.tasks.model import TaskResult, TaskType
+from antarest.core.tasks.model import TaskResult
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
@@ -46,20 +46,17 @@ def test_remote_executor():
         )
         event_bus.push(result_event)
 
-    # TODO: weird, the event bus queue name is not the "task queue"
-    event_bus.add_queue_consumer(event_listener, TaskType.UNARCHIVE)
+    event_bus.add_queue_consumer(event_listener, "q1")
 
     task_result = None
 
     def start_task():
         nonlocal task_result
-        task_result = executor.execute_remote_task(
-            task_type=TaskType.UNARCHIVE, task_queue="q1", task_args={"src": "src", "dest": "dest"}
-        )
+        task_result = executor.execute_remote_task(task_queue="q1", task_args={"src": "src", "dest": "dest"})
 
     thread = Thread(target=start_task)
     thread.start()
-    thread.join()
+    thread.join(timeout=10)
     assert len(events) == 1
     assert task_result == TaskResult(success=True, message="OK")
 
@@ -71,6 +68,4 @@ def test_remote_executor_should_reject_unknown_queue():
     executor = RemoteWorkerExecutor(event_bus=Mock(), config=config)
 
     with pytest.raises(ValueError):
-        executor.execute_remote_task(
-            task_type=TaskType.UNARCHIVE, task_queue="q3", task_args={"src": "src", "dest": "dest"}
-        )
+        executor.execute_remote_task(task_queue="q3", task_args={"src": "src", "dest": "dest"})

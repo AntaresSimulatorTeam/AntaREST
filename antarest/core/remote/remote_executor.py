@@ -21,7 +21,7 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.tasks.model import TaskResult, TaskType
+from antarest.core.tasks.model import TaskResult
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,6 @@ class IRemoteExecutor(ABC):
     @abstractmethod
     def execute_remote_task(
         self,
-        task_type: TaskType,
         task_queue: str,
         task_args: dict[str, int | float | bool | str],
     ) -> TaskResult:
@@ -62,7 +61,6 @@ class RemoteWorkerExecutor(IRemoteExecutor):
     @override
     def execute_remote_task(
         self,
-        task_type: TaskType,
         task_queue: str,
         task_args: dict[str, int | float | bool | str],
     ) -> TaskResult:
@@ -88,18 +86,20 @@ class RemoteWorkerExecutor(IRemoteExecutor):
             [EventType.WORKER_TASK_ENDED],
         )
         try:
+            # Note that the event bus queue differs from the task queue.
+            #
             self.event_bus.queue(
                 Event(
                     type=EventType.WORKER_TASK,
                     payload=WorkerTaskCommand(
                         task_id=remote_task_id,
-                        task_type=task_type,
+                        task_type=task_queue,
                         task_args=task_args,
                     ),
                     # Use `NONE` for internal events
                     permissions=PermissionInfo(public_mode=PublicMode.NONE),
                 ),
-                task_type,
+                task_queue,
             )
             while not task_result_wrapper:
                 logger.info("💤 Sleeping 1 second...")

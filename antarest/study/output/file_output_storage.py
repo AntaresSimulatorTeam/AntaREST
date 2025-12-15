@@ -23,7 +23,6 @@ from typing_extensions import override
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
-from antarest.core.tasks.model import TaskType
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.study.business.output.aggregator_management import AggregatorManager
@@ -288,7 +287,6 @@ class FileOutputStorage(IOutputStorage):
         dest = study_outputs.outputs_path / output_id
         src = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
         self._remote_executor.execute_remote_task(
-            TaskType.UNARCHIVE,
             f"unarchive_{study_outputs.study_workspace}",
             ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
         )
