@@ -949,14 +949,8 @@ class VariantStudyService(AbstractStorageService):
 
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
         output_src_path = path_study / "output"
-        self.raw_study_service.export_study_flat_utils(
-            snapshot_path,
-            dst_path,
-            outputs,
-            output_list_filter,
-            denormalize,
-            output_src_path,
-            is_managed(metadata),
+        self.raw_study_service.export_study_to_flat_directory(
+            snapshot_path, dst_path, outputs, output_list_filter, denormalize, output_src_path, is_managed(metadata)
         )
 
     @override

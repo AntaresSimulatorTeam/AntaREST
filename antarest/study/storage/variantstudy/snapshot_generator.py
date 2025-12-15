@@ -160,11 +160,11 @@ class SnapshotGenerator:
     def _export_ref_study(self, snapshot_dir: Path, ref_study: Study) -> None:
         if isinstance(ref_study, VariantStudy):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-            self.raw_study_service.export_study_flat_utils(
+            self.raw_study_service.export_study_to_flat_directory(
                 ref_study.snapshot_dir,
                 snapshot_dir,
-                denormalize=False,  # de-normalization is done at the end
-                outputs=False,  # do NOT export outputs
+                outputs=False,
+                denormalize=False,
                 is_study_managed=is_managed(ref_study),
             )
         elif isinstance(ref_study, RawStudy):

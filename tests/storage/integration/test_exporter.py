@@ -151,12 +151,8 @@ def test_export_flat(
     with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=path_studies)
 
-    raw_study_service.export_study_flat_utils(
-        path_studies / "STA-mini",
-        export_path / "STA-mini-export",
-        outputs,
-        output_list,
-        denormalize=denormalize,
+    raw_study_service.export_study_to_flat_directory(
+        path_studies / "STA-mini", export_path / "STA-mini-export", outputs, output_list, denormalize=denormalize
     )
 
     export_output_path = export_path / "STA-mini-export" / "output"

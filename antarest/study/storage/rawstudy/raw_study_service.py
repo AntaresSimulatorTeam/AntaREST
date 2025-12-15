@@ -402,7 +402,7 @@ class RawStudyService(AbstractStorageService):
                 else:
                     raise TypeError(f"unarchive requires a RawStudy, got {type(metadata)}")
 
-            self.export_study_flat_utils(
+            self.export_study_to_flat_directory(
                 Path(metadata.path),
                 dst_path,
                 outputs,
@@ -532,11 +532,11 @@ class RawStudyService(AbstractStorageService):
             assert link_content is not None
             matrices_mapping.setdefault(extract_matrix_id(link_content), []).append(node)
 
-        for matrix_id, dataframe in self._matrix_service.yield_matrices(list(matrices_mapping.keys())):
-            for node in matrices_mapping[matrix_id]:
-                node.write_dataframe(dataframe)
+        for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping.keys())):
+            for node in matrices_mapping[matrix_content.id]:
+                node.write_dataframe(matrix_content.data)
 
-    def export_study_flat_utils(
+    def export_study_to_flat_directory(
         self,
         study_dir: Path,
         dest: Path,

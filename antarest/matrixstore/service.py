@@ -42,6 +42,7 @@ from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFoun
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
     Matrix,
+    MatrixContent,
     MatrixDataSet,
     MatrixDataSetDTO,
     MatrixDataSetRelation,
@@ -125,7 +126,10 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[MatrixContent]:
+        """
+        Returns an iterator over MatrixContent objects containing the matrix id and the dataframe it represents.
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -197,9 +201,9 @@ class SimpleMatrixService(ISimpleMatrixService):
         raise NotImplementedError()
 
     @override
-    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[MatrixContent]:
         for matrix_id in matrix_ids:
-            yield matrix_id, self.get(matrix_id)
+            yield MatrixContent(id=matrix_id, data=self.get(matrix_id))
 
     @override
     def exists(self, matrix_id: str) -> bool:
@@ -507,19 +511,19 @@ class MatrixService(ISimpleMatrixService):
         return [_matrix_to_dto(m) for m in matrices]
 
     @override
-    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[MatrixContent]:
         # First yield predefined matrices
         db_matrix_ids = []
         for matrix_id in matrix_ids:
             if matrix_id in self._predefined_matrices:
-                yield matrix_id, self._predefined_matrices[matrix_id]()
+                yield MatrixContent(id=matrix_id, data=self._predefined_matrices[matrix_id]())
             else:
                 db_matrix_ids.append(matrix_id)
         # Then fetch the other ones in DB
         if db_matrix_ids:
             matrices = self.repo.get_batch(db_matrix_ids)
             for matrix in matrices:
-                yield matrix.id, self.matrix_content_repository.get(matrix.id, matrix.version)
+                yield MatrixContent(id=matrix.id, data=self.matrix_content_repository.get(matrix.id, matrix.version))
 
     @override
     def exists(self, matrix_id: str) -> bool:

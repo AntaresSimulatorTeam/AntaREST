@@ -16,7 +16,7 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
-from antarest.matrixstore.model import MatrixMetadataDTO, MatrixReferencesDTO
+from antarest.matrixstore.model import MatrixContent, MatrixMetadataDTO, MatrixReferencesDTO
 from antarest.matrixstore.repository import compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
@@ -70,9 +70,9 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         raise NotImplementedError()
 
     @override
-    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[MatrixContent]:
         for matrix_id in matrix_ids:
-            yield matrix_id, self.get(matrix_id)
+            yield MatrixContent(id=matrix_id, data=self.get(matrix_id))
 
     @override
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
