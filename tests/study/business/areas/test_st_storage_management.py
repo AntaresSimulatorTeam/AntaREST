@@ -16,7 +16,12 @@ import pytest
 from antarest.core.exceptions import ChildNotFoundError, STStorageNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.st_storage_management import STStorageManager
-from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup, STStorageUpdate
+from antarest.study.business.model.sts_model import (
+    STStorageAdditionalConstraintCreation,
+    STStorageCreation,
+    STStorageGroup,
+    STStorageUpdate,
+)
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -233,3 +238,32 @@ class TestSTStorageManager:
         assert not st_storage_output.initial_level_optim
         assert st_storage_output.injection_nominal_capacity == 2000.0
         assert st_storage_output.efficiency == 0.94  # Asserts this field wasn't modified as we didn't ask to
+
+
+def test_delete_storages_from_sc_builder(manager: STStorageManager, study_interface: StudyInterface) -> None:
+    # Create 3 short-term storage additional constraints
+    c1 = STStorageAdditionalConstraintCreation(name="c1")
+    c2 = STStorageAdditionalConstraintCreation(name="c2")
+    c3 = STStorageAdditionalConstraintCreation(name="c3")
+    manager.create_additional_constraints(study_interface, "fr", "storage1", [c1])
+    manager.create_additional_constraints(study_interface, "fr", "storage2", [c2])
+    manager.create_additional_constraints(study_interface, "de", "storagede", [c3])
+    # Fill the scenario-builder
+    file_study = study_interface.get_files()
+    scenario_builder = {
+        "Default Ruleset": {
+            # Short-term storage part
+            "sts,fr,1,storage1": 4,
+            "sts,fr,1,storage2": 3,
+            "sts,de,1,storagede": 2,
+            # Additional constraints part
+            "sta,fr,1,storage1,c1": 11,
+            "sta,fr,1,storage2,c2": 12,
+            "sta,fr,1,storagede,c3": 13,
+        }
+    }
+    file_study.tree.save(scenario_builder, ["settings", "scenariobuilder"])
+    # Remove the additional constraint `c3`. Its line only should disappear
+    # Remove the sts `storagede`. Its line only should disappear
+    # Remove the sts `storage1`. 2 lines should disappear, his one and the one concerning its constraint
+    # Remove the area `fr`. 2 lines should disappear as they concern objects inside area `fr`.
