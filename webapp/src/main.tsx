@@ -12,10 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import { QueryClient } from "@tanstack/react-query";
+import { createRouter } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
-import App from "./App";
+import App from "./app/App";
+import SimpleLoader from "./components/loaders/SimpleLoader";
+import EmptyView from "./components/page/EmptyView";
+import store from "./redux/store";
+import { routeTree } from "./routeTree.gen";
 import { initConfig } from "./services/config";
-import storage, { StorageKey } from "./services/utils/localStorage";
 
 if (process.env.NODE_ENV === "development") {
   // Remove message from Emotion library about unsafe usage in SSR
@@ -31,18 +36,36 @@ if (process.env.NODE_ENV === "development") {
   };
 }
 
-initConfig().then((config) => {
-  const versionInstalled = storage.getItem(StorageKey.Version);
-  storage.setItem(StorageKey.Version, config.versionInfo.gitcommit);
-  if (versionInstalled !== config.versionInfo.gitcommit) {
-    window.location.reload();
-  }
+const queryClient = new QueryClient();
 
+const router = createRouter({
+  routeTree,
+  context: {
+    auth: {
+      isAuthenticated: false,
+      isLoading: true,
+      isRejected: false,
+    },
+    store,
+    queryClient,
+  },
+  defaultPendingComponent: SimpleLoader,
+  defaultErrorComponent: ({ error }) => <EmptyView title={error.toString()} />,
+});
+
+// Register the router instance for type safety
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
+
+initConfig().then(() => {
   const rootContainer = document.getElementById("root");
 
   if (!rootContainer) {
     throw new Error("Root container not found");
   }
 
-  createRoot(rootContainer).render(<App />);
+  createRoot(rootContainer).render(<App queryClient={queryClient} router={router} />);
 });

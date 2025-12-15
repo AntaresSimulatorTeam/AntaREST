@@ -79,6 +79,7 @@ function TableModeLayout() {
 
   return (
     <ListView
+      splitId="tablemode"
       list={templates.map((tp) => ({
         id: tp.name,
         label: tp.name,
@@ -91,7 +92,7 @@ function TableModeLayout() {
       renderEmptyPanel={() => <EmptyView title={t("study.tableMode.empty")} />}
       actions={
         <Button startIcon={<AddIcon />} variant="contained" onClick={handleAdd}>
-          Add
+          {t("global.add")}
         </Button>
       }
     />

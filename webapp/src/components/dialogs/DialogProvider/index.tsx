@@ -15,7 +15,7 @@
 import BasicDialog from "@/components/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import useOrderedState from "@/hooks/useOrderedState";
-import { useCallback } from "react";
+import { Fragment, useCallback } from "react";
 import DialogContext from "./DialogContext";
 import type { DialogProviderValue, SetDialogOptions } from "./types";
 
@@ -30,7 +30,7 @@ function getDialogProps<T extends SetDialogOptions>(options: T) {
 
 function getDialog(options: SetDialogOptions, key: string) {
   if (options.type === "raw") {
-    return options.element;
+    return <Fragment key={key}>{options.element}</Fragment>;
   }
 
   if (options.type === "confirmation") {

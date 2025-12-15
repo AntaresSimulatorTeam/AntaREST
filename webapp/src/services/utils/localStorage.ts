@@ -22,7 +22,6 @@ import packages from "../../../package.json";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
 
 export const StorageKey = {
-  Version: "version",
   AuthUser: "authUser",
   // Studies
   StudiesFavorites: "studies.favorites",
@@ -39,10 +38,9 @@ export const StorageKey = {
 type Key = (typeof StorageKey)[keyof typeof StorageKey] | string;
 
 const APP_NAME = packages.name;
-const SHARED_KEYS = [StorageKey.Version, StorageKey.AuthUser];
+const SHARED_KEYS = [StorageKey.AuthUser];
 
 interface TypeFromKey {
-  [StorageKey.Version]: string;
   [StorageKey.AuthUser]: UserInfo;
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;

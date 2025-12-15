@@ -12,21 +12,14 @@
  * This file is part of the Antares project.
  */
 
-//! Redux store must be imported before any redux ducks
-import store from "./redux/store";
-
-import { RouterProvider } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { Provider } from "react-redux";
-import usePromise from "./hooks/usePromise";
-import useSafeMemo from "./hooks/useSafeMemo";
-import { login } from "./redux/ducks/auth";
-import useAppDispatch from "./redux/hooks/useAppDispatch";
-import useAppSelector from "./redux/hooks/useAppSelector";
-import { getAuthUser } from "./redux/selectors";
-import router from "./router";
-import { needAuth } from "./services/api/auth";
-import storage, { StorageKey } from "./services/utils/localStorage";
+import usePromise from "@/hooks/usePromise";
+import useSafeMemo from "@/hooks/useSafeMemo";
+import { login } from "@/redux/ducks/auth";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
+import { needAuth } from "@/services/api/auth";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 
 function useAuth() {
   const user = useAppSelector(getAuthUser);
@@ -60,25 +53,7 @@ function useAuth() {
     [data, isLoading, isRejected],
   );
 
-  useEffect(() => {
-    // cf. https://github.com/TanStack/router/issues/1604#issuecomment-2118648159
-    router.invalidate();
-  }, [auth]);
-
   return auth;
 }
 
-function InnerApp() {
-  const auth = useAuth();
-  return <RouterProvider router={router} context={{ auth }} />;
-}
-
-function App() {
-  return (
-    <Provider store={store}>
-      <InnerApp />
-    </Provider>
-  );
-}
-
-export default App;
+export default useAuth;

@@ -13,10 +13,15 @@
  */
 
 import BackButton from "@/components/buttons/BackButton";
-import router from "@/router";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
-import { Outlet, useMatchRoute, type ToOptions } from "@tanstack/react-router";
+import {
+  Outlet,
+  useMatchRoute,
+  useRouter,
+  type RegisteredRouter,
+  type ToOptions,
+} from "@tanstack/react-router";
 import { useState } from "react";
 import RouterLink from "../router/RouterLink";
 
@@ -59,7 +64,7 @@ function isRouteTabs(tabs: RouteTab[] | ContentTab[]): tabs is RouteTab[] {
   return tabs.length > 0 && isRouteTab(tabs[0]);
 }
 
-function getRouteTabValue(tab: RouteTab) {
+function getRouteTabValue(tab: RouteTab, router: RegisteredRouter) {
   return tab.id ?? router.buildLocation(tab.linkOptions).href;
 }
 
@@ -67,8 +72,8 @@ function getContentTabValue(tab: ContentTab, tabIndex: number) {
   return tab.id ?? tabIndex;
 }
 
-function getTabValue(tab: RouteTab | ContentTab, tabIndex: number) {
-  return isRouteTab(tab) ? getRouteTabValue(tab) : getContentTabValue(tab, tabIndex);
+function getTabValue(tab: RouteTab | ContentTab, tabIndex: number, router: RegisteredRouter) {
+  return isRouteTab(tab) ? getRouteTabValue(tab, router) : getContentTabValue(tab, tabIndex);
 }
 
 function TabsView<TTabs extends RouteTab[] | ContentTab[]>({
@@ -80,19 +85,21 @@ function TabsView<TTabs extends RouteTab[] | ContentTab[]>({
   disablePadding = false,
   disableGutters = false,
 }: TabsViewProps<TTabs>) {
+  const router = useRouter();
+  const matchRoute = useMatchRoute();
   const hasRouteTabs = isRouteTabs(tabs);
 
   const [activeContentTabValue, setActiveContentTabValue] = useState(() =>
-    tabs.length > 0 ? getTabValue(tabs[0], 0) : "",
+    tabs.length > 0 ? getTabValue(tabs[0], 0, router) : "",
   );
-
-  const matchRoute = useMatchRoute();
 
   const activeRouteTab = hasRouteTabs
     ? tabs.find((tab) => matchRoute({ ...tab.linkOptions, fuzzy: true }))
     : undefined;
 
-  const activeTabValue = activeRouteTab ? getRouteTabValue(activeRouteTab) : activeContentTabValue;
+  const activeTabValue = activeRouteTab
+    ? getRouteTabValue(activeRouteTab, router)
+    : activeContentTabValue;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -130,7 +137,7 @@ function TabsView<TTabs extends RouteTab[] | ContentTab[]>({
           {onBack && <BackButton onClick={onBack} />}
           <TabList onChange={handleChange}>
             {tabs.map((tab, index) => {
-              const value = getTabValue(tab, index);
+              const value = getTabValue(tab, index, router);
 
               return (
                 <Tab
@@ -151,7 +158,7 @@ function TabsView<TTabs extends RouteTab[] | ContentTab[]>({
           </TabList>
         </Box>
         {tabs.map((tab, index) => {
-          const value = getTabValue(tab, index);
+          const value = getTabValue(tab, index, router);
 
           return (
             <TabPanel

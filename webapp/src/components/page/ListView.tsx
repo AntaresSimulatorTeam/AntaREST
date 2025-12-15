@@ -13,7 +13,7 @@
  */
 
 import { isSearchMatching } from "@/utils/stringUtils";
-import { Box, List, ListItem, Tooltip } from "@mui/material";
+import { Box, List, ListItem, Tooltip, Typography } from "@mui/material";
 import { Outlet, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import SearchFE from "../fieldEditors/SearchFE";
@@ -31,6 +31,7 @@ interface RouteItem extends BaseItem {
 
 interface ListViewProps<TItems extends RouteItem[] = RouteItem[]> {
   list: TItems;
+  splitId: string;
   renderPanel?: (props: { children: React.ReactNode }, item: TItems[number]) => React.ReactNode;
   renderEmptyPanel?: () => React.ReactNode;
   actions?: React.ReactNode;
@@ -38,6 +39,7 @@ interface ListViewProps<TItems extends RouteItem[] = RouteItem[]> {
 
 function ListView<TItems extends RouteItem[]>({
   list,
+  splitId,
   renderPanel = ({ children }) => children,
   renderEmptyPanel,
   actions,
@@ -45,7 +47,7 @@ function ListView<TItems extends RouteItem[]>({
   const [search, setSearch] = useState("");
 
   return (
-    <SplitView splitId="test">
+    <SplitView splitId={splitId}>
       <Box>
         {actions && (
           <Box
@@ -76,7 +78,7 @@ function ListView<TItems extends RouteItem[]>({
               <Tooltip key={item.id} title={item.label} placement="right">
                 <ListItem disablePadding>
                   <RouterListItemButton {...item.linkOptions} activeProps={{ selected: true }}>
-                    {item.label}
+                    <Typography noWrap>{item.label}</Typography>
                   </RouterListItemButton>
                 </ListItem>
               </Tooltip>

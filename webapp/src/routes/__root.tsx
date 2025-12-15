@@ -13,12 +13,23 @@
  */
 
 import DialogProvider from "@/components/dialogs/DialogProvider";
-import type { RouterContext } from "@/router";
+import type store from "@/redux/store";
+import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { SnackbarProvider } from "notistack";
 import SnackbarCloseButton from "./_authenticated/-components/SnackbarCloseButton";
 import ThemeProvider from "./_authenticated/-components/ThemeProvider";
+
+interface RouterContext {
+  auth: {
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    isRejected: boolean;
+  };
+  store: typeof store;
+  queryClient: QueryClient;
+}
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
