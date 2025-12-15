@@ -156,7 +156,6 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
 
     # Check that a remote unarchive task was created
     remote_executor.execute_remote_task.assert_called_once_with(
-        TaskType.UNARCHIVE,
         "unarchive_other_workspace",
         ArchiveTaskArgs(
             src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
