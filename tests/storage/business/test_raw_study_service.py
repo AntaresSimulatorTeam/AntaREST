@@ -379,7 +379,6 @@ def test_copy_study(tmp_path: Path) -> None:
 
     config = Mock()
     study_factory.create_from_fs.return_value = FileStudy(config, study)
-    study_factory.create_from_config.return_value = study
 
     url_engine = Mock()
     url_engine.resolve.return_value = None, None, None
