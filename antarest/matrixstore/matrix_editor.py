@@ -14,7 +14,7 @@ import functools
 import operator
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel
@@ -37,16 +37,17 @@ class MatrixSlice(AntaresBaseModel):
     column_from: int
     column_to: int
 
-    class Config:
-        extra = "forbid"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "example": {
                 "column_from": 5,
                 "column_to": 8,
                 "row_from": 0,
                 "row_to": 8760,
             }
-        }
+        },
+    )
 
     @model_validator(mode="before")
     def check_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -113,9 +114,10 @@ class Operation(AntaresBaseModel):
     operation: str = Field(pattern=r"[=/*+-]|ABS")
     value: float
 
-    class Config:
-        extra = "forbid"
-        json_schema_extra = {"example": {"operation": "=", "value": 120.0}}
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"example": {"operation": "=", "value": 120.0}},
+    )
 
     # noinspection SpellCheckingInspection
     def compute(self, x: Any, use_coords: bool = False) -> Any:
@@ -160,16 +162,17 @@ class MatrixEditInstruction(AntaresBaseModel):
     coordinates: Optional[List[Tuple[int, int]]] = None
     operation: Operation
 
-    class Config:
-        extra = "forbid"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "example": {
                 "column_from": 5,
                 "column_to": 8,
                 "row_from": 0,
                 "row_to": 8760,
             }
-        }
+        },
+    )
 
     @model_validator(mode="before")
     def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:
