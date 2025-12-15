@@ -277,7 +277,7 @@ class FileOutputStorage(IOutputStorage):
             )
             remove_from_cache(self._cache, study_id)
         except Exception as e:
-            # TODO: raise here ?
+            # TODO: we should probably raise here
             logger.warning(
                 f"Failed to archive study {study_id} output {output_id}",
                 exc_info=e,
@@ -313,7 +313,7 @@ class FileOutputStorage(IOutputStorage):
                 unzip(outputs_path / output_id, outputs_path / f"{output_id}{ArchiveFormat.ZIP}")
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
-                # TODO: we should probably raise here
+                # TODO: we should probably raise here and remove partially unzipped files
                 logger.warning(
                     f"Failed to unarchive study {study_id} output {output_id}",
                     exc_info=e,
