@@ -74,13 +74,6 @@ def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc
     return new_column_order
 
 
-def _infer_time_id(df: pd.DataFrame, is_details: bool) -> List[int]:
-    if is_details:
-        return df[TIME_ID_COL].tolist()
-    else:
-        return list(range(1, len(df) + 1))
-
-
 def _filtered_files_listing(
     folders_to_check: List[Path],
     query_file: str,
@@ -307,7 +300,8 @@ class AggregatorManager:
 
             if self.transform_columns_headers:
                 # add a column for the time id
-                df[TIME_ID_COL] = _infer_time_id(df, is_details)
+                if not is_details:
+                    df[TIME_ID_COL] = range(1, len(df) + 1)
 
                 # Reorganize the columns
                 df = df.reindex(columns=pd.Index(new_column_order))
