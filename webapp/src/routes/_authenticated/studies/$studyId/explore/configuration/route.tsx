@@ -31,6 +31,7 @@ function ConfigurationLayout() {
     <TabsView
       tabs={[
         {
+          id: "general",
           label: "General",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/general",
@@ -38,6 +39,7 @@ function ConfigurationLayout() {
           }),
         },
         {
+          id: "ts-generation",
           label: "Time-Series Generation",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/ts-generation",
@@ -45,6 +47,7 @@ function ConfigurationLayout() {
           }),
         },
         {
+          id: "optimization",
           label: "Optimization",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/optimization",
@@ -52,6 +55,7 @@ function ConfigurationLayout() {
           }),
         },
         semver.gte(study.version, "8.3.0") && {
+          id: "adequacy-patch",
           label: "Adequacy Patch",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/adequacy-patch",
@@ -60,6 +64,7 @@ function ConfigurationLayout() {
           noWrapper: true,
         },
         {
+          id: "advanced-params",
           label: "Advanced Parameters",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/advanced-params",
@@ -67,6 +72,7 @@ function ConfigurationLayout() {
           }),
         },
         {
+          id: "eco-options",
           label: t("study.configuration.economicOpt"),
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/eco-options",
@@ -74,6 +80,7 @@ function ConfigurationLayout() {
           }),
         },
         {
+          id: "geo-trimming",
           label: t("study.configuration.geographicTrimming"),
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/geo-trimming",

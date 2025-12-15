@@ -32,6 +32,7 @@ function GeographicTrimmingLayout() {
     <TabsView
       tabs={[
         {
+          id: "areas",
           label: t("study.configuration.geographicTrimming.areas"),
           linkOptions: {
             to: "/studies/$studyId/explore/configuration/geo-trimming/areas",
@@ -39,6 +40,7 @@ function GeographicTrimmingLayout() {
           },
         },
         {
+          id: "links",
           label: t("study.configuration.geographicTrimming.links"),
           linkOptions: {
             to: "/studies/$studyId/explore/configuration/geo-trimming/links",
@@ -46,6 +48,7 @@ function GeographicTrimmingLayout() {
           },
         },
         {
+          id: "binding-constraints",
           label: t("study.configuration.geographicTrimming.bindingConstraints"),
           linkOptions: {
             to: "/studies/$studyId/explore/configuration/geo-trimming/binding-constraints",

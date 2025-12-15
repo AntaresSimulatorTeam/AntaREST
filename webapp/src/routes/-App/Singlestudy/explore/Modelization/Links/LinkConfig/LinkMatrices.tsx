@@ -53,6 +53,7 @@ function LinkMatrices({ study, area1, area2, isOldStudy }: Props) {
       disableGutters
       tabs={[
         {
+          id: "parameters",
           label: t("study.modelization.links.matrix.parameters"),
           content: (
             <Matrix
@@ -77,6 +78,7 @@ function LinkMatrices({ study, area1, area2, isOldStudy }: Props) {
           ),
         },
         {
+          id: "capacities",
           label: t("study.modelization.links.matrix.capacities"),
           content: (
             <SplitView splitId="link-transCapaDirect-transCapaIndirect" sizes={[50, 50]}>

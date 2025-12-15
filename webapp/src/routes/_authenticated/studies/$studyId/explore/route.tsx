@@ -60,6 +60,7 @@ function StudyExploreLayout() {
     <TabsView
       tabs={[
         {
+          id: "modelization",
           label: t("study.configuration"),
           linkOptions: {
             to: "/studies/$studyId/explore/configuration",
@@ -67,6 +68,7 @@ function StudyExploreLayout() {
           },
         },
         {
+          id: "tablemode",
           label: t("study.tableMode"),
           linkOptions: {
             to: "/studies/$studyId/explore/tablemode",
@@ -74,6 +76,7 @@ function StudyExploreLayout() {
           },
         },
         {
+          id: "outputs",
           label: t("study.results"),
           linkOptions: {
             to: "/studies/$studyId/explore/outputs",
@@ -81,6 +84,7 @@ function StudyExploreLayout() {
           },
         },
         {
+          id: "debug",
           label: t("study.debug"),
           linkOptions: {
             to: "/studies/$studyId/explore/debug",

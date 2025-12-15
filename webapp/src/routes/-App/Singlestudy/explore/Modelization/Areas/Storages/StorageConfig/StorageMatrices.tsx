@@ -40,6 +40,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
 
   const matricesAllVersions = [
     {
+      id: "modulation",
       label: t("study.modelization.storages.modulation"),
       content: (
         <SplitView splitId="storage-injectionModulation-withdrawalModulation" sizes={[50, 50]}>
@@ -69,6 +70,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       ),
     },
     {
+      id: "rule-curves",
       label: t("study.modelization.storages.ruleCurves"),
       content: (
         <SplitView splitId="storage-lowerRuleCurve-upperRuleCurve" sizes={[50, 50]}>
@@ -98,6 +100,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       ),
     },
     {
+      id: "inflows",
       label: t("study.modelization.storages.inflows"),
       content: (
         <Matrix
@@ -116,6 +119,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
 
   const matrices920 = [
     {
+      id: "costs",
       label: t("study.modelization.storages.costs"),
       content: (
         <SplitView splitId="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
@@ -145,6 +149,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       ),
     },
     {
+      id: "variation-costs",
       label: t("study.modelization.storages.variationCosts"),
       content: (
         <SplitView
@@ -177,6 +182,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       ),
     },
     {
+      id: "level-cost",
       label: t("study.modelization.storages.levelCost"),
       content: (
         <Matrix

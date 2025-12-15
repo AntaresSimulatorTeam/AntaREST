@@ -38,6 +38,7 @@ function StorageConfig() {
       divider
       tabs={[
         {
+          id: "operating-parameters",
           label: t("study.modelization.storages.operatingParameters"),
           content: (
             <StorageForm
@@ -49,12 +50,14 @@ function StorageConfig() {
           ),
         },
         {
+          id: "time-series",
           label: t("global.timeSeries"),
           content: (
             <StorageMatrices studyVersion={study.version} areaId={areaId} storageId={storageId} />
           ),
         },
         semver.gte(study.version, "9.2.0") && {
+          id: "additional-constraints",
           label: t("study.modelization.storages.additionalConstraints"),
           content: (
             <AdditionalConstraints

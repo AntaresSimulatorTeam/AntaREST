@@ -32,6 +32,7 @@ function AdequacyPatchLayout() {
     <TabsView
       tabs={[
         {
+          id: "general",
           label: t("study.configuration.adequacyPatch.tab.general"),
           linkOptions: {
             to: "/studies/$studyId/explore/configuration/adequacy-patch/general",
@@ -39,6 +40,7 @@ function AdequacyPatchLayout() {
           },
         },
         {
+          id: "perimeter",
           label: t("study.configuration.adequacyPatch.tab.perimeter"),
           linkOptions: {
             to: "/studies/$studyId/explore/configuration/adequacy-patch/perimeter",

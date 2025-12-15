@@ -37,6 +37,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
       disableGutters
       tabs={[
         {
+          id: "common",
           label: t("study.modelization.clusters.matrix.common"),
           content: (
             <Matrix
@@ -49,6 +50,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           ),
         },
         {
+          id: "ts-gen",
           label: t("study.modelization.clusters.matrix.tsGen"),
           content: (
             <Matrix
@@ -61,6 +63,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           ),
         },
         {
+          id: "availability",
           label: t("study.modelization.clusters.matrix.availability"),
           content: (
             <Matrix
@@ -71,6 +74,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           ),
         },
         semver.gte(study.version, "8.7.0") && {
+          id: "fuel-costs",
           label: t("study.modelization.clusters.matrix.fuelCosts"),
           content: (
             <Matrix
@@ -80,6 +84,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           ),
         },
         semver.gte(study.version, "8.7.0") && {
+          id: "co2-costs",
           label: t("study.modelization.clusters.matrix.co2Costs"),
           content: (
             <Matrix

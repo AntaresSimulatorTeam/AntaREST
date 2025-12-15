@@ -42,36 +42,42 @@ function SettingsLayout() {
         <TabsView
           tabs={[
             {
+              id: "general",
               label: t("global.general"),
               linkOptions: linkOptions({
                 to: "/settings/general",
               }),
             },
             isUserAdmin && {
+              id: "users",
               label: t("global.users"),
               linkOptions: linkOptions({
                 to: "/settings/users",
               }),
             },
             (isUserAdmin || isUserInGroupAdmin) && {
+              id: "groups",
               label: t("global.group"),
               linkOptions: linkOptions({
                 to: "/settings/groups",
               }),
             },
             isWebMode && {
+              id: "tokens",
               label: t("global.tokens"),
               linkOptions: linkOptions({
                 to: "/settings/tokens",
               }),
             },
             isUserAdmin && {
+              id: "maintenance",
               label: t("global.maintenance"),
               linkOptions: linkOptions({
                 to: "/settings/maintenance",
               }),
             },
             {
+              id: "about",
               label: t("global.about"),
               linkOptions: linkOptions({
                 to: "/settings/about",

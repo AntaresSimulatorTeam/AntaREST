@@ -37,6 +37,7 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
       divider
       tabs={[
         {
+          id: "parameters",
           label: t("global.parameters"),
           content: (
             <ConstraintForm
@@ -47,6 +48,7 @@ function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
           ),
         },
         {
+          id: "time-series",
           label: t("global.timeSeries"),
           content: (
             // Force a remount of ConstraintMatrix when `constraintId` changes.

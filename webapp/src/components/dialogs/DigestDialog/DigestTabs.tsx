@@ -23,18 +23,22 @@ interface DigestTabsProps {
 function DigestTabs({ matrices }: DigestTabsProps) {
   const tabItems = [
     {
+      id: "area",
       label: "Area",
       content: <DigestMatrix matrix={matrices.area} />,
     },
     {
+      id: "districts",
       label: "Districts",
       content: <DigestMatrix matrix={matrices.districts} />,
     },
     {
+      id: "flow-linear",
       label: "Flow Linear",
       content: <DigestMatrix matrix={matrices.flowLinear} />,
     },
     {
+      id: "flow-quadratic",
       label: "Flow Quadratic",
       content: <DigestMatrix matrix={matrices.flowQuadratic} />,
     },
