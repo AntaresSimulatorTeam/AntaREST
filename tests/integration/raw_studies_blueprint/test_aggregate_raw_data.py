@@ -915,7 +915,6 @@ class TestRawDataAggregationColumnsFormatting:
         pd.testing.assert_frame_equal(actual_df, expected_df, check_dtype=False)
 
 
-@pytest.mark.integration
 class TestDataAggregationCreationOperations:
     def test_get_aggregated_output_task_result(
         self,
