@@ -229,7 +229,8 @@ class OutputService:
 
     @staticmethod
     def _get_output_archive_task_names(study_id: str, study_name: str, output_id: str) -> tuple[str, str]:
-        # TODO: why that inconsistency ??
+        # TODO: why that inconsistency in naming, between the 2 types of tasks ?
+        #       Locking would better not be implemented based on the task name, but in a more structured way.
         return (
             f"Archive output {study_id}/{output_id}",
             f"Unarchive output {study_name}/{output_id} ({study_id})",
