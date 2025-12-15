@@ -44,7 +44,7 @@ from antarest.study.model import (
     TimeSeriesData,
 )
 from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
-from antarest.study.output.output_service import IStudiesRepository, OutputService, StudyMetadata
+from antarest.study.output.output_service import IStudyMetadataProvider, OutputService, StudyMetadata
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -79,8 +79,8 @@ def test_is_output_archived(tmp_path: Path) -> None:
     assert is_output_archived(path_output=tmp_path / "output_1.4.3")
 
 
-def _studies_repository(study: Study) -> IStudiesRepository:
-    class Impl(IStudiesRepository):
+def _studies_repository(study: Study) -> IStudyMetadataProvider:
+    class Impl(IStudyMetadataProvider):
         def get_study_metadata(self, study_id: str) -> StudyMetadata:
             return StudyMetadata(study.id, study.name)
 

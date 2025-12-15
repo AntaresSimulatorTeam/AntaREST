@@ -20,14 +20,13 @@ import redis
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
-from typing_extensions import override
 
 from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
 from antarest.blobstore.main import build_blob_service
 from antarest.blobstore.service import BlobService
 from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
-from antarest.core.config import DEFAULT_WORKSPACE_NAME, Config, RedisConfig
+from antarest.core.config import Config, RedisConfig
 from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
@@ -48,8 +47,9 @@ from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
-from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
-from antarest.study.output.output_service import OutputService, StudyServiceStudiesRepository
+from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
+from antarest.study.output.file_output_storage import FileOutputStorage
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
@@ -152,20 +152,6 @@ class CoreServices:
     blob_service: BlobService
 
 
-def _file_outputs_provider(study_service: StudyService) -> IFileOutputsProvider:
-    class Impl(IFileOutputsProvider):
-        @override
-        def get_outputs(self, study_id: str) -> FileStudyOutputs:
-            metadata = study_service.get_study(study_id)
-            return FileStudyOutputs(
-                get_file_study=lambda: study_service.get_file_study(metadata),
-                outputs_path=Path(metadata.path) / "output",
-                study_workspace=getattr(metadata, "workspace", DEFAULT_WORKSPACE_NAME),
-            )
-
-    return Impl()
-
-
 def build_output_service(
     app_ctxt: Optional[AppBuildContext],
     study_service: StudyService,
@@ -178,11 +164,13 @@ def build_output_service(
 ) -> OutputService:
     remote_executor = RemoteWorkerExecutor(event_bus, config)
     output_storage = FileOutputStorage(
-        outputs_provider=_file_outputs_provider(study_service), cache=cache, remote_executor=remote_executor
+        outputs_provider=study_service_as_file_outputs_provider(study_service),
+        cache=cache,
+        remote_executor=remote_executor,
     )
 
     output_service = OutputService(
-        studies_repository=StudyServiceStudiesRepository(study_service),
+        studies_repository=study_service_as_studies_repository(study_service),
         storage=output_storage,
         task_service=task_service,
         file_transfer_manager=filetransfer_service,

@@ -49,7 +49,7 @@ class IRemoteExecutor(ABC):
 
 class RemoteWorkerExecutor(IRemoteExecutor):
     """
-    Implementation which relies on messages exchanged through the event bus with a remove worker.
+    Implementation which relies on messages exchanged through the event bus with a remote worker.
     """
 
     def __init__(self, event_bus: IEventBus, config: Config):

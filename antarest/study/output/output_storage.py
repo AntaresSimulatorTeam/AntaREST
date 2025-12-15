@@ -85,7 +85,7 @@ class IOutputStorage(ABC):
         """Check if a study output is archived."""
 
     @abstractmethod
-    def archive_study_output(self, study_id: str, output_id: str) -> bool:
+    def archive_study_output(self, study_id: str, output_id: str) -> None:
         """Archive a study output."""
 
     # noinspection SpellCheckingInspection

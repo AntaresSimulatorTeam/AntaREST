@@ -17,7 +17,6 @@ from typing import BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
 from fastapi import HTTPException
-from typing_extensions import override
 
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
@@ -70,13 +69,12 @@ from antarest.study.output.output_model import (
     OutputVariablesViewStatus,
 )
 from antarest.study.output.output_storage import IOutputStorage
-from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
-from antarest.study.storage.utils import assert_permission, remove_from_cache
+from antarest.study.storage.utils import remove_from_cache
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +85,7 @@ class StudyMetadata:
     name: str
 
 
-class IStudiesRepository(ABC):
+class IStudyMetadataProvider(ABC):
     """
     Provides a lightweigth, read only, access to studies metadata.
     """
@@ -105,22 +103,6 @@ class IStudiesRepository(ABC):
             UserHasNotPermissionError: if the user does not have the permission
             UnsupportedOperationOnArchivedStudy: if the study is archived
         """
-
-
-class StudyServiceStudiesRepository(IStudiesRepository):
-    def __init__(self, study_service: StudyService) -> None:
-        self._study_service = study_service
-
-    @override
-    def get_study_metadata(self, study_id: str) -> StudyMetadata:
-        study = self._study_service.get_study(study_id)
-        return StudyMetadata(id=study.id, name=study.name or "<Unnamed study>")
-
-    @override
-    def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
-        study = self._study_service.get_study(study_id)
-        assert_permission(study, StudyPermissionType.READ)
-        self._study_service.assert_study_unarchived(study)
 
 
 class OutputVariablesViewMaterializationTask:
@@ -209,7 +191,7 @@ class OutputService:
         file_transfer_manager: FileTransferManager,
         matrix_service: ISimpleMatrixService,
         tmp_dir: Path,
-        studies_repository: IStudiesRepository,
+        studies_repository: IStudyMetadataProvider,
         cache: ICache,
     ) -> None:
         self._storage = storage

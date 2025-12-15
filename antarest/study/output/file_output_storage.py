@@ -266,7 +266,7 @@ class FileOutputStorage(IOutputStorage):
         return is_output_archived(output_path)
 
     @override
-    def archive_study_output(self, study_id: str, output_id: str) -> bool:
+    def archive_study_output(self, study_id: str, output_id: str) -> None:
         """Archive a study output."""
         try:
             study_outputs = self._outputs_provider.get_outputs(study_id)
@@ -277,13 +277,12 @@ class FileOutputStorage(IOutputStorage):
                 archive_format=ArchiveFormat.ZIP,
             )
             remove_from_cache(self._cache, study_id)
-            return True
         except Exception as e:
+            # TODO: raise here ?
             logger.warning(
                 f"Failed to archive study {study_id} output {output_id}",
                 exc_info=e,
             )
-            return False
 
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest = study_outputs.outputs_path / output_id
@@ -316,7 +315,7 @@ class FileOutputStorage(IOutputStorage):
                 unzip(outputs_path / output_id, outputs_path / f"{output_id}{ArchiveFormat.ZIP}")
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
-                # TODO: we don't raise here ??
+                # TODO: we should probably raise here
                 logger.warning(
                     f"Failed to unarchive study {study_id} output {output_id}",
                     exc_info=e,
