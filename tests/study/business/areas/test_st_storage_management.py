@@ -260,7 +260,7 @@ def test_delete_storages_from_sc_builder(manager: STStorageManager, study_interf
             # Additional constraints part
             "sta,fr,1,storage1,c1": 11,
             "sta,fr,1,storage2,c2": 12,
-            "sta,fr,1,storagede,c3": 13,
+            "sta,de,1,storagede,c3": 13,
         }
     }
     file_study.tree.save(scenario_builder, ["settings", "scenariobuilder"])
