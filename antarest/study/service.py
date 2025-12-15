@@ -134,6 +134,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
@@ -2282,8 +2283,9 @@ class StudyService:
         study = self.get_study(study_id)
         study_interface = self.get_study_interface(study)
 
-        if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            if matrix_path.parts[-1] == "allocation":
+        url = matrix_path.parts
+        if url in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
+            if url[-1] == "allocation":
                 hydro_matrix: HydroCorrelationMatrix | HydroAllocationMatrix = (
                     self.allocation_manager.get_allocation_matrix(study_interface)
                 )
@@ -2291,20 +2293,15 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        # Gets the data and checks given path existence
-        matrix_obj = self.get(study_id, path, depth=3, formatted=True)
-
         # Checks that the provided path refers to a matrix
-        url = path.split("/")
-        parent_dir = self.get(study_id, "/".join(url[:-1]), depth=3, formatted=True)
-        target_path = parent_dir[url[-1]]
-        if not isinstance(target_path, str) or not target_path.startswith(("matrix://", "matrixfile://")):
+        node = self.get_file_study(study).tree.get_node(list(url))
+        if isinstance(node, MatrixNode):
+            df_matrix = node.parse_as_dataframe()
+        elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
+            df_matrix = pd.DataFrame(**node.load())  # type: ignore
+        else:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
-        # Builds the dataframe
-        if not matrix_obj["data"]:
-            return pd.DataFrame()
-        df_matrix = pd.DataFrame(**matrix_obj)
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
             time_column = pd.date_range(
