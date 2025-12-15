@@ -374,7 +374,7 @@ def test_db_session_metrics():
         assert _get_histo_count(registry, "db_transactions_duration_seconds") == 2
 
 
-class TestModel(BaseModel):
+class DummyModel(BaseModel):
     value: int
 
 
@@ -396,7 +396,7 @@ def test_http_request_metrics() -> None:
         raise Exception()
 
     @app.post("/validation")
-    def validation(input: TestModel) -> int:
+    def validation(input: DummyModel) -> int:
         return input.value
 
     add_exception_handlers(app)
