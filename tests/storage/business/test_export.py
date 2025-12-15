@@ -25,11 +25,13 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import empty_study_fixture
 from tests.db_statement_recorder import DBStatementRecorder
@@ -132,8 +134,18 @@ def test_normalize_denormalized_methods(raw_study_service: RawStudyService, tmp_
     factory = MatrixUriMapperFactory(command_context.matrix_service)
     raw_study_service.study_factory = StudyFactory(matrix_mapper_factory=factory, cache=Mock())
 
-    # Create an area to have matrices in our study
-    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=study.config.version)
+    # Create an area and a thermal with specific matrices to have real DB matrices in our study
+    version = study.config.version
+    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
+    output = cmd.apply(study)
+    assert output.status
+    cmd = CreateCluster(
+        area_id="fr",
+        parameters=ThermalClusterCreation(name="th1"),
+        prepro=8760 * [[2]],
+        command_context=command_context,
+        study_version=version,
+    )
     output = cmd.apply(study)
     assert output.status
 

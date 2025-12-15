@@ -513,7 +513,8 @@ class MatrixService(ISimpleMatrixService):
         for matrix_id in matrix_ids:
             if matrix_id in self._predefined_matrices:
                 yield matrix_id, self._predefined_matrices[matrix_id]()
-            db_matrix_ids.append(matrix_id)
+            else:
+                db_matrix_ids.append(matrix_id)
         # Then fetch the other ones in DB
         if db_matrix_ids:
             matrices = self.repo.get_batch(db_matrix_ids)
