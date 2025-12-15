@@ -610,8 +610,8 @@ class RawStudyService(AbstractStorageService):
         duration = "{:.3f}".format(stop_time - start_time)
         with_outputs = "with outputs" if outputs else "without outputs"
         logger.info(f"Study '{study_dir}' exported ({with_outputs}, flat mode) in {duration}s")
-        study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
         if denormalize:
+            study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
             self.denormalize_study(study)
             duration = "{:.3f}".format(time.time() - stop_time)
             logger.info(f"Study '{study_dir}' denormalized in {duration}s")
