@@ -16,7 +16,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from threading import Thread
-from typing import BinaryIO, List, Optional, Sequence, cast
+from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -507,7 +507,7 @@ class RawStudyService(AbstractStorageService):
         """
         if isinstance(study, Study):
             study = self.get_raw(study)
-        matrix_nodes = cast(list[MatrixNode], study.tree.normalize())
+        matrix_nodes = study.tree.get_matrix_nodes_to_normalize()
         if not matrix_nodes:
             return
 
@@ -522,7 +522,7 @@ class RawStudyService(AbstractStorageService):
         """
         if isinstance(study, Study):
             study = self.get_raw(study)
-        matrix_nodes = cast(list[MatrixNode], study.tree.denormalize())
+        matrix_nodes = study.tree.get_matrix_nodes_to_denormalize()
         if not matrix_nodes:
             return
 

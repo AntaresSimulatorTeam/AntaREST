@@ -53,12 +53,12 @@ def test_normalize_denormalize_methods(tmp_path: Path) -> None:
 
     node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
 
-    assert node.normalize() == [node]
-    assert node.denormalize() == []
+    assert node.get_matrix_nodes_to_normalize() == [node]
+    assert node.get_matrix_nodes_to_denormalize() == []
 
     link = file.parent / f"{file.name}.link"
     link.write_text("my-id")
     node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
 
-    assert node.normalize() == []
-    assert node.denormalize() == [node]
+    assert node.get_matrix_nodes_to_normalize() == []
+    assert node.get_matrix_nodes_to_denormalize() == [node]

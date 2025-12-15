@@ -12,7 +12,7 @@
 
 import shutil
 from abc import ABC, abstractmethod
-from typing import List, Optional, Self, Tuple
+from typing import List, Optional, Tuple
 
 from typing_extensions import override
 
@@ -21,6 +21,7 @@ from antarest.core.model import JSON, SUB_JSON
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode, OriginalFile
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 
 class FilterError(Exception):
@@ -146,19 +147,19 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             shutil.rmtree(self.config.path)
 
     @override
-    def normalize(self) -> list[Self]:
-        nodes: list[Self] = []
+    def get_matrix_nodes_to_normalize(self) -> list[MatrixNode]:
+        nodes: list[MatrixNode] = []
         for child in self.build().values():
-            node = child.normalize()
-            nodes.extend(node)  # type: ignore
+            node = child.get_matrix_nodes_to_normalize()
+            nodes.extend(node)
         return nodes
 
     @override
-    def denormalize(self) -> list[Self]:
-        nodes: list[Self] = []
+    def get_matrix_nodes_to_denormalize(self) -> list[MatrixNode]:
+        nodes: list[MatrixNode] = []
         for child in self.build().values():
-            node = child.denormalize()
-            nodes.extend(node)  # type: ignore
+            node = child.get_matrix_nodes_to_denormalize()
+            nodes.extend(node)
         return nodes
 
     def _extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
