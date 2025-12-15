@@ -17,7 +17,7 @@ import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence
+from typing import Callable, Iterable, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -57,6 +57,7 @@ from antarest.matrixstore.repository import (
     MatrixContentRepository,
     MatrixDataSetRepository,
     MatrixRepository,
+    compute_hash,
 )
 
 # List of files to exclude from ZIP archives
@@ -84,6 +85,16 @@ Therefore, we rely on this version to know how to read the matrices
 
 
 class ISimpleMatrixService(ABC):
+    @abstractmethod
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+        """
+        Registers a predefined matrix which will not created with factory function when requested.
+
+        This allows to not actually store often used matrices, and create them on the fly instead
+        of reading them from storage.
+        """
+        raise NotImplementedError()
+
     @abstractmethod
     def create(self, data: pd.DataFrame) -> str:
         """
@@ -144,6 +155,13 @@ class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
         self.matrix_content_repository = matrix_content_repository
         self.usage_providers: List[IMatrixUsageProvider] = []
+        self._predefined_matrices: dict[str, Callable[[], pd.DataFrame]] = {}
+
+    @override
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+        matrix_id = compute_hash(matrix_factory())
+        self._predefined_matrices[matrix_id] = matrix_factory
+        return matrix_id
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -151,6 +169,8 @@ class SimpleMatrixService(ISimpleMatrixService):
 
     @override
     def get(self, matrix_id: str) -> pd.DataFrame:
+        if matrix_id in self._predefined_matrices:
+            return self._predefined_matrices[matrix_id]()
         return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
 
     @override
@@ -159,7 +179,7 @@ class SimpleMatrixService(ISimpleMatrixService):
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return self.matrix_content_repository.exists(matrix_id)
+        return matrix_id in self._predefined_matrices or self.matrix_content_repository.exists(matrix_id)
 
     @override
     def delete(self, matrix_id: str) -> None:
@@ -230,6 +250,13 @@ class MatrixService(ISimpleMatrixService):
         self.config = config
         self.usage_providers: List[IMatrixUsageProvider] = []
         self._create_dataset_usage_provider()
+        self._predefined_matrices: dict[str, Callable[[], pd.DataFrame]] = {}
+
+    @override
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+        matrix_id = compute_hash(matrix_factory())
+        self._predefined_matrices[matrix_id] = matrix_factory
+        return matrix_id
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -424,6 +451,8 @@ class MatrixService(ISimpleMatrixService):
             A Data Transfer Object (DTO) of the matrix and its content,
             or `None` if the matrix is not found in the database.
         """
+        if matrix_id in self._predefined_matrices:
+            return self._predefined_matrices[matrix_id]()
         matrix = self.repo.get(matrix_id)
         if matrix is None:
             raise MatrixNotFound(matrix_id)
@@ -451,7 +480,9 @@ class MatrixService(ISimpleMatrixService):
         Returns:
             bool: `True` if the matrix object exists in both repositories, `False` otherwise.
         """
-        return self.matrix_content_repository.exists(matrix_id) and self.repo.exists(matrix_id)
+        return matrix_id in self._predefined_matrices or (
+            self.matrix_content_repository.exists(matrix_id) and self.repo.exists(matrix_id)
+        )
 
     @override
     def delete(self, matrix_id: str) -> None:

@@ -507,6 +507,7 @@ nominalcapacity = 14.0
         storage_service=study_service.storage_service,
         event_bus=study_service.event_bus,
         study_interface_supplier=study_service.get_study_interface,
+        thermal_outage_details=False,
     )
 
     task_id = study_service.task_service.add_task(
