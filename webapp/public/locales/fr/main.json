@@ -125,6 +125,7 @@
   "global.reverse": "Inverser",
   "global.offset": "Décalage",
   "global.parameters": "Paramètres",
+  "global.home": "Accueil",
   "date": {
     "monday": "Lundi",
     "tuesday": "Mardi",
@@ -169,6 +170,7 @@
   },
   "lang.en": "Anglais",
   "lang.fr": "Français",
+  "page.notFound": "Page introuvable",
   "login.error": "Échec de l'authentification",
   "login.error.message": "Oups, une erreur inattendue s'est produite.\nVeuillez essayer d'actualiser la page.",
   "tasks.title": "Tâches",

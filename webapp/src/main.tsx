@@ -16,6 +16,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
 import App from "./app/App";
+import PageNotFound from "./app/PageNotFound";
 import SimpleLoader from "./components/loaders/SimpleLoader";
 import EmptyView from "./components/page/EmptyView";
 import store from "./redux/store";
@@ -51,6 +52,7 @@ const router = createRouter({
   },
   defaultPendingComponent: SimpleLoader,
   defaultErrorComponent: ({ error }) => <EmptyView title={error.toString()} />,
+  defaultNotFoundComponent: PageNotFound,
 });
 
 // Register the router instance for type safety

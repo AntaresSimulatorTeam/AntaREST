@@ -125,6 +125,7 @@
   "global.reverse": "Reverse",
   "global.offset": "Offset",
   "global.parameters": "Parameters",
+  "global.home": "Home",
   "date": {
     "monday": "Monday",
     "tuesday": "Tuesday",
@@ -169,6 +170,7 @@
   },
   "lang.en": "English",
   "lang.fr": "French",
+  "page.notFound": "Page not found",
   "login.error": "Failed to authenticate",
   "login.error.message": "Oops, an unexpected error happened.\nPlease try to refresh the page.",
   "tasks.title": "Tasks",
