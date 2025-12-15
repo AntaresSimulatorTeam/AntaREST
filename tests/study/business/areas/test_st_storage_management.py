@@ -26,6 +26,7 @@ from antarest.study.business.study_interface import FileStudyInterface, StudyInt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 EXPECTED_STORAGES = {
@@ -263,7 +264,39 @@ def test_delete_storages_from_sc_builder(manager: STStorageManager, study_interf
         }
     }
     file_study.tree.save(scenario_builder, ["settings", "scenariobuilder"])
+
     # Remove the additional constraint `c3`. Its line only should disappear
+    manager.delete_additional_constraints(study_interface, "de", "storagede", ["c3"])
+    sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
+    assert sc_builder == {
+        "sts,fr,1,storage1": 4,
+        "sts,fr,1,storage2": 3,
+        "sts,de,1,storagede": 2,
+        "sta,fr,1,storage1,c1": 11,
+        "sta,fr,1,storage2,c2": 12,
+    }
+
     # Remove the sts `storagede`. Its line only should disappear
+    manager.delete_storages(study_interface, "de", ["storagede"])
+    sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
+    assert sc_builder == {
+        "sts,fr,1,storage1": 4,
+        "sts,fr,1,storage2": 3,
+        "sta,fr,1,storage1,c1": 11,
+        "sta,fr,1,storage2,c2": 12,
+    }
+
     # Remove the sts `storage1`. 2 lines should disappear, his one and the one concerning its constraint
+    manager.delete_storages(study_interface, "fr", ["storage1"])
+    sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
+    assert sc_builder == {
+        "sts,fr,1,storage2": 3,
+        "sta,fr,1,storage2,c2": 12,
+    }
+
     # Remove the area `fr`. 2 lines should disappear as they concern objects inside area `fr`.
+    cmd = RemoveArea(command_context=manager._command_context, id="fr", study_version=file_study.config.version)
+    output = cmd.apply(file_study)
+    assert output.status
+    sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
+    assert sc_builder == {}
