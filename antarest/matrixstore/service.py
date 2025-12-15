@@ -508,9 +508,17 @@ class MatrixService(ISimpleMatrixService):
 
     @override
     def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[tuple[str, pd.DataFrame]]:
-        matrices = self.repo.get_batch(list(matrix_ids))
-        for matrix in matrices:
-            yield matrix.id, self.matrix_content_repository.get(matrix.id, matrix.version)
+        # First yield predefined matrices
+        db_matrix_ids = []
+        for matrix_id in matrix_ids:
+            if matrix_id in self._predefined_matrices:
+                yield matrix_id, self._predefined_matrices[matrix_id]()
+            db_matrix_ids.append(matrix_id)
+        # Then fetch the other ones in DB
+        if db_matrix_ids:
+            matrices = self.repo.get_batch(db_matrix_ids)
+            for matrix in matrices:
+                yield matrix.id, self.matrix_content_repository.get(matrix.id, matrix.version)
 
     @override
     def exists(self, matrix_id: str) -> bool:
