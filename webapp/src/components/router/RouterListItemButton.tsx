@@ -13,8 +13,12 @@
  */
 
 import { ListItemButton } from "@mui/material";
-import { createLink } from "@tanstack/react-router";
+import { createLink, type LinkComponent } from "@tanstack/react-router";
 
-const RouterListItemButton = createLink(ListItemButton);
+const CustomListItemButton = createLink(ListItemButton);
+
+export const RouterListItemButton: LinkComponent<typeof ListItemButton> = (props) => {
+  return <CustomListItemButton activeProps={{ selected: true }} {...props} />;
+};
 
 export default RouterListItemButton;

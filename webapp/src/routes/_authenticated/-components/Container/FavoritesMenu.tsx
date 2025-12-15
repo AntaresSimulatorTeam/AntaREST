@@ -38,12 +38,7 @@ function FavoritesMenu() {
     <SidebarItem label={t("studies.favorites")} icon={<StarBorderIcon />}>
       <List disablePadding dense>
         {favorites.map((fav) => (
-          <RouterListItemButton
-            key={fav.id}
-            to="/studies/$studyId"
-            params={{ studyId: fav.id }}
-            activeProps={{ selected: true }}
-          >
+          <RouterListItemButton key={fav.id} to="/studies/$studyId" params={{ studyId: fav.id }}>
             <Tooltip title={fav.name}>
               <ListItemText
                 primary={fav.name}

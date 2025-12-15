@@ -53,7 +53,6 @@ function ListView<TItems extends RouteItem[]>({
           <Box
             sx={{
               display: "flex",
-              justifyContent: "flex-end",
               gap: 1,
               p: 1,
               pb: 0,
@@ -77,7 +76,7 @@ function ListView<TItems extends RouteItem[]>({
             .map((item) => (
               <Tooltip key={item.id} title={item.label} placement="right">
                 <ListItem disablePadding>
-                  <RouterListItemButton {...item.linkOptions} activeProps={{ selected: true }}>
+                  <RouterListItemButton {...item.linkOptions}>
                     <Typography noWrap>{item.label}</Typography>
                   </RouterListItemButton>
                 </ListItem>
