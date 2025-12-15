@@ -493,66 +493,6 @@ def test_delete_study(tmp_path: Path) -> None:
     assert not study_path.exists()
 
 
-@pytest.mark.unit_test
-def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
-    name = "my-study"
-    study_path = tmp_path / name
-    study_path.mkdir()
-    study_antares = study_path / "study.antares"
-    study_antares.touch()
-
-    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), version="100")
-
-    file_study_tree = Mock()
-    file_study_tree.get.return_value = {"version": 100}
-
-    study_factory = Mock()
-    study_factory.create_from_config.return_value = file_study_tree
-
-    study_service = RawStudyService(
-        config=build_config(tmp_path, workspace_name="foo"),
-        cache=Mock(),
-        study_factory=study_factory,
-    )
-
-    study_service.check_and_update_study_version_in_database(raw_study)
-
-    assert raw_study.version == "100"
-
-    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), version="42")
-
-    file_study_tree = Mock()
-    file_study_tree.get.return_value = {"version": 42}
-
-    study_factory = Mock()
-    study_factory.create_from_config.return_value = file_study_tree
-
-    study_service = RawStudyService(
-        config=build_config(tmp_path, workspace_name="foo"),
-        cache=Mock(),
-        study_factory=study_factory,
-    )
-
-    study_service.check_and_update_study_version_in_database(raw_study)
-
-    assert raw_study.version == "42"
-
-    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), version="100")
-
-    study_factory = Mock()
-    study_factory.create_from_config.side_effect = FileNotFoundError()
-
-    study_service = RawStudyService(
-        config=build_config(tmp_path, workspace_name="foo"),
-        cache=Mock(),
-        study_factory=study_factory,
-    )
-
-    study_service.check_and_update_study_version_in_database(raw_study)
-
-    assert raw_study.version == "100"
-
-
 def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name

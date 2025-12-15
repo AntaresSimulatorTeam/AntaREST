@@ -30,11 +30,11 @@ from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.core.utils.utils import current_time
-from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, build_matrix_uri
+from antarest.matrixstore.matrix_uri_mapper import build_matrix_uri
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
@@ -469,31 +469,6 @@ class RawStudyService(AbstractStorageService):
         if metadata.archived:
             return self.find_archive_path(metadata)
         return Path(metadata.path)
-
-    def check_and_update_study_version_in_database(self, study: RawStudy) -> None:
-        try:
-            study_path = self.get_study_path(study)
-            if study_path:
-                config = FileStudyTreeConfig(
-                    study_path=study_path,
-                    path=study_path,
-                    study_id="",
-                    version=StudyVersion.parse(0),
-                )
-                raw_study = self.study_factory.create_from_config(config, NormalizedMatrixUriMapper.NORMALIZED)
-                file_metadata = raw_study.get(url=["study", "antares"])
-                study_version = str(file_metadata.get("version", study.version))
-                if study_version != study.version:
-                    logger.warning(
-                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
-                    )
-                    study.version = study_version
-        except Exception as e:
-            logger.error(
-                "Failed to check and/or update study version in database for study %s",
-                study.id,
-                exc_info=e,
-            )
 
     @staticmethod
     def cleanup_lazynode_zipfilelist_cache() -> None:
