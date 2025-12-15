@@ -32,12 +32,6 @@ def extract_matrix_id(uri: str) -> str:
     return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
 
 
-def build_matrix_uri(id: str) -> str:
-    if id.startswith(MATRIX_PROTOCOL_PREFIX):
-        return id
-    return f"{MATRIX_PROTOCOL_PREFIX}{id}"
-
-
 class NormalizedMatrixUriMapper(StrEnum):
     NORMALIZED = "normalized"
     DENORMALIZED = "denormalized"
