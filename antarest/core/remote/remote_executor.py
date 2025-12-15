@@ -86,8 +86,6 @@ class RemoteWorkerExecutor(IRemoteExecutor):
             [EventType.WORKER_TASK_ENDED],
         )
         try:
-            # Note that the event bus queue differs from the task queue.
-            #
             self.event_bus.queue(
                 Event(
                     type=EventType.WORKER_TASK,
