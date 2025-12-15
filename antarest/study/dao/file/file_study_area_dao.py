@@ -393,7 +393,7 @@ class FileStudyAreaDao(AreaDao):
         """Remove the area from scenario builder configuration."""
         rulesets = study_data.tree.get(["settings", "scenariobuilder"])
 
-        area_keys = {"l", "h", "w", "s", "t", "r", "hl", "hfl", "hgp"}
+        area_keys = {"l", "h", "w", "s", "t", "r", "hl", "hfl", "hgp", "sts", "sta"}
         link_keys = {"ntc"}
         for ruleset in rulesets.values():
             for key in list(ruleset):

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List
+from typing import Callable, Dict, List
 
 import pandas as pd
 from typing_extensions import override
@@ -29,6 +29,13 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     def __init__(self) -> None:
         self._content: Dict[str, pd.DataFrame] = {}
         self.usage_providers: List[IMatrixUsageProvider] = []
+        self._predefined_matrices: dict[str, Callable[[], pd.DataFrame]] = {}
+
+    @override
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+        matrix_id = compute_hash(matrix_factory())
+        self._predefined_matrices[matrix_id] = matrix_factory
+        return matrix_id
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -38,11 +45,13 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def get(self, matrix_id: str) -> pd.DataFrame:
+        if matrix_id in self._predefined_matrices:
+            return self._predefined_matrices[matrix_id]()
         return self._content[matrix_id]
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return matrix_id in self._content
+        return matrix_id in self._predefined_matrices or matrix_id in self._content
 
     @override
     def delete(self, matrix_id: str) -> None:
