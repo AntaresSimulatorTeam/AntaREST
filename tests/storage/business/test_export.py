@@ -113,7 +113,7 @@ def test_export_flat(empty_study_930: FileStudy, raw_study_service: RawStudyServ
 
 
 @with_db_context
-def test_normalize_denormalized_methods(raw_study_service: RawStudyService, tmp_path: Path) -> None:
+def test_normalize_denormalized_methods(tmp_path: Path) -> None:
     # Create a real matrix_service with a db connection to test DB queries
     db_session = db.session
     buket_dir = tmp_path / "matrixstore_bucket"
@@ -132,7 +132,8 @@ def test_normalize_denormalized_methods(raw_study_service: RawStudyService, tmp_
         generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
     factory = MatrixUriMapperFactory(command_context.matrix_service)
-    raw_study_service.study_factory = StudyFactory(matrix_mapper_factory=factory, cache=Mock())
+    study_factory = StudyFactory(matrix_mapper_factory=factory, cache=Mock())
+    raw_study_service = RawStudyService(config=Mock(), study_factory=study_factory, cache=Mock())
 
     # Create an area and a thermal with specific matrices to have real DB matrices in our study
     version = study.config.version
