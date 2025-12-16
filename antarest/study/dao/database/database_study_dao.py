@@ -114,28 +114,11 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
 
     @override
     def get_comments(self) -> str:
-        """
-        Get study comments.
-
-        Note: Comments are not yet stored in database for database-mode studies.
-        This method returns an empty string for now.
-
-        Returns:
-            Empty string.
-        """
-        return ""
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
     def save_comments(self, comments: str) -> None:
-        """
-        Save study comments.
-
-        Note: Comments are not yet stored in database for database-mode studies.
-
-        Args:
-            comments: The comments to save.
-        """
-        pass
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
     def get_file_study(self) -> FileStudy:
