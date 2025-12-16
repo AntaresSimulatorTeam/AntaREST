@@ -113,14 +113,14 @@ def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, S
 
     app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
 
-    def is_study_ready():
+    def is_study_scanned():
         with db():
             studies = services.study.get_studies_information(
                 StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))
             )
             return len(studies) == 1
 
-    wait_for(is_study_ready, timeout=10, sleep_time=0.01)
+    wait_for(is_study_scanned, timeout=10, sleep_time=0.01)
 
     yield app, services
     services.watcher.stop()
