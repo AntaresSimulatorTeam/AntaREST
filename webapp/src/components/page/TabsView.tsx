@@ -14,7 +14,7 @@
 
 import BackButton from "@/components/buttons/BackButton";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
-import { Box, Tab } from "@mui/material";
+import { Box, Tab, type SxProps, type Theme } from "@mui/material";
 import { Outlet, useMatchRoute, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import RouterLink from "../router/RouterLink";
@@ -35,13 +35,10 @@ interface ContentTab extends BaseTab {
   content?: React.ReactNode;
 }
 
-export interface TabsViewProps<
-  TTabs extends RouteTab[] | ContentTab[] = RouteTab[] | ContentTab[],
-> {
-  tabs: TTabs;
+export interface TabsViewProps {
+  tabs: RouteTab[] | ContentTab[];
   onChange?: TabListProps["onChange"];
   onBack?: VoidFunction;
-  renderPanel?: (props: { children: React.ReactNode }, tab: TTabs[number]) => React.ReactNode;
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
@@ -55,15 +52,14 @@ function isRouteTabs(tabs: RouteTab[] | ContentTab[]): tabs is RouteTab[] {
   return tabs.length > 0 && isRouteTab(tabs[0]);
 }
 
-function TabsView<TTabs extends RouteTab[] | ContentTab[]>({
+function TabsView({
   tabs,
   onChange,
   onBack,
-  renderPanel = ({ children }) => children,
   divider = false,
   disablePadding = false,
   disableGutters = false,
-}: TabsViewProps<TTabs>) {
+}: TabsViewProps) {
   const matchRoute = useMatchRoute();
   const hasRouteTabs = isRouteTabs(tabs);
 
@@ -74,6 +70,20 @@ function TabsView<TTabs extends RouteTab[] | ContentTab[]>({
   const activeTabValue = hasRouteTabs
     ? tabs.find((tab) => matchRoute({ ...tab.linkOptions, fuzzy: true }))?.id || ""
     : activeContentTabId;
+
+  const panelSx: SxProps<Theme> = [
+    {
+      flex: 1,
+      p: 2,
+      position: "relative",
+      overflow: "auto",
+      ":has(> :first-child:is(.TabsView, .SplitView, .ViewWrapper))": {
+        p: 0,
+      },
+    },
+    disablePadding && { p: 0 },
+    disableGutters && { px: 0 },
+  ];
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -126,27 +136,17 @@ function TabsView<TTabs extends RouteTab[] | ContentTab[]>({
             ))}
           </TabList>
         </Box>
-        {tabs.map((tab) => (
-          <TabPanel
-            key={tab.id}
-            value={tab.id}
-            sx={[
-              {
-                flex: 1,
-                p: 2,
-                position: "relative",
-                overflow: "auto",
-                ":has(> :first-child:is(.TabsView, .SplitView, .ViewWrapper))": {
-                  p: 0,
-                },
-              },
-              disablePadding && { p: 0 },
-              disableGutters && { px: 0 },
-            ]}
-          >
-            {renderPanel({ children: hasRouteTabs ? <Outlet /> : tab.content }, tab)}
-          </TabPanel>
-        ))}
+        {hasRouteTabs ? (
+          <Box sx={panelSx}>
+            <Outlet />
+          </Box>
+        ) : (
+          tabs.map((tab) => (
+            <TabPanel key={tab.id} value={tab.id} sx={panelSx}>
+              {tab.content}
+            </TabPanel>
+          ))
+        )}
       </TabContext>
     </Box>
   );

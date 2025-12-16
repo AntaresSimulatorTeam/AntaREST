@@ -29,6 +29,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/Form/types";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { generateTimeSeries, setTimeSeriesConfig } from "@/services/api/studies/timeseries";
 import BuildIcon from "@mui/icons-material/Build";
 import { useRef, useState } from "react";
@@ -80,18 +81,20 @@ function TimeSeriesGeneration() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Form
-      config={{
-        defaultValues,
-        disabled: isLaunchTaskInProgress,
-      }}
-      onSubmit={handleSubmit}
-      onSubmitSuccessful={handleSubmitSuccessful}
-      submitButtonText={t("study.configuration.tsManagement.generateTs")}
-      submitButtonIcon={<BuildIcon />}
-      apiRef={apiRef}
-    >
-      <Fields />
-    </Form>
+    <ViewWrapper>
+      <Form
+        config={{
+          defaultValues,
+          disabled: isLaunchTaskInProgress,
+        }}
+        onSubmit={handleSubmit}
+        onSubmitSuccessful={handleSubmitSuccessful}
+        submitButtonText={t("study.configuration.tsManagement.generateTs")}
+        submitButtonIcon={<BuildIcon />}
+        apiRef={apiRef}
+      >
+        <Fields />
+      </Form>
+    </ViewWrapper>
   );
 }

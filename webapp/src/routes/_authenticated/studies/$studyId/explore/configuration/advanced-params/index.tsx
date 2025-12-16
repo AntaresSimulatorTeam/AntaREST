@@ -14,6 +14,7 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { updateStudySynthesis } from "@/redux/ducks/studySyntheses";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { createFileRoute } from "@tanstack/react-router";
@@ -61,15 +62,17 @@ function AdvancedParameters() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Form
-      config={{
-        defaultValues: () => getAdvancedParamsFormFields(study.id),
-      }}
-      onSubmit={handleSubmit}
-      onSubmitSuccessful={handleSubmitSuccessful}
-      enableUndoRedo
-    >
-      <Fields />
-    </Form>
+    <ViewWrapper>
+      <Form
+        config={{
+          defaultValues: () => getAdvancedParamsFormFields(study.id),
+        }}
+        onSubmit={handleSubmit}
+        onSubmitSuccessful={handleSubmitSuccessful}
+        enableUndoRedo
+      >
+        <Fields />
+      </Form>
+    </ViewWrapper>
   );
 }

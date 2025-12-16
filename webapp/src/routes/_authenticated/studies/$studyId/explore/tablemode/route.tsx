@@ -14,10 +14,10 @@
 
 import EmptyView from "@/components/page/EmptyView";
 import ListView from "@/components/page/ListView";
-import ViewWrapper from "@/components/page/ViewWrapper";
 import useDialog from "@/hooks/useDialog";
 import { sortByName } from "@/services/utils";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import TableViewIcon from "@mui/icons-material/TableView";
 import { createFileRoute, linkOptions, redirect } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
@@ -86,8 +86,7 @@ function TableModeLayout() {
           params: { studyId: study.id, tableModeId: tp.name },
         }),
       }))}
-      renderPanel={ViewWrapper}
-      renderEmptyPanel={() => <EmptyView title={t("study.tableMode.empty")} />}
+      emptyListContent={<EmptyView title={t("study.tableMode.empty")} icon={TableViewIcon} />}
       onAdd={handleAdd}
     />
   );

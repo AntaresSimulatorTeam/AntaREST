@@ -18,6 +18,7 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { validateNumber } from "@/utils/validation/number";
 import { Tooltip } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
@@ -54,155 +55,159 @@ function General() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Form
-      config={{
-        defaultValues: () => getAdequacyPatchFormFields(study.id),
-      }}
-      onSubmit={handleSubmit}
-      enableUndoRedo
-    >
-      {({ control }) => (
-        <>
-          <Fieldset fullFieldWidth>
-            <SwitchFE
-              label={t("study.configuration.adequacyPatch.enableAdequacyPatch")}
-              name="enableAdequacyPatch"
-              control={control}
-            />
-          </Fieldset>
-          <Fieldset
-            legend={
-              <Tooltip
-                title={t("study.configuration.adequacyPatch.legend.localMatchingRule.tooltip", {
-                  defaultValue: "",
-                })}
-              >
-                <span>{t("study.configuration.adequacyPatch.legend.localMatchingRule")}</span>
-              </Tooltip>
-            }
-            fullFieldWidth
-          >
-            <SwitchFE
-              label={t(
-                "study.configuration.adequacyPatch.ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch",
-              )}
-              name="ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch"
-              control={control}
-            />
-          </Fieldset>
-          {semver.gte(study.version, "8.5.0") && (
-            <>
-              <Fieldset
-                legend={
-                  <Tooltip
-                    title={t(
-                      "study.configuration.adequacyPatch.legend.curtailmentSharing.tooltip",
-                      {
-                        defaultValue: "",
-                      },
-                    )}
-                  >
-                    <span>{t("study.configuration.adequacyPatch.legend.curtailmentSharing")}</span>
-                  </Tooltip>
-                }
-              >
-                <SelectFE
-                  label={t("study.configuration.adequacyPatch.priceTakingOrder")}
-                  options={PRICE_TAKING_ORDER_OPTIONS}
-                  name="priceTakingOrder"
-                  control={control}
-                />
+    <ViewWrapper>
+      <Form
+        config={{
+          defaultValues: () => getAdequacyPatchFormFields(study.id),
+        }}
+        onSubmit={handleSubmit}
+        enableUndoRedo
+      >
+        {({ control }) => (
+          <>
+            <Fieldset fullFieldWidth>
+              <SwitchFE
+                label={t("study.configuration.adequacyPatch.enableAdequacyPatch")}
+                name="enableAdequacyPatch"
+                control={control}
+              />
+            </Fieldset>
+            <Fieldset
+              legend={
                 <Tooltip
-                  title={t("study.configuration.adequacyPatch.includeHurdleCostCsr.tooltip", {
+                  title={t("study.configuration.adequacyPatch.legend.localMatchingRule.tooltip", {
                     defaultValue: "",
                   })}
                 >
-                  <span>
-                    <SwitchFE
-                      label={t("study.configuration.adequacyPatch.includeHurdleCostCsr")}
-                      sx={{ textWrap: "nowrap" }}
-                      name="includeHurdleCostCsr"
-                      control={control}
-                    />
-                  </span>
+                  <span>{t("study.configuration.adequacyPatch.legend.localMatchingRule")}</span>
                 </Tooltip>
-              </Fieldset>
-
-              <Fieldset
-                legend={t("study.configuration.adequacyPatch.legend.advanced")}
-                fieldWidth={500}
-              >
-                <Tooltip
-                  title={t(
-                    "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule.tooltip",
-                    { defaultValue: "" },
-                  )}
-                >
-                  <span>
-                    <NumberFE
-                      label={t(
-                        "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule",
+              }
+              fullFieldWidth
+            >
+              <SwitchFE
+                label={t(
+                  "study.configuration.adequacyPatch.ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch",
+                )}
+                name="ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch"
+                control={control}
+              />
+            </Fieldset>
+            {semver.gte(study.version, "8.5.0") && (
+              <>
+                <Fieldset
+                  legend={
+                    <Tooltip
+                      title={t(
+                        "study.configuration.adequacyPatch.legend.curtailmentSharing.tooltip",
+                        {
+                          defaultValue: "",
+                        },
                       )}
-                      name="thresholdInitiateCurtailmentSharingRule"
-                      control={control}
-                      rules={{
-                        validate: validateNumber({ min: 0 }),
-                      }}
-                    />
-                  </span>
-                </Tooltip>
-                <Tooltip
-                  title={t(
-                    "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations.tooltip",
-                  )}
+                    >
+                      <span>
+                        {t("study.configuration.adequacyPatch.legend.curtailmentSharing")}
+                      </span>
+                    </Tooltip>
+                  }
                 >
-                  <span>
-                    <NumberFE
-                      label={t(
-                        "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations",
-                      )}
-                      name="thresholdDisplayLocalMatchingRuleViolations"
-                      control={control}
-                      rules={{
-                        validate: validateNumber({ min: 0 }),
-                      }}
-                    />
-                  </span>
-                </Tooltip>
-                <Tooltip
-                  title={t(
-                    "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation.tooltip",
-                  )}
-                >
-                  <span>
-                    <NumberFE
-                      label={t(
-                        "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation",
-                      )}
-                      name="thresholdCsrVariableBoundsRelaxation"
-                      control={control}
-                      rules={{
-                        validate: validateNumber({
-                          min: 0,
-                          integer: true,
-                        }),
-                      }}
-                    />
-                  </span>
-                </Tooltip>
-                {semver.gte(study.version, "9.3.0") && (
-                  <SwitchFE
-                    label={t("study.configuration.adequacyPatch.redispatch")}
-                    sx={{ textWrap: "nowrap" }}
-                    name="redispatch"
+                  <SelectFE
+                    label={t("study.configuration.adequacyPatch.priceTakingOrder")}
+                    options={PRICE_TAKING_ORDER_OPTIONS}
+                    name="priceTakingOrder"
                     control={control}
                   />
-                )}
-              </Fieldset>
-            </>
-          )}
-        </>
-      )}
-    </Form>
+                  <Tooltip
+                    title={t("study.configuration.adequacyPatch.includeHurdleCostCsr.tooltip", {
+                      defaultValue: "",
+                    })}
+                  >
+                    <span>
+                      <SwitchFE
+                        label={t("study.configuration.adequacyPatch.includeHurdleCostCsr")}
+                        sx={{ textWrap: "nowrap" }}
+                        name="includeHurdleCostCsr"
+                        control={control}
+                      />
+                    </span>
+                  </Tooltip>
+                </Fieldset>
+
+                <Fieldset
+                  legend={t("study.configuration.adequacyPatch.legend.advanced")}
+                  fieldWidth={500}
+                >
+                  <Tooltip
+                    title={t(
+                      "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule.tooltip",
+                      { defaultValue: "" },
+                    )}
+                  >
+                    <span>
+                      <NumberFE
+                        label={t(
+                          "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule",
+                        )}
+                        name="thresholdInitiateCurtailmentSharingRule"
+                        control={control}
+                        rules={{
+                          validate: validateNumber({ min: 0 }),
+                        }}
+                      />
+                    </span>
+                  </Tooltip>
+                  <Tooltip
+                    title={t(
+                      "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations.tooltip",
+                    )}
+                  >
+                    <span>
+                      <NumberFE
+                        label={t(
+                          "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations",
+                        )}
+                        name="thresholdDisplayLocalMatchingRuleViolations"
+                        control={control}
+                        rules={{
+                          validate: validateNumber({ min: 0 }),
+                        }}
+                      />
+                    </span>
+                  </Tooltip>
+                  <Tooltip
+                    title={t(
+                      "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation.tooltip",
+                    )}
+                  >
+                    <span>
+                      <NumberFE
+                        label={t(
+                          "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation",
+                        )}
+                        name="thresholdCsrVariableBoundsRelaxation"
+                        control={control}
+                        rules={{
+                          validate: validateNumber({
+                            min: 0,
+                            integer: true,
+                          }),
+                        }}
+                      />
+                    </span>
+                  </Tooltip>
+                  {semver.gte(study.version, "9.3.0") && (
+                    <SwitchFE
+                      label={t("study.configuration.adequacyPatch.redispatch")}
+                      sx={{ textWrap: "nowrap" }}
+                      name="redispatch"
+                      control={control}
+                    />
+                  )}
+                </Fieldset>
+              </>
+            )}
+          </>
+        )}
+      </Form>
+    </ViewWrapper>
   );
 }

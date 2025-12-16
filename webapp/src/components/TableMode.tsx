@@ -94,7 +94,7 @@ function TableMode<T extends TableModeType>({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box>
+    <Box sx={{ display: "flex", flexDirection: "column", height: 1 }}>
       {name && (
         <Typography color="textSecondary" gutterBottom noWrap>
           {name}

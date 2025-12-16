@@ -12,11 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import EmptyView from "@/components/page/EmptyView";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import TableMode from "@/components/TableMode";
 import useDialog from "@/hooks/useDialog";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
 import { Button } from "@mui/material";
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -90,30 +93,37 @@ function Table() {
   ////////////////////////////////////////////////////////////////
 
   if (!template) {
-    return null;
+    return (
+      <EmptyView
+        title={t("study.tableMode.notFound", { name: tableModeId })}
+        icon={SearchOffIcon}
+      />
+    );
   }
 
   return (
-    <TableMode
-      studyId={study.id}
-      name={template.name}
-      type={template.type}
-      columns={template.columns}
-      extraActions={
-        <>
-          <Button variant="outlined" startIcon={<EditIcon />} onClick={handleEdit}>
-            {t("global.edit")}
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={handleDelete}
-          >
-            {t("global.delete")}
-          </Button>
-        </>
-      }
-    />
+    <ViewWrapper>
+      <TableMode
+        studyId={study.id}
+        name={template.name}
+        type={template.type}
+        columns={template.columns}
+        extraActions={
+          <>
+            <Button variant="outlined" startIcon={<EditIcon />} onClick={handleEdit}>
+              {t("global.edit")}
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={handleDelete}
+            >
+              {t("global.delete")}
+            </Button>
+          </>
+        }
+      />
+    </ViewWrapper>
   );
 }

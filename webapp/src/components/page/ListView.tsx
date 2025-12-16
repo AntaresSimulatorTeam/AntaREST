@@ -34,8 +34,7 @@ interface RouteItem extends BaseItem {
 interface ListViewProps<TItems extends RouteItem[] = RouteItem[]> {
   list: TItems;
   splitId: string;
-  renderPanel?: (props: { children: React.ReactNode }, item: TItems[number]) => React.ReactNode;
-  renderEmptyPanel?: () => React.ReactNode;
+  emptyListContent?: React.ReactNode;
   onAdd?(): void;
   actions?: React.ReactNode;
 }
@@ -43,8 +42,7 @@ interface ListViewProps<TItems extends RouteItem[] = RouteItem[]> {
 function ListView<TItems extends RouteItem[]>({
   list,
   splitId,
-  renderPanel = ({ children }) => children,
-  renderEmptyPanel,
+  emptyListContent,
   onAdd,
   actions,
 }: ListViewProps<TItems>) {
@@ -95,11 +93,7 @@ function ListView<TItems extends RouteItem[]>({
             ))}
         </List>
       </Box>
-      <Box>
-        {list.length > 0
-          ? renderPanel({ children: <Outlet /> }, {} as TItems[number])
-          : renderEmptyPanel?.()}
-      </Box>
+      <Box>{list.length > 0 ? <Outlet /> : emptyListContent}</Box>
     </SplitView>
   );
 }

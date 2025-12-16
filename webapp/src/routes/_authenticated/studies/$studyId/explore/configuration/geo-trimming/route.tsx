@@ -13,7 +13,6 @@
  */
 
 import TabsView from "@/components/page/TabsView";
-import ViewWrapper from "@/components/page/ViewWrapper";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../../-hooks/useStudy";
@@ -56,7 +55,6 @@ function GeographicTrimmingLayout() {
           },
         },
       ]}
-      renderPanel={ViewWrapper}
     />
   );
 }

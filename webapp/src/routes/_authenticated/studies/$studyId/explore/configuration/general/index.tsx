@@ -14,6 +14,7 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { createFileRoute } from "@tanstack/react-router";
 import useStudy from "../../../-hooks/useStudy";
 import Fields from "./-components/Fields";
@@ -56,12 +57,14 @@ function General() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Form
-      config={{ defaultValues: () => getGeneralFormFields(study.id) }}
-      onSubmit={handleSubmit}
-      enableUndoRedo
-    >
-      <Fields study={study} />
-    </Form>
+    <ViewWrapper>
+      <Form
+        config={{ defaultValues: () => getGeneralFormFields(study.id) }}
+        onSubmit={handleSubmit}
+        enableUndoRedo
+      >
+        <Fields study={study} />
+      </Form>
+    </ViewWrapper>
   );
 }

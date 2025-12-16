@@ -13,7 +13,6 @@
  */
 
 import TabsView from "@/components/page/TabsView";
-import ViewWrapper from "@/components/page/ViewWrapper";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
@@ -61,7 +60,6 @@ function ConfigurationLayout() {
             to: "/studies/$studyId/explore/configuration/adequacy-patch",
             params: { studyId: study.id },
           }),
-          noWrapper: true,
         },
         {
           id: "advanced-params",
@@ -86,12 +84,8 @@ function ConfigurationLayout() {
             to: "/studies/$studyId/explore/configuration/geo-trimming",
             params: { studyId: study.id },
           }),
-          noWrapper: true,
         },
       ].filter(Boolean)}
-      renderPanel={({ children }, { noWrapper }) => {
-        return noWrapper ? children : <ViewWrapper>{children}</ViewWrapper>;
-      }}
     />
   );
 }

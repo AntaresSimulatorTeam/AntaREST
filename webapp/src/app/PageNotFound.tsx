@@ -15,21 +15,22 @@
 import EmptyView from "@/components/page/EmptyView";
 import RouterButton from "@/components/router/RouterButton";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
+import { useMatch } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 function PageNotFound() {
   const { t } = useTranslation();
-  return (
-    <EmptyView
-      title={t("page.notFound")}
-      icon={SearchOffIcon}
-      action={
-        <RouterButton to="/" variant="contained">
-          {t("global.home")}
-        </RouterButton>
-      }
-    />
-  );
+  const match = useMatch({ strict: false });
+  const isRoot = match.routeId === "__root__";
+
+  // In the root route, there is no menu to go back
+  const actions = isRoot ? (
+    <RouterButton to={location.pathname.split("/").slice(0, -1).join("/")} variant="contained">
+      {t("global.home")}
+    </RouterButton>
+  ) : null;
+
+  return <EmptyView title={t("page.notFound")} icon={SearchOffIcon} actions={actions} />;
 }
 
 export default PageNotFound;

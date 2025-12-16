@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import ViewWrapper from "@/components/page/ViewWrapper";
 import TableMode from "@/components/TableMode";
 import { createFileRoute } from "@tanstack/react-router";
 import useStudy from "../../../-hooks/useStudy";
@@ -26,6 +27,8 @@ function Areas() {
   const study = useStudy();
 
   return (
-    <TableMode studyId={study.id} type="areas" columns={["filterByYear", "filterSynthesis"]} />
+    <ViewWrapper>
+      <TableMode studyId={study.id} type="areas" columns={["filterByYear", "filterSynthesis"]} />
+    </ViewWrapper>
   );
 }

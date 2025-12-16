@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import ViewWrapper from "@/components/page/ViewWrapper";
 import TableMode from "@/components/TableMode";
 import { createFileRoute } from "@tanstack/react-router";
 import useStudy from "../../-hooks/useStudy";
@@ -26,18 +27,20 @@ function EconomicOptions() {
   const study = useStudy();
 
   return (
-    <TableMode
-      studyId={study.id}
-      type="areas"
-      columns={[
-        "energyCostUnsupplied",
-        "spreadUnsuppliedEnergyCost",
-        "energyCostSpilled",
-        "spreadSpilledEnergyCost",
-        "nonDispatchPower",
-        "dispatchHydroPower",
-        "otherDispatchPower",
-      ]}
-    />
+    <ViewWrapper>
+      <TableMode
+        studyId={study.id}
+        type="areas"
+        columns={[
+          "energyCostUnsupplied",
+          "spreadUnsuppliedEnergyCost",
+          "energyCostSpilled",
+          "spreadSpilledEnergyCost",
+          "nonDispatchPower",
+          "dispatchHydroPower",
+          "otherDispatchPower",
+        ]}
+      />
+    </ViewWrapper>
   );
 }

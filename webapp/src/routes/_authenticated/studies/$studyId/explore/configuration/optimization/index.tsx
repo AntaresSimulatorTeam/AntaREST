@@ -17,6 +17,7 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import {
   getOptimizationForm,
   setOptimizationForm,
@@ -61,107 +62,109 @@ function Optimization() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Form
-      config={{
-        defaultValues: () =>
-          getOptimizationForm({ studyId: study.id, studyVersion: study.version }),
-      }}
-      onSubmit={handleSubmit}
-      enableUndoRedo
-    >
-      {({ control }) => (
-        <>
-          <Fieldset legend={t("study.configuration.optimization.legend.general")}>
-            <SelectFE
-              label={t("study.configuration.optimization.unfeasibleProblemBehavior")}
-              options={UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS}
-              name="unfeasibleProblemBehavior"
-              control={control}
-            />
-            <SelectFE
-              label={t("study.configuration.optimization.simplexOptimizationRange")}
-              options={SIMPLEX_OPTIMIZATION_RANGE_OPTIONS}
-              name="simplexOptimizationRange"
-              control={control}
-            />
-            {semver.gte(study.version, "8.3.0") ? (
+    <ViewWrapper>
+      <Form
+        config={{
+          defaultValues: () =>
+            getOptimizationForm({ studyId: study.id, studyVersion: study.version }),
+        }}
+        onSubmit={handleSubmit}
+        enableUndoRedo
+      >
+        {({ control }) => (
+          <>
+            <Fieldset legend={t("study.configuration.optimization.legend.general")}>
               <SelectFE
-                label={t("study.configuration.optimization.exportMps")}
-                options={EXPORT_MPS_OPTIONS}
-                name="exportMps"
+                label={t("study.configuration.optimization.unfeasibleProblemBehavior")}
+                options={UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS}
+                name="unfeasibleProblemBehavior"
                 control={control}
               />
-            ) : (
+              <SelectFE
+                label={t("study.configuration.optimization.simplexOptimizationRange")}
+                options={SIMPLEX_OPTIMIZATION_RANGE_OPTIONS}
+                name="simplexOptimizationRange"
+                control={control}
+              />
+              {semver.gte(study.version, "8.3.0") ? (
+                <SelectFE
+                  label={t("study.configuration.optimization.exportMps")}
+                  options={EXPORT_MPS_OPTIONS}
+                  name="exportMps"
+                  control={control}
+                />
+              ) : (
+                <SwitchFE
+                  label={t("study.configuration.optimization.exportMps")}
+                  name="exportMps"
+                  control={control}
+                />
+              )}
               <SwitchFE
-                label={t("study.configuration.optimization.exportMps")}
-                name="exportMps"
+                label={t("study.configuration.optimization.bindingConstraints")}
+                name="bindingConstraints"
                 control={control}
               />
-            )}
-            <SwitchFE
-              label={t("study.configuration.optimization.bindingConstraints")}
-              name="bindingConstraints"
-              control={control}
-            />
-            <SwitchFE
-              label={t("study.configuration.optimization.hurdleCosts")}
-              name="hurdleCosts"
-              control={control}
-            />
-          </Fieldset>
-          <Fieldset legend={t("study.configuration.optimization.legend.links")}>
-            {semver.gte(study.version, "8.4.0") ? (
-              <SelectFE
-                label={t("study.configuration.optimization.transmissionCapacities")}
-                options={TRANSMISSION_CAPACITIES_OPTIONS}
-                name="transmissionCapacities"
+              <SwitchFE
+                label={t("study.configuration.optimization.hurdleCosts")}
+                name="hurdleCosts"
                 control={control}
               />
-            ) : (
-              <SelectFE
-                label={t("study.configuration.optimization.transmissionCapacities")}
-                options={LEGACY_TRANSMISSION_CAPACITIES_OPTIONS}
-                name="transmissionCapacities"
+            </Fieldset>
+            <Fieldset legend={t("study.configuration.optimization.legend.links")}>
+              {semver.gte(study.version, "8.4.0") ? (
+                <SelectFE
+                  label={t("study.configuration.optimization.transmissionCapacities")}
+                  options={TRANSMISSION_CAPACITIES_OPTIONS}
+                  name="transmissionCapacities"
+                  control={control}
+                />
+              ) : (
+                <SelectFE
+                  label={t("study.configuration.optimization.transmissionCapacities")}
+                  options={LEGACY_TRANSMISSION_CAPACITIES_OPTIONS}
+                  name="transmissionCapacities"
+                  control={control}
+                />
+              )}
+            </Fieldset>
+            <Fieldset legend={t("study.configuration.optimization.legend.thermalClusters")}>
+              <SwitchFE
+                label={t("study.configuration.optimization.thermalClustersMinStablePower")}
+                name="thermalClustersMinStablePower"
                 control={control}
               />
-            )}
-          </Fieldset>
-          <Fieldset legend={t("study.configuration.optimization.legend.thermalClusters")}>
-            <SwitchFE
-              label={t("study.configuration.optimization.thermalClustersMinStablePower")}
-              name="thermalClustersMinStablePower"
-              control={control}
-            />
-            <SwitchFE
-              label={t("study.configuration.optimization.thermalClustersMinUdTime")}
-              name="thermalClustersMinUdTime"
-              control={control}
-            />
-          </Fieldset>
-          <Fieldset legend={t("study.configuration.optimization.legend.reserve")}>
-            <SwitchFE
-              label={t("study.configuration.optimization.dayAheadReserve")}
-              name="dayAheadReserve"
-              control={control}
-            />
-            <SwitchFE
-              label={t("study.configuration.optimization.primaryReserve")}
-              name="primaryReserve"
-              control={control}
-            />
-            <SwitchFE
-              label={t("study.configuration.optimization.strategicReserve")}
-              name="strategicReserve"
-              control={control}
-            />
-            <SwitchFE
-              label={t("study.configuration.optimization.spinningReserve")}
-              name="spinningReserve"
-              control={control}
-            />
-          </Fieldset>
-        </>
-      )}
-    </Form>
+              <SwitchFE
+                label={t("study.configuration.optimization.thermalClustersMinUdTime")}
+                name="thermalClustersMinUdTime"
+                control={control}
+              />
+            </Fieldset>
+            <Fieldset legend={t("study.configuration.optimization.legend.reserve")}>
+              <SwitchFE
+                label={t("study.configuration.optimization.dayAheadReserve")}
+                name="dayAheadReserve"
+                control={control}
+              />
+              <SwitchFE
+                label={t("study.configuration.optimization.primaryReserve")}
+                name="primaryReserve"
+                control={control}
+              />
+              <SwitchFE
+                label={t("study.configuration.optimization.strategicReserve")}
+                name="strategicReserve"
+                control={control}
+              />
+              <SwitchFE
+                label={t("study.configuration.optimization.spinningReserve")}
+                name="spinningReserve"
+                control={control}
+              />
+            </Fieldset>
+          </>
+        )}
+      </Form>
+    </ViewWrapper>
   );
 }

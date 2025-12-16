@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import ViewWrapper from "@/components/page/ViewWrapper";
 import TableMode from "@/components/TableMode";
 import { createFileRoute } from "@tanstack/react-router";
 import useStudy from "../../../-hooks/useStudy";
@@ -24,5 +25,10 @@ export const Route = createFileRoute(
 
 function Perimeter() {
   const study = useStudy();
-  return <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />;
+
+  return (
+    <ViewWrapper>
+      <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />
+    </ViewWrapper>
+  );
 }

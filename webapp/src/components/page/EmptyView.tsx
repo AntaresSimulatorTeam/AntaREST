@@ -12,23 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import LiveHelpRoundedIcon from "@mui/icons-material/LiveHelpRounded";
-import { Box } from "@mui/material";
 import type { SvgIconComponent } from "@mui/icons-material";
+import LiveHelpRoundedIcon from "@mui/icons-material/LiveHelpRounded";
+import { Box, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 export interface EmptyViewProps {
   title?: string;
   icon?: SvgIconComponent;
+  actions?: React.ReactNode;
   extraActions?: React.ReactNode;
-  action?: React.ReactNode;
 }
 
 function EmptyView({
   title,
   icon: Icon = LiveHelpRoundedIcon,
+  actions,
   extraActions,
-  action,
 }: EmptyViewProps) {
   const { t } = useTranslation();
 
@@ -57,9 +57,9 @@ function EmptyView({
           {extraActions}
         </Box>
       )}
-      {Icon && <Icon sx={{ height: 100, width: 100 }} />}
-      <div>{title || t("common.noContent")}</div>
-      {action && <Box sx={{ mt: 2 }}>{action}</Box>}
+      {Icon && <Icon sx={{ height: 100, width: 100, color: "text.disabled" }} />}
+      <Typography color="textDisabled">{title || t("common.noContent")}</Typography>
+      {actions && <Box sx={{ display: "flex", gap: 1, m: 2 }}>{actions}</Box>}
     </Box>
   );
 }
