@@ -81,24 +81,28 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Get all areas for this study
-        stmt_areas = select(area.c.id, area.c.area_id).where(area.c.study_id == study_id)
-        areas_result = session.execute(stmt_areas).fetchall()
+        # Single query with JOIN to get all areas and their UI info
+        stmt = (
+            select(area.c.area_id, area_ui)
+            .select_from(area.join(area_ui, area.c.id == area_ui.c.area_id))
+            .where(area.c.study_id == study_id)
+        )
+        rows = session.execute(stmt).fetchall()
 
-        if not areas_result:
+        if not rows:
             return {}
 
+        # Group UI rows by area_id
+        ui_by_area: Dict[str, List[Any]] = {}
+        for row in rows:
+            area_id = row.area_id
+            if area_id not in ui_by_area:
+                ui_by_area[area_id] = []
+            ui_by_area[area_id].append(row)
+
+        # Build result
         result: Dict[str, AreaUIData] = {}
-
-        for area_row in areas_result:
-            area_db_id = area_row.id
-            area_id = area_row.area_id
-
-            # Get all UI info for this area across all layers
-            stmt_ui = select(area_ui).where(area_ui.c.area_id == area_db_id)
-            ui_rows = session.execute(stmt_ui).fetchall()
-
-            # Build AreaUIData structure
+        for area_id, ui_rows in ui_by_area.items():
             ui_dict: Dict[str, int | str] = {}
             layer_x: Dict[str, int] = {}
             layer_y: Dict[str, int] = {}
