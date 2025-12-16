@@ -20,7 +20,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import TableViewIcon from "@mui/icons-material/TableView";
 import { createFileRoute, linkOptions, redirect } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../-hooks/useStudy";
+import useStudy from "../../../../../-shared/hook/useStudy";
 import storage, { StorageKey } from "../../../../../../services/utils/localStorage";
 import TableTemplateFormDialog from "./$tableModeId/-components/TableTemplateFormDialog";
 

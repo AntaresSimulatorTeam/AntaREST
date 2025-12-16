@@ -18,7 +18,7 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { validateString } from "@/utils/validation/string";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";

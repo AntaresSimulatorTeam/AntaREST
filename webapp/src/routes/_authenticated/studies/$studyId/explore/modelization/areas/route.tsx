@@ -13,107 +13,73 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
-import SplitView from "@/components/page/SplitView";
-import ViewWrapper from "@/components/page/ViewWrapper";
+import ListView from "@/components/page/ListView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";
-import { useUpdateEffect } from "react-use";
-import AreaPropsView from "../../../../../../-App/Singlestudy/explore/Modelization/Areas/AreaPropsView";
-import AreasTab from "../../../../../../-App/Singlestudy/explore/Modelization/Areas/AreasTab";
-import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
-import { getCurrentArea, getStudySynthesis } from "../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../types/types";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getAreas } from "@/redux/selectors";
+import { createFileRoute, useMatchRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import useStudy from "../../../../../../-shared/hook/useStudy";
 
-function Areas() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { areaId: paramAreaId } = useParams();
-  const currentArea = useAppSelector(getCurrentArea);
-  const dispatch = useAppDispatch();
-  const location = useLocation();
-  const navigate = useNavigate();
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/modelization/areas")(
+  {
+    component: AreasLayout,
+  },
+);
 
-  const res = useStudySynthesis({
+function AreasLayout() {
+  const study = useStudy();
+  const navigate = Route.useNavigate();
+
+  const response = useStudySynthesis({
     studyId: study.id,
-    selector: (state, id) => getStudySynthesis(state, id)?.enr_modelling,
+    selector: getAreas,
   });
 
-  useUpdateEffect(() => {
-    if (paramAreaId && (!currentArea || paramAreaId !== currentArea.id)) {
-      dispatch(setCurrentArea(paramAreaId));
+  const matchRoute = useMatchRoute();
+
+  const isAreaSelected = !!matchRoute({
+    to: "/studies/$studyId/explore/modelization/areas/$areaId",
+    params: { studyId: study.id },
+    fuzzy: true,
+  });
+
+  // Redirect to first area if none is selected
+  useEffect(() => {
+    const { data } = response;
+
+    if (!isAreaSelected && data && data.length > 0) {
+      navigate({
+        to: "/studies/$studyId/explore/modelization/areas/$areaId/properties",
+        params: { studyId: study.id, areaId: data[0].id },
+        replace: true,
+      });
     }
-  }, [paramAreaId, currentArea, dispatch]);
-
-  const updateUrl = (newAreaId: string) => {
-    if (!newAreaId || (currentArea && newAreaId === currentArea.id)) {
-      return;
-    }
-
-    const pathSegments = location.pathname.split("/");
-    const areaIndex = pathSegments.findIndex((segment) => segment === "area");
-
-    if (areaIndex === -1) {
-      return;
-    }
-
-    const areaIdIndex = areaIndex + 1;
-
-    pathSegments[areaIdIndex] = newAreaId;
-
-    // Keep section (properties, thermal, etc.)
-    const sectionIndex = areaIdIndex + 1;
-
-    if (!pathSegments[sectionIndex]) {
-      // If no section specified, default to properties
-      pathSegments[sectionIndex] = "properties";
-    } else if (
-      pathSegments[sectionIndex] &&
-      ["thermal", "storages", "renewables"].includes(pathSegments[sectionIndex])
-    ) {
-      // If we're in a cluster type page, remove the specific cluster ID
-      // This avoids navigating to an invalid cluster when changing areas
-      if (pathSegments.length > sectionIndex + 1) {
-        pathSegments.splice(sectionIndex + 1);
-      }
-    }
-
-    navigate(pathSegments.join("/"), { replace: true });
-  };
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleAreaClick = (areaId: string): void => {
-    dispatch(setCurrentArea(areaId));
-    updateUrl(areaId);
-  };
+  }, [isAreaSelected, navigate, response, study.id]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  // renewablesClustering={renewablesClustering !== "aggregated"}
+
   return (
-    <SplitView splitId="areas">
-      {/* Left */}
-      <AreaPropsView studyId={study.id} onClick={handleAreaClick} currentArea={currentArea?.id} />
-      {/* Right */}
-      <ViewWrapper>
-        <UsePromiseCond
-          response={res}
-          ifFulfilled={(renewablesClustering) =>
-            currentArea ? (
-              <AreasTab renewablesClustering={renewablesClustering !== "aggregated"} />
-            ) : (
-              <EmptyView title="No areas" />
-            )
-          }
+    <UsePromiseCond
+      response={response}
+      ifFulfilled={(areas) => (
+        <ListView
+          splitId="areas"
+          list={areas.map((area) => ({
+            ...area,
+            label: area.name,
+            linkOptions: {
+              to: "/studies/$studyId/explore/modelization/areas/$areaId",
+              params: { studyId: study.id, areaId: area.id },
+            },
+          }))}
+          emptyListContent={<EmptyView title="No areas" />}
         />
-      </ViewWrapper>
-    </SplitView>
+      )}
+    />
   );
 }
-
-export default Areas;

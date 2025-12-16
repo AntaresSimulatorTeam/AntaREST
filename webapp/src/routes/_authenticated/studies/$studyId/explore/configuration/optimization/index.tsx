@@ -26,7 +26,7 @@ import type { OptimizationForm } from "@/services/api/studies/config/optimizatio
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import useStudy from "../../../-hooks/useStudy";
+import useStudy from "../../../../../../-shared/hook/useStudy";
 import {
   EXPORT_MPS_OPTIONS,
   LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,

@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import { Graph, type GraphLink, type GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
 import { INITIAL_ZOOM, useRenderNodes } from "../-utils";
-import useStudy from "../../../../-hooks/useStudy";
+import useStudy from "../../../../../../../-shared/hook/useStudy";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   createStudyMapLink,

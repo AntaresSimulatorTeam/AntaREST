@@ -17,7 +17,7 @@ import { createLinkId } from "@/services/api/studies/links/utils";
 import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import { F } from "ts-toolbelt";
-import { isGroupAdmin, isUserAdmin } from "../services/utils";
+import { isGroupAdmin, isUserAdmin, sortByName } from "../services/utils";
 import type {
   AllClustersAndLinks,
   Area,
@@ -234,11 +234,14 @@ export const getCurrentStudySynthesis = createSelector(
 
 export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
   if (synthesis) {
-    return Object.keys(synthesis.areas).map((id) => ({
+    const areas: Array<Area & { id: string }> = Object.keys(synthesis.areas).map((id) => ({
       ...synthesis.areas[id],
       id,
-    })) as Array<Area & { id: string }>;
+    }));
+
+    return sortByName(areas);
   }
+
   return [];
 });
 
@@ -258,7 +261,11 @@ export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
 export const getArea = createSelector(
   getStudySynthesis,
   (state: AppState, studyId: StudyMetadata["id"], areaId: string) => areaId,
-  (synthesis, areaId) => synthesis?.areas[areaId],
+  (synthesis, areaId) =>
+    synthesis?.areas[areaId] &&
+    ({ ...synthesis.areas[areaId], id: areaId } as Area & {
+      id: string;
+    }),
 );
 
 export const getCurrentAreaId = (state: AppState): StudySynthesesState["currentArea"] => {

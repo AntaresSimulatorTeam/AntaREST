@@ -24,7 +24,7 @@ import { Tooltip } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import useStudy from "../../../../-hooks/useStudy";
+import useStudy from "../../../../../../../-shared/hook/useStudy";
 import {
   getAdequacyPatchFormFields,
   PRICE_TAKING_ORDER_OPTIONS,

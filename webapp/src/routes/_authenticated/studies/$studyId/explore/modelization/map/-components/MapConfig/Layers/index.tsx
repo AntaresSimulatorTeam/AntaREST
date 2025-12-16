@@ -14,7 +14,7 @@
 
 import DataGridForm from "@/components/DataGridForm";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";

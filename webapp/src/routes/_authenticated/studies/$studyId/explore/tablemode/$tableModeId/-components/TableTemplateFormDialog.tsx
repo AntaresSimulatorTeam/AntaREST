@@ -27,7 +27,7 @@ import startCase from "lodash/startCase";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { getTableColumnsForType, type TableTemplate } from "../../-utils";
-import useStudy from "../../../../-hooks/useStudy";
+import useStudy from "../../../../../../../-shared/hook/useStudy";
 
 export interface TableTemplateFormDialogProps
   extends Pick<FormDialogProps<TableTemplate>, "title" | "titleIcon" | "onCancel"> {

@@ -27,7 +27,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import type { XpansionCandidate } from "../-shared/types";
-import useStudy from "../../../-hooks/useStudy";
+import useStudy from "../../../../../../-shared/hook/useStudy";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import {

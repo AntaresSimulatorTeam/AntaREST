@@ -15,7 +15,7 @@
 import FormDialog from "@/components/dialogs/FormDialog";
 import StringFE from "@/components/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import type { AxiosError } from "axios";

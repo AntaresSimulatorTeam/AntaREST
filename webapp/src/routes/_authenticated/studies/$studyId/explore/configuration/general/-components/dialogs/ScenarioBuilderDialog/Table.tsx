@@ -15,7 +15,7 @@
 import DataGridForm from "@/components/DataGridForm";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import EmptyView from "@/components/page/EmptyView";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type {
   Level1Display,

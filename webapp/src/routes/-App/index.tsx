@@ -13,7 +13,8 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Areas from "../_authenticated/studies/$studyId/explore/modelization/areas";
+import Properties from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/properties";
+import Areas from "../_authenticated/studies/$studyId/explore/modelization/areas/route";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -23,7 +24,6 @@ import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/Spl
 import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import Load from "./Singlestudy/explore/Modelization/Areas/Load";
 import MiscGen from "./Singlestudy/explore/Modelization/Areas/MiscGen";
-import Properties from "./Singlestudy/explore/Modelization/Areas/Properties";
 import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import RenewableConfig from "./Singlestudy/explore/Modelization/Areas/Renewables/RenewableConfig";
 import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";

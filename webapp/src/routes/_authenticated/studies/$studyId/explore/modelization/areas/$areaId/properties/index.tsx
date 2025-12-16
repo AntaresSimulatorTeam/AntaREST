@@ -14,20 +14,25 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { useOutletContext } from "react-router";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import Fields from "./Fields";
+import useStudy from "@/routes/-shared/hook/useStudy";
+import { createFileRoute } from "@tanstack/react-router";
+import useArea from "../../../../../../../../-shared/hook/useArea";
+import Fields from "./-components/Fields";
 import {
   getPropertiesFormFields,
   setPropertiesFormFields,
   type PropertiesFormFields,
-} from "./utils";
+} from "./-utils";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/properties/",
+)({
+  component: Properties,
+});
 
 function Properties() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const currentAreaId = useAppSelector(getCurrentAreaId);
+  const study = useStudy();
+  const area = useArea();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -35,7 +40,7 @@ function Properties() {
 
   const handleSubmit = (data: SubmitHandlerPlus<PropertiesFormFields>) => {
     const { dirtyValues } = data;
-    return setPropertiesFormFields(study.id, currentAreaId, dirtyValues);
+    return setPropertiesFormFields(study.id, area.id, dirtyValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -44,9 +49,9 @@ function Properties() {
 
   return (
     <Form
-      key={study.id + currentAreaId}
+      key={area.id}
       config={{
-        defaultValues: () => getPropertiesFormFields(study.id, currentAreaId),
+        defaultValues: () => getPropertiesFormFields(study.id, area.id),
       }}
       onSubmit={handleSubmit}
       enableUndoRedo
@@ -55,5 +60,3 @@ function Properties() {
     </Form>
   );
 }
-
-export default Properties;

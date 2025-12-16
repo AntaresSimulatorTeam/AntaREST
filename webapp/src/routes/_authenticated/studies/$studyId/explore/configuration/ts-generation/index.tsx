@@ -34,7 +34,7 @@ import { generateTimeSeries, setTimeSeriesConfig } from "@/services/api/studies/
 import BuildIcon from "@mui/icons-material/Build";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../-hooks/useStudy";
+import useStudy from "../../../../../../-shared/hook/useStudy";
 import usePromiseHandler from "../../../../../../../hooks/usePromiseHandler";
 import Fields from "./-components/Fields";
 import { defaultValues, type TimeSeriesConfigValues } from "./-utils";

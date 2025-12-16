@@ -57,7 +57,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { compareDesc, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../-hooks/useStudy";
+import useStudy from "../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/")({
   // loader: ({ params: { studyId }, location }) => {

@@ -12,65 +12,63 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo } from "react";
+import TabsView from "@/components/page/TabsView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
-import semver from "semver";
-import TabWrapper from "../../../../../../../-App/Singlestudy/explore/TabWrapper";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import useArea from "../../../../../../../-shared/hook/useArea";
+import useStudy from "../../../../../../../-shared/hook/useStudy";
 
-interface Props {
-  renewablesClustering: boolean;
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId",
+)({
+  component: AreaLayout,
+});
+
+function AreaLayout() {
+  const study = useStudy();
+  const area = useArea();
+  const { t } = useTranslation();
+
+  return (
+    <ViewWrapper>
+      <TabsView
+        tabs={[
+          {
+            id: "properties",
+            label: t("study.modelization.properties"),
+            linkOptions: {
+              to: "/studies/$studyId/explore/modelization/areas/$areaId/properties",
+              params: { studyId: study.id, areaId: area.id },
+            },
+          },
+          // { label: t("study.modelization.load"), pathSuffix: "load" },
+          // { label: t("study.modelization.thermal"), pathSuffix: "thermal" },
+          // {
+          //   label: "study.modelization.storages",
+          //   pathSuffix: "storages",
+          //   condition: semver.gte(study.version, "8.6.0"),
+          // },
+          // {
+          //   label: "study.modelization.renewables",
+          //   pathSuffix: "renewables",
+          //   condition: renewablesClustering,
+          // },
+          // { label: "study.modelization.hydro", pathSuffix: "hydro" },
+          // {
+          //   label: "study.modelization.wind",
+          //   pathSuffix: "wind",
+          //   condition: !renewablesClustering,
+          // },
+          // {
+          //   label: "study.modelization.solar",
+          //   pathSuffix: "solar",
+          //   condition: !renewablesClustering,
+          // },
+          // { label: "study.modelization.reserves", pathSuffix: "reserves" },
+          // { label: "study.modelization.miscGen", pathSuffix: "miscGen" },
+        ]}
+      />
+    </ViewWrapper>
+  );
 }
-
-function AreasTab({ renewablesClustering }: Props) {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const areaId = useAppSelector(getCurrentAreaId);
-  const [t] = useTranslation();
-
-  const tabList = useMemo(() => {
-    const basePath = `/studies/${study.id}/explore/modelization/area/${encodeURI(areaId)}`;
-
-    const tabs = [
-      { label: "study.modelization.properties", pathSuffix: "properties" },
-      { label: "study.modelization.load", pathSuffix: "load" },
-      { label: "study.modelization.thermal", pathSuffix: "thermal" },
-      {
-        label: "study.modelization.storages",
-        pathSuffix: "storages",
-        condition: semver.gte(study.version, "8.6.0"),
-      },
-      {
-        label: "study.modelization.renewables",
-        pathSuffix: "renewables",
-        condition: renewablesClustering,
-      },
-      { label: "study.modelization.hydro", pathSuffix: "hydro" },
-      {
-        label: "study.modelization.wind",
-        pathSuffix: "wind",
-        condition: !renewablesClustering,
-      },
-      {
-        label: "study.modelization.solar",
-        pathSuffix: "solar",
-        condition: !renewablesClustering,
-      },
-      { label: "study.modelization.reserves", pathSuffix: "reserves" },
-      { label: "study.modelization.miscGen", pathSuffix: "miscGen" },
-    ];
-
-    return tabs
-      .filter(({ condition }) => condition ?? true)
-      .map(({ label, pathSuffix }) => ({
-        label: t(label),
-        path: `${basePath}/${pathSuffix}`,
-      }));
-  }, [study.id, areaId, renewablesClustering, t, study.version]);
-
-  return <TabWrapper study={study} tabList={tabList} />;
-}
-
-export default AreasTab;

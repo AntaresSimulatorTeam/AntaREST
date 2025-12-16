@@ -19,7 +19,7 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { Button, Typography } from "@mui/material";

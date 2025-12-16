@@ -20,7 +20,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../-hooks/useStudy";
+import useStudy from "../../../../../-shared/hook/useStudy";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import {

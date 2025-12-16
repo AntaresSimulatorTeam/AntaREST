@@ -18,7 +18,7 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import { updateStudySynthesis } from "@/redux/ducks/studySyntheses";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { createFileRoute } from "@tanstack/react-router";
-import useStudy from "../../../-hooks/useStudy";
+import useStudy from "../../../../../../-shared/hook/useStudy";
 import Fields from "./-components/Fields";
 import {
   getAdvancedParamsFormFields,

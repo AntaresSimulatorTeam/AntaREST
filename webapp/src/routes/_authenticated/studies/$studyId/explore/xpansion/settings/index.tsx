@@ -15,7 +15,7 @@
 import DataViewerDialog from "@/components/dialogs/DataViewerDialog";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";

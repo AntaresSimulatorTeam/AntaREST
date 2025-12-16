@@ -15,13 +15,13 @@
 import TabsView from "@/components/page/TabsView";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../-hooks/useStudy";
+import useStudy from "../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/modelization")({
-  component: Modelization,
+  component: ModelizationLayout,
 });
 
-function Modelization() {
+function ModelizationLayout() {
   const study = useStudy();
   const { t } = useTranslation();
   // const dispatch = useAppDispatch();
@@ -68,12 +68,17 @@ function Modelization() {
             params: { studyId: study.id },
           },
         },
-        // {
-        //   label: t("study.areas"),
-        //   path: areaPath,
-        //   onClick: handleAreasClick,
-        //   disabled: areas.length === 0,
-        // },
+        {
+          id: "areas",
+          label: t("study.areas"),
+          linkOptions: {
+            to: "/studies/$studyId/explore/modelization/areas",
+            params: { studyId: study.id },
+          },
+          // path: areaPath,
+          // onClick: handleAreasClick,
+          // disabled: areas.length === 0,
+        },
         // {
         //   label: t("study.links"),
         //   path: `${basePath}/links`,

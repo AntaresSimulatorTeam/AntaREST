@@ -52,7 +52,7 @@ function ListView<TItems extends RouteItem[]>({
 
   return (
     <SplitView splitId={splitId}>
-      <Box>
+      <Box sx={{ display: "flex", flexDirection: "column" }}>
         {hasActions && (
           <Box
             sx={{
@@ -79,7 +79,7 @@ function ListView<TItems extends RouteItem[]>({
             sx={{ p: 1, pb: 0 }}
           />
         )}
-        <List dense>
+        <List dense sx={{ overflow: "auto" }}>
           {list
             .filter((item) => isSearchMatching(search, item.label))
             .map((item) => (

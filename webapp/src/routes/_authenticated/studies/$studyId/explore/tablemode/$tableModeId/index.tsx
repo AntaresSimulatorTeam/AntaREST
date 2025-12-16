@@ -23,7 +23,7 @@ import SearchOffIcon from "@mui/icons-material/SearchOff";
 import { Button } from "@mui/material";
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../-hooks/useStudy";
+import useStudy from "../../../../../../-shared/hook/useStudy";
 import TableTemplateFormDialog from "./-components/TableTemplateFormDialog";
 
 export const Route = createFileRoute(

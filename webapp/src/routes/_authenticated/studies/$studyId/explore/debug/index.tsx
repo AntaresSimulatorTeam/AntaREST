@@ -22,7 +22,7 @@ import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
-import useStudy from "../../-hooks/useStudy";
+import useStudy from "../../../../../-shared/hook/useStudy";
 import Data from "./-components/Data";
 import DebugContext from "./-components/DebugContext";
 import Tree from "./-components/Tree";

@@ -27,7 +27,7 @@ import type { Area, LinkElement, MatrixIndex } from "@/types/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../-hooks/useStudy";
+import useStudy from "../../../../../../-shared/hook/useStudy";
 import usePromise from "../../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks } from "../../../../../../../redux/selectors";

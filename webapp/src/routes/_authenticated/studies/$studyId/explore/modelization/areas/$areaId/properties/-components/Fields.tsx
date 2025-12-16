@@ -17,17 +17,16 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/components/Form";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
 import semver from "semver";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import { ADEQUACY_PATCH_OPTIONS, type PropertiesFormFields } from "./utils";
+import { ADEQUACY_PATCH_OPTIONS, type PropertiesFormFields } from "../-utils";
 
 function Fields() {
   const { t } = useTranslation();
   const { control } = useFormContextPlus<PropertiesFormFields>();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
 
   const filterOptions = useMemo(
     () =>

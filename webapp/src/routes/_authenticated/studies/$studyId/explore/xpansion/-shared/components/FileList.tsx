@@ -17,7 +17,7 @@ import FileTable from "@/components/FileTable";
 import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
