@@ -25,10 +25,18 @@ import * as R from "ramda";
  *
  * @param params - The parameters.
  * @param params.studyId - The study ID.
+ * @param params.outageDetails - Whether to generate outage details.
  * @returns A promise that returns the task ID if fulfilled.
  */
-export async function generateTimeSeries(params: { studyId: StudyMetadata["id"] }) {
-  const { data } = await client.put<string>(`/v1/studies/${params.studyId}/timeseries/generate`);
+export async function generateTimeSeries(params: {
+  studyId: StudyMetadata["id"];
+  outageDetails?: boolean;
+}) {
+  const { data } = await client.put<string>(
+    `/v1/studies/${params.studyId}/timeseries/generate`,
+    null,
+    { params: { outage_details: params.outageDetails ?? false } },
+  );
   return data;
 }
 

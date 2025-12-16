@@ -329,6 +329,9 @@ class FileStudyAreaDao(AreaDao):
         if study_version > STUDY_VERSION_9_2:
             study_data.tree.delete(["input", "hydro", "hydro", "overflow spilled cost difference", area_id])
 
+        if (study_data.tree.config.path / "user" / "ts-generator-output" / "thermal" / area_id).exists():
+            study_data.tree.delete(["user", "ts-generator-output", "thermal", area_id])
+
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
 
@@ -392,7 +395,7 @@ class FileStudyAreaDao(AreaDao):
         """Remove the area from scenario builder configuration."""
         rulesets = study_data.tree.get(["settings", "scenariobuilder"])
 
-        area_keys = {"l", "h", "w", "s", "t", "r", "hl", "hfl", "hgp"}
+        area_keys = {"l", "h", "w", "s", "t", "r", "hl", "hfl", "hgp", "sts", "sta"}
         link_keys = {"ntc"}
         for ruleset in rulesets.values():
             for key in list(ruleset):

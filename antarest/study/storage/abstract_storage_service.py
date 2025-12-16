@@ -300,7 +300,9 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         return output_full_name
 
     @override
-    def export_study(self, metadata: Study, target: Path, outputs: bool = True) -> Path:
+    def export_study(
+        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
+    ) -> Path:
         """
         Export and compress the study inside a 7zip file.
 
@@ -308,6 +310,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             metadata: Study metadata object.
             target: Path of the file to export to.
             outputs: Flag to indicate whether to include the output folder inside the exportation.
+            archive_format:
 
         Returns:
             The 7zip file containing the study files compressed inside.
@@ -318,7 +321,7 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
-            archive_dir(tmp_study_path, target)
+            archive_dir(tmp_study_path, target, archive_format=archive_format)
             stopwatch.log_elapsed(
                 lambda x: logger.info(f"Study {path_study} exported ({target.suffix} format) in {x}s")
             )
