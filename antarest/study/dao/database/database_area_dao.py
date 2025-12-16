@@ -16,9 +16,9 @@ Database implementation of AreaDao using SQLAlchemy Core.
 This module provides database-backed storage for areas when storage_mode=DATABASE.
 """
 
-from abc import abstractmethod
 from typing import Any, Dict, List
 
+import pandas as pd
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -32,18 +32,31 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 
 class DatabaseAreaDao(AreaDao):
     """
-    Database implementation of AreaDao
+    Database implementation of AreaDao.
+
+    Note: Write operations do NOT commit transactions. The caller (service layer)
+    is responsible for transaction management (commit/rollback). This allows
+    combining multiple DAO operations into a single atomic transaction.
     """
 
-    @abstractmethod
+    def __init__(self, study_id: str, db_session: Session) -> None:
+        """
+        Initialize DatabaseAreaDao with dependencies.
+
+        Args:
+            study_id: The study ID for database queries.
+            db_session: SQLAlchemy session for database operations.
+        """
+        self._study_id = study_id
+        self._db_session = db_session
+
     def get_study_id(self) -> str:
         """Get the study ID for database queries."""
-        raise NotImplementedError()
+        return self._study_id
 
-    @abstractmethod
     def get_session(self) -> Session:
         """Get the SQLAlchemy session for database operations."""
-        raise NotImplementedError()
+        return self._db_session
 
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:
@@ -216,7 +229,6 @@ class DatabaseAreaDao(AreaDao):
             color_b=b,
         )
         session.execute(stmt_ui)
-        session.commit()
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -242,7 +254,6 @@ class DatabaseAreaDao(AreaDao):
         # Delete area (cascade will delete area_ui automatically)
         stmt = delete(area).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
         session.execute(stmt)
-        session.commit()
 
     @override
     def save_area_ui(self, area_id: str, layer: str, area_ui_data: AreaUI) -> None:
@@ -294,7 +305,6 @@ class DatabaseAreaDao(AreaDao):
                 color_b=b,
             )
             session.execute(stmt_insert)
-        session.commit()
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
@@ -357,4 +367,44 @@ class DatabaseAreaDao(AreaDao):
                     color_b=default_ui.color_b,
                 )
                 session.execute(stmt_insert)
-        session.commit()
+
+    # Time series methods - not yet implemented for database storage mode
+    @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_load(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_reserves(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_solar(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_wind(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")

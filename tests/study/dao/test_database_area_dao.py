@@ -16,11 +16,9 @@ Unit tests for DatabaseAreaDao.
 
 import uuid
 
-import pandas as pd
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaUI
@@ -28,65 +26,6 @@ from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.models import area, area_ui
 from antarest.study.model import StorageMode
 from tests.helpers import create_study
-
-
-class TestDatabaseAreaDao(DatabaseAreaDao):
-    """
-    Concrete implementation of DatabaseAreaDao for testing.
-    Implements the abstract methods
-    """
-
-    def __init__(self, study_id: str, session: Session):
-        self._study_id = study_id
-        self._session = session
-
-    @override
-    def get_study_id(self) -> str:
-        return self._study_id
-
-    @override
-    def get_session(self) -> Session:
-        return self._session
-
-    @override
-    def get_load(self, area_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
-
-    @override
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
-
-    @override
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
-
-    @override
-    def get_solar(self, area_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
-
-    @override
-    def get_wind(self, area_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
-
-    @override
-    def save_load(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @override
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @override
-    def save_reserves(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @override
-    def save_solar(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @override
-    def save_wind(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError()
 
 
 class TestDatabaseAreaDaoMethods:
@@ -109,11 +48,11 @@ class TestDatabaseAreaDaoMethods:
         return study_id
 
     @pytest.fixture
-    def dao(self, db_session: Session, study_id: str) -> TestDatabaseAreaDao:
+    def dao(self, db_session: Session, study_id: str) -> DatabaseAreaDao:
         """Create a DatabaseAreaDao instance for testing."""
-        return TestDatabaseAreaDao(study_id, db_session)
+        return DatabaseAreaDao(study_id, db_session)
 
-    def test_save_area_creates_area_with_default_ui(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_save_area_creates_area_with_default_ui(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that save_area creates a new area with default UI for layer '0'.
         """
@@ -139,7 +78,7 @@ class TestDatabaseAreaDaoMethods:
             assert ui_row.color_g == 108
             assert ui_row.color_b == 44
 
-    def test_save_area_raises_error_if_exists(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_save_area_raises_error_if_exists(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that save_area raises ValueError if area already exists.
         """
@@ -151,7 +90,7 @@ class TestDatabaseAreaDaoMethods:
             with pytest.raises(ValueError, match="already exists"):
                 dao.save_area("Paris")
 
-    def test_delete_area_removes_area_and_ui(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_delete_area_removes_area_and_ui(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that delete_area removes the area and cascades to area_ui.
         """
@@ -169,7 +108,7 @@ class TestDatabaseAreaDaoMethods:
             area_row = db_session.execute(stmt_area).fetchone()
             assert area_row is None
 
-    def test_delete_area_raises_error_if_not_exists(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_delete_area_raises_error_if_not_exists(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that delete_area raises AreaNotFound if area doesn't exist.
         """
@@ -177,7 +116,7 @@ class TestDatabaseAreaDaoMethods:
             with pytest.raises(AreaNotFound):
                 dao.delete_area("nonexistent")
 
-    def test_get_all_areas_info_returns_areas(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_get_all_areas_info_returns_areas(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that get_all_areas_info returns all areas for a study with original names preserved.
         """
@@ -199,7 +138,7 @@ class TestDatabaseAreaDaoMethods:
             # All areas should have thermals=None for now
             assert all(a.thermals is None for a in areas)
 
-    def test_get_area_ui_returns_ui_for_layer(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_get_area_ui_returns_ui_for_layer(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that get_area_ui returns UI data for a specific layer.
         """
@@ -214,7 +153,7 @@ class TestDatabaseAreaDaoMethods:
             assert ui.y == 0
             assert ui.color_rgb == (230, 108, 44)
 
-    def test_get_area_ui_falls_back_to_layer_zero(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_get_area_ui_falls_back_to_layer_zero(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that get_area_ui falls back to layer '0' if requested layer doesn't exist.
         """
@@ -229,7 +168,7 @@ class TestDatabaseAreaDaoMethods:
             assert ui.y == 0
             assert ui.color_rgb == (230, 108, 44)
 
-    def test_get_area_ui_raises_error_if_area_not_exists(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_get_area_ui_raises_error_if_area_not_exists(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that get_area_ui raises AreaNotFound if area doesn't exist.
         """
@@ -237,7 +176,7 @@ class TestDatabaseAreaDaoMethods:
             with pytest.raises(AreaNotFound):
                 dao.get_area_ui("nonexistent")
 
-    def test_save_area_ui_updates_existing(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_save_area_ui_updates_existing(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that save_area_ui updates existing UI data.
         """
@@ -258,7 +197,7 @@ class TestDatabaseAreaDaoMethods:
             assert ui.y == 200
             assert ui.color_rgb == (255, 0, 0)
 
-    def test_save_area_ui_creates_new_layer(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_save_area_ui_creates_new_layer(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that save_area_ui creates UI for a new layer.
         """
@@ -284,7 +223,7 @@ class TestDatabaseAreaDaoMethods:
             assert ui_layer1.y == 400
             assert ui_layer1.color_rgb == (0, 255, 0)
 
-    def test_save_area_ui_raises_error_if_area_not_exists(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_save_area_ui_raises_error_if_area_not_exists(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that save_area_ui raises AreaNotFound if area doesn't exist.
         """
@@ -293,7 +232,7 @@ class TestDatabaseAreaDaoMethods:
             with pytest.raises(AreaNotFound):
                 dao.save_area_ui("nonexistent", "0", new_ui)
 
-    def test_get_all_areas_ui_info_returns_all_layers(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_get_all_areas_ui_info_returns_all_layers(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that get_all_areas_ui_info returns UI data for all areas and layers.
         """
@@ -333,7 +272,7 @@ class TestDatabaseAreaDaoMethods:
             assert london_ui.layer_y == {"0": 0, "1": 150}
             assert london_ui.layer_color == {"0": "230, 108, 44", "1": "0, 0, 255"}
 
-    def test_save_layer_areas_adds_and_removes(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_save_layer_areas_adds_and_removes(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that save_layer_areas adds and removes areas from a layer.
         """
@@ -397,7 +336,7 @@ class TestDatabaseAreaDaoMethods:
             berlin_ui = dao.get_area_ui("berlin", "1")
             assert berlin_ui is not None
 
-    def test_save_layer_areas_copies_default_ui(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
+    def test_save_layer_areas_copies_default_ui(self, db_session: Session, dao: DatabaseAreaDao) -> None:
         """
         Test that save_layer_areas copies default UI from layer '0' when adding areas to a new layer.
         """
