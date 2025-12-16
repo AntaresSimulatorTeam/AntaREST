@@ -15,7 +15,6 @@ import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
@@ -36,7 +35,6 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
@@ -95,12 +93,6 @@ class RawStudyService(AbstractStorageService):
             study_factory=study_factory,
             cache=cache,
         )
-        self.cleanup_thread = Thread(
-            target=RawStudyService.cleanup_lazynode_zipfilelist_cache,
-            name=f"{self.__class__.__name__}-Cleaner",
-            daemon=True,
-        )
-        self.cleanup_thread.start()
 
         self._matrix_service = self.study_factory._matrix_mapper_factory._matrix_service
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
@@ -467,18 +459,6 @@ class RawStudyService(AbstractStorageService):
         if metadata.archived:
             return self.find_archive_path(metadata)
         return Path(metadata.path)
-
-    @staticmethod
-    def cleanup_lazynode_zipfilelist_cache() -> None:
-        while True:
-            logger.info(f"Cleaning lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
-            LazyNode.ZIP_FILELIST_CACHE = {
-                key: LazyNode.ZIP_FILELIST_CACHE[key]
-                for key in LazyNode.ZIP_FILELIST_CACHE
-                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < current_time()
-            }
-            logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
-            time.sleep(600)
 
     @override
     def get_output_path(self, study: Study, output_id: str) -> Path:
