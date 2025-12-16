@@ -29,6 +29,7 @@ area = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("study_id", String(36), ForeignKey("study.id", ondelete="CASCADE"), nullable=False, index=True),
     Column("area_id", String(255), nullable=False),
+    Column("area_name", String(255), nullable=False),
     UniqueConstraint("study_id", "area_id", name="uq_area_study_id_area_id"),
 )
 

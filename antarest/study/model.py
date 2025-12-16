@@ -242,9 +242,6 @@ class StudyContentStatus(enum.Enum):
 class StorageMode(enum.StrEnum):
     """
     Storage mode for study data.
-
-    FILESYSTEM: Traditional file-based storage (default for backward compatibility)
-    DATABASE: Database-based storage for areas and related entities
     """
 
     FILESYSTEM = "filesystem"

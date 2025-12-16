@@ -122,11 +122,12 @@ class TestDatabaseAreaDaoMethods:
             db_session.commit()
 
         with db_session:
-            # Check area was created
+            # Check area was created with both ID and original name
             stmt_area = select(area).where((area.c.study_id == dao.get_study_id()) & (area.c.area_id == "paris"))
             area_row = db_session.execute(stmt_area).fetchone()
             assert area_row is not None
             assert area_row.area_id == "paris"
+            assert area_row.area_name == "Paris"
 
             # Check default UI was created for layer "0"
             stmt_ui = select(area_ui).where((area_ui.c.area_id == area_row.id) & (area_ui.c.layer_id == "0"))
@@ -178,7 +179,7 @@ class TestDatabaseAreaDaoMethods:
 
     def test_get_all_areas_info_returns_areas(self, db_session: Session, dao: TestDatabaseAreaDao) -> None:
         """
-        Test that get_all_areas_info returns all areas for a study.
+        Test that get_all_areas_info returns all areas for a study with original names preserved.
         """
         with db_session:
             dao.save_area("Paris")
@@ -189,8 +190,12 @@ class TestDatabaseAreaDaoMethods:
         with db_session:
             areas = dao.get_all_areas_info()
             assert len(areas) == 3
+            # Check IDs (lowercase/normalized)
             area_ids = {a.id for a in areas}
             assert area_ids == {"paris", "london", "berlin"}
+            # Check original names are preserved
+            area_names = {a.name for a in areas}
+            assert area_names == {"Paris", "London", "Berlin"}
             # All areas should have thermals=None for now
             assert all(a.thermals is None for a in areas)
 

@@ -36,6 +36,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
+        sa.Column("area_name", sa.String(length=255), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id"],
             ["study.id"],

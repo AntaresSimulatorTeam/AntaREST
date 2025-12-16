@@ -17,10 +17,9 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List
 
 from sqlalchemy import delete, insert, select, update
-from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -58,15 +57,12 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        stmt = select(area.c.area_id).where(area.c.study_id == study_id)
+        stmt = select(area.c.area_id, area.c.area_name).where(area.c.study_id == study_id)
         result = session.execute(stmt)
 
         areas_info = []
         for row in result:
-            area_id = row.area_id
-            # For now, we don't have the name stored in DB (it's in filesystem config)
-            # and thermals is not yet implemented
-            areas_info.append(AreaInfo(id=area_id, name=area_id, thermals=None))
+            areas_info.append(AreaInfo(id=row.area_id, name=row.area_name, thermals=None))
 
         return areas_info
 
@@ -178,7 +174,7 @@ class DatabaseAreaDao(AreaDao):
                 )
 
         # If no UI found at all, return defaults
-        return AreaUI(x=0, y=0, color_rgb=(230, 108, 44))
+        return AreaUI()
 
     @override
     def save_area(self, area_name: str) -> None:
@@ -203,27 +199,21 @@ class DatabaseAreaDao(AreaDao):
         if existing:
             raise ValueError(f"Area '{area_name}' already exists and could not be created")
 
-        # Insert new area
-        stmt_area = insert(area).values(study_id=study_id, area_id=area_id)
-        # Cast to CursorResult to access inserted_primary_key attribute
-        # (locally mypy infers CursorResult, but CI with type stubs requires explicit cast)
-        result = cast(CursorResult[Any], session.execute(stmt_area))  # type: ignore[redundant-cast, unused-ignore]
-        session.flush()
+        # Insert new area and get the generated ID
+        stmt_area = insert(area).values(study_id=study_id, area_id=area_id, area_name=area_name).returning(area.c.id)
+        new_area_id = session.execute(stmt_area).scalar_one()
 
-        inserted_pk = result.inserted_primary_key
-        if inserted_pk is None:
-            raise RuntimeError("Failed to get inserted primary key for area")
-        new_area_id = inserted_pk[0]
-
-        # Create default UI for layer "0"
+        # Create default UI for layer "0" using model defaults
+        default_ui = AreaUI()
+        r, g, b = default_ui.color_rgb
         stmt_ui = insert(area_ui).values(
             area_id=new_area_id,
             layer_id="0",
-            x=0,
-            y=0,
-            color_r=230,
-            color_g=108,
-            color_b=44,
+            x=default_ui.x,
+            y=default_ui.y,
+            color_r=r,
+            color_g=g,
+            color_b=b,
         )
         session.execute(stmt_ui)
         session.commit()

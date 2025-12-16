@@ -903,7 +903,7 @@ class StudyService:
         study_name: str,
         version: Optional[StudyVersion],
         group_ids: List[str],
-        storage_mode: StorageMode,
+        storage_mode: StorageMode = StorageMode.FILESYSTEM,
         directory: str = "",
     ) -> str:
         """
