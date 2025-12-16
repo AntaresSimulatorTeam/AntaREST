@@ -59,7 +59,7 @@ class CheckSubNode(INode[int, int, int]):
         return []
 
 
-class TestMiddleNode(FolderNode):
+class MiddleNode(FolderNode):
     def __init__(
         self,
         matrix_mapper: MatrixUriMapper,

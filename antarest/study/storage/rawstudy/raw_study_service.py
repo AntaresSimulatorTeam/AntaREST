@@ -12,10 +12,8 @@
 
 import logging
 import shutil
-import time
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 
@@ -35,7 +33,6 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
     create_new_empty_study,
@@ -94,12 +91,6 @@ class RawStudyService(AbstractStorageService):
             study_factory=study_factory,
             cache=cache,
         )
-        self.cleanup_thread = Thread(
-            target=RawStudyService.cleanup_lazynode_zipfilelist_cache,
-            name=f"{self.__class__.__name__}-Cleaner",
-            daemon=True,
-        )
-        self.cleanup_thread.start()
 
         RawStudyMatrixUsageProvider(
             StudyMetadataRepository(cache_service=cache),
@@ -332,26 +323,6 @@ class RawStudyService(AbstractStorageService):
         else:
             raise StudyDeletionNotAllowed(metadata.id)
 
-    @override
-    def delete_output(self, metadata: Study, output_name: str) -> None:
-        """
-        Delete output folder
-        Args:
-            metadata: study
-            output_name: output simulation
-
-        Returns:
-
-        """
-        study_path = self.get_study_path(metadata)
-        output_path = study_path / "output" / output_name
-        if output_path.exists() and output_path.is_dir():
-            shutil.rmtree(output_path, ignore_errors=True)
-        else:
-            output_path = output_path.parent / f"{output_name}.zip"
-            output_path.unlink(missing_ok=True)
-        remove_from_cache(self.cache, metadata.id)
-
     def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
         """
         Import study in the directory of the study.
@@ -494,22 +465,6 @@ class RawStudyService(AbstractStorageService):
                 study.id,
                 exc_info=e,
             )
-
-    @staticmethod
-    def cleanup_lazynode_zipfilelist_cache() -> None:
-        while True:
-            logger.info(f"Cleaning lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
-            LazyNode.ZIP_FILELIST_CACHE = {
-                key: LazyNode.ZIP_FILELIST_CACHE[key]
-                for key in LazyNode.ZIP_FILELIST_CACHE
-                if LazyNode.ZIP_FILELIST_CACHE[key].expiration_date < current_time()
-            }
-            logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
-            time.sleep(600)
-
-    @override
-    def get_output_path(self, study: Study, output_id: str) -> Path:
-        return self.get_study_path(study) / "output" / output_id
 
     @staticmethod
     def checks_antares_web_compatibility(study: Study) -> None:

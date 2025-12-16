@@ -35,11 +35,11 @@ from antarest.core.tasks.service import ITaskService
 from antarest.login.model import User
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
+from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
-from antarest.study.storage.output_service import OutputService
-from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from tests.helpers import create_raw_study
 
 UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
@@ -70,7 +70,7 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
 
 
 @pytest.fixture
-def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> StudyService:
+def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tuple[StudyService, OutputService, Config]:
     path_studies = tmp_path / "studies"
 
     path_resources = project_path / "resources"
@@ -135,10 +135,12 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     blob_content_repository = BlobContentRepository(bucket_dir=blob_path)
     blob_service = BlobService(blob_content_repository=blob_content_repository)
 
+    cache = LocalCache(config=config.cache)
+
     # Final object
-    storage_service = build_study_service(
+    study_service = build_study_service(
         app_ctxt=Mock(),
-        cache=LocalCache(config=config.cache),
+        cache=cache,
         file_transfer_manager=Mock(),
         task_service=task_service_mock,
         user_service=user_service,
@@ -150,18 +152,30 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
         job_result_repository=job_result_repository,
     )
 
-    return storage_service
+    output_service = build_output_service(
+        app_ctxt=Mock(),
+        study_service=study_service,
+        config=config,
+        cache=cache,
+        event_bus=study_service.event_bus,
+        task_service=task_service_mock,
+        filetransfer_service=Mock(),
+        matrix_service=matrix_service,
+    )
+
+    return study_service, output_service, config
+
+
+@pytest.fixture
+def storage_service(services: tuple[StudyService, OutputService]) -> StudyService:
+    return services[0]
 
 
 @pytest.fixture(name="output_service")
-def output_service_fixture(storage_service: StudyService) -> OutputService:
-    storage = OutputStorageDispatcher(
-        storage_service.storage_service.raw_study_service, storage_service.storage_service.variant_study_service
-    )
-    return OutputService(
-        storage_service,
-        storage,
-        storage_service.task_service,
-        storage_service.file_transfer_manager,
-        storage_service.event_bus,
-    )
+def output_service_fixture(services: tuple[StudyService, OutputService]) -> OutputService:
+    return services[1]
+
+
+@pytest.fixture
+def config(services: tuple[StudyService, OutputService, Config]) -> Config:
+    return services[2]

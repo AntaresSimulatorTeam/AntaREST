@@ -25,9 +25,9 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.utils import current_user_context
 from antarest.study.model import RawStudy, Study
+from antarest.study.output.output_service import OutputService
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)

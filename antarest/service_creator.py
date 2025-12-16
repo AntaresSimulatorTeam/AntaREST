@@ -35,6 +35,7 @@ from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.metrics import add_db_metrics
 from antarest.core.persistence import upgrade_db
+from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
@@ -44,15 +45,17 @@ from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
+from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
+from antarest.study.output.file_output_storage import FileOutputStorage
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.watcher import Watcher
-from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
+from antarest.study.web.output_blueprint import create_output_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
@@ -149,6 +152,39 @@ class CoreServices:
     blob_service: BlobService
 
 
+def build_output_service(
+    app_ctxt: Optional[AppBuildContext],
+    study_service: StudyService,
+    cache: ICache,
+    task_service: ITaskService,
+    filetransfer_service: FileTransferManager,
+    event_bus: IEventBus,
+    config: Config,
+    matrix_service: ISimpleMatrixService,
+) -> OutputService:
+    remote_executor = RemoteWorkerExecutor(event_bus, config)
+    output_storage = FileOutputStorage(
+        outputs_provider=study_service_as_file_outputs_provider(study_service),
+        cache=cache,
+        remote_executor=remote_executor,
+    )
+
+    output_service = OutputService(
+        studies_repository=study_service_as_studies_repository(study_service),
+        storage=output_storage,
+        task_service=task_service,
+        file_transfer_manager=filetransfer_service,
+        matrix_service=matrix_service,
+        tmp_dir=config.storage.tmp_dir,
+        cache=cache,
+    )
+
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
+
+    return output_service
+
+
 def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
@@ -175,16 +211,21 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         event_bus=event_bus,
         blob_service=blob_service,
     )
-    storage_dispatcher = OutputStorageDispatcher(
-        study_service.storage_service.raw_study_service, study_service.storage_service.variant_study_service
-    )
-    output_service = OutputService(
+
+    output_service = build_output_service(
+        app_ctxt=app_ctxt,
+        cache=cache,
         study_service=study_service,
-        storage=storage_dispatcher,
         task_service=task_service,
-        file_transfer_manager=filetransfer_service,
+        filetransfer_service=filetransfer_service,
         event_bus=event_bus,
+        config=config,
+        matrix_service=matrix_service,
     )
+
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
+
     return CoreServices(
         cache=cache,
         event_bus=event_bus,
