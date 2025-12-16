@@ -16,10 +16,10 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import semver from "semver";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../types/types";
-import TabWrapper from "../../TabWrapper";
+import TabWrapper from "../../../../../../../-App/Singlestudy/explore/TabWrapper";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 
 interface Props {
   renewablesClustering: boolean;
