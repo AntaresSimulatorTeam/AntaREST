@@ -13,9 +13,11 @@
  */
 
 import { isSearchMatching } from "@/utils/stringUtils";
-import { Box, List, ListItem, Tooltip, Typography } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import { Box, Button, List, ListItem, Tooltip, Typography } from "@mui/material";
 import { Outlet, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import SearchFE from "../fieldEditors/SearchFE";
 import RouterListItemButton from "../router/RouterListItemButton";
 import SplitView from "./SplitView";
@@ -34,6 +36,7 @@ interface ListViewProps<TItems extends RouteItem[] = RouteItem[]> {
   splitId: string;
   renderPanel?: (props: { children: React.ReactNode }, item: TItems[number]) => React.ReactNode;
   renderEmptyPanel?: () => React.ReactNode;
+  onAdd?(): void;
   actions?: React.ReactNode;
 }
 
@@ -42,14 +45,17 @@ function ListView<TItems extends RouteItem[]>({
   splitId,
   renderPanel = ({ children }) => children,
   renderEmptyPanel,
+  onAdd,
   actions,
 }: ListViewProps<TItems>) {
   const [search, setSearch] = useState("");
+  const { t } = useTranslation();
+  const hasActions = !!onAdd || !!actions;
 
   return (
     <SplitView splitId={splitId}>
       <Box>
-        {actions && (
+        {hasActions && (
           <Box
             sx={{
               display: "flex",
@@ -58,6 +64,11 @@ function ListView<TItems extends RouteItem[]>({
               pb: 0,
             }}
           >
+            {onAdd && (
+              <Button startIcon={<AddIcon />} variant="contained" onClick={onAdd}>
+                {t("global.add")}
+              </Button>
+            )}
             {actions}
           </Box>
         )}

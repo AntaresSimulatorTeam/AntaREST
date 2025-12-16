@@ -17,9 +17,7 @@ import ListView from "@/components/page/ListView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import useDialog from "@/hooks/useDialog";
 import { sortByName } from "@/services/utils";
-import AddIcon from "@mui/icons-material/Add";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { Button } from "@mui/material";
 import { createFileRoute, linkOptions, redirect } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
@@ -90,11 +88,7 @@ function TableModeLayout() {
       }))}
       renderPanel={ViewWrapper}
       renderEmptyPanel={() => <EmptyView title={t("study.tableMode.empty")} />}
-      actions={
-        <Button startIcon={<AddIcon />} variant="contained" onClick={handleAdd}>
-          {t("global.add")}
-        </Button>
-      }
+      onAdd={handleAdd}
     />
   );
 }
