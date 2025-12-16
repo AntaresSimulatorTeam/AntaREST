@@ -465,7 +465,7 @@ class RawStudyInterface(StudyInterface):
                 update_cache(self._raw_study_service.cache, study.id, data)
 
             # Update editor metadata (only in FILESYSTEM mode)
-            self._update_editor(file_study)
+            self._update_editor_and_lastsave(file_study)
 
         # Notify changes to child variants
         self._variant_study_service.on_parent_change(study.id)
@@ -960,7 +960,6 @@ class StudyService:
             created_at=now_utc,
             updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
-            additional_data=StudyAdditionalData(author=author, editor=author),
             storage_mode=storage_mode,
             directory_id=directory_id,
             owner=owner,

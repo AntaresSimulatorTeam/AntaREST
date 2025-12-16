@@ -16,6 +16,7 @@ Unit tests for DatabaseAreaDao.
 
 import uuid
 
+import pandas as pd
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -46,6 +47,46 @@ class TestDatabaseAreaDao(DatabaseAreaDao):
     @override
     def get_session(self) -> Session:
         return self._session
+
+    @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def save_load(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_reserves(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_solar(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_wind(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
 
 
 class TestDatabaseAreaDaoMethods:

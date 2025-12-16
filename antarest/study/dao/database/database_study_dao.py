@@ -18,7 +18,7 @@ Currently implements only Area operations via DatabaseAreaDao.
 """
 
 from pathlib import PurePosixPath
-from typing import Dict, Optional, Sequence
+from typing import Dict, Iterator, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -727,4 +727,136 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    # AreaDao abstract methods for load/misc_gen/reserves/solar/wind
+    @override
+    def get_load(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_reserves(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_solar(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_wind(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_load(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_reserves(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_solar(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_wind(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    # Hydro series methods
+    @override
+    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    # Link series methods
+    @override
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    # User resources
+    @override
+    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
