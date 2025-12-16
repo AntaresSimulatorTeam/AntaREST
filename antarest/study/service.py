@@ -103,7 +103,7 @@ from antarest.study.business.timeseries_config_management import TimeSeriesConfi
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
-from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.directory_service import DirectoryService
@@ -413,53 +413,45 @@ class RawStudyInterface(StudyInterface):
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, self._repository.session).read_only()
+            return DatabaseStudyDao(self._study.id, db.session).read_only()
         return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
-        should_invalidate_cache = False
+        file_study: Optional[FileStudy] = None
 
-        # Apply commands based on storage mode
+        # Build DAO based on storage mode
         if study.storage_mode == StorageMode.DATABASE:
-            # DATABASE mode: apply to database
-            database_dao = DatabaseStudyDao(study.id, self._repository.session)
-
-            for command in commands:
-                result = command.apply(database_dao, listener)
-                if result.should_invalidate_cache:
-                    should_invalidate_cache = True
-                if not result.status:
-                    raise CommandApplicationError(result.message)
-
-            # Invalidate cache if needed
-            if should_invalidate_cache:
-                remove_from_cache(self._raw_study_service.cache, study.id)
+            dao: StudyDao = DatabaseStudyDao(study.id, db.session)
         else:
-            # FILESYSTEM mode: apply to file system
             file_study = self.get_files()
+            context = commands[0].command_context if commands else None
+            dao = FileStudyTreeDao(
+                file_study,
+                context.generator_matrix_constants if context else None,
+                context.blob_service if context else None,
+            )
 
-            for command in commands:
-                context = command.command_context
-                result = command.apply(
-                    FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service),
-                    listener,
-                )
-                if result.should_invalidate_cache:
-                    should_invalidate_cache = True
-                if not result.status:
-                    raise CommandApplicationError(result.message)
+        # Apply all commands
+        should_invalidate_cache = False
+        for command in commands:
+            result = command.apply(dao, listener)
+            if result.should_invalidate_cache:
+                should_invalidate_cache = True
+            if not result.status:
+                raise CommandApplicationError(result.message)
 
-            # Update cache (only in FILESYSTEM mode)
-            if should_invalidate_cache:
-                remove_from_cache(self._raw_study_service.cache, study.id)
-            else:
-                # Update cache when it's not invalidated
-                data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
-                update_cache(self._raw_study_service.cache, study.id, data)
+        # Handle cache invalidation
+        if should_invalidate_cache:
+            remove_from_cache(self._raw_study_service.cache, study.id)
+        elif file_study is not None:
+            # Update cache only in FILESYSTEM mode when not invalidated
+            data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+            update_cache(self._raw_study_service.cache, study.id, data)
 
-            # Update editor metadata (only in FILESYSTEM mode)
+        # Update editor metadata (only in FILESYSTEM mode)
+        if file_study is not None:
             self._update_editor_and_lastsave(file_study)
 
         # Notify changes to child variants
@@ -485,9 +477,8 @@ class VariantStudyInterface(StudyInterface):
     to the variant.
     """
 
-    def __init__(self, variant_service: VariantStudyService, repository: StudyMetadataRepository, study: VariantStudy):
+    def __init__(self, variant_service: VariantStudyService, study: VariantStudy):
         self._variant_service = variant_service
-        self._repository = repository
         self._study = study
         self._version = StudyVersion.parse(self._study.version)
 
@@ -508,7 +499,7 @@ class VariantStudyInterface(StudyInterface):
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, self._repository.session).read_only()
+            return DatabaseStudyDao(self._study.id, db.session).read_only()
         return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
@@ -876,7 +867,6 @@ class StudyService:
         if isinstance(study, VariantStudy):
             return VariantStudyInterface(
                 self.storage_service.variant_study_service,
-                self.repository,
                 study,
             )
         elif isinstance(study, RawStudy):

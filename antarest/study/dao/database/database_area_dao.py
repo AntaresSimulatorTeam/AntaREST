@@ -196,43 +196,37 @@ class DatabaseAreaDao(AreaDao):
 
         area_id = transform_name_to_id(area_name)
 
-        try:
-            # Check if area already exists
-            stmt_check = select(area.c.id).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
-            existing = session.execute(stmt_check).fetchone()
+        # Check if area already exists
+        stmt_check = select(area.c.id).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
+        existing = session.execute(stmt_check).fetchone()
 
-            if existing:
-                raise ValueError(f"Area '{area_name}' already exists and could not be created")
+        if existing:
+            raise ValueError(f"Area '{area_name}' already exists and could not be created")
 
-            # Insert new area
-            stmt_area = insert(area).values(study_id=study_id, area_id=area_id)
-            # Cast to CursorResult to access inserted_primary_key attribute
-            # (locally mypy infers CursorResult, but CI with type stubs requires explicit cast)
-            result = cast(CursorResult[Any], session.execute(stmt_area))  # type: ignore[redundant-cast, unused-ignore]
-            session.flush()
+        # Insert new area
+        stmt_area = insert(area).values(study_id=study_id, area_id=area_id)
+        # Cast to CursorResult to access inserted_primary_key attribute
+        # (locally mypy infers CursorResult, but CI with type stubs requires explicit cast)
+        result = cast(CursorResult[Any], session.execute(stmt_area))  # type: ignore[redundant-cast, unused-ignore]
+        session.flush()
 
-            inserted_pk = result.inserted_primary_key
-            if inserted_pk is None:
-                raise RuntimeError("Failed to get inserted primary key for area")
-            new_area_id = inserted_pk[0]
+        inserted_pk = result.inserted_primary_key
+        if inserted_pk is None:
+            raise RuntimeError("Failed to get inserted primary key for area")
+        new_area_id = inserted_pk[0]
 
-            # Create default UI for layer "0"
-            stmt_ui = insert(area_ui).values(
-                area_id=new_area_id,
-                layer_id="0",
-                x=0,
-                y=0,
-                color_r=230,
-                color_g=108,
-                color_b=44,
-            )
-            session.execute(stmt_ui)
-
-            # Single atomic commit for both area and area_ui
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
+        # Create default UI for layer "0"
+        stmt_ui = insert(area_ui).values(
+            area_id=new_area_id,
+            layer_id="0",
+            x=0,
+            y=0,
+            color_r=230,
+            color_g=108,
+            color_b=44,
+        )
+        session.execute(stmt_ui)
+        session.commit()
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -248,23 +242,17 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        try:
-            # Check if area exists
-            stmt_check = select(area.c.id).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
-            existing = session.execute(stmt_check).fetchone()
+        # Check if area exists
+        stmt_check = select(area.c.id).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
+        existing = session.execute(stmt_check).fetchone()
 
-            if not existing:
-                raise AreaNotFound(area_id)
+        if not existing:
+            raise AreaNotFound(area_id)
 
-            # Delete area (cascade will delete area_ui automatically)
-            stmt = delete(area).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
-            session.execute(stmt)
-
-            # Single atomic commit
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
+        # Delete area (cascade will delete area_ui automatically)
+        stmt = delete(area).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
+        session.execute(stmt)
+        session.commit()
 
     @override
     def save_area_ui(self, area_id: str, layer: str, area_ui_data: AreaUI) -> None:
@@ -282,47 +270,41 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        try:
-            # Get the area database ID
-            stmt_area = select(area.c.id).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
-            area_result = session.execute(stmt_area).fetchone()
+        # Get the area database ID
+        stmt_area = select(area.c.id).where((area.c.study_id == study_id) & (area.c.area_id == area_id))
+        area_result = session.execute(stmt_area).fetchone()
 
-            if not area_result:
-                raise AreaNotFound(area_id)
+        if not area_result:
+            raise AreaNotFound(area_id)
 
-            area_db_id = area_result.id
-            r, g, b = area_ui_data.color_rgb
+        area_db_id = area_result.id
+        r, g, b = area_ui_data.color_rgb
 
-            # Check if UI for this layer already exists
-            stmt_check = select(area_ui.c.id).where((area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == layer))
-            existing_ui = session.execute(stmt_check).fetchone()
+        # Check if UI for this layer already exists
+        stmt_check = select(area_ui.c.id).where((area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == layer))
+        existing_ui = session.execute(stmt_check).fetchone()
 
-            if existing_ui:
-                # Update existing UI
-                stmt_update = (
-                    update(area_ui)
-                    .where((area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == layer))
-                    .values(x=area_ui_data.x, y=area_ui_data.y, color_r=r, color_g=g, color_b=b)
-                )
-                session.execute(stmt_update)
-            else:
-                # Insert new UI
-                stmt_insert = insert(area_ui).values(
-                    area_id=area_db_id,
-                    layer_id=layer,
-                    x=area_ui_data.x,
-                    y=area_ui_data.y,
-                    color_r=r,
-                    color_g=g,
-                    color_b=b,
-                )
-                session.execute(stmt_insert)
-
-            # Single atomic commit for the update or insert
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
+        if existing_ui:
+            # Update existing UI
+            stmt_update = (
+                update(area_ui)
+                .where((area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == layer))
+                .values(x=area_ui_data.x, y=area_ui_data.y, color_r=r, color_g=g, color_b=b)
+            )
+            session.execute(stmt_update)
+        else:
+            # Insert new UI
+            stmt_insert = insert(area_ui).values(
+                area_id=area_db_id,
+                layer_id=layer,
+                x=area_ui_data.x,
+                y=area_ui_data.y,
+                color_r=r,
+                color_g=g,
+                color_b=b,
+            )
+            session.execute(stmt_insert)
+        session.commit()
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
@@ -343,54 +325,46 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        try:
-            # Get all areas for this study
-            stmt_areas = select(area.c.id, area.c.area_id).where(area.c.study_id == study_id)
-            all_areas = {row.area_id: row.id for row in session.execute(stmt_areas).fetchall()}
+        # Get all areas for this study
+        stmt_areas = select(area.c.id, area.c.area_id).where(area.c.study_id == study_id)
+        all_areas = {row.area_id: row.id for row in session.execute(stmt_areas).fetchall()}
 
-            # Get current areas in this study that have this layer
-            stmt_existing = (
-                select(area_ui.c.area_id)
-                .select_from(area_ui.join(area, area_ui.c.area_id == area.c.id))
-                .where((area_ui.c.layer_id == layer_id) & (area.c.study_id == study_id))
+        # Get current areas in this study that have this layer
+        stmt_existing = (
+            select(area_ui.c.area_id)
+            .select_from(area_ui.join(area, area_ui.c.area_id == area.c.id))
+            .where((area_ui.c.layer_id == layer_id) & (area.c.study_id == study_id))
+        )
+        existing_area_db_ids = {row.area_id for row in session.execute(stmt_existing).fetchall()}
+
+        # Map area_ids to database IDs
+        target_area_db_ids = {all_areas[aid] for aid in area_ids if aid in all_areas}
+
+        # Remove layer from areas not in the target list
+        to_remove = existing_area_db_ids - target_area_db_ids
+        if to_remove:
+            study_scoped_area_ids = select(area.c.id).where((area.c.study_id == study_id) & (area.c.id.in_(to_remove)))
+            stmt_delete = delete(area_ui).where(
+                (area_ui.c.area_id.in_(study_scoped_area_ids)) & (area_ui.c.layer_id == layer_id)
             )
-            existing_area_db_ids = {row.area_id for row in session.execute(stmt_existing).fetchall()}
+            session.execute(stmt_delete)
 
-            # Map area_ids to database IDs
-            target_area_db_ids = {all_areas[aid] for aid in area_ids if aid in all_areas}
+        # Add layer to areas that don't have it yet
+        to_add = target_area_db_ids - existing_area_db_ids
+        for area_db_id in to_add:
+            # Get default UI from layer "0" to copy position
+            stmt_default = select(area_ui).where((area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == "0"))
+            default_ui = session.execute(stmt_default).fetchone()
 
-            # Remove layer from areas not in the target list
-            to_remove = existing_area_db_ids - target_area_db_ids
-            if to_remove:
-                study_scoped_area_ids = select(area.c.id).where(
-                    (area.c.study_id == study_id) & (area.c.id.in_(to_remove))
+            if default_ui:
+                stmt_insert = insert(area_ui).values(
+                    area_id=area_db_id,
+                    layer_id=layer_id,
+                    x=default_ui.x,
+                    y=default_ui.y,
+                    color_r=default_ui.color_r,
+                    color_g=default_ui.color_g,
+                    color_b=default_ui.color_b,
                 )
-                stmt_delete = delete(area_ui).where(
-                    (area_ui.c.area_id.in_(study_scoped_area_ids)) & (area_ui.c.layer_id == layer_id)
-                )
-                session.execute(stmt_delete)
-
-            # Add layer to areas that don't have it yet
-            to_add = target_area_db_ids - existing_area_db_ids
-            for area_db_id in to_add:
-                # Get default UI from layer "0" to copy position
-                stmt_default = select(area_ui).where((area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == "0"))
-                default_ui = session.execute(stmt_default).fetchone()
-
-                if default_ui:
-                    stmt_insert = insert(area_ui).values(
-                        area_id=area_db_id,
-                        layer_id=layer_id,
-                        x=default_ui.x,
-                        y=default_ui.y,
-                        color_r=default_ui.color_r,
-                        color_g=default_ui.color_g,
-                        color_b=default_ui.color_b,
-                    )
-                    session.execute(stmt_insert)
-
-            # Single atomic commit for all delete and insert operations
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
+                session.execute(stmt_insert)
+        session.commit()
