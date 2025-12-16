@@ -12,31 +12,35 @@
  * This file is part of the Antares project.
  */
 
+import { createFileRoute } from "@tanstack/react-router";
 import {
-  addWeight,
-  deleteWeight,
-  getWeight,
-  getAllWeights,
-} from "../../../../../services/api/xpansion";
-import FileList from "./FileList";
+  addConstraints,
+  deleteConstraints,
+  getAllConstraints,
+  getConstraint,
+} from "../../../../../../services/api/xpansion";
+import FileList from "./-shared/components/FileList";
 
-function Weights() {
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/xpansion/constraints",
+)({
+  component: Constraints,
+});
+
+function Constraints() {
   return (
     <FileList
-      addResource={addWeight}
-      deleteResource={deleteWeight}
-      fetchResourceContent={getWeight}
-      listResources={getAllWeights}
+      addResource={addConstraints}
+      deleteResource={deleteConstraints}
+      fetchResourceContent={getConstraint}
+      listResources={getAllConstraints}
       errorMessages={{
         add: "xpansion.error.addFile",
         delete: "xpansion.error.deleteFile",
         list: "xpansion.error.loadConfiguration",
         fetchOne: "xpansion.error.getFile",
       }}
-      title="xpansion.weights"
-      isMatrix
+      title="global.files"
     />
   );
 }
-
-export default Weights;

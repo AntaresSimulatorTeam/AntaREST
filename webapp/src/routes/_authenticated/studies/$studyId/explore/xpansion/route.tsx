@@ -12,67 +12,49 @@
  * This file is part of the Antares project.
  */
 
-/* eslint-disable react-hooks/exhaustive-deps */
+import TabsView from "@/components/page/TabsView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import AddIcon from "@mui/icons-material/Add";
 import { Box, Button } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import useStudy from "../../-hooks/useStudy";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import {
   createXpansionConfiguration,
   xpansionConfigurationExist,
-} from "../../../../../services/api/xpansion";
-import type { StudyMetadata } from "../../../../../types/types";
-import TabWrapper from "../TabWrapper";
+} from "../../../../../../services/api/xpansion";
 
-function Xpansion() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/xpansion")({
+  validateSearch: (search) => ({
+    reload: typeof search.reload === "number" ? search.reload : undefined,
+  }),
+
+  component: XpansionLayout,
+});
+
+function XpansionLayout() {
+  const study = useStudy();
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [exist, setExist] = useState<boolean>(false);
+  const { reload } = Route.useSearch();
+  const navigate = Route.useNavigate();
 
-  const res = usePromiseWithSnackbarError(() => xpansionConfigurationExist(study.id), {
+  const response = usePromiseWithSnackbarError(() => xpansionConfigurationExist(study.id), {
     errorMessage: t("xpansion.error.loadConfiguration"),
-    deps: [exist],
+    deps: [study.id, reload],
   });
 
-  const tabList = useMemo(
-    () => [
-      {
-        label: t("xpansion.candidates"),
-        path: `/studies/${study?.id}/explore/xpansion/candidates`,
-      },
-      {
-        label: t("global.settings"),
-        path: `/studies/${study?.id}/explore/xpansion/settings`,
-      },
-      {
-        label: t("xpansion.constraints"),
-        path: `/studies/${study?.id}/explore/xpansion/constraints`,
-      },
-      {
-        label: t("xpansion.weights"),
-        path: `/studies/${study?.id}/explore/xpansion/weights`,
-      },
-      {
-        label: t("xpansion.capacities"),
-        path: `/studies/${study?.id}/explore/xpansion/capacities`,
-      },
-    ],
-    [study],
-  );
-
   useEffect(() => {
-    if (window.history.state.usr) {
-      setExist(window.history.state.usr.exist);
-    } else {
-      setExist(!!res.data);
+    if (reload) {
+      navigate({
+        search: { reload: undefined },
+      });
     }
-  }, [window.history.state.usr, res.data]);
+  }, [navigate, reload]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -80,13 +62,10 @@ function Xpansion() {
 
   const createXpansion = async () => {
     try {
-      if (study) {
-        await createXpansionConfiguration(study.id);
-      }
+      await createXpansionConfiguration(study.id);
+      response.reload();
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.createConfiguration"), e as AxiosError);
-    } finally {
-      setExist(true);
     }
   };
 
@@ -97,9 +76,9 @@ function Xpansion() {
   return (
     <>
       <UsePromiseCond
-        response={res}
-        ifFulfilled={(data) =>
-          !data && !exist ? (
+        response={response}
+        ifFulfilled={(isConfigExist) =>
+          !isConfigExist ? (
             <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
               <Button
                 color="primary"
@@ -111,12 +90,53 @@ function Xpansion() {
               </Button>
             </Box>
           ) : (
-            <TabWrapper study={study} tabList={tabList} disablePadding />
+            <TabsView
+              tabs={[
+                {
+                  id: "candidates",
+                  label: t("xpansion.candidates"),
+                  linkOptions: {
+                    to: "/studies/$studyId/explore/xpansion/candidates",
+                    params: { studyId: study.id },
+                  },
+                },
+                {
+                  id: "settings",
+                  label: t("global.settings"),
+                  linkOptions: {
+                    to: "/studies/$studyId/explore/xpansion/settings",
+                    params: { studyId: study.id },
+                  },
+                },
+                {
+                  id: "constraints",
+                  label: t("xpansion.constraints"),
+                  linkOptions: {
+                    to: "/studies/$studyId/explore/xpansion/constraints",
+                    params: { studyId: study.id },
+                  },
+                },
+                {
+                  id: "weights",
+                  label: t("xpansion.weights"),
+                  linkOptions: {
+                    to: "/studies/$studyId/explore/xpansion/weights",
+                    params: { studyId: study.id },
+                  },
+                },
+                {
+                  id: "capacities",
+                  label: t("xpansion.capacities"),
+                  linkOptions: {
+                    to: "/studies/$studyId/explore/xpansion/capacities",
+                    params: { studyId: study.id },
+                  },
+                },
+              ]}
+            />
           )
         }
       />
     </>
   );
 }
-
-export default Xpansion;

@@ -25,7 +25,7 @@ import { Button, ButtonGroup } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { XpansionCandidate } from "../types";
+import type { XpansionCandidate } from "../../-shared/types";
 
 interface PropType {
   open: boolean;

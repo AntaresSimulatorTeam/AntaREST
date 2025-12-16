@@ -15,13 +15,15 @@
 import DataViewerDialog from "@/components/dialogs/DataViewerDialog";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import { XpansionResourceType, type XpansionSettings } from "../-shared/types";
+import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import {
   getAllCandidates,
   getAllConstraints,
@@ -30,11 +32,15 @@ import {
   getWeight,
   getXpansionSettings,
   updateXpansionSettings,
-} from "../../../../../../services/api/xpansion";
-import { removeEmptyFields } from "../../../../../../services/utils/index";
-import type { StudyMetadata } from "../../../../../../types/types";
-import { XpansionResourceType, type XpansionSettings } from "../types";
-import SettingsForm from "./SettingsForm";
+} from "../../../../../../../services/api/xpansion";
+import { removeEmptyFields } from "../../../../../../../services/utils/index";
+import SettingsForm from "./-components/SettingsForm";
+
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/xpansion/settings/")(
+  {
+    component: Settings,
+  },
+);
 
 const resourceContentFetcher = (
   resourceType: string,
@@ -47,7 +53,7 @@ const resourceContentFetcher = (
 
 function Settings() {
   const [t] = useTranslation();
-  const { study } = useOutletContext<{ study?: StudyMetadata }>();
+  const study = useStudy();
   const [resourceViewDialog, setResourceViewDialog] = useState<{
     filename: string;
     content: string;
@@ -180,5 +186,3 @@ function Settings() {
     </>
   );
 }
-
-export default Settings;

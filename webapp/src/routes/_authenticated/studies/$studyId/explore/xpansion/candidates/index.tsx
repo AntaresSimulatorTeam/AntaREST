@@ -20,14 +20,16 @@ import SplitView from "@/components/page/SplitView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import { getLinks } from "@/services/api/studies/links";
 import { Backdrop, Box, CircularProgress } from "@mui/material";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext } from "react-router-dom";
 import { usePromise as usePromiseWrapper } from "react-use";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import type { XpansionCandidate } from "../-shared/types";
+import useStudy from "../../../-hooks/useStudy";
+import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import {
   addCandidate,
   deleteCandidate,
@@ -37,17 +39,21 @@ import {
   getCapacity,
   updateCandidate,
   xpansionConfigurationExist,
-} from "../../../../../../services/api/xpansion";
-import { nameToId, removeEmptyFields } from "../../../../../../services/utils/index";
-import type { StudyMetadata } from "../../../../../../types/types";
-import type { XpansionCandidate } from "../types";
-import CandidateForm from "./CandidateForm";
-import CreateCandidateDialog from "./CreateCandidateDialog";
-import XpansionPropsView from "./XpansionPropsView";
+} from "../../../../../../../services/api/xpansion";
+import { nameToId, removeEmptyFields } from "../../../../../../../services/utils/index";
+import CandidateForm from "./-components/CandidateForm";
+import CreateCandidateDialog from "./-components/CreateCandidateDialog";
+import XpansionPropsView from "./-components/XpansionPropsView";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/xpansion/candidates/",
+)({
+  component: Candidates,
+});
 
 function Candidates() {
   const [t] = useTranslation();
-  const { study } = useOutletContext<{ study?: StudyMetadata }>();
+  const study = useStudy();
   const navigate = useNavigate();
   const mounted = usePromiseWrapper();
   const [candidateCreationDialog, setCandidateCreationDialog] = useState<boolean>(false);
@@ -118,13 +124,16 @@ function Candidates() {
 
   const deleteXpansion = async () => {
     try {
-      if (study) {
-        await mounted(deleteXpansionConfiguration(study.id));
-      }
+      await mounted(deleteXpansionConfiguration(study.id));
+
+      navigate({
+        to: "/studies/$studyId/explore/xpansion",
+        params: { studyId: study.id },
+        search: { reload: Date.now() },
+        replace: true,
+      });
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.deleteConfiguration"), e as AxiosError);
-    } finally {
-      navigate("../../xpansion", { state: { exist: false } });
     }
   };
 
@@ -226,7 +235,7 @@ function Candidates() {
   return (
     <>
       <SplitView splitId="xpansion">
-        <Box>
+        <Box sx={{ position: "relative" }}>
           <XpansionPropsView
             candidateList={candidates || []}
             onAdd={() => setCandidateCreationDialog(true)}
@@ -276,5 +285,3 @@ function Candidates() {
     </>
   );
 }
-
-export default Candidates;

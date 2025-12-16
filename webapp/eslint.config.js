@@ -13,7 +13,7 @@
  */
 
 import eslint from "@eslint/js";
-import queryPlugin from '@tanstack/eslint-plugin-query';
+import queryPlugin from "@tanstack/eslint-plugin-query";
 import vitestPlugin from "@vitest/eslint-plugin";
 import jsdocPlugin from "eslint-plugin-jsdoc";
 import licenseHeaderPlugin from "eslint-plugin-license-header";
@@ -23,7 +23,6 @@ import reactHookPlugin from "eslint-plugin-react-hooks";
 import reactRefreshPlugin from "eslint-plugin-react-refresh";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-
 
 export default [
   // Must be defined here to be applied to all configurations.

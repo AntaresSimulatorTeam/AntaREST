@@ -20,8 +20,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import { Box, Button, Divider, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Fields, SelectFields, StyledVisibilityIcon, Title } from "../share/styles";
-import { XpansionResourceType, type XpansionSettings } from "../types";
+import { Fields, SelectFields, StyledVisibilityIcon, Title } from "../../-shared/components/styles";
+import { XpansionResourceType, type XpansionSettings } from "../../-shared/types";
 
 interface PropType {
   settings: XpansionSettings;

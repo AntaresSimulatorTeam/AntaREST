@@ -12,30 +12,36 @@
  * This file is part of the Antares project.
  */
 
+import { createFileRoute } from "@tanstack/react-router";
 import {
-  getAllConstraints,
-  deleteConstraints,
-  getConstraint,
-  addConstraints,
-} from "../../../../../services/api/xpansion";
-import FileList from "./FileList";
+  addCapacity,
+  deleteCapacity,
+  getAllCapacities,
+  getCapacity,
+} from "../../../../../../services/api/xpansion";
+import FileList from "./-shared/components/FileList";
 
-function Constraints() {
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/xpansion/capacities",
+)({
+  component: Capacities,
+});
+
+function Capacities() {
   return (
     <FileList
-      addResource={addConstraints}
-      deleteResource={deleteConstraints}
-      fetchResourceContent={getConstraint}
-      listResources={getAllConstraints}
+      addResource={addCapacity}
+      deleteResource={deleteCapacity}
+      fetchResourceContent={getCapacity}
+      listResources={getAllCapacities}
       errorMessages={{
         add: "xpansion.error.addFile",
         delete: "xpansion.error.deleteFile",
         list: "xpansion.error.loadConfiguration",
         fetchOne: "xpansion.error.getFile",
       }}
-      title="global.files"
+      title="xpansion.capacities"
+      isMatrix
     />
   );
 }
-
-export default Constraints;

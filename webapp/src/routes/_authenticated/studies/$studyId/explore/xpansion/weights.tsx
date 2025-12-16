@@ -12,31 +12,34 @@
  * This file is part of the Antares project.
  */
 
+import { createFileRoute } from "@tanstack/react-router";
 import {
-  getAllCapacities,
-  deleteCapacity,
-  getCapacity,
-  addCapacity,
-} from "../../../../../services/api/xpansion";
-import FileList from "./FileList";
+  addWeight,
+  deleteWeight,
+  getAllWeights,
+  getWeight,
+} from "../../../../../../services/api/xpansion";
+import FileList from "./-shared/components/FileList";
 
-function Capacities() {
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/xpansion/weights")({
+  component: Weights,
+});
+
+function Weights() {
   return (
     <FileList
-      addResource={addCapacity}
-      deleteResource={deleteCapacity}
-      fetchResourceContent={getCapacity}
-      listResources={getAllCapacities}
+      addResource={addWeight}
+      deleteResource={deleteWeight}
+      fetchResourceContent={getWeight}
+      listResources={getAllWeights}
       errorMessages={{
         add: "xpansion.error.addFile",
         delete: "xpansion.error.deleteFile",
         list: "xpansion.error.loadConfiguration",
         fetchOne: "xpansion.error.getFile",
       }}
-      title="xpansion.capacities"
+      title="xpansion.weights"
       isMatrix
     />
   );
 }
-
-export default Capacities;

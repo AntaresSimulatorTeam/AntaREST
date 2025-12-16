@@ -39,12 +39,6 @@ import Links from "./Singlestudy/explore/Modelization/Links";
 import Map from "./Singlestudy/explore/Modelization/Map";
 import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
 import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
-import Xpansion from "./Singlestudy/explore/Xpansion";
-import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
-import Capacities from "./Singlestudy/explore/Xpansion/Capacities";
-import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
-import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
-import Weights from "./Singlestudy/explore/Xpansion/Weights";
 
 function App() {
   return (
@@ -101,18 +95,6 @@ function App() {
           <Route path="bindingcontraint" element={<BindingConstraints />} />
           <Route index element={<Map />} />
           <Route path="*" element={<Map />} />
-        </Route>
-        <Route path="xpansion" element={<Xpansion />}>
-          <Route path="candidates" element={<Candidates />} />
-          <Route path="settings" element={<XpansionSettings />} />
-          <Route path="constraints" element={<Constraints />} />
-          <Route path="weights" element={<Weights />} />
-          <Route path="capacities" element={<Capacities />} />
-          <Route index element={<Candidates />} />
-          <Route path="*" element={<Candidates />} />
-        </Route>
-        <Route path="*" element={<Modelization />}>
-          <Route index element={<Map />} />
         </Route>
       </Routes>
     </Router>

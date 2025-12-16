@@ -18,8 +18,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { Box, Button } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import ListElement from "../../../../../../components/ListElement";
-import type { XpansionCandidate } from "../types";
+import type { XpansionCandidate } from "../../-shared/types";
+import ListElement from "../../../../../../../../components/ListElement";
 
 interface PropsType {
   candidateList: XpansionCandidate[];

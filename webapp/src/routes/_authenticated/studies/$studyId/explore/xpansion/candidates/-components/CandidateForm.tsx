@@ -29,8 +29,8 @@ import {
   StyledDeleteIcon,
   StyledVisibilityIcon,
   Title,
-} from "../share/styles";
-import type { XpansionCandidate } from "../types";
+} from "../../-shared/components/styles";
+import type { XpansionCandidate } from "../../-shared/types";
 
 interface PropType {
   candidate: XpansionCandidate | undefined;
