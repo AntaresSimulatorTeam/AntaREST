@@ -21,7 +21,6 @@ import jinja2
 import pytest
 from _pytest.tmpdir import TempPathFactory
 from fastapi import FastAPI
-from integration.utils import wait_for
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
@@ -33,6 +32,7 @@ from antarest.service_creator import Services
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
+from tests.integration.utils import wait_for
 
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
