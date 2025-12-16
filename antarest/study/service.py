@@ -104,6 +104,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
@@ -411,18 +412,12 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-        from antarest.study.model import StorageMode
-
         if self._study.storage_mode == StorageMode.DATABASE:
             return DatabaseStudyDao(self._study.id, self._repository.session).read_only()
         return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
-        from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-        from antarest.study.model import StorageMode
-
         study = self._study
         should_invalidate_cache = False
 
@@ -512,9 +507,6 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-        from antarest.study.model import StorageMode
-
         if self._study.storage_mode == StorageMode.DATABASE:
             return DatabaseStudyDao(self._study.id, self._repository.session).read_only()
         return FileStudyTreeDao(self.get_files()).read_only()
