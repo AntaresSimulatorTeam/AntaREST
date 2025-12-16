@@ -504,7 +504,6 @@ def test_delete_study(tmp_path: Path) -> None:
     assert not study_path.exists()
 
 
-@pytest.mark.unit_test
 def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
