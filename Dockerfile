@@ -9,15 +9,13 @@ ENV ANTAREST_CONF /resources/application.yaml
 
 RUN mkdir -p examples/studies
 
-COPY ./pyproject.toml ./uv.lock /app/
+COPY ./pyproject.toml ./uv.lock /
 COPY ./conf/* /conf/
-COPY ./antarest /app/antarest
+COPY ./antarest /antarest
 COPY ./resources /resources
 COPY ./scripts /scripts
-COPY ./alembic /app/alembic
-COPY ./alembic.ini /app/alembic.ini
-
-WORKDIR /app
+COPY ./alembic /alembic
+COPY ./alembic.ini /alembic.ini
 
 # Install dependencies using uv
 RUN uv sync --frozen --no-dev
