@@ -13,6 +13,7 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { deleteUser, getUsers } from "@/services/api/user";
@@ -172,13 +173,7 @@ function Users() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: 1,
-      }}
-    >
+    <ViewWrapper>
       <Header
         setSearchValue={setSearchValue}
         addUser={addUser}
@@ -261,6 +256,6 @@ function Users() {
           onCancel={() => setUserToEdit(undefined)}
         />
       )}
-    </Box>
+    </ViewWrapper>
   );
 }

@@ -13,6 +13,7 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useAppSelector from "@/redux/hooks/useAppSelector";
@@ -185,13 +186,7 @@ function Groups() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: 1,
-      }}
-    >
+    <ViewWrapper>
       <Header
         setSearchValue={setSearchValue}
         addGroup={addGroup}
@@ -274,6 +269,6 @@ function Groups() {
           onCancel={() => setGroupToEdit(undefined)}
         />
       )}
-    </Box>
+    </ViewWrapper>
   );
 }

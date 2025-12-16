@@ -13,6 +13,7 @@
  */
 
 import CopyButton from "@/components/buttons/CopyButton";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { GITHUB_URL } from "@/routes/-shared/constants";
 import { getConfig } from "@/services/config";
 import LaunchIcon from "@mui/icons-material/Launch";
@@ -43,27 +44,29 @@ function About() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <List dense disablePadding>
-      <ListItem
-        disablePadding
-        secondaryAction={
-          <IconButton edge="end" onClick={handleProjectHomepageClick}>
-            <LaunchIcon />
-          </IconButton>
-        }
-      >
-        <ListItemButton>
-          <ListItemText primary="Antares Web" secondary={version} />
-        </ListItemButton>
-      </ListItem>
-      <ListItem
-        disablePadding
-        secondaryAction={<CopyButton edge="end" onClick={handleCopyCommitClick} />}
-      >
-        <ListItemButton>
-          <ListItemText primary="Commit SHA" secondary={gitcommit} />
-        </ListItemButton>
-      </ListItem>
-    </List>
+    <ViewWrapper>
+      <List dense disablePadding>
+        <ListItem
+          disablePadding
+          secondaryAction={
+            <IconButton edge="end" onClick={handleProjectHomepageClick}>
+              <LaunchIcon />
+            </IconButton>
+          }
+        >
+          <ListItemButton>
+            <ListItemText primary="Antares Web" secondary={version} />
+          </ListItemButton>
+        </ListItem>
+        <ListItem
+          disablePadding
+          secondaryAction={<CopyButton edge="end" onClick={handleCopyCommitClick} />}
+        >
+          <ListItemButton>
+            <ListItemText primary="Commit SHA" secondary={gitcommit} />
+          </ListItemButton>
+        </ListItem>
+      </List>
+    </ViewWrapper>
   );
 }

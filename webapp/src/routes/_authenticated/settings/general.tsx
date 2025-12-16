@@ -16,6 +16,7 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { changeLanguage, getCurrentLanguage } from "@/utils/i18nUtils";
 import { useColorScheme } from "@mui/material";
@@ -55,31 +56,33 @@ function General() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Form config={{ defaultValues }} onSubmit={handleSubmit}>
-      {({ control }) => (
-        <>
-          <Fieldset>
-            <SelectFE
-              label={t("global.language")}
-              name="lang"
-              control={control}
-              options={SUPPORTED_LANGUAGES.map((lang) => ({
-                label: t(`lang.${lang}`),
-                value: lang,
-              }))}
-            />
-            <SelectFE
-              label={t("global.theme")}
-              name="themeMode"
-              control={control}
-              options={THEME_MODES.map((option) => ({
-                ...option,
-                label: t(`global.${option.value}`),
-              }))}
-            />
-          </Fieldset>
-        </>
-      )}
-    </Form>
+    <ViewWrapper>
+      <Form config={{ defaultValues }} onSubmit={handleSubmit}>
+        {({ control }) => (
+          <>
+            <Fieldset>
+              <SelectFE
+                label={t("global.language")}
+                name="lang"
+                control={control}
+                options={SUPPORTED_LANGUAGES.map((lang) => ({
+                  label: t(`lang.${lang}`),
+                  value: lang,
+                }))}
+              />
+              <SelectFE
+                label={t("global.theme")}
+                name="themeMode"
+                control={control}
+                options={THEME_MODES.map((option) => ({
+                  ...option,
+                  label: t(`global.${option.value}`),
+                }))}
+              />
+            </Fieldset>
+          </>
+        )}
+      </Form>
+    </ViewWrapper>
   );
 }

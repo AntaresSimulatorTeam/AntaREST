@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useAppSelector from "@/redux/hooks/useAppSelector";
@@ -19,7 +20,7 @@ import { getAuthUser } from "@/redux/selectors";
 import { getBots, getUser, getUsers } from "@/services/api/user";
 import { isUserAdmin } from "@/services/utils";
 import type { BotDetailsDTO } from "@/types/types";
-import { Box, List, ListItem, Skeleton } from "@mui/material";
+import { List, ListItem, Skeleton } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -78,13 +79,7 @@ function Tokens() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: 1,
-      }}
-    >
+    <ViewWrapper>
       <Header setSearchValue={setSearchValue} reloadFetchTokens={res.reload} />
       <List sx={{ overflow: "auto" }}>
         <UsePromiseCond
@@ -107,6 +102,6 @@ function Tokens() {
           )}
         />
       </List>
-    </Box>
+    </ViewWrapper>
   );
 }

@@ -17,6 +17,7 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import ViewWrapper from "@/components/page/ViewWrapper";
 import {
   getMaintenanceMode,
   getMessageInfo,
@@ -58,19 +59,21 @@ function Maintenance() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Form config={{ defaultValues: getDefaultValues }} onSubmit={handleSubmit} enableUndoRedo>
-      {({ control }) => (
-        <Fieldset fullFieldWidth>
-          <SwitchFE name="mode" label={t("settings.maintenanceMode")} control={control} />
-          <StringFE
-            name="message"
-            label={t("global.message")}
-            control={control}
-            minRows={6}
-            multiline
-          />
-        </Fieldset>
-      )}
-    </Form>
+    <ViewWrapper>
+      <Form config={{ defaultValues: getDefaultValues }} onSubmit={handleSubmit} enableUndoRedo>
+        {({ control }) => (
+          <Fieldset fullFieldWidth>
+            <SwitchFE name="mode" label={t("settings.maintenanceMode")} control={control} />
+            <StringFE
+              name="message"
+              label={t("global.message")}
+              control={control}
+              minRows={6}
+              multiline
+            />
+          </Fieldset>
+        )}
+      </Form>
+    </ViewWrapper>
   );
 }
