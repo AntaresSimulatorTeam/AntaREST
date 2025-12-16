@@ -18,14 +18,14 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";
 import { useUpdateEffect } from "react-use";
-import { setCurrentArea } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
-import { getCurrentArea, getStudySynthesis } from "../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../types/types";
-import AreaPropsView from "./AreaPropsView";
-import AreasTab from "./AreasTab";
+import AreaPropsView from "../../../../../../-App/Singlestudy/explore/Modelization/Areas/AreaPropsView";
+import AreasTab from "../../../../../../-App/Singlestudy/explore/Modelization/Areas/AreasTab";
+import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
+import { getCurrentArea, getStudySynthesis } from "../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../types/types";
 
 function Areas() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

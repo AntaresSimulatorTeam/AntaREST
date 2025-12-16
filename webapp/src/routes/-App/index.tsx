@@ -13,7 +13,7 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Areas from "./Singlestudy/explore/Modelization/Areas";
+import Areas from "../_authenticated/studies/$studyId/explore/modelization/areas";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
