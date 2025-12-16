@@ -13,21 +13,23 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Box, Button, Typography } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
+import useEnqueueErrorSnackbar from "../../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   deleteStudyMapLink,
   deleteStudyMapNode,
   type StudyMapLink,
   type StudyMapNode,
-} from "../../../../../../../redux/ducks/studyMaps";
-import { setCurrentArea, setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import type { StudyMetadata } from "../../../../../../../types/types";
+} from "../../../../../../../../../redux/ducks/studyMaps";
+import {
+  setCurrentArea,
+  setCurrentLink,
+} from "../../../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../../../redux/hooks/useAppDispatch";
 import { AreaDeleteIcon } from "./style";
 
 interface Props {
@@ -38,7 +40,7 @@ interface Props {
 function DeleteAreaDialog(props: Props) {
   const { currentLink, currentArea } = props;
   const [t] = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openConfirmationModal, setOpenConfirmationModal] = useState(false);

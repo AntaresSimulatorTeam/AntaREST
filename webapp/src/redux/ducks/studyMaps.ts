@@ -16,7 +16,7 @@ import {
   getNodeWidth,
   NODE_COLOR,
   NODE_HEIGHT,
-} from "@/routes/-App/Singlestudy/explore/Modelization/Map/utils";
+} from "@/routes/_authenticated/studies/$studyId/explore/modelization/map/-utils";
 import * as linksApi from "@/services/api/studies/links";
 import type { LinkStyleValue } from "@/services/api/studies/links/types";
 import { createLinkId, parseLinkId } from "@/services/api/studies/links/utils";

@@ -13,7 +13,6 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Modelization from "./Singlestudy/explore/Modelization";
 import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
@@ -36,66 +35,55 @@ import ThermalConfig from "./Singlestudy/explore/Modelization/Areas/Thermal/Ther
 import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
 import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstraints";
 import Links from "./Singlestudy/explore/Modelization/Links";
-import Map from "./Singlestudy/explore/Modelization/Map";
-import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
-import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="modelization" element={<Modelization />}>
-          <Route path="map" element={<Map />}>
-            <Route path="layers" element={<Layers />} />
-            <Route path="districts" element={<Districts />} />
+        <Route path="area" element={<Areas />} />
+        <Route path="area/:areaId" element={<Areas />}>
+          <Route path="properties" element={<Properties />} />
+          <Route path="load" element={<Load />} />
+          <Route path="thermal" element={<Thermal />} />
+          <Route path="thermal/:clusterId" element={<ThermalConfig />} />
+          <Route path="storages" element={<Storages />} />
+          <Route path="storages/:storageId" element={<StorageConfig />} />
+          <Route path="hydro" element={<Navigate to="management" replace />} />
+          <Route path="hydro" element={<Hydro />}>
+            <Route path="management" element={<ManagementOptions />} />
+            <Route path="allocation" element={<Allocation />} />
+            <Route path="correlation" element={<Correlation />} />
+            {HYDRO_ROUTES.map(({ path, type, isSplitView, splitConfig, form, sx }) => {
+              return isSplitView && splitConfig ? (
+                <Route
+                  key={path}
+                  path={path}
+                  element={
+                    <SplitHydroMatrix
+                      types={[type, splitConfig.partnerType]}
+                      direction={splitConfig.direction}
+                      sizes={splitConfig.sizes}
+                      form={form}
+                      sx={sx}
+                    />
+                  }
+                />
+              ) : (
+                <Route key={path} path={path} element={<HydroMatrix type={type} />} />
+              );
+            })}
           </Route>
-          <Route path="area" element={<Areas />} />
-          <Route path="area/:areaId" element={<Areas />}>
-            <Route path="properties" element={<Properties />} />
-            <Route path="load" element={<Load />} />
-            <Route path="thermal" element={<Thermal />} />
-            <Route path="thermal/:clusterId" element={<ThermalConfig />} />
-            <Route path="storages" element={<Storages />} />
-            <Route path="storages/:storageId" element={<StorageConfig />} />
-            <Route path="hydro" element={<Navigate to="management" replace />} />
-            <Route path="hydro" element={<Hydro />}>
-              <Route path="management" element={<ManagementOptions />} />
-              <Route path="allocation" element={<Allocation />} />
-              <Route path="correlation" element={<Correlation />} />
-              {HYDRO_ROUTES.map(({ path, type, isSplitView, splitConfig, form, sx }) => {
-                return isSplitView && splitConfig ? (
-                  <Route
-                    key={path}
-                    path={path}
-                    element={
-                      <SplitHydroMatrix
-                        types={[type, splitConfig.partnerType]}
-                        direction={splitConfig.direction}
-                        sizes={splitConfig.sizes}
-                        form={form}
-                        sx={sx}
-                      />
-                    }
-                  />
-                ) : (
-                  <Route key={path} path={path} element={<HydroMatrix type={type} />} />
-                );
-              })}
-            </Route>
-            <Route path="wind" element={<Wind />} />
-            <Route path="solar" element={<Solar />} />
-            <Route path="renewables" element={<Renewables />} />
-            <Route path="renewables/:clusterId" element={<RenewableConfig />} />
-            <Route path="reserves" element={<Reserve />} />
-            <Route path="miscGen" element={<MiscGen />} />
-            <Route index element={<Properties />} />
-            <Route path="*" element={<Properties />} />
-          </Route>
-          <Route path="links" element={<Links />} />
-          <Route path="bindingcontraint" element={<BindingConstraints />} />
-          <Route index element={<Map />} />
-          <Route path="*" element={<Map />} />
+          <Route path="wind" element={<Wind />} />
+          <Route path="solar" element={<Solar />} />
+          <Route path="renewables" element={<Renewables />} />
+          <Route path="renewables/:clusterId" element={<RenewableConfig />} />
+          <Route path="reserves" element={<Reserve />} />
+          <Route path="miscGen" element={<MiscGen />} />
+          <Route index element={<Properties />} />
+          <Route path="*" element={<Properties />} />
         </Route>
+        <Route path="links" element={<Links />} />
+        <Route path="bindingcontraint" element={<BindingConstraints />} />
       </Routes>
     </Router>
   );

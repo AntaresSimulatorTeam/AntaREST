@@ -13,8 +13,8 @@
  */
 
 import { useMemo } from "react";
-import type { StudyLayer } from "../../../../../../types/types";
-import type { StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
+import type { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
+import type { StudyLayer } from "../../../../../../../types/types";
 
 ////////////////////////////////////////////////////////////////
 // Types

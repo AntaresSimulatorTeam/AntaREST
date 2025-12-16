@@ -14,23 +14,22 @@
 
 import DataGridForm from "@/components/DataGridForm";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import { Box, Button } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import { updateStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getAreas, getStudyMapLayersById } from "../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import { updateStudyMapLayer } from "../../../../../../../../../../redux/ducks/studyMaps";
+import useAppDispatch from "../../../../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
+import { getAreas, getStudyMapLayersById } from "../../../../../../../../../../redux/selectors";
 import CreateLayerDialog from "./CreateLayerDialog";
 import UpdateLayerDialog from "./UpdateLayerDialog";
 
 function Layers() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
   const areas = useAppSelector((state) => getAreas(state, study.id));

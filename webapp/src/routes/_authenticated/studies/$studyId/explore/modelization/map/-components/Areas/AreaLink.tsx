@@ -13,16 +13,19 @@
  */
 
 import { useTranslation } from "react-i18next";
-import type { LinkElement } from "../../../../../../../types/types";
-import { setCurrentArea, setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
+import {
+  setCurrentArea,
+  setCurrentLink,
+} from "../../../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../../../redux/hooks/useAppDispatch";
+import type { LinkElement } from "../../../../../../../../../types/types";
 
 import {
   AreaLinkContainer,
   AreaLinkContent,
+  AreaLinkLabel,
   AreaLinkRoot,
   AreaLinkTitle,
-  AreaLinkLabel,
 } from "./style";
 
 interface Props {

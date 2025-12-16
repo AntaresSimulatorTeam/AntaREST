@@ -12,19 +12,21 @@
  * This file is part of the Antares project.
  */
 
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import { setCurrentArea, setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaLinks } from "../../../../../../../redux/selectors";
+import {
+  setCurrentArea,
+  setCurrentLink,
+} from "../../../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaLinks } from "../../../../../../../../../redux/selectors";
 import { AreaLinkContainer, AreaLinkContent, AreaLinkRoot, AreaLinkTitle } from "./style";
 
 function AreaLinks() {
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const areaLinks = useAppSelector((state) => getCurrentAreaLinks(state, study.id));
 
   ////////////////////////////////////////////////////////////////

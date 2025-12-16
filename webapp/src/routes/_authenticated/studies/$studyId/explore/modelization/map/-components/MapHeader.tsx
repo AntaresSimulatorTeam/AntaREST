@@ -14,11 +14,11 @@
 
 import { Box, Chip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { LinkProperties } from "../../../../../../types/types";
-import { setCurrentLayer, type StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentLayer, getStudyMapLayersById } from "../../../../../../redux/selectors";
+import { setCurrentLayer, type StudyMapNode } from "../../../../../../../../redux/ducks/studyMaps";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentLayer, getStudyMapLayersById } from "../../../../../../../../redux/selectors";
+import type { LinkProperties } from "../../../../../../../../types/types";
 
 interface Props {
   links: LinkProperties[];

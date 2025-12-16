@@ -18,16 +18,19 @@ import type { DebouncedFunc } from "lodash";
 import { useEffect, useState } from "react";
 import { Graph, type GraphLink, type GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { createStudyMapLink, type StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
-import { setCurrentArea, setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentLayer } from "../../../../../../redux/selectors";
-import type { LinkProperties, StudyMetadata } from "../../../../../../types/types";
+import { INITIAL_ZOOM, useRenderNodes } from "../-utils";
+import useStudy from "../../../../-hooks/useStudy";
+import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import {
+  createStudyMapLink,
+  type StudyMapNode,
+} from "../../../../../../../../redux/ducks/studyMaps";
+import { setCurrentArea, setCurrentLink } from "../../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentLayer } from "../../../../../../../../redux/selectors";
+import type { LinkProperties } from "../../../../../../../../types/types";
 import Node from "./Node";
-import { INITIAL_ZOOM, useRenderNodes } from "./utils";
 
 interface Props {
   height: number;
@@ -53,7 +56,7 @@ function MapGraph({
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const [sourceNode, setSourceNode] = useState<string | undefined>(undefined);
   const [targetNode, setTargetNode] = useState<string | undefined>(undefined);
   const currentLayerId = useAppSelector(getCurrentLayer);

@@ -17,16 +17,15 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import { createStudyMapDistrict } from "../../../../../../../../../../redux/ducks/studyMaps";
+import useAppDispatch from "../../../../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
+import { getStudyMapDistrictsById } from "../../../../../../../../../../redux/selectors";
 
 interface Props {
   open: boolean;
@@ -41,7 +40,7 @@ const defaultValues = {
 
 function CreateDistrictDialog(props: Props) {
   const { open, onClose } = props;
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const districtsById = useAppSelector(getStudyMapDistrictsById);

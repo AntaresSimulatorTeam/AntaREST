@@ -21,37 +21,6 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore")
   component: StudyExploreLayout,
 });
 
-{
-  /* <TabWrapper
-  study={study}
-  divider
-  tabList={[
-    {
-      label: t("study.modelization"),
-      path: `/studies/${studyId}/explore/modelization`,
-    },
-    {
-      label: t("study.configuration"),
-      path: `/studies/${studyId}/explore/configuration`,
-    },
-    {
-      label: t("study.tableMode"),
-      path: `/studies/${studyId}/explore/tablemode`,
-    },
-    { label: "Xpansion", path: `/studies/${studyId}/explore/xpansion` },
-    {
-      label: t("study.results"),
-      path: `/studies/${studyId}/explore/results`,
-    },
-    {
-      label: t("study.debug"),
-      path: `/studies/${studyId}/explore/debug`,
-    },
-  ]}
-  disablePadding
-/> */
-}
-
 function StudyExploreLayout() {
   const study = useStudy();
   const { t } = useTranslation();
@@ -59,6 +28,14 @@ function StudyExploreLayout() {
   return (
     <TabsView
       tabs={[
+        {
+          id: "modelization",
+          label: t("study.modelization"),
+          linkOptions: {
+            to: "/studies/$studyId/explore/modelization",
+            params: { studyId: study.id },
+          },
+        },
         {
           id: "configuration",
           label: t("study.configuration"),

@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, ButtonGroup } from "@mui/material";
-import SettingsIcon from "@mui/icons-material/Settings";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from "./utils";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { Box, Button, ButtonGroup } from "@mui/material";
+import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from "../-utils";
 
 interface Props {
   onZoomIn: () => void;

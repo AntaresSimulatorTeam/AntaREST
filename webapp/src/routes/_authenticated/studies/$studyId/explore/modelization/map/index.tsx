@@ -15,42 +15,47 @@
 import SplitView from "@/components/page/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { Box } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
 import AutoSizer from "react-virtualized-auto-sizer";
-import useDebouncedState from "../../../../../../hooks/useDebouncedState";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import useStudy from "../../../-hooks/useStudy";
+import useDebouncedState from "../../../../../../../hooks/useDebouncedState";
+import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   createStudyMapNode,
   updateStudyMapNode,
   type StudyMapNode,
-} from "../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import useStudyMaps from "../../../../../../redux/hooks/useStudyMaps";
+} from "../../../../../../../redux/ducks/studyMaps";
+import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import useStudyMaps from "../../../../../../../redux/hooks/useStudyMaps";
 import {
   getCurrentLayer,
   getCurrentStudyMapNode,
   getStudyMapLinks,
   getStudyMapNodes,
-} from "../../../../../../redux/selectors";
-import type { LinkProperties, StudyMetadata, UpdateAreaUi } from "../../../../../../types/types";
-import Areas from "./Areas";
-import CreateAreaDialog from "./CreateAreaDialog";
-import MapConfig from "./MapConfig";
-import MapControlButtons from "./MapControlButtons";
-import MapGraph from "./MapGraph";
-import MapHeader from "./MapHeader";
-import { MapContainer } from "./style";
-import { getUpdatedNode, INITIAL_ZOOM, NODE_COLOR } from "./utils";
+} from "../../../../../../../redux/selectors";
+import type { LinkProperties, UpdateAreaUi } from "../../../../../../../types/types";
+import Areas from "./-components/Areas";
+import CreateAreaDialog from "./-components/CreateAreaDialog";
+import MapConfig from "./-components/MapConfig";
+import MapControlButtons from "./-components/MapControlButtons";
+import MapGraph from "./-components/MapGraph";
+import MapHeader from "./-components/MapHeader";
+import { MapContainer } from "./-components/style";
+import { getUpdatedNode, INITIAL_ZOOM, NODE_COLOR } from "./-utils";
+
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/modelization/map/")({
+  component: Map,
+});
 
 function Map() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -221,5 +226,3 @@ function Map() {
     />
   );
 }
-
-export default Map;
