@@ -16,6 +16,7 @@ from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
+from antares.study.version import StudyVersion
 from fastapi import APIRouter, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
@@ -24,6 +25,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
+from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -32,7 +34,6 @@ from antarest.study.model import (
     MatrixIndex,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
-    StudyVersionStr,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
@@ -343,12 +344,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def create_study(
         name: str,
-        version: StudyVersionStr | None = None,
+        version: str | None = None,
         groups: str = "",
         directory: str = Query(
             "", description="Directory path where the study will be created (e.g., 'project/subfolder')"
         ),
     ) -> str:
+        study_version = StudyVersion.parse(version) if version else None
         logger.info(f"Creating new study '{name}'")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
@@ -356,7 +358,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         directory_path_sanitized = validate_folder_path(directory) if directory else ""
 
-        uuid = study_service.create_study(name_sanitized, version, group_ids, directory=directory_path_sanitized)
+        uuid = study_service.create_study(name_sanitized, study_version, group_ids, directory=directory_path_sanitized)
 
         return uuid
 
@@ -382,11 +384,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/export",
         summary="Export Study",
     )
-    def export_study(uuid: str, no_output: Optional[bool] = False) -> FileDownloadTaskDTO:
+    def export_study(
+        uuid: str, no_output: Optional[bool] = False, compression: ArchiveFormat = ArchiveFormat.ZIP
+    ) -> FileDownloadTaskDTO:
         logger.info(f"Exporting study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
 
-        return study_service.export_study(uuid_sanitized, not no_output)
+        return study_service.export_study(uuid_sanitized, not no_output, compression)
 
     @bp.delete(
         "/studies/{uuid}",

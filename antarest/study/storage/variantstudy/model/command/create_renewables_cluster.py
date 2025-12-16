@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final, List, Optional, Self
+from typing import Any, Dict, Final, Optional, Self
 
 from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, model_validator
@@ -103,7 +103,3 @@ class CreateRenewablesCluster(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

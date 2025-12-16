@@ -16,6 +16,7 @@ from pathlib import Path
 from py7zr import SevenZipFile
 
 from antarest.core.model import PublicMode
+from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
@@ -70,7 +71,9 @@ class TestAbstractStorageService:
 
         # Check the `export_study` function
         target_path = tmp_path / "export.7z"
-        actual = raw_study_service.export_study(metadata, target_path, outputs=True)
+        actual = raw_study_service.export_study(
+            metadata, target_path, outputs=True, archive_format=ArchiveFormat.SEVEN_ZIP
+        )
         assert actual == target_path
 
         # Check that the 7zip file exist and is valid

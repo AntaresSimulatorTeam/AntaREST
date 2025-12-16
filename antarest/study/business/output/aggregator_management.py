@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 import logging
+import warnings
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
+from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -32,6 +33,10 @@ from antarest.study.business.output.utils import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
+# We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
+# But it logs a FutureWarning every time so we silence it here.
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
 # noinspection SpellCheckingInspection
 AREA_COL = "area"
 """Column name for the area."""
@@ -47,7 +52,6 @@ AREA_OR_LINK_INDEX__IND, AREA_OR_LINK_INDEX__ALL = 2, 1
 """Indexes in path parts starting from the output root `economy//mc-(ind/all)` to determine the area/link name."""
 CLUSTER_ID_COMPONENT = 0
 ACTUAL_COLUMN_COMPONENT = 1
-DUMMY_COMPONENT = 2
 
 logger = logging.getLogger(__name__)
 
@@ -248,29 +252,21 @@ class AggregatorManager:
         if not is_details:
             return df
 
-        # number of rows in the data frame
-        df_len = len(df)
-        cluster_dummy_product_cols = sorted(set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in df.columns]))
+        nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
         # actual columns without the cluster id (NODU, production etc.)
-        actual_cols = sorted(set(df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
+        actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())
 
-        # using a dictionary to build the new data frame with the base columns (NO2, production etc.)
-        # and the cluster id and time id
-        new_obj: Dict[str, Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
+        # First perform the stack / unstack operation to have the final shape
+        final_df = df.stack(level=[CLUSTER_ID_COMPONENT, ACTUAL_COLUMN_COMPONENT]).unstack()
 
-        # loop over the cluster id to extract the values of the actual columns
-        for cluster_id, dummy_component in cluster_dummy_product_cols:
-            for actual_col in actual_cols:
-                col_values = df[(cluster_id, actual_col, dummy_component)].tolist()
-                new_obj[actual_col] += col_values
-            new_obj[CLUSTER_ID_COL] += [cluster_id for _ in range(df_len)]
-            new_obj[TIME_ID_COL] += list(range(1, df_len + 1))
+        # Reset the index, drop the first column and rename the columns accordingly
+        final_df.reset_index(inplace=True)
+        final_df.drop(final_df.columns[0], axis=1, inplace=True)
+        final_df.columns = pd.Index([CLUSTER_ID_COL] + actual_cols, dtype="str")
 
-        # reorganize the data frame
-        columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
-        final_df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
-
-        return final_df
+        # Add the TIME_ID column and reindex to have the columns in the right order
+        final_df[TIME_ID_COL] = (final_df.index // nb_clusters) + 1
+        return final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))  # type: ignore
 
     def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
