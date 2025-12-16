@@ -207,7 +207,10 @@ class DatabaseAreaDao(AreaDao):
             result = cast(CursorResult[Any], session.execute(stmt_area))  # type: ignore[redundant-cast, unused-ignore]
             session.flush()
 
-            new_area_id = result.inserted_primary_key[0]
+            inserted_pk = result.inserted_primary_key
+            if inserted_pk is None:
+                raise RuntimeError("Failed to get inserted primary key for area")
+            new_area_id = inserted_pk[0]
 
             # Create default UI for layer "0"
             stmt_ui = insert(area_ui).values(
