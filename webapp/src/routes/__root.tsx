@@ -15,6 +15,7 @@
 import DialogProvider from "@/components/dialogs/DialogProvider";
 import type store from "@/redux/store";
 import type { QueryClient } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { SnackbarProvider } from "notistack";
@@ -35,6 +36,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
 });
 
+const { VITE_ROUTER_DEVTOOLS, VITE_QUERY_DEVTOOLS } = import.meta.env;
+
 function RootLayout() {
   return (
     <ThemeProvider>
@@ -48,7 +51,8 @@ function RootLayout() {
           <Outlet />
         </DialogProvider>
       </SnackbarProvider>
-      <TanStackRouterDevtools />
+      {VITE_ROUTER_DEVTOOLS === "true" && <TanStackRouterDevtools />}
+      {VITE_QUERY_DEVTOOLS === "true" && <ReactQueryDevtools />}
     </ThemeProvider>
   );
 }

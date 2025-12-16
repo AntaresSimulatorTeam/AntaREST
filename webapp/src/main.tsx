@@ -23,7 +23,7 @@ import store from "./redux/store";
 import { routeTree } from "./routeTree.gen";
 import { initConfig } from "./services/config";
 
-if (process.env.NODE_ENV === "development") {
+if (import.meta.env.DEV) {
   // Remove message from Emotion library about unsafe usage in SSR
   const originalError = console.error;
   console.error = (message, ...rest) => {

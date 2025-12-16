@@ -38,7 +38,7 @@ let config: Config = {
   },
 };
 
-if (process.env.NODE_ENV === "development") {
+if (import.meta.env.DEV) {
   config = {
     ...config,
     baseUrl: "http://localhost:3000",
