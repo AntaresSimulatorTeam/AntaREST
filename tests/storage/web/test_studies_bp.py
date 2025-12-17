@@ -19,7 +19,6 @@ from http import HTTPStatus
 from pathlib import Path, PurePosixPath
 from unittest.mock import Mock, call
 
-import numpy as np
 from fastapi import FastAPI
 from markupsafe import Markup
 from starlette.testclient import TestClient
@@ -41,23 +40,14 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_7_0,
     STUDY_VERSION_8_8,
-    MatrixAggregationResultDTO,
-    MatrixIndex,
     OwnerInfo,
     StorageMode,
-    StudyDownloadDTO,
-    StudyDownloadLevelDTO,
-    StudyDownloadType,
     StudyMetadataDTO,
-    StudySimResultDTO,
-    StudySimSettingsDTO,
-    TimeSerie,
-    TimeSeriesData,
 )
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
-from antarest.study.storage.output_service import OutputService
+from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import with_admin_user
-from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 
 ADMIN = JWTUser(
@@ -76,7 +66,7 @@ CONFIG = Config(
 
 def create_test_client(
     service: StudyService,
-    output_service: OutputService | None = None,
+    output_service: OutputService = Mock(),
     file_transfer_manager: FileTransferManager = Mock(),
     raise_server_exceptions: bool = True,
 ) -> TestClient:
@@ -87,11 +77,13 @@ def create_test_client(
         task_service=Mock(),
         file_transfer_manager=file_transfer_manager,
         study_service=service,
-        output_service=output_service,
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
         blob_service=Mock(spec=BlobService),
+    )
+    app_ctxt.api_root.include_router(
+        create_output_routes(output_service=output_service, file_transfer_manager=file_transfer_manager, config=CONFIG)
     )
     return TestClient(app_ctxt.build(), raise_server_exceptions=raise_server_exceptions)
 
@@ -370,111 +362,6 @@ def test_edit_study() -> None:
     client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={"Hello": "World"})
 
     mock_storage_service.edit_study.assert_called_once_with("my-uuid", "url/to/change", {"Hello": "World"})
-
-
-def test_output_download(tmp_path: Path) -> None:
-    mock_output_service = Mock(spec=OutputService)
-
-    output_data = MatrixAggregationResultDTO(
-        index=MatrixIndex(),
-        data=[
-            TimeSeriesData(
-                name="td3_37_de^38_pl",
-                type=StudyDownloadType.LINK,
-                data={
-                    "1": [
-                        TimeSerie(
-                            name="H. VAL",
-                            unit="Euro/MWh",
-                            data=np.array([0.5, 0.6, 0.7]),
-                        )
-                    ]
-                },
-            )
-        ],
-        warnings=[],
-    )
-    mock_output_service.download_outputs.return_value = output_data
-
-    study_download = StudyDownloadDTO(
-        type=StudyDownloadType.AREA,
-        years=[1],
-        level=StudyDownloadLevelDTO.ANNUAL,
-        filterIn="",
-        filterOut="",
-        filter=[],
-        columns=["00001|td3_37_de-38_pl|H. VAL|Euro/MWh"],
-        synthesis=False,
-        includeClusters=True,
-    )
-    ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
-    mock_output_service._file_transfer_manager = ftm
-    client = create_test_client(Mock(), mock_output_service, ftm, raise_server_exceptions=False)
-    res = client.post(
-        f"/v1/studies/{UUID}/outputs/my-output-id/download",
-        json=study_download.model_dump(),
-    )
-    assert res.json() == output_data.model_dump()
-
-
-def test_output_whole_download(tmp_path: Path) -> None:
-    output_id = "my_output_id"
-
-    expected = FileDownloadTaskDTO(
-        file=FileDownloadDTO(
-            id="some id",
-            name="name",
-            filename="filename",
-            expiration_date=None,
-            ready=True,
-        ),
-        task="some-task",
-    )
-
-    ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
-    output_service = Mock(spec=OutputService)
-    output_service._study_service = Mock()
-    output_service.export_output.return_value = expected
-    output_service._file_transfer_manager = ftm
-    client = create_test_client(Mock(), output_service, ftm, raise_server_exceptions=False)
-    res = client.get(
-        f"/v1/studies/{UUID}/outputs/{output_id}/export",
-    )
-    assert res.status_code == HTTPStatus.OK
-
-
-def test_sim_result() -> None:
-    study_id = str(uuid.uuid4())
-    settings = StudySimSettingsDTO(
-        general={},
-        input={},
-        output={},
-        optimization={},
-        otherPreferences={},
-        advancedParameters={},
-        seedsMersenneTwister={},
-    )
-    result_data = [
-        StudySimResultDTO(
-            name="output-id",
-            type="economy",
-            settings=settings,
-            completionDate="",
-            status="",
-            archived=False,
-        )
-    ]
-
-    output_service = Mock(spec=OutputService)
-    output_service._study_service = Mock()
-    output_service.get_study_sim_result.return_value = result_data
-    ftm = Mock(spec=FileTransferManager)
-    output_service._file_transfer_manager = ftm
-
-    client = create_test_client(Mock(), output_service, raise_server_exceptions=False)
-    res = client.get(f"/v1/studies/{study_id}/outputs")
-    actual_object = [StudySimResultDTO.model_validate(res.json()[0])]
-    assert actual_object == result_data
 
 
 def test_study_permission_management(tmp_path: Path) -> None:
