@@ -404,7 +404,7 @@ class OutputService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def download_outputs(self, study_id: str, output_id: str, data: StudyDownloadDTO) -> FileResponse:
+    def download_outputs(self, study_id: str, output_id: str, data: StudyDownloadDTO, tmp_file: Path) -> FileResponse:
         """
         Download outputs
         Args:
@@ -432,12 +432,11 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
         file_paths = []
-        tmp_dir = self._tmp_dir
         try:
             # Launch all aggregation tasks
             for query_file in query_files:
                 file_name = str(uuid.uuid4())
-                file_path = tmp_dir / file_name
+                file_path = self._tmp_dir / file_name
                 task_id = self.start_aggregate_output_data(
                     study_id,
                     output_id,
@@ -497,16 +496,14 @@ class OutputService:
                 }
             )
 
-            final_name = str(uuid.uuid4())
-            final_path = tmp_dir / final_name
-            with open(final_path, "w", encoding="utf-8") as fh:
+            with open(tmp_file, "w", encoding="utf-8") as fh:
                 fh.write(response.model_dump_json())
 
         finally:
             for file_path in file_paths:
                 file_path.unlink(missing_ok=True)
 
-        return FileResponse(final_path, headers={"Content-Disposition": "inline"}, media_type="application/json")
+        return FileResponse(tmp_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """

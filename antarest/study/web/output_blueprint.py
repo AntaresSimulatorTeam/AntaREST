@@ -12,10 +12,11 @@
 import collections
 import logging
 from http import HTTPStatus
+from pathlib import Path
 from typing import Annotated, Any, Sequence
 
 import pandas as pd
-from fastapi import APIRouter, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, Query, Request, UploadFile
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
@@ -149,12 +150,13 @@ def create_output_routes(
         data: StudyDownloadDTO,
         request: Request,  # deprecated, we always return a JSON response
         use_task: bool = False,  # deprecated, we always consider it's False
+        tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
     ) -> FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
 
-        return output_service.download_outputs(study_id, output_id, data)
+        return output_service.download_outputs(study_id, output_id, data, tmp_export_file)
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",
