@@ -13,21 +13,26 @@
  */
 
 import BackButton from "@/components/buttons/BackButton";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
+import { nameToId } from "@/services/utils";
 import { Chip, Divider } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import useAppSelector from "../../../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../../../redux/selectors";
-import { nameToId } from "../../../../../../../../../../../services/utils";
-import type { StudyMetadata } from "../../../../../../../../../../../types/types";
-import ThermalForm from "./ThermalForm";
-import ThermalMatrices from "./ThermalMatrices";
+import ThermalForm from "./-components/ThermalForm";
+import ThermalMatrices from "./-components/ThermalMatrices";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId/",
+)({
+  component: ThermalConfig,
+});
 
 function ThermalConfig() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const navigate = useNavigate();
-  const areaId = useAppSelector(getCurrentAreaId);
-  const { clusterId = "" } = useParams();
+  const study = useStudy();
+  const area = useArea();
+  const navigate = Route.useNavigate();
+  const { thermalId } = Route.useParams();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -36,14 +41,12 @@ function ThermalConfig() {
 
   return (
     <>
-      <BackButton onClick={() => navigate("../thermal")} />
-      <ThermalForm study={study} areaId={areaId} clusterId={clusterId} />
+      <BackButton onClick={() => navigate({ to: ".." })} />
+      <ThermalForm study={study} areaId={area.id} clusterId={thermalId} />
       <Divider sx={{ my: 2 }} variant="middle">
         <Chip label={t("global.matrices")} size="small" />
       </Divider>
-      <ThermalMatrices study={study} areaId={areaId} clusterId={nameToId(clusterId)} />
+      <ThermalMatrices study={study} areaId={area.id} clusterId={nameToId(thermalId)} />
     </>
   );
 }
-
-export default ThermalConfig;

@@ -15,7 +15,7 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import Thermal from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal";
-import ThermalConfig from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/-components/ThermalConfig";
+import ThermalConfig from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";

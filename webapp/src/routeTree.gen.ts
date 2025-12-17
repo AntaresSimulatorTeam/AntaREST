@@ -63,7 +63,9 @@ import { Route as AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRoute
 import { Route as AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/index'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchGeneralIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/general/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdLoadRouteImport } from './routes/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/load'
+import { Route as AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/properties/index'
+import { Route as AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId/index'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -439,11 +441,29 @@ const AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdLoadRoute =
         AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRoute,
     } as any,
   )
+const AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRoute =
+  AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRouteImport.update(
+    {
+      id: '/thermal/',
+      path: '/thermal/',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRoute =
   AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRouteImport.update(
     {
       id: '/properties/',
       path: '/properties/',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRoute =
+  AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRouteImport.update(
+    {
+      id: '/thermal/$thermalId/',
+      path: '/thermal/$thermalId/',
       getParentRoute: () =>
         AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRoute,
     } as any,
@@ -504,6 +524,8 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/configuration/adequacy-patch/general': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchGeneralIndexRoute
   '/studies/$studyId/explore/modelization/areas/$areaId/': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdIndexRoute
   '/studies/$studyId/explore/modelization/areas/$areaId/properties': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRoute
+  '/studies/$studyId/explore/modelization/areas/$areaId/thermal': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRoute
+  '/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
@@ -551,6 +573,8 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/configuration/adequacy-patch/general': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchGeneralIndexRoute
   '/studies/$studyId/explore/modelization/areas/$areaId': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdIndexRoute
   '/studies/$studyId/explore/modelization/areas/$areaId/properties': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRoute
+  '/studies/$studyId/explore/modelization/areas/$areaId/thermal': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRoute
+  '/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -609,6 +633,8 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/general/': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchGeneralIndexRoute
   '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdIndexRoute
   '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/properties/': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRoute
+  '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRoute
+  '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId/': typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -667,6 +693,8 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/configuration/adequacy-patch/general'
     | '/studies/$studyId/explore/modelization/areas/$areaId/'
     | '/studies/$studyId/explore/modelization/areas/$areaId/properties'
+    | '/studies/$studyId/explore/modelization/areas/$areaId/thermal'
+    | '/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -714,6 +742,8 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/configuration/adequacy-patch/general'
     | '/studies/$studyId/explore/modelization/areas/$areaId'
     | '/studies/$studyId/explore/modelization/areas/$areaId/properties'
+    | '/studies/$studyId/explore/modelization/areas/$areaId/thermal'
+    | '/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -771,6 +801,8 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/general/'
     | '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/'
     | '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/properties/'
+    | '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/'
+    | '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1158,11 +1190,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdLoadRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/': {
+      id: '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/'
+      path: '/thermal'
+      fullPath: '/studies/$studyId/explore/modelization/areas/$areaId/thermal'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRoute
+    }
     '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/properties/': {
       id: '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/properties/'
       path: '/properties'
       fullPath: '/studies/$studyId/explore/modelization/areas/$areaId/properties'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId/': {
+      id: '/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId/'
+      path: '/thermal/$thermalId'
+      fullPath: '/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRoute
     }
   }
@@ -1282,6 +1328,8 @@ interface AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRouteChi
   AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdLoadRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdLoadRoute
   AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdIndexRoute
   AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRoute
+  AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRoute
+  AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRoute
 }
 
 const AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRouteChildren: AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRouteChildren =
@@ -1292,6 +1340,10 @@ const AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRouteChildre
       AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdIndexRoute,
     AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRoute:
       AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdPropertiesIndexRoute,
+    AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRoute:
+      AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalIndexRoute,
+    AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRoute:
+      AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdThermalThermalIdIndexRoute,
   }
 
 const AuthenticatedStudiesStudyIdExploreModelizationAreasAreaIdRouteRouteWithChildren =

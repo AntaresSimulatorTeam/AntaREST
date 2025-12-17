@@ -47,7 +47,14 @@ function AreaLayout() {
               params,
             }),
           },
-          // { label: t("study.modelization.thermal"), pathSuffix: "thermal" },
+          {
+            id: "thermal",
+            label: t("study.modelization.thermal"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modelization/areas/$areaId/thermal",
+              params,
+            }),
+          },
           // {
           //   label: "study.modelization.storages",
           //   pathSuffix: "storages",

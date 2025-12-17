@@ -15,11 +15,14 @@
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box } from "@mui/material";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext } from "react-router-dom";
 import semver from "semver";
 import {
   addClusterCapacity,
@@ -27,10 +30,6 @@ import {
   getClustersWithCapacityTotals,
   toCapacityString,
 } from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
-import usePromiseWithSnackbarError from "../../../../../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../types/types";
 import {
   createThermalCluster,
   deleteThermalClusters,
@@ -40,25 +39,31 @@ import {
   type ThermalClusterWithCapacity,
 } from "./-utils";
 
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/",
+)({
+  component: Thermal,
+});
+
 const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
 function Thermal() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
+  const area = useArea();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const areaId = useAppSelector(getCurrentAreaId);
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     ThermalClusterWithCapacity[]
   >(
     async () => {
-      const clusters = await getThermalClusters(study.id, areaId);
+      const clusters = await getThermalClusters(study.id, area.id);
       return clusters?.map(addClusterCapacity);
     },
     {
       resetDataOnReload: true,
       errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, areaId],
+      deps: [study.id, area.id],
     },
   );
 
@@ -120,23 +125,30 @@ function Thermal() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = async (values: TRow) => {
-    const cluster = await createThermalCluster(study.id, areaId, values);
+    const cluster = await createThermalCluster(study.id, area.id, values);
     return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
-    const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
+    const cluster = await duplicateThermalCluster(study.id, area.id, row.id, newName);
 
     return { ...row, ...cluster };
   };
 
   const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
-    return deleteThermalClusters(study.id, areaId, ids);
+    return deleteThermalClusters(study.id, area.id, ids);
   };
 
   const handleNameClick = (row: ThermalClusterWithCapacity) => {
-    navigate(row.id);
+    navigate({
+      to: "/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId",
+      params: {
+        studyId: study.id,
+        areaId: area.id,
+        thermalId: row.id,
+      },
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -172,5 +184,3 @@ function Thermal() {
     />
   );
 }
-
-export default Thermal;
