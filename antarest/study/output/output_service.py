@@ -685,7 +685,14 @@ class OutputService:
                 )
 
                 results = self._storage.aggregate_output_data(
-                    uuid, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
+                    uuid,
+                    output_id,
+                    query_file,
+                    frequency,
+                    ids_to_consider,
+                    columns_names,
+                    transform_columns_headers,
+                    mc_years,
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)
 

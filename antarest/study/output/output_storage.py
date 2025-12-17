@@ -113,6 +113,7 @@ class IOutputStorage(ABC):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
+        transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
     ) -> Iterator[pd.DataFrame]:
         """
