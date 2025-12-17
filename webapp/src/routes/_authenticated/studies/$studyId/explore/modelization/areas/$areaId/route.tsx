@@ -14,10 +14,8 @@
 
 import TabsView from "@/components/page/TabsView";
 import ViewWrapper from "@/components/page/ViewWrapper";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useArea from "../../../../../../../-shared/hook/useArea";
-import useStudy from "../../../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId",
@@ -26,9 +24,8 @@ export const Route = createFileRoute(
 });
 
 function AreaLayout() {
-  const study = useStudy();
-  const area = useArea();
   const { t } = useTranslation();
+  const params = Route.useParams();
 
   return (
     <ViewWrapper>
@@ -37,12 +34,19 @@ function AreaLayout() {
           {
             id: "properties",
             label: t("study.modelization.properties"),
-            linkOptions: {
+            linkOptions: linkOptions({
               to: "/studies/$studyId/explore/modelization/areas/$areaId/properties",
-              params: { studyId: study.id, areaId: area.id },
-            },
+              params,
+            }),
           },
-          // { label: t("study.modelization.load"), pathSuffix: "load" },
+          {
+            id: "load",
+            label: t("study.modelization.load"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modelization/areas/$areaId/load",
+              params,
+            }),
+          },
           // { label: t("study.modelization.thermal"), pathSuffix: "thermal" },
           // {
           //   label: "study.modelization.storages",

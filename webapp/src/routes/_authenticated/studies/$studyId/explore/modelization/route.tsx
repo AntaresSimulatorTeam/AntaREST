@@ -13,17 +13,16 @@
  */
 
 import TabsView from "@/components/page/TabsView";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/modelization")({
   component: ModelizationLayout,
 });
 
 function ModelizationLayout() {
-  const study = useStudy();
   const { t } = useTranslation();
+  const params = Route.useParams();
   // const dispatch = useAppDispatch();
   // const navigate = useNavigate();
   // const { areaId: paramAreaId } = useParams();
@@ -63,18 +62,18 @@ function ModelizationLayout() {
         {
           id: "map",
           label: t("study.modelization.map"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/modelization/map",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
         {
           id: "areas",
           label: t("study.areas"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/modelization/areas",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
           // path: areaPath,
           // onClick: handleAreasClick,
           // disabled: areas.length === 0,
@@ -89,6 +88,7 @@ function ModelizationLayout() {
         //   path: `${basePath}/bindingcontraint`,
         // },
       ]}
+      divider
     />
   );
 }

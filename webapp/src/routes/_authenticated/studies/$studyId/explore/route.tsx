@@ -13,17 +13,16 @@
  */
 
 import TabsView from "@/components/page/TabsView";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore")({
   component: StudyExploreLayout,
 });
 
 function StudyExploreLayout() {
-  const study = useStudy();
   const { t } = useTranslation();
+  const params = Route.useParams();
 
   return (
     <TabsView
@@ -31,50 +30,52 @@ function StudyExploreLayout() {
         {
           id: "modelization",
           label: t("study.modelization"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/modelization",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
         {
           id: "configuration",
           label: t("study.configuration"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
         {
           id: "tablemode",
           label: t("study.tableMode"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/tablemode",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
         {
           id: "xpansion",
           label: "Xpansion",
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/xpansion",
-            params: { studyId: study.id },
-          },
+            params,
+            search: { reload: undefined },
+          }),
         },
         {
           id: "outputs",
           label: t("study.results"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/outputs",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
         {
           id: "debug",
           label: t("study.debug"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/debug",
-            params: { studyId: study.id },
-          },
+            params,
+            search: { path: undefined },
+          }),
         },
       ]}
       divider

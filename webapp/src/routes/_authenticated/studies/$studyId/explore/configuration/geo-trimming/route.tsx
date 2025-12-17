@@ -13,9 +13,8 @@
  */
 
 import TabsView from "@/components/page/TabsView";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/geo-trimming",
@@ -24,8 +23,8 @@ export const Route = createFileRoute(
 });
 
 function GeographicTrimmingLayout() {
-  const study = useStudy();
   const { t } = useTranslation();
+  const params = Route.useParams();
 
   return (
     <TabsView
@@ -33,26 +32,26 @@ function GeographicTrimmingLayout() {
         {
           id: "areas",
           label: t("study.configuration.geographicTrimming.areas"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/geo-trimming/areas",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
         {
           id: "links",
           label: t("study.configuration.geographicTrimming.links"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/geo-trimming/links",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
         {
           id: "binding-constraints",
           label: t("study.configuration.geographicTrimming.bindingConstraints"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/geo-trimming/binding-constraints",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
       ]}
     />

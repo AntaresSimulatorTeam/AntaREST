@@ -17,7 +17,7 @@ import ListView from "@/components/page/ListView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getAreas } from "@/redux/selectors";
-import { createFileRoute, useMatchRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions, useMatchRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import useStudy from "../../../../../../-shared/hook/useStudy";
 
@@ -72,10 +72,12 @@ function AreasLayout() {
           list={areas.map((area) => ({
             ...area,
             label: area.name,
-            linkOptions: {
-              to: "/studies/$studyId/explore/modelization/areas/$areaId",
-              params: { studyId: study.id, areaId: area.id },
-            },
+            linkOptions: linkOptions({
+              to: isAreaSelected
+                ? "."
+                : "/studies/$studyId/explore/modelization/areas/$areaId/properties",
+              params: (prev) => ({ ...prev, areaId: area.id }),
+            }),
           }))}
           emptyListContent={<EmptyView title="No areas" />}
         />

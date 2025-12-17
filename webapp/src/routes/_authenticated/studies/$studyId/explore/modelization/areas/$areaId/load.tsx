@@ -13,20 +13,22 @@
  */
 
 import Matrix from "@/components/Matrix";
+import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../redux/selectors";
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/load",
+)({
+  component: Load,
+});
 
 function Load() {
-  const currentArea = useAppSelector(getCurrentAreaId);
+  const area = useArea();
   const study = useStudy();
-  const url = `input/load/series/load_${currentArea}`;
+  const url = `input/load/series/load_${area.id}`;
 
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
-  return <Matrix studyId={study.id} url={url} aggregateColumns="stats" />;
+  return <Matrix key={area.id} studyId={study.id} url={url} aggregateColumns="stats" />;
 }
 
 export default Load;

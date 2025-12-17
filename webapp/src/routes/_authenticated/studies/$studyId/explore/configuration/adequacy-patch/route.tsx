@@ -13,9 +13,8 @@
  */
 
 import TabsView from "@/components/page/TabsView";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/adequacy-patch",
@@ -24,8 +23,8 @@ export const Route = createFileRoute(
 });
 
 function AdequacyPatchLayout() {
-  const study = useStudy();
   const { t } = useTranslation();
+  const params = Route.useParams();
 
   return (
     <TabsView
@@ -33,18 +32,18 @@ function AdequacyPatchLayout() {
         {
           id: "general",
           label: t("study.configuration.adequacyPatch.tab.general"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/adequacy-patch/general",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
         {
           id: "perimeter",
           label: t("study.configuration.adequacyPatch.tab.perimeter"),
-          linkOptions: {
+          linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/adequacy-patch/perimeter",
-            params: { studyId: study.id },
-          },
+            params,
+          }),
         },
       ]}
     />

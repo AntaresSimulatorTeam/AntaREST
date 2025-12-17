@@ -13,8 +13,7 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Properties from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/properties";
-import Areas from "../_authenticated/studies/$studyId/explore/modelization/areas/route";
+import Properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -22,7 +21,6 @@ import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMat
 import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
 import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
 import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import Load from "./Singlestudy/explore/Modelization/Areas/Load";
 import MiscGen from "./Singlestudy/explore/Modelization/Areas/MiscGen";
 import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import RenewableConfig from "./Singlestudy/explore/Modelization/Areas/Renewables/RenewableConfig";
@@ -40,10 +38,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="area" element={<Areas />} />
-        <Route path="area/:areaId" element={<Areas />}>
-          <Route path="properties" element={<Properties />} />
-          <Route path="load" element={<Load />} />
+        <Route path="area/:areaId">
           <Route path="thermal" element={<Thermal />} />
           <Route path="thermal/:clusterId" element={<ThermalConfig />} />
           <Route path="storages" element={<Storages />} />

@@ -30,7 +30,7 @@ import { type FileInfo, getFileType, getTreeData, type TreeData } from "./-utils
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/debug/")({
   validateSearch: (search) => ({
-    path: (search.path as string) || "",
+    path: (search.path as string) || undefined,
   }),
   component: Debug,
 });
@@ -53,7 +53,7 @@ function Debug() {
 
   const contextValue = useMemo(
     () => ({
-      setPathSearchParam: (path: string) => {
+      setPathSearchParam: (path: string | undefined) => {
         navigate({ search: { path } });
       },
       isTreeLoading,

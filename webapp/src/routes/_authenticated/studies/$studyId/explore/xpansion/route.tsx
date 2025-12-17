@@ -16,7 +16,7 @@ import TabsView from "@/components/page/TabsView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import AddIcon from "@mui/icons-material/Add";
 import { Box, Button } from "@mui/material";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -40,21 +40,22 @@ function XpansionLayout() {
   const study = useStudy();
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const { reload } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const params = Route.useParams();
+  const search = Route.useSearch();
 
   const response = usePromiseWithSnackbarError(() => xpansionConfigurationExist(study.id), {
     errorMessage: t("xpansion.error.loadConfiguration"),
-    deps: [study.id, reload],
+    deps: [study.id, search.reload],
   });
 
   useEffect(() => {
-    if (reload) {
+    if (search.reload) {
       navigate({
         search: { reload: undefined },
       });
     }
-  }, [navigate, reload]);
+  }, [navigate, search.reload]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -95,42 +96,47 @@ function XpansionLayout() {
                 {
                   id: "candidates",
                   label: t("xpansion.candidates"),
-                  linkOptions: {
+                  linkOptions: linkOptions({
                     to: "/studies/$studyId/explore/xpansion/candidates",
-                    params: { studyId: study.id },
-                  },
+                    params,
+                    search,
+                  }),
                 },
                 {
                   id: "settings",
                   label: t("global.settings"),
-                  linkOptions: {
+                  linkOptions: linkOptions({
                     to: "/studies/$studyId/explore/xpansion/settings",
-                    params: { studyId: study.id },
-                  },
+                    params,
+                    search,
+                  }),
                 },
                 {
                   id: "constraints",
                   label: t("xpansion.constraints"),
-                  linkOptions: {
+                  linkOptions: linkOptions({
                     to: "/studies/$studyId/explore/xpansion/constraints",
-                    params: { studyId: study.id },
-                  },
+                    params,
+                    search,
+                  }),
                 },
                 {
                   id: "weights",
                   label: t("xpansion.weights"),
-                  linkOptions: {
+                  linkOptions: linkOptions({
                     to: "/studies/$studyId/explore/xpansion/weights",
-                    params: { studyId: study.id },
-                  },
+                    params,
+                    search,
+                  }),
                 },
                 {
                   id: "capacities",
                   label: t("xpansion.capacities"),
-                  linkOptions: {
+                  linkOptions: linkOptions({
                     to: "/studies/$studyId/explore/xpansion/capacities",
-                    params: { studyId: study.id },
-                  },
+                    params,
+                    search,
+                  }),
                 },
               ]}
             />
