@@ -30,16 +30,13 @@ from antarest.study.business.output.utils import QueryFileType
 from antarest.study.business.output.variables_management import extract_variables_list
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
-    ExportFormat,
     MatrixIndex,
-    StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.output_storage import IOutputStorage
-from antarest.study.output.study_download_utils import StudyDownloader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -227,24 +224,6 @@ class FileOutputStorage(IOutputStorage):
         if not path_output_zip.exists():
             archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
         stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {study_id} exported in {x}s"))
-
-    @override
-    def create_output_download(
-        self, study_id: str, output_id: str, data: StudyDownloadDTO, filetype: ExportFormat, target: Path
-    ) -> None:
-        """
-        For the "download" feature of the API.
-        """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        stopwatch = StopWatch()
-        matrix = StudyDownloader.build(
-            study_outputs.get_file_study(),
-            output_id,
-            data,
-        )
-        stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s"))
-        StudyDownloader.export(matrix, filetype, target)
-        stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s"))
 
     @override
     def output_exists(self, study_id: str, output_id: str) -> bool:

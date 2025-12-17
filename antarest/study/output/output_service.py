@@ -41,14 +41,12 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.output.aggregator_management import (
     AREA_COL,
     CLUSTER_ID_COL,
     LINK_COL,
-    AggregatorManager,
 )
-from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL
 from antarest.study.business.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
@@ -417,9 +415,7 @@ class OutputService:
         Returns: FileResponse containing the asked data.
 
         """
-        study = self._study_service.get_study(study_id)
-        assert_permission(study, StudyPermissionType.READ)
-        self._study_service.assert_study_unarchived(study)
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
         # Fetches time_index
@@ -436,7 +432,7 @@ class OutputService:
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 
         file_paths = []
-        tmp_dir = self._study_service.config.storage.tmp_dir
+        tmp_dir = self._tmp_dir
         try:
             # Launch all aggregation tasks
             for query_file in query_files:
@@ -680,18 +676,6 @@ class OutputService:
             Aggregation task id
         """
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
-        study = self._study_service.get_study(uuid)
-        assert_permission(study, StudyPermissionType.READ)
-        output_path = self._storage.get_output_path(study, output_id)
-        aggregator_manager = AggregatorManager(
-            output_path,
-            query_file,
-            frequency,
-            ids_to_consider,
-            columns_names,
-            transform_columns_headers,
-            mc_years,
-        )
 
         def aggregate_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
