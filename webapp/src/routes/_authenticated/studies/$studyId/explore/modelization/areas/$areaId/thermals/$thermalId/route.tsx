@@ -23,7 +23,7 @@ import ThermalForm from "./-components/ThermalForm";
 import ThermalMatrices from "./-components/ThermalMatrices";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/",
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId",
 )({
   component: ThermalConfig,
 });
