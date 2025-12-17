@@ -24,8 +24,12 @@ def _list_to_np(array: Any) -> npt.NDArray[np.float64]:
     raise ValueError("Input should be either a list or a numpy array")
 
 
-def _np_to_list(array: npt.NDArray[np.float64]) -> Any:
-    return array.tolist()
+def _np_to_list(array: npt.NDArray[np.float64]) -> list[float] | list[list[float]]:
+    if array.ndim == 1:
+        return [float(x) for x in array]
+    elif array.ndim == 2:
+        return [[float(x) for x in row] for row in array]
+    raise ValueError(f"Expected 1 or 2 dimensional array, got {array.ndim}")
 
 
 NpArray: TypeAlias = Annotated[npt.NDArray[np.float64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
