@@ -25,19 +25,20 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
-from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
+from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.study.main import build_study_service
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.main import add_study_routes
+from antarest.study.output.output_model import OutputVariablesInformation
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
-from antarest.study.storage.output_model import OutputVariablesInformation
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -55,7 +56,9 @@ ADMIN = JWTUser(
 
 
 @pytest.fixture
-def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
+def client(
+    storage_service: StudyService, output_service: OutputService, db_engine: Engine, config: Config
+) -> TestClient:
     app = FastAPI(title=__name__)
     app.add_middleware(
         DBSessionMiddleware,
@@ -63,17 +66,11 @@ def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
         session_args={"autocommit": False, "autoflush": False},
     )
     build_ctxt = create_app_ctxt(app)
-    build_study_service(
-        build_ctxt,
-        cache=Mock(),
-        user_service=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        matrix_service=Mock(spec=MatrixService),
-        blob_service=Mock(spec=BlobService),
-        config=storage_service.storage_service.raw_study_service.config,
+    add_study_routes(build_ctxt, storage_service, Mock(), config)
+    build_ctxt.api_root.include_router(
+        create_output_routes(output_service, storage_service.file_transfer_manager, config)
     )
+
     return TestClient(build_ctxt.build())
 
 
@@ -617,18 +614,18 @@ def test_sta_mini_filter(storage_service: StudyService, url: str, expected_outpu
     )
 
 
-def _add_study_in_db(output_service: OutputService) -> None:
+def _add_study_in_db(study_service: StudyService) -> None:
     """Adds the study UUID inside the DB to avoid ForeginKey issues"""
     with db():
-        study = output_service._study_service.get_study(UUID)
+        study = study_service.get_study(UUID)
         db.session.add(study)
         db.session.commit()
 
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_nominal_case(output_service: OutputService) -> None:
-    _add_study_in_db(output_service)
+def test_sta_mini_output_variables_nominal_case(storage_service: StudyService, output_service: OutputService) -> None:
+    _add_study_in_db(storage_service)
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     assert variables.model_dump() == {
         "area": [
@@ -685,17 +682,17 @@ def test_sta_mini_output_variables_nominal_case(output_service: OutputService) -
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_mc_ind(output_service: OutputService) -> None:
-    _add_study_in_db(output_service)
+def test_sta_mini_output_variables_no_mc_ind(storage_service: StudyService, output_service: OutputService) -> None:
+    _add_study_in_db(storage_service)
     res = output_service.get_output_variables_information(UUID, "20201014-1427eco")
     assert res == OutputVariablesInformation(area=[], link=[])
 
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_links(output_service: OutputService) -> None:
-    _add_study_in_db(output_service)
-    study_path = Path(output_service._study_service.get_study(UUID).path)
+def test_sta_mini_output_variables_no_links(storage_service: StudyService, output_service: OutputService) -> None:
+    _add_study_in_db(storage_service)
+    study_path = Path(storage_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
@@ -705,9 +702,9 @@ def test_sta_mini_output_variables_no_links(output_service: OutputService) -> No
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_areas(output_service: OutputService) -> None:
-    _add_study_in_db(output_service)
-    study_path = Path(output_service._study_service.get_study(UUID).path)
+def test_sta_mini_output_variables_no_areas(storage_service: StudyService, output_service: OutputService) -> None:
+    _add_study_in_db(storage_service)
+    study_path = Path(storage_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)
