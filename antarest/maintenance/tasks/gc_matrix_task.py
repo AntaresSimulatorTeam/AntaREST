@@ -16,21 +16,27 @@ Matrix garbage collection task wrapper for Celery.
 This task deletes unused matrices from the matrix store based on retention time.
 """
 
+from celery import Task
+
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.gc_matrix import GCTaskResult, clean_matrices
 
 
-@celery_app.task(name="antarest.maintenance.tasks.clean_matrices_task", pydantic=True)
-def clean_matrices_task() -> GCTaskResult:
+@celery_app.task(bind=True, name="antarest.maintenance.tasks.clean_matrices_task", pydantic=True)
+def clean_matrices_task(self: Task) -> GCTaskResult:  # type: ignore[type-arg]
     """
     Celery task wrapper for clean_matrices.
 
-    Retrieves dependencies from the worker context and delegates to clean_matrices().
+    Retrieves dependencies from the Celery app configuration (injected during worker init)
+    and delegates to clean_matrices().
+
+    Args:
+        self: The bound task instance, provides access to self.app
     """
-    ctx = MaintenanceContext.get_instance()
-    if ctx.config is None:
-        raise RuntimeError("MaintenanceContext config is not initialized. Ensure worker was properly started.")
+    ctx: MaintenanceContext | None = getattr(self.app.conf, "maintenance_ctx", None)
+    if ctx is None:
+        raise RuntimeError("MaintenanceContext not found in app.conf. Ensure worker was properly started.")
 
     return clean_matrices(
         matrix_service=ctx.matrix_service,

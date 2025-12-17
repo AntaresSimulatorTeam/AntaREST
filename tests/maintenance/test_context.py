@@ -10,57 +10,56 @@
 #
 # This file is part of the Antares project.
 
-"""Tests for MaintenanceContext singleton."""
+"""Tests for MaintenanceContext."""
 
 from unittest.mock import Mock
-
-import pytest
 
 from antarest.maintenance.context import MaintenanceContext
 
 
-@pytest.fixture(autouse=True)
-def reset_singleton():
-    """Reset the singleton instance before and after each test."""
-    MaintenanceContext._INSTANCE = None
-    yield
-    MaintenanceContext._INSTANCE = None
-
-
 class TestMaintenanceContext:
-    def test_get_instance_returns_singleton(self):
-        """Test that get_instance always returns the same instance."""
-        instance1 = MaintenanceContext.get_instance()
-        instance2 = MaintenanceContext.get_instance()
+    def test_constructor_stores_config_and_services(self):
+        """Test that constructor properly stores config and core_services."""
+        mock_config = Mock()
+        mock_core_services = Mock()
 
-        assert instance1 is instance2
+        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services)
 
-    def test_matrix_service_raises_when_not_initialized(self):
-        """Test that accessing matrix_service before initialization raises RuntimeError."""
-        ctx = MaintenanceContext.get_instance()
+        assert ctx.config is mock_config
+        assert ctx.core_services is mock_core_services
 
-        with pytest.raises(RuntimeError, match="MaintenanceContext not initialized"):
-            _ = ctx.matrix_service
-
-    def test_blob_service_raises_when_not_initialized(self):
-        """Test that accessing blob_service before initialization raises RuntimeError."""
-        ctx = MaintenanceContext.get_instance()
-
-        with pytest.raises(RuntimeError, match="MaintenanceContext not initialized"):
-            _ = ctx.blob_service
-
-    def test_set_core_services(self):
-        """Test that set_core_services injects services directly."""
+    def test_matrix_service_returns_service_from_core_services(self):
+        """Test that matrix_service property returns the service from core_services."""
         mock_matrix_service = Mock()
-        mock_blob_service = Mock()
         mock_core_services = Mock()
         mock_core_services.matrix_service = mock_matrix_service
+        mock_config = Mock()
+
+        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services)
+
+        assert ctx.matrix_service is mock_matrix_service
+
+    def test_blob_service_returns_service_from_core_services(self):
+        """Test that blob_service property returns the service from core_services."""
+        mock_blob_service = Mock()
+        mock_core_services = Mock()
         mock_core_services.blob_service = mock_blob_service
         mock_config = Mock()
 
-        ctx = MaintenanceContext.get_instance()
-        ctx.set_core_services(config=mock_config, core_services=mock_core_services)
+        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services)
 
-        assert ctx.matrix_service is mock_matrix_service
         assert ctx.blob_service is mock_blob_service
-        assert ctx.config is mock_config
+
+    def test_multiple_instances_are_independent(self):
+        """Test that multiple MaintenanceContext instances are independent (not singleton)."""
+        mock_config_1 = Mock()
+        mock_config_2 = Mock()
+        mock_core_services_1 = Mock()
+        mock_core_services_2 = Mock()
+
+        ctx1 = MaintenanceContext(config=mock_config_1, core_services=mock_core_services_1)
+        ctx2 = MaintenanceContext(config=mock_config_2, core_services=mock_core_services_2)
+
+        assert ctx1 is not ctx2
+        assert ctx1.config is mock_config_1
+        assert ctx2.config is mock_config_2

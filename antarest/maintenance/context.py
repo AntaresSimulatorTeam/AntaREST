@@ -13,15 +13,17 @@
 """
 Dependency injection context for Celery workers.
 
-This module provides a singleton context that initializes all required services
-(MatrixService, BlobService, StudyService, etc.) when the worker starts.
+This module provides a context that holds all required services
+(MatrixService, BlobService, etc.) for maintenance tasks.
 
-Each Celery task retrieves services from this context instead of recreating them.
+The context is created once per worker process in the worker_init signal
+and stored in the Celery app configuration (app.conf.maintenance_ctx).
+Tasks access it via self.app.conf when using bind=True.
 """
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
@@ -37,77 +39,60 @@ logger = logging.getLogger(__name__)
 
 class MaintenanceContext:
     """
-    Singleton context for maintenance tasks.
+    Context holding services for maintenance tasks.
 
     Provides access to all services needed by maintenance tasks:
     - MatrixService
     - BlobService
     - ...
 
-    The context is initialized once per worker process in the worker_init signal.
-    Note: No thread synchronization is needed because worker_init is called only once
-    at worker startup, and tasks run sequentially within a worker process.
+    This is NOT a singleton. An instance is created during worker initialization
+    and attached to the Celery app via `app.conf.maintenance_ctx`.
+    Tasks access it via `self.app.conf.maintenance_ctx` when using `bind=True`.
     """
 
-    _INSTANCE: Optional["MaintenanceContext"] = None
-
-    def __init__(self) -> None:
-        self.config: Optional["Config"] = None
-        self.core_services: Optional["CoreServices"] = None
-
-    @classmethod
-    def get_instance(cls) -> "MaintenanceContext":
-        """Get or create the singleton instance."""
-        if cls._INSTANCE is None:
-            cls._INSTANCE = MaintenanceContext()
-        return cls._INSTANCE
-
-    def initialize(self, config: "Config", config_path: Path) -> None:
+    def __init__(self, config: "Config", core_services: "CoreServices") -> None:
         """
-        Initialize the context with config and services.
-
-        This is called automatically by worker_init signal (once per worker).
+        Create a MaintenanceContext with the given config and services.
 
         Args:
-            config: Already loaded Config object
-            config_path: Path to application.yaml (needed for DB engine initialization)
-        """
-        if self.core_services is not None:
-            logger.debug("MaintenanceContext already initialized")
-            return
-
-        logger.info(f"Initializing MaintenanceContext from {config_path}")
-
-        self.config = config
-
-        engine = init_db_engine(config_path, self.config, auto_upgrade_db=False)
-        DBSessionMiddleware(None, custom_engine=engine, session_args=cast(dict[str, bool], SESSION_ARGS))
-
-        self.core_services = create_core_services(app_ctxt=None, config=self.config)
-
-        logger.info("MaintenanceContext initialized successfully")
-
-    def set_core_services(self, config: "Config", core_services: "CoreServices") -> None:
-        """
-        Directly set the core services (for testing).
-
-        Args:
-            config: Config object
-            core_services: Pre-built CoreServices instance
+            config: Application configuration
+            core_services: Pre-built CoreServices instance containing all services
         """
         self.config = config
         self.core_services = core_services
 
+    @classmethod
+    def create(cls, config: "Config", config_path: Path) -> "MaintenanceContext":
+        """
+        Factory method to create a fully initialized MaintenanceContext.
+
+        This handles database engine initialization and service creation.
+        Use this in production (worker_init signal).
+
+        Args:
+            config: Already loaded Config object
+            config_path: Path to application.yaml (needed for DB engine initialization)
+
+        Returns:
+            A fully initialized MaintenanceContext
+        """
+        logger.info(f"Creating MaintenanceContext from {config_path}")
+
+        engine = init_db_engine(config_path, config, auto_upgrade_db=False)
+        DBSessionMiddleware(None, custom_engine=engine, session_args=cast(dict[str, bool], SESSION_ARGS))
+
+        core_services = create_core_services(app_ctxt=None, config=config)
+
+        logger.info("MaintenanceContext created successfully")
+        return cls(config=config, core_services=core_services)
+
     @property
     def matrix_service(self) -> "MatrixService":
         """Get MatrixService."""
-        if self.core_services is None:
-            raise RuntimeError("MaintenanceContext not initialized")
         return self.core_services.matrix_service
 
     @property
     def blob_service(self) -> "BlobService":
         """Get BlobService."""
-        if self.core_services is None:
-            raise RuntimeError("MaintenanceContext not initialized")
         return self.core_services.blob_service

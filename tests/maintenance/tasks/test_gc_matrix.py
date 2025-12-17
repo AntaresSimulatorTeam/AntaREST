@@ -17,7 +17,6 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.maintenance.tasks.gc_matrix import _delete_unused_saved_matrices
-from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
 
 
 class TestDeleteUnusedSavedMatrices:
@@ -81,8 +80,23 @@ class TestDeleteUnusedSavedMatrices:
 class TestCleanMatricesTaskWiring:
     """Tests for the Celery task wiring (context extraction)."""
 
-    def test_raises_when_config_not_initialized(self):
-        """Test that clean_matrices_task raises when config is None."""
+    def test_raises_when_context_not_in_app_conf(self):
+        """Test that clean_matrices_task raises when maintenance_ctx is not in app.conf."""
 
-        with pytest.raises(RuntimeError, match="MaintenanceContext config is not initialized"):
-            clean_matrices_task()
+        from antarest.maintenance.app import celery_app
+
+        # Temporarily remove maintenance_ctx from app.conf if it exists
+        original_ctx = getattr(celery_app.conf, "maintenance_ctx", None)
+        try:
+            # Ensure maintenance_ctx is not set (or set to None)
+            celery_app.conf.maintenance_ctx = None
+
+            with pytest.raises(RuntimeError, match="MaintenanceContext not found in app.conf"):
+                # Call the task directly (synchronously, not via Celery)
+                from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
+
+                clean_matrices_task.run()
+        finally:
+            # Restore original state
+            if original_ctx is not None:
+                celery_app.conf.maintenance_ctx = original_ctx
