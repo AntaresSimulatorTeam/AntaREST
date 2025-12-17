@@ -14,18 +14,23 @@
 
 import Matrix from "@/components/Matrix";
 import TabsView from "@/components/page/TabsView";
-import type { Cluster, StudyMetadata } from "@/types/types";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../../-utils";
+import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../-utils";
 
-interface Props {
-  study: StudyMetadata;
-  areaId: string;
-  clusterId: Cluster["id"];
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices",
+)({
+  component: Matrices,
+});
 
-function ThermalMatrices({ study, areaId, clusterId }: Props) {
+function Matrices() {
+  const study = useStudy();
+  const area = useArea();
+  const { thermalId } = Route.useParams();
   const [t] = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -34,7 +39,6 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
 
   return (
     <TabsView
-      disableGutters
       tabs={[
         {
           id: "common",
@@ -42,7 +46,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           content: (
             <Matrix
               studyId={study.id}
-              url={`input/thermal/prepro/${areaId}/${clusterId}/modulation`}
+              url={`input/thermal/prepro/${area.id}/${thermalId}/modulation`}
               customColumns={COMMON_MATRIX_COLS}
               isTimeSeries={false}
               enableFilters
@@ -55,7 +59,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           content: (
             <Matrix
               studyId={study.id}
-              url={`input/thermal/prepro/${areaId}/${clusterId}/data`}
+              url={`input/thermal/prepro/${area.id}/${thermalId}/data`}
               customColumns={TS_GEN_MATRIX_COLS}
               isTimeSeries={false}
               enableFilters
@@ -68,7 +72,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           content: (
             <Matrix
               studyId={study.id}
-              url={`input/thermal/series/${areaId}/${clusterId}/series`}
+              url={`input/thermal/series/${area.id}/${thermalId}/series`}
               aggregateColumns="stats" // avg, min, max
             />
           ),
@@ -79,7 +83,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           content: (
             <Matrix
               studyId={study.id}
-              url={`input/thermal/series/${areaId}/${clusterId}/fuelCost`}
+              url={`input/thermal/series/${area.id}/${thermalId}/fuelCost`}
             />
           ),
         },
@@ -89,7 +93,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
           content: (
             <Matrix
               studyId={study.id}
-              url={`input/thermal/series/${areaId}/${clusterId}/CO2Cost`}
+              url={`input/thermal/series/${area.id}/${thermalId}/CO2Cost`}
             />
           ),
         },
@@ -97,5 +101,3 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
     />
   );
 }
-
-export default ThermalMatrices;

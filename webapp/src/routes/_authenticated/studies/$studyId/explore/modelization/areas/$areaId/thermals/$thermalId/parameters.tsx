@@ -19,7 +19,10 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { validateNumber } from "@/utils/validation/number";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import {
@@ -31,16 +34,18 @@ import {
   type ThermalCluster,
   getThermalCluster,
   updateThermalCluster,
-} from "../../-utils";
-import type { Area, Cluster, StudyMetadata } from "../../../../../../../../../../../types/types";
+} from "../-utils";
 
-interface Props {
-  study: StudyMetadata;
-  areaId: Area["name"];
-  clusterId: Cluster["id"];
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/parameters",
+)({
+  component: Parameters,
+});
 
-function ThermalForm({ study, areaId, clusterId }: Props) {
+function Parameters() {
+  const study = useStudy();
+  const area = useArea();
+  const { thermalId } = Route.useParams();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -48,7 +53,7 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
-    return updateThermalCluster(study.id, areaId, clusterId, dirtyValues);
+    return updateThermalCluster(study.id, area.id, thermalId, dirtyValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -57,8 +62,8 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
 
   return (
     <Form
-      key={study.id + areaId + clusterId}
-      config={{ defaultValues: () => getThermalCluster(study.id, areaId, clusterId) }}
+      key={area.id + thermalId}
+      config={{ defaultValues: () => getThermalCluster(study.id, area.id, thermalId) }}
       onSubmit={handleSubmit}
       enableUndoRedo
       disableStickyFooter
@@ -288,5 +293,3 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
     </Form>
   );
 }
-
-export default ThermalForm;

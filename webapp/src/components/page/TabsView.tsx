@@ -38,7 +38,7 @@ interface ContentTab extends BaseTab {
 export interface TabsViewProps {
   tabs: RouteTab[] | ContentTab[];
   onChange?: TabListProps["onChange"];
-  onBack?: VoidFunction;
+  onBack?: VoidFunction | ToOptions;
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
@@ -63,13 +63,13 @@ function TabsView({
   const matchRoute = useMatchRoute();
   const hasRouteTabs = isRouteTabs(tabs);
 
-  const [activeContentTabId, setActiveContentTabId] = useState(() =>
+  const [activeContentTabValue, setActiveContentTabValue] = useState(() =>
     tabs.length > 0 ? tabs[0].id : "",
   );
 
   const activeTabValue = hasRouteTabs
     ? tabs.find((tab) => matchRoute({ ...tab.linkOptions, fuzzy: true }))?.id || ""
-    : activeContentTabId;
+    : activeContentTabValue;
 
   const panelSx: SxProps<Theme> = [
     {
@@ -89,11 +89,11 @@ function TabsView({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (event: React.SyntheticEvent, newTabIndex: number) => {
+  const handleChange = (event: React.SyntheticEvent, newTabValue: BaseTab["id"]) => {
     if (!hasRouteTabs) {
-      setActiveContentTabId(tabs[newTabIndex].id);
+      setActiveContentTabValue(newTabValue);
     }
-    onChange?.(event, newTabIndex);
+    onChange?.(event, newTabValue);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -117,7 +117,11 @@ function TabsView({
             divider && { borderBottom: 1, borderColor: "divider" },
           ]}
         >
-          {onBack && <BackButton onClick={onBack} />}
+          {onBack && (
+            <BackButton
+              {...(typeof onBack === "function" ? { onClick: onBack } : { linkOptions: onBack })}
+            />
+          )}
           <TabList onChange={handleChange}>
             {tabs.map((tab) => (
               <Tab

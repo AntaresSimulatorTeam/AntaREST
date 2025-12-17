@@ -568,6 +568,8 @@
   "study.modelization.map.districts.delete.confirm": "Êtes-vous sûr de vouloir supprimer le district '{{0}}' ?",
   "study.modelization.load": "Conso",
   "study.modelization.thermals": "Thermiques",
+  "study.modelization.thermals.parameters": "Paramètres",
+  "study.modelization.thermals.matrices": "Matrices",
   "study.modelization.hydro": "Hydro",
   "study.modelization.hydro.correlation.viewMatrix": "Voir les correlations",
   "study.modelization.hydro.correlation.coefficient": "Coeff. (%)",

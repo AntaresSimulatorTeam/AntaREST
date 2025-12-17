@@ -14,18 +14,39 @@
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Button, type ButtonProps } from "@mui/material";
+import type { ToOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import RouterButton from "../router/RouterButton";
 
-export interface BackButtonProps {
-  onClick: ButtonProps["onClick"];
-}
+export type BackButtonProps =
+  | {
+      onClick?: ButtonProps["onClick"];
+      linkOptions?: never;
+    }
+  | {
+      onClick?: never;
+      linkOptions?: ToOptions;
+    };
 
-function BackButton(props: BackButtonProps) {
+function BackButton({ onClick, linkOptions }: BackButtonProps) {
   const { t } = useTranslation();
+  const label = t("button.back");
+  const sharedProps: ButtonProps = {
+    color: "secondary",
+    startIcon: <ArrowBackIcon />,
+  };
+
+  if (linkOptions) {
+    return (
+      <RouterButton {...sharedProps} {...linkOptions}>
+        {label}
+      </RouterButton>
+    );
+  }
 
   return (
-    <Button color="secondary" startIcon={<ArrowBackIcon />} {...props}>
-      {t("button.back")}
+    <Button {...sharedProps} onClick={onClick}>
+      {label}
     </Button>
   );
 }
