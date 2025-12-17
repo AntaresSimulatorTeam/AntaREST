@@ -636,6 +636,45 @@ class MetricsConfig:
 
 
 @dataclass(frozen=True)
+class CeleryConfig:
+    """
+    Sub config object dedicated to Celery technical configuration.
+
+    Attributes:
+        broker_url: URL of the message broker (built from RedisConfig)
+        result_backend: URL of the result backend (built from RedisConfig)
+        result_expires: Time in seconds before task results expire
+    """
+
+    # Redis database number for Celery (broker + results)
+    REDIS_DB: ClassVar[int] = 1
+
+    broker_url: str = ""
+    result_backend: str = ""
+    result_expires: int = 86400  # 24 hours
+
+    @staticmethod
+    def _build_redis_url(redis_config: RedisConfig, db: int) -> str:
+        password_part = f":{redis_config.password}@" if redis_config.password else ""
+        return f"redis://{password_part}{redis_config.host}:{redis_config.port}/{db}"
+
+    @classmethod
+    def from_dict(cls, data: JSON, redis_config: Optional[RedisConfig] = None) -> "CeleryConfig":
+        defaults = cls()
+
+        if redis_config:
+            redis_url = cls._build_redis_url(redis_config, cls.REDIS_DB)
+        else:
+            redis_url = ""
+
+        return cls(
+            broker_url=data.get("broker_url", redis_url),
+            result_backend=data.get("result_backend", redis_url),
+            result_expires=data.get("result_expires", defaults.result_expires),
+        )
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
@@ -654,6 +693,7 @@ class Config:
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
     metrics: MetricsConfig = MetricsConfig()
+    celery: CeleryConfig = CeleryConfig()
     root_path: str = ""
     api_prefix: str = ""
     desktop_mode: bool = False
@@ -667,6 +707,7 @@ class Config:
             if "storage" in data
             else defaults.storage
         )
+        redis_config = RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis
         return cls(
             server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
             security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
@@ -676,10 +717,11 @@ class Config:
             logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
             debug=data.get("debug", defaults.debug),
             resources_path=data["resources_path"] if "resources_path" in data else defaults.resources_path,
-            redis=RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis,
+            redis=redis_config,
             eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
             cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
+            celery=CeleryConfig.from_dict(data.get("celery", {}), redis_config=redis_config),
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
             desktop_mode=desktop_mode,

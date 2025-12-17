@@ -46,7 +46,6 @@ server:
   worker_threadpool_size: 12
   services:
     - watcher
-    - matrix_gc
 
 logging:
   level: INFO
@@ -55,8 +54,16 @@ logging:
 # True to get sqlalchemy logs
 debug: False
 
-# Uncomment these lines to use redis as a backend for the eventbus
-# It is required to use redis when using this application on multiple workers in a preforked model like gunicorn for instance
+# Uncomment these lines to use redis as a backend for the eventbus and Celery.
+# It is required to use redis when using this application on multiple workers in a preforked model like gunicorn for instance.
+# Celery will automatically use this Redis configuration with DB 1 for its broker and result backend.
 #redis:
 #  host: localhost
 #  port: 6379
+#  password: your_password  # optional
+
+# Celery configuration for maintenance tasks (optional)
+# The broker_url and result_backend are automatically built from the redis config above.
+# You only need to configure celery-specific settings here if you want to override defaults.
+# celery:
+#   result_expires: 86400  # 24 hours
