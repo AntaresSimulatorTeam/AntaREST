@@ -21,6 +21,7 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
@@ -33,13 +34,13 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
 )
 from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
-from antarest.study.storage.output_model import (
+from antarest.study.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
-from antarest.study.storage.output_service import OutputService
+from antarest.study.output.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
@@ -63,7 +64,9 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_output_routes(output_service: OutputService, config: Config) -> APIRouter:
+def create_output_routes(
+    output_service: OutputService, file_transfer_manager: FileTransferManager, config: Config
+) -> APIRouter:
     """
     Endpoint implementation for outputs management
 
@@ -149,7 +152,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         data: StudyDownloadDTO,
         request: Request,
         use_task: bool = False,
-        tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
+        tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
     ) -> Response | FileDownloadTaskDTO | FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
@@ -157,15 +160,31 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         accept = request.headers["Accept"]
         filetype = ExportFormat.from_dto(accept)
 
-        content = output_service.download_outputs(
-            study_id,
-            output_id,
-            data,
-            use_task,
-            filetype,
-            tmp_export_file,
-        )
-        return content
+        if use_task:
+            return output_service.start_output_download_creation(
+                study_id,
+                output_id,
+                data,
+                filetype,
+            )
+        else:
+            output_service.create_output_download(
+                study_id,
+                output_id,
+                data,
+                filetype,
+                tmp_export_file,
+            )
+            if filetype == ExportFormat.JSON:
+                headers = {"Content-Disposition": "inline"}
+            elif filetype == ExportFormat.TAR_GZ:
+                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
+            elif filetype == ExportFormat.ZIP:
+                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
+            else:  # pragma: no cover
+                raise NotImplementedError(f"Export format {filetype} is not supported")
+
+            return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",
