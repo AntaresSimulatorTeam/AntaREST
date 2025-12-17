@@ -48,10 +48,10 @@ function AreaLayout() {
             }),
           },
           {
-            id: "thermal",
-            label: t("study.modelization.thermal"),
+            id: "thermals",
+            label: t("study.modelization.thermals"),
             linkOptions: linkOptions({
-              to: "/studies/$studyId/explore/modelization/areas/$areaId/thermal",
+              to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals",
               params,
             }),
           },

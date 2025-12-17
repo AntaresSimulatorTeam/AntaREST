@@ -40,14 +40,14 @@ import {
 } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/",
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/",
 )({
-  component: Thermal,
+  component: Thermals,
 });
 
 const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
-function Thermal() {
+function Thermals() {
   const study = useStudy();
   const area = useArea();
   const { t } = useTranslation();
@@ -142,7 +142,7 @@ function Thermal() {
 
   const handleNameClick = (row: ThermalClusterWithCapacity) => {
     navigate({
-      to: "/studies/$studyId/explore/modelization/areas/$areaId/thermal/$thermalId",
+      to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId",
       params: {
         studyId: study.id,
         areaId: area.id,
