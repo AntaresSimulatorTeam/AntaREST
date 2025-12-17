@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from enum import Enum, StrEnum
+from typing import TypeAlias
 
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
@@ -46,7 +47,7 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
-QueryFileType = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
+QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
 
 def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:

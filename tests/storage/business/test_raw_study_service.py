@@ -26,6 +26,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
@@ -438,23 +439,33 @@ timestamp = 1599488150
         """,
         )
 
+    class OutputsProvider(IFileOutputsProvider):
+        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            return FileStudyOutputs(
+                get_file_study=lambda: study_service.get_raw(md),
+                outputs_path=study_path / "output",
+                study_workspace=DEFAULT_WORKSPACE_NAME,
+            )
+
+    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+
     expected_output_name = "20200907-1615eco-11mc"
-    output_name = study_service.import_output(md, zipped_output)
+    output_name = output_storage.import_output(name, zipped_output)
     if output_name != expected_output_name:
         # because windows sucks...
         expected_output_name = "20200907-1415eco-11mc"
     assert output_name == expected_output_name
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
 
-    study_service.unarchive_study_output(md, expected_output_name)
+    output_storage.unarchive_study_output(name, expected_output_name)
     assert (study_path / "output" / expected_output_name).exists()
     assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
-    study_service.delete_output(md, output_name)
+    output_storage.delete_output(name, output_name)
 
-    study_service.archive_study_output(md, expected_output_name)
+    output_storage.archive_study_output(name, expected_output_name)
     assert not (study_path / "output" / expected_output_name).exists()
     assert (study_path / "output" / (expected_output_name + ".zip")).exists()
-    study_service.delete_output(md, output_name)
+    output_storage.delete_output(name, output_name)
     assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
 
 
@@ -493,7 +504,6 @@ def test_delete_study(tmp_path: Path) -> None:
     assert not study_path.exists()
 
 
-@pytest.mark.unit_test
 def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name

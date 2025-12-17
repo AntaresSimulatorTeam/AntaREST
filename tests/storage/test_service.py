@@ -57,7 +57,6 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -68,18 +67,15 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
-    is_output_archived,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import create_raw_study, create_study, create_variant_study, with_admin_user, with_db_context
 
@@ -1271,196 +1267,6 @@ def test_create_command(
 
 
 @with_admin_user
-def test_unarchive_output(tmp_path: Path, command_context: CommandContext) -> None:
-    study_id = str(uuid.uuid4())
-    study_name = "My Study"
-    study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id=study_id,
-        path=tmp_path,
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-        workspace="other_workspace",
-        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
-    )
-    # The `name` attribute cannot be mocked during creation of the mock object
-    # https://stackoverflow.com/a/62552149/1513933
-    study_mock.name = study_name
-
-    service = build_study_service(
-        raw_study_service=Mock(spec=RawStudyService),
-        directory_service=Mock(spec=DirectoryService),
-        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
-        config=Mock(spec=Config),
-    )
-
-    service.task_service.reset_mock()
-
-    output_id = "some-output"
-    service.task_service.add_worker_task.return_value = None  # type: ignore
-    service.task_service.list_tasks.return_value = []  # type: ignore
-    (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
-    storage = OutputStorageDispatcher(
-        service.storage_service.raw_study_service, service.storage_service.variant_study_service
-    )
-    fill_study_service_with_command_context(service, command_context)
-    output_service = OutputService(
-        service,
-        storage,
-        service.task_service,
-        Mock(),
-        Mock(),
-    )
-    output_service.unarchive_output(study_id, output_id)
-
-    service.task_service.add_worker_task.assert_called_once_with(
-        TaskType.UNARCHIVE,
-        "unarchive_other_workspace",
-        ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
-        ).model_dump(),
-        name=f"Unarchive output {study_name}/{output_id} ({study_id})",
-        ref_id=study_id,
-    )
-    service.task_service.add_task.assert_called_once_with(
-        ANY,
-        f"Unarchive output {study_name}/{output_id} ({study_id})",
-        task_type=TaskType.UNARCHIVE,
-        ref_id=study_id,
-        progress=None,
-        custom_event_messages=None,
-    )
-
-
-@with_admin_user
-def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -> None:
-    study_id = str(uuid.uuid4())
-    study_name = "My Study"
-    study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id=study_id,
-        path=tmp_path,
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-        workspace="other_workspace",
-        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
-    )
-    # The `name` attribute cannot be mocked during creation of the mock object
-    # https://stackoverflow.com/a/62552149/1513933
-    study_mock.name = study_name
-
-    service = build_study_service(
-        raw_study_service=Mock(spec=RawStudyService),
-        directory_service=Mock(spec=DirectoryService),
-        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
-        config=Mock(spec=Config),
-    )
-
-    service.task_service.reset_mock()
-
-    output_zipped = "some-output_zipped"
-    output_unzipped = "some-output_unzipped"
-    service.task_service.add_worker_task.return_value = None  # type: ignore
-    (tmp_path / "output" / output_unzipped).mkdir(parents=True)
-    (tmp_path / "output" / f"{output_zipped}.zip").touch()
-    service.task_service.list_tasks.side_effect = [
-        [
-            TaskDTO(
-                id="1",
-                name=f"Archive output {study_id}/{output_zipped}",
-                status=TaskStatus.PENDING,
-                creation_date_utc=str(current_time()),
-                type=TaskType.ARCHIVE,
-                ref_id=study_id,
-            )
-        ],
-        [
-            TaskDTO(
-                id="1",
-                name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
-                status=TaskStatus.PENDING,
-                creation_date_utc=str(current_time()),
-                type=TaskType.UNARCHIVE,
-                ref_id=study_id,
-            )
-        ],
-        [
-            TaskDTO(
-                id="1",
-                name=f"Archive output {study_id}/{output_unzipped}",
-                status=TaskStatus.PENDING,
-                creation_date_utc=str(current_time()),
-                type=TaskType.ARCHIVE,
-                ref_id=study_id,
-            )
-        ],
-        [
-            TaskDTO(
-                id="1",
-                name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
-                status=TaskStatus.RUNNING,
-                creation_date_utc=str(current_time()),
-                type=TaskType.UNARCHIVE,
-                ref_id=study_id,
-            )
-        ],
-        [],
-    ]
-    storage = OutputStorageDispatcher(
-        service.storage_service.raw_study_service, service.storage_service.variant_study_service
-    )
-    fill_study_service_with_command_context(service, command_context)
-    output_service = OutputService(
-        service,
-        storage,
-        service.task_service,
-        Mock(),
-        Mock(),
-    )
-    with pytest.raises(TaskAlreadyRunning):
-        output_service.unarchive_output(study_id, output_zipped)
-
-    with pytest.raises(TaskAlreadyRunning):
-        output_service.unarchive_output(study_id, output_zipped)
-
-    with pytest.raises(TaskAlreadyRunning):
-        output_service.archive_output(
-            study_id,
-            output_unzipped,
-        )
-
-    with pytest.raises(TaskAlreadyRunning):
-        output_service.archive_output(
-            study_id,
-            output_unzipped,
-        )
-
-    output_service.unarchive_output(study_id, output_zipped)
-
-    service.task_service.add_worker_task.assert_called_once_with(
-        TaskType.UNARCHIVE,
-        "unarchive_other_workspace",
-        ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_zipped}.zip"), dest=str(tmp_path / "output" / output_zipped)
-        ).model_dump(),
-        name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
-        ref_id=study_id,
-    )
-    service.task_service.add_task.assert_called_once_with(
-        ANY,
-        f"Unarchive output {study_name}/{output_zipped} ({study_id})",
-        task_type=TaskType.UNARCHIVE,
-        ref_id=study_id,
-        progress=None,
-        custom_event_messages=None,
-    )
-
-
-@with_admin_user
 def test_get_save_logs(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -1922,18 +1728,3 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
     # No event must be emitted
     event_bus.push.assert_not_called()
-
-
-def test_is_output_archived(tmp_path: Path) -> None:
-    assert not is_output_archived(path_output=Path("fake_path"))
-    assert is_output_archived(path_output=Path("fake_path.zip"))
-
-    zipped_output_path = tmp_path / "output.zip"
-    zipped_output_path.mkdir(parents=True)
-    assert is_output_archived(path_output=zipped_output_path)
-    assert is_output_archived(path_output=tmp_path / "output")
-
-    zipped_with_suffix = tmp_path / "output_1.4.3.zip"
-    zipped_with_suffix.mkdir(parents=True)
-    assert is_output_archived(path_output=zipped_with_suffix)
-    assert is_output_archived(path_output=tmp_path / "output_1.4.3")
