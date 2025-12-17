@@ -22,7 +22,7 @@ from antarest.study.business.output.variables_management import (
     check_arguments_coherence_and_return_identifier,
     check_output_variable_exists,
 )
-from antarest.study.storage.output_model import OutputVariablesList, OutputVariablesType
+from antarest.study.output.output_model import OutputVariablesList, OutputVariablesType
 
 AVAILABLE_VARIABLES = OutputVariablesList(
     **{

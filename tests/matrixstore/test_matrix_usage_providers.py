@@ -34,8 +34,8 @@ from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import RawStudy
+from antarest.study.output.output_model import OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.output_model import OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider

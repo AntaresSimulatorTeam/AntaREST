@@ -51,7 +51,6 @@ from antarest.study.model import (
     RawStudy,
     Study,
     StudyMetadataDTO,
-    StudySimResultDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
@@ -879,20 +878,6 @@ class VariantStudyService(AbstractStorageService):
         )
 
     @override
-    def get_study_sim_result(self, study: Study) -> List[StudySimResultDTO]:
-        """
-        Get global result information
-        Args:
-            study: study
-        Returns: study output data
-        """
-        if isinstance(study, VariantStudy):
-            self._safe_generation(study, timeout=600)
-        else:
-            raise TypeError(f"Expected {VariantStudy} but received {type(study)}")
-        return super().get_study_sim_result(study=study)
-
-    @override
     def delete(self, metadata: Study) -> None:
         """
         Delete study
@@ -904,20 +889,6 @@ class VariantStudyService(AbstractStorageService):
         if study_path.exists():
             shutil.rmtree(study_path)
             remove_from_cache(self.cache, metadata.id)
-
-    @override
-    def delete_output(self, metadata: Study, output_id: str) -> None:
-        """
-        Delete a simulation output
-        Args:
-            metadata: study
-            output_id: output simulation
-        Returns:
-        """
-        study_path = Path(metadata.path)
-        output_path = study_path / "output" / output_id
-        shutil.rmtree(output_path, ignore_errors=True)
-        remove_from_cache(self.cache, metadata.id)
 
     @override
     def get_study_path(self, metadata: Study) -> Path:
@@ -998,10 +969,6 @@ class VariantStudyService(AbstractStorageService):
             progress=None,
             custom_event_messages=None,
         )
-
-    @override
-    def get_output_path(self, study: Study, output_id: str) -> Path:
-        return Path(study.path) / "output" / output_id
 
 
 class SnapshotCleanerTask:

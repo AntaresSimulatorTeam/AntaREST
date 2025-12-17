@@ -22,18 +22,14 @@ from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
-import numpy as np
-import pandas as pd
 import pytest
 from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
-from starlette.responses import Response
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
-from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup, JWTUser
@@ -48,56 +44,38 @@ from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
-from antarest.study.business.model.district_model import District
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
-    ExportFormat,
-    MatrixAggregationResultDTO,
-    MatrixIndex,
     OwnerInfo,
     RawStudy,
     Study,
     StudyContentStatus,
-    StudyDownloadDTO,
-    StudyDownloadLevelDTO,
-    StudyDownloadType,
     StudyFolder,
     StudyMetadataDTO,
-    TimeSerie,
-    TimeSeriesData,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    AreaConfig,
     FileStudyTreeConfig,
-    LinkConfig,
-    Mode,
-    Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
-    is_output_archived,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import create_raw_study, create_study, create_variant_study, with_admin_user, with_db_context
 
@@ -651,226 +629,6 @@ def test_save_metadata() -> None:
     )
     service._save_study(study_to_save)
     repository.save.assert_called_once_with(study)
-
-
-@with_jwt_user
-def test_download_output(command_context: CommandContext) -> None:
-    study_service = Mock()
-    repository = Mock(spec=StudyMetadataRepository)
-
-    study_version = 870
-    input_study = create_raw_study(
-        id="c",
-        path="c",
-        name="c",
-        version=str(study_version),
-        content_status=StudyContentStatus.WARNING,
-        workspace=DEFAULT_WORKSPACE_NAME,
-        owner=User(id=0),
-    )
-    input_data = StudyDownloadDTO(
-        type="AREA",
-        years=[],
-        level="annual",
-        filterIn="",
-        filterOut="",
-        filter=[],
-        columns=[],
-        synthesis=False,
-        includeClusters=True,
-    )
-
-    area = AreaConfig(
-        name="area",
-        links={"west": LinkConfig(filters_synthesis=[], filters_year=[])},
-        thermals=[],
-        renewables=[],
-        filters_synthesis=[],
-        filters_year=[],
-    )
-
-    sim = Simulation(
-        name="",
-        date="",
-        mode=Mode.ECONOMY,
-        nbyears=1,
-        synthesis=True,
-        by_year=True,
-        error=False,
-        playlist=[0],
-        xpansion="",
-    )
-    file_study_tree_config = FileStudyTreeConfig(
-        study_path=Path(input_study.path),
-        path=Path(input_study.path),
-        study_id=str(uuid.uuid4()),
-        version=StudyVersion.parse(input_study.version),
-        areas={"east": area},
-        districts={"north": District(id="north", name="north")},
-        outputs={"output-id": sim},
-        store_new_set=False,
-    )
-    file_study_tree = Mock(spec=FileStudyTree, config=file_study_tree_config)
-
-    repository.get.return_value = input_study
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, Mock(spec=DirectoryService), repository, config)
-    storage = OutputStorageDispatcher(
-        service.storage_service.raw_study_service, service.storage_service.variant_study_service
-    )
-    fill_study_service_with_command_context(service, command_context)
-    output_service = OutputService(
-        service,
-        storage,
-        service.task_service,
-        service.file_transfer_manager,
-        service.event_bus,
-    )
-
-    study_service.get_raw.return_value = FileStudy(config=file_study_tree_config, tree=file_study_tree)
-    output_config = {
-        "general": {
-            "first-month-in-year": "january",
-            "january.1st": "Monday",
-            "leapyear": False,
-            "first.weekday": "Monday",
-            "simulation.start": 1,
-            "simulation.end": 354,
-        }
-    }
-    file_study_tree.get.side_effect = [
-        output_config,
-        output_config,
-        output_config,
-    ]
-
-    res_study = Mock(spec=OutputSeriesMatrix)
-    res_study.parse_dataframe.return_value = pd.DataFrame(columns=[("H. VAL", "Euro/MWh")], data=[[0.5]])
-    res_study_details = Mock(spec=OutputSeriesMatrix)
-    res_study_details.parse_dataframe.return_value = pd.DataFrame(columns=[("some cluster", "Euro/MWh")], data=[[0.8]])
-
-    file_study_tree.get_node.side_effect = [
-        res_study,
-        res_study_details,
-        res_study,
-        res_study,
-        res_study_details,
-    ]
-
-    # AREA TYPE
-    res_matrix = MatrixAggregationResultDTO(
-        index=MatrixIndex(
-            start_date="2018-01-01 00:00:00",
-            steps=1,
-            first_week_size=7,
-            level=StudyDownloadLevelDTO.ANNUAL,
-        ),
-        data=[
-            TimeSeriesData(
-                name="east",
-                type=StudyDownloadType.AREA,
-                data={
-                    "1": [
-                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5])),
-                        TimeSerie(name="some cluster", unit="Euro/MWh", data=np.array([0.8])),
-                    ]
-                },
-            )
-        ],
-        warnings=[],
-    )
-    res = t.cast(
-        Response,
-        output_service.download_outputs(
-            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
-        ),
-    )
-    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
-    # Ensures it was called with economy in lower case
-    file_study_tree.get_node.assert_called_with(
-        ["output", "output-id", "economy", "mc-ind", "00001", "areas", "east", "details-annual"]
-    )
-
-    # AREA TYPE - ZIP & TASK
-    export_file_download = FileDownload(
-        id="download-id",
-        filename="filename",
-        name="name",
-        ready=False,
-        path="path",
-        expiration_date=current_time(),
-    )
-    service.file_transfer_manager.request_download.return_value = export_file_download  # type: ignore
-    task_id = "task-id"
-    service.task_service.add_task.return_value = task_id  # type: ignore
-
-    result = t.cast(
-        FileDownloadTaskDTO,
-        output_service.download_outputs("study-id", "output-id", input_data, use_task=True, filetype=ExportFormat.ZIP),
-    )
-
-    res_file_download = FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
-    assert result == res_file_download
-
-    # LINK TYPE
-    input_data.type = StudyDownloadType.LINK
-    input_data.filter = ["east>west"]
-    res_matrix = MatrixAggregationResultDTO(
-        index=MatrixIndex(
-            start_date="2018-01-01 00:00:00",
-            steps=1,
-            first_week_size=7,
-            level=StudyDownloadLevelDTO.ANNUAL,
-        ),
-        data=[
-            TimeSeriesData(
-                name="east^west",
-                type=StudyDownloadType.LINK,
-                data={"1": [TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5]))]},
-            )
-        ],
-        warnings=[],
-    )
-    res = t.cast(
-        Response,
-        output_service.download_outputs(
-            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
-        ),
-    )
-    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
-
-    # CLUSTER TYPE
-    input_data.type = StudyDownloadType.DISTRICT
-    input_data.filter = []
-    input_data.filterIn = "n"
-    res_matrix = MatrixAggregationResultDTO(
-        index=MatrixIndex(
-            start_date="2018-01-01 00:00:00",
-            steps=1,
-            first_week_size=7,
-            level=StudyDownloadLevelDTO.ANNUAL,
-        ),
-        data=[
-            TimeSeriesData(
-                name="north",
-                type=StudyDownloadType.DISTRICT,
-                data={
-                    "1": [
-                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5])),
-                        TimeSerie(name="some cluster", unit="Euro/MWh", data=np.array([0.8])),
-                    ]
-                },
-            )
-        ],
-        warnings=[],
-    )
-    res = t.cast(
-        Response,
-        output_service.download_outputs(
-            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
-        ),
-    )
-    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
 
 # noinspection PyArgumentList
@@ -1509,196 +1267,6 @@ def test_create_command(
 
 
 @with_admin_user
-def test_unarchive_output(tmp_path: Path, command_context: CommandContext) -> None:
-    study_id = str(uuid.uuid4())
-    study_name = "My Study"
-    study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id=study_id,
-        path=tmp_path,
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-        workspace="other_workspace",
-        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
-    )
-    # The `name` attribute cannot be mocked during creation of the mock object
-    # https://stackoverflow.com/a/62552149/1513933
-    study_mock.name = study_name
-
-    service = build_study_service(
-        raw_study_service=Mock(spec=RawStudyService),
-        directory_service=Mock(spec=DirectoryService),
-        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
-        config=Mock(spec=Config),
-    )
-
-    service.task_service.reset_mock()
-
-    output_id = "some-output"
-    service.task_service.add_worker_task.return_value = None  # type: ignore
-    service.task_service.list_tasks.return_value = []  # type: ignore
-    (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
-    storage = OutputStorageDispatcher(
-        service.storage_service.raw_study_service, service.storage_service.variant_study_service
-    )
-    fill_study_service_with_command_context(service, command_context)
-    output_service = OutputService(
-        service,
-        storage,
-        service.task_service,
-        Mock(),
-        Mock(),
-    )
-    output_service.unarchive_output(study_id, output_id)
-
-    service.task_service.add_worker_task.assert_called_once_with(
-        TaskType.UNARCHIVE,
-        "unarchive_other_workspace",
-        ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
-        ).model_dump(),
-        name=f"Unarchive output {study_name}/{output_id} ({study_id})",
-        ref_id=study_id,
-    )
-    service.task_service.add_task.assert_called_once_with(
-        ANY,
-        f"Unarchive output {study_name}/{output_id} ({study_id})",
-        task_type=TaskType.UNARCHIVE,
-        ref_id=study_id,
-        progress=None,
-        custom_event_messages=None,
-    )
-
-
-@with_admin_user
-def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -> None:
-    study_id = str(uuid.uuid4())
-    study_name = "My Study"
-    study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id=study_id,
-        path=tmp_path,
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-        workspace="other_workspace",
-        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
-    )
-    # The `name` attribute cannot be mocked during creation of the mock object
-    # https://stackoverflow.com/a/62552149/1513933
-    study_mock.name = study_name
-
-    service = build_study_service(
-        raw_study_service=Mock(spec=RawStudyService),
-        directory_service=Mock(spec=DirectoryService),
-        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
-        config=Mock(spec=Config),
-    )
-
-    service.task_service.reset_mock()
-
-    output_zipped = "some-output_zipped"
-    output_unzipped = "some-output_unzipped"
-    service.task_service.add_worker_task.return_value = None  # type: ignore
-    (tmp_path / "output" / output_unzipped).mkdir(parents=True)
-    (tmp_path / "output" / f"{output_zipped}.zip").touch()
-    service.task_service.list_tasks.side_effect = [
-        [
-            TaskDTO(
-                id="1",
-                name=f"Archive output {study_id}/{output_zipped}",
-                status=TaskStatus.PENDING,
-                creation_date_utc=str(current_time()),
-                type=TaskType.ARCHIVE,
-                ref_id=study_id,
-            )
-        ],
-        [
-            TaskDTO(
-                id="1",
-                name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
-                status=TaskStatus.PENDING,
-                creation_date_utc=str(current_time()),
-                type=TaskType.UNARCHIVE,
-                ref_id=study_id,
-            )
-        ],
-        [
-            TaskDTO(
-                id="1",
-                name=f"Archive output {study_id}/{output_unzipped}",
-                status=TaskStatus.PENDING,
-                creation_date_utc=str(current_time()),
-                type=TaskType.ARCHIVE,
-                ref_id=study_id,
-            )
-        ],
-        [
-            TaskDTO(
-                id="1",
-                name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
-                status=TaskStatus.RUNNING,
-                creation_date_utc=str(current_time()),
-                type=TaskType.UNARCHIVE,
-                ref_id=study_id,
-            )
-        ],
-        [],
-    ]
-    storage = OutputStorageDispatcher(
-        service.storage_service.raw_study_service, service.storage_service.variant_study_service
-    )
-    fill_study_service_with_command_context(service, command_context)
-    output_service = OutputService(
-        service,
-        storage,
-        service.task_service,
-        Mock(),
-        Mock(),
-    )
-    with pytest.raises(TaskAlreadyRunning):
-        output_service.unarchive_output(study_id, output_zipped)
-
-    with pytest.raises(TaskAlreadyRunning):
-        output_service.unarchive_output(study_id, output_zipped)
-
-    with pytest.raises(TaskAlreadyRunning):
-        output_service.archive_output(
-            study_id,
-            output_unzipped,
-        )
-
-    with pytest.raises(TaskAlreadyRunning):
-        output_service.archive_output(
-            study_id,
-            output_unzipped,
-        )
-
-    output_service.unarchive_output(study_id, output_zipped)
-
-    service.task_service.add_worker_task.assert_called_once_with(
-        TaskType.UNARCHIVE,
-        "unarchive_other_workspace",
-        ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_zipped}.zip"), dest=str(tmp_path / "output" / output_zipped)
-        ).model_dump(),
-        name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
-        ref_id=study_id,
-    )
-    service.task_service.add_task.assert_called_once_with(
-        ANY,
-        f"Unarchive output {study_name}/{output_zipped} ({study_id})",
-        task_type=TaskType.UNARCHIVE,
-        ref_id=study_id,
-        progress=None,
-        custom_event_messages=None,
-    )
-
-
-@with_admin_user
 def test_get_save_logs(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -2071,18 +1639,3 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
     # No event must be emitted
     event_bus.push.assert_not_called()
-
-
-def test_is_output_archived(tmp_path: Path) -> None:
-    assert not is_output_archived(path_output=Path("fake_path"))
-    assert is_output_archived(path_output=Path("fake_path.zip"))
-
-    zipped_output_path = tmp_path / "output.zip"
-    zipped_output_path.mkdir(parents=True)
-    assert is_output_archived(path_output=zipped_output_path)
-    assert is_output_archived(path_output=tmp_path / "output")
-
-    zipped_with_suffix = tmp_path / "output_1.4.3.zip"
-    zipped_with_suffix.mkdir(parents=True)
-    assert is_output_archived(path_output=zipped_with_suffix)
-    assert is_output_archived(path_output=tmp_path / "output_1.4.3")

@@ -19,7 +19,7 @@ from checksumdir import dirhash
 from py7zr import SevenZipFile, py7zr
 
 from antarest.blobstore.service import BlobService
-from antarest.core.config import Config, InternalMatrixFormat
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
@@ -27,6 +27,7 @@ from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepos
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
+from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -206,17 +207,22 @@ def test_export_output(tmp_path: Path) -> None:
     export_path = tmp_path / "study.zip"
 
     study_factory = Mock()
-    study_service = RawStudyService(
-        config=Config(),
-        study_factory=study_factory,
-        cache=Mock(),
-    )
 
     study = create_raw_study(id="Yo", path=root)
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 
-    study_service.export_output(study, output_id, export_path)
+    class OutputsProvider(IFileOutputsProvider):
+        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            return FileStudyOutputs(
+                get_file_study=lambda: FileStudy(Mock(), study_tree),
+                outputs_path=root / "output",
+                study_workspace=DEFAULT_WORKSPACE_NAME,
+            )
+
+    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+
+    output_storage.export_output(study.id, output_id, export_path)
     zipf = ZipFile(export_path)
 
     assert "file_output.txt" in zipf.namelist()
@@ -225,4 +231,4 @@ def test_export_output(tmp_path: Path) -> None:
     output_path = root / "output" / output_id
     target_path = root / "output" / f"{output_id}.zip"
     archive_dir(output_path, target_path, True, ArchiveFormat.ZIP)
-    study_service.export_output(study, output_id, export_path)
+    output_storage.export_output(study.id, output_id, export_path)

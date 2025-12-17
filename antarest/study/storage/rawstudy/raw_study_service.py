@@ -29,11 +29,11 @@ from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.core.utils.utils import current_time
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
+from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
@@ -323,26 +323,6 @@ class RawStudyService(AbstractStorageService):
         else:
             raise StudyDeletionNotAllowed(metadata.id)
 
-    @override
-    def delete_output(self, metadata: Study, output_name: str) -> None:
-        """
-        Delete output folder
-        Args:
-            metadata: study
-            output_name: output simulation
-
-        Returns:
-
-        """
-        study_path = self.get_study_path(metadata)
-        output_path = study_path / "output" / output_name
-        if output_path.exists() and output_path.is_dir():
-            shutil.rmtree(output_path, ignore_errors=True)
-        else:
-            output_path = output_path.parent / f"{output_name}.zip"
-            output_path.unlink(missing_ok=True)
-        remove_from_cache(self.cache, metadata.id)
-
     def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
         """
         Import study in the directory of the study.
@@ -460,9 +440,33 @@ class RawStudyService(AbstractStorageService):
             return self.find_archive_path(metadata)
         return Path(metadata.path)
 
-    @override
     def get_output_path(self, study: Study, output_id: str) -> Path:
         return self.get_study_path(study) / "output" / output_id
+
+    def check_and_update_study_version_in_database(self, study: RawStudy) -> None:
+        try:
+            study_path = self.get_study_path(study)
+            if study_path:
+                config = FileStudyTreeConfig(
+                    study_path=study_path,
+                    path=study_path,
+                    study_id="",
+                    version=StudyVersion.parse(0),
+                )
+                raw_study = self.study_factory.create_from_config(config, NormalizedMatrixUriMapper.NORMALIZED)
+                file_metadata = raw_study.get(url=["study", "antares"])
+                study_version = str(file_metadata.get("version", study.version))
+                if study_version != study.version:
+                    logger.warning(
+                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
+                    )
+                    study.version = study_version
+        except Exception as e:
+            logger.error(
+                "Failed to check and/or update study version in database for study %s",
+                study.id,
+                exc_info=e,
+            )
 
     @staticmethod
     def checks_antares_web_compatibility(study: Study) -> None:
