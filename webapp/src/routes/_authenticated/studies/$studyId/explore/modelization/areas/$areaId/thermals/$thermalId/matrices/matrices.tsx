@@ -22,7 +22,7 @@ import semver from "semver";
 import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices",
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/matrices",
 )({
   component: Matrices,
 });
