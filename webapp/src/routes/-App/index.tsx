@@ -14,6 +14,8 @@
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
+import Thermal from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal";
+import ThermalConfig from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermal/-components/ThermalConfig";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -28,8 +30,6 @@ import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";
 import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
 import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
 import StorageConfig from "./Singlestudy/explore/Modelization/Areas/Storages/StorageConfig";
-import Thermal from "./Singlestudy/explore/Modelization/Areas/Thermal";
-import ThermalConfig from "./Singlestudy/explore/Modelization/Areas/Thermal/ThermalConfig";
 import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
 import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstraints";
 import Links from "./Singlestudy/explore/Modelization/Links";

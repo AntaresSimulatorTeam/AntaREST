@@ -22,7 +22,6 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { validateNumber } from "@/utils/validation/number";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import type { Area, Cluster, StudyMetadata } from "../../../../../../../../types/types";
 import {
   COST_GENERATION_OPTIONS,
   THERMAL_GROUPS,
@@ -32,7 +31,8 @@ import {
   type ThermalCluster,
   getThermalCluster,
   updateThermalCluster,
-} from "../utils";
+} from "../../-utils";
+import type { Area, Cluster, StudyMetadata } from "../../../../../../../../../../../types/types";
 
 interface Props {
   study: StudyMetadata;

@@ -21,16 +21,16 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import semver from "semver";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../types/types";
 import {
   addClusterCapacity,
   capacityAggregationFn,
   getClustersWithCapacityTotals,
   toCapacityString,
-} from "../common/clustersUtils";
+} from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
+import usePromiseWithSnackbarError from "../../../../../../../../../hooks/usePromiseWithSnackbarError";
+import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../../types/types";
 import {
   createThermalCluster,
   deleteThermalClusters,
@@ -38,7 +38,7 @@ import {
   getThermalClusters,
   THERMAL_GROUPS,
   type ThermalClusterWithCapacity,
-} from "./utils";
+} from "./-utils";
 
 const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 

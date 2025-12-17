@@ -17,7 +17,7 @@ import TabsView from "@/components/page/TabsView";
 import type { Cluster, StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../utils";
+import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../../-utils";
 
 interface Props {
   study: StudyMetadata;
