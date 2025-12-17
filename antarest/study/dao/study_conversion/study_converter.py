@@ -184,7 +184,7 @@ class StudyConverter:
             for layer, x in source_ui.layer_x.items():
                 y = source_ui.layer_y[layer]
                 color = source_ui.layer_color[layer]
-                color_rgb = (int(c) for c in color.strip(" ").split(","))
+                color_rgb = tuple(int(c) for c in color.strip(" ").split(","))
                 area_ui = AreaUI(x=x, y=y, color_rgb=color_rgb)
                 self._new_dao.save_area_ui(area_id, layer, area_ui)
 
@@ -270,7 +270,8 @@ class StudyConverter:
             self._new_dao.save_st_storage_inflows(area_id, sts_id, inflows_id)
 
             if self._study_version >= STUDY_VERSION_9_2:
-                self._new_dao.save_st_storage_additional_constraints(area_id, sts_id, constraints[sts_id])
+                if sts_id in constraints:
+                    self._new_dao.save_st_storage_additional_constraints(area_id, sts_id, constraints[sts_id])
 
                 cost_injection = self._source_dao.get_st_storage_cost_injection(area_id, sts_id)
                 injection_id = self._matrix_service.create(cost_injection)
