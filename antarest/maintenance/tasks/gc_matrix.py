@@ -31,6 +31,7 @@ from antarest.matrixstore.service import MatrixService
 
 class TaskStatus(StrEnum):
     SUCCESS = "success"
+    PARTIAL_SUCCESS = "partial_success"
     SKIPPED = "skipped"
     ERROR = "error"
 
@@ -40,6 +41,7 @@ class GCTaskResult(BaseModel):
 
     status: TaskStatus
     deleted_count: int
+    failed_count: int = 0
     duration_seconds: float
     dry_run: Optional[bool] = None
     reason: Optional[str] = None
@@ -120,6 +122,7 @@ def clean_matrices(
                     f"unused={len(unused_matrices)}"
                 )
 
+                failures = 0
                 if unused_matrices:
                     # Compare for each matrix, its lifetime duration to the `retention_time` value.
                     # If it's more, remove the matrix. Otherwise, pass.
@@ -158,11 +161,13 @@ def clean_matrices(
         )
 
     duration = time.time() - start_time
-    logger.info(f"Finished matrix GC in {duration}s (deleted {deleted_count} matrices)")
+    status = TaskStatus.PARTIAL_SUCCESS if failures > 0 else TaskStatus.SUCCESS
+    logger.info(f"Finished matrix GC in {duration}s (deleted {deleted_count}, failed {failures})")
 
     return GCTaskResult(
-        status=TaskStatus.SUCCESS,
+        status=status,
         deleted_count=deleted_count,
+        failed_count=failures,
         duration_seconds=duration,
         dry_run=dry_run,
     )

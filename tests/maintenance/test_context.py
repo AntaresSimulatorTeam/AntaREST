@@ -12,6 +12,8 @@
 
 """Tests for MaintenanceContext singleton."""
 
+from unittest.mock import Mock
+
 import pytest
 
 from antarest.maintenance.context import MaintenanceContext
@@ -46,3 +48,19 @@ class TestMaintenanceContext:
 
         with pytest.raises(RuntimeError, match="MaintenanceContext not initialized"):
             _ = ctx.blob_service
+
+    def test_set_core_services(self):
+        """Test that set_core_services injects services directly."""
+        mock_matrix_service = Mock()
+        mock_blob_service = Mock()
+        mock_core_services = Mock()
+        mock_core_services.matrix_service = mock_matrix_service
+        mock_core_services.blob_service = mock_blob_service
+        mock_config = Mock()
+
+        ctx = MaintenanceContext.get_instance()
+        ctx.set_core_services(config=mock_config, core_services=mock_core_services)
+
+        assert ctx.matrix_service is mock_matrix_service
+        assert ctx.blob_service is mock_blob_service
+        assert ctx.config is mock_config

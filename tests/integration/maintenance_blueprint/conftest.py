@@ -10,15 +10,9 @@
 #
 # This file is part of the Antares project.
 
-"""Fixtures for maintenance integration tests.
+"""Fixtures for maintenance integration tests."""
 
-This module reuses fixtures from conftest_db.py and matrixstore/conftest.py.
-"""
-
-# Re-export fixtures from conftest_db (db_engine, db_middleware)
 from tests.conftest_db import db_engine_fixture, db_middleware_fixture
-
-# Re-export fixtures from matrixstore conftest
 from tests.matrixstore.conftest import (
     content_repo_fixture,
     dataset_repo_fixture,
@@ -26,7 +20,6 @@ from tests.matrixstore.conftest import (
     matrix_service_fixture,
 )
 
-# Make fixtures available to pytest
 db_engine = db_engine_fixture
 db_middleware = db_middleware_fixture
 matrix_repo = matrix_repo_fixture

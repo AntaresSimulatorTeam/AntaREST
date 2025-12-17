@@ -64,6 +64,19 @@ class TestDeleteUnusedSavedMatrices:
 
         mock_matrix_service.delete.assert_not_called()
 
+    def test_returns_failure_count(self):
+        """Test that failures are counted correctly."""
+        mock_matrix_service = Mock()
+        mock_matrix_service.delete.side_effect = [None, Exception("fail"), None]
+
+        failures = _delete_unused_saved_matrices(
+            matrix_service=mock_matrix_service,
+            unused_matrices={"m1", "m2", "m3"},
+            dry_run=False,
+        )
+
+        assert failures == 1
+
 
 class TestCleanMatricesTaskWiring:
     """Tests for the Celery task wiring (context extraction)."""

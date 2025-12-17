@@ -54,7 +54,6 @@ class TestCeleryAppConfiguration:
 
     def test_celery_app_has_correct_name(self, mock_config_loading):
         """Test that the Celery app is created with the correct name."""
-        # Import after mock is set up
         import importlib
 
         import antarest.maintenance.app as app_module
@@ -140,7 +139,6 @@ class TestInitWorker:
 
             init_worker()
 
-            # Context should not be initialized (core_services remains None)
             ctx = MaintenanceContext.get_instance()
             assert ctx.core_services is None
 
@@ -154,13 +152,11 @@ class TestInitWorker:
             patch("antarest.maintenance.app._config", mock_config),
             patch.dict(os.environ, {}, clear=True),
         ):
-            # Remove ANTAREST_CONF if it exists
             os.environ.pop("ANTAREST_CONF", None)
 
             from antarest.maintenance.app import init_worker
 
             init_worker()
 
-            # Context should not be initialized (core_services remains None)
             ctx = MaintenanceContext.get_instance()
             assert ctx.core_services is None

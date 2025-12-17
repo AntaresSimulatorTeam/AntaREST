@@ -707,6 +707,7 @@ class Config:
             if "storage" in data
             else defaults.storage
         )
+        redis_config = RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis
         return cls(
             server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
             security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
@@ -716,7 +717,7 @@ class Config:
             logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
             debug=data.get("debug", defaults.debug),
             resources_path=data["resources_path"] if "resources_path" in data else defaults.resources_path,
-            redis=(redis_config := RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis),
+            redis=redis_config,
             eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
             cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,

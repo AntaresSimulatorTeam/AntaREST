@@ -80,15 +80,23 @@ class MaintenanceContext:
 
         self.config = config
 
-        # Initialize database session middleware (required for db() context manager)
         engine = init_db_engine(config_path, self.config, auto_upgrade_db=False)
         DBSessionMiddleware(None, custom_engine=engine, session_args=cast(dict[str, bool], SESSION_ARGS))
 
-        # Create services using existing factories
-        # app_ctxt=None because we're not in a FastAPI context
         self.core_services = create_core_services(app_ctxt=None, config=self.config)
 
         logger.info("MaintenanceContext initialized successfully")
+
+    def set_core_services(self, config: "Config", core_services: "CoreServices") -> None:
+        """
+        Directly set the core services (for testing).
+
+        Args:
+            config: Config object
+            core_services: Pre-built CoreServices instance
+        """
+        self.config = config
+        self.core_services = core_services
 
     @property
     def matrix_service(self) -> "MatrixService":
