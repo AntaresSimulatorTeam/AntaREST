@@ -46,6 +46,7 @@ def test_export(
     raw_study_service.study_factory = StudyFactory(
         matrix_mapper_factory=MatrixUriMapperFactory(command_context.matrix_service), cache=Mock()
     )
+    raw_study_service._matrix_service = command_context.matrix_service
     # Create an area to ensure the matrices are denormalized afterward
     cmd = CreateArea(command_context=command_context, area_name="fr", study_version=empty_study_930.config.version)
     output = cmd.apply(empty_study_930)
