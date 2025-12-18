@@ -21,10 +21,10 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import semver from "semver";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../types/types";
+import usePromiseWithSnackbarError from "../../../../../../../../../hooks/usePromiseWithSnackbarError";
+import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../../types/types";
 import {
   createStorage,
   deleteStorages,

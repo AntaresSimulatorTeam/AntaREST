@@ -13,9 +13,8 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
-import Thermal from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals";
-import ThermalConfig from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/route";
+import Storages from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/storages";
+import StorageConfig from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/storages/StorageConfig";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -28,8 +27,6 @@ import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import RenewableConfig from "./Singlestudy/explore/Modelization/Areas/Renewables/RenewableConfig";
 import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";
 import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
-import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
-import StorageConfig from "./Singlestudy/explore/Modelization/Areas/Storages/StorageConfig";
 import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
 import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstraints";
 import Links from "./Singlestudy/explore/Modelization/Links";
@@ -39,10 +36,9 @@ function App() {
     <Router>
       <Routes>
         <Route path="area/:areaId">
-          <Route path="thermal" element={<Thermal />} />
-          <Route path="thermal/:clusterId" element={<ThermalConfig />} />
           <Route path="storages" element={<Storages />} />
           <Route path="storages/:storageId" element={<StorageConfig />} />
+
           <Route path="hydro" element={<Navigate to="management" replace />} />
           <Route path="hydro" element={<Hydro />}>
             <Route path="management" element={<ManagementOptions />} />
@@ -68,16 +64,21 @@ function App() {
               );
             })}
           </Route>
+
           <Route path="wind" element={<Wind />} />
+
           <Route path="solar" element={<Solar />} />
+
           <Route path="renewables" element={<Renewables />} />
           <Route path="renewables/:clusterId" element={<RenewableConfig />} />
+
           <Route path="reserves" element={<Reserve />} />
+
           <Route path="miscGen" element={<MiscGen />} />
-          <Route index element={<Properties />} />
-          <Route path="*" element={<Properties />} />
         </Route>
+
         <Route path="links" element={<Links />} />
+
         <Route path="bindingcontraint" element={<BindingConstraints />} />
       </Routes>
     </Router>
