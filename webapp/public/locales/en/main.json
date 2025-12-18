@@ -578,7 +578,7 @@
   "study.modelization.storages": "Storages",
   "study.modelization.storages.injectionParameters": "Stored parameters",
   "study.modelization.storages.withdrawalParameters": "Released parameters",
-  "study.modelization.storages.modulation": "Stored / Released Modulation",
+  "study.modelization.storages.modulation": "Modulation",
   "study.modelization.storages.ruleCurves": "Rule Curves",
   "study.modelization.storages.costs": "Costs",
   "study.modelization.storages.variationCosts": "Variation costs",

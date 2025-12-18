@@ -578,7 +578,7 @@
   "study.modelization.storages": "Stockages",
   "study.modelization.storages.injectionParameters": "Paramètres de stockage",
   "study.modelization.storages.withdrawalParameters": "Paramètres de déstockage",
-  "study.modelization.storages.modulation": "Modulation du stockage / déstockage",
+  "study.modelization.storages.modulation": "Modulation",
   "study.modelization.storages.ruleCurves": "Courbe guides",
   "study.modelization.storages.costs": "Coûts",
   "study.modelization.storages.variationCosts": "Coûts de variation",

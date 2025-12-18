@@ -41,22 +41,18 @@ function StorageLayout() {
             to: "/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId/parameters",
             params,
           }),
+        },
+        {
+          id: "time-series",
+          label: t("global.timeSeries"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId/time-series",
+            params,
+          }),
           // content: (
-          //   <StorageForm
-          //     studyId={studyId}
-          //     studyVersion={study.version}
-          //     areaId={areaId}
-          //     storageId={storageId}
-          //   />
+          //   <StorageMatrices studyVersion={study.version} areaId={areaId} storageId={storageId} />
           // ),
         },
-        // {
-        //   id: "time-series",
-        //   label: t("global.timeSeries"),
-        //   content: (
-        //     <StorageMatrices studyVersion={study.version} areaId={areaId} storageId={storageId} />
-        //   ),
-        // },
         // semver.gte(study.version, "9.2.0") && {
         //   id: "additional-constraints",
         //   label: t("study.modelization.storages.additionalConstraints"),
