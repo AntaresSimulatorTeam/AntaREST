@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Annotated, Any, Sequence
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, Query, UploadFile
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
@@ -148,8 +148,7 @@ def create_output_routes(
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
-        request: Request,  # deprecated, we always return a JSON response
-        use_task: bool = False,  # deprecated, we always consider it's False
+        use_task: bool = Query(default=False, deprecated=True),
         tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
     ) -> FileResponse:
         study_id = sanitize_uuid(study_id)

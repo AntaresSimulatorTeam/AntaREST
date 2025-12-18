@@ -427,7 +427,7 @@ class OutputService:
             query_files = [MCIndLinksQueryFile.VALUES]
         else:
             query_files = [MCIndAreasQueryFile.VALUES]
-            if data.includeClusters:
+            if data.include_clusters:
                 query_files.append(MCIndAreasQueryFile.DETAILS)
                 query_files.append(MCIndAreasQueryFile.DETAILS_RES)
 

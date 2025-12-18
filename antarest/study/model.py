@@ -589,7 +589,7 @@ class StudyDownloadLevelDTO(enum.StrEnum):
             raise ShouldNotHappenException()
 
 
-class StudyDownloadDTO(AntaresBaseModel):
+class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
     """
     DTO used to download outputs
     """
@@ -597,16 +597,16 @@ class StudyDownloadDTO(AntaresBaseModel):
     type: StudyDownloadType
     years: list[int] = []
     level: StudyDownloadLevelDTO
-    filterIn: Optional[str]  # deprecated, we don't consider it
-    filterOut: Optional[str]  # deprecated, we don't consider it
+    filter_in: Annotated[Optional[str], Field(deprecated=True)]  # We don't consider it
+    filter_out: Annotated[Optional[str], Field(deprecated=True)]  # We don't consider it
     filter: list[str] = []
     columns: list[str] = []
-    synthesis: bool = False  # deprecated, we always consider it's False
-    includeClusters: bool = False
+    synthesis: Annotated[bool, Field(deprecated=True, default=False)]  # We always consider it's False
+    include_clusters: bool = False
 
     @model_validator(mode="after")
     def check_coherence(self) -> "StudyDownloadDTO":
-        if self.includeClusters and self.type == StudyDownloadType.LINK:
+        if self.include_clusters and self.type == StudyDownloadType.LINK:
             raise ValueError("Cannot ask for cluster values for type link")
         return self
 
