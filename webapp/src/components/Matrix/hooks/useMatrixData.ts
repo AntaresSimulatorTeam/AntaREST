@@ -63,7 +63,7 @@ export function useMatrixData({
 
   const { t } = useTranslation();
   const [index, setIndex] = useState<MatrixIndex>();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [updateCount, setUpdateCount] = useState(0);
@@ -95,6 +95,8 @@ export function useMatrixData({
   );
 
   const fetchMatrix = useCallback(async () => {
+    setIsLoading(true);
+
     try {
       const [matrix, index] = await Promise.all([
         // Use the custom fetch function if provided, else use the regular `/raw` API.
