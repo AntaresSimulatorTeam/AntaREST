@@ -66,8 +66,6 @@ function Parameters() {
       config={{ defaultValues: () => getThermalCluster(study.id, area.id, thermalId) }}
       onSubmit={handleSubmit}
       enableUndoRedo
-      disableStickyFooter
-      hideFooterDivider
     >
       {({ control, watch }) => {
         const isCostGenerationEnabled = watch("costGeneration") === "useCostTimeseries";

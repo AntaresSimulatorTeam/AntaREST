@@ -12,26 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import Matrix from "@/components/Matrix";
 import TabsView from "@/components/page/TabsView";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices",
 )({
-  component: Matrices,
+  component: MatricesLayout,
 });
 
-function Matrices() {
+function MatricesLayout() {
   const study = useStudy();
-  const area = useArea();
-  const { thermalId } = Route.useParams();
-  const [t] = useTranslation();
+  const params = Route.useParams();
+  const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -43,59 +39,42 @@ function Matrices() {
         {
           id: "common",
           label: t("study.modelization.clusters.matrix.common"),
-          content: (
-            <Matrix
-              studyId={study.id}
-              url={`input/thermal/prepro/${area.id}/${thermalId}/modulation`}
-              customColumns={COMMON_MATRIX_COLS}
-              isTimeSeries={false}
-              enableFilters
-            />
-          ),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/common",
+            params,
+          }),
         },
         {
-          id: "ts-gen",
+          id: "ts-generator",
           label: t("study.modelization.clusters.matrix.tsGen"),
-          content: (
-            <Matrix
-              studyId={study.id}
-              url={`input/thermal/prepro/${area.id}/${thermalId}/data`}
-              customColumns={TS_GEN_MATRIX_COLS}
-              isTimeSeries={false}
-              enableFilters
-            />
-          ),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/ts-generator",
+            params,
+          }),
         },
         {
           id: "availability",
           label: t("study.modelization.clusters.matrix.availability"),
-          content: (
-            <Matrix
-              studyId={study.id}
-              url={`input/thermal/series/${area.id}/${thermalId}/series`}
-              aggregateColumns="stats" // avg, min, max
-            />
-          ),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/availability",
+            params,
+          }),
         },
         semver.gte(study.version, "8.7.0") && {
           id: "fuel-costs",
-          label: t("study.modelization.clusters.matrix.fuelCosts"),
-          content: (
-            <Matrix
-              studyId={study.id}
-              url={`input/thermal/series/${area.id}/${thermalId}/fuelCost`}
-            />
-          ),
+          label: t("study.modelization.clusters.matrix.fuelCost"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/fuel-cost",
+            params,
+          }),
         },
         semver.gte(study.version, "8.7.0") && {
           id: "co2-costs",
-          label: t("study.modelization.clusters.matrix.co2Costs"),
-          content: (
-            <Matrix
-              studyId={study.id}
-              url={`input/thermal/series/${area.id}/${thermalId}/CO2Cost`}
-            />
-          ),
+          label: t("study.modelization.clusters.matrix.co2Cost"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/co2-cost",
+            params,
+          }),
         },
       ].filter(Boolean)}
     />

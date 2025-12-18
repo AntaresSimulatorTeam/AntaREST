@@ -17,7 +17,8 @@ import ListView from "@/components/page/ListView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getAreas } from "@/redux/selectors";
-import { createFileRoute, linkOptions, useMatchRoute } from "@tanstack/react-router";
+import type { AreaWithId } from "@/types/types";
+import { createFileRoute, linkOptions, useParams } from "@tanstack/react-router";
 import { useEffect } from "react";
 import useStudy from "../../../../../../-shared/hook/useStudy";
 
@@ -30,32 +31,50 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/m
 function AreasLayout() {
   const study = useStudy();
   const navigate = Route.useNavigate();
+  const { areaId, thermalId } = useParams({ strict: false });
 
   const response = useStudySynthesis({
     studyId: study.id,
     selector: getAreas,
   });
 
-  const matchRoute = useMatchRoute();
-
-  const isAreaSelected = !!matchRoute({
-    to: "/studies/$studyId/explore/modelization/areas/$areaId",
-    params: { studyId: study.id },
-    fuzzy: true,
-  });
-
   // Redirect to first area if none is selected
   useEffect(() => {
     const { data } = response;
 
-    if (!isAreaSelected && data && data.length > 0) {
+    if (!areaId && data && data.length > 0) {
       navigate({
         to: "/studies/$studyId/explore/modelization/areas/$areaId/properties",
         params: { studyId: study.id, areaId: data[0].id },
         replace: true,
       });
     }
-  }, [isAreaSelected, navigate, response, study.id]);
+  }, [navigate, areaId, response, study.id]);
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const getAreaLinkOptions = (area: AreaWithId) => {
+    const params = { studyId: study.id, areaId: area.id };
+
+    if (thermalId) {
+      return linkOptions({
+        to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals",
+        params,
+      });
+    }
+
+    if (!areaId) {
+      return linkOptions({
+        to: "/studies/$studyId/explore/modelization/areas/$areaId/properties",
+        params,
+      });
+    }
+
+    // Keep the current sub-route when switching area
+    return linkOptions({ to: ".", params });
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -72,12 +91,7 @@ function AreasLayout() {
           list={areas.map((area) => ({
             ...area,
             label: area.name,
-            linkOptions: linkOptions({
-              to: isAreaSelected
-                ? "."
-                : "/studies/$studyId/explore/modelization/areas/$areaId/properties",
-              params: (prev) => ({ ...prev, areaId: area.id }),
-            }),
+            linkOptions: getAreaLinkOptions(area),
           }))}
           emptyListContent={<EmptyView title="No areas" />}
         />

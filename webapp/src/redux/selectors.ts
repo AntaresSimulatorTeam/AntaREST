@@ -20,7 +20,7 @@ import { F } from "ts-toolbelt";
 import { isGroupAdmin, isUserAdmin, sortByName } from "../services/utils";
 import type {
   AllClustersAndLinks,
-  Area,
+  AreaWithId,
   Cluster,
   FileStudyTreeConfigDTO,
   GroupDetailsDTO,
@@ -234,7 +234,7 @@ export const getCurrentStudySynthesis = createSelector(
 
 export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
   if (synthesis) {
-    const areas: Array<Area & { id: string }> = Object.keys(synthesis.areas).map((id) => ({
+    const areas: AreaWithId[] = Object.keys(synthesis.areas).map((id) => ({
       ...synthesis.areas[id],
       id,
     }));
@@ -252,7 +252,7 @@ export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
         acc[id] = { ...synthesis.areas[id], id };
         return acc;
       },
-      {} as Record<string, Area & { id: string }>,
+      {} as Record<string, AreaWithId>,
     );
   }
   return {};
@@ -262,10 +262,7 @@ export const getArea = createSelector(
   getStudySynthesis,
   (state: AppState, studyId: StudyMetadata["id"], areaId: string) => areaId,
   (synthesis, areaId) =>
-    synthesis?.areas[areaId] &&
-    ({ ...synthesis.areas[areaId], id: areaId } as Area & {
-      id: string;
-    }),
+    synthesis?.areas[areaId] && ({ ...synthesis.areas[areaId], id: areaId } as AreaWithId),
 );
 
 export const getCurrentAreaId = (state: AppState): StudySynthesesState["currentArea"] => {
@@ -277,9 +274,7 @@ export const getCurrentArea = createSelector(
   getCurrentAreaId,
   (synthesis, areaId) => {
     if (synthesis?.areas[areaId]) {
-      return { id: areaId, ...synthesis?.areas[areaId] } as Area & {
-        id: string;
-      };
+      return { id: areaId, ...synthesis?.areas[areaId] } as AreaWithId;
     }
   },
 );

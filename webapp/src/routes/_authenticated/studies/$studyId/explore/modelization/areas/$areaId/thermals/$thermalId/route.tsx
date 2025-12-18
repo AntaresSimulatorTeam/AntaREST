@@ -24,7 +24,6 @@ export const Route = createFileRoute(
 
 function ThermalLayout() {
   const params = Route.useParams();
-  const navigate = Route.useNavigate();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -32,14 +31,6 @@ function ThermalLayout() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    // <>
-    //   <BackButton onClick={() => navigate({ to: ".." })} />
-    //   <ThermalForm study={study} areaId={area.id} clusterId={thermalId} />
-    //   <Divider sx={{ my: 2 }} variant="middle">
-    //     <Chip label={t("global.matrices")} size="small" />
-    //   </Divider>
-    //   <ThermalMatrices study={study} areaId={area.id} clusterId={nameToId(thermalId)} />
-    // </>
     <TabsView
       onBack={linkOptions({
         to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals",

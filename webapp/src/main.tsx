@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
@@ -51,7 +52,9 @@ const router = createRouter({
     queryClient,
   },
   defaultPendingComponent: SimpleLoader,
-  defaultErrorComponent: ({ error }) => <EmptyView title={error.toString()} />,
+  defaultErrorComponent: ({ error }) => (
+    <EmptyView title={error.toString()} icon={ErrorOutlineIcon} />
+  ),
   defaultNotFoundComponent: PageNotFound,
 });
 

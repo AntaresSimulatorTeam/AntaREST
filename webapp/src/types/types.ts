@@ -308,6 +308,10 @@ export interface Area {
   filters_year: string[];
 }
 
+export interface AreaWithId extends Area {
+  id: string;
+}
+
 export interface District {
   id: string;
   name?: string;
