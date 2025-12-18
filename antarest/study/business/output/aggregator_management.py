@@ -27,6 +27,7 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
+    concatenate_dataframe_multi_indexed_columns,
     get_start_column,
     normalize_df_column_names,
     parse_headers,
@@ -281,8 +282,7 @@ class AggregatorManager:
             df = self.columns_filtering(df, is_details)
 
             if not self.transform_columns_headers:
-                # Flatten the multi-index columns as they are not processable by pyarrow
-                df.columns = pd.Index([" % ".join(col) for col in df.columns])
+                concatenate_dataframe_multi_indexed_columns(df)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(df.columns.tolist(), column_name, is_details, self.mc_root)
