@@ -162,23 +162,24 @@ class JobResultDTO(AntaresBaseModel):
     solver_stats: Optional[str]
     owner: Optional[UserInfo]
 
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = JobResultDTO(
-                id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
-                study_id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
-                launcher="slurm",
-                launcher_params='{"nb_cpu": 4, "time_limit": 3600}',
-                status=JobStatus.SUCCESS,
-                creation_date="2023-11-25 12:00:00",
-                completion_date="2023-11-25 12:27:31",
-                msg="Study successfully executed",
-                output_id="20231125-1227eco",
-                exit_code=0,
-                solver_stats="time: 1651s, call_count: 1, optimization_issues: []",
-                owner=UserInfo(id=0o007, name="James BOND"),
-            ).model_dump(mode="json")
+    @staticmethod
+    def model_config_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+        schema["example"] = JobResultDTO(
+            id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
+            study_id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
+            launcher="slurm",
+            launcher_params='{"nb_cpu": 4, "time_limit": 3600}',
+            status=JobStatus.SUCCESS,
+            creation_date="2023-11-25 12:00:00",
+            completion_date="2023-11-25 12:27:31",
+            msg="Study successfully executed",
+            output_id="20231125-1227eco",
+            exit_code=0,
+            solver_stats="time: 1651s, call_count: 1, optimization_issues: []",
+            owner=UserInfo(id=0o007, name="James BOND"),
+        ).model_dump(mode="json")
+
+    model_config = ConfigDict(json_schema_extra=model_config_json_schema_extra)
 
 
 class JobLog(Base):
@@ -356,25 +357,27 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
 
 
 class SolverPresets(AntaresBaseModel):
-    class Config:
-        extra = "forbid"
-        alias_generator = to_camel
-        populate_by_name = True
+    @staticmethod
+    def model_config_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+        schema["example"] = SolverPresets(
+            id="preset-001",
+            name="xpress-fast",
+            linear_solver="xpress",
+            min_antares_version=SolverVersion.parse("9.2"),
+            max_antares_version=None,
+            linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
+            linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
+            linear_solver_param={"MAXTIME": "3600"},
+            use_optim_1_basis_next_week=True,
+            use_optim_1_basis_optim_2=True,
+        ).model_dump(mode="json", by_alias=True)
 
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = SolverPresets(
-                id="preset-001",
-                name="xpress-fast",
-                linear_solver="xpress",
-                min_antares_version=SolverVersion.parse("9.2"),
-                max_antares_version=None,
-                linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
-                linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
-                linear_solver_param={"MAXTIME": "3600"},
-                use_optim_1_basis_next_week=True,
-                use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json", by_alias=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        alias_generator=to_camel,
+        populate_by_name=True,
+        json_schema_extra=model_config_json_schema_extra,
+    )
 
     id: str
     name: ItemName
@@ -469,24 +472,26 @@ class SolverPresets(AntaresBaseModel):
 
 
 class SolverPresetsCreation(AntaresBaseModel):
-    class Config:
-        extra = "forbid"
-        alias_generator = to_camel
-        populate_by_name = True
+    @staticmethod
+    def model_config_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+        schema["example"] = SolverPresetsCreation(
+            name="xpress-fast",
+            linear_solver="xpress",
+            min_antares_version=SolverVersion.parse("9.2"),
+            max_antares_version=None,
+            linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
+            linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
+            linear_solver_param={"MAXTIME": "3600"},
+            use_optim_1_basis_next_week=True,
+            use_optim_1_basis_optim_2=True,
+        ).model_dump(mode="json", by_alias=True)
 
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = SolverPresetsCreation(
-                name="xpress-fast",
-                linear_solver="xpress",
-                min_antares_version=SolverVersion.parse("9.2"),
-                max_antares_version=None,
-                linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
-                linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
-                linear_solver_param={"MAXTIME": "3600"},
-                use_optim_1_basis_next_week=True,
-                use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json", by_alias=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        alias_generator=to_camel,
+        populate_by_name=True,
+        json_schema_extra=model_config_json_schema_extra,
+    )
 
     name: ItemName
     linear_solver: str
@@ -500,23 +505,25 @@ class SolverPresetsCreation(AntaresBaseModel):
 
 
 class SolverPresetsUpdate(AntaresBaseModel):
-    class Config:
-        extra = "forbid"
-        alias_generator = to_camel
-        populate_by_name = True
+    @staticmethod
+    def model_config_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+        schema["example"] = SolverPresetsUpdate(
+            linear_solver="xpress",
+            min_antares_version=SolverVersion.parse("9.2"),
+            max_antares_version=None,
+            linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
+            linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
+            linear_solver_param={"MAXTIME": "3600"},
+            use_optim_1_basis_next_week=True,
+            use_optim_1_basis_optim_2=True,
+        ).model_dump(mode="json", by_alias=True)
 
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = SolverPresetsUpdate(
-                linear_solver="xpress",
-                min_antares_version=SolverVersion.parse("9.2"),
-                max_antares_version=None,
-                linear_solver_param_optim_1={"THREADS": "4", "PRESOLVE": "1"},
-                linear_solver_param_optim_2={"MIPRELSTOP": "0.01"},
-                linear_solver_param={"MAXTIME": "3600"},
-                use_optim_1_basis_next_week=True,
-                use_optim_1_basis_optim_2=True,
-            ).model_dump(mode="json", by_alias=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        alias_generator=to_camel,
+        populate_by_name=True,
+        json_schema_extra=model_config_json_schema_extra,
+    )
 
     linear_solver: Optional[str] = None
     min_antares_version: Optional[SolverVersionStr] = None

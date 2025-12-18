@@ -10,9 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Optional, Set
-
-from typing_extensions import override
+from typing import Any, Dict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json, to_json
@@ -42,7 +40,7 @@ class IniProperties(
         """
 
         config = {}
-        for field_name, field in self.model_fields.items():
+        for field_name, field in self.__class__.model_fields.items():
             value = getattr(self, field_name)
             if value is None:
                 continue
@@ -53,16 +51,3 @@ class IniProperties(
             else:
                 config[alias] = from_json(to_json(value))
         return config
-
-    @classmethod
-    @override
-    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> "IniProperties":
-        """
-        Construct a new model instance from a dict of values, replacing aliases with real field names.
-        """
-        # The pydantic construct() function does not allow aliases to be handled.
-        aliases = {(field.alias or name): name for name, field in cls.model_fields.items()}
-        renamed_values = {aliases.get(k, k): v for k, v in values.items()}
-        if _fields_set is not None:
-            _fields_set = {aliases.get(f, f) for f in _fields_set}
-        return IniProperties.model_construct(_fields_set, **renamed_values)
