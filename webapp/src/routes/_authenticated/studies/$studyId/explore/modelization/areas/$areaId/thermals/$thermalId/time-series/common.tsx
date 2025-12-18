@@ -16,15 +16,15 @@ import Matrix from "@/components/Matrix";
 import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
-import { TS_GEN_MATRIX_COLS } from "../../-utils";
+import { COMMON_MATRIX_COLS } from "../../-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/ts-generator",
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/common",
 )({
-  component: TimeSeriesGenerator,
+  component: Common,
 });
 
-function TimeSeriesGenerator() {
+function Common() {
   const study = useStudy();
   const area = useArea();
   const { thermalId } = Route.useParams();
@@ -32,8 +32,8 @@ function TimeSeriesGenerator() {
   return (
     <Matrix
       studyId={study.id}
-      url={`input/thermal/prepro/${area.id}/${thermalId}/data`}
-      customColumns={TS_GEN_MATRIX_COLS}
+      url={`input/thermal/prepro/${area.id}/${thermalId}/modulation`}
+      customColumns={COMMON_MATRIX_COLS}
       isTimeSeries={false}
       enableFilters
     />

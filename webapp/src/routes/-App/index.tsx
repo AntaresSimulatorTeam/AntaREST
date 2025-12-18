@@ -13,8 +13,6 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Storages from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/storages";
-import StorageConfig from "../_authenticated/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId/time-series";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -36,9 +34,6 @@ function App() {
     <Router>
       <Routes>
         <Route path="area/:areaId">
-          <Route path="storages" element={<Storages />} />
-          <Route path="storages/:storageId" element={<StorageConfig />} />
-
           <Route path="hydro" element={<Navigate to="management" replace />} />
           <Route path="hydro" element={<Hydro />}>
             <Route path="management" element={<ManagementOptions />} />

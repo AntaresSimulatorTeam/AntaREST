@@ -15,11 +15,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/",
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/",
 )({
   beforeLoad: ({ params }) => {
     throw redirect({
-      to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/common",
+      to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/common",
       params,
       replace: true,
     });

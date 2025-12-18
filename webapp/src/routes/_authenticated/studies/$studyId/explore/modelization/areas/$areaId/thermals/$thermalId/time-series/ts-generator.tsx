@@ -15,27 +15,27 @@
 import Matrix from "@/components/Matrix";
 import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import { compactSemanticVersion } from "@/utils/versionUtils";
 import { createFileRoute } from "@tanstack/react-router";
-import semver from "semver";
+import { TS_GEN_MATRIX_COLS } from "../../-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/co2-cost",
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/ts-generator",
 )({
-  component: Co2Costs,
+  component: TimeSeriesGenerator,
 });
 
-function Co2Costs() {
+function TimeSeriesGenerator() {
   const study = useStudy();
   const area = useArea();
   const { thermalId } = Route.useParams();
-  const minVersion = "8.7.0";
 
-  if (semver.lt(study.version, minVersion)) {
-    throw new Error(
-      `CO2 Cost matrix is only available for study version ${compactSemanticVersion(minVersion)} and above.`,
-    );
-  }
-
-  return <Matrix studyId={study.id} url={`input/thermal/series/${area.id}/${thermalId}/CO2Cost`} />;
+  return (
+    <Matrix
+      studyId={study.id}
+      url={`input/thermal/prepro/${area.id}/${thermalId}/data`}
+      customColumns={TS_GEN_MATRIX_COLS}
+      isTimeSeries={false}
+      enableFilters
+    />
+  );
 }

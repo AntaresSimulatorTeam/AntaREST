@@ -19,12 +19,12 @@ import { useTranslation } from "react-i18next";
 import semver from "semver";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices",
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series",
 )({
-  component: MatricesLayout,
+  component: TimeSeriesLayout,
 });
 
-function MatricesLayout() {
+function TimeSeriesLayout() {
   const study = useStudy();
   const params = Route.useParams();
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ function MatricesLayout() {
           id: "common",
           label: t("study.modelization.clusters.matrix.common"),
           linkOptions: linkOptions({
-            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/common",
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/common",
             params,
           }),
         },
@@ -48,7 +48,7 @@ function MatricesLayout() {
           id: "ts-generator",
           label: t("study.modelization.clusters.matrix.tsGen"),
           linkOptions: linkOptions({
-            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/ts-generator",
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/ts-generator",
             params,
           }),
         },
@@ -56,7 +56,7 @@ function MatricesLayout() {
           id: "availability",
           label: t("study.modelization.clusters.matrix.availability"),
           linkOptions: linkOptions({
-            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/availability",
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/availability",
             params,
           }),
         },
@@ -64,7 +64,7 @@ function MatricesLayout() {
           id: "fuel-costs",
           label: t("study.modelization.clusters.matrix.fuelCost"),
           linkOptions: linkOptions({
-            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/fuel-cost",
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/fuel-cost",
             params,
           }),
         },
@@ -72,7 +72,7 @@ function MatricesLayout() {
           id: "co2-costs",
           label: t("study.modelization.clusters.matrix.co2Cost"),
           linkOptions: linkOptions({
-            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/co2-cost",
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/co2-cost",
             params,
           }),
         },

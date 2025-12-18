@@ -72,7 +72,7 @@ function Parameters() {
 
         return (
           <>
-            <Fieldset legend={t("global.general")}>
+            <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
               <StringFE label={t("global.name")} name="name" control={control} disabled />
               {semver.lt(study.version, "9.3.0") ? (
                 <SelectFE
@@ -93,8 +93,6 @@ function Parameters() {
                   control={control}
                 />
               )}
-            </Fieldset>
-            <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
               <SwitchFE
                 label={t("study.modelization.clusters.enabled")}
                 name="enabled"

@@ -36,6 +36,7 @@ function ThermalLayout() {
         to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals",
         params,
       })}
+      divider
       tabs={[
         {
           id: "parameters",
@@ -46,10 +47,10 @@ function ThermalLayout() {
           },
         },
         {
-          id: "matrices",
-          label: t("study.modelization.thermals.matrices"),
+          id: "time-series",
+          label: t("global.timeSeries"),
           linkOptions: {
-            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices",
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series",
             params,
           },
         },

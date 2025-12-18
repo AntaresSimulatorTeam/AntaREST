@@ -15,27 +15,29 @@
 import Matrix from "@/components/Matrix";
 import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import { createFileRoute } from "@tanstack/react-router";
-import { COMMON_MATRIX_COLS } from "../../-utils";
+import semver from "semver";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/matrices/common",
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId/time-series/fuel-cost",
 )({
-  component: Common,
+  component: FuelCost,
 });
 
-function Common() {
+function FuelCost() {
   const study = useStudy();
   const area = useArea();
   const { thermalId } = Route.useParams();
+  const minVersion = "8.7.0";
+
+  if (semver.lt(study.version, minVersion)) {
+    throw new Error(
+      `Fuel Cost matrix is only available for study version ${compactSemanticVersion(minVersion)} and above.`,
+    );
+  }
 
   return (
-    <Matrix
-      studyId={study.id}
-      url={`input/thermal/prepro/${area.id}/${thermalId}/modulation`}
-      customColumns={COMMON_MATRIX_COLS}
-      isTimeSeries={false}
-      enableFilters
-    />
+    <Matrix studyId={study.id} url={`input/thermal/series/${area.id}/${thermalId}/fuelCost`} />
   );
 }
