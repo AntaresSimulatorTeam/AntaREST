@@ -12,13 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import client from "@/services/api/client";
+import type { Area, StudyMetadata } from "@/types/types";
+import type { ExcludeNullFromProps, PartialExceptFor } from "@/utils/tsUtils";
 import * as RA from "ramda-adjunct";
-import client from "../../../../../../../../../services/api/client";
-import type { Area, StudyMetadata } from "../../../../../../../../../types/types";
-import type {
-  ExcludeNullFromProps,
-  PartialExceptFor,
-} from "../../../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
