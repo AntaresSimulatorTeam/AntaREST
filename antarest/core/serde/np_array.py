@@ -37,6 +37,3 @@ def _np_to_list(array: npt.NDArray[np.float64]) -> list[float] | list[list[float
 
 
 NpArray: TypeAlias = Annotated[npt.NDArray[np.float64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
-
-# The `BeforeValidator` uses a lot of memory so we won't use it inside the Imagrid `/download` endpoint
-NpArrayLowMemory: TypeAlias = Annotated[npt.NDArray[np.float64], PlainSerializer(_np_to_list)]

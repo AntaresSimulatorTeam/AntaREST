@@ -47,7 +47,7 @@ from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.np_array import NpArrayLowMemory
+from antarest.core.serde.np_array import NpArray
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 
@@ -597,8 +597,8 @@ class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
     type: StudyDownloadType
     years: list[int] = []
     level: StudyDownloadLevelDTO
-    filter_in: Annotated[Optional[str], Field(deprecated=True)]  # We don't consider it
-    filter_out: Annotated[Optional[str], Field(deprecated=True)]  # We don't consider it
+    filter_in: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
+    filter_out: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
     filter: list[str] = []
     columns: list[str] = []
     synthesis: Annotated[bool, Field(deprecated=True, default=False)]  # We always consider it's False
@@ -623,7 +623,7 @@ class TimeSerie(AntaresBaseModel):
 
     name: str
     unit: str
-    data: NpArrayLowMemory = np.zeros(shape=(0,))
+    data: NpArray = np.zeros(shape=(0,))
 
 
 class TimeSeriesData(AntaresBaseModel):
