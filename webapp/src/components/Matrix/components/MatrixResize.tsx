@@ -34,7 +34,7 @@ function MatrixResize() {
   } = useMatrixContext();
   const { t } = useTranslation();
   const errorSnackBar = useEnqueueErrorSnackbar();
-  const currentColumnCount = currentState.data[0].length;
+  const currentColumnCount = currentState.data[0]?.length ?? 0;
   const [targetColumnCount, setTargetColumnCount] = useState(currentColumnCount);
 
   useUpdateEffect(() => {
