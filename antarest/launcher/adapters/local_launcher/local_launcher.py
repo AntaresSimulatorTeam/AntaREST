@@ -122,11 +122,19 @@ class LocalLauncher(AbstractLauncher):
                 std_err_file = logs_path / f"{job_id}-err.log"
                 std_out_file = logs_path / f"{job_id}-out.log"
                 with open(std_err_file, "w") as err_file, open(std_out_file, "w") as out_file:
+                    creationflags = 0
+                    if os.name == "nt":
+                        # must use getattr otherwise mypy raises an error
+                        # when it's run on linux as the attribute doesn't exist there. Can't do a
+                        # type ignore as mypy will raises an error on windows, because that type ignore
+                        # would be useless as the attribute exists on windows.
+                        creationflags = getattr(subprocess, "CREATE_NO_WINDOW")
                     process = subprocess.Popen(
                         new_args,
                         env=environment_variables,
                         stdout=out_file,
                         stderr=err_file,
+                        creationflags=creationflags,
                     )
                 self.job_id_to_study_id[job_id] = (study_uuid, export_path, process)
                 self.callbacks.update_status(job_id, JobStatus.RUNNING, None, None)
