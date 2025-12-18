@@ -71,5 +71,29 @@ elif [ "$use_uvicorn" = true ]; then
   done
 else
   export PYTHONPATH=$BASE_DIR
-  python3 $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
+
+  # Check if module is celery-related
+  case "$1" in
+    celery-beat)
+      echo "Starting Celery Beat scheduler..."
+      exec celery -A antarest.maintenance.app:celery_app beat \
+        --loglevel=info \
+        --pidfile=/tmp/celerybeat.pid
+      ;;
+    celery-worker)
+      echo "Starting Celery Worker..."
+      CONCURRENCY="${CELERY_CONCURRENCY:-1}"
+      POOL="${CELERY_POOL:-solo}"
+      exec celery -A antarest.maintenance.app:celery_app worker \
+        --loglevel=info \
+        --concurrency=$CONCURRENCY \
+        --pool=$POOL \
+        --queues=maintenance \
+        --max-tasks-per-child=100
+      ;;
+    *)
+      # Default: run antarest module (watcher, auto_archiver, etc.)
+      python3 $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
+      ;;
+  esac
 fi
