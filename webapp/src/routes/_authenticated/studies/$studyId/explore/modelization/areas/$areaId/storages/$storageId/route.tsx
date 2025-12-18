@@ -13,64 +13,63 @@
  */
 
 import TabsView from "@/components/page/TabsView";
-import { getCurrentAreaId } from "@/redux/selectors";
-import { nameToId } from "@/services/utils";
-import type { StudyMetadata } from "@/types/types";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import semver from "semver";
-import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
-import AdditionalConstraints from "../StorageConfig/AdditionalConstraints";
-import StorageForm from "./parameters/StorageForm";
-import StorageMatrices from "./time-series/StorageMatrices";
 
-function StorageConfig() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const navigate = useNavigate();
-  const areaId = useAppSelector(getCurrentAreaId);
-  const { storageId = "" } = useParams();
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId",
+)({
+  component: StorageLayout,
+});
+
+function StorageLayout() {
+  const params = Route.useParams();
   const { t } = useTranslation();
-  const studyId = study.id;
 
   return (
     <TabsView
-      onBack={() => navigate("../storages")}
+      onBack={linkOptions({
+        to: "/studies/$studyId/explore/modelization/areas/$areaId/storages",
+        params,
+      })}
       divider
       tabs={[
         {
-          id: "operating-parameters",
-          label: t("study.modelization.storages.operatingParameters"),
-          content: (
-            <StorageForm
-              studyId={studyId}
-              studyVersion={study.version}
-              areaId={areaId}
-              storageId={storageId}
-            />
-          ),
+          id: "parameters",
+          label: t("study.modelization.storages.parameters"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId/parameters",
+            params,
+          }),
+          // content: (
+          //   <StorageForm
+          //     studyId={studyId}
+          //     studyVersion={study.version}
+          //     areaId={areaId}
+          //     storageId={storageId}
+          //   />
+          // ),
         },
-        {
-          id: "time-series",
-          label: t("global.timeSeries"),
-          content: (
-            <StorageMatrices studyVersion={study.version} areaId={areaId} storageId={storageId} />
-          ),
-        },
-        semver.gte(study.version, "9.2.0") && {
-          id: "additional-constraints",
-          label: t("study.modelization.storages.additionalConstraints"),
-          content: (
-            <AdditionalConstraints
-              studyId={studyId}
-              areaId={areaId}
-              storageId={nameToId(storageId)}
-              studyVersion={study.version}
-            />
-          ),
-        },
+        // {
+        //   id: "time-series",
+        //   label: t("global.timeSeries"),
+        //   content: (
+        //     <StorageMatrices studyVersion={study.version} areaId={areaId} storageId={storageId} />
+        //   ),
+        // },
+        // semver.gte(study.version, "9.2.0") && {
+        //   id: "additional-constraints",
+        //   label: t("study.modelization.storages.additionalConstraints"),
+        //   content: (
+        //     <AdditionalConstraints
+        //       studyId={studyId}
+        //       areaId={areaId}
+        //       storageId={nameToId(storageId)}
+        //       studyVersion={study.version}
+        //     />
+        //   ),
+        // },
       ].filter(Boolean)}
     />
   );
 }
-
-export default StorageConfig;

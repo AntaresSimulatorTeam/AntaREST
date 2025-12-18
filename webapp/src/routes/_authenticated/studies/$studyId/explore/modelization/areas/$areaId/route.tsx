@@ -14,8 +14,10 @@
 
 import TabsView from "@/components/page/TabsView";
 import ViewWrapper from "@/components/page/ViewWrapper";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId",
@@ -24,6 +26,7 @@ export const Route = createFileRoute(
 });
 
 function AreaLayout() {
+  const study = useStudy();
   const { t } = useTranslation();
   const params = Route.useParams();
 
@@ -55,11 +58,14 @@ function AreaLayout() {
               params,
             }),
           },
-          // {
-          //   label: "study.modelization.storages",
-          //   pathSuffix: "storages",
-          //   condition: semver.gte(study.version, "8.6.0"),
-          // },
+          semver.gte(study.version, "8.6.0") && {
+            id: "storages",
+            label: t("study.modelization.storages"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modelization/areas/$areaId/storages",
+              params,
+            }),
+          },
           // {
           //   label: "study.modelization.renewables",
           //   pathSuffix: "renewables",
@@ -78,7 +84,7 @@ function AreaLayout() {
           // },
           // { label: "study.modelization.reserves", pathSuffix: "reserves" },
           // { label: "study.modelization.miscGen", pathSuffix: "miscGen" },
-        ]}
+        ].filter(Boolean)}
       />
     </ViewWrapper>
   );

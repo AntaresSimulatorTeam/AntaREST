@@ -19,7 +19,7 @@ import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box } from "@mui/material";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -51,7 +51,7 @@ function Thermals() {
   const study = useStudy();
   const area = useArea();
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const navigate = Route.useNavigate();
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     ThermalClusterWithCapacity[]

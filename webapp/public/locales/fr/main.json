@@ -609,7 +609,7 @@
   "study.modelization.storages.allowOverflow": "Autoriser le débordement du stockage",
   "study.modelization.storages.initialLevel": "Niveau initial (%)",
   "study.modelization.storages.initialLevelOptim": "Niveau initial optimisé",
-  "study.modelization.storages.operatingParameters": "Paramètres de fonctionnement",
+  "study.modelization.storages.parameters": "Paramètres",
   "study.modelization.storages.additionalConstraints": "Contraintes additionnelles",
   "study.modelization.storages.additionalConstraints.add": "Ajouter une contrainte additionnelle",
   "study.modelization.storages.additionalConstraints.variable": "Variable",

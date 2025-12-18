@@ -19,9 +19,11 @@ import NumberFE from "@/components/fieldEditors/NumberFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
-import type { Area, StudyMetadata } from "@/types/types";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import {
@@ -29,19 +31,20 @@ import {
   convertRatioToPercentage,
   type FormalizedStorage,
   getStorage,
-  type Storage,
   STORAGE_GROUPS,
   updateStorage,
-} from "../../-utils";
+} from "../-utils";
 
-interface Props {
-  studyId: StudyMetadata["id"];
-  studyVersion: string;
-  areaId: Area["name"];
-  storageId: Storage["id"];
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId/parameters",
+)({
+  component: Parameters,
+});
 
-function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
+function Parameters() {
+  const study = useStudy();
+  const area = useArea();
+  const { storageId } = Route.useParams();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -49,7 +52,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const getDefaultValues = async () => {
-    const storage = await getStorage(studyId, areaId, storageId);
+    const storage = await getStorage(study.id, area.id, storageId);
     return convertRatioToPercentage(storage);
   };
 
@@ -59,8 +62,8 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FormalizedStorage>) => {
     const updatedStorage = await updateStorage(
-      studyId,
-      areaId,
+      study.id,
+      area.id,
       storageId,
       convertPercentageToRatio(dirtyValues),
     );
@@ -74,7 +77,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
 
   return (
     <Form
-      key={studyId + areaId + storageId}
+      key={area.id + storageId}
       config={{ defaultValues: getDefaultValues }}
       onSubmit={handleSubmit}
       enableUndoRedo
@@ -83,7 +86,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
         <>
           <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
             <StringFE label={t("global.name")} name="name" control={control} disabled />
-            {semver.lt(studyVersion, "9.2.0") ? (
+            {semver.lt(study.version, "9.2.0") ? (
               <SelectFE
                 label={t("global.group")}
                 name="group"
@@ -102,7 +105,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 control={control}
               />
             )}
-            {semver.gte(studyVersion, "8.8.0") && (
+            {semver.gte(study.version, "8.8.0") && (
               <SwitchFE label={t("global.enabled")} name="enabled" control={control} />
             )}
             <Fieldset.Break />
@@ -140,7 +143,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 width: 2,
               }}
             />
-            {semver.gte(studyVersion, "9.3.0") && (
+            {semver.gte(study.version, "9.3.0") && (
               <SwitchFE
                 label={t("study.modelization.storages.allowOverflow")}
                 name="allowOverflow"
@@ -173,7 +176,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 validate: validateNumber({ min: 0, max: 100 }),
               }}
             />
-            {semver.gte(studyVersion, "9.2.0") && (
+            {semver.gte(study.version, "9.2.0") && (
               <SwitchFE
                 label={t("study.modelization.storages.penalizeVariationInjection")}
                 name="penalizeVariationInjection"
@@ -198,7 +201,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 />
               </Box>
             </Tooltip>
-            {semver.gte(studyVersion, "9.2.0") && (
+            {semver.gte(study.version, "9.2.0") && (
               <>
                 <Tooltip
                   title={t("study.modelization.storages.efficiencyWithdrawal.info")}
@@ -229,5 +232,3 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
     </Form>
   );
 }
-
-export default StorageForm;

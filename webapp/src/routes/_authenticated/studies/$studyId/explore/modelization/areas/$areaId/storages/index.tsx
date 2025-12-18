@@ -15,16 +15,15 @@
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box, Tooltip } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext } from "react-router-dom";
 import semver from "semver";
 import usePromiseWithSnackbarError from "../../../../../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../types/types";
 import {
   createStorage,
   deleteStorages,
@@ -33,22 +32,28 @@ import {
   getStoragesTotals,
   STORAGE_GROUPS,
   type FormalizedStorage,
-} from "./utils";
+} from "./-utils";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/storages/",
+)({
+  component: Storages,
+});
 
 const columnHelper = createMRTColumnHelper<FormalizedStorage>();
 
 function Storages() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
+  const area = useArea();
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const areaId = useAppSelector(getCurrentAreaId);
+  const navigate = Route.useNavigate();
 
   const { data: storages = [], isLoading } = usePromiseWithSnackbarError(
-    () => getStorages(study.id, areaId),
+    () => getStorages(study.id, area.id),
     {
       resetDataOnReload: true,
       errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, areaId],
+      deps: [study.id, area.id],
     },
   );
 
@@ -145,20 +150,27 @@ function Storages() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = (values: TRow) => {
-    return createStorage(study.id, areaId, values);
+    return createStorage(study.id, area.id, values);
   };
 
   const handleDuplicate = (row: FormalizedStorage, newName: string) => {
-    return duplicateStorage(study.id, areaId, row.id, newName);
+    return duplicateStorage(study.id, area.id, row.id, newName);
   };
 
   const handleDelete = (rows: FormalizedStorage[]) => {
     const ids = rows.map((row) => row.id);
-    return deleteStorages(study.id, areaId, ids);
+    return deleteStorages(study.id, area.id, ids);
   };
 
   const handleNameClick = (row: FormalizedStorage) => {
-    navigate(row.id);
+    navigate({
+      to: "/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId",
+      params: {
+        studyId: study.id,
+        areaId: area.id,
+        storageId: row.id,
+      },
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -193,5 +205,3 @@ function Storages() {
     />
   );
 }
-
-export default Storages;

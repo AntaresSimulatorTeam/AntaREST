@@ -609,7 +609,7 @@
   "study.modelization.storages.allowOverflow": "Allow overflow for the storage",
   "study.modelization.storages.initialLevel": "Initial level (%)",
   "study.modelization.storages.initialLevelOptim": "Initial level optimized",
-  "study.modelization.storages.operatingParameters": "Operating Parameters",
+  "study.modelization.storages.parameters": "Parameters",
   "study.modelization.storages.additionalConstraints": "Additional Constraints",
   "study.modelization.storages.additionalConstraints.add": "Add Additional Constraint",
   "study.modelization.storages.additionalConstraints.variable": "Variable",
