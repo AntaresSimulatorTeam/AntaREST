@@ -19,10 +19,10 @@ import type { StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import semver from "semver";
-import useAppSelector from "../../../../../../../../../../../redux/hooks/useAppSelector";
-import AdditionalConstraints from "../../StorageConfig/AdditionalConstraints";
-import StorageForm from "../../StorageConfig/StorageForm";
-import StorageMatrices from "../../StorageConfig/StorageMatrices";
+import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
+import AdditionalConstraints from "../StorageConfig/AdditionalConstraints";
+import StorageForm from "./parameters/StorageForm";
+import StorageMatrices from "./time-series/StorageMatrices";
 
 function StorageConfig() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

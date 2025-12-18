@@ -20,7 +20,7 @@ import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import type { Storage } from "../utils";
+import type { Storage } from "../../-utils";
 
 interface Props {
   areaId: StudyMetadata["id"];
