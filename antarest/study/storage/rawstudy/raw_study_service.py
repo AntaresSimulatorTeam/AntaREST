@@ -82,18 +82,10 @@ class RawStudyService(AbstractStorageService):
 
     """
 
-    def __init__(
-        self,
-        config: Config,
-        study_factory: StudyFactory,
-        cache: ICache,
-    ):
-        super().__init__(
-            config=config,
-            study_factory=study_factory,
-            cache=cache,
-        )
+    def __init__(self, config: Config, study_factory: StudyFactory, cache: ICache):
+        super().__init__(config=config, cache=cache)
 
+        self.study_factory = study_factory
         self._matrix_service = self.study_factory._matrix_mapper_factory._matrix_service
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
 

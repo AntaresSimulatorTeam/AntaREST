@@ -97,16 +97,13 @@ class VariantStudyService(AbstractStorageService):
         event_bus: IEventBus,
         config: Config,
     ):
-        super().__init__(
-            config=config,
-            study_factory=study_factory,
-            cache=cache,
-        )
+        super().__init__(config=config, cache=cache)
         self.task_service = task_service
         self.raw_study_service = raw_study_service
         self.repository = repository
         self.event_bus = event_bus
         self.command_factory = command_factory
+        self.study_factory = study_factory
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 

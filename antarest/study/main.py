@@ -84,11 +84,7 @@ def build_study_service(
     variant_repository = variant_repository or VariantStudyRepository(cache)
     job_result_repository = job_result_repository or JobResultRepository()
 
-    raw_study_service = RawStudyService(
-        config=config,
-        study_factory=study_factory,
-        cache=cache,
-    )
+    raw_study_service = RawStudyService(config=config, study_factory=study_factory, cache=cache)
 
     if not generator_matrix_constants:
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service=matrix_service)
