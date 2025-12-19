@@ -30,6 +30,7 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
@@ -82,11 +83,13 @@ class RawStudyService(AbstractStorageService):
 
     """
 
-    def __init__(self, config: Config, study_factory: StudyFactory, cache: ICache):
+    def __init__(
+        self, config: Config, study_factory: StudyFactory, cache: ICache, matrix_service: ISimpleMatrixService
+    ):
         super().__init__(config=config, cache=cache)
 
         self.study_factory = study_factory
-        self._matrix_service = self.study_factory._matrix_mapper_factory._matrix_service
+        self._matrix_service = matrix_service
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
 
     def update_from_raw_meta(
