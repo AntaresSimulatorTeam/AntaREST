@@ -42,6 +42,7 @@ export interface TabsViewProps {
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
+  extraActions?: React.ReactNode;
 }
 
 function isRouteTab(tab: RouteTab | ContentTab): tab is RouteTab {
@@ -59,6 +60,7 @@ function TabsView({
   divider = false,
   disablePadding = false,
   disableGutters = false,
+  extraActions,
 }: TabsViewProps) {
   const matchRoute = useMatchRoute();
   const hasRouteTabs = isRouteTabs(tabs);
@@ -122,7 +124,7 @@ function TabsView({
               {...(typeof onBack === "function" ? { onClick: onBack } : { linkOptions: onBack })}
             />
           )}
-          <TabList onChange={handleChange}>
+          <TabList onChange={handleChange} sx={{ flex: 1 }}>
             {tabs.map((tab) => (
               <Tab
                 key={tab.id}
@@ -139,6 +141,9 @@ function TabsView({
               />
             ))}
           </TabList>
+          {extraActions && (
+            <Box sx={{ display: "flex", alignItems: "center", px: 1 }}>{extraActions}</Box>
+          )}
         </Box>
         {hasRouteTabs ? (
           <Box sx={panelSx}>

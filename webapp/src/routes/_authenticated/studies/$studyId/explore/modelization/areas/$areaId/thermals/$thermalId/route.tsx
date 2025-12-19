@@ -12,9 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
 import TabsView from "@/components/page/TabsView";
-import { createFileRoute, linkOptions } from "@tanstack/react-router";
+import usePromise from "@/hooks/usePromise";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
+import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { getThermalClusters } from "../-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId",
@@ -23,8 +28,38 @@ export const Route = createFileRoute(
 });
 
 function ThermalLayout() {
+  const study = useStudy();
+  const area = useArea();
   const params = Route.useParams();
+  const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const { data: thermalOptions = [params.thermalId], status: thermalOptionsStatus } =
+    usePromise(async () => {
+      const thermals = await getThermalClusters(study.id, area.id);
+
+      return thermals.map((thermal) => ({
+        label: thermal.name,
+        value: thermal.id,
+        group: thermal.group,
+      }));
+    }, [study.id, area.id]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleChange = (event: SelectFEChangeEvent<string>) => {
+    const newThermalId = event.target.value;
+
+    navigate({
+      to: ".",
+      params: {
+        ...params,
+        thermalId: newThermalId,
+      },
+    });
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -55,6 +90,16 @@ function ThermalLayout() {
           },
         },
       ]}
+      extraActions={
+        <SelectFE
+          value={params.thermalId}
+          options={thermalOptions}
+          onChange={handleChange}
+          size="extra-small"
+          disabled={thermalOptionsStatus !== "fulfilled"}
+          sx={{ maxWidth: 150 }}
+        />
+      }
     />
   );
 }

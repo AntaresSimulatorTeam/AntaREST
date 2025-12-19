@@ -14,12 +14,14 @@
 
 import reactHookFormSupport, { type ReactHookFormSupportProps } from "@/hoc/reactHookFormSupport";
 import i18n from "@/i18n";
+import { sortByName } from "@/services/utils";
 import type { SvgIconComponent } from "@mui/icons-material";
 import {
   Box,
   Button,
   ButtonGroup,
   Chip,
+  ListSubheader,
   MenuItem,
   TextField,
   Tooltip,
@@ -30,6 +32,7 @@ import {
 import type { SelectInputProps } from "@mui/material/Select/SelectInput";
 import type { TFunction } from "i18next";
 import startCase from "lodash/startCase";
+import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useMemo, useState } from "react";
 import type { FieldPath, FieldValues } from "react-hook-form";
@@ -42,6 +45,7 @@ interface Option<T extends AllowedValue> {
   label?: string | ((t: TFunction) => string);
   icon?: SvgIconComponent;
   tooltip?: string;
+  group?: string;
 }
 
 export type Options<T extends AllowedValue> = Array<T | Option<T>> | ReadonlyArray<T | Option<T>>;
@@ -137,6 +141,17 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
       }),
     [options, startCaseLabel, t],
   );
+
+  const groupsOfOptions = useMemo(() => {
+    const optionsByGroup = R.groupBy(R.propOr("", "group"), optionsFormatted);
+
+    const groups = Object.entries(optionsByGroup).map(([group, options = []]) => ({
+      name: group,
+      options,
+    }));
+
+    return sortByName(groups);
+  }, [optionsFormatted]);
 
   // Invalid options are values that are in the current value (multiple mode) but not in the options.
   // Add them to the options list is the only way to allow to remove them from the select input.
@@ -263,18 +278,28 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
           <Typography color="error">{label}</Typography>
         </MenuItem>
       ))}
-      {optionsFormatted.map(({ value, label, icon: Icon, tooltip, id }) => (
-        <MenuItem key={id} value={value}>
-          {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
-          {tooltip ? (
-            <Tooltip title={t(tooltip)} placement="right">
-              <span>{label}</span>
-            </Tooltip>
-          ) : (
-            label
-          )}
-        </MenuItem>
-      ))}
+      {/* Reason of using `flatMap`: https://github.com/mui/material-ui/issues/35403#issuecomment-2656136654 */}
+      {groupsOfOptions.flatMap((group) =>
+        [
+          group.name && (
+            <ListSubheader key={group.name} inset>
+              {group.name}
+            </ListSubheader>
+          ),
+          ...group.options.map(({ value, label, icon: Icon, tooltip, id }) => (
+            <MenuItem key={id} value={value}>
+              {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
+              {tooltip ? (
+                <Tooltip title={t(tooltip)} placement="right">
+                  <span>{label}</span>
+                </Tooltip>
+              ) : (
+                label
+              )}
+            </MenuItem>
+          )),
+        ].filter(Boolean),
+      )}
     </TextField>
   );
 }

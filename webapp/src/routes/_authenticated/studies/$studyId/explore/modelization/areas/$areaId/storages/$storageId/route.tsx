@@ -12,9 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
 import TabsView from "@/components/page/TabsView";
-import { createFileRoute, linkOptions } from "@tanstack/react-router";
+import usePromise from "@/hooks/usePromise";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
+import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { getStorages } from "../-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId",
@@ -23,8 +28,42 @@ export const Route = createFileRoute(
 });
 
 function StorageLayout() {
+  const study = useStudy();
+  const area = useArea();
   const params = Route.useParams();
+  const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const { data: storageOptions = [params.storageId], status: storageOptionsStatus } =
+    usePromise(async () => {
+      const storages = await getStorages(study.id, area.id);
+
+      return storages.map((storage) => ({
+        label: storage.name,
+        value: storage.id,
+        group: storage.group,
+      }));
+    }, [study.id, area.id]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleChange = (event: SelectFEChangeEvent<string>) => {
+    const newStorageId = event.target.value;
+
+    navigate({
+      to: ".",
+      params: {
+        ...params,
+        storageId: newStorageId,
+      },
+    });
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <TabsView
@@ -49,9 +88,6 @@ function StorageLayout() {
             to: "/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId/time-series",
             params,
           }),
-          // content: (
-          //   <StorageMatrices studyVersion={study.version} areaId={areaId} storageId={storageId} />
-          // ),
         },
         // semver.gte(study.version, "9.2.0") && {
         //   id: "additional-constraints",
@@ -66,6 +102,16 @@ function StorageLayout() {
         //   ),
         // },
       ].filter(Boolean)}
+      extraActions={
+        <SelectFE
+          value={params.storageId}
+          options={storageOptions}
+          onChange={handleChange}
+          size="extra-small"
+          disabled={storageOptionsStatus !== "fulfilled"}
+          sx={{ maxWidth: 150 }}
+        />
+      }
     />
   );
 }
