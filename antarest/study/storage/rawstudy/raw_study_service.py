@@ -440,9 +440,6 @@ class RawStudyService(AbstractStorageService):
             return self.find_archive_path(metadata)
         return Path(metadata.path)
 
-    def get_output_path(self, study: Study, output_id: str) -> Path:
-        return self.get_study_path(study) / "output" / output_id
-
     def check_and_update_study_version_in_database(self, study: RawStudy) -> None:
         try:
             study_path = self.get_study_path(study)
