@@ -10,7 +10,11 @@
 #
 # This file is part of the Antares project.
 from enum import Enum, StrEnum
+from typing import Iterator, TypeAlias
 
+import pandas as pd
+
+from antarest.study.model import TimeSerie
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 """Column name for the Monte Carlo year."""
@@ -46,7 +50,7 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
-QueryFileType = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
+QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
 
 def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
@@ -82,3 +86,20 @@ def parse_headers(content: str, start_col: int) -> list[list[str]]:
                 header_lines[k].append(col)
 
     return header_lines
+
+
+def concatenate_dataframe_multi_indexed_columns(df: pd.DataFrame) -> None:
+    """
+    Used inside Imagrid endpoint as we want to keep the unit of the column but pyarrow doesn't handle MultiIndex.
+    """
+    df.columns = pd.Index([" % ".join(col) for col in df.columns])
+
+
+def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[TimeSerie]:
+    """
+    Performs the inverse transformation compared to the concatenate method. Also used inside Imagrid endpoint.
+    """
+    for column in df.columns:
+        splitted_col = column.split(" % ")
+        name, unit = splitted_col[0], splitted_col[1]
+        yield TimeSerie(name=name, unit=unit or " ", data=df[column].to_numpy())

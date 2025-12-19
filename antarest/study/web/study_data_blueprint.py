@@ -708,20 +708,22 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         table_type: TableModeType,
         data: TableDataDTO = Body(
             ...,
-            example={
-                "de / nuclear_cl1": {
-                    "enabled": True,
-                    "group": "Nuclear",
-                    "unitCount": 17,
-                    "nominalCapacity": 123,
-                },
-                "de / gas_cl1": {
-                    "enabled": True,
-                    "group": "Gas",
-                    "unitCount": 15,
-                    "nominalCapacity": 456,
-                },
-            },
+            examples=[
+                {
+                    "de / nuclear_cl1": {
+                        "enabled": True,
+                        "group": "Nuclear",
+                        "unitCount": 17,
+                        "nominalCapacity": 123,
+                    },
+                    "de / gas_cl1": {
+                        "enabled": True,
+                        "group": "Gas",
+                        "unitCount": 15,
+                        "nominalCapacity": 456,
+                    },
+                }
+            ],
         ),
     ) -> TableDataDTO:
         """
@@ -1083,12 +1085,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         data: HydroAllocation = Body(
             ...,
-            example=HydroAllocation(
-                allocation=[
-                    HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
-                    HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
-                ]
-            ),
+            examples=[
+                HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
+                        HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
+                    ]
+                )
+            ],
         ),
     ) -> HydroAllocation:
         """
@@ -1152,12 +1156,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         data: HydroCorrelation = Body(
             ...,
-            example=HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea.model_validate({"areaId": "east", "coefficient": 80}),
-                    HydroCorrelationArea.model_validate({"areaId": "north", "coefficient": 20}),
-                ]
-            ),
+            examples=[
+                HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea.model_validate({"areaId": "east", "coefficient": 80}),
+                        HydroCorrelationArea.model_validate({"areaId": "north", "coefficient": 20}),
+                    ]
+                )
+            ],
         ),
     ) -> HydroCorrelation:
         """

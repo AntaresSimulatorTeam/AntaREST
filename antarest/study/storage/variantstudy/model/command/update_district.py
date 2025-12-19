@@ -12,7 +12,7 @@
 
 from typing import Any, Dict, Final, Optional
 
-from pydantic import ValidationInfo, model_validator
+from pydantic import ConfigDict, ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.district_model import DistrictUpdate, update_district
@@ -47,6 +47,8 @@ class UpdateDistrict(ICommand):
     # version 2: rename filter_items to areas, move all parameters under "parameters"
     _SERIALIZATION_VERSION: Final[int] = 2
 
+    model_config = ConfigDict(populate_by_name=True)
+
     @model_validator(mode="before")
     @classmethod
     def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
@@ -64,9 +66,6 @@ class UpdateDistrict(ICommand):
                     parameters["comments"] = values.pop("comments")
                 values["parameters"] = parameters
         return values
-
-    class Config:
-        populate_by_name = True
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:

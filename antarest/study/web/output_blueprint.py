@@ -16,11 +16,12 @@ from pathlib import Path
 from typing import Annotated, Any, Sequence
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, Query, UploadFile
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
@@ -32,25 +33,27 @@ from antarest.study.business.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
-from antarest.study.storage.output_model import (
+from antarest.study.model import MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
-from antarest.study.storage.output_service import OutputService
+from antarest.study.output.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+
 download_expiration_time_query: Any = Query(
     gt=0,
     lt=1000,
     description="Expiration time for the download file (in minutes)",
 )
+
 DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
@@ -63,7 +66,9 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_output_routes(output_service: OutputService, config: Config) -> APIRouter:
+def create_output_routes(
+    output_service: OutputService, file_transfer_manager: FileTransferManager, config: Config
+) -> APIRouter:
     """
     Endpoint implementation for outputs management
 
@@ -138,34 +143,19 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
         return output_service.get_output_time_index(study_id, output_id, frequency)
 
-    @bp.post(
-        "/studies/{study_id}/outputs/{output_id}/download",
-        summary="Get outputs data",
-        response_model=None,  # only pydantic models are supported as response model
-    )
+    @bp.post("/studies/{study_id}/outputs/{output_id}/download", summary="Get outputs data")
     def output_download(
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
-        request: Request,
-        use_task: bool = False,
-        tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
-    ) -> Response | FileDownloadTaskDTO | FileResponse:
+        use_task: bool = Query(default=False, deprecated=True),
+        tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
+    ) -> FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
-        accept = request.headers["Accept"]
-        filetype = ExportFormat.from_dto(accept)
 
-        content = output_service.download_outputs(
-            study_id,
-            output_id,
-            data,
-            use_task,
-            filetype,
-            tmp_export_file,
-        )
-        return content
+        return output_service.download_outputs(study_id, output_id, data, tmp_export_file)
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",

@@ -11,80 +11,16 @@
 # This file is part of the Antares project.
 
 import datetime
-import tarfile
-from hashlib import md5
-from pathlib import Path
 from typing import Any, Dict
 from unittest.mock import Mock
-from zipfile import ZipFile
 
-import numpy as np
 import pytest
 
 from antarest.study.model import (
-    ExportFormat,
-    MatrixAggregationResultDTO,
     MatrixIndex,
     StudyDownloadLevelDTO,
-    StudyDownloadType,
-    TimeSerie,
-    TimeSeriesData,
 )
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import DAY_NAMES, get_start_date
-
-
-def test_output_downloads_export(tmp_path: Path) -> None:
-    matrix = MatrixAggregationResultDTO(
-        index=MatrixIndex(start_date="2000-01-01 00:00:00"),
-        data=[
-            TimeSeriesData(
-                name="a1",
-                type=StudyDownloadType.AREA,
-                data={
-                    "1": [
-                        TimeSerie(name="A", unit="", data=np.array([1, 2, 3, 4], dtype=np.float64)),
-                        TimeSerie(name="B", unit="", data=np.array([5, 6, 7, 8], dtype=np.float64)),
-                    ],
-                    "2": [
-                        TimeSerie(name="A", unit="", data=np.array([10, 11, 12, 13], dtype=np.float64)),
-                        TimeSerie(name="B", unit="", data=np.array([14, None, None, 15], dtype=np.float64)),
-                    ],
-                },
-            ),
-            TimeSeriesData(
-                name="a2",
-                type=StudyDownloadType.AREA,
-                data={
-                    "1": [
-                        TimeSerie(name="A", unit="", data=np.array([16, 17, 18, 19], dtype=np.float64)),
-                        TimeSerie(name="B", unit="", data=np.array([20, 21, 22, 23], dtype=np.float64)),
-                    ],
-                    "2": [
-                        TimeSerie(name="A", unit="", data=np.array([24, None, 25, 26], dtype=np.float64)),
-                        TimeSerie(name="B", unit="", data=np.array([27, 28, 29, 30], dtype=np.float64)),
-                    ],
-                },
-            ),
-        ],
-        warnings=[],
-    )
-    zip_file = tmp_path / "output.zip"
-    StudyDownloader.export(matrix, ExportFormat.ZIP, zip_file)
-    with ZipFile(zip_file) as zip_input:
-        assert zip_input.namelist() == ["a1.csv", "a2.csv"]
-        print(zip_input.read("a1.csv"))
-        assert md5(zip_input.read("a1.csv")).hexdigest() == "e183e79f2184d6f6dacb8ad215cb056c"
-        assert md5(zip_input.read("a2.csv")).hexdigest() == "c007db83f2769e6128e0f8c6b04d43eb"
-
-    tar_file = tmp_path / "output.tar.gz"
-    StudyDownloader.export(matrix, ExportFormat.TAR_GZ, tar_file)
-    with tarfile.open(tar_file, mode="r:gz") as tar_input:
-        assert tar_input.getnames() == ["a1.csv", "a2.csv"]
-        data = tar_input.extractfile("a1.csv").read()
-        assert md5(data).hexdigest() == "e183e79f2184d6f6dacb8ad215cb056c"
-        data = tar_input.extractfile("a2.csv").read()
-        assert md5(data).hexdigest() == "c007db83f2769e6128e0f8c6b04d43eb"
 
 
 @pytest.mark.parametrize(
