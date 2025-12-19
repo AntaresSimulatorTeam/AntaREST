@@ -46,7 +46,7 @@ from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.model import (
     RawStudy,
     Study,
@@ -96,6 +96,7 @@ class VariantStudyService(AbstractStorageService):
         repository: VariantStudyRepository,
         event_bus: IEventBus,
         config: Config,
+        matrix_service: ISimpleMatrixService,
     ):
         super().__init__(config=config, cache=cache)
         self.task_service = task_service
@@ -104,6 +105,7 @@ class VariantStudyService(AbstractStorageService):
         self.event_bus = event_bus
         self.command_factory = command_factory
         self.study_factory = study_factory
+        self._matrix_service = matrix_service
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
@@ -349,9 +351,8 @@ class VariantStudyService(AbstractStorageService):
             )
             or []
         }
-        return cast(MatrixService, self.command_factory.command_context.matrix_service).download_matrix_list(
-            list(matrices), f"{study.name}_{study.id}_matrices"
-        )
+        matrix_service = cast(MatrixService, self._matrix_service)
+        return matrix_service.download_matrix_list(list(matrices), f"{study.name}_{study.id}_matrices")
 
     def _get_variant_study(
         self,

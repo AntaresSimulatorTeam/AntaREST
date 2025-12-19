@@ -101,6 +101,7 @@ def build_study_service(
         repository=variant_repository,
         event_bus=event_bus,
         config=config,
+        matrix_service=matrix_service,
     )
 
     directory_service = DirectoryService(directory_repository=DirectoryRepository())
