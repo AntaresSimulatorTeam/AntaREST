@@ -20,10 +20,10 @@ from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelationArea,
     HydroCorrelationMatrix,
 )
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 def _set_up(command_context: CommandContext, study: FileStudy) -> None:
@@ -121,7 +121,7 @@ def test_get_correlation_matrix(
 ) -> None:
     _set_up(command_context, empty_study_920)
 
-    study = FileStudyInterface(empty_study_920)
+    study = file_study_interface(empty_study_920)
     matrix = manager.get_correlation_matrix(study)
 
     # Check
@@ -179,7 +179,7 @@ def test_get_correlation_for_area(
         ),
     }
 
-    study = FileStudyInterface(empty_study_920)
+    study = file_study_interface(empty_study_920)
     for area_id in expected_correlations:
         correlation = manager.get_correlation_for_area(study, area_id)
         assert correlation == expected_correlations[area_id]
@@ -190,7 +190,7 @@ def test_set_correlation_for_area(
 ) -> None:
     _set_up(command_context, empty_study_920)
 
-    study = FileStudyInterface(empty_study_920)
+    study = file_study_interface(empty_study_920)
 
     new_correlation = HydroCorrelation(
         correlation=[

@@ -184,8 +184,8 @@ class StudyConverter:
             for layer, x in source_ui.layer_x.items():
                 y = source_ui.layer_y[layer]
                 color = source_ui.layer_color[layer]
-                color_rgb = tuple(int(c) for c in color.strip(" ").split(","))
-                area_ui = AreaUI(x=x, y=y, color_rgb=color_rgb)
+                r, g, b = (int(c) for c in color.strip(" ").split(","))
+                area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
                 self._new_dao.save_area_ui(area_id, layer, area_ui)
 
             # Hydro

@@ -115,8 +115,8 @@ class FileStudyInterface(StudyInterface):
     def __init__(
         self,
         file_study: FileStudy,
-        generator_matrix_constants: Optional["GeneratorMatrixConstants"] = None,
-        blob_service: Optional["IBlobService"] = None,
+        generator_matrix_constants: "GeneratorMatrixConstants",
+        blob_service: "IBlobService",
     ):
         self.file_study = file_study
         self._generator_matrix_constants = generator_matrix_constants
@@ -149,4 +149,4 @@ class FileStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service).read_only()  # type: ignore
+        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service).read_only()
