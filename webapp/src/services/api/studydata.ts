@@ -13,8 +13,8 @@
  */
 
 import {
-  type BindingConstraint,
   bindingConstraintModelAdapter,
+  type BindingConstraint,
 } from "@/routes/-App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import type { StudyMapNode } from "../../redux/ducks/studyMaps";
 import type { AreaUIUpdatePayload, UpdateAreaUi } from "../../types/types";

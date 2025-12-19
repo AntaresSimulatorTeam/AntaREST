@@ -26,7 +26,7 @@ const TIME_STEPS = ["hourly", "daily", "weekly"] as const;
 const OUTPUT_FILTERS = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
 
 export const OPERATOR_OPTIONS: Options<string> = OPERATORS.map((operator) => ({
-  label: (t) => t(`study.modelization.bindingConst.operator.${operator}`),
+  label: (t) => t(`study.modeling.bindingConst.operator.${operator}`),
   value: operator,
 }));
 

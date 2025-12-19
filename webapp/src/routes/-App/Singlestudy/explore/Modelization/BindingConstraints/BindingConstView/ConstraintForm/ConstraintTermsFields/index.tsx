@@ -72,7 +72,7 @@ function ConstraintTermsFields({ study, options, constraintId }: Props) {
 
   return (
     <>
-      <Fieldset legend={t("study.modelization.bindingConst.constraintTerm")}>
+      <Fieldset legend={t("study.modeling.bindingConst.constraintTerm")}>
         <Box sx={{ display: "flex", width: 1, flexDirection: "column" }}>
           <Box
             sx={{
@@ -86,7 +86,7 @@ function ConstraintTermsFields({ study, options, constraintId }: Props) {
               startIcon={<AddCircleOutlineRoundedIcon />}
               onClick={() => setOpenConstraintTermDialog(true)}
             >
-              {t("study.modelization.bindingConst.createConstraintTerm")}
+              {t("study.modeling.bindingConst.createConstraintTerm")}
             </Button>
           </Box>
           {constraintTerms.map((term: ConstraintTerm, index: number) => (
@@ -108,7 +108,7 @@ function ConstraintTermsFields({ study, options, constraintId }: Props) {
           open={openConstraintTermDialog}
           studyId={study.id}
           constraintId={constraintId}
-          title={t("study.modelization.bindingConst.createConstraintTerm")}
+          title={t("study.modeling.bindingConst.createConstraintTerm")}
           onCancel={() => setOpenConstraintTermDialog(false)}
           append={append}
           constraintTerms={constraintTerms}

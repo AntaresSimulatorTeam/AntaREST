@@ -146,7 +146,7 @@ function ConstraintTermFE({ options, term, constraintTerms, saveValue, deleteTer
       <ConstraintElement
         left={
           <TextField
-            label={t("study.modelization.bindingConst.weight")}
+            label={t("study.modeling.bindingConst.weight")}
             variant="outlined"
             type="number"
             value={weight}
@@ -181,7 +181,7 @@ function ConstraintTermFE({ options, term, constraintTerms, saveValue, deleteTer
               right={
                 <OffsetInput onRemove={handleOffsetRemove}>
                   <TextField
-                    label={t("study.modelization.bindingConst.offset")}
+                    label={t("study.modeling.bindingConst.offset")}
                     variant="outlined"
                     type="number"
                     value={offset}
@@ -210,7 +210,7 @@ function ConstraintTermFE({ options, term, constraintTerms, saveValue, deleteTer
             startIcon={<AddCircleOutlineRoundedIcon />}
             onClick={handleOffsetAdd}
           >
-            {t("study.modelization.bindingConst.offset")}
+            {t("study.modeling.bindingConst.offset")}
           </Button>
         ) : null}
         <Button

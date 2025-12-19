@@ -54,7 +54,7 @@ function CorrelationField({ field, index, label }: Props) {
       <Grid item xs={4} md={2}>
         <NumberFE
           key={field.id}
-          label={t("study.modelization.hydro.correlation.coefficient")}
+          label={t("study.modeling.hydro.correlation.coefficient")}
           name={`correlation.${index}.coefficient` as const}
           control={control}
           rules={{ validate: validateNumber({ min: -100, max: 100 }) }}

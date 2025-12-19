@@ -148,7 +148,7 @@ function Renewables() {
       onDelete={handleDelete}
       onNameClick={handleNameClick}
       deleteConfirmationMessage={(rows) => {
-        return t("studies.modelization.clusters.question.delete", {
+        return t("studies.modeling.clusters.question.delete", {
           count: rows.length,
           clusterNames: rows.map((row) => row.name),
         });

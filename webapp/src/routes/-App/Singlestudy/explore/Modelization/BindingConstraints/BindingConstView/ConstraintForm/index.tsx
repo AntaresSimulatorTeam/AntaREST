@@ -173,7 +173,7 @@ function ConstraintForm({ study, constraintId, reloadConstraintsList }: Props) {
           alert="warning"
           open
         >
-          {t("study.modelization.bindingConst.question.deleteBindingConstraint", {
+          {t("study.modeling.bindingConst.question.deleteBindingConstraint", {
             constraintName: constraintId,
           })}
         </ConfirmationDialog>

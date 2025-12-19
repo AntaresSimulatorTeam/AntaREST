@@ -35,14 +35,14 @@ function LinkMatrices({ study, area1, area2, isOldStudy }: Props) {
         studyId={study.id}
         url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}`}
         customColumns={[
-          t("study.modelization.links.matrix.columns.transCapaDirect"),
-          t("study.modelization.links.matrix.columns.transCapaIndirect"),
-          `${t("study.modelization.links.matrix.columns.hurdleCostsDirect")} (${area1}->${area2})`,
-          `${t("study.modelization.links.matrix.columns.hurdleCostsIndirect")} (${area2}->${area1})`,
-          t("study.modelization.links.matrix.columns.impedances"),
-          t("study.modelization.links.matrix.columns.loopFlow"),
-          t("study.modelization.links.matrix.columns.pShiftMin"),
-          t("study.modelization.links.matrix.columns.pShiftMax"),
+          t("study.modeling.links.matrix.columns.transCapaDirect"),
+          t("study.modeling.links.matrix.columns.transCapaIndirect"),
+          `${t("study.modeling.links.matrix.columns.hurdleCostsDirect")} (${area1}->${area2})`,
+          `${t("study.modeling.links.matrix.columns.hurdleCostsIndirect")} (${area2}->${area1})`,
+          t("study.modeling.links.matrix.columns.impedances"),
+          t("study.modeling.links.matrix.columns.loopFlow"),
+          t("study.modeling.links.matrix.columns.pShiftMin"),
+          t("study.modeling.links.matrix.columns.pShiftMax"),
         ]}
       />
     );
@@ -54,23 +54,23 @@ function LinkMatrices({ study, area1, area2, isOldStudy }: Props) {
       tabs={[
         {
           id: "parameters",
-          label: t("study.modelization.links.matrix.parameters"),
+          label: t("study.modeling.links.matrix.parameters"),
           content: (
             <Matrix
               studyId={study.id}
               url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}_parameters`}
-              title={t("study.modelization.links.matrix.parameters")}
+              title={t("study.modeling.links.matrix.parameters")}
               customColumns={[
                 `${t(
-                  "study.modelization.links.matrix.columns.hurdleCostsDirect",
+                  "study.modeling.links.matrix.columns.hurdleCostsDirect",
                 )} (${area1}->${area2})`,
                 `${t(
-                  "study.modelization.links.matrix.columns.hurdleCostsIndirect",
+                  "study.modeling.links.matrix.columns.hurdleCostsIndirect",
                 )} (${area2}->${area1})`,
-                t("study.modelization.links.matrix.columns.impedances"),
-                t("study.modelization.links.matrix.columns.loopFlow"),
-                t("study.modelization.links.matrix.columns.pShiftMin"),
-                t("study.modelization.links.matrix.columns.pShiftMax"),
+                t("study.modeling.links.matrix.columns.impedances"),
+                t("study.modeling.links.matrix.columns.loopFlow"),
+                t("study.modeling.links.matrix.columns.pShiftMin"),
+                t("study.modeling.links.matrix.columns.pShiftMax"),
               ]}
               isTimeSeries={false}
               enableFilters
@@ -79,14 +79,14 @@ function LinkMatrices({ study, area1, area2, isOldStudy }: Props) {
         },
         {
           id: "capacities",
-          label: t("study.modelization.links.matrix.capacities"),
+          label: t("study.modeling.links.matrix.capacities"),
           content: (
             <SplitView splitId="link-transCapaDirect-transCapaIndirect" sizes={[50, 50]}>
               <Box sx={{ pr: 2 }}>
                 <Matrix
                   studyId={study.id}
                   url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_direct`}
-                  title={t("study.modelization.links.matrix.columns.transCapaDirect", {
+                  title={t("study.modeling.links.matrix.columns.transCapaDirect", {
                     area1,
                     area2,
                   })}
@@ -96,7 +96,7 @@ function LinkMatrices({ study, area1, area2, isOldStudy }: Props) {
                 <Matrix
                   studyId={study.id}
                   url={`input/links/${area1.toLowerCase()}/capacities/${area2.toLowerCase()}_indirect`}
-                  title={t("study.modelization.links.matrix.columns.transCapaIndirect", {
+                  title={t("study.modeling.links.matrix.columns.transCapaIndirect", {
                     area1,
                     area2,
                   })}

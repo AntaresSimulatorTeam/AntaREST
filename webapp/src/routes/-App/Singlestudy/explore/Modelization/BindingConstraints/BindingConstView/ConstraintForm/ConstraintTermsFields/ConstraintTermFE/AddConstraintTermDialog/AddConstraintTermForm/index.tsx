@@ -63,7 +63,7 @@ export default function AddConstraintTermForm({ options, constraintTerms }: Prop
         left={
           <NumberFE
             name="weight"
-            label={t("study.modelization.bindingConst.weight")}
+            label={t("study.modeling.bindingConst.weight")}
             variant="outlined"
             control={control}
             rules={{
@@ -88,7 +88,7 @@ export default function AddConstraintTermForm({ options, constraintTerms }: Prop
               <OffsetInput onRemove={handleOffsetRemove}>
                 <NumberFE
                   name="offset"
-                  label={t("study.modelization.bindingConst.offset")}
+                  label={t("study.modeling.bindingConst.offset")}
                   variant="outlined"
                   control={control}
                   rules={{
@@ -108,7 +108,7 @@ export default function AddConstraintTermForm({ options, constraintTerms }: Prop
           sx={{ ml: 3.5 }}
           onClick={() => setIsOffset(true)}
         >
-          {t("study.modelization.bindingConst.offset")}
+          {t("study.modeling.bindingConst.offset")}
         </Button>
       )}
     </Box>

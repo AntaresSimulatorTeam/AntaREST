@@ -55,7 +55,7 @@ function DuplicateConstraintDialog({
 
   return (
     <FormDialog
-      title={t("study.modelization.bindingConst.duplicate")}
+      title={t("study.modeling.bindingConst.duplicate")}
       titleIcon={ContentCopy}
       maxWidth="sm"
       open={open}

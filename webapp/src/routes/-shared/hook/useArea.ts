@@ -21,7 +21,7 @@ function useArea() {
   const study = useStudy();
 
   const { areaId } = useParams({
-    from: "/_authenticated/studies/$studyId/explore/modelization/areas/$areaId",
+    from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId",
   });
 
   const area = useAppSelector((state) => getArea(state, study.id, areaId));

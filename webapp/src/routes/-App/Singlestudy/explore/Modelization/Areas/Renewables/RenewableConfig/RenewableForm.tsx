@@ -84,7 +84,7 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
               />
             )}
             <SelectFE
-              label={t("study.modelization.clusters.tsInterpretation")}
+              label={t("study.modeling.clusters.tsInterpretation")}
               name="tsInterpretation"
               control={control}
               options={TS_INTERPRETATION_OPTIONS}
@@ -93,14 +93,14 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
               }}
             />
           </Fieldset>
-          <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
+          <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>
             <SwitchFE
-              label={t("study.modelization.clusters.enabled")}
+              label={t("study.modeling.clusters.enabled")}
               name="enabled"
               control={control}
             />
             <NumberFE
-              label={t("study.modelization.clusters.unitcount")}
+              label={t("study.modeling.clusters.unitcount")}
               name="unitCount"
               control={control}
               rules={{
@@ -112,7 +112,7 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
               }}
             />
             <NumberFE
-              label={t("study.modelization.clusters.nominalCapacity")}
+              label={t("study.modeling.clusters.nominalCapacity")}
               name="nominalCapacity"
               control={control}
               rules={{

@@ -28,10 +28,10 @@ function StudyExploreLayout() {
     <TabsView
       tabs={[
         {
-          id: "modelization",
-          label: t("study.modelization"),
+          id: "modeling",
+          label: t("study.modeling"),
           linkOptions: linkOptions({
-            to: "/studies/$studyId/explore/modelization",
+            to: "/studies/$studyId/explore/modeling",
             params,
           }),
         },

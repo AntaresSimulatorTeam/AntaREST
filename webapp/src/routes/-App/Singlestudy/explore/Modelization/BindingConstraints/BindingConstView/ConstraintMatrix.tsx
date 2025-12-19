@@ -60,21 +60,21 @@ function ConstraintMatrix({ study, constraintId }: Props) {
           {operator === "less" && (
             <Matrix
               studyId={study.id}
-              title={t("study.modelization.bindingConst.timeSeries.less")}
+              title={t("study.modeling.bindingConst.timeSeries.less")}
               url={`${URL_BASE}${constraintId}_lt`}
             />
           )}
           {operator === "equal" && (
             <Matrix
               studyId={study.id}
-              title={t("study.modelization.bindingConst.timeSeries.equal")}
+              title={t("study.modeling.bindingConst.timeSeries.equal")}
               url={`${URL_BASE}${constraintId}_eq`}
             />
           )}
           {operator === "greater" && (
             <Matrix
               studyId={study.id}
-              title={t("study.modelization.bindingConst.timeSeries.greater")}
+              title={t("study.modeling.bindingConst.timeSeries.greater")}
               url={`${URL_BASE}${constraintId}_gt`}
             />
           )}
@@ -83,14 +83,14 @@ function ConstraintMatrix({ study, constraintId }: Props) {
               <Box sx={{ px: 2 }}>
                 <Matrix
                   studyId={study.id}
-                  title={t("study.modelization.bindingConst.timeSeries.less")}
+                  title={t("study.modeling.bindingConst.timeSeries.less")}
                   url={`${URL_BASE}${constraintId}_lt`}
                 />
               </Box>
               <Box sx={{ px: 2 }}>
                 <Matrix
                   studyId={study.id}
-                  title={t("study.modelization.bindingConst.timeSeries.greater")}
+                  title={t("study.modeling.bindingConst.timeSeries.greater")}
                   url={`${URL_BASE}${constraintId}_gt`}
                 />
               </Box>

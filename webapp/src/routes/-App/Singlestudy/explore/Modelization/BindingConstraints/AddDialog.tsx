@@ -100,7 +100,7 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
   return (
     <FormDialog
       key={study.id}
-      title={t("study.modelization.bindingConst.newBindingConst")}
+      title={t("study.modeling.bindingConst.newBindingConst")}
       config={{ defaultValues }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
@@ -117,7 +117,7 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
         >
           <SwitchFE
             name="enabled"
-            label={t("study.modelization.bindingConst.enabled")}
+            label={t("study.modeling.bindingConst.enabled")}
             control={control}
           />
           <StringFE
@@ -151,19 +151,19 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
           )}
           <StringFE
             name="comments"
-            label={t("study.modelization.bindingConst.comments")}
+            label={t("study.modeling.bindingConst.comments")}
             control={control}
           />
           <SelectFE
             name="timeStep"
-            label={t("study.modelization.bindingConst.type")}
+            label={t("study.modeling.bindingConst.type")}
             variant="outlined"
             options={TIME_STEPS_OPTIONS}
             control={control}
           />
           <SelectFE
             name="operator"
-            label={t("study.modelization.bindingConst.operator")}
+            label={t("study.modeling.bindingConst.operator")}
             variant="outlined"
             options={OPERATOR_OPTIONS}
             control={control}

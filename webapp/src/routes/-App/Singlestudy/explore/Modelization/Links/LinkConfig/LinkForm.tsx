@@ -35,12 +35,12 @@ function LinkForm({ study, link, isOldStudy }: Props) {
   const { t } = useTranslation();
 
   const optionTransCap = Object.values(TransmissionCapacity).map((value) => ({
-    label: t(`study.modelization.links.transmissionCapacities.${value}`),
+    label: t(`study.modeling.links.transmissionCapacities.${value}`),
     value,
   }));
 
   const assetTypeOptions = Object.values(AssetType).map((value) => ({
-    label: t(`study.modelization.links.type.${value}`),
+    label: t(`study.modeling.links.type.${value}`),
     value,
   }));
 
@@ -103,29 +103,29 @@ function LinkForm({ study, link, isOldStudy }: Props) {
         <>
           <Fieldset legend={t("global.general")}>
             <SwitchFE
-              label={t("study.modelization.links.hurdleCost")}
+              label={t("study.modeling.links.hurdleCost")}
               name="hurdlesCost"
               control={control}
             />
             <SwitchFE
-              label={t("study.modelization.links.loopFlows")}
+              label={t("study.modeling.links.loopFlows")}
               name="loopFlow"
               control={control}
             />
             <SwitchFE
-              label={t("study.modelization.links.pst")}
+              label={t("study.modeling.links.pst")}
               name="usePhaseShifter"
               control={control}
             />
             <Fieldset.Break />
             <SelectFE
-              label={t("study.modelization.links.transmissionCapacities")}
+              label={t("study.modeling.links.transmissionCapacities")}
               name="transmissionCapacities"
               control={control}
               options={optionTransCap}
             />
             <SelectFE
-              label={t("study.modelization.links.type")}
+              label={t("study.modeling.links.type")}
               name="assetType"
               control={control}
               options={assetTypeOptions}

@@ -73,7 +73,7 @@ function Links() {
             data.length > 0 && currentLink ? (
               <LinkConfig link={currentLink} />
             ) : (
-              <EmptyView title={t("study.modelization.links.empty")} />
+              <EmptyView title={t("study.modeling.links.empty")} />
             )
           }
         />
