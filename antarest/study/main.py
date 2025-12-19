@@ -103,10 +103,7 @@ def build_study_service(
         config=config,
     )
 
-    directory_repository = DirectoryRepository()
-    directory_service = DirectoryService(
-        directory_repository=directory_repository,
-    )
+    directory_service = DirectoryService(directory_repository=DirectoryRepository())
 
     study_service = study_service or StudyService(
         raw_study_service=raw_study_service,
