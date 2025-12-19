@@ -12,8 +12,8 @@
 
 import ctypes
 import logging
-import os
 import re
+import sys
 from pathlib import PurePosixPath
 from typing import List, Optional
 
@@ -91,7 +91,7 @@ class Explorer:
             if workspace_name == DEFAULT_WORKSPACE_NAME:
                 continue
 
-            if os.name == "nt":
+            if sys.platform == "win32":
                 # On Windows, we use Windows-specific APIs (via `get_volume_label`) to retrieve the disk name
                 # for each workspace.
                 disk_name = get_volume_label(workspace_name)
@@ -114,7 +114,7 @@ def get_volume_label(drive_letter: str) -> Optional[str]:
         return None
 
     # assert we're on windows so mypy doesn't check windll on linux
-    if os.name == "nt":
+    if sys.platform == "win32":
         volume_name_buffer = ctypes.create_unicode_buffer(1024)
         file_system_name_buffer = ctypes.create_unicode_buffer(1024)
         serial_number = ctypes.c_ulong()

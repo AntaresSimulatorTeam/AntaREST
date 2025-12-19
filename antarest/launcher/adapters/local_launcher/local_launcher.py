@@ -16,6 +16,7 @@ import shlex
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -123,12 +124,8 @@ class LocalLauncher(AbstractLauncher):
                 std_out_file = logs_path / f"{job_id}-out.log"
                 with open(std_err_file, "w") as err_file, open(std_out_file, "w") as out_file:
                     creationflags = 0
-                    if os.name == "nt":
-                        # must use getattr otherwise mypy raises an error
-                        # when it's run on linux as the attribute doesn't exist there. Can't do a
-                        # type ignore as mypy will raises an error on windows, because that type ignore
-                        # would be useless as the attribute exists on windows.
-                        creationflags = getattr(subprocess, "CREATE_NO_WINDOW")
+                    if sys.platform == "win32":
+                        creationflags = subprocess.CREATE_NO_WINDOW
                     process = subprocess.Popen(
                         new_args,
                         env=environment_variables,
