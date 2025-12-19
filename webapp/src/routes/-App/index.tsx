@@ -13,7 +13,7 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Renewables from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/Renewables";
+import Renewables from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables";
 import RenewableConfig from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/Renewables/RenewableConfig";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";

@@ -26,11 +26,11 @@ import {
   capacityAggregationFn,
   getClustersWithCapacityTotals,
   toCapacityString,
-} from "../../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
-import usePromiseWithSnackbarError from "../../../../../../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../../types/types";
+} from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
+import usePromiseWithSnackbarError from "../../../../../../../../../hooks/usePromiseWithSnackbarError";
+import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../../types/types";
 import {
   RENEWABLE_GROUPS,
   createRenewableCluster,
@@ -38,7 +38,7 @@ import {
   duplicateRenewableCluster,
   getRenewableClusters,
   type RenewableClusterWithCapacity,
-} from "./utils";
+} from "./Renewables/utils";
 
 const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
