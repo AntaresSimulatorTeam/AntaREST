@@ -19,9 +19,9 @@ import type { StudyMetadata } from "@/types/types";
 import { Chip, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import useAppSelector from "../../../../../../../../../../../redux/hooks/useAppSelector";
-import RenewableForm from "./RenewableForm";
-import RenewableMatrix from "./RenewableMatrix";
+import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
+import RenewableForm from "../Renewables/RenewableConfig/RenewableForm";
+import RenewableMatrix from "../Renewables/RenewableConfig/RenewableMatrix";
 
 function RenewableConfig() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
