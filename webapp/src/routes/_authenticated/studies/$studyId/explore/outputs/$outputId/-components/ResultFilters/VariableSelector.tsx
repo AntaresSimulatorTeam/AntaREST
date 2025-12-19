@@ -134,13 +134,13 @@ function VariableSelector({
       renderInput={(params) => (
         <StringFE
           {...params}
-          label={t("study.results.variable")}
+          label={t("study.outputs.variable")}
           margin="dense"
           sx={{ minWidth: 160 }}
           size="extra-small"
         />
       )}
-      noOptionsText={t("study.results.noVariables")}
+      noOptionsText={t("study.outputs.noVariables")}
     />
   );
 }

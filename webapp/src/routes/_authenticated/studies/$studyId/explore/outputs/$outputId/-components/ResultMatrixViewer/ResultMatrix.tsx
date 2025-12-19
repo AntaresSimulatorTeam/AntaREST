@@ -65,7 +65,7 @@ function ResultMatrix({
         }
 
         if (!isNonEmptyMatrix(filteredData)) {
-          return <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />;
+          return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;
         }
 
         return (
@@ -88,7 +88,7 @@ function ResultMatrix({
             // for the selected area or link result
             // TODO: Instead this should be an empty response from the server
             toError(err).message.includes("404")
-              ? t("study.results.noData")
+              ? t("study.outputs.noData")
               : t("data.error.matrix")
           }
           icon={GridOffIcon}

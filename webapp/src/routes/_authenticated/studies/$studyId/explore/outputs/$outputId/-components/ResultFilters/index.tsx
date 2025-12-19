@@ -273,7 +273,7 @@ function ResultFilters({
       id: "display",
       field: (
         <SelectFE
-          label={t("study.results.display")}
+          label={t("study.outputs.display")}
           value={dataType}
           options={[
             { value: "values", label: "General values" },
@@ -339,7 +339,7 @@ function ResultFilters({
       id: "temporality",
       field: (
         <SelectFE
-          label={t("study.results.temporality")}
+          label={t("study.outputs.temporality")}
           value={frequency}
           options={[
             { value: "hourly", label: "Hourly" },

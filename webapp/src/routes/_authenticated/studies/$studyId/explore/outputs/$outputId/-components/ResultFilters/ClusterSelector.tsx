@@ -62,13 +62,13 @@ function ClusterSelector({
   const getLabel = () => {
     switch (dataType) {
       case "details":
-        return t("study.results.thermalCluster");
+        return t("study.outputs.thermalCluster");
       case "details-res":
-        return t("study.results.renewableCluster");
+        return t("study.outputs.renewableCluster");
       case "details-STstorage":
-        return t("study.results.shortTermStorage");
+        return t("study.outputs.shortTermStorage");
       default:
-        return t("study.results.cluster");
+        return t("study.outputs.cluster");
     }
   };
 
@@ -95,7 +95,7 @@ function ClusterSelector({
           sx={{ minWidth: 160 }}
         />
       )}
-      noOptionsText={t("study.results.noClusters")}
+      noOptionsText={t("study.outputs.noClusters")}
     />
   );
 }

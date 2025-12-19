@@ -62,7 +62,7 @@ function StudyExploreLayout() {
         },
         {
           id: "outputs",
-          label: t("study.results"),
+          label: t("study.outputs"),
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/outputs",
             params,

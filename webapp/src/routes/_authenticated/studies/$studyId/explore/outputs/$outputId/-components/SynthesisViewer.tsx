@@ -45,7 +45,7 @@ function SynthesisViewer({ synthesisRes }: SynthesisViewerProps) {
         ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
         ifFulfilled={(matrix) => {
           if (!matrix) {
-            return <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />;
+            return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;
           }
 
           return (

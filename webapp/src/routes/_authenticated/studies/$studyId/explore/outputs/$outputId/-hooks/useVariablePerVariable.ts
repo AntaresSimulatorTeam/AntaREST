@@ -204,7 +204,7 @@ export function useVariablePerVariable({
         frequency,
       };
     } catch (error) {
-      enqueueErrorSnackbar(t("study.results.materializationStartFailed"), toError(error));
+      enqueueErrorSnackbar(t("study.outputs.materializationStartFailed"), toError(error));
       setIsMaterializing(false);
     }
   };
@@ -226,7 +226,7 @@ export function useVariablePerVariable({
       (message: string) => {
         setIsMaterializing(false);
         setMaterializationTaskId(null);
-        enqueueErrorSnackbar(t("study.results.materializationFailed"), new Error(message));
+        enqueueErrorSnackbar(t("study.outputs.materializationFailed"), new Error(message));
         materializationParamsRef.current = null;
       },
       [enqueueErrorSnackbar, t],

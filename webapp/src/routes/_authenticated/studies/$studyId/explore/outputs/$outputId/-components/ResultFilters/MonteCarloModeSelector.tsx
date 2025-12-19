@@ -27,12 +27,12 @@ function MonteCarloModeSelector({ value, onChange, disabled }: MonteCarloModeSel
 
   return (
     <SelectFE
-      label={t("study.results.monteCarlo")}
+      label={t("study.outputs.monteCarlo")}
       value={value}
       options={[
         { value: "mc-all", label: "Synthesis" },
         { value: "mc-ind", label: "Year by year" },
-        { value: "variable-per-variable", label: t("study.results.variablePerVariable") },
+        { value: "variable-per-variable", label: t("study.outputs.variablePerVariable") },
       ]}
       size="extra-small"
       onChange={(event) => onChange(event.target.value)}

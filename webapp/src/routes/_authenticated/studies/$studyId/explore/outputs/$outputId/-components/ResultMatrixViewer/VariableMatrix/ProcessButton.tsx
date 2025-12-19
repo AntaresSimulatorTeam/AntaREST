@@ -33,7 +33,7 @@ function ProcessButton({ onClick, loading = false, disabled = false }: ProcessBu
       disabled={disabled || loading}
       startIcon={loading ? <CircularProgress size={16} /> : <PlayArrowIcon />}
     >
-      {t("study.results.process")}
+      {t("study.outputs.process")}
     </Button>
   );
 }

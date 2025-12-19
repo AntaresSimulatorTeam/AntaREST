@@ -60,23 +60,6 @@ import { useTranslation } from "react-i18next";
 import useStudy from "../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/")({
-  // loader: ({ params: { studyId }, location }) => {
-  //   const templates = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
-  //   const sortedTemplates = sortByName(templates);
-
-  //   if (
-  //     sortedTemplates.length > 0 &&
-  //     location.pathname === `/studies/${studyId}/explore/tablemode`
-  //   ) {
-  //     throw redirect({
-  //       to: "/studies/$studyId/explore/tablemode/$tableModeId",
-  //       params: { studyId, tableModeId: sortedTemplates[0].name },
-  //       replace: true,
-  //     });
-  //   }
-
-  //   return sortedTemplates;
-  // },
   component: Outputs,
 });
 

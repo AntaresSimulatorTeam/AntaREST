@@ -92,7 +92,7 @@ function VariableMatrix({
     !variablesMetadata ||
     !hasVariablesForItem(variablesMetadata, itemType, selectedItemId, selectedItem)
   ) {
-    return <EmptyView title={t("study.results.noVariablesForArea")} icon={GridOffIcon} />;
+    return <EmptyView title={t("study.outputs.noVariablesForArea")} icon={GridOffIcon} />;
   }
 
   ////////////////////////////////////////////////////////////////
@@ -105,7 +105,7 @@ function VariableMatrix({
       ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
       ifFulfilled={(matrix) => {
         if (!matrix || !isNonEmptyMatrix(matrix.data)) {
-          return <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />;
+          return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;
         }
 
         return (
@@ -132,7 +132,7 @@ function VariableMatrix({
           // state using the taskId and the "IN_PROGRESS" status
           return (
             <EmptyView
-              title={t("study.results.scanRequired")}
+              title={t("study.outputs.scanRequired")}
               icon={GridOffIcon}
               actions={<ProcessButton onClick={onMaterializeVariable} loading={isMaterializing} />}
             />

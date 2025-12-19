@@ -113,7 +113,7 @@ function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps)
             <DownloadButton onClick={handleDownload} />
           </Menubar>
           {isEmptyContent(text) ? ( // TODO remove when files become editable
-            <EmptyView icon={GridOffIcon} title={t("study.results.noData")} />
+            <EmptyView icon={GridOffIcon} title={t("study.outputs.noData")} />
           ) : (
             <SyntaxHighlighter
               style={atomOneDark}
