@@ -78,7 +78,6 @@ from antarest.study.storage.variantstudy.model.model import (
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
-from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +107,6 @@ class VariantStudyService(AbstractStorageService):
         self.repository = repository
         self.event_bus = event_bus
         self.command_factory = command_factory
-        self.generator = VariantCommandGenerator(self.study_factory)
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
