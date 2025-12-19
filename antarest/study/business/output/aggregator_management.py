@@ -27,6 +27,7 @@ from antarest.study.business.output.utils import (
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
+    concatenate_dataframe_multi_indexed_columns,
     get_start_column,
     normalize_df_column_names,
     parse_headers,
@@ -74,13 +75,6 @@ def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc
     return new_column_order
 
 
-def _infer_time_id(df: pd.DataFrame, is_details: bool) -> List[int]:
-    if is_details:
-        return df[TIME_ID_COL].tolist()
-    else:
-        return list(range(1, len(df) + 1))
-
-
 def _filtered_files_listing(
     folders_to_check: List[Path],
     query_file: str,
@@ -102,6 +96,7 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
+        transform_columns_headers: bool,  # False when used by the Imagrid `/download` endpoint.
         mc_years: Optional[Sequence[int]] = None,
     ):
         self.output_path = output_path
@@ -124,6 +119,7 @@ class AggregatorManager:
             else MCRoot.MC_ALL
         )
         self._output_first_column = get_start_column(self.frequency)
+        self.transform_columns_headers = transform_columns_headers
 
     def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
         content = file_path.read_text(encoding="utf-8")
@@ -218,16 +214,15 @@ class AggregatorManager:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
+            df_columns = [col[0] for col in df.columns] if not self.transform_columns_headers else df.columns.to_list()
             if is_details:
                 filtered_columns = [CLUSTER_ID_COL, TIME_ID_COL] + [
-                    c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
+                    c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)
                 ]
             elif self.mc_root == MCRoot.MC_ALL:
-                filtered_columns = [
-                    c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
-                ]
+                filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
             else:
-                filtered_columns = [c for c in df.columns.tolist() if c.lower() in lower_case_columns]
+                filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
             df = df.loc[:, filtered_columns]
         return df
 
@@ -247,9 +242,9 @@ class AggregatorManager:
         Returns:
             the DataFrame with the correct columns and values
         """
-
-        df = self._parse_output_file(file_path, normalize_column_names=not is_details)
-        if not is_details:
+        normalize_cols = self.transform_columns_headers and not is_details
+        df = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
+        if not self.transform_columns_headers or not is_details:
             return df
 
         nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
@@ -286,6 +281,9 @@ class AggregatorManager:
             # columns filtering
             df = self.columns_filtering(df, is_details)
 
+            if not self.transform_columns_headers:
+                concatenate_dataframe_multi_indexed_columns(df)
+
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(df.columns.tolist(), column_name, is_details, self.mc_root)
 
@@ -300,10 +298,13 @@ class AggregatorManager:
                 relative_path_parts = file_path.relative_to(self.mc_all_path).parts
                 df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
 
-            # add a column for the time id
-            df[TIME_ID_COL] = _infer_time_id(df, is_details)
-            # Reorganize the columns
-            df = df.reindex(columns=pd.Index(new_column_order))
+            if self.transform_columns_headers:
+                # add a column for the time id
+                if not is_details:
+                    df[TIME_ID_COL] = range(1, len(df) + 1)
+
+                # Reorganize the columns
+                df = df.reindex(columns=pd.Index(new_column_order))
 
             yield df
 

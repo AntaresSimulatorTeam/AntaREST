@@ -1,7 +1,16 @@
 from datetime import timedelta
 from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
-from pydantic import BaseModel, StrictBool, StrictInt, StrictStr, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    StrictBool,
+    StrictInt,
+    StrictStr,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 
 class LoadConfig(BaseModel):
@@ -84,6 +93,4 @@ class LoadConfig(BaseModel):
 
         return values
 
-    class Config:
-        str_min_length = 1
-        str_strip_whitespace = True
+    model_config = ConfigDict(str_min_length=1, str_strip_whitespace=True)
