@@ -450,7 +450,9 @@ def _check_version(
 def validate_thematic_trimming_against_version(
     thematic_trimming: ThematicTrimming | ThematicTrimmingUpdate, version: StudyVersion
 ) -> None:
-    forbidden_fields = set(thematic_trimming.model_fields) - get_thematic_trimming_fields_according_to_version(version)
+    forbidden_fields = set(
+        thematic_trimming.__class__.model_fields
+    ) - get_thematic_trimming_fields_according_to_version(version)
     for field in forbidden_fields:
         _check_version(thematic_trimming, field, version)
 

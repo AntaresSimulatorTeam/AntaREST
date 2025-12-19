@@ -17,7 +17,7 @@ from typing import BinaryIO, Iterator, List, Optional, Sequence
 import pandas as pd
 
 from antarest.study.business.output.utils import QueryFileType
-from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO, StudySimResultDTO
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -69,14 +69,6 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def create_output_download(
-        self, study_id: str, output_id: str, data: StudyDownloadDTO, filetype: ExportFormat, target: Path
-    ) -> None:
-        """
-        For the "download" feature of the API.
-        """
-
-    @abstractmethod
     def output_exists(self, study_id: str, output_id: str) -> bool:
         """Check if a study output exists."""
 
@@ -121,6 +113,7 @@ class IOutputStorage(ABC):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
+        transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
     ) -> Iterator[pd.DataFrame]:
         """
