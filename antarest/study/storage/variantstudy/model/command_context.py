@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from pydantic import ConfigDict
+
 from antarest.blobstore.service import IBlobService
 from antarest.core.serde import AntaresBaseModel
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -20,5 +22,4 @@ class CommandContext(AntaresBaseModel):
     matrix_service: ISimpleMatrixService
     blob_service: IBlobService
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
