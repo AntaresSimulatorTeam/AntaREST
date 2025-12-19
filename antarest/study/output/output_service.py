@@ -66,9 +66,9 @@ from antarest.study.business.output.variables_management import (
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
     MatrixAggregationResultDTO,
+    MatrixFrequency,
     MatrixIndex,
     StudyDownloadDTO,
-    StudyDownloadLevelDTO,
     StudyDownloadType,
     StudySimResultDTO,
 )
@@ -82,7 +82,6 @@ from antarest.study.output.output_model import (
 )
 from antarest.study.output.output_storage import IOutputStorage
 from antarest.study.storage.df_download import export_df_chunks
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
@@ -347,7 +346,7 @@ class OutputService:
 
         return output_id
 
-    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
         """
         Get the time index (start date and step count) for output matrices with a given frequency.
         Args:

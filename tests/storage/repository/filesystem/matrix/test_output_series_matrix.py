@@ -17,9 +17,9 @@ import pandas as pd
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 
 MATRIX_DAILY_DATA = """\

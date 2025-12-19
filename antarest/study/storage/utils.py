@@ -53,9 +53,9 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_9_0,
+    MatrixFrequency,
     MatrixIndex,
     Study,
-    StudyDownloadLevelDTO,
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
@@ -291,7 +291,7 @@ DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
 def get_start_date(
     file_study: FileStudy,
     output_id: Optional[str] = None,
-    level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY,
+    level: MatrixFrequency = MatrixFrequency.HOURLY,
 ) -> MatrixIndex:
     """
     Retrieve the index (start date and step count) for output or input matrices
@@ -324,17 +324,17 @@ def get_start_date(
     start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
 
     def _get_steps(
-        daily_steps: int, temporality: StudyDownloadLevelDTO, begin_date: datetime, is_output: Optional[str] = None
+        daily_steps: int, temporality: MatrixFrequency, begin_date: datetime, is_output: Optional[str] = None
     ) -> int:
         temporality_mapping = {
-            StudyDownloadLevelDTO.DAILY: daily_steps,
-            StudyDownloadLevelDTO.HOURLY: daily_steps * 24,
-            StudyDownloadLevelDTO.ANNUAL: 1,
-            StudyDownloadLevelDTO.WEEKLY: math.ceil(daily_steps / 7),
-            StudyDownloadLevelDTO.MONTHLY: 12,
+            MatrixFrequency.DAILY: daily_steps,
+            MatrixFrequency.HOURLY: daily_steps * 24,
+            MatrixFrequency.ANNUAL: 1,
+            MatrixFrequency.WEEKLY: math.ceil(daily_steps / 7),
+            MatrixFrequency.MONTHLY: 12,
         }
 
-        if temporality == StudyDownloadLevelDTO.MONTHLY and is_output:
+        if temporality == MatrixFrequency.MONTHLY and is_output:
             end_date = begin_date + timedelta(days=daily_steps)
             same_year = end_date.year == begin_date.year
             return 1 + end_date.month - begin_date.month if same_year else (13 - begin_date.month) + end_date.month
