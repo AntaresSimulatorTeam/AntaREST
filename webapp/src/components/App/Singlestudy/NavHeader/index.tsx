@@ -15,7 +15,6 @@
 import { Box } from "@mui/material";
 import type { StudyMetadata } from "../../../../types/types";
 import Actions from "./Actions";
-import Details from "./Details";
 
 interface Props {
   study: StudyMetadata;
@@ -43,7 +42,6 @@ function NavHeader({ study, parentStudy, variantNb, isExplorer }: Props) {
         variantNb={variantNb}
         isExplorer={isExplorer}
       />
-      <Details study={study} parentStudy={parentStudy} variantNb={variantNb} />
     </Box>
   );
 }
