@@ -14,7 +14,6 @@ import ctypes
 import logging
 import os
 import re
-import sys
 from pathlib import PurePosixPath
 from typing import List, Optional
 
@@ -115,14 +114,14 @@ def get_volume_label(drive_letter: str) -> Optional[str]:
         return None
 
     # assert we're on windows so mypy doesn't check windll on linux
-    if sys.platform == "win32":
+    if os.name == "nt":
         volume_name_buffer = ctypes.create_unicode_buffer(1024)
         file_system_name_buffer = ctypes.create_unicode_buffer(1024)
         serial_number = ctypes.c_ulong()
         max_component_length = ctypes.c_ulong()
         file_system_flags = ctypes.c_ulong()
 
-        result = ctypes.windll.kernel32.GetVolumeInformationW(
+        result = ctypes.windll.kernel32.GetVolumeInformationW(  # type: ignore[attr-defined]
             ctypes.c_wchar_p(drive_letter),
             volume_name_buffer,
             ctypes.sizeof(volume_name_buffer),
