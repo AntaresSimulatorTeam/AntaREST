@@ -14,6 +14,7 @@
 
 import eslint from "@eslint/js";
 import queryPlugin from "@tanstack/eslint-plugin-query";
+import routerPlugin from "@tanstack/eslint-plugin-router";
 import vitestPlugin from "@vitest/eslint-plugin";
 import jsdocPlugin from "eslint-plugin-jsdoc";
 import licenseHeaderPlugin from "eslint-plugin-license-header";
@@ -44,6 +45,7 @@ export default [
   reactPlugin.configs.flat["jsx-runtime"],
   jsdocPlugin.configs["flat/recommended-typescript"],
   ...queryPlugin.configs["flat/recommended"],
+  ...routerPlugin.configs["flat/recommended"],
   vitestPlugin.configs.recommended,
   prettierPluginRecommended, // Must be the last one
   {
