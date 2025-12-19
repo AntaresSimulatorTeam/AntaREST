@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Annotated, Any, Sequence
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, Query, UploadFile
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
@@ -33,7 +33,7 @@ from antarest.study.business.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.model import MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
 from antarest.study.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
@@ -47,11 +47,13 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+
 download_expiration_time_query: Any = Query(
     gt=0,
     lt=1000,
     description="Expiration time for the download file (in minutes)",
 )
+
 DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
@@ -141,50 +143,19 @@ def create_output_routes(
         logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
         return output_service.get_output_time_index(study_id, output_id, frequency)
 
-    @bp.post(
-        "/studies/{study_id}/outputs/{output_id}/download",
-        summary="Get outputs data",
-        response_model=None,  # only pydantic models are supported as response model
-    )
+    @bp.post("/studies/{study_id}/outputs/{output_id}/download", summary="Get outputs data")
     def output_download(
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
-        request: Request,
-        use_task: bool = False,
+        use_task: bool = Query(default=False, deprecated=True),
         tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
-    ) -> Response | FileDownloadTaskDTO | FileResponse:
+    ) -> FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
-        accept = request.headers["Accept"]
-        filetype = ExportFormat.from_dto(accept)
 
-        if use_task:
-            return output_service.start_output_download_creation(
-                study_id,
-                output_id,
-                data,
-                filetype,
-            )
-        else:
-            output_service.create_output_download(
-                study_id,
-                output_id,
-                data,
-                filetype,
-                tmp_export_file,
-            )
-            if filetype == ExportFormat.JSON:
-                headers = {"Content-Disposition": "inline"}
-            elif filetype == ExportFormat.TAR_GZ:
-                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
-            elif filetype == ExportFormat.ZIP:
-                headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
-            else:  # pragma: no cover
-                raise NotImplementedError(f"Export format {filetype} is not supported")
-
-            return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
+        return output_service.download_outputs(study_id, output_id, data, tmp_export_file)
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",

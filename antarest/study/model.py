@@ -16,7 +16,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -28,6 +28,7 @@ from pydantic import (
     alias_generators,
     computed_field,
     field_validator,
+    model_validator,
 )
 from pydantic.alias_generators import to_camel
 from sqlalchemy import (
@@ -588,58 +589,26 @@ class StudyDownloadLevelDTO(enum.StrEnum):
             raise ShouldNotHappenException()
 
 
-class ExportFormat(enum.StrEnum):
-    ZIP = "application/zip"
-    TAR_GZ = "application/tar+gz"
-    JSON = "application/json"
-
-    @classmethod
-    def from_dto(cls, accept_header: str) -> "ExportFormat":
-        """
-        Convert the "Accept" header to the corresponding content type.
-
-        Args:
-            accept_header: Value of the "Accept" header.
-
-        Returns:
-            The corresponding content type: ZIP, TAR_GZ or JSON.
-            By default, JSON is returned if the format is not recognized.
-            For instance, if the "Accept" header is "*/*", JSON is returned.
-        """
-        mapping = {
-            "application/zip": ExportFormat.ZIP,
-            "application/tar+gz": ExportFormat.TAR_GZ,
-            "application/json": ExportFormat.JSON,
-        }
-        return mapping.get(accept_header, ExportFormat.JSON)
-
-    @property
-    def suffix(self) -> str:
-        """
-        Returns the file suffix associated with the format: ".zip", ".tar.gz" or ".json".
-        """
-        mapping = {
-            ExportFormat.ZIP: ".zip",
-            ExportFormat.TAR_GZ: ".tar.gz",
-            ExportFormat.JSON: ".json",
-        }
-        return mapping[self]
-
-
-class StudyDownloadDTO(AntaresBaseModel):
+class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
     """
     DTO used to download outputs
     """
 
     type: StudyDownloadType
-    years: Optional[List[int]]
+    years: list[int] = []
     level: StudyDownloadLevelDTO
-    filterIn: Optional[str]
-    filterOut: Optional[str]
-    filter: Optional[List[str]]
-    columns: Optional[List[str]]
-    synthesis: bool = False
-    includeClusters: bool = False
+    filter_in: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
+    filter_out: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
+    filter: list[str] = []
+    columns: list[str] = []
+    synthesis: Annotated[bool, Field(deprecated=True, default=False)]  # We always consider it's False
+    include_clusters: bool = False
+
+    @model_validator(mode="after")
+    def check_coherence(self) -> "StudyDownloadDTO":
+        if self.include_clusters and self.type == StudyDownloadType.LINK:
+            raise ValueError("Cannot ask for cluster values for type link")
+        return self
 
 
 class MatrixIndex(AntaresBaseModel):
@@ -660,33 +629,12 @@ class TimeSerie(AntaresBaseModel):
 class TimeSeriesData(AntaresBaseModel):
     type: StudyDownloadType
     name: str
-    data: Dict[str, List[TimeSerie]] = {}
+    data: dict[str, list[TimeSerie]] = {}
 
 
 class MatrixAggregationResultDTO(AntaresBaseModel):
     index: MatrixIndex
-    data: List[TimeSeriesData]
-    warnings: List[str]
-
-
-class MatrixAggregationResult(AntaresBaseModel):
-    index: MatrixIndex
-    data: Dict[Tuple[StudyDownloadType, str], Dict[str, List[TimeSerie]]]
-    warnings: List[str]
-
-    def to_dto(self) -> MatrixAggregationResultDTO:
-        return MatrixAggregationResultDTO.model_construct(
-            index=self.index,
-            data=[
-                TimeSeriesData.model_construct(
-                    type=key_type,
-                    name=key_name,
-                    data=self.data[(key_type, key_name)],
-                )
-                for key_type, key_name in self.data
-            ],
-            warnings=self.warnings,
-        )
+    data: list[TimeSeriesData]
 
 
 class DirectoryMetadata(AntaresBaseModel):
