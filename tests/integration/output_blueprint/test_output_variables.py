@@ -17,8 +17,8 @@ from starlette.testclient import TestClient
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.model import MatrixFrequency
 from antarest.study.output.output_model import OutputVariables, OutputVariablesViewsModel
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 from tests.integration.utils import wait_task_completion
 
@@ -248,6 +248,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
     res = client.get(f"{url}/data", params=query_params)
+    print(res.json()["data"])
     assert np.isnan(np.array(res.json()["data"])).all()
 
     # Ensures we raise before running the task when asking for materializing wrong data.
@@ -257,3 +258,51 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         "description": "Could not retrieve variables view for output '20201014-1425eco-goodbye' : The variable 'H. LEV' does not exist for area 'FAKE_AREA' and type 'area'.",
         "exception": "OutputVariablesViewError",
     }
+
+
+def test_get_output_variables_view_format(client: TestClient, user_access_token: str, internal_study_id: str):
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    output_id = "20201014-1425eco-goodbye"
+    url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
+
+    # Areas
+    query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
+
+    # Materialize the data
+    task_id = client.post(f"{url}/materialize", params=query_params).json()
+    # Ask for data with materializing in process -> Should return a 404 with a status `IN_PROGRESS`
+    res = client.get(f"{url}/data", params=query_params)
+    assert res.json() == {"status": "IN_PROGRESS", "task_id": task_id}
+    # Wait for materializing to end
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+
+    query_params["export_format"] = "CSV"
+    # Asks for the data. This time, it should succeed.
+    res = client.get(f"{url}/data", params=query_params)
+    assert (
+        res.content.decode("utf-8")
+        == """,1,2
+2018-01-07,46452000,46452000
+2018-01-14,46452000,46452000
+"""
+    )
+
+    query_params["index"] = "false"
+    res = client.get(f"{url}/data", params=query_params)
+    assert (
+        res.content.decode("utf-8")
+        == """1,2
+46452000,46452000
+46452000,46452000
+"""
+    )
+
+    query_params["header"] = "false"
+    res = client.get(f"{url}/data", params=query_params)
+    assert (
+        res.content.decode("utf-8")
+        == """46452000,46452000
+46452000,46452000
+"""
+    )

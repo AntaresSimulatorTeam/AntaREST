@@ -419,7 +419,7 @@ class OutputService:
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
         # Fetches time_index
-        time_index = self.get_output_time_index(study_id, output_id, data.level)
+        time_index = self.get_output_time_index(study_id, output_id, MatrixFrequency(data.level))
 
         # Fetches the data
         query_files: list[QueryFileType]
@@ -748,6 +748,11 @@ class OutputService:
         variables_list = self.get_output_variables_list(study_id, output_id)
         return OutputVariablesInformation.from_variables_list(variables_list)
 
+    def _with_time_index(self, df: pd.DataFrame, matrix_index: MatrixIndex) -> pd.DataFrame:
+        time_column = pd.date_range(start=matrix_index.start_date, periods=len(df), freq=matrix_index.level.value[0])
+        df.index = time_column
+        return df
+
     def get_output_variables_view(
         self,
         study_id: str,
@@ -761,6 +766,7 @@ class OutputService:
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
+        with_index: bool = False,
     ) -> pd.DataFrame | OutputVariablesViewResponse:
         """
         If the view is already registered in DB, updates its `last_read` value and returns it.
@@ -782,7 +788,12 @@ class OutputService:
             db.session.commit()
 
             # Return the dataframe
-            return self._matrix_service.get(db_model.matrix_id)
+            df = self._matrix_service.get(db_model.matrix_id)
+            return (
+                self._with_time_index(df, self.get_output_time_index(study_id, output_id, frequency))
+                if with_index
+                else df
+            )
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)

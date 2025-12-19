@@ -12,6 +12,7 @@
 import collections
 import logging
 from http import HTTPStatus
+from io import BytesIO
 from pathlib import Path
 from typing import Annotated, Any, Sequence
 
@@ -546,6 +547,13 @@ def create_output_routes(
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
+        export_format: TableExportFormat | None = None,
+        with_header: bool = Query(
+            True, alias="header", description="Whether to include the header or not", title="With Header"
+        ),
+        with_index: bool = Query(
+            True, alias="index", description="Whether to include the index or not", title="With Index"
+        ),
     ) -> Response:
         """
         Fetches the variables view for a given output and a given configuration.
@@ -566,11 +574,19 @@ def create_output_routes(
             thermal_id,
             renewable_id,
             st_storage_id,
+            with_index,
         )
-        if isinstance(view, pd.DataFrame):
+        if not isinstance(view, pd.DataFrame):
+            return Response(status_code=HTTPStatus.NOT_FOUND, content=to_json(view), media_type="application/json")
+
+        # TODO: should be elsewhere
+        if not export_format:
             content = view.to_dict(orient="split", index=False)
             return Response(content=to_json(content), media_type="application/json")
-        return Response(status_code=404, content=to_json(view), media_type="application/json")
+
+        buffer = BytesIO()
+        export_format.export_table(view, buffer, with_header=with_header, with_index=with_index)
+        return Response(status_code=HTTPStatus.OK, content=buffer.getvalue(), media_type=export_format.media_type)
 
     @bp.post(
         "/studies/{uuid}/output/{output_id}/variables-views/materialize",
