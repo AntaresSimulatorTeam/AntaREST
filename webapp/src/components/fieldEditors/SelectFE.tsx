@@ -282,7 +282,13 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
       {groupsOfOptions.flatMap((group) =>
         [
           group.name && (
-            <ListSubheader key={group.name} inset>
+            <ListSubheader
+              key={group.name}
+              sx={(theme) => ({
+                backgroundColor: theme.palette.background.paper,
+                backgroundImage: theme.vars.overlays[1],
+              })}
+            >
               {group.name}
             </ListSubheader>
           ),

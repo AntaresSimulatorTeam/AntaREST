@@ -19,7 +19,7 @@ import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box } from "@mui/material";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -51,7 +51,6 @@ function Thermals() {
   const study = useStudy();
   const area = useArea();
   const { t } = useTranslation();
-  const navigate = Route.useNavigate();
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     ThermalClusterWithCapacity[]
@@ -140,17 +139,6 @@ function Thermals() {
     return deleteThermalClusters(study.id, area.id, ids);
   };
 
-  const handleNameClick = (row: ThermalClusterWithCapacity) => {
-    navigate({
-      to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId",
-      params: {
-        studyId: study.id,
-        areaId: area.id,
-        thermalId: row.id,
-      },
-    });
-  };
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -165,7 +153,16 @@ function Thermals() {
       onCreate={handleCreate}
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}
-      onNameClick={handleNameClick}
+      nameLinkOptions={(row) =>
+        linkOptions({
+          to: "/studies/$studyId/explore/modelization/areas/$areaId/thermals/$thermalId",
+          params: {
+            studyId: study.id,
+            areaId: area.id,
+            thermalId: row.id,
+          },
+        })
+      }
       deleteConfirmationMessage={(rows) => {
         return t("studies.modelization.clusters.question.delete", {
           count: rows.length,

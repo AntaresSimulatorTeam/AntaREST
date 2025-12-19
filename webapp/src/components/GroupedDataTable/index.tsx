@@ -23,6 +23,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { Box, Button, Skeleton } from "@mui/material";
+import { type ToOptions } from "@tanstack/react-router";
 import {
   MaterialReactTable,
   MRT_ToggleFiltersButton,
@@ -35,6 +36,7 @@ import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
+import RouterLink from "../router/RouterLink";
 import CreateDialog from "./CreateDialog";
 import DuplicateDialog from "./DuplicateDialog";
 import type { TRow } from "./types";
@@ -53,6 +55,7 @@ export interface GroupedDataTableProps<
   onDuplicate?: (row: TData, newName: string) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
   onNameClick?: (row: TData) => void;
+  nameLinkOptions?: (row: TData) => ToOptions;
   onDataChange?: (data: TData[]) => void;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((rows: TData[]) => string);
@@ -74,6 +77,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   onDuplicate,
   onDelete,
   onNameClick,
+  nameLinkOptions,
   onDataChange,
   isLoading,
   deleteConfirmationMessage,
@@ -84,8 +88,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  // Allow to use the last root of `onNameClick` in `tableColumns`
-  const callbacksRef = useUpdatedRef({ onNameClick });
+  const callbacksRef = useUpdatedRef({ onNameClick, nameLinkOptions });
   const pendingRows = useRef<Array<TRow<TGroups[number]>>>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
 
@@ -115,13 +118,22 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
         size: 100,
         filterVariant: "autocomplete",
         filterSelectOptions: existingNames,
-        Cell:
-          callbacksRef.current.onNameClick &&
-          (({ renderedCellValue, row }) => {
-            if (isPendingRow(row.original)) {
-              return renderedCellValue;
-            }
+        Cell: ({ renderedCellValue, row }) => {
+          const { onNameClick, nameLinkOptions } = callbacksRef.current;
 
+          if (isPendingRow(row.original)) {
+            return renderedCellValue;
+          }
+
+          if (nameLinkOptions) {
+            return (
+              <RouterLink color="textPrimary" underline="hover" {...nameLinkOptions(row.original)}>
+                {renderedCellValue}
+              </RouterLink>
+            );
+          }
+
+          if (onNameClick) {
             return (
               <Box
                 sx={{
@@ -131,12 +143,15 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
                     textDecoration: "underline",
                   },
                 }}
-                onClick={() => callbacksRef.current.onNameClick?.(row.original)}
+                onClick={() => onNameClick(row.original)}
               >
                 {renderedCellValue}
               </Box>
             );
-          }),
+          }
+
+          return renderedCellValue;
+        },
         ...getTableOptionsForAlign("left"),
       },
       ...columns.map(

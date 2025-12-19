@@ -18,7 +18,7 @@ import type { TRow } from "@/components/GroupedDataTable/types";
 import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box, Tooltip } from "@mui/material";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -46,7 +46,6 @@ function Storages() {
   const study = useStudy();
   const area = useArea();
   const { t } = useTranslation();
-  const navigate = Route.useNavigate();
 
   const { data: storages = [], isLoading } = usePromiseWithSnackbarError(
     () => getStorages(study.id, area.id),
@@ -162,17 +161,6 @@ function Storages() {
     return deleteStorages(study.id, area.id, ids);
   };
 
-  const handleNameClick = (row: FormalizedStorage) => {
-    navigate({
-      to: "/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId",
-      params: {
-        studyId: study.id,
-        areaId: area.id,
-        storageId: row.id,
-      },
-    });
-  };
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -187,7 +175,16 @@ function Storages() {
       onCreate={handleCreate}
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}
-      onNameClick={handleNameClick}
+      nameLinkOptions={(row) =>
+        linkOptions({
+          to: "/studies/$studyId/explore/modelization/areas/$areaId/storages/$storageId",
+          params: {
+            studyId: study.id,
+            areaId: area.id,
+            storageId: row.id,
+          },
+        })
+      }
       deleteConfirmationMessage={(rows) => {
         return t("studies.modelization.clusters.question.delete", {
           count: rows.length,
