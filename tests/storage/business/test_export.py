@@ -133,9 +133,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
     command_context = CommandContext(
         generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
-    factory = MatrixUriMapperFactory(command_context.matrix_service)
-    study_factory = StudyFactory(matrix_mapper_factory=factory, cache=Mock())
-    raw_study_service = RawStudyService(config=Mock(), study_factory=study_factory, cache=Mock())
+    raw_study_service = RawStudyService(Mock(), Mock(), Mock(), matrix_service)
 
     # Create an area and a thermal with specific matrices to have real DB matrices in our study
     version = study.config.version
