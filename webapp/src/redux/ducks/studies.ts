@@ -182,10 +182,11 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
   },
 );
 
-export const setStudy = createAsyncThunk<StudyMetadata, StudyEventPayload, AppAsyncThunkConfig>(
-  n("SET_STUDY"),
-  ({ id }) => api.getStudyMetadata(id),
-);
+export const setStudy = createAsyncThunk<
+  StudyMetadata,
+  StudyEventPayload | StudyMetadata["id"],
+  AppAsyncThunkConfig
+>(n("SET_STUDY"), (arg) => api.getStudyMetadata(typeof arg === "string" ? arg : arg.id));
 
 interface StudyDeleteInfo {
   id: StudyMetadata["id"];

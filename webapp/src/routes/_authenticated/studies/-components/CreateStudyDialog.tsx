@@ -85,7 +85,7 @@ function CreateStudyDialog({ open, onClose }: Props) {
               closeSnackbar(snackbarId);
             }}
           >
-            {t("button.explore")}
+            {t("global.open")}
           </Button>
           <IconButton onClick={() => closeSnackbar(snackbarId)}>
             <CloseRoundedIcon />

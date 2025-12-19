@@ -20,8 +20,8 @@ import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { Typography } from "@mui/material";
+import { useNavigate } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 
 interface Props {
   study: StudyMetadata;
@@ -45,9 +45,13 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
     try {
       await dispatch(deleteStudy({ id: study.id, deleteChildren: true })).unwrap();
 
-      navigate(parentStudy ? `/studies/${parentStudy.id}` : "/studies");
-
       onClose();
+
+      navigate(
+        parentStudy
+          ? { to: "/studies/$studyId", params: { studyId: parentStudy.id } }
+          : { to: "/studies" },
+      );
     } catch (err) {
       enqueueErrorSnackbar(t("studies.error.deleteStudy"), toError(err));
     }

@@ -17,6 +17,8 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { setStudy } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { createVariant } from "@/services/api/variant";
 import { createListFromTree } from "@/services/utils";
 import type { VariantTree } from "@/types/types";
@@ -37,6 +39,7 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
   const defaultValues = { name: "", sourceId: parentId };
+  const dispatch = useAppDispatch();
 
   const studiesSource = useMemo(() => createListFromTree(variantTree), [variantTree]);
 
@@ -51,9 +54,11 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
     const { sourceId, name } = data.values;
-    return createVariant(sourceId, name);
+    const variantId = await createVariant(sourceId, name);
+    await dispatch(setStudy(variantId)).unwrap();
+    return variantId;
   };
 
   const handleSubmitSuccessful = (
@@ -61,7 +66,7 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
     variantId: string,
   ) => {
     onClose();
-    navigate({ to: `/studies/${variantId}` });
+    navigate({ to: "/studies/$studyId", params: { studyId: variantId } });
   };
 
   ////////////////////////////////////////////////////////////////

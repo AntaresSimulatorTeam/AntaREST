@@ -13,6 +13,7 @@
  */
 
 import i18n from "@/i18n";
+import { getStudy } from "@/redux/selectors";
 import { TASK_TYPES_MANAGED } from "@/routes/_authenticated/tasks/-components/utils";
 import { includes } from "@/utils/tsUtils";
 import debug from "debug";
@@ -29,6 +30,7 @@ import {
   setWebSocketConnected,
 } from "../../redux/ducks/ui";
 import type { AppDispatch } from "../../redux/store";
+import store from "../../redux/store";
 import type { UserInfo } from "../../types/types";
 import { adaptJobDtoToJob } from "../api/launcher/jobs/adapters";
 import type { JobDTO } from "../api/launcher/jobs/types";
@@ -206,7 +208,13 @@ export function reloadWs(dispatch: AppDispatch, user?: UserInfo) {
 function makeStudyListener(dispatch: AppDispatch): WsEventListener {
   return function listener(e: WsEvent) {
     switch (e.type) {
-      case WsEventType.StudyCreated:
+      case WsEventType.StudyCreated: {
+        const study = getStudy(store.getState(), e.payload.id);
+        if (!study) {
+          dispatch(setStudy(e.payload));
+        }
+        break;
+      }
       case WsEventType.StudyEdited:
         dispatch(setStudy(e.payload));
         break;
