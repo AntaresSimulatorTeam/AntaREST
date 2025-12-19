@@ -121,7 +121,7 @@ def get_volume_label(drive_letter: str) -> Optional[str]:
         max_component_length = ctypes.c_ulong()
         file_system_flags = ctypes.c_ulong()
 
-        result = ctypes.windll.kernel32.GetVolumeInformationW(  # type: ignore[attr-defined]
+        result = ctypes.windll.kernel32.GetVolumeInformationW(
             ctypes.c_wchar_p(drive_letter),
             volume_name_buffer,
             ctypes.sizeof(volume_name_buffer),
