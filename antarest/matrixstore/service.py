@@ -319,7 +319,7 @@ class MatrixService(ISimpleMatrixService):
         Important:
             If an error occurs while creating or saving the matrix object,
             the associated data file will not (and should not) be deleted.
-            The `MatrixGarbageCollector` class is responsible for removing
+            The matrix garbage collection Celery task is responsible for removing
             unreferenced matrices to avoid leaving unused files lying around.
         """
         matrix_id, matrix_model = self._create(data)
@@ -548,8 +548,8 @@ class MatrixService(ISimpleMatrixService):
         Parameters:
             matrix_id: The SHA256 hash of the matrix object to delete.
         """
-        # Matrix deletion is done exclusively when the `MatrixGarbageCollector`
-        # service collects deprecated matrices (matrices that are no longer
+        # Matrix deletion is done exclusively when the matrix garbage collection
+        # Celery task collects deprecated matrices (matrices that are no longer
         # used by any study) and deletes them.
         # So, we can ignore missing database records and/or missing files.
         # Currently, the deletion is done matrix by matrix (eager deletion

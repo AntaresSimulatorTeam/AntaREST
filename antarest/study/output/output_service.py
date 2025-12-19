@@ -10,13 +10,15 @@
 #
 # This file is part of the Antares project.
 import logging
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO, Callable, Optional, Sequence
+from typing import Any, BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
 from fastapi import HTTPException
+from starlette.responses import FileResponse
 
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
@@ -29,6 +31,9 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.serde.parquet_writer import (
+    yield_dataframes_from_parquet,
+)
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
@@ -37,13 +42,19 @@ from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.output.aggregator_management import CLUSTER_ID_COL
+from antarest.study.business.output.aggregator_management import (
+    AREA_COL,
+    CLUSTER_ID_COL,
+    LINK_COL,
+)
 from antarest.study.business.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
+    QueryFileType,
+    split_concatenated_columns_from_dataframe,
 )
 from antarest.study.business.output.variables_management import (
     OutputIdentifier,
@@ -54,10 +65,11 @@ from antarest.study.business.output.variables_management import (
 )
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
-    ExportFormat,
+    MatrixAggregationResultDTO,
     MatrixIndex,
     StudyDownloadDTO,
     StudyDownloadLevelDTO,
+    StudyDownloadType,
     StudySimResultDTO,
 )
 from antarest.study.output.output_model import (
@@ -393,80 +405,98 @@ class OutputService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def start_output_download_creation(
-        self,
-        study_id: str,
-        output_id: str,
-        data: StudyDownloadDTO,
-        filetype: ExportFormat,
-    ) -> FileDownloadTaskDTO:
+    def download_outputs(self, study_id: str, output_id: str, data: StudyDownloadDTO, tmp_file: Path) -> FileResponse:
         """
         Download outputs
         Args:
             study_id: study ID.
             output_id: output ID.
             data: Json parameters.
-            filetype: type of returning file,.
+
+        Returns: FileResponse containing the asked data.
+
         """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        metadata = self._studies_repository.get_study_metadata(study_id)
-
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
-        logger.info(f"Exporting {output_id} from study {study_id}")
-        export_name = f"Study filtered output {metadata.name}/{output_id} export"
-        export_file_download = self._file_transfer_manager.request_download(
-            f"{metadata.name}-{study_id}-{output_id}_filtered{filetype.suffix}", export_name
-        )
-        export_path = Path(export_file_download.path)
-        export_id = export_file_download.id
+        # Fetches time_index
+        time_index = self.get_output_time_index(study_id, output_id, data.level)
 
-        def export_task(_notifier: ITaskNotifier) -> TaskResult:
-            try:
-                self._storage.create_output_download(study_id, output_id, data, filetype, export_path)
-                self._file_transfer_manager.set_ready(export_id)
-                return TaskResult(
-                    success=True,
-                    message=f"Study filtered output {metadata.name}/{output_id} successfully exported",
+        # Fetches the data
+        query_files: list[QueryFileType]
+        if data.type == StudyDownloadType.LINK:
+            query_files = [MCIndLinksQueryFile.VALUES]
+        else:
+            query_files = [MCIndAreasQueryFile.VALUES]
+            if data.include_clusters:
+                query_files.append(MCIndAreasQueryFile.DETAILS)
+                query_files.append(MCIndAreasQueryFile.DETAILS_RES)
+
+        file_paths = []
+        try:
+            # Launch all aggregation tasks
+            for query_file in query_files:
+                file_name = str(uuid.uuid4())
+                file_path = self._tmp_dir / file_name
+                task_id = self.start_aggregate_output_data(
+                    study_id,
+                    output_id,
+                    query_file,
+                    MatrixFrequency(data.level.value),
+                    TableExportFormat.PARQUET,
+                    data.columns,
+                    data.filter,
+                    file_path,
+                    transform_columns_headers=False,
+                    mc_years=data.years,
                 )
-            except Exception as e:
-                self._file_transfer_manager.fail(export_id, str(e))
-                raise
+                # Wait for the aggregation to end
+                self._task_service.await_task(task_id)
 
-        task_id = self._task_service.add_task(
-            export_task,
-            export_name,
-            task_type=TaskType.EXPORT,
-            ref_id=study_id,
-            progress=None,
-            custom_event_messages=None,
-        )
+                # Aggregation can fail (for instance, when asking renewables values and no cluster exists)
+                # If so, we shouldn't raise to keep backward compatibility
+                task = self._task_service.status_task(task_id)
+                if task.status != TaskStatus.COMPLETED:
+                    file_path.unlink(missing_ok=True)
+                    continue
 
-        return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
+                file_paths.append(file_path)
 
-    def create_output_download(
-        self,
-        study_id: str,
-        output_id: str,
-        data: StudyDownloadDTO,
-        filetype: ExportFormat,
-        tmp_export_file: Path,
-    ) -> None:
-        """
-        Download outputs
-        Args:
-            study_id: study ID.
-            output_id: output ID.
-            data: Json parameters.
-            filetype: type of returning file,.
-            tmp_export_file: temporary file (if `use_task` is false),.
+            # Once they all ended, build the final response
+            intermediary_dict: dict[str, Any] = {}
+            # We're opening the parquet files chunk by chunk to avoid flooding memory
+            for dataframe in yield_dataframes_from_parquet(file_paths, []):
+                # Convert the dataframe in the right response
+                column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
+                for object_name, object_group in dataframe.groupby(column_type_name):
+                    assert isinstance(object_name, str)
+                    element_name = object_name
+                    if data.type == StudyDownloadType.LINK:
+                        element_name = "^".join(element_name.split(" - "))
 
-        Returns: CSV content file
+                    for year, year_group in object_group.groupby(MCYEAR_COL):
+                        del year_group[column_type_name]
+                        del year_group[MCYEAR_COL]
+                        variables_list = list(split_concatenated_columns_from_dataframe(year_group))
+                        intermediary_dict.setdefault(element_name, {}).setdefault(str(year), []).extend(variables_list)
 
-        """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        logger.info(f"Study {study_id} output download asked by {get_user_id()}")
-        self._storage.create_output_download(study_id, output_id, data, filetype, tmp_export_file)
+            response = MatrixAggregationResultDTO.model_validate(
+                {
+                    "index": time_index,
+                    "data": [
+                        {"type": data.type, "name": name, "data": values} for name, values in intermediary_dict.items()
+                    ],
+                }
+            )
+
+            with open(tmp_file, "w", encoding="utf-8") as fh:
+                fh.write(response.model_dump_json())
+
+        finally:
+            for file_path in file_paths:
+                file_path.unlink(missing_ok=True)
+
+        return FileResponse(tmp_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
     def delete_output(self, uuid: str, output_name: str) -> None:
         """
@@ -593,7 +623,7 @@ class OutputService:
             columns_names,
             ids_to_consider,
             file_download_path,
-            mc_years,
+            mc_years=mc_years,
             on_success=lambda: self._file_transfer_manager.set_ready(download_id, use_notification=False),
             on_failure=lambda e: self._file_transfer_manager.fail(download_id, str(e)),
         )
@@ -610,6 +640,7 @@ class OutputService:
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
         file_path: Path,
+        transform_columns_headers: bool = True,
         mc_years: Optional[Sequence[int]] = None,
         on_success: Optional[Callable[[], None]] = None,
         on_failure: Optional[Callable[[Exception], None]] = None,
@@ -626,6 +657,7 @@ class OutputService:
             columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             file_path: path of the file where output aggregation data will be stored
+            transform_columns_headers: If False, keeps the output columns as written by the Simulator
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
             on_success: callback to be called when the task is completed successfully
             on_failure: callback to be called when the task fails with an exception
@@ -643,7 +675,14 @@ class OutputService:
                 )
 
                 results = self._storage.aggregate_output_data(
-                    uuid, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
+                    uuid,
+                    output_id,
+                    query_file,
+                    frequency,
+                    ids_to_consider,
+                    columns_names,
+                    transform_columns_headers,
+                    mc_years,
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)
 

@@ -14,81 +14,17 @@ from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import Mock
 
-import numpy as np
-
 from antarest.core.config import Config, StorageConfig
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.study.model import (
-    ExportFormat,
-    MatrixAggregationResultDTO,
-    MatrixIndex,
-    StudyDownloadDTO,
-    StudyDownloadLevelDTO,
-    StudyDownloadType,
     StudySimResultDTO,
     StudySimSettingsDTO,
-    TimeSerie,
-    TimeSeriesData,
 )
 from antarest.study.output.output_service import OutputService
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 from tests.storage.web.test_studies_bp import create_test_client
-
-
-def test_output_download(tmp_path: Path) -> None:
-    mock_output_service = Mock(spec=OutputService)
-
-    output_data = MatrixAggregationResultDTO(
-        index=MatrixIndex(),
-        data=[
-            TimeSeriesData(
-                name="td3_37_de^38_pl",
-                type=StudyDownloadType.LINK,
-                data={
-                    "1": [
-                        TimeSerie(
-                            name="H. VAL",
-                            unit="Euro/MWh",
-                            data=np.array([0.5, 0.6, 0.7]),
-                        )
-                    ]
-                },
-            )
-        ],
-        warnings=[],
-    )
-
-    def mock_create_output_download(
-        study_id: str,
-        output_id: str,
-        data: StudyDownloadDTO,
-        filetype: ExportFormat,
-        tmp_export_file: Path,
-    ):
-        tmp_export_file.write_text(output_data.model_dump_json())
-
-    mock_output_service.create_output_download.side_effect = mock_create_output_download
-
-    study_download = StudyDownloadDTO(
-        type=StudyDownloadType.AREA,
-        years=[1],
-        level=StudyDownloadLevelDTO.ANNUAL,
-        filterIn="",
-        filterOut="",
-        filter=[],
-        columns=["00001|td3_37_de-38_pl|H. VAL|Euro/MWh"],
-        synthesis=False,
-        includeClusters=True,
-    )
-    ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
-    client = create_test_client(Mock(), mock_output_service, ftm, raise_server_exceptions=False)
-    res = client.post(
-        f"/v1/studies/{UUID}/outputs/my-output-id/download",
-        json=study_download.model_dump(),
-    )
-    assert res.json() == output_data.model_dump()
 
 
 def test_output_whole_download(tmp_path: Path) -> None:

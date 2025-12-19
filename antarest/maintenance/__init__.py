@@ -10,15 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any
+"""
+Maintenance package for AntaREST.
 
-from pydantic import BaseModel
-
-
-def get_model_field_values(model: BaseModel) -> dict[str, Any]:
-    """
-    Returns a shallow copy dictionary of the fields of a model.
-
-    Allows to get fields without performing a full, recursive, model_dump.
-    """
-    return {f: getattr(model, f) for f in model.__class__.model_fields.keys()}
+This package contains:
+- Celery application configuration (app.py)
+- Worker context for dependency injection (context.py)
+- Periodic maintenance tasks in tasks/ (garbage collection, archiving, etc.)
+"""

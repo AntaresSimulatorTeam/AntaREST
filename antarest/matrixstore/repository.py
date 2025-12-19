@@ -321,7 +321,7 @@ class MatrixContentRepository:
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
             # However, this deletion is possible when the matrix is no longer in use.
-            # This is done in `MatrixGarbageCollector` when matrix files are deleted.
+            # This is done by the matrix garbage collection Celery task when matrix files are deleted.
 
             return MatrixCreationResult(hash=matrix_hash, new=True)
 
