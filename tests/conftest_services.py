@@ -361,7 +361,7 @@ def raw_study_service_fixture(
     core_config: Config,
     study_factory: StudyFactory,
     core_cache: ICache,
-    matrix_service: ISimpleMatrixService,
+    simple_matrix_service: ISimpleMatrixService,
 ) -> RawStudyService:
     """
     Fixture that creates a RawStudyService instance.
@@ -375,7 +375,7 @@ def raw_study_service_fixture(
         An instance of the RawStudyService class with the provided dependencies.
     """
     return RawStudyService(
-        config=core_config, study_factory=study_factory, cache=core_cache, matrix_service=matrix_service
+        config=core_config, study_factory=study_factory, cache=core_cache, matrix_service=simple_matrix_service
     )
 
 
@@ -389,7 +389,7 @@ def variant_study_service_fixture(
     variant_study_repository: VariantStudyRepository,
     event_bus: IEventBus,
     core_config: Config,
-    matrix_service: ISimpleMatrixService,
+    simple_matrix_service: ISimpleMatrixService,
 ) -> VariantStudyService:
     """
     Fixture that creates a VariantStudyService instance.
@@ -416,7 +416,7 @@ def variant_study_service_fixture(
         repository=variant_study_repository,
         event_bus=event_bus,
         config=core_config,
-        matrix_service=matrix_service,
+        matrix_service=simple_matrix_service,
     )
 
 
