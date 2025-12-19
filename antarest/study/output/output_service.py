@@ -419,7 +419,7 @@ class OutputService:
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
         # Fetches time_index
-        time_index = self.get_output_time_index(study_id, output_id, MatrixFrequency(data.level))
+        time_index = self.get_output_time_index(study_id, output_id, data.level)
 
         # Fetches the data
         query_files: list[QueryFileType]
@@ -441,7 +441,7 @@ class OutputService:
                     study_id,
                     output_id,
                     query_file,
-                    MatrixFrequency(data.level.value),
+                    data.level,
                     TableExportFormat.PARQUET,
                     data.columns,
                     data.filter,
