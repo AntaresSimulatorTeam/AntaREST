@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 from abc import ABC, abstractmethod
+from enum import StrEnum
 from pathlib import Path
 from typing import BinaryIO, Iterator, List, Optional, Sequence
 
@@ -25,6 +26,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 logger = logging.getLogger(__name__)
 
 
+class OutputStorageType(StrEnum):
+    FILE_TREE = "FILE_TREE"
+    PARQUET = "PARQUET"
+
+
 class IOutputStorage(ABC):
     """
     Provides access to stored outputs.
@@ -32,6 +38,11 @@ class IOutputStorage(ABC):
     That API must not be dependent on a particular storage implementation, in particular
     on the antares-solver file format.
     """
+
+    @property
+    @abstractmethod
+    def storage_type(self) -> OutputStorageType:
+        raise NotImplementedError()
 
     @abstractmethod
     def import_output(

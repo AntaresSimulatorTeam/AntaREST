@@ -59,7 +59,7 @@ class AbstractStorageService(IStudyStorage, ABC):
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
 
         owner_info = (
-            OwnerInfo(id=study.owner.id, name=study.owner.name)
+            OwnerInfo(id=study.owner.id, name=study.owner.storage_type)
             if study.owner is not None
             else OwnerInfo(name=study.author or "Unknown")
         )
@@ -78,7 +78,7 @@ class AbstractStorageService(IStudyStorage, ABC):
             type=study.type,
             archived=study.archived if study.archived is not None else False,
             owner=owner_info,
-            groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
+            groups=[GroupDTO(id=group.id, name=group.storage_type) for group in study.groups],
             public_mode=study.public_mode or PublicMode.NONE,
             horizon=study.horizon,
             folder=folder_path or study.folder,

@@ -41,6 +41,7 @@ from antarest.study.output.output_model import (
     OutputVariablesViewResponse,
 )
 from antarest.study.output.output_service import OutputService
+from antarest.study.output.output_storage import OutputStorageType
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
@@ -88,10 +89,10 @@ def create_output_routes(
         status_code=HTTPStatus.ACCEPTED,
         summary="Import Output",
     )
-    def import_output(uuid: str, output: UploadFile) -> str | None:
+    def import_output(uuid: str, output: UploadFile, storage_type: OutputStorageType | None = None) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-        output_id = output_service.import_output(uuid_sanitized, output.file)
+        output_id = output_service.import_output(uuid_sanitized, output.file, storage_type)
         return output_id
 
     @bp.get(

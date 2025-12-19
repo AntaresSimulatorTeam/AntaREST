@@ -211,7 +211,7 @@ class MatrixDataSet(Base):
         return MatrixDataSetDTO(
             id=self.id,
             name=self.name,
-            matrices=[MatrixInfoDTO(name=matrix.name, id=matrix.matrix.id) for matrix in self.matrices],
+            matrices=[MatrixInfoDTO(name=matrix.storage_type, id=matrix.matrix.id) for matrix in self.matrices],
             owner=UserInfo(id=self.owner.id, name=self.owner.name),
             groups=[GroupDTO(id=group.id, name=group.name) for group in self.groups],
             public=self.public,

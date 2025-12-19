@@ -155,11 +155,11 @@ def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMeta
         type=study.type,
         archived=study.archived if study.archived is not None else False,
         owner=(
-            OwnerInfo(id=study.owner.id, name=study.owner.name)
+            OwnerInfo(id=study.owner.id, name=study.owner.storage_type)
             if study.owner is not None
             else OwnerInfo(name="Unknown")
         ),
-        groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
+        groups=[GroupDTO(id=group.id, name=group.storage_type) for group in study.groups],
         public_mode=study.public_mode or PublicMode.NONE,
         horizon=study.horizon,
         scenario=None,
@@ -377,15 +377,15 @@ def test_sync_studies_from_disk() -> None:
 
     # new studies should be added
     study_a2 = saved_studies_map[("a", "workspace2")]
-    assert study_a2.name == "a"
+    assert study_a2.storage_type == "a"
     assert study_a2.public_mode == PublicMode.FULL
 
     study_f1 = saved_studies_map[("f", "workspace1")]
-    assert study_f1.name == "f"
+    assert study_f1.storage_type == "f"
     assert study_f1.public_mode == PublicMode.FULL
 
     study_f2 = saved_studies_map[("f", "workspace2")]
-    assert study_f2.name == "f"
+    assert study_f2.storage_type == "f"
     assert study_f2.public_mode == PublicMode.FULL
 
 
@@ -880,7 +880,7 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # All admin and writers should have WRITE access to the studies.
     # Other members of the group should have no access.
     for user_name, jwt_user in jwt_users.items():
-        has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
+        has_access = any(jwt_group.storage_type in {"admin", "Writers"} for jwt_group in jwt_user.groups)
         with current_user_context(jwt_user):
             if has_access:
                 assert_permission_on_studies(studies, StudyPermissionType.WRITE)
@@ -897,7 +897,7 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # All admin and writers should have READ access to the studies.
     # Other members of the group should have no access, because they don't have access to the writers-only studies.
     for user_name, jwt_user in jwt_users.items():
-        has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
+        has_access = any(jwt_group.storage_type in {"admin", "Writers"} for jwt_group in jwt_user.groups)
         with current_user_context(jwt_user):
             if has_access:
                 assert_permission_on_studies(studies, StudyPermissionType.READ)

@@ -111,11 +111,11 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
         type=study.type,
         archived=study.archived if study.archived is not None else False,
         owner=(
-            OwnerInfo(id=study.owner.id, name=study.owner.name)
+            OwnerInfo(id=study.owner.id, name=study.owner.storage_type)
             if study.owner is not None
             else OwnerInfo(name="Unknown")
         ),
-        groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
+        groups=[GroupDTO(id=group.id, name=group.storage_type) for group in study.groups],
         public_mode=study.public_mode or PublicMode.NONE,
         horizon=study.additional_data.horizon,
         scenario=None,
@@ -188,7 +188,7 @@ def test_scan(study_tree: Path) -> None:
     groups = call.args[0][0].groups
     assert len(groups) == 1
     assert groups[0].id == "tata"
-    assert groups[0].name == "tata"
+    assert groups[0].storage_type == "tata"
     assert call.args[1] is None
 
 
@@ -317,7 +317,7 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
         groups = call.args[0][0].groups
         assert len(groups) == 1
         assert groups[0].id == "toto"
-        assert groups[0].name == "toto"
+        assert groups[0].storage_type == "toto"
         assert call.args[1] == tmp_path / "test"
 
     # verify that `upgrade_folder` and `ts_gen_folder`  have been skipped

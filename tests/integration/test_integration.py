@@ -1236,14 +1236,18 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     res_zip = client.post(
         "/v1/matrix/_import",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
-        files={"file": (matrices_zip_path.name, io.BytesIO(matrices_zip_path.read_bytes()), "application/zip")},
+        files={"file": (matrices_zip_path.storage_type, io.BytesIO(matrices_zip_path.read_bytes()), "application/zip")},
     )
     matrices_seven_zip_path = ASSETS_DIR / "matrices.7z"
     res_seven_zip = client.post(
         "/v1/matrix/_import",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         files={
-            "file": (matrices_seven_zip_path.name, io.BytesIO(matrices_seven_zip_path.read_bytes()), "application/zip")
+            "file": (
+                matrices_seven_zip_path.storage_type,
+                io.BytesIO(matrices_seven_zip_path.read_bytes()),
+                "application/zip",
+            )
         },
     )
     for res in [res_zip, res_seven_zip]:

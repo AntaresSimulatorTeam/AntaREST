@@ -36,7 +36,7 @@ from antarest.study.model import (
     StudySimSettingsDTO,
 )
 from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.output_storage import IOutputStorage
+from antarest.study.output.output_storage import IOutputStorage, OutputStorageType
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -92,6 +92,11 @@ class FileOutputStorage(IOutputStorage):
         self._outputs_provider = outputs_provider
         self._cache = cache
         self._remote_executor = remote_executor
+
+    @override
+    @property
+    def storage_type(self) -> OutputStorageType:
+        return OutputStorageType.FILE_TREE
 
     @override
     def import_output(

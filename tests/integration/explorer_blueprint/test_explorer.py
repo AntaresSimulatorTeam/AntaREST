@@ -65,7 +65,7 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
     )
     res.raise_for_status()
     directories_res = res.json()
-    directories_res = list(sorted([FolderDTO(**d) for d in directories_res], key=lambda f: f.name))
+    directories_res = list(sorted([FolderDTO(**d) for d in directories_res], key=lambda f: f.storage_type))
     directorires_expected = [
         FolderDTO(path=Path("folder/studyC"), workspace="ext", name="studyC", hasChildren=False, isStudyFolder=True),
         FolderDTO(path=Path("folder/trash"), workspace="ext", name="trash", hasChildren=False, isStudyFolder=False),
