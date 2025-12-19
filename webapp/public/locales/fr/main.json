@@ -626,6 +626,7 @@
   "study.modeling.wind": "Éolien",
   "study.modeling.solar": "Solaire",
   "study.modeling.renewables": "Renouvelables",
+  "study.modeling.renewables.parameters": "Paramètres",
   "study.modeling.reserves": "Réserves",
   "study.modeling.miscGen": "Divers Gen.",
   "study.modeling.clusters.byGroups": "Clusters par groupes",

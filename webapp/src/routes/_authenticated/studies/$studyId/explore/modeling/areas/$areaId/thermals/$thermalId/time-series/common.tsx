@@ -31,6 +31,7 @@ function Common() {
 
   return (
     <Matrix
+      key={thermalId}
       studyId={study.id}
       url={`input/thermal/prepro/${area.id}/${thermalId}/modulation`}
       customColumns={COMMON_MATRIX_COLS}

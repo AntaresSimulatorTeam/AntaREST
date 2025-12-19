@@ -13,24 +13,27 @@
  */
 
 import Matrix from "@/components/Matrix";
+import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import type { Cluster } from "@/types/types";
+import { createFileRoute } from "@tanstack/react-router";
 
-interface Props {
-  areaId: string;
-  clusterId: Cluster["id"];
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId/time-series",
+)({
+  component: TimeSeries,
+});
 
-function RenewableMatrix({ areaId, clusterId }: Props) {
+function TimeSeries() {
   const study = useStudy();
+  const area = useArea();
+  const { renewableId } = Route.useParams();
 
   return (
     <Matrix
+      key={renewableId}
       studyId={study.id}
-      url={`input/renewables/series/${areaId}/${clusterId}/series`}
+      url={`input/renewables/series/${area.id}/${renewableId}/series`}
       aggregateColumns="stats"
     />
   );
 }
-
-export default RenewableMatrix;

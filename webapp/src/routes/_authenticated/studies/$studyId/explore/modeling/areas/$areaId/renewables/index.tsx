@@ -15,11 +15,13 @@
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box } from "@mui/material";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext } from "react-router-dom";
 import semver from "semver";
 import {
   addClusterCapacity,
@@ -28,9 +30,6 @@ import {
   toCapacityString,
 } from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
 import usePromiseWithSnackbarError from "../../../../../../../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../types/types";
 import {
   RENEWABLE_GROUPS,
   createRenewableCluster,
@@ -38,27 +37,32 @@ import {
   duplicateRenewableCluster,
   getRenewableClusters,
   type RenewableClusterWithCapacity,
-} from "./Renewables/utils";
+} from "./-utils";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/",
+)({
+  component: Renewables,
+});
 
 const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
 function Renewables() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
+  const area = useArea();
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const areaId = useAppSelector(getCurrentAreaId);
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     RenewableClusterWithCapacity[]
   >(
     async () => {
-      const clusters = await getRenewableClusters(study.id, areaId);
+      const clusters = await getRenewableClusters(study.id, area.id);
       return clusters?.map(addClusterCapacity);
     },
     {
       resetDataOnReload: true,
       errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, areaId],
+      deps: [study.id, area.id],
     },
   );
 
@@ -113,23 +117,19 @@ function Renewables() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = async (values: TRow) => {
-    const cluster = await createRenewableCluster(study.id, areaId, values);
+    const cluster = await createRenewableCluster(study.id, area.id, values);
     return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (row: RenewableClusterWithCapacity, newName: string) => {
-    const cluster = await duplicateRenewableCluster(study.id, areaId, row.id, newName);
+    const cluster = await duplicateRenewableCluster(study.id, area.id, row.id, newName);
 
     return { ...row, ...cluster };
   };
 
   const handleDelete = (rows: RenewableClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
-    return deleteRenewableClusters(study.id, areaId, ids);
-  };
-
-  const handleNameClick = (row: RenewableClusterWithCapacity) => {
-    navigate(row.id);
+    return deleteRenewableClusters(study.id, area.id, ids);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -146,7 +146,16 @@ function Renewables() {
       onCreate={handleCreate}
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}
-      onNameClick={handleNameClick}
+      nameLinkOptions={(row) =>
+        linkOptions({
+          to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId",
+          params: {
+            studyId: study.id,
+            areaId: area.id,
+            renewableId: row.id,
+          },
+        })
+      }
       deleteConfirmationMessage={(rows) => {
         return t("studies.modeling.clusters.question.delete", {
           count: rows.length,

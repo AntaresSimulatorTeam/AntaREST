@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/m
 function AreasLayout() {
   const study = useStudy();
   const navigate = Route.useNavigate();
-  const { areaId, thermalId, storageId } = useParams({ strict: false });
+  const { areaId, thermalId, storageId, renewableId } = useParams({ strict: false });
 
   const response = useStudySynthesis({
     studyId: study.id,
@@ -66,6 +66,13 @@ function AreasLayout() {
     if (storageId) {
       return linkOptions({
         to: "/studies/$studyId/explore/modeling/areas/$areaId/storages",
+        params,
+      });
+    }
+
+    if (renewableId) {
+      return linkOptions({
+        to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables",
         params,
       });
     }

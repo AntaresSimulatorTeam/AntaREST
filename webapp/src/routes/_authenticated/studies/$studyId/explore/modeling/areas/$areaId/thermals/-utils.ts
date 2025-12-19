@@ -14,6 +14,7 @@
 
 import type { ClusterWithCapacity } from "@/routes/-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
 import client from "@/services/api/client";
+import { nameToId } from "@/services/utils";
 import type { Area, Cluster, StudyMetadata } from "@/types/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
 
@@ -137,7 +138,10 @@ const getClusterUrl = (
 
 export async function getThermalClusters(studyId: StudyMetadata["id"], areaId: Area["name"]) {
   const res = await client.get<ThermalCluster[]>(getClustersUrl(studyId, areaId));
-  return res.data;
+  return res.data.map<ThermalCluster>((cluster) => ({
+    ...cluster,
+    id: nameToId(cluster.id),
+  }));
 }
 
 export async function getThermalCluster(

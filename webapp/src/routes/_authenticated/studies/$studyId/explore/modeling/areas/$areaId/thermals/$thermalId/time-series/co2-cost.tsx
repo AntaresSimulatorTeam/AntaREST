@@ -37,5 +37,11 @@ function Co2Costs() {
     );
   }
 
-  return <Matrix studyId={study.id} url={`input/thermal/series/${area.id}/${thermalId}/CO2Cost`} />;
+  return (
+    <Matrix
+      key={thermalId}
+      studyId={study.id}
+      url={`input/thermal/series/${area.id}/${thermalId}/CO2Cost`}
+    />
+  );
 }

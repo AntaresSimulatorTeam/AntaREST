@@ -31,6 +31,7 @@ function TimeSeriesGenerator() {
 
   return (
     <Matrix
+      key={thermalId}
       studyId={study.id}
       url={`input/thermal/prepro/${area.id}/${thermalId}/data`}
       customColumns={TS_GEN_MATRIX_COLS}

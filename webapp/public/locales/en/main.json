@@ -626,6 +626,7 @@
   "study.modeling.wind": "Wind",
   "study.modeling.solar": "Solar",
   "study.modeling.renewables": "Renewables",
+  "study.modeling.renewables.parameters": "Parameters",
   "study.modeling.reserves": "Reserves",
   "study.modeling.miscGen": "Misc. Gen.",
   "study.modeling.clusters.byGroups": "Clusters by groups",

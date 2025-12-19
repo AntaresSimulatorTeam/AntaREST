@@ -62,7 +62,7 @@ function Parameters() {
 
   return (
     <Form
-      key={area.id + thermalId}
+      key={thermalId}
       config={{ defaultValues: () => getThermalCluster(study.id, area.id, thermalId) }}
       onSubmit={handleSubmit}
       enableUndoRedo

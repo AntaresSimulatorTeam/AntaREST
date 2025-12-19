@@ -38,6 +38,10 @@ function FuelCost() {
   }
 
   return (
-    <Matrix studyId={study.id} url={`input/thermal/series/${area.id}/${thermalId}/fuelCost`} />
+    <Matrix
+      key={thermalId}
+      studyId={study.id}
+      url={`input/thermal/series/${area.id}/${thermalId}/fuelCost`}
+    />
   );
 }

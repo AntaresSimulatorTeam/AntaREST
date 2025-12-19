@@ -19,7 +19,9 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import type { Area, Cluster, StudyMetadata } from "@/types/types";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import {
@@ -28,15 +30,18 @@ import {
   TS_INTERPRETATION_OPTIONS,
   updateRenewableCluster,
   type RenewableCluster,
-} from "../utils";
+} from "../-utils";
 
-interface Props {
-  study: StudyMetadata;
-  areaId: Area["name"];
-  clusterId: Cluster["id"];
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId/parameters",
+)({
+  component: Parameters,
+});
 
-function RenewableForm({ study, areaId, clusterId }: Props) {
+function Parameters() {
+  const study = useStudy();
+  const area = useArea();
+  const { renewableId } = Route.useParams();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -44,7 +49,7 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<RenewableCluster>) => {
-    return updateRenewableCluster(study.id, areaId, clusterId, dirtyValues);
+    return updateRenewableCluster(study.id, area.id, renewableId, dirtyValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -53,80 +58,70 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
 
   return (
     <Form
-      key={study.id + areaId + clusterId}
-      config={{ defaultValues: () => getRenewableCluster(study.id, areaId, clusterId) }}
+      key={renewableId}
+      config={{ defaultValues: () => getRenewableCluster(study.id, area.id, renewableId) }}
       onSubmit={handleSubmit}
       enableUndoRedo
       disableStickyFooter
       hideFooterDivider
     >
       {({ control }) => (
-        <>
-          <Fieldset legend={t("global.general")}>
-            <StringFE label={t("global.name")} name="name" control={control} disabled />
-            {semver.lt(study.version, "9.3.0") ? (
-              <SelectFE
-                label={t("global.group")}
-                name="group"
-                control={control}
-                options={RENEWABLE_GROUPS}
-                startCaseLabel={false}
-                sx={{
-                  alignSelf: "center",
-                }}
-              />
-            ) : (
-              <StringFE
-                label={t("global.group")}
-                name="group"
-                datalist={RENEWABLE_GROUPS}
-                control={control}
-              />
-            )}
+        <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>
+          <StringFE label={t("global.name")} name="name" control={control} disabled />
+          {semver.lt(study.version, "9.3.0") ? (
             <SelectFE
-              label={t("study.modeling.clusters.tsInterpretation")}
-              name="tsInterpretation"
+              label={t("global.group")}
+              name="group"
               control={control}
-              options={TS_INTERPRETATION_OPTIONS}
+              options={RENEWABLE_GROUPS}
+              startCaseLabel={false}
               sx={{
                 alignSelf: "center",
               }}
             />
-          </Fieldset>
-          <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>
-            <SwitchFE
-              label={t("study.modeling.clusters.enabled")}
-              name="enabled"
+          ) : (
+            <StringFE
+              label={t("global.group")}
+              name="group"
+              datalist={RENEWABLE_GROUPS}
               control={control}
             />
-            <NumberFE
-              label={t("study.modeling.clusters.unitcount")}
-              name="unitCount"
-              control={control}
-              rules={{
-                min: {
-                  value: 1,
-                  message: t("form.field.minValue", { 0: 1 }),
-                },
-                setValueAs: Math.floor,
-              }}
-            />
-            <NumberFE
-              label={t("study.modeling.clusters.nominalCapacity")}
-              name="nominalCapacity"
-              control={control}
-              rules={{
-                min: {
-                  value: 0,
-                  message: t("form.field.minValue", { 0: 0 }),
-                },
-              }}
-            />
-          </Fieldset>
-        </>
+          )}
+          <SwitchFE label={t("study.modeling.clusters.enabled")} name="enabled" control={control} />
+          <SelectFE
+            label={t("study.modeling.clusters.tsInterpretation")}
+            name="tsInterpretation"
+            control={control}
+            options={TS_INTERPRETATION_OPTIONS}
+            sx={{
+              alignSelf: "center",
+            }}
+          />
+          <NumberFE
+            label={t("study.modeling.clusters.unitcount")}
+            name="unitCount"
+            control={control}
+            rules={{
+              min: {
+                value: 1,
+                message: t("form.field.minValue", { 0: 1 }),
+              },
+              setValueAs: Math.floor,
+            }}
+          />
+          <NumberFE
+            label={t("study.modeling.clusters.nominalCapacity")}
+            name="nominalCapacity"
+            control={control}
+            rules={{
+              min: {
+                value: 0,
+                message: t("form.field.minValue", { 0: 0 }),
+              },
+            }}
+          />
+        </Fieldset>
       )}
     </Form>
   );
 }
-
-export default RenewableForm;

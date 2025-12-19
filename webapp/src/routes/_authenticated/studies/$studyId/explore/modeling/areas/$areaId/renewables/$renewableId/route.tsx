@@ -12,38 +12,94 @@
  * This file is part of the Antares project.
  */
 
-import BackButton from "@/components/buttons/BackButton";
-import { getCurrentAreaId } from "@/redux/selectors";
-import { nameToId } from "@/services/utils";
-import type { StudyMetadata } from "@/types/types";
-import { Chip, Divider } from "@mui/material";
+import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
+import TabsView from "@/components/page/TabsView";
+import usePromise from "@/hooks/usePromise";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
+import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
-import RenewableForm from "../Renewables/RenewableConfig/RenewableForm";
-import RenewableMatrix from "../Renewables/RenewableConfig/RenewableMatrix";
+import { getRenewableClusters } from "../-utils";
 
-function RenewableConfig() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId",
+)({
+  component: RenewablesLayout,
+});
+
+function RenewablesLayout() {
+  const study = useStudy();
+  const area = useArea();
+  const params = Route.useParams();
   const navigate = useNavigate();
-  const areaId = useAppSelector(getCurrentAreaId);
-  const { clusterId = "" } = useParams();
   const { t } = useTranslation();
+
+  const { data: renewableOptions = [params.renewableId], status: renewableOptionsStatus } =
+    usePromise(async () => {
+      const renewables = await getRenewableClusters(study.id, area.id);
+      console.log(renewables);
+      return renewables.map((renewable) => ({
+        label: renewable.name,
+        value: renewable.id,
+        group: renewable.group,
+      }));
+    }, [study.id, area.id]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleChange = (event: SelectFEChangeEvent<string>) => {
+    const newRenewableId = event.target.value;
+
+    navigate({
+      to: ".",
+      params: {
+        ...params,
+        renewableId: newRenewableId,
+      },
+    });
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <BackButton onClick={() => navigate("../renewables")} />
-      <RenewableForm study={study} areaId={areaId} clusterId={clusterId} />
-      <Divider sx={{ my: 2 }} variant="middle">
-        <Chip label={t("global.matrix")} size="small" />
-      </Divider>
-      <RenewableMatrix areaId={areaId} clusterId={nameToId(clusterId)} />
-    </>
+    <TabsView
+      onBack={linkOptions({
+        to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables",
+        params,
+      })}
+      divider
+      tabs={[
+        {
+          id: "parameters",
+          label: t("study.modeling.renewables.parameters"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId/parameters",
+            params,
+          }),
+        },
+        {
+          id: "time-series",
+          label: t("global.timeSeries"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId/time-series",
+            params,
+          }),
+        },
+      ]}
+      extraActions={
+        <SelectFE
+          value={params.renewableId}
+          options={renewableOptions}
+          onChange={handleChange}
+          size="extra-small"
+          disabled={renewableOptionsStatus !== "fulfilled"}
+          sx={{ maxWidth: 150 }}
+        />
+      }
+    />
   );
 }
-
-export default RenewableConfig;

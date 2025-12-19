@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import type { ClusterWithCapacity } from "../../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
-import client from "../../../../../../../../../../services/api/client";
-import type { Area, Cluster, StudyMetadata } from "../../../../../../../../../../types/types";
-import type { PartialExceptFor } from "../../../../../../../../../../utils/tsUtils";
+import client from "@/services/api/client";
+import { nameToId } from "@/services/utils";
+import type { Area, Cluster, StudyMetadata } from "@/types/types";
+import type { PartialExceptFor } from "@/utils/tsUtils";
+import type { ClusterWithCapacity } from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -74,7 +75,10 @@ const getClusterUrl = (
 
 export async function getRenewableClusters(studyId: StudyMetadata["id"], areaId: Area["name"]) {
   const res = await client.get<RenewableCluster[]>(getClustersUrl(studyId, areaId));
-  return res.data;
+  return res.data.map<RenewableCluster>((cluster) => ({
+    ...cluster,
+    id: nameToId(cluster.id),
+  }));
 }
 
 export async function getRenewableCluster(

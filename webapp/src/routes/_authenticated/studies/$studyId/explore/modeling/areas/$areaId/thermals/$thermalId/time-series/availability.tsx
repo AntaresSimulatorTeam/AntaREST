@@ -30,6 +30,7 @@ function Availability() {
 
   return (
     <Matrix
+      key={thermalId}
       studyId={study.id}
       url={`input/thermal/series/${area.id}/${thermalId}/series`}
       aggregateColumns="stats" // avg, min, max
