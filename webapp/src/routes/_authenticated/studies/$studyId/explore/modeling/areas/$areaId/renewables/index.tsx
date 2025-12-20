@@ -15,6 +15,7 @@
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box } from "@mui/material";
@@ -29,7 +30,6 @@ import {
   getClustersWithCapacityTotals,
   toCapacityString,
 } from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
-import usePromiseWithSnackbarError from "../../../../../../../../../hooks/usePromiseWithSnackbarError";
 import {
   RENEWABLE_GROUPS,
   createRenewableCluster,

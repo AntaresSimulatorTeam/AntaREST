@@ -37,7 +37,7 @@ function RenewablesLayout() {
   const { data: renewableOptions = [params.renewableId], status: renewableOptionsStatus } =
     usePromise(async () => {
       const renewables = await getRenewableClusters(study.id, area.id);
-      console.log(renewables);
+
       return renewables.map((renewable) => ({
         label: renewable.name,
         value: renewable.id,

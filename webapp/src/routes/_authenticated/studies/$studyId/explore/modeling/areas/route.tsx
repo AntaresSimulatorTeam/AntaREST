@@ -92,8 +92,6 @@ function AreasLayout() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  // renewablesClustering={renewablesClustering !== "aggregated"}
-
   return (
     <UsePromiseCond
       response={response}

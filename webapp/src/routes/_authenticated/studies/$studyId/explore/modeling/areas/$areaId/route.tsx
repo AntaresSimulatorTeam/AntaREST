@@ -14,6 +14,8 @@
 
 import TabsView from "@/components/page/TabsView";
 import ViewWrapper from "@/components/page/ViewWrapper";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudySynthesis } from "@/redux/selectors";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -29,6 +31,10 @@ function AreaLayout() {
   const study = useStudy();
   const { t } = useTranslation();
   const params = Route.useParams();
+
+  // The value corresponds to the parameter "renewable-generation-modelling",
+  // editable in "/studies/$studyId/explore/configuration/advanced-params"
+  const enrModelling = useAppSelector((state) => getStudySynthesis(state, study.id)?.enr_modelling);
 
   return (
     <ViewWrapper>
@@ -66,16 +72,15 @@ function AreaLayout() {
               params,
             }),
           },
-          {
-            id: "renewables",
-            label: t("study.modeling.renewables"),
-            linkOptions: linkOptions({
-              to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables",
-              params,
-            }),
-            // pathSuffix: "renewables",
-            // condition: renewablesClustering,
-          },
+          semver.gte(study.version, "8.1.0") &&
+            enrModelling === "clusters" && {
+              id: "renewables",
+              label: t("study.modeling.renewables"),
+              linkOptions: linkOptions({
+                to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables",
+                params,
+              }),
+            },
           // { label: "study.modeling.hydro", pathSuffix: "hydro" },
           // {
           //   label: "study.modeling.wind",

@@ -344,7 +344,7 @@ export interface FileStudyTreeConfigDTO {
   bindings: string[];
   store_new_set: boolean;
   archive_input_series: string[];
-  enr_modelling: string;
+  enr_modelling: "aggregated" | "clusters";
 }
 
 export interface LinkElement {

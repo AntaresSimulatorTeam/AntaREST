@@ -14,7 +14,7 @@
 
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
-import { fetchStudyVersions, setCurrentStudy } from "@/redux/ducks/studies";
+import { setCurrentStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { getStudyMetadata } from "@/services/api/study";
 import { getVariantParents, getVariantTree } from "@/services/api/variant";
@@ -54,10 +54,7 @@ function StudyHomeLayout() {
   }, [studyId]);
 
   useEffect(() => {
-    if (studyId) {
-      dispatch(setCurrentStudy(studyId));
-      dispatch(fetchStudyVersions());
-    }
+    dispatch(setCurrentStudy(studyId));
   }, [dispatch, studyId]);
 
   // Change the name of the web browser tab
