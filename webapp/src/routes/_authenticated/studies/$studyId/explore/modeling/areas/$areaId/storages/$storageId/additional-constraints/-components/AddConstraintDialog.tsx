@@ -18,6 +18,8 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { createAdditionalConstraint } from "@/services/api/studies/areas/storages";
 import type {
   AdditionalConstraint,
@@ -25,45 +27,47 @@ import type {
 } from "@/services/api/studies/areas/storages/types";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { DEFAULT_CONSTRAINT_VALUES, OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "./constants";
+import { DEFAULT_CONSTRAINT_VALUES, OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "../-constants";
 
 interface Props {
-  open: boolean;
-  onClose: VoidFunction;
-  onSave: (createdConstraint: AdditionalConstraint) => void;
-  studyId: string;
-  areaId: string;
-  storageId: string;
+  onCancel: VoidFunction;
   existingNames: string[];
 }
 
-function AddConstraintDialog({
-  open,
-  onClose,
-  onSave,
-  studyId,
-  areaId,
-  storageId,
-  existingNames,
-}: Props) {
+function AddConstraintDialog({ onCancel, existingNames }: Props) {
+  const study = useStudy();
+  const area = useArea();
+  const { storageId } = useParams({
+    from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
+  });
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({ values }: SubmitHandlerPlus<AdditionalConstraintCreation>) => {
-    const createdConstraint = await createAdditionalConstraint({
-      studyId,
-      areaId,
+  const handleSubmit = ({ values }: SubmitHandlerPlus<AdditionalConstraintCreation>) => {
+    return createAdditionalConstraint({
+      studyId: study.id,
+      areaId: area.id,
       storageId,
       values,
     });
+  };
 
-    onSave(createdConstraint);
+  const handleSumitSuccessful = (
+    data: SubmitHandlerPlus<AdditionalConstraintCreation>,
+    createdConstraint: AdditionalConstraint,
+  ) => {
+    // navigate({
+    //   to: "/studies/$studyId/explore/tablemode/$tableModeId",
+    //   params: { studyId: study.id, tableModeId: values.name },
+    //   replace: isUpdateDialog ? true : false,
+    // });
 
-    onClose();
+    onCancel();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -72,11 +76,12 @@ function AddConstraintDialog({
 
   return (
     <FormDialog
+      open
       title={t("study.modeling.storages.additionalConstraints.add")}
       titleIcon={AddCircleIcon}
-      open={open}
-      onCancel={onClose}
+      onCancel={onCancel}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={handleSumitSuccessful}
       config={{ defaultValues: DEFAULT_CONSTRAINT_VALUES }}
     >
       {({ control }) => (
