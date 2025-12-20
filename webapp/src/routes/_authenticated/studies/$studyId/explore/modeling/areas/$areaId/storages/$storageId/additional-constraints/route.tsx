@@ -40,7 +40,7 @@ import AddConstraintDialog from "./AdditionalConstraints/AddConstraintDialog";
 import ConstraintForm from "./AdditionalConstraints/ConstraintForm";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints",
 )({
   component: AdditionalConstraints,
 });
