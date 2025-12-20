@@ -21,30 +21,34 @@ import PropertiesView from "@/components/PropertiesView";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useArea from "@/routes/-shared/hook/useArea";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import {
   deleteAdditionalConstraint,
   getAdditionalConstraints,
 } from "@/services/api/studies/areas/storages";
 import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
 import { sortByName } from "@/services/utils";
-import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { isSearchMatching } from "@/utils/stringUtils";
 import { Delete as DeleteIcon } from "@mui/icons-material";
 import { Box, List, ListItem, ListItemButton, ListItemText, Tooltip } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import AddConstraintDialog from "./AddConstraintDialog";
-import ConstraintForm from "./ConstraintForm";
+import AddConstraintDialog from "./AdditionalConstraints/AddConstraintDialog";
+import ConstraintForm from "./AdditionalConstraints/ConstraintForm";
 
-interface Props {
-  studyId: StudyMetadata["id"];
-  areaId: string;
-  storageId: string;
-  studyVersion: StudyMetadata["version"];
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/",
+)({
+  component: AdditionalConstraints,
+});
 
-function AdditionalConstraints({ studyId, areaId, storageId, studyVersion }: Props) {
+function AdditionalConstraints() {
+  const study = useStudy();
+  const area = useArea();
+  const { storageId } = Route.useParams();
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState("");
   const [constraints, setConstraints] = useState<AdditionalConstraint[]>([]);
@@ -54,11 +58,11 @@ function AdditionalConstraints({ studyId, areaId, storageId, studyVersion }: Pro
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const { isLoading, isRejected, error } = usePromiseWithSnackbarError(
-    () => getAdditionalConstraints({ studyId, areaId, storageId }),
+    () => getAdditionalConstraints({ studyId: study.id, areaId: area.id, storageId }),
     {
       onDataChange: (data = []) => setConstraints(data),
       errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, areaId, storageId],
+      deps: [study.id, area.id, storageId],
     },
   );
 
@@ -107,8 +111,8 @@ function AdditionalConstraints({ studyId, areaId, storageId, studyVersion }: Pro
       setConstraints((prevConstraints) => prevConstraints.filter(({ id }) => id !== constraintId));
 
       await deleteAdditionalConstraint({
-        studyId,
-        areaId,
+        studyId: study.id,
+        areaId: area.id,
         storageId,
         constraintId,
       });
@@ -175,16 +179,15 @@ function AdditionalConstraints({ studyId, areaId, storageId, studyVersion }: Pro
             />
           )}
         </Box>
-
         {/* Right panel - Constraint form */}
         <ViewWrapper elevation={2}>
           {selectedConstraintId ? (
             <ConstraintForm
-              studyId={studyId}
-              areaId={areaId}
+              studyId={study.id}
+              areaId={area.id}
               storageId={storageId}
               constraintId={selectedConstraintId}
-              studyVersion={studyVersion}
+              studyVersion={study.version}
               onDelete={handleDelete}
             />
           ) : (
@@ -196,8 +199,8 @@ function AdditionalConstraints({ studyId, areaId, storageId, studyVersion }: Pro
         open={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
         onSave={handleAdd}
-        studyId={studyId}
-        areaId={areaId}
+        studyId={study.id}
+        areaId={area.id}
         storageId={storageId}
         existingNames={constraints.map((c) => c.name)}
       />

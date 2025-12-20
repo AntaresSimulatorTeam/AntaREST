@@ -31,6 +31,7 @@ function Inflows() {
 
   return (
     <Matrix
+      key={storageId}
       studyId={study.id}
       url={`input/st-storage/series/${area.id}/${storageId}/inflows`}
       // Since v9.3 this matrix supports the resize functionality

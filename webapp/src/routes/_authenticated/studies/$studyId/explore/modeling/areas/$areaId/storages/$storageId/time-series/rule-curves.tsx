@@ -37,6 +37,7 @@ function RuleCurves() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
+          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.lowerRuleCurve")}
           url={`input/st-storage/series/${area.id}/${storageId}/lower_rule_curve`}
@@ -48,6 +49,7 @@ function RuleCurves() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
+          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.upperRuleCurve")}
           url={`input/st-storage/series/${area.id}/${storageId}/upper_rule_curve`}

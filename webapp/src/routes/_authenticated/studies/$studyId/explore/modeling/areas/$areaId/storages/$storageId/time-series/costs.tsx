@@ -46,6 +46,7 @@ function Costs() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
+          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.injectionCost")}
           url={`input/st-storage/series/${area.id}/${storageId}/cost_injection`}
@@ -57,6 +58,7 @@ function Costs() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
+          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.withdrawalCost")}
           url={`input/st-storage/series/${area.id}/${storageId}/cost_withdrawal`}

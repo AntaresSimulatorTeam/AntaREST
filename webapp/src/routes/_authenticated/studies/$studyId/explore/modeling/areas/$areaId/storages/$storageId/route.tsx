@@ -19,6 +19,7 @@ import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import { getStorages } from "../-utils";
 
 export const Route = createFileRoute(
@@ -89,18 +90,14 @@ function StorageLayout() {
             params,
           }),
         },
-        // semver.gte(study.version, "9.2.0") && {
-        //   id: "additional-constraints",
-        //   label: t("study.modeling.storages.additionalConstraints"),
-        //   content: (
-        //     <AdditionalConstraints
-        //       studyId={studyId}
-        //       areaId={areaId}
-        //       storageId={nameToId(storageId)}
-        //       studyVersion={study.version}
-        //     />
-        //   ),
-        // },
+        semver.gte(study.version, "9.2.0") && {
+          id: "additional-constraints",
+          label: t("study.modeling.storages.additionalConstraints"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints",
+            params,
+          }),
+        },
       ].filter(Boolean)}
       extraActions={
         <SelectFE

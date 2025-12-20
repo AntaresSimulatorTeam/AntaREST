@@ -85,12 +85,12 @@ function AreaLayout() {
           // {
           //   label: "study.modeling.wind",
           //   pathSuffix: "wind",
-          //   condition: !renewablesClustering,
+          //   condition: !(renewableGenerationModeling !== "aggregated"),
           // },
           // {
           //   label: "study.modeling.solar",
           //   pathSuffix: "solar",
-          //   condition: !renewablesClustering,
+          //   condition: !(renewableGenerationModeling !== "aggregated"),
           // },
           // { label: "study.modeling.reserves", pathSuffix: "reserves" },
           // { label: "study.modeling.miscGen", pathSuffix: "miscGen" },

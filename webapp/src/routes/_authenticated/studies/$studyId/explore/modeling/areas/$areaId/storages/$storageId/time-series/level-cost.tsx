@@ -41,6 +41,7 @@ function LevelCost() {
 
   return (
     <Matrix
+      key={storageId}
       studyId={study.id}
       title={t("study.modeling.storages.levelCost")}
       url={`input/st-storage/series/${area.id}/${storageId}/cost_level`}

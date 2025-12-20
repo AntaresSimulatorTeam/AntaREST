@@ -37,6 +37,7 @@ function Modulation() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
+          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.injectionModulation")}
           url={`input/st-storage/series/${area.id}/${storageId}/pmax_injection`}
@@ -48,6 +49,7 @@ function Modulation() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
+          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.withdrawalModulation")}
           url={`input/st-storage/series/${area.id}/${storageId}/pmax_withdrawal`}
