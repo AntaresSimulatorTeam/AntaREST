@@ -23,9 +23,9 @@ import type {
 } from "@/services/api/studies/areas/storages/types";
 import { Alert } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "../constants";
+import { isOccurrencesValid } from "../-utils";
+import { OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "../../AdditionalConstraints/constants";
 import OccurrencesFE from "./OccurrencesFE";
-import { isOccurrencesValid } from "./utils";
 
 function Fields() {
   const { t } = useTranslation();

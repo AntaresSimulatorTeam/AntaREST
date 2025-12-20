@@ -14,7 +14,7 @@
 
 import i18n from "@/i18n";
 import type { AdditionalConstraintOccurrences } from "@/services/api/studies/areas/storages/types";
-import { isOccurrencesValid } from "../utils";
+import { isOccurrencesValid } from "../../-utils";
 
 export function validateOccurrences(v: AdditionalConstraintOccurrences): string | true {
   if (!isOccurrencesValid(v)) {
