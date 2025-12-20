@@ -11,29 +11,25 @@
 # This file is part of the Antares project.
 
 import datetime
-from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
+from antarest.maintenance.tasks.auto_archive import archive_old_studies
+from antarest.maintenance.tasks.common import TaskStatus
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.output.output_service import OutputService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.auto_archive_service import AutoArchiveService
 from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
 
 @with_db_context
-def test_auto_archival(tmp_path: Path) -> None:
-    workspace_path = tmp_path / "workspace_test"
-    auto_archive_service = AutoArchiveService(
-        Mock(spec=StudyService),
-        Mock(spec=OutputService),
-        Config(storage=StorageConfig(workspaces={"test": WorkspaceConfig(path=workspace_path)})),
-    )
+def test_auto_archival() -> None:
+    """Test that archive_old_studies correctly identifies and archives old studies."""
+    mock_study_service = Mock(spec=StudyService)
+    mock_output_service = Mock(spec=OutputService)
 
     now = current_time()
 
@@ -77,23 +73,33 @@ def test_auto_archival(tmp_path: Path) -> None:
     )
     db_session.commit()
 
-    study_service = auto_archive_service.study_service
-    study_service.repository = repository
+    mock_study_service.repository = repository
+    mock_study_service.storage_service = Mock()
+    mock_study_service.storage_service.variant_study_service = Mock()
+    mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
+    mock_study_service.task_service = Mock()
+    mock_study_service.archive.side_effect = TaskAlreadyRunning
+    mock_study_service.get_study = repository.get
+    mock_output_service.archive_outputs.return_value = ["task1"]
 
-    study_service.storage_service = Mock()
-    study_service.storage_service.variant_study_service = Mock()
-    study_service.archive.side_effect = TaskAlreadyRunning
-    study_service.get_study = repository.get
+    result = archive_old_studies(
+        study_service=mock_study_service,
+        output_service=mock_output_service,
+        threshold_days=60,
+        snapshot_retention_days=7,
+        dry_run=False,
+    )
 
-    auto_archive_service._try_archive_studies()
+    # The task should complete successfully (TaskAlreadyRunning is handled gracefully)
+    assert result.status == TaskStatus.SUCCESS
 
     # Check that the raw study "d" was about to be archived but failed because the task was already running
-    study_service.archive.assert_called_once_with("d")
+    mock_study_service.archive.assert_called_once_with("d")
 
     # Check that the variant outputs are deleted for the variant study "e"
-    auto_archive_service.output_service.archive_outputs.assert_called_once_with("e")
+    mock_output_service.archive_outputs.assert_called_once_with("e")
 
     # Check if the `clear_all_snapshots` method was called with default values
-    study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
+    mock_study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
         datetime.timedelta(days=7)
     )
