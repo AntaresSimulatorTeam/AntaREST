@@ -14,7 +14,8 @@
 
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.maintenance.tasks.common import GCTaskResult, TaskStatus
+from antarest.core.utils.lock import create_lock
+from antarest.maintenance.tasks.common import GCTaskResult, LockId, TaskStatus
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 
@@ -91,3 +92,12 @@ class TestCleanBlobsIntegration:
 
         for blob_id in blob_ids:
             assert blob_id not in simple_blob_service.get_saved_blobs()
+
+    def test_returns_skipped_when_lock_held(self, simple_blob_service: BlobService):
+        """Test that clean_blobs returns SKIPPED when the lock is already held."""
+        with db():
+            with create_lock(db.session, lock_id=LockId.BLOB_GC):
+                result = clean_blobs(blob_service=simple_blob_service, dry_run=False)
+
+        assert result.status == TaskStatus.SKIPPED
+        assert result.reason == "lock_not_acquired"
