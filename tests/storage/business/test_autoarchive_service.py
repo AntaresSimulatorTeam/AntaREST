@@ -27,7 +27,6 @@ from tests.helpers import create_raw_study, create_variant_study, with_db_contex
 
 @with_db_context
 def test_auto_archival() -> None:
-    """Test that archive_old_studies correctly identifies and archives old studies."""
     mock_study_service = Mock(spec=StudyService)
     mock_output_service = Mock(spec=OutputService)
 
@@ -90,16 +89,9 @@ def test_auto_archival() -> None:
         dry_run=False,
     )
 
-    # The task should complete successfully (TaskAlreadyRunning is handled gracefully)
     assert result.status == TaskStatus.SUCCESS
-
-    # Check that the raw study "d" was about to be archived but failed because the task was already running
     mock_study_service.archive.assert_called_once_with("d")
-
-    # Check that the variant outputs are deleted for the variant study "e"
     mock_output_service.archive_outputs.assert_called_once_with("e")
-
-    # Check if the `clear_all_snapshots` method was called with default values
     mock_study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
         datetime.timedelta(days=7)
     )

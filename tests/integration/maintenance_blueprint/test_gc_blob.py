@@ -20,10 +20,7 @@ from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 
 class TestCleanBlobsIntegration:
-    """Integration tests for clean_blobs using real services."""
-
     def test_deletes_unused_blobs(self, simple_blob_service: BlobService):
-        """Test that unused blobs are deleted."""
         blob_id = simple_blob_service.save(b"Test content")
         assert blob_id in simple_blob_service.get_saved_blobs()
 
@@ -41,7 +38,6 @@ class TestCleanBlobsIntegration:
         assert blob_id not in simple_blob_service.get_saved_blobs()
 
     def test_dry_run_does_not_delete(self, simple_blob_service: BlobService):
-        """Test that dry_run mode does not delete blobs."""
         blob_id = simple_blob_service.save(b"Test content for dry run")
         assert blob_id in simple_blob_service.get_saved_blobs()
 
@@ -59,7 +55,6 @@ class TestCleanBlobsIntegration:
         assert blob_id in simple_blob_service.get_saved_blobs()
 
     def test_returns_success_with_no_blobs(self, simple_blob_service: BlobService):
-        """Test successful execution when there are no blobs."""
         with db():
             result = clean_blobs(
                 blob_service=simple_blob_service,
@@ -71,7 +66,6 @@ class TestCleanBlobsIntegration:
         assert result.duration_seconds >= 0
 
     def test_deletes_multiple_unused_blobs(self, simple_blob_service: BlobService):
-        """Test that multiple unused blobs are deleted."""
         blob_ids = [
             simple_blob_service.save(b"Content 1"),
             simple_blob_service.save(b"Content 2"),
@@ -94,7 +88,6 @@ class TestCleanBlobsIntegration:
             assert blob_id not in simple_blob_service.get_saved_blobs()
 
     def test_returns_skipped_when_lock_held(self, simple_blob_service: BlobService):
-        """Test that clean_blobs returns SKIPPED when the lock is already held."""
         with db():
             with create_lock(db.session, lock_id=LockId.BLOB_GC):
                 result = clean_blobs(blob_service=simple_blob_service, dry_run=False)
