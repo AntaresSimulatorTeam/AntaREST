@@ -19,7 +19,9 @@ from typing_extensions import TypeAlias
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
-from antarest.study.business.output.utils import (
+from antarest.study.model import MatrixFrequency
+from antarest.study.output.output_model import OutputVariablesList, OutputVariablesViewsModel
+from antarest.study.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -30,8 +32,6 @@ from antarest.study.business.output.utils import (
     normalize_df_column_names,
     parse_headers,
 )
-from antarest.study.model import MatrixFrequency
-from antarest.study.output.output_model import OutputVariablesList, OutputVariablesViewsModel
 
 
 class ThermalClusterOutputId(BaseModel, extra="forbid"):

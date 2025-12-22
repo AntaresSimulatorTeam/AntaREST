@@ -25,9 +25,6 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
-from antarest.study.business.output.aggregator_management import AggregatorManager
-from antarest.study.business.output.utils import QueryFileType
-from antarest.study.business.output.variables_management import extract_variables_list
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     MatrixFrequency,
@@ -35,8 +32,11 @@ from antarest.study.model import (
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
+from antarest.study.output.aggregator_management import AggregatorManager
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.output_storage import IOutputStorage
+from antarest.study.output.utils import QueryFileType
+from antarest.study.output.variables_management import extract_variables_list
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

@@ -42,29 +42,6 @@ from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.output.aggregator_management import (
-    AREA_COL,
-    CLUSTER_ID_COL,
-    LINK_COL,
-)
-from antarest.study.business.output.utils import (
-    MCYEAR_COL,
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-    QueryFileType,
-    split_concatenated_columns_from_dataframe,
-)
-from antarest.study.business.output.variables_management import (
-    OutputItemId,
-    check_output_variable_exists,
-    create_output_view_db_model,
-    get_ids_for_aggregation,
-    get_output_view_inside_db,
-    get_query_file,
-)
-from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixFrequency,
@@ -72,6 +49,11 @@ from antarest.study.model import (
     StudyDownloadDTO,
     StudyDownloadType,
     StudySimResultDTO,
+)
+from antarest.study.output.aggregator_management import (
+    AREA_COL,
+    CLUSTER_ID_COL,
+    LINK_COL,
 )
 from antarest.study.output.output_model import (
     OutputVariables,
@@ -81,6 +63,24 @@ from antarest.study.output.output_model import (
     OutputVariablesViewStatus,
 )
 from antarest.study.output.output_storage import IOutputStorage
+from antarest.study.output.utils import (
+    MCYEAR_COL,
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    QueryFileType,
+    split_concatenated_columns_from_dataframe,
+)
+from antarest.study.output.variables_management import (
+    OutputItemId,
+    check_output_variable_exists,
+    create_output_view_db_model,
+    get_ids_for_aggregation,
+    get_output_view_inside_db,
+    get_query_file,
+)
+from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
