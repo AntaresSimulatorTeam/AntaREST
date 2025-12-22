@@ -18,9 +18,9 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import capacity
 
 # noinspection SpellCheckingInspection

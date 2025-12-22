@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Iterator, Protocol
+from typing import IO, Iterator, Protocol
 
 import numpy as np
 import pandas as pd
@@ -152,7 +152,7 @@ class TableExportFormat(EnumIgnoreCase):
     def export_table(
         self,
         df: pd.DataFrame,
-        export_path: str | Path,
+        export_path: str | Path | IO[bytes],
         *,
         with_index: bool = True,
         with_header: bool = True,

@@ -27,9 +27,10 @@ from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode, dump_dataframe
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, dump_dataframe
 
 logger = logging.getLogger(__name__)
 

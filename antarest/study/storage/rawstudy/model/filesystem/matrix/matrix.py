@@ -13,7 +13,6 @@ import contextlib
 import io
 import logging
 from abc import ABC, abstractmethod
-from enum import StrEnum
 from pathlib import Path
 from typing import List, Optional, TypeAlias, cast
 
@@ -26,24 +25,11 @@ from antarest.core.model import JSON
 from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
-
-
-class MatrixFrequency(StrEnum):
-    """
-    An enumeration of matrix frequencies.
-
-    Each frequency corresponds to a specific time interval for a matrix's data.
-    """
-
-    ANNUAL = "annual"
-    MONTHLY = "monthly"
-    WEEKLY = "weekly"
-    DAILY = "daily"
-    HOURLY = "hourly"
 
 
 def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO) -> None:

@@ -17,8 +17,8 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.study.model import (
+    MatrixFrequency,
     MatrixIndex,
-    StudyDownloadLevelDTO,
 )
 from antarest.study.storage.utils import DAY_NAMES, get_start_date
 
@@ -35,12 +35,12 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
                 "simulation.start": 1,
                 "simulation.end": 354,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2024, 1, 1)),
                 steps=51,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -52,12 +52,12 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
                 "simulation.start": 1,
                 "simulation.end": 354,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2018, 1, 1)),
                 steps=51,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -69,12 +69,12 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
                 "simulation.start": 5,
                 "simulation.end": 340,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 5)),
                 steps=48,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -86,12 +86,12 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
                 "simulation.start": 1,
                 "simulation.end": 200,
             },
-            StudyDownloadLevelDTO.MONTHLY,
+            MatrixFrequency.MONTHLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=7,
                 first_week_size=2,
-                level=StudyDownloadLevelDTO.MONTHLY,
+                level=MatrixFrequency.MONTHLY,
             ),
         ),
         (
@@ -103,12 +103,12 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
                 "simulation.start": 1,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.MONTHLY,
+            MatrixFrequency.MONTHLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=4,
                 first_week_size=2,
-                level=StudyDownloadLevelDTO.MONTHLY,
+                level=MatrixFrequency.MONTHLY,
             ),
         ),
         (
@@ -120,12 +120,12 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
                 "simulation.start": 5,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.HOURLY,
+            MatrixFrequency.HOURLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 3, 5)),
                 steps=2304,
                 first_week_size=1,
-                level=StudyDownloadLevelDTO.HOURLY,
+                level=MatrixFrequency.HOURLY,
             ),
         ),
         (
@@ -137,12 +137,12 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
                 "simulation.start": 5,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.ANNUAL,
+            MatrixFrequency.ANNUAL,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 3, 5)),
                 steps=1,
                 first_week_size=1,
-                level=StudyDownloadLevelDTO.ANNUAL,
+                level=MatrixFrequency.ANNUAL,
             ),
         ),
         (
@@ -154,19 +154,17 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
                 "simulation.start": 3,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.DAILY,
+            MatrixFrequency.DAILY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2022, 3, 3)),
                 steps=98,
                 first_week_size=1,
-                level=StudyDownloadLevelDTO.DAILY,
+                level=MatrixFrequency.DAILY,
             ),
         ),
     ],
 )
-def test_create_matrix_index_output(
-    config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex
-) -> None:
+def test_create_matrix_index_output(config: Dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
     config_mock = Mock()
     config_mock.archived = False
     output_id = "some output"
@@ -190,12 +188,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 1,
                 "simulation.end": 354,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2024, 1, 1)),
                 steps=53,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -207,12 +205,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 1,
                 "simulation.end": 354,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2018, 1, 1)),
                 steps=53,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -224,12 +222,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 5,
                 "simulation.end": 340,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=53,
                 first_week_size=4,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -241,12 +239,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 1,
                 "simulation.end": 200,
             },
-            StudyDownloadLevelDTO.MONTHLY,
+            MatrixFrequency.MONTHLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=12,
                 first_week_size=2,
-                level=StudyDownloadLevelDTO.MONTHLY,
+                level=MatrixFrequency.MONTHLY,
             ),
         ),
         (
@@ -258,12 +256,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 1,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.MONTHLY,
+            MatrixFrequency.MONTHLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=12,
                 first_week_size=2,
-                level=StudyDownloadLevelDTO.MONTHLY,
+                level=MatrixFrequency.MONTHLY,
             ),
         ),
         (
@@ -275,12 +273,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 5,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.HOURLY,
+            MatrixFrequency.HOURLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 3, 1)),
                 steps=8760,
                 first_week_size=5,
-                level=StudyDownloadLevelDTO.HOURLY,
+                level=MatrixFrequency.HOURLY,
             ),
         ),
         (
@@ -292,12 +290,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 5,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.ANNUAL,
+            MatrixFrequency.ANNUAL,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 3, 1)),
                 steps=1,
                 first_week_size=5,
-                level=StudyDownloadLevelDTO.ANNUAL,
+                level=MatrixFrequency.ANNUAL,
             ),
         ),
         (
@@ -309,17 +307,17 @@ def test_create_matrix_index_output(
                 "simulation.start": 3,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.DAILY,
+            MatrixFrequency.DAILY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2022, 3, 1)),
                 steps=365,
                 first_week_size=3,
-                level=StudyDownloadLevelDTO.DAILY,
+                level=MatrixFrequency.DAILY,
             ),
         ),
     ],
 )
-def test_create_matrix_index_input(config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex) -> None:
+def test_create_matrix_index_input(config: Dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
     file_study = Mock()
     file_study.tree.get.return_value = {"general": config}
     # Asserts the content are the same
