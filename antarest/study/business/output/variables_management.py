@@ -34,31 +34,31 @@ from antarest.study.output.output_model import OutputVariablesList, OutputVariab
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
-class ThermalClusterOutputId(BaseModel):
+class ThermalClusterOutputId(BaseModel, extra="forbid"):
     type: Literal["thermal"] = "thermal"
     area_id: str
     thermal_id: str
 
 
-class RenewableClusterOutputId(BaseModel):
+class RenewableClusterOutputId(BaseModel, extra="forbid"):
     type: Literal["renewable"] = "renewable"
     area_id: str
     renewable_id: str
 
 
-class ShortTermStorageOutputId(BaseModel):
+class ShortTermStorageOutputId(BaseModel, extra="forbid"):
     type: Literal["st_storage"] = "st_storage"
     area_id: str
     st_storage_id: str
 
 
-class LinkOutputId(BaseModel):
+class LinkOutputId(BaseModel, extra="forbid"):
     type: Literal["link"] = "link"
     area_from_id: str
     area_to_id: str
 
 
-class AreaOutputId(BaseModel):
+class AreaOutputId(BaseModel, extra="forbid"):
     type: Literal["area"] = "area"
     area_id: str
 

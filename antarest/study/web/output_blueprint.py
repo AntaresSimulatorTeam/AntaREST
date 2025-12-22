@@ -25,6 +25,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -80,15 +81,17 @@ def _to_item_id(
     return (
         RootModel[OutputItemId]
         .model_validate(
-            {
-                "type": type,
-                "area_id": area_id,
-                "area_from_id": area_from_id,
-                "area_to_id": area_to_id,
-                "thermal_id": thermal_id,
-                "renewable_id": renewable_id,
-                "st_storage_id": st_storage_id,
-            }
+            remove_nones(
+                {
+                    "type": type,
+                    "area_id": area_id,
+                    "area_from_id": area_from_id,
+                    "area_to_id": area_to_id,
+                    "thermal_id": thermal_id,
+                    "renewable_id": renewable_id,
+                    "st_storage_id": st_storage_id,
+                }
+            )
         )
         .root
     )
