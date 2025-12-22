@@ -57,11 +57,12 @@ from antarest.study.business.output.utils import (
     split_concatenated_columns_from_dataframe,
 )
 from antarest.study.business.output.variables_management import (
-    OutputIdentifier,
-    check_arguments_coherence_and_return_identifier,
+    OutputItemId,
     check_output_variable_exists,
     create_output_view_db_model,
+    get_ids_for_aggregation,
     get_output_view_inside_db,
+    get_query_file,
 )
 from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
@@ -76,7 +77,6 @@ from antarest.study.output.output_model import (
     OutputVariables,
     OutputVariablesInformation,
     OutputVariablesList,
-    OutputVariablesType,
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
@@ -127,14 +127,12 @@ class OutputVariablesViewMaterializationTask:
         study_id: str,
         output_id: str,
         output_service: "OutputService",
-        variable_type: OutputVariablesType,
         variable_name: str,
         frequency: MatrixFrequency,
-        output_identifier: OutputIdentifier,
+        output_identifier: OutputItemId,
     ) -> None:
         self._study_id = study_id
         self._output_id = output_id
-        self._variable_type = variable_type
         self._frequency = frequency
         self._variable_name = variable_name
         self._output_service = output_service
@@ -143,15 +141,16 @@ class OutputVariablesViewMaterializationTask:
     def _materialize_view(self) -> None:
         """Run the task"""
         with temp_file_path(dir=self._output_service._tmp_dir) as tmp_path:
+            item_id, subitem_id = get_ids_for_aggregation(self._output_identifier)
             # Calls the aggregation with the right arguments
             task_id = self._output_service.start_aggregate_output_data(
                 self._study_id,
                 self._output_id,
-                self._output_identifier.query_file,
+                get_query_file(self._output_identifier),
                 self._frequency,
                 TableExportFormat.PARQUET,
                 [self._variable_name],
-                [self._output_identifier.get_id_for_aggregation()],
+                [item_id],
                 tmp_path,
             )
 
@@ -159,9 +158,9 @@ class OutputVariablesViewMaterializationTask:
             self._output_service._task_service.await_task(task_id)
 
             # Transform the dataframe to have the expected format
-            if cluster_id := self._output_identifier.get_sub_id_for_aggregation():
+            if subitem_id:
                 dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, self._variable_name, CLUSTER_ID_COL])
-                dataframe = dataframe[dataframe[CLUSTER_ID_COL] == cluster_id].drop(columns=[CLUSTER_ID_COL])
+                dataframe = dataframe[dataframe[CLUSTER_ID_COL] == subitem_id].drop(columns=[CLUSTER_ID_COL])
             else:
                 dataframe = pd.read_parquet(tmp_path, columns=[MCYEAR_COL, self._variable_name])
 
@@ -174,7 +173,6 @@ class OutputVariablesViewMaterializationTask:
         db_model = create_output_view_db_model(
             self._study_id,
             self._output_id,
-            self._variable_type,
             self._variable_name,
             self._frequency,
             self._output_identifier,
@@ -221,11 +219,12 @@ class OutputService:
         return self._storage.get_digest(study_id, output_id)
 
     def _get_ongoing_variables_view_materialization_task(
-        self, output_identifier: OutputIdentifier, study_id: str, output_id: str, frequency: MatrixFrequency
+        self, item_identifier: OutputItemId, study_id: str, output_id: str, frequency: MatrixFrequency
     ) -> tuple[str | None, str]:
-        task_name = f"Materializing output view for study `{study_id}`, output `{output_id}`, frequency `{frequency}`, id `{output_identifier.get_id_for_aggregation()}`"
-        if sub_id := output_identifier.get_sub_id_for_aggregation():
-            task_name += f" sub_id `{sub_id}`"
+        item_id, subitem_id = get_ids_for_aggregation(item_identifier)
+        task_name = f"Materializing output view for study `{study_id}`, output `{output_id}`, frequency `{frequency}`, id `{item_id}`"
+        if subitem_id:
+            task_name += f" sub_id `{subitem_id}`"
 
         study_tasks = self._task_service.list_tasks(
             TaskListFilter(
@@ -753,15 +752,9 @@ class OutputService:
         self,
         study_id: str,
         output_id: str,
-        variable_type: OutputVariablesType,
+        output_item_id: OutputItemId,
         variable_name: str,
         frequency: MatrixFrequency,
-        area_id: str | None = None,
-        area_from_id: str | None = None,
-        area_to_id: str | None = None,
-        thermal_id: str | None = None,
-        renewable_id: str | None = None,
-        st_storage_id: str | None = None,
     ) -> pd.DataFrame | OutputVariablesViewResponse:
         """
         If the view is already registered in DB, updates its `last_read` value and returns it.
@@ -769,13 +762,7 @@ class OutputService:
         """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
-        output_identifier = check_arguments_coherence_and_return_identifier(
-            variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
-        )
-
-        db_model = get_output_view_inside_db(
-            study_id, output_id, variable_type, variable_name, frequency, output_identifier
-        )
+        db_model = get_output_view_inside_db(study_id, output_id, variable_name, frequency, output_item_id)
         if db_model is not None:
             # Update `last_read` value inside DB
             db_model.last_read = current_time()
@@ -787,11 +774,11 @@ class OutputService:
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)
-        check_output_variable_exists(output_id, variable_type, variable_name, available_variables, output_identifier)
+        check_output_variable_exists(output_id, variable_name, available_variables, output_item_id)
 
         # Return a 404 Response with a body specifying if the materialization is in progress or not.
         task_id, _ = self._get_ongoing_variables_view_materialization_task(
-            output_identifier, study_id, output_id, frequency
+            output_item_id, study_id, output_id, frequency
         )
         status = OutputVariablesViewStatus.IN_PROGRESS if task_id else OutputVariablesViewStatus.NOT_FOUND
         return OutputVariablesViewResponse(status=status, task_id=task_id)
@@ -800,15 +787,9 @@ class OutputService:
         self,
         study_id: str,
         output_id: str,
-        variable_type: OutputVariablesType,
+        output_item_id: OutputItemId,
         variable_name: str,
         frequency: MatrixFrequency,
-        area_id: str | None = None,
-        area_from_id: str | None = None,
-        area_to_id: str | None = None,
-        thermal_id: str | None = None,
-        renewable_id: str | None = None,
-        st_storage_id: str | None = None,
     ) -> str:
         """
         If the view is already registered in DB, raise an HTTP Conflict error.
@@ -816,30 +797,24 @@ class OutputService:
         """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
-        output_identifier = check_arguments_coherence_and_return_identifier(
-            variable_type, output_id, area_id, area_from_id, area_to_id, thermal_id, renewable_id, st_storage_id
-        )
-
-        db_model = get_output_view_inside_db(
-            study_id, output_id, variable_type, variable_name, frequency, output_identifier
-        )
+        db_model = get_output_view_inside_db(study_id, output_id, variable_name, frequency, output_item_id)
         if db_model is not None:
             raise HTTPException(status_code=417, detail="The output variables view is already materialized in DB")
 
         # If a task materializing the same view is already running, returns its id
         task_id, task_name = self._get_ongoing_variables_view_materialization_task(
-            output_identifier, study_id, output_id, frequency
+            output_item_id, study_id, output_id, frequency
         )
         if task_id:
             return task_id
 
         # Checks the asked couple `variable name` / `object_id` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)
-        check_output_variable_exists(output_id, variable_type, variable_name, available_variables, output_identifier)
+        check_output_variable_exists(output_id, variable_name, available_variables, output_item_id)
 
         # Materialize the view
         task = OutputVariablesViewMaterializationTask(
-            study_id, output_id, self, variable_type, variable_name, frequency, output_identifier
+            study_id, output_id, self, variable_name, frequency, output_item_id
         )
 
         return self._task_service.add_task(

@@ -17,6 +17,7 @@ from typing import Annotated, Any, Sequence
 
 import pandas as pd
 from fastapi import APIRouter, Depends, Query, UploadFile
+from pydantic import RootModel
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
@@ -33,6 +34,7 @@ from antarest.study.business.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
+from antarest.study.business.output.variables_management import OutputItemId
 from antarest.study.model import MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
 from antarest.study.output.output_model import (
     OutputVariablesInformation,
@@ -64,6 +66,32 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     values = [v.strip() for v in values]
     # remove duplicates and preserve order (to have a deterministic result for unit tests).
     return list(collections.OrderedDict.fromkeys(values))
+
+
+def _to_item_id(
+    type: OutputVariablesType,
+    area_id: str | None = None,
+    area_from_id: str | None = None,
+    area_to_id: str | None = None,
+    thermal_id: str | None = None,
+    renewable_id: str | None = None,
+    st_storage_id: str | None = None,
+) -> OutputItemId:
+    return (
+        RootModel[OutputItemId]
+        .model_validate(
+            {
+                "type": type,
+                "area_id": area_id,
+                "area_from_id": area_from_id,
+                "area_to_id": area_to_id,
+                "thermal_id": thermal_id,
+                "renewable_id": renewable_id,
+                "st_storage_id": st_storage_id,
+            }
+        )
+        .root
+    )
 
 
 def create_output_routes(
@@ -538,9 +566,9 @@ def create_output_routes(
     def get_output_variables_view(
         uuid: str,
         output_id: str,
-        type: OutputVariablesType,
         variable_name: str,
         frequency: MatrixFrequency,
+        type: OutputVariablesType,
         area_id: str | None = None,
         area_from_id: str | None = None,
         area_to_id: str | None = None,
@@ -555,18 +583,22 @@ def create_output_routes(
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
+
+        item_id = _to_item_id(
+            type=type,
+            area_id=area_id,
+            area_from_id=area_from_id,
+            area_to_id=area_to_id,
+            thermal_id=thermal_id,
+            renewable_id=renewable_id,
+            st_storage_id=st_storage_id,
+        )
         view = output_service.get_output_variables_view(
             uuid,
             output_id,
-            type,
+            item_id,
             variable_name,
             frequency,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
         )
         if isinstance(view, pd.DataFrame):
             content = view.to_dict(orient="split", index=False)
@@ -580,9 +612,9 @@ def create_output_routes(
     def materialize_output_variables_view(
         uuid: str,
         output_id: str,
-        type: OutputVariablesType,
         variable_name: str,
         frequency: MatrixFrequency,
+        type: OutputVariablesType,
         area_id: str | None = None,
         area_from_id: str | None = None,
         area_to_id: str | None = None,
@@ -597,18 +629,21 @@ def create_output_routes(
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
+        item_id = _to_item_id(
+            type=type,
+            area_id=area_id,
+            area_from_id=area_from_id,
+            area_to_id=area_to_id,
+            thermal_id=thermal_id,
+            renewable_id=renewable_id,
+            st_storage_id=st_storage_id,
+        )
         return output_service.materialize_output_variables_view(
             uuid,
             output_id,
-            type,
+            item_id,
             variable_name,
             frequency,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
         )
 
     return bp
