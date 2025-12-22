@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import os
+import sys
 
 import pytest
 from starlette.testclient import TestClient
@@ -18,7 +18,7 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskStatus
 from tests.integration.utils import wait_task_completion
 
-RUN_ON_WINDOWS = os.name == "nt"
+RUN_ON_WINDOWS = sys.platform == "win32"
 
 
 class TestStudyUpgrade:

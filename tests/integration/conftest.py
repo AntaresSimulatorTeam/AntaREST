@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import os
 import shutil
+import sys
 import typing as t
 import uuid
 import zipfile
@@ -38,7 +38,7 @@ HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 
-RUN_ON_WINDOWS = os.name == "nt"
+RUN_ON_WINDOWS = sys.platform == "win32"
 
 
 @pytest.fixture(scope="session")
