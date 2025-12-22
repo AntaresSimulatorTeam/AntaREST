@@ -14,7 +14,8 @@ import dataclasses
 import enum
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
+from enum import StrEnum
 from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, TypeAlias
 
@@ -43,7 +44,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from typing_extensions import override
 
-from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
@@ -564,29 +564,18 @@ class StudyDownloadType(enum.StrEnum):
     AREA = "AREA"
 
 
-class StudyDownloadLevelDTO(enum.StrEnum):
+class MatrixFrequency(StrEnum):
+    """
+    An enumeration of matrix frequencies.
+
+    Each frequency corresponds to a specific time interval for a matrix's data.
+    """
+
     ANNUAL = "annual"
     MONTHLY = "monthly"
     WEEKLY = "weekly"
     DAILY = "daily"
     HOURLY = "hourly"
-
-    def inc_date(self, date: datetime) -> datetime:
-        if self.value == StudyDownloadLevelDTO.ANNUAL:
-            return date.replace(year=date.year + 1)
-        elif self.value == StudyDownloadLevelDTO.MONTHLY:
-            if date.month == 12:
-                return date.replace(year=date.year + 1, month=1)
-            else:
-                return date.replace(month=date.month + 1)
-        elif self.value == StudyDownloadLevelDTO.WEEKLY:
-            return date + timedelta(days=7)
-        elif self.value == StudyDownloadLevelDTO.DAILY:
-            return date + timedelta(days=1)
-        elif self.value == StudyDownloadLevelDTO.HOURLY:
-            return date + timedelta(hours=1)
-        else:
-            raise ShouldNotHappenException()
 
 
 class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
@@ -596,7 +585,7 @@ class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
 
     type: StudyDownloadType
     years: list[int] = []
-    level: StudyDownloadLevelDTO
+    level: MatrixFrequency
     filter_in: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
     filter_out: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
     filter: list[str] = []
@@ -615,7 +604,7 @@ class MatrixIndex(AntaresBaseModel):
     start_date: str = ""
     steps: int = 8760
     first_week_size: int = 7
-    level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
+    level: MatrixFrequency = MatrixFrequency.HOURLY
 
 
 class TimeSerie(AntaresBaseModel):

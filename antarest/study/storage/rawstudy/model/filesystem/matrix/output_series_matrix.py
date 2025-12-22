@@ -21,6 +21,7 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
@@ -33,7 +34,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import 
     HeadWriter,
     LinkHeadWriter,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 logger = logging.getLogger(__name__)
 

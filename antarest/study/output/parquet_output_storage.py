@@ -14,10 +14,10 @@ from typing import BinaryIO, Iterator, List, Optional, Sequence
 
 import pandas as pd
 
-from antarest.study.business.output.utils import QueryFileType
-from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.model import MatrixIndex, StudySimResultDTO
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.output_storage import IOutputStorage, OutputStorageType
+from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
@@ -54,7 +54,7 @@ class ParquetOutputStorage(IOutputStorage):
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
         raise NotImplementedError()
 
-    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
         raise NotImplementedError()
 
     def aggregate_output_data(
