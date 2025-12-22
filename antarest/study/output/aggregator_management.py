@@ -20,7 +20,8 @@ import polars as pl
 from polars.exceptions import ComputeError
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.study.business.output.utils import (
+from antarest.study.model import MatrixFrequency
+from antarest.study.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
     MCIndAreasQueryFile,
@@ -32,7 +33,6 @@ from antarest.study.business.output.utils import (
     normalize_df_column_names,
     parse_headers,
 )
-from antarest.study.model import MatrixFrequency
 
 # We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
 # But it logs a FutureWarning every time so we silence it here.
