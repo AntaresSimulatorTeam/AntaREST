@@ -30,8 +30,8 @@ from antarest.study.business.output.utils import QueryFileType
 from antarest.study.business.output.variables_management import extract_variables_list
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    MatrixFrequency,
     MatrixIndex,
-    StudyDownloadLevelDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
@@ -40,7 +40,6 @@ from antarest.study.output.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
@@ -310,7 +309,7 @@ class FileOutputStorage(IOutputStorage):
         return digest_node.get_ui()
 
     @override
-    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
         """
         Get the time index (start date and step count) for output matrices with a given frequency.
         Args:

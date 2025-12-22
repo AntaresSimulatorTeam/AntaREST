@@ -110,11 +110,11 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
+    MatrixFrequency,
     MatrixIndex,
     RawStudy,
     Study,
     StudyContentStatus,
-    StudyDownloadLevelDTO,
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
@@ -964,15 +964,15 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
         output_id = None
-        level = StudyDownloadLevelDTO.HOURLY
+        frequency = MatrixFrequency.HOURLY
         if path:
             path_components = path.strip().strip("/").split("/")
             if len(path_components) > 2 and path_components[0] == "output":
                 output_id = path_components[1]
             data_node = file_study.tree.get_node(path_components)
             if isinstance(data_node, OutputSeriesMatrix) or isinstance(data_node, InputSeriesMatrix):
-                level = StudyDownloadLevelDTO(data_node.freq)
-        return get_start_date(file_study, output_id, level)
+                frequency = data_node.freq
+        return get_start_date(file_study, output_id, frequency)
 
     def remove_duplicates(self) -> None:
         duplicates = self.repository.list_duplicates()
