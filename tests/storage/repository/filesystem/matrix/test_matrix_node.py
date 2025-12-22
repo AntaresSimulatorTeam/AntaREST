@@ -18,9 +18,9 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 MOCK_MATRIX = pd.DataFrame([[1, 2], [3, 4]])
 

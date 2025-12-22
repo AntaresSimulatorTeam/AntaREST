@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
     BindingConstraintOutputSeriesMatrix,
 )

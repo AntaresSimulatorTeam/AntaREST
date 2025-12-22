@@ -17,9 +17,8 @@ from typing import BinaryIO, Iterator, List, Optional, Sequence
 import pandas as pd
 
 from antarest.study.business.output.utils import QueryFileType
-from antarest.study.model import MatrixIndex, StudyDownloadLevelDTO, StudySimResultDTO
+from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO
 from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -92,7 +91,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_output_time_index(self, study_id: str, output_id: str, frequency: StudyDownloadLevelDTO) -> MatrixIndex:
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
         """
         Get the time index (start date and step count) for output matrices with a given frequency.
 

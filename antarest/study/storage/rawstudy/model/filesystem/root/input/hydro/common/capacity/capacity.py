@@ -17,12 +17,11 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.serde.np_array import NpArray
-from antarest.study.model import STUDY_VERSION_6_5
+from antarest.study.model import STUDY_VERSION_6_5, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_daily_ones
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
 class MatrixInfo(TypedDict, total=False):
