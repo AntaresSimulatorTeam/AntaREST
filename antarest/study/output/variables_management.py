@@ -14,10 +14,8 @@ from pathlib import Path
 from typing import Annotated, Any, Iterator, Literal, Tuple
 
 from pydantic import BaseModel, Field
-from typing_extensions import TypeAlias
-from typing_extensions import override
 from sqlalchemy import select
-from typing_extensions import override
+from typing_extensions import TypeAlias
 
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.core.utils.fastapi_sqlalchemy import db
