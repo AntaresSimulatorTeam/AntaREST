@@ -470,13 +470,13 @@ class OutputService:
                 column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
                 for object_name, object_group in dataframe.groupby(column_type_name):
                     assert isinstance(object_name, str)
+                    assert isinstance(object_group, pd.DataFrame)
                     element_name = object_name
                     if data.type == StudyDownloadType.LINK:
                         element_name = "^".join(element_name.split(" - "))
 
                     for year, year_group in object_group.groupby(MCYEAR_COL):
-                        del year_group[column_type_name]
-                        del year_group[MCYEAR_COL]
+                        year_group.drop(columns=[column_type_name, MCYEAR_COL], inplace=True)
                         variables_list = list(split_concatenated_columns_from_dataframe(year_group))
                         intermediary_dict.setdefault(element_name, {}).setdefault(str(year), []).extend(variables_list)
 
