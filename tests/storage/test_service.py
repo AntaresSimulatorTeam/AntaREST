@@ -1531,7 +1531,7 @@ def test_upgrade_study__raw_study__nominal(
     upgrade_study_mock.assert_called_once_with()
 
     # The study must be updated in the database
-    actual_study: RawStudy = db.session.query(Study).get(study_id)
+    actual_study: RawStudy = db.session.get(Study, study_id)
     assert actual_study is not None, "Not in database"
     assert actual_study.version == f"{parsed_target_version:2d}"
 
@@ -1619,7 +1619,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
         task(notifier)
 
     # The study must not be updated in the database
-    actual_study: RawStudy = db.session.query(Study).get(study_id)
+    actual_study: RawStudy = db.session.get(Study, study_id)
     assert actual_study is not None, "Not in database"
     assert actual_study.version == old_version
 

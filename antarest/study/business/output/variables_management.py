@@ -15,6 +15,9 @@ from typing import Annotated, Any, Iterator, Literal, Tuple
 
 from pydantic import BaseModel, Field
 from typing_extensions import TypeAlias
+from typing_extensions import override
+from sqlalchemy import select
+from typing_extensions import override
 
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -326,12 +329,12 @@ def get_output_view_inside_db(
     frequency: MatrixFrequency,
     item_id: OutputItemId,
 ) -> OutputVariablesViewsModel | None:
-    q = db.session.query(OutputVariablesViewsModel)
-    q = q.filter(OutputVariablesViewsModel.study_id == study_id)
-    q = q.filter(OutputVariablesViewsModel.output_id == output_id)
-    q = q.filter(OutputVariablesViewsModel.type == item_id.type)
-    q = q.filter(OutputVariablesViewsModel.frequency == frequency)
-    q = q.filter(OutputVariablesViewsModel.variable_name == variable_name)
+    stmt = select(OutputVariablesViewsModel)
+    stmt = stmt.where(OutputVariablesViewsModel.study_id == study_id)
+    stmt = stmt.where(OutputVariablesViewsModel.output_id == output_id)
+    stmt = stmt.where(OutputVariablesViewsModel.type == item_id.type)
+    stmt = stmt.where(OutputVariablesViewsModel.frequency == frequency)
+    stmt = stmt.where(OutputVariablesViewsModel.variable_name == variable_name)
 
     match item_id:
         case AreaOutputId():
@@ -352,9 +355,9 @@ def get_output_view_inside_db(
             raise NotImplementedError(f"output identifier `{item_id.__class__}` is not implemented")
 
     for column, value in filters:
-        q = q.filter(column == value)
+        stmt = stmt.where(column == value)
 
-    return q.scalar()  # type: ignore
+    return db.session.scalar(stmt)
 
 
 def create_output_view_db_model(
