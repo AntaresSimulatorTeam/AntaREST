@@ -17,7 +17,7 @@ from typing import Annotated, Any, Sequence
 
 import pandas as pd
 from fastapi import APIRouter, Depends, Query, UploadFile
-from pydantic import RootModel
+from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
@@ -69,6 +69,9 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
+_ITEM_ID_TYPE_ADAPTER: TypeAdapter[OutputItemId] = TypeAdapter(OutputItemId)
+
+
 def _to_item_id(
     type: OutputVariablesType,
     area_id: str | None = None,
@@ -78,22 +81,18 @@ def _to_item_id(
     renewable_id: str | None = None,
     st_storage_id: str | None = None,
 ) -> OutputItemId:
-    return (
-        RootModel[OutputItemId]
-        .model_validate(
-            remove_nones(
-                {
-                    "type": type,
-                    "area_id": area_id,
-                    "area_from_id": area_from_id,
-                    "area_to_id": area_to_id,
-                    "thermal_id": thermal_id,
-                    "renewable_id": renewable_id,
-                    "st_storage_id": st_storage_id,
-                }
-            )
+    return _ITEM_ID_TYPE_ADAPTER.validate_python(
+        remove_nones(
+            {
+                "type": type,
+                "area_id": area_id,
+                "area_from_id": area_from_id,
+                "area_to_id": area_to_id,
+                "thermal_id": thermal_id,
+                "renewable_id": renewable_id,
+                "st_storage_id": st_storage_id,
+            }
         )
-        .root
     )
 
 
