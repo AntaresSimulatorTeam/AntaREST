@@ -18,9 +18,9 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 MOCK_MATRIX = pd.DataFrame([[1, 2], [3, 4]])
 
@@ -45,52 +45,20 @@ class MockMatrixNode(MatrixNode):
         pass  # not used
 
 
-class TestMatrixNode:
-    def test_normalize(self, tmp_path: Path) -> None:
-        file = tmp_path / "matrix.json"
-        file.touch()
+def test_normalize_denormalize_methods(tmp_path: Path) -> None:
+    file = tmp_path / "matrix.txt"
 
-        matrix_service = Mock()
-        matrix_service.create.return_value = "my-id"
+    matrix_mapper = MatrixUriMapperFactory(matrix_service=Mock()).create(NormalizedMatrixUriMapper.NORMALIZED)
+    config = FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8)
 
-        factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-        matrix_mapper = factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+    node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
 
-        node = MockMatrixNode(
-            matrix_mapper=matrix_mapper,
-            config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
-        )
+    assert node.get_matrix_nodes_to_normalize() == [node]
+    assert node.get_matrix_nodes_to_denormalize() == []
 
-        node.normalize()
+    link = file.parent / f"{file.name}.link"
+    link.write_text("my-id")
+    node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
 
-        # check the result
-        assert node.matrix_mapper.get_link_content(node) == "matrix://my-id"
-        assert not file.exists()
-        matrix_service.create.assert_called_once()
-        args = matrix_service.create.call_args.args
-        assert len(args) == 1
-        assert MOCK_MATRIX.equals(args[0])
-
-    def test_denormalize(self, tmp_path: Path) -> None:
-        file = tmp_path / "matrix.json"
-
-        link = file.parent / f"{file.name}.link"
-        link.write_text("my-id")
-
-        matrix_service = Mock()
-        matrix_service.get.return_value = MOCK_MATRIX
-
-        factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-        matrix_mapper = factory.create(NormalizedMatrixUriMapper.NORMALIZED)
-
-        node = MockMatrixNode(
-            matrix_mapper=matrix_mapper,
-            config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
-        )
-
-        node.denormalize()
-
-        # check the result
-        assert not link.exists()
-        actual = pd.read_csv(file, sep="\t", header=None)
-        assert actual.equals(MOCK_MATRIX)
+    assert node.get_matrix_nodes_to_normalize() == []
+    assert node.get_matrix_nodes_to_denormalize() == [node]

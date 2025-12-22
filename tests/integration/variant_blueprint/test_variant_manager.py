@@ -85,7 +85,7 @@ def generate_snapshot_fixture(
 
             # Modify the `created_at` and `updated_at` attributes in DB.
             with db():
-                variant = db.session.query(Study).get(variant_id)
+                variant = db.session.get(Study, variant_id)
                 variant.last_access = different_time
                 variant.updated_at = different_time
                 db.session.merge(variant)

@@ -14,8 +14,7 @@ from typing import Iterator, TypeAlias
 
 import pandas as pd
 
-from antarest.study.model import TimeSerie
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.model import MatrixFrequency, TimeSerie
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"

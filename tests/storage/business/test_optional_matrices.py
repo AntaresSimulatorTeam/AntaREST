@@ -17,13 +17,16 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.sts_model import STStorageCreation
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_optional_matrices(empty_study_920: FileStudy, command_context: CommandContext) -> None:
+def test_optional_matrices(
+    empty_study_920: FileStudy, command_context: CommandContext, raw_study_service: RawStudyService
+) -> None:
     # Create an area containing 1 thermal cluster and 1 short-term storage
     study = empty_study_920
     version = study.config.version
@@ -65,7 +68,7 @@ def test_optional_matrices(empty_study_920: FileStudy, command_context: CommandC
         assert content["data"] == expected_content
 
     # Ensures the normalization succeeds even if the files are missing
-    study.tree.normalize()
+    raw_study_service.normalize_study(study)
 
     # Removes a file that's not optional for the Simulator
     url = ["input", "thermal", "series", "fr", "thermal_cluster", "series"]
@@ -83,4 +86,4 @@ def test_optional_matrices(empty_study_920: FileStudy, command_context: CommandC
         ChildNotFoundError,
         match="404: File 'input/thermal/series/fr/thermal_cluster/series.txt' not found in the study ''",
     ):
-        study.tree.normalize()
+        raw_study_service.normalize_study(study)
