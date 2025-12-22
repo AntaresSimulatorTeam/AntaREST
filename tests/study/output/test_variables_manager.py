@@ -12,7 +12,8 @@
 import pytest
 
 from antarest.core.exceptions import OutputVariablesViewError
-from antarest.study.business.output.variables_management import (
+from antarest.study.output.output_model import OutputVariablesList
+from antarest.study.output.variables_management import (
     AreaOutputId,
     LinkOutputId,
     OutputItemId,
@@ -21,7 +22,6 @@ from antarest.study.business.output.variables_management import (
     ThermalClusterOutputId,
     check_output_variable_exists,
 )
-from antarest.study.output.output_model import OutputVariablesList
 
 AVAILABLE_VARIABLES = OutputVariablesList(
     **{

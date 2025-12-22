@@ -16,9 +16,9 @@ from typing import BinaryIO, Iterator, List, Optional, Sequence
 
 import pandas as pd
 
-from antarest.study.business.output.utils import QueryFileType
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO
 from antarest.study.output.output_model import OutputVariablesList
+from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)

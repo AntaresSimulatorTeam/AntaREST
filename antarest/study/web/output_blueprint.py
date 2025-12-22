@@ -29,13 +29,6 @@ from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.output.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-)
-from antarest.study.business.output.variables_management import OutputItemId
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.output.output_model import (
     OutputVariablesInformation,
@@ -44,6 +37,13 @@ from antarest.study.output.output_model import (
     OutputVariablesViewResponse,
 )
 from antarest.study.output.output_service import OutputService
+from antarest.study.output.utils import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
+from antarest.study.output.variables_management import OutputItemId
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
