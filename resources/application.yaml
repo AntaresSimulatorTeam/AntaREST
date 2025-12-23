@@ -18,6 +18,12 @@ storage:
     studies:
       path: ./examples/studies/
 
+  # new output storage
+  output:
+    enable: true
+    default: false
+    archive_dir: ./output-archives
+
 launcher:
   default: local
   launchers:

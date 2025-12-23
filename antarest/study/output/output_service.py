@@ -195,7 +195,7 @@ class OutputVariablesViewMaterializationTask:
 class OutputService:
     def __init__(
         self,
-        storage: IOutputStorage,
+        storage: IOutputStorage | list[IOutputStorage],
         task_service: ITaskService,
         file_transfer_manager: FileTransferManager,
         matrix_service: ISimpleMatrixService,
@@ -203,7 +203,7 @@ class OutputService:
         studies_repository: IStudyMetadataProvider,
         cache: ICache,
     ) -> None:
-        self._storages = [storage]
+        self._storages = storage if isinstance(storage, list) else [storage]
         self._task_service = task_service
         self._file_transfer_manager = file_transfer_manager
         self._matrix_service = matrix_service

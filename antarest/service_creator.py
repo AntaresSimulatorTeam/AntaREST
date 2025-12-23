@@ -49,7 +49,11 @@ from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
 from antarest.study.output.file_output_storage import FileOutputStorage
+from antarest.study.output.lfs.flat_dir_large_file_storage import FlatDirLargeFileStorage
 from antarest.study.output.output_service import OutputService
+from antarest.study.output.output_storage import IOutputStorage
+from antarest.study.output.storage.parquet_output_storage import ParquetOutputStorage
+from antarest.study.output.storage.repository import OutputMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
@@ -152,6 +156,20 @@ class CoreServices:
     blob_service: BlobService
 
 
+def build_output_storage(config: Config, file_output_storage: FileOutputStorage) -> list[IOutputStorage]:
+    if not config.storage.output.enable:
+        return [file_output_storage]
+    tmp_dir = config.storage.tmp_dir / "outputs"
+    lfs = FlatDirLargeFileStorage(config.storage.archive_dir)
+    parquet_storage = ParquetOutputStorage(
+        tmp_dir=tmp_dir, archive_storage=lfs, metadata_repository=OutputMetadataRepository()
+    )
+    if config.storage.output.default:
+        return [parquet_storage, file_output_storage]
+    else:
+        return [file_output_storage, parquet_storage]
+
+
 def build_output_service(
     app_ctxt: Optional[AppBuildContext],
     study_service: StudyService,
@@ -163,15 +181,16 @@ def build_output_service(
     matrix_service: ISimpleMatrixService,
 ) -> OutputService:
     remote_executor = RemoteWorkerExecutor(event_bus, config)
-    output_storage = FileOutputStorage(
+    file_output_storage = FileOutputStorage(
         outputs_provider=study_service_as_file_outputs_provider(study_service),
         cache=cache,
         remote_executor=remote_executor,
     )
+    storages = build_output_storage(config, file_output_storage)
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),
-        storage=output_storage,
+        storage=storages,
         task_service=task_service,
         file_transfer_manager=filetransfer_service,
         matrix_service=matrix_service,
