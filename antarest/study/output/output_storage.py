@@ -48,15 +48,20 @@ class IOutputStorage(ABC):
         self,
         study_id: str,
         output: BinaryIO | Path,
-        output_name: Optional[str] = None,
+        output_name_suffix: Optional[str] = None,
     ) -> Optional[str]:
         """
         Import an outputs to the storage.
+
+        Accepts either a binary input, in which case either a zip or 7z file is expected,
+        or a path, in which case only uncompressed or zip is handled (?).
+        Note that in the case of a zip file path, the output will be considered archived.
 
         Args:
             study_id: the study id
             output: Path of the output or raw data
             output_name: Optional name suffix to append to the output name
+
         Returns: None
         """
 

@@ -553,8 +553,8 @@ class StudySimResultDTO(AntaresBaseModel):
     name: str
     type: str
     settings: StudySimSettingsDTO
-    completionDate: str
-    status: str
+    completionDate: str  # TODO: delete ? seems never filled with actual information
+    status: str  # TODO: delete ? seems never filled with actual information
     archived: bool
 
 

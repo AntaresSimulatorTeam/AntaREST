@@ -29,7 +29,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,  # TODO: this is useless, should be removed
         config: FileStudyTreeConfig,
     ) -> None:
         self.matrix_mapper = matrix_mapper

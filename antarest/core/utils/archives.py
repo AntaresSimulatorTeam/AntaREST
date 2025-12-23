@@ -87,6 +87,17 @@ def read_in_zip(
             tmp_dir.cleanup()
 
 
+def find_archive_format(path: Path) -> Optional[ArchiveFormat]:
+    # Read the first few bytes to identify the file format
+    with open(path, "rb") as f:
+        file_format = f.read(4)
+    if file_format[:4] == b"PK\x03\x04":
+        return ArchiveFormat.ZIP
+    elif file_format[:2] == b"7z":
+        return ArchiveFormat.SEVEN_ZIP
+    raise BadArchiveContent("Unsupported archive format.")
+
+
 def extract_archive(stream: BinaryIO, target_dir: Path) -> None:
     """
     Extract a ZIP archive to a given destination.

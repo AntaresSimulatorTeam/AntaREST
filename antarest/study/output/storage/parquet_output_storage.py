@@ -9,20 +9,25 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import shutil
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence, Optional, Iterator, List, BinaryIO
+from typing import BinaryIO, Iterator, List, Optional, Sequence
 
 import pandas as pd
 from typing_extensions import override
 
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO, StudySimSettingsDTO
+from antarest.study.output.file.extract_metadata import extract_metadata
 from antarest.study.output.lfs.large_file_storage import ILargeFileStorage
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.output_storage import IOutputStorage, OutputStorageType
-from antarest.study.output.storage.repository import OutputMetadataRepository, OutputMetadata
+from antarest.study.output.storage.repository import OutputMetadata, OutputMetadataRepository
 from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
+from antarest.study.storage.utils import extract_output_name
 
 
 def _archive_id(study_id: str, output_name: str) -> str:
@@ -52,14 +57,45 @@ def _metadata_to_sim_result(metadata: OutputMetadata) -> StudySimResultDTO:
         type=metadata.type,
     )
 
-def _read_metadata(archive_path: Path) -> StudySimResultDTO:
 
+@dataclass(frozen=True)
+class _OutputTmpPaths:
+    archive_path: Path
+    dir_path: Path
+
+
+def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path, Path]:
+    archive_path = tmp_dir / f"{uuid.uuid4()}"
+    dir_path = tmp_dir / f"{uuid.uuid4()}"
+    try:
+        if isinstance(output, Path):
+            if output.is_dir():
+                shutil.copytree(output, dir_path, dirs_exist_ok=False)
+                archive_dir(dir_path, archive_path, remove_source_dir=False, archive_format=ArchiveFormat.ZIP)
+            else:
+                shutil.copy(output, archive_path)
+                with archive_path.open("rb") as f:
+                    extract_archive(f, dir_path)
+        else:
+            # write the archive to one dir and extract to the second
+            with archive_path.open("wb") as f:
+                shutil.copyfileobj(output, f)
+            with archive_path.open("rb") as f:
+                extract_archive(f, dir_path)
+    except Exception:
+        shutil.rmtree(archive_path, ignore_errors=True)
+        shutil.rmtree(dir_path, ignore_errors=True)
+        raise
+    return archive_path, dir_path
 
 
 class ParquetOutputStorage(IOutputStorage):
-    def __init__(self, metadata_repository: OutputMetadataRepository, archive_storage: ILargeFileStorage) -> None:
+    def __init__(
+        self, tmp_dir: Path, metadata_repository: OutputMetadataRepository, archive_storage: ILargeFileStorage
+    ) -> None:
         self._archive_storage = archive_storage
         self._metadata_repository = metadata_repository
+        self._tmp_dir = tmp_dir
 
     def _get_metadata(self, study_id: str, output_name: str) -> OutputMetadata | None:
         return self._metadata_repository.get(study_id, output_name)
@@ -76,17 +112,45 @@ class ParquetOutputStorage(IOutputStorage):
         return OutputStorageType.PARQUET
 
     @override
-    def import_output(self, study_id: str, output: BinaryIO | Path, output_name: Optional[str] = None) -> Optional[str]:
+    def import_output(
+        self, study_id: str, output: BinaryIO | Path, output_name_suffix: Optional[str] = None
+    ) -> Optional[str]:
         if isinstance(output, Path) and not output.is_file():
             raise ValueError(f"Imported output should be a file ({output}).")
 
-        self._archive_storage.write_file(_archive_id(study_id, output_name), output)
-        self._metadata_repository.save(OutputMetadata(study_id=study_id, output_name=output_name, archived=False))
+        # TODO: more meaningful names for tmp dirs
+        tmp_dir = self._tmp_dir / f"{uuid.uuid4()}"
+        tmp_dir.mkdir(parents=True)
+        try:
+            # We first ensure we have 2 versions of the output: compressed and uncompressed
+            archive_path, dir_path = _write_temporary_files(tmp_dir, output)
+            # The implementation is awful
+            output_name = extract_output_name(dir_path, output_name_suffix)
+
+            # Write the compressed version to archive storage
+            self._archive_storage.write_file(_archive_id(study_id, output_name), archive_path)
+
+            # Create metadata
+            metadata = extract_metadata(dir_path)
+
+            # TODO here: extract variables values
+
+            self._metadata_repository.save(
+                OutputMetadata(
+                    study_id=study_id,
+                    output_name=output_name,
+                    archived=False,
+                    type=metadata.type,
+                )
+            )
+            return output_name
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
     @override
     def get_study_sim_result(self, study_id: str) -> List[StudySimResultDTO]:
         outputs = self._metadata_repository.get_all(study_id)
-        return
+        return [_metadata_to_sim_result(m) for m in outputs]
 
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:

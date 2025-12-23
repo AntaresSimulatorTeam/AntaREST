@@ -102,10 +102,11 @@ class FileOutputStorage(IOutputStorage):
         self,
         study_id: str,
         output: BinaryIO | Path,
-        output_name: Optional[str] = None,
+        output_name_suffix: Optional[str] = None,
     ) -> Optional[str]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
 
+        # Initialize to path to temporary output directory ?
         path_output = study_outputs.outputs_path / f"imported_output_{str(uuid4())}"
 
         path_output.mkdir(parents=True)
@@ -114,7 +115,7 @@ class FileOutputStorage(IOutputStorage):
         stopwatch = StopWatch()
         try:
             if isinstance(output, Path):
-                if output != path_output and output.suffix != ArchiveFormat.ZIP:
+                if output.suffix != ArchiveFormat.ZIP:
                     shutil.copytree(output, path_output / "imported")
                 elif output.suffix == ArchiveFormat.ZIP:
                     is_zipped = True
@@ -122,12 +123,17 @@ class FileOutputStorage(IOutputStorage):
                     path_output = Path(str(path_output) + f"{ArchiveFormat.ZIP}")
                     shutil.copyfile(output, path_output)
             else:
+                # in case of stream, we extract it to temporary output directory
                 extract_archive(output, path_output)
 
             stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
+
+            # Does nothing if zipped, else make sure that output files are just under that path, no nested directories.
             fix_study_root(path_output)
-            output_full_name = extract_output_name(path_output, output_name)
+            output_full_name = extract_output_name(path_output, output_name_suffix)
             extension = f"{ArchiveFormat.ZIP}" if is_zipped else ""
+
+            # Moving temporary directory to actual directory /output/<output-name>[.zip]
             path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
             remove_from_cache(self._cache, study_id)
 

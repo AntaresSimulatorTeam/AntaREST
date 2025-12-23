@@ -42,7 +42,7 @@ class OutputMetadataRepository:
     def get(self, study_id: str, output_name: str) -> OutputMetadata | None:
         return db.session.get(OutputMetadata, (study_id, output_name))
 
-    def get_all(self, study_id: str | None, archived: bool | None) -> Iterator[OutputMetadata]:
+    def get_all(self, study_id: str | None = None, archived: bool | None = None) -> Iterator[OutputMetadata]:
         stmt = select(OutputMetadata)
         if study_id is not None:
             stmt = stmt.where(OutputMetadata.archived == archived)
