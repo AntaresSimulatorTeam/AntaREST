@@ -26,7 +26,7 @@ from antarest.study.output.output_storage import IOutputStorage, OutputStorageTy
 from antarest.study.output.storage.repository import OutputMetadata, OutputMetadataRepository
 from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
-from antarest.study.storage.utils import extract_output_name
+from antarest.study.storage.utils import extract_output_name, fix_study_root
 
 
 def _archive_id(study_id: str, output_name: str) -> str:
@@ -83,6 +83,9 @@ def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path
                 shutil.copyfileobj(output, f)
             with archive_path.open("rb") as f:
                 extract_archive(f, dir_path)
+
+        # Still needed to ensure the output is not in a sub-directory
+        fix_study_root(dir_path)
     except Exception:
         shutil.rmtree(archive_path, ignore_errors=True)
         shutil.rmtree(dir_path, ignore_errors=True)

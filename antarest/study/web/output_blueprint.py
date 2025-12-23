@@ -121,7 +121,7 @@ def create_output_routes(
     def import_output(uuid: str, output: UploadFile, storage_type: OutputStorageType | None = None) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-        output_id = output_service.import_output(uuid_sanitized, output.file, storage_type)
+        output_id = output_service.import_output(uuid_sanitized, output.file, storage_type=storage_type)
         return output_id
 
     @bp.get(

@@ -228,7 +228,7 @@ class StorageConfig:
             blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
             blob_gc_sleeping_time=data.get("blob_gc_sleeping_time", defaults.blob_gc_sleeping_time),
             blob_gc_dry_run=data.get("blob_gc_dry_run", defaults.blob_gc_dry_run),
-            output=OutputStorageConfig.from_dict(data) if "output" in data else defaults.output,
+            output=OutputStorageConfig.from_dict(data["output"]) if "output" in data else defaults.output,
         )
 
     @classmethod
