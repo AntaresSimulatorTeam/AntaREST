@@ -53,7 +53,7 @@ class AbstractStorageService(IStudyStorage, ABC):
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
 
         owner_info = (
-            OwnerInfo(id=study.owner.id, name=study.owner.storage_type)
+            OwnerInfo(id=study.owner.id, name=study.owner.name)
             if study.owner is not None
             else OwnerInfo(name=study.author or "Unknown")
         )
