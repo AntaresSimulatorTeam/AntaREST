@@ -71,6 +71,7 @@ def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path
         if isinstance(output, Path):
             if output.is_dir():
                 shutil.copytree(output, dir_path, dirs_exist_ok=False)
+                archive_path = tmp_dir / f"{uuid.uuid4()}{ArchiveFormat.ZIP}"
                 archive_dir(dir_path, archive_path, remove_source_dir=False, archive_format=ArchiveFormat.ZIP)
             else:
                 shutil.copy(output, archive_path)
@@ -115,9 +116,6 @@ class ParquetOutputStorage(IOutputStorage):
     def import_output(
         self, study_id: str, output: BinaryIO | Path, output_name_suffix: Optional[str] = None
     ) -> Optional[str]:
-        if isinstance(output, Path) and not output.is_file():
-            raise ValueError(f"Imported output should be a file ({output}).")
-
         # TODO: more meaningful names for tmp dirs
         tmp_dir = self._tmp_dir / f"{uuid.uuid4()}"
         tmp_dir.mkdir(parents=True)

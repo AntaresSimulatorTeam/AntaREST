@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import os
 import shutil
 from pathlib import Path
 from typing import BinaryIO
@@ -45,3 +46,7 @@ class FlatDirLargeFileStorage(ILargeFileStorage):
     @override
     def delete_file(self, blob_id: str) -> None:
         self._get_path(blob_id).unlink(missing_ok=True)
+
+    @override
+    def list_files(self) -> list[str]:
+        return os.listdir(self._directory)

@@ -36,3 +36,7 @@ class ILargeFileStorage(ABC):
     @abstractmethod
     def delete_file(self, blob_id: str) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def list_files(self) -> list[str]:
+        raise NotImplementedError()
