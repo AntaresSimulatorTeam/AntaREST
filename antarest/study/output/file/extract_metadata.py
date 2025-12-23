@@ -25,6 +25,7 @@ DUPLICATE_KEYS = [
 
 
 def extract_metadata(output_path: Path) -> StudySimResultDTO:
+    # TODO: add some basic checks
     parameters_path = output_path / "about-the-study" / "parameters.ini"
     ini_reader = IniReader(special_keys=DUPLICATE_KEYS)
     parameters_dict = ini_reader.read(parameters_path)
@@ -37,7 +38,7 @@ def extract_metadata(output_path: Path) -> StudySimResultDTO:
         otherPreferences=parameters_dict["other preferences"],
         advancedParameters=parameters_dict["advanced parameters"],
         seedsMersenneTwister=parameters_dict["seeds - Mersenne Twister"],
-        playlist=[year for year in (get_playlist(parameters_dict) or {}).keys()],
+        playlist=list((get_playlist(parameters_dict) or {}).keys()),
     )
     # TODO: maybe the short version "eco" is expected, instead of "Economy"
     #       is it anyway useful ??
