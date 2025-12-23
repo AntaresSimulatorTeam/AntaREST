@@ -20,6 +20,8 @@ from antarest.study.model import Study
 
 
 class OutputMetadata(Base):
+    __tablename__ = "output_metadata"
+
     study_id: Mapped[str] = mapped_column(
         ForeignKey(Study.id),
         primary_key=True,
@@ -28,8 +30,6 @@ class OutputMetadata(Base):
     output_name: Mapped[str] = mapped_column(primary_key=True, nullable=False)
     archived: Mapped[bool] = mapped_column(nullable=False)
     type: Mapped[str] = mapped_column(nullable=False)
-    completion_date: Mapped[str] = mapped_column(nullable=False)  # TODO: Date instead
-    status: Mapped[str] = mapped_column(nullable=False)  # TODO: map to enum ?
 
 
 class OutputMetadataRepository:
@@ -45,7 +45,7 @@ class OutputMetadataRepository:
     def get_all(self, study_id: str | None = None, archived: bool | None = None) -> Iterator[OutputMetadata]:
         stmt = select(OutputMetadata)
         if study_id is not None:
-            stmt = stmt.where(OutputMetadata.archived == archived)
+            stmt = stmt.where(OutputMetadata.study_id == study_id)
         if archived is not None:
             stmt = stmt.where(OutputMetadata.archived == archived)
         return db.session.scalars(stmt)

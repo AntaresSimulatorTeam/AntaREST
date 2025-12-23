@@ -52,8 +52,8 @@ def _metadata_to_sim_result(metadata: OutputMetadata) -> StudySimResultDTO:
         archived=metadata.archived,
         name=metadata.output_name,
         settings=_empty_settings(),  # TODO
-        completionDate=metadata.completion_date,
-        status=metadata.status,
+        completionDate="",
+        status="",
         type=metadata.type,
     )
 
