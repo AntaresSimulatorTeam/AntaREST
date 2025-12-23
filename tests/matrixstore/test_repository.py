@@ -176,7 +176,7 @@ class TestMatrixRepository:
             res = dataset_repo.query("name 2")
             assert len(res) == 1
             assert len(res[0].matrices) == 1
-            assert res[0].matrices[0].storage_type == "m1"
+            assert res[0].matrices[0].name == "m1"
             assert res[0].matrices[0].matrix.id == m1.id
             assert len(dataset_repo.query("name 2")) == 1
             assert len(dataset_repo.query("name")) == 2

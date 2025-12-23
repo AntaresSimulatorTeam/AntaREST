@@ -471,13 +471,13 @@ def test_dataset_lifecycle() -> None:
         service.create_dataset(dataset_info, matrices)
     assert dataset_repo.save.call_count == 1
     call = dataset_repo.save.call_args_list[0]
-    assert call[0][0].storage_type == "datasetA"
+    assert call[0][0].name == "datasetA"
     assert call[0][0].public is True
     assert call[0][0].owner_id == userA.id
     groups = call[0][0].groups
     assert len(groups) == 1
     assert groups[0].id == "groupA"
-    assert groups[0].storage_type == "groupA"
+    assert groups[0].name == "groupA"
     assert call[0][0].matrices == [
         MatrixDataSetRelation(name="A", matrix_id="m1"),
         MatrixDataSetRelation(name="B", matrix_id="m2"),
