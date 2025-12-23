@@ -18,7 +18,8 @@ class ILargeFileStorage(ABC):
     """
     Interface for storing large files, possibly larger than memory.
 
-    Relies on paths for the moment, could use streams if needed
+    Typical implementations will be filesystem based or S3 based.
+    Relies on paths for the moment, could use streams if needed.
     """
 
     @abstractmethod

@@ -36,7 +36,7 @@ class OutputMetadataRepository:
     """
     Provides access to output metadata.
 
-    TODO: don't expose ORM instances ?
+    TODO: don't expose ORM instances but pydantic model instead ?
     """
 
     def get(self, study_id: str, output_name: str) -> OutputMetadata | None:

@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import shutil
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, Iterator, List, Optional, Sequence
 
@@ -58,13 +57,14 @@ def _metadata_to_sim_result(metadata: OutputMetadata) -> StudySimResultDTO:
     )
 
 
-@dataclass(frozen=True)
-class _OutputTmpPaths:
-    archive_path: Path
-    dir_path: Path
-
-
 def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path, Path]:
+    """
+    Ensures we have the output in both forms on disk, compressed and uncompressed,
+    whatever the input is (a compressed binary stream, or a compressed or uncompressed path).
+
+    Returns:
+        the path to the compressed archive, and the path to the uncompressed directory.
+    """
     archive_path = tmp_dir / f"{uuid.uuid4()}"
     dir_path = tmp_dir / f"{uuid.uuid4()}"
     try:
@@ -91,6 +91,15 @@ def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path
 
 
 class ParquetOutputStorage(IOutputStorage):
+    """
+    The implementation will be based on a few sub-components:
+    - archives will be stored in an LFS
+    - metadata will be stored in database
+    - actual variables values will be unarchived to parquet files
+
+    The tmp directory will be used on import or unarchival to store uncompressed files.
+    """
+
     def __init__(
         self, tmp_dir: Path, metadata_repository: OutputMetadataRepository, archive_storage: ILargeFileStorage
     ) -> None:

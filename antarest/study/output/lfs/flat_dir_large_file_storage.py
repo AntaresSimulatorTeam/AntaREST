@@ -20,6 +20,10 @@ from antarest.study.output.lfs.large_file_storage import ILargeFileStorage
 
 
 class FlatDirLargeFileStorage(ILargeFileStorage):
+    """
+    Implementation storing files flat in a configured directory.
+    """
+
     def __init__(self, directory: Path):
         self._directory = directory
         self._directory.mkdir(parents=True, exist_ok=True)
