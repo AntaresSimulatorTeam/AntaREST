@@ -1,0 +1,62 @@
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+from typing import Iterator
+
+from sqlalchemy import ForeignKey, delete, select
+from sqlalchemy.orm import Mapped, mapped_column
+
+from antarest.core.persistence import Base
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.model import Study
+
+
+class OutputMetadata(Base):
+    study_id: Mapped[str] = mapped_column(
+        ForeignKey(Study.id),
+        primary_key=True,
+        nullable=False,
+    )
+    output_name: Mapped[str] = mapped_column(primary_key=True, nullable=False)
+    archived: Mapped[bool] = mapped_column(nullable=False)
+    type: Mapped[str] = mapped_column(nullable=False)
+    completion_date: Mapped[str] = mapped_column(nullable=False)  # TODO: Date instead
+    status: Mapped[str] = mapped_column(nullable=False)  # TODO: map to enum ?
+
+
+class OutputMetadataRepository:
+    """
+    Provides access to output metadata.
+
+    TODO: don't expose ORM instances ?
+    """
+
+    def get(self, study_id: str, output_name: str) -> OutputMetadata | None:
+        return db.session.get(OutputMetadata, (study_id, output_name))
+
+    def get_all(self, study_id: str | None, archived: bool | None) -> Iterator[OutputMetadata]:
+        stmt = select(OutputMetadata)
+        if study_id is not None:
+            stmt = stmt.where(OutputMetadata.archived == archived)
+        if archived is not None:
+            stmt = stmt.where(OutputMetadata.archived == archived)
+        return db.session.scalars(stmt)
+
+    def delete(self, study_id: str, output_name: str) -> None:
+        stmt = delete(OutputMetadata).where(
+            OutputMetadata.study_id == study_id, OutputMetadata.output_name == output_name
+        )
+        db.session.execute(stmt)
+        db.session.commit()
+
+    def save(self, output_metadata: OutputMetadata) -> None:
+        db.session.add(output_metadata)
+        db.session.commit()
