@@ -77,6 +77,7 @@ def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, S
     tmp_dir = tmp_path / "tmp"
     default_workspace = tmp_path / "internal_workspace"
     ext_workspace_path = tmp_path / "ext_workspace"
+    output_archive_dir = tmp_path / "output_archives"
 
     matrix_dir.mkdir()
     blob_dir.mkdir()
@@ -108,6 +109,7 @@ def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, S
                 archive_dir=str(archive_dir),
                 tmp_dir=str(tmp_dir),
                 launcher_mock=ASSETS_DIR / launcher_name,
+                output_archive_dir=str(output_archive_dir),
             )
         )
 
