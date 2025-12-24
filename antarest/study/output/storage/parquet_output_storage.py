@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import logging
 import shutil
 import uuid
 from pathlib import Path
@@ -17,7 +18,9 @@ from typing import BinaryIO, Iterator, List, Optional, Sequence
 import pandas as pd
 from typing_extensions import override
 
+from antarest.core.exceptions import OutputNotFound
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive
+from antarest.core.utils.utils import StopWatch
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO, StudySimSettingsDTO
 from antarest.study.output.filestudy.extract_metadata import extract_metadata
 from antarest.study.output.lfs.lfs import ILargeFileStorage
@@ -27,6 +30,8 @@ from antarest.study.output.storage.repository import OutputMetadata, OutputMetad
 from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import extract_output_name, fix_study_root
+
+logger = logging.getLogger(__name__)
 
 
 def _archive_id(study_id: str, output_name: str) -> str:
@@ -116,7 +121,7 @@ class ParquetOutputStorage(IOutputStorage):
     def _require_metadata(self, study_id: str, output_name: str) -> OutputMetadata:
         metadata = self._metadata_repository.get(study_id, output_name)
         if metadata is None:
-            raise ValueError(f"Output {output_name} does not exist.")
+            raise OutputNotFound(f"Output {output_name} does not exist.")
         return metadata
 
     @override
@@ -128,13 +133,13 @@ class ParquetOutputStorage(IOutputStorage):
     def import_output(
         self, study_id: str, output: BinaryIO | Path, output_name_suffix: Optional[str] = None
     ) -> Optional[str]:
-        # TODO: more meaningful names for tmp dirs
-        tmp_dir = self._tmp_dir / f"{uuid.uuid4()}"
+        logger.info(f"Importing output for study {study_id} to internal storage.")
+        timer = StopWatch()
+        tmp_dir = self._tmp_dir / f"output-import-{study_id}-{uuid.uuid4()}"
         tmp_dir.mkdir(parents=True)
         try:
             # We first ensure we have 2 versions of the output: compressed and uncompressed
             archive_path, dir_path = _write_temporary_files(tmp_dir, output)
-            # The implementation is awful
             output_name = extract_output_name(dir_path, output_name_suffix)
 
             # Write the compressed version to archive storage
@@ -153,6 +158,7 @@ class ParquetOutputStorage(IOutputStorage):
                     type=metadata.type,
                 )
             )
+            timer.log_elapsed(lambda duration: logger.info(f"Output imported to internal storage in {duration}s."))
             return output_name
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -167,12 +173,14 @@ class ParquetOutputStorage(IOutputStorage):
         # TODO: we should have some sort of synchronization so that
         #       the output appears deleted asap.
         #       Maybe only mark it deleted, and have it removed in the background.
+        logger.info(f"Deleting output {study_id}/{output_id} from internal storage.")
         self._require_metadata(study_id, output_id)
         self._archive_storage.delete_file(_archive_id(study_id, output_id))
         self._metadata_repository.delete(study_id, output_id)
 
     @override
     def export_output(self, study_id: str, output_id: str, target: Path) -> None:
+        logger.info(f"Exporting output {study_id}/{output_id} from internal storage.")
         self._require_metadata(study_id, output_id)
         self._archive_storage.read_file(_archive_id(study_id, output_id), target)
 
@@ -188,6 +196,7 @@ class ParquetOutputStorage(IOutputStorage):
     @override
     def archive_study_output(self, study_id: str, output_id: str) -> None:
         # For now, only a logical operation
+        logger.info(f"Archiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
         metadata.archived = True
         self._metadata_repository.save(metadata)
@@ -195,6 +204,7 @@ class ParquetOutputStorage(IOutputStorage):
     @override
     def unarchive_study_output(self, study_id: str, output_id: str) -> None:
         # For now, only a logical operation
+        logger.info(f"Unarchiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
         metadata.archived = False
         self._metadata_repository.save(metadata)
