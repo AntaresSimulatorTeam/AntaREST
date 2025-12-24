@@ -21,8 +21,8 @@ from sqlalchemy import Engine
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import Study
-from antarest.study.output.lfs.flat_dir_large_file_storage import FlatDirLargeFileStorage
-from antarest.study.output.lfs.large_file_storage import ILargeFileStorage
+from antarest.study.output.lfs.dir_lfs import DirLargeFileStorage
+from antarest.study.output.lfs.lfs import ILargeFileStorage
 from antarest.study.output.storage.parquet_output_storage import ParquetOutputStorage
 from antarest.study.output.storage.repository import OutputMetadataRepository
 from antarest.study.repository import StudyMetadataRepository
@@ -67,7 +67,7 @@ def study_id(study_repo: StudyMetadataRepository) -> str:
 
 @pytest.fixture
 def lfs(tmp_path: Path) -> ILargeFileStorage:
-    return FlatDirLargeFileStorage(tmp_path / "lfs")
+    return DirLargeFileStorage(tmp_path / "lfs")
 
 
 @pytest.fixture

@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from antarest.study.model import StudySimSettingsDTO
-from antarest.study.output.file.extract_metadata import extract_metadata
+from antarest.study.output.filestudy.extract_metadata import extract_metadata
 
 
 @pytest.fixture

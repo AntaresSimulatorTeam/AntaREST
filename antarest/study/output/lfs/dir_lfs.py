@@ -16,10 +16,10 @@ from typing import BinaryIO
 
 from typing_extensions import override
 
-from antarest.study.output.lfs.large_file_storage import ILargeFileStorage
+from antarest.study.output.lfs.lfs import ILargeFileStorage
 
 
-class FlatDirLargeFileStorage(ILargeFileStorage):
+class DirLargeFileStorage(ILargeFileStorage):
     """
     Implementation storing files flat in a configured directory.
     """

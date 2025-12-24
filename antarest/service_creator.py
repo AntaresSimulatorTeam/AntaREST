@@ -49,7 +49,7 @@ from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
 from antarest.study.output.file_output_storage import FileOutputStorage
-from antarest.study.output.lfs.flat_dir_large_file_storage import FlatDirLargeFileStorage
+from antarest.study.output.lfs.dir_lfs import DirLargeFileStorage
 from antarest.study.output.output_service import OutputService
 from antarest.study.output.output_storage import IOutputStorage
 from antarest.study.output.storage.parquet_output_storage import ParquetOutputStorage
@@ -160,7 +160,7 @@ def build_output_storage(config: Config, file_output_storage: FileOutputStorage)
     if not config.storage.output.enable:
         return [file_output_storage]
     tmp_dir = config.storage.tmp_dir / "outputs"
-    lfs = FlatDirLargeFileStorage(config.storage.archive_dir)
+    lfs = DirLargeFileStorage(config.storage.archive_dir)
     parquet_storage = ParquetOutputStorage(
         tmp_dir=tmp_dir, archive_storage=lfs, metadata_repository=OutputMetadataRepository()
     )

@@ -13,11 +13,11 @@ from pathlib import Path
 
 import pytest
 
-from antarest.study.output.lfs.flat_dir_large_file_storage import FlatDirLargeFileStorage
+from antarest.study.output.lfs.dir_lfs import DirLargeFileStorage
 
 
 def test_lfs(tmp_path: Path):
-    storage = FlatDirLargeFileStorage(tmp_path / "lfs")
+    storage = DirLargeFileStorage(tmp_path / "lfs")
 
     assert not storage.file_exists("unknown")
 
