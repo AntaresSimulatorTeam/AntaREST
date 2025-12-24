@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import shutil
 import uuid
 import zipfile
 from pathlib import Path
@@ -17,9 +18,11 @@ from unittest.mock import Mock
 import pytest
 from sqlalchemy import Engine
 
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import Study
 from antarest.study.output.lfs.flat_dir_large_file_storage import FlatDirLargeFileStorage
+from antarest.study.output.lfs.large_file_storage import ILargeFileStorage
 from antarest.study.output.storage.parquet_output_storage import ParquetOutputStorage
 from antarest.study.output.storage.repository import OutputMetadataRepository
 from antarest.study.repository import StudyMetadataRepository
@@ -54,18 +57,36 @@ def output_path(tmp_path_factory: pytest.TempPathFactory, sta_mini_zip_path: Pat
     return tmp_dir / "STA-mini" / "output" / "20201014-1427eco"
 
 
-def test_storage(
-    tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputMetadataRepository, output_path: Path
-):
-    lfs = FlatDirLargeFileStorage(tmp_path / "lfs")
-
-    storage_tmp_dir = tmp_path / "storage" / "tmp"
-    storage = ParquetOutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, metadata_repository=output_repo)
-
+@pytest.fixture
+def study_id(study_repo: StudyMetadataRepository) -> str:
     with db():
         # The FK constraints enforces us to create a study first.
         study_repo.save(Study(id="my-study", name="name", version="9.2", path=""))
+    return "my-study"
 
+
+@pytest.fixture
+def lfs(tmp_path: Path) -> ILargeFileStorage:
+    return FlatDirLargeFileStorage(tmp_path / "lfs")
+
+
+@pytest.fixture
+def storage(
+    tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputMetadataRepository, lfs: ILargeFileStorage
+) -> ParquetOutputStorage:
+    storage_tmp_dir = tmp_path / "storage" / "tmp"
+    storage = ParquetOutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, metadata_repository=output_repo)
+    return storage
+
+
+def test_storage(
+    tmp_path: Path,
+    storage: ParquetOutputStorage,
+    lfs: ILargeFileStorage,
+    study_id: str,
+    output_path: Path,
+):
+    with db():
         # Check there is no output at first for that study
         assert not storage.output_exists(study_id="my-study", output_id="20201014-1427eco")
         assert storage.get_study_sim_result(study_id="my-study") == []
@@ -107,3 +128,57 @@ def test_storage(
         assert not storage.output_exists(study_id="my-study", output_id="20201014-1427eco")
         assert storage.get_study_sim_result(study_id="my-study") == []
         assert lfs.list_files() == []
+
+
+def create_archive(archive_format: ArchiveFormat, nested: bool, output_path: Path, tmp_path: Path) -> Path:
+    """
+    Creates an archive containing the output files, possibly with an additional directory level if nested is True
+    """
+    if nested:
+        nested_output_path = tmp_path / "output"
+        shutil.copytree(output_path, nested_output_path / "nested")
+        output_path = nested_output_path
+    archive_path = tmp_path / f"archive{archive_format}"
+    archive_dir(output_path, archive_path, remove_source_dir=False, archive_format=archive_format)
+    return archive_path
+
+
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
+def test_import_archive(
+    storage: ParquetOutputStorage,
+    study_id: str,
+    output_path: Path,
+    archive_format: ArchiveFormat,
+    nested: bool,
+    tmp_path: Path,
+):
+    archive_path = create_archive(archive_format, nested, output_path, tmp_path)
+    with db():
+        output_name = storage.import_output(study_id, archive_path)
+
+    assert output_name == "20201014-1427eco"
+    with db():
+        assert storage.output_exists(study_id=study_id, output_id="20201014-1427eco")
+        assert not storage.is_output_archived(study_id=study_id, output_id="20201014-1427eco")
+
+
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
+def test_import_archive_stream(
+    storage: ParquetOutputStorage,
+    study_id: str,
+    output_path: Path,
+    archive_format: ArchiveFormat,
+    nested: bool,
+    tmp_path: Path,
+):
+    archive_path = create_archive(archive_format, nested, output_path, tmp_path)
+    with db():
+        with open(archive_path, "rb") as archive_io:
+            output_name = storage.import_output(study_id, archive_io)
+
+    assert output_name == "20201014-1427eco"
+    with db():
+        assert storage.output_exists(study_id=study_id, output_id="20201014-1427eco")
+        assert not storage.is_output_archived(study_id=study_id, output_id="20201014-1427eco")
