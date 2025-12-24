@@ -20,7 +20,7 @@ depends_on = None
 def upgrade():
     op.create_table(
         "output_metadata",
-        sa.Column("study_id", sa.String(), sa.ForeignKey("study.id"), nullable=False, primary_key=True),
+        sa.Column("study_id", sa.String(), nullable=False, primary_key=True),
         sa.Column("output_name", sa.String(), nullable=False, primary_key=True),
         sa.Column("type", sa.String(), nullable=False),
         sa.Column("archived", sa.Boolean(), nullable=False),

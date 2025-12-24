@@ -11,19 +11,21 @@
 # This file is part of the Antares project.
 from typing import Iterator
 
-from sqlalchemy import ForeignKey, delete, select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.model import Study
 
 
 class OutputMetadata(Base):
     __tablename__ = "output_metadata"
 
+    # Design note: we don't enforce a foreign key constraint on study_id because it
+    #              constrains too much the workflow, for example it does not allow
+    #              to mark an output for deletion and delete it later, or just to
+    #              delete output after deleting the study itself
     study_id: Mapped[str] = mapped_column(
-        ForeignKey(Study.id),
         primary_key=True,
         nullable=False,
     )

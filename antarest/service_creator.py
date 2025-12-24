@@ -156,7 +156,16 @@ class CoreServices:
     blob_service: BlobService
 
 
-def build_output_storage(config: Config, file_output_storage: FileOutputStorage) -> list[IOutputStorage]:
+# TODO: move it elswhere ?
+def _delete_study_outputs(storage: IOutputStorage, study_id: str) -> None:
+    outputs = storage.get_study_sim_result(study_id)
+    for output in outputs:
+        storage.delete_output(study_id, output.name)
+
+
+def build_output_storage(
+    config: Config, file_output_storage: FileOutputStorage, study_service: StudyService
+) -> list[IOutputStorage]:
     if not config.storage.output.enable:
         return [file_output_storage]
     tmp_dir = config.storage.tmp_dir / "outputs"
@@ -164,6 +173,15 @@ def build_output_storage(config: Config, file_output_storage: FileOutputStorage)
     parquet_storage = ParquetOutputStorage(
         tmp_dir=tmp_dir, archive_storage=lfs, metadata_repository=OutputMetadataRepository()
     )
+
+    # TODO: move that registration elsewhere ? not visible enough here
+    def _delete_study_outputs(study_id: str) -> None:
+        outputs = parquet_storage.get_study_sim_result(study_id)
+        for output in outputs:
+            parquet_storage.delete_output(study_id, output.name)
+
+    study_service.add_on_deletion_callback(_delete_study_outputs)
+
     if config.storage.output.default:
         return [parquet_storage, file_output_storage]
     else:
@@ -186,7 +204,7 @@ def build_output_service(
         cache=cache,
         remote_executor=remote_executor,
     )
-    storages = build_output_storage(config, file_output_storage)
+    storages = build_output_storage(config, file_output_storage, study_service)
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),
