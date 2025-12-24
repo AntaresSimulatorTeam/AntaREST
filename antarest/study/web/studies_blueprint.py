@@ -30,6 +30,7 @@ from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_f
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
+from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     MatrixIndex,
     StudyMetadataDTO,
@@ -37,7 +38,6 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +366,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/synthesis",
         summary="Return study synthesis",
     )
-    def get_study_synthesis(uuid: str) -> FileStudyTreeConfigDTO:
+    def get_study_synthesis(uuid: str) -> StudySynthesis:
         study_id = sanitize_uuid(uuid)
         logger.info(f"Return a synthesis for study '{study_id}'")
         return study_service.get_study_synthesis(study_id)

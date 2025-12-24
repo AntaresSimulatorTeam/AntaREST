@@ -45,6 +45,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
+from antarest.study.storage.rawstudy.raw_study_service import copy_output_folders
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -191,6 +192,23 @@ class FileOutputStorage(IOutputStorage):
                     exc_info=e,
                 )
         return results
+
+    @override
+    def get_simulations(self, study_id: str) -> list[Simulation]:
+        """
+        Get the list of output for a study.
+        TODO: More or less a duplicate of get_study_sim_result.
+        """
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        return list(study_outputs.get_file_study().config.outputs.values())
+
+    @override
+    def copy_outputs(
+        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
+    ) -> None:
+        src_outputs_dir = self._outputs_provider.get_outputs(src_study_id).outputs_path
+        target_outputs_dir = self._outputs_provider.get_outputs(target_study_id).outputs_path
+        copy_output_folders(src_outputs_dir, target_outputs_dir, with_outputs, output_ids)
 
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:

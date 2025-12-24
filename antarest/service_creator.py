@@ -20,6 +20,7 @@ import redis
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
+from typing_extensions import override
 
 from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
 from antarest.blobstore.main import build_blob_service
@@ -54,9 +55,10 @@ from antarest.study.output.output_service import OutputService
 from antarest.study.output.output_storage import IOutputStorage
 from antarest.study.output.storage.parquet_output_storage import ParquetOutputStorage
 from antarest.study.output.storage.repository import OutputMetadataRepository
-from antarest.study.service import StudyService
+from antarest.study.service import IOutputServiceAccess, StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
 from antarest.study.web.output_blueprint import create_output_routes
@@ -188,6 +190,30 @@ def build_output_storage(
         return [file_output_storage, parquet_storage]
 
 
+def _output_service_access(output_service: OutputService) -> IOutputServiceAccess:
+    class Impl(IOutputServiceAccess):
+        @override
+        def list_outputs(self, study_id: str) -> list[Simulation]:
+            return output_service.get_simulations(study_id)
+
+        @override
+        def copy_outputs(
+            self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
+        ) -> None:
+            return output_service.copy_outputs(src_study_id, target_study_id, with_outputs, output_ids)
+
+        @override
+        def delete_outputs(self, study_id: str) -> None:
+            for output in output_service.get_study_sim_result(study_id):
+                output_service.delete_output(study_id, output.name)
+
+        @override
+        def write_outputs_to_dir(self, study_id: str, outputs_dir: str) -> None:
+            raise NotImplementedError("Not implemented yet")
+
+    return Impl()
+
+
 def build_output_service(
     app_ctxt: Optional[AppBuildContext],
     study_service: StudyService,
@@ -215,6 +241,8 @@ def build_output_service(
         tmp_dir=config.storage.tmp_dir,
         cache=cache,
     )
+
+    study_service.register_output_service(_output_service_access(output_service))
 
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))

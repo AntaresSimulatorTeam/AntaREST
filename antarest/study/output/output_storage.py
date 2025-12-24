@@ -20,6 +20,7 @@ import pandas as pd
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.utils import QueryFileType
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,21 @@ class IOutputStorage(ABC):
     def get_study_sim_result(self, study_id: str) -> List[StudySimResultDTO]:
         """
         Get the list of output for a study
+        """
+
+    @abstractmethod
+    def copy_outputs(
+        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
+    ) -> None:
+        """
+        Copies outputs to another study.
+        """
+
+    @abstractmethod
+    def get_simulations(self, study_id: str) -> List[Simulation]:
+        """
+        Get the list of output for a study.
+        TODO: More or less a duplicate of get_study_sim_result ...
         """
 
     @abstractmethod

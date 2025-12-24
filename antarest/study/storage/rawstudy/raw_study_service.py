@@ -12,6 +12,7 @@
 
 import logging
 import shutil
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -27,14 +28,17 @@ from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNot
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
-from antarest.core.utils.archives import ArchiveFormat, extract_archive
-from antarest.core.utils.utils import current_time
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive
+from antarest.core.utils.utils import StopWatch, current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
@@ -204,11 +208,11 @@ class RawStudyService(AbstractStorageService):
         )
 
     @override
-    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
-        return FileStudyTreeConfigDTO.from_build_config(study.config)
+        return StudyDataSynthesis.from_study_config(study.config)
 
     def create(self, metadata: RawStudy) -> RawStudy:
         """
@@ -244,8 +248,6 @@ class RawStudyService(AbstractStorageService):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        output_ids: List[str],
-        with_outputs: bool | None,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -270,8 +272,7 @@ class RawStudyService(AbstractStorageService):
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
-        copy_output_folders(src_path / "output", dest_path / "output", with_outputs, output_ids)
-
+        # TODO: now we create the config too early without the outputs, maybe ?
         study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
 
         update_antares_info(dest_study, study.tree, update_author=False)
@@ -382,13 +383,23 @@ class RawStudyService(AbstractStorageService):
             if metadata.archived:
                 shutil.rmtree(metadata.path, ignore_errors=True)
 
-    def archive(self, study: RawStudy) -> Path:
+    def archive(self, study: RawStudy) -> None:
         archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
-        new_study_path = self.export_study(study, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
+
+        path_study = Path(study.path)
+        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
+            logger.info(f"Exporting study {study.id} to temporary path {tmpdir}")
+            tmp_study_path = Path(tmpdir) / "tmp_copy"
+            self.export_study_flat(study, tmp_study_path)
+            stopwatch = StopWatch()
+            archive_dir(tmp_study_path, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Study {path_study} exported ({archive_path.suffix} format) in {x}s")
+            )
+
         shutil.rmtree(study.path)
         remove_from_cache(cache=self.cache, root_id=study.id)
         self.cache.invalidate(study.id)
-        return new_study_path
 
     # noinspection SpellCheckingInspection
     def unarchive(self, study: RawStudy) -> None:

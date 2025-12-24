@@ -28,6 +28,7 @@ from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.output_storage import IOutputStorage, OutputStorageType
 from antarest.study.output.storage.repository import OutputMetadata, OutputMetadataRepository
 from antarest.study.output.utils import QueryFileType
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import extract_output_name, fix_study_root
 
@@ -167,6 +168,18 @@ class ParquetOutputStorage(IOutputStorage):
     def get_study_sim_result(self, study_id: str) -> List[StudySimResultDTO]:
         outputs = self._metadata_repository.get_all(study_id)
         return [_metadata_to_sim_result(m) for m in outputs]
+
+    @override
+    def get_simulations(self, study_id: str) -> list[Simulation]:
+        # TODO
+        return []
+
+    @override
+    def copy_outputs(
+        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
+    ) -> None:
+        # TODO
+        pass
 
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:

@@ -16,6 +16,8 @@ import http
 import io
 import logging
 import os
+import tempfile
+from abc import ABC, abstractmethod
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
@@ -56,7 +58,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
-from antarest.core.utils.archives import ArchiveFormat, is_archive_format
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
@@ -106,6 +108,7 @@ from antarest.study.business.xpansion_management import (
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.directory_service import DirectoryService
+from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -126,7 +129,7 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
@@ -483,6 +486,33 @@ class VariantStudyInterface(StudyInterface):
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
 
+class IOutputServiceAccess(ABC):
+    """
+    Access to data from the output service.
+
+    Lightweight interface to the output service, with only a few methods that are legitimate to
+    use by studies being an aggregate of study data and output data.
+    """
+
+    @abstractmethod
+    def list_outputs(self, study_id: str) -> list[Simulation]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def copy_outputs(
+        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
+    ) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_outputs(self, study_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_outputs_to_dir(self, study_id: str, outputs_dir: str) -> None:
+        raise NotImplementedError()
+
+
 class StudyService:
     """
     Storage module facade service to handle studies management.
@@ -543,6 +573,19 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
+        self._output_service: IOutputServiceAccess | None = None
+
+    def register_output_service(self, output_service: IOutputServiceAccess) -> None:
+        """
+        Study and output features have some dependencies on each other, therefore we need to
+        register one of them after construction.
+        """
+        self._output_service = output_service
+
+    def _get_output_service(self) -> IOutputServiceAccess:
+        if not self._output_service:
+            raise RuntimeError("Output service not registered")
+        return self._output_service
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -943,7 +986,7 @@ class StudyService:
                 return curr_user.to_dto().name
         return "Unknown"
 
-    def get_study_synthesis(self, study_id: str) -> FileStudyTreeConfigDTO:
+    def get_study_synthesis(self, study_id: str) -> StudySynthesis:
         """
         Get the synthesis of a study.
 
@@ -956,8 +999,9 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         study.last_access = current_time()
         self.repository.save(study)
-        study_storage_service = self.storage_service.get_storage(study)
-        return study_storage_service.get_synthesis(study)
+        input_synthesis = self.storage_service.get_storage(study).get_synthesis(study)
+        outputs = self._get_output_service().list_outputs(study.id)
+        return StudySynthesis.aggregate(input_synthesis, outputs)
 
     def get_input_matrix_startdate(self, study_id: str, path: Optional[str]) -> MatrixIndex:
         study = self.get_study(study_id)
@@ -1187,8 +1231,6 @@ class StudyService:
                 dest_study_name,
                 group_ids,
                 destination_folder,
-                output_ids,
-                with_outputs,
             )
 
             study.owner = owner
@@ -1196,6 +1238,8 @@ class StudyService:
 
             self._save_study(study)
             self.storage_service.raw_study_service.normalize_study(study)
+
+            self._get_output_service().copy_outputs(origin_study.id, study.id, with_outputs, output_ids)
 
             # Copying all jobs associated with the study
             jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
@@ -1294,9 +1338,7 @@ class StudyService:
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
-                self.storage_service.get_storage(target_study).export_study(
-                    target_study, export_path, outputs, archive_format
-                )
+                self._do_export_study(target_study, export_path, outputs, archive_format)
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(success=True, message=f"Study {uuid} successfully exported")
             except Exception as e:
@@ -1313,6 +1355,33 @@ class StudyService:
         )
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
+
+    def _do_export_study(
+        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
+    ) -> Path:
+        """
+        Export and compress the study to an archive file.
+
+        Args:
+            metadata: Study metadata object.
+            target: Path of the file to export to.
+            outputs: Flag to indicate whether to include the output folder inside the exportation.
+            archive_format:
+
+        Returns:
+            Path to the archive file containing the study files compressed inside.
+        """
+        path_study = Path(metadata.path)
+        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
+            logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
+            tmp_study_path = Path(tmpdir) / "tmp_copy"
+            self.storage_service.get_storage(metadata).export_study_flat(metadata, tmp_study_path, outputs)
+            stopwatch = StopWatch()
+            archive_dir(tmp_study_path, target, archive_format=archive_format)
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Study {path_study} exported ({target.suffix} format) in {x}s")
+            )
+        return target
 
     def export_study_flat(
         self,

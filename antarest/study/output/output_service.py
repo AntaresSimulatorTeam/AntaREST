@@ -82,6 +82,7 @@ from antarest.study.output.variables_management import (
 )
 from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.storage.df_download import export_df_chunks
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
@@ -327,6 +328,11 @@ class OutputService:
         )
 
         return [r for s in self._storages for r in s.get_study_sim_result(study_id)]
+
+    def get_simulations(self, study_id: str) -> list[Simulation]:
+        """ """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        return [r for s in self._storages for r in s.get_simulations(study_id)]
 
     def import_output(
         self,
@@ -837,3 +843,9 @@ class OutputService:
             progress=0,
             custom_event_messages=None,
         )
+
+    def copy_outputs(
+        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
+    ) -> None:
+        for s in self._storages:
+            s.copy_outputs(src_study_id, target_study_id, with_outputs, output_ids)
