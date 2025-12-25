@@ -81,7 +81,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_simulations(self, study_id: str) -> List[Simulation]:
+    def get_simulations(self, study_id: str) -> dict[str, Simulation]:
         """
         Get the list of output for a study.
         TODO: More or less a duplicate of get_study_sim_result ...
@@ -91,6 +91,12 @@ class IOutputStorage(ABC):
     def delete_output(self, study_id: str, output_id: str) -> None:
         """
         Delete a simulation output
+        """
+
+    @abstractmethod
+    def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
+        """
+        Writes outputs in filestudy format into parent directory
         """
 
     @abstractmethod

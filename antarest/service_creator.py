@@ -193,7 +193,7 @@ def build_output_storage(
 def _output_service_access(output_service: OutputService) -> IOutputServiceAccess:
     class Impl(IOutputServiceAccess):
         @override
-        def list_outputs(self, study_id: str) -> list[Simulation]:
+        def list_outputs(self, study_id: str) -> dict[str, Simulation]:
             return output_service.get_simulations(study_id)
 
         @override
@@ -208,8 +208,11 @@ def _output_service_access(output_service: OutputService) -> IOutputServiceAcces
                 output_service.delete_output(study_id, output.name)
 
         @override
-        def write_outputs_to_dir(self, study_id: str, outputs_dir: str) -> None:
-            raise NotImplementedError("Not implemented yet")
+        def write_outputs_to_dir(self, study_id: str, parent_dir: Path, outputs: list[str] | None = None) -> None:
+            if outputs is None:
+                outputs = [o.name for o in output_service.get_study_sim_result(study_id)]
+            for output in outputs:
+                output_service.write_output_to_dir(study_id, output, parent_dir)
 
     return Impl()
 

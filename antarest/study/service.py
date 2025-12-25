@@ -495,7 +495,7 @@ class IOutputServiceAccess(ABC):
     """
 
     @abstractmethod
-    def list_outputs(self, study_id: str) -> list[Simulation]:
+    def list_outputs(self, study_id: str) -> dict[str, Simulation]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -509,7 +509,7 @@ class IOutputServiceAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def write_outputs_to_dir(self, study_id: str, outputs_dir: str) -> None:
+    def write_outputs_to_dir(self, study_id: str, outputs_dir: Path, outputs: list[str] | None = None) -> None:
         raise NotImplementedError()
 
 
@@ -1376,6 +1376,8 @@ class StudyService:
             logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.storage_service.get_storage(metadata).export_study_flat(metadata, tmp_study_path, outputs)
+            if outputs:
+                self._get_output_service().write_outputs_to_dir(metadata.id, tmp_study_path / "output")
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, target, archive_format=archive_format)
             stopwatch.log_elapsed(
@@ -1393,9 +1395,9 @@ class StudyService:
         study = self.get_study(uuid)
         self.assert_study_unarchived(study)
 
-        return self.storage_service.get_storage(study).export_study_flat(
-            study, dest, len(output_list or []) > 0, output_list
-        )
+        self.storage_service.get_storage(study).export_study_flat(study, dest)
+        if output_list:
+            self._get_output_service().write_outputs_to_dir(study.id, dest / "output")
 
     def delete_study(self, uuid: str, children: bool) -> None:
         """

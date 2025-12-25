@@ -163,7 +163,6 @@ class SnapshotGenerator:
             self.raw_study_service.export_study_to_flat_directory(
                 ref_study.snapshot_dir,
                 snapshot_dir,
-                outputs=False,
                 denormalize=False,
                 is_study_managed=is_managed(ref_study),
             )
@@ -172,7 +171,6 @@ class SnapshotGenerator:
                 ref_study,
                 snapshot_dir,
                 denormalize=False,  # de-normalization is done at the end
-                outputs=False,  # do NOT export outputs
             )
         else:  # pragma: no cover
             raise TypeError(repr(type(ref_study)))

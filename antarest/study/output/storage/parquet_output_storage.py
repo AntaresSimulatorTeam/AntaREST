@@ -170,9 +170,9 @@ class ParquetOutputStorage(IOutputStorage):
         return [_metadata_to_sim_result(m) for m in outputs]
 
     @override
-    def get_simulations(self, study_id: str) -> list[Simulation]:
+    def get_simulations(self, study_id: str) -> dict[str, Simulation]:
         # TODO
-        return []
+        return {}
 
     @override
     def copy_outputs(
@@ -247,3 +247,7 @@ class ParquetOutputStorage(IOutputStorage):
     @override
     def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
         raise NotImplementedError()
+
+    @override
+    def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
+        pass  # TODO

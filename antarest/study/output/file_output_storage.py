@@ -23,7 +23,7 @@ from typing_extensions import override
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unarchive, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -194,13 +194,13 @@ class FileOutputStorage(IOutputStorage):
         return results
 
     @override
-    def get_simulations(self, study_id: str) -> list[Simulation]:
+    def get_simulations(self, study_id: str) -> dict[str, Simulation]:
         """
         Get the list of output for a study.
         TODO: More or less a duplicate of get_study_sim_result.
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        return list(study_outputs.get_file_study().config.outputs.values())
+        return study_outputs.get_file_study().config.outputs
 
     @override
     def copy_outputs(
@@ -223,6 +223,23 @@ class FileOutputStorage(IOutputStorage):
             output_path = study_outputs.outputs_path / f"{output_id}.zip"
             output_path.unlink(missing_ok=True)
         remove_from_cache(self._cache, study_id)
+
+    @override
+    def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
+        """
+        Writes outputs in filestudy format into parent directory
+        """
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+
+        path_output = study_outputs.outputs_path / output_id
+        path_output_zip = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
+
+        if path_output.is_dir():
+            shutil.copytree(path_output, parent / output_id, dirs_exist_ok=False)
+        elif path_output_zip.is_file():
+            unarchive(path_output_zip, path_output)
+        else:
+            raise StudyOutputNotFoundError()
 
     @override
     def export_output(self, study_id: str, output_id: str, target: Path) -> None:

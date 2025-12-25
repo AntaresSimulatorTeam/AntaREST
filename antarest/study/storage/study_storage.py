@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -150,8 +150,6 @@ class IStudyStorage(ABC):
         self,
         metadata: Study,
         dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         """
@@ -160,8 +158,6 @@ class IStudyStorage(ABC):
         Args:
             metadata: study.
             dst_path: destination path.
-            outputs: list of outputs to keep.
-            output_list_filter: list of outputs to keep (None indicate all outputs).
             denormalize: denormalize the study (replace matrix links by real matrices).
         """
 

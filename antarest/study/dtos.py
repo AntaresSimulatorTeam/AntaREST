@@ -89,7 +89,7 @@ class StudySynthesis(AntaresBaseModel):
     archive_path: Optional[Path] = None
 
     @classmethod
-    def aggregate(cls, synthesis: StudyDataSynthesis, output: list[Simulation]) -> "StudySynthesis":
+    def aggregate(cls, synthesis: StudyDataSynthesis, outputs: dict[str, Simulation]) -> "StudySynthesis":
         return StudySynthesis.model_construct(
             study_path=synthesis.study_path,
             path=synthesis.path,
@@ -103,5 +103,5 @@ class StudySynthesis(AntaresBaseModel):
             archive_input_series=synthesis.archive_input_series,
             enr_modelling=synthesis.enr_modelling,
             archive_path=synthesis.archive_path,
-            outputs={output.name: output for output in output},
+            outputs=outputs,
         )

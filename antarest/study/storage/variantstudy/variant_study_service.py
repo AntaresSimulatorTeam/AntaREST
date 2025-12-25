@@ -893,8 +893,6 @@ class VariantStudyService(AbstractStorageService):
         self,
         metadata: Study,
         dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         if isinstance(metadata, VariantStudy):
@@ -903,11 +901,9 @@ class VariantStudyService(AbstractStorageService):
             raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
 
         path_study = Path(metadata.path)
-
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
-        output_src_path = path_study / "output"
         self.raw_study_service.export_study_to_flat_directory(
-            snapshot_path, dst_path, outputs, output_list_filter, denormalize, output_src_path, is_managed(metadata)
+            snapshot_path, dst_path, denormalize, is_managed(metadata)
         )
 
     @override

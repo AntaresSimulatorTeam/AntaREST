@@ -329,10 +329,10 @@ class OutputService:
 
         return [r for s in self._storages for r in s.get_study_sim_result(study_id)]
 
-    def get_simulations(self, study_id: str) -> list[Simulation]:
+    def get_simulations(self, study_id: str) -> dict[str, Simulation]:
         """ """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return [r for s in self._storages for r in s.get_simulations(study_id)]
+        return {sim_id: sim for s in self._storages for sim_id, sim in s.get_simulations(study_id).items()}
 
     def import_output(
         self,
@@ -847,5 +847,11 @@ class OutputService:
     def copy_outputs(
         self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
     ) -> None:
+        self._studies_repository.assert_permission(src_study_id, StudyPermissionType.READ)
+        self._studies_repository.assert_permission(target_study_id, StudyPermissionType.WRITE)
         for s in self._storages:
             s.copy_outputs(src_study_id, target_study_id, with_outputs, output_ids)
+
+    def write_output_to_dir(self, study_id: str, output_id: str, outputs_dir: Path) -> None:
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        self._find_output_storage(study_id, output_id).write_output_to_dir(study_id, output_id, outputs_dir)

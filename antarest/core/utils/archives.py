@@ -60,6 +60,19 @@ def archive_dir(
         shutil.rmtree(src_dir_path)
 
 
+def unarchive(archive: Path, dst: Path) -> None:
+    fmt = find_archive_format(archive)
+    match fmt:
+        case ArchiveFormat.ZIP:
+            with zipfile.ZipFile(archive, mode="r") as f:
+                f.extractall(dst)
+        case ArchiveFormat.SEVEN_ZIP:
+            with py7zr.SevenZipFile(archive, mode="r") as f:
+                f.extractall(dst)
+        case _:
+            raise BadArchiveContent(f"Unsupported archive format {fmt}")
+
+
 def unzip(dir_path: Path, zip_path: Path) -> None:
     with zipfile.ZipFile(zip_path, mode="r") as zipf:
         zipf.extractall(dir_path)
