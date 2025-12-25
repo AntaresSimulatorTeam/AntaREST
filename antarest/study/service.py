@@ -1975,7 +1975,15 @@ class StudyService:
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             study_to_archive = assert_raw(study_to_archive)
+
+            # TODO: proposition to keep current behaviour but with any kind of output:
+            #       1. create the temp dir
+            #       2. write study without outputs to the temp dir
+            #       3. write outputs to the temp dir, using output service
+            #       4. zip the temp dir, mark as archived
+            #       5. delete outputs
             self.storage_service.raw_study_service.archive(study_to_archive)
+
             study_to_archive.archived = True
             self.repository.save(study_to_archive)
             self.event_bus.push(
