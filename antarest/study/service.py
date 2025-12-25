@@ -1437,6 +1437,8 @@ class StudyService:
         if isinstance(study, VariantStudy) and study.generation_task:
             self.task_service.await_task(study.generation_task, 600)
 
+        self._get_output_service().delete_outputs(study.id)
+
         self.repository.delete(study.id)
 
         # delete the files afterward for
