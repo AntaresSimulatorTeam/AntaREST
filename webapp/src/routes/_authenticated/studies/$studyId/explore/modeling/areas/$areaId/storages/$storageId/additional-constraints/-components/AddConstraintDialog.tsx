@@ -18,56 +18,118 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useArea from "@/routes/-shared/hook/useArea";
-import useStudy from "@/routes/-shared/hook/useStudy";
-import { createAdditionalConstraint } from "@/services/api/studies/areas/storages";
-import type {
-  AdditionalConstraint,
-  AdditionalConstraintCreation,
-} from "@/services/api/studies/areas/storages/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useSafeMemo from "@/hooks/useSafeMemo";
+import { storageMutations, storageQueries } from "@/queries/storages";
+import type { StorageConstraintCreation } from "@/services/api/studies/areas/storages/types";
+import { getNames } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { useParams } from "@tanstack/react-router";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_CONSTRAINT_VALUES, OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "../-constants";
 
 interface Props {
   onCancel: VoidFunction;
-  existingNames: string[];
 }
 
-function AddConstraintDialog({ onCancel, existingNames }: Props) {
-  const study = useStudy();
-  const area = useArea();
-  const { storageId } = useParams({
+function AddConstraintDialog({ onCancel }: Props) {
+  const { t } = useTranslation();
+  const params = useParams({
     from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
   });
-  const { t } = useTranslation();
+  const router = useRouter();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const tempConstraintId = useSafeMemo(() => crypto.randomUUID(), []);
+  const { studyId, areaId, storageId } = params;
+  const queryOptions = storageQueries.constraintList(studyId, areaId, storageId);
+  const { queryKey } = queryOptions;
+
+  const { data: existingNames } = useSuspenseQuery({
+    ...queryOptions,
+    select: getNames,
+  });
+
+  const isRouterMatchConstraint = (constraintId: string) => {
+    return router.state.matches.some(
+      (m) =>
+        m.routeId ===
+          "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId/" &&
+        m.params.constraintId === constraintId,
+    );
+  };
+
+  const { mutate } = useMutation({
+    ...storageMutations.createConstraint(),
+    meta: { tempConstraintId },
+    onMutate: async (variables, context) => {
+      const { values } = variables;
+
+      await context.client.cancelQueries({ queryKey });
+
+      const prevConstraints = context.client.getQueryData(queryKey);
+
+      context.client.setQueryData(queryKey, (old = []) => {
+        return [
+          ...old,
+          {
+            ...values,
+            id: tempConstraintId,
+            name: values.name,
+            variable: values.variable || "netting",
+            operator: values.operator || "less",
+            occurrences: values.occurrences || [],
+            enabled: values.enabled ?? true,
+            isOptimistic: true,
+          },
+        ];
+      });
+
+      router.navigate({
+        to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId",
+        params: { ...params, constraintId: tempConstraintId },
+      });
+
+      return { prevConstraints };
+    },
+    onError: (error, variables, onMutateResult, context) => {
+      const { prevConstraints } = onMutateResult || {};
+
+      context.client.setQueryData(queryKey, prevConstraints);
+
+      enqueueErrorSnackbar("Not adding", error);
+
+      if (isRouterMatchConstraint(tempConstraintId)) {
+        router.navigate({ to: "..", replace: true });
+      }
+    },
+    onSuccess: (newConstraint, variables, onMutateResult, context) => {
+      context.client.setQueryData(queryKey, (old = []) => {
+        return old.map((constraint) =>
+          constraint.id === tempConstraintId ? newConstraint : constraint,
+        );
+      });
+
+      if (isRouterMatchConstraint(tempConstraintId)) {
+        router.navigate({
+          to: ".",
+          params: { ...params, constraintId: newConstraint.id },
+          replace: true,
+        });
+      }
+    },
+    onSettled: (data, error, variables, onMutateResult, context) => {
+      context.client.invalidateQueries({ queryKey });
+    },
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values }: SubmitHandlerPlus<AdditionalConstraintCreation>) => {
-    return createAdditionalConstraint({
-      studyId: study.id,
-      areaId: area.id,
-      storageId,
-      values,
-    });
-  };
-
-  const handleSumitSuccessful = (
-    data: SubmitHandlerPlus<AdditionalConstraintCreation>,
-    createdConstraint: AdditionalConstraint,
-  ) => {
-    // navigate({
-    //   to: "/studies/$studyId/explore/tablemode/$tableModeId",
-    //   params: { studyId: study.id, tableModeId: values.name },
-    //   replace: isUpdateDialog ? true : false,
-    // });
-
-    onCancel();
+  const handleSubmit = ({ values }: SubmitHandlerPlus<StorageConstraintCreation>) => {
+    mutate({ ...params, values });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -81,7 +143,7 @@ function AddConstraintDialog({ onCancel, existingNames }: Props) {
       titleIcon={AddCircleIcon}
       onCancel={onCancel}
       onSubmit={handleSubmit}
-      onSubmitSuccessful={handleSumitSuccessful}
+      onSubmitSuccessful={onCancel}
       config={{ defaultValues: DEFAULT_CONSTRAINT_VALUES }}
     >
       {({ control }) => (

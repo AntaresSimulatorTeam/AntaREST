@@ -13,9 +13,8 @@
  */
 
 import type { PartialExceptFor } from "@/utils/tsUtils";
-import { F } from "ts-toolbelt";
 
-export interface BaseStorageParams {
+export interface StorageParams {
   studyId: string;
   areaId: string;
   storageId: string;
@@ -25,53 +24,50 @@ export interface BaseStorageParams {
 // Additional Constraints
 ////////////////////////////////////////////////////////////////
 
-export type AdditionalConstraintVariable = "withdrawal" | "injection" | "netting";
+export type StorageConstraintVariable = "withdrawal" | "injection" | "netting";
 
-export type AdditionalConstraintOperator = "less" | "greater" | "equal";
+export type StorageConstraintOperator = "less" | "greater" | "equal";
 
-export type AdditionalConstraintOccurrences = Array<{ hours: number[] }>;
+export type StorageConstraintOccurrences = Array<{ hours: number[] }>;
 
-export interface AdditionalConstraint {
+export interface StorageConstraint {
   id: string;
   name: string;
-  variable: AdditionalConstraintVariable;
-  operator: AdditionalConstraintOperator;
-  occurrences: AdditionalConstraintOccurrences;
+  variable: StorageConstraintVariable;
+  operator: StorageConstraintOperator;
+  occurrences: StorageConstraintOccurrences;
   enabled: boolean;
 }
 
-export type AdditionalConstraintCreation = PartialExceptFor<
-  Omit<AdditionalConstraint, "id">,
-  "name"
->;
+export type StorageConstraintCreation = PartialExceptFor<Omit<StorageConstraint, "id">, "name">;
 
-export type AdditionalConstraintUpdate = Partial<Omit<AdditionalConstraint, "id" | "name">>;
+export type StorageConstraintUpdate = Partial<Omit<StorageConstraint, "id" | "name">>;
 
-export interface GetAdditionalConstraintParams extends BaseStorageParams {
-  constraintId: AdditionalConstraint["id"];
+export interface GetStorageConstraintParams extends StorageParams {
+  constraintId: StorageConstraint["id"];
 }
 
-export interface CreateAdditionalConstraintsParams<T> extends BaseStorageParams {
-  constraints: Array<F.Exact<T, AdditionalConstraintCreation>>;
+export interface CreateStorageConstraintsParams extends StorageParams {
+  constraints: StorageConstraintCreation[];
 }
 
-export interface CreateAdditionalConstraintParams<T> extends BaseStorageParams {
-  values: F.Exact<T, AdditionalConstraintCreation>;
+export interface CreateStorageConstraintParams extends StorageParams {
+  values: StorageConstraintCreation;
 }
 
-export interface UpdateAdditionalConstraintsParams<T> extends BaseStorageParams {
-  constraints: Record<AdditionalConstraint["id"], F.Exact<T, AdditionalConstraintUpdate>>;
+export interface UpdateStorageConstraintsParams extends StorageParams {
+  constraints: Record<StorageConstraint["id"], StorageConstraintUpdate>;
 }
 
-export interface UpdateAdditionalConstraintParams<T> extends BaseStorageParams {
-  constraintId: AdditionalConstraint["id"];
-  values: F.Exact<T, AdditionalConstraintUpdate>;
+export interface UpdateStorageConstraintParams extends StorageParams {
+  constraintId: StorageConstraint["id"];
+  values: StorageConstraintUpdate;
 }
 
-export interface DeleteAdditionalConstraintsParams extends BaseStorageParams {
-  constraintIds: Array<AdditionalConstraint["id"]>;
+export interface DeleteStorageConstraintsParams extends StorageParams {
+  constraintIds: Array<StorageConstraint["id"]>;
 }
 
-export interface DeleteAdditionalConstraintParams extends BaseStorageParams {
-  constraintId: AdditionalConstraint["id"];
+export interface DeleteStorageConstraintParams extends StorageParams {
+  constraintId: StorageConstraint["id"];
 }

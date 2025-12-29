@@ -21,6 +21,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomScrollbar from "../CustomScrollbar";
 import EmptyView from "../page/EmptyView";
+import ErrorView from "../page/ErrorView";
 import MatrixActions from "./components/MatrixActions";
 import MatrixGrid from "./components/MatrixGrid";
 import { MatrixProvider } from "./context/MatrixContext";
@@ -144,7 +145,7 @@ function Matrix({
   }
 
   if (error) {
-    return <EmptyView title={error.message} />;
+    return <ErrorView error={error} />;
   }
 
   return (

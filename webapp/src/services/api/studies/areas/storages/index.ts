@@ -14,47 +14,57 @@
 
 import client from "@/services/api/client";
 import { format } from "@/utils/stringUtils";
+import * as R from "ramda";
 import type {
-  AdditionalConstraint,
-  BaseStorageParams,
-  CreateAdditionalConstraintParams,
-  CreateAdditionalConstraintsParams,
-  DeleteAdditionalConstraintParams,
-  DeleteAdditionalConstraintsParams,
-  GetAdditionalConstraintParams,
-  UpdateAdditionalConstraintParams,
-  UpdateAdditionalConstraintsParams,
+  CreateStorageConstraintParams,
+  CreateStorageConstraintsParams,
+  DeleteStorageConstraintParams,
+  DeleteStorageConstraintsParams,
+  GetStorageConstraintParams,
+  StorageConstraint,
+  StorageParams,
+  UpdateStorageConstraintParams,
+  UpdateStorageConstraintsParams,
 } from "./types";
 
 const BASE_URL = "/v1/studies/{studyId}/areas/{areaId}/storages";
 const CONSTRAINTS_URL = `${BASE_URL}/{storageId}/additional-constraints`;
+const CONSTRAINT_URL = `${CONSTRAINTS_URL}/{constraintId}`;
 
-const buildUrl = (params: BaseStorageParams & { constraintId?: string }) =>
-  format(params.constraintId ? `${CONSTRAINTS_URL}/{constraintId}` : CONSTRAINTS_URL, params);
-
-export async function getAdditionalConstraints(params: BaseStorageParams) {
-  const { data } = await client.get<AdditionalConstraint[]>(buildUrl(params));
+export async function getStorageConstraints(params: StorageParams) {
+  const url = format(CONSTRAINTS_URL, params);
+  const { data } = await client.get<StorageConstraint[]>(url);
   return data;
 }
 
-export async function getAdditionalConstraint(params: GetAdditionalConstraintParams) {
-  const { data } = await client.get<AdditionalConstraint>(buildUrl(params));
+export async function getStorageConstraint(params: GetStorageConstraintParams) {
+  const url = format(CONSTRAINT_URL, params);
+  const { data } = await client.get<StorageConstraint>(url);
   return data;
 }
 
-export async function createAdditionalConstraints<T>({
+export async function createStorageConstraints({
   constraints,
   ...params
-}: CreateAdditionalConstraintsParams<T>) {
-  const { data } = await client.post<AdditionalConstraint[]>(buildUrl(params), constraints);
+}: CreateStorageConstraintsParams) {
+  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
+  await new Promise((res) => setTimeout(() => res(1), 5000));
+
+  const url = format(CONSTRAINTS_URL, params);
+  const validConstraints = constraints.map(
+    R.pick(["name", "variable", "operator", "occurrences", "enabled"]),
+  );
+
+  const { data } = await client.post<StorageConstraint[]>(url, validConstraints);
+
   return data;
 }
 
-export async function createAdditionalConstraint<T>({
+export async function createStorageConstraint({
   values,
   ...params
-}: CreateAdditionalConstraintParams<T>) {
-  const createdConstraints = await createAdditionalConstraints({
+}: CreateStorageConstraintParams) {
+  const createdConstraints = await createStorageConstraints({
     ...params,
     constraints: [values],
   });
@@ -62,20 +72,27 @@ export async function createAdditionalConstraint<T>({
   return createdConstraints[0];
 }
 
-export async function updateAdditionalConstraints<T>({
+export async function updateStorageConstraints({
   constraints,
   ...params
-}: UpdateAdditionalConstraintsParams<T>) {
-  const { data } = await client.put<AdditionalConstraint[]>(buildUrl(params), constraints);
+}: UpdateStorageConstraintsParams) {
+  const url = format(CONSTRAINTS_URL, params);
+  const validConstraints = R.map(
+    R.pick(["variable", "operator", "occurrences", "enabled"]),
+    constraints,
+  );
+
+  const { data } = await client.put<StorageConstraint[]>(url, validConstraints);
+
   return data;
 }
 
-export async function updateAdditionalConstraint<T>({
+export async function updateStorageConstraint({
   constraintId,
   values,
   ...params
-}: UpdateAdditionalConstraintParams<T>) {
-  const updatedConstraints = await updateAdditionalConstraints({
+}: UpdateStorageConstraintParams) {
+  const updatedConstraints = await updateStorageConstraints({
     ...params,
     constraints: { [constraintId]: values },
   });
@@ -83,16 +100,20 @@ export async function updateAdditionalConstraint<T>({
   return updatedConstraints[0];
 }
 
-export async function deleteAdditionalConstraints({
+export async function deleteStorageConstraints({
   constraintIds,
   ...params
-}: DeleteAdditionalConstraintsParams) {
-  await client.delete(buildUrl(params), { data: constraintIds });
+}: DeleteStorageConstraintsParams) {
+  const url = format(CONSTRAINTS_URL, params);
+  await client.delete(url, { data: constraintIds });
 }
 
-export async function deleteAdditionalConstraint({
+export async function deleteStorageConstraint({
   constraintId,
   ...params
-}: DeleteAdditionalConstraintParams) {
-  await deleteAdditionalConstraints({ ...params, constraintIds: [constraintId] });
+}: DeleteStorageConstraintParams) {
+  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
+  await new Promise((res) => setTimeout(() => res(1), 2000));
+
+  await deleteStorageConstraints({ ...params, constraintIds: [constraintId] });
 }

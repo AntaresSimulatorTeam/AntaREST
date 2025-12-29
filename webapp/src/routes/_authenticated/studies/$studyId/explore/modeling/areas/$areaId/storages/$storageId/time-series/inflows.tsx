@@ -13,7 +13,6 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 import semver from "semver";
@@ -26,14 +25,13 @@ export const Route = createFileRoute(
 
 function Inflows() {
   const study = useStudy();
-  const area = useArea();
-  const { storageId } = Route.useParams();
+  const { areaId, storageId } = Route.useParams();
 
   return (
     <Matrix
       key={storageId}
       studyId={study.id}
-      url={`input/st-storage/series/${area.id}/${storageId}/inflows`}
+      url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
       // Since v9.3 this matrix supports the resize functionality
       {...(semver.lt(study.version, "9.3.0") && {
         isTimeSeries: false,

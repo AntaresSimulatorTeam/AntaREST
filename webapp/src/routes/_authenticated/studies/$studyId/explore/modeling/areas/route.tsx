@@ -20,21 +20,16 @@ import { getAreas } from "@/redux/selectors";
 import type { AreaWithId } from "@/types/types";
 import { createFileRoute, linkOptions, useParams } from "@tanstack/react-router";
 import { useEffect } from "react";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/modeling/areas")({
   component: AreasLayout,
 });
 
 function AreasLayout() {
-  const study = useStudy();
   const navigate = Route.useNavigate();
+  const { studyId } = Route.useParams();
   const { areaId, thermalId, storageId, renewableId } = useParams({ strict: false });
-
-  const response = useStudySynthesis({
-    studyId: study.id,
-    selector: getAreas,
-  });
+  const response = useStudySynthesis({ studyId, selector: getAreas });
 
   // Redirect to first area if none is selected
   useEffect(() => {
@@ -42,19 +37,20 @@ function AreasLayout() {
 
     if (!areaId && data && data.length > 0) {
       navigate({
-        to: "/studies/$studyId/explore/modeling/areas/$areaId/properties",
-        params: { studyId: study.id, areaId: data[0].id },
+        from: Route.fullPath,
+        to: "$areaId",
+        params: { areaId: data[0].id },
         replace: true,
       });
     }
-  }, [navigate, areaId, response, study.id]);
+  }, [navigate, areaId, response, studyId]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
   const getAreaLinkOptions = (area: AreaWithId) => {
-    const params = { studyId: study.id, areaId: area.id };
+    const params = { studyId, areaId: area.id };
 
     if (thermalId) {
       return linkOptions({

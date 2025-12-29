@@ -20,7 +20,6 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import TableViewIcon from "@mui/icons-material/TableView";
 import { createFileRoute, linkOptions, redirect } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../-shared/hook/useStudy";
 import storage, { StorageKey } from "../../../../../../services/utils/localStorage";
 import TableTemplateFormDialog from "./$tableModeId/-components/TableTemplateFormDialog";
 
@@ -34,8 +33,9 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/t
       location.pathname === `/studies/${studyId}/explore/tablemode`
     ) {
       throw redirect({
-        to: "/studies/$studyId/explore/tablemode/$tableModeId",
-        params: { studyId, tableModeId: sortedTemplates[0].name },
+        from: Route.fullPath,
+        to: "$tableModeId",
+        params: { tableModeId: sortedTemplates[0].name },
         replace: true,
       });
     }
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/t
 
 function TableModeLayout() {
   const templates = Route.useLoaderData();
-  const study = useStudy();
+  const params = Route.useParams();
   const { t } = useTranslation();
   const { openDialog } = useDialog();
 
@@ -83,7 +83,7 @@ function TableModeLayout() {
         label: tp.name,
         linkOptions: linkOptions({
           to: "/studies/$studyId/explore/tablemode/$tableModeId",
-          params: { studyId: study.id, tableModeId: tp.name },
+          params: { ...params, tableModeId: tp.name },
         }),
       }))}
       emptyListContent={<EmptyView title={t("study.tableMode.empty")} icon={TableViewIcon} />}

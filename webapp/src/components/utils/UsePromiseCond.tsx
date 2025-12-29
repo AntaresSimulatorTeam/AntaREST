@@ -13,9 +13,10 @@
  */
 
 import { PromiseStatus, type UsePromiseResponse } from "@/hooks/usePromise";
+import { toError } from "@/utils/fnUtils";
 import debug from "debug";
 import SimpleLoader from "../loaders/SimpleLoader";
-import EmptyView from "../page/EmptyView";
+import ErrorView from "../page/ErrorView";
 
 const log = debug("antares:utils:UsePromiseCond");
 
@@ -55,7 +56,7 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
   const {
     response,
     ifPending = () => <SimpleLoader />,
-    ifRejected = (error) => <EmptyView title={error?.toString()} />,
+    ifRejected = (error) => <ErrorView error={toError(error)} />,
     ifFulfilled,
     keepLastResolvedOnReload = false,
   } = props;

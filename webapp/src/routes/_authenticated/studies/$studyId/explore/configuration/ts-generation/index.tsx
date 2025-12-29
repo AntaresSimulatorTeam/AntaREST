@@ -34,7 +34,6 @@ import { generateTimeSeries, setTimeSeriesConfig } from "@/services/api/studies/
 import BuildIcon from "@mui/icons-material/Build";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 import usePromiseHandler from "../../../../../../../hooks/usePromiseHandler";
 import Fields from "./-components/Fields";
 import { defaultValues, type TimeSeriesConfigValues } from "./-utils";
@@ -46,7 +45,7 @@ export const Route = createFileRoute(
 });
 
 function TimeSeriesGeneration() {
-  const study = useStudy();
+  const { studyId } = Route.useParams();
   const { t } = useTranslation();
   const [isLaunchTaskInProgress, setIsLaunchTaskInProgress] = useState(false);
   const apiRef = useRef<UseFormReturnPlus<TimeSeriesConfigValues>>(null);
@@ -62,14 +61,14 @@ function TimeSeriesGeneration() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<TimeSeriesConfigValues>) => {
-    return setTimeSeriesConfig({ studyId: study.id, values });
+    return setTimeSeriesConfig({ studyId, values });
   };
 
   const handleSubmitSuccessful = async ({ values }: SubmitHandlerPlus<TimeSeriesConfigValues>) => {
     setIsLaunchTaskInProgress(true);
 
     // The WebSocket will trigger an event after the fulfillment of the promise (see `FreezeStudy`)
-    await handleGenerateTs({ studyId: study.id, outageDetails: values.thermal.outageDetails });
+    await handleGenerateTs({ studyId, outageDetails: values.thermal.outageDetails });
 
     setIsLaunchTaskInProgress(false);
 

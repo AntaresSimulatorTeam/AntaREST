@@ -15,7 +15,6 @@
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TableMode from "@/components/TableMode";
 import { createFileRoute } from "@tanstack/react-router";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/geo-trimming/binding-constraints",
@@ -24,12 +23,12 @@ export const Route = createFileRoute(
 });
 
 function BindingConstraints() {
-  const study = useStudy();
+  const { studyId } = Route.useParams();
 
   return (
     <ViewWrapper>
       <TableMode
-        studyId={study.id}
+        studyId={studyId}
         type="binding-constraints"
         columns={["filterYearByYear", "filterSynthesis"]}
       />

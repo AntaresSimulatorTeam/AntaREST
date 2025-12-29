@@ -12,14 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import type { QueryList, QueryListItemBase } from "./types";
 
-export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/")({
-  beforeLoad: () => {
-    throw redirect({
-      from: Route.fullPath,
-      to: "modeling",
-      replace: true,
-    });
-  },
-});
+export function queryList<T extends QueryListItemBase>(list: T[]): QueryList<T> {
+  return list;
+}

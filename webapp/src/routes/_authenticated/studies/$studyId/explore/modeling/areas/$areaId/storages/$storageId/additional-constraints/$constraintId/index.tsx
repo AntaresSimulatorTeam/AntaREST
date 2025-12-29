@@ -16,50 +16,78 @@ import OkDialog from "@/components/dialogs/OkDialog";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import Matrix from "@/components/Matrix";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import useDialog from "@/hooks/useDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import i18n from "@/i18n";
+import { storageQueries } from "@/queries/storages";
+import type { QueryList } from "@/queries/types";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import {
-  getAdditionalConstraint,
-  updateAdditionalConstraint,
+  deleteStorageConstraint,
+  getStorageConstraint,
+  updateStorageConstraint,
 } from "@/services/api/studies/areas/storages";
-import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
-import type { StudyMetadata } from "@/types/types";
-import { buildKey } from "@/utils/reactUtils";
+import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
+import { toError } from "@/utils/fnUtils";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Button } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
 import semver from "semver";
-import Fields from "./Fields";
+import Fields from "./-components/Fields";
 
-interface Props {
-  studyId: StudyMetadata["id"];
-  areaId: string;
-  storageId: string;
-  constraintId: AdditionalConstraint["id"];
-  studyVersion: StudyMetadata["version"];
-  onDelete: (constraintId: AdditionalConstraint["id"]) => void;
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId/",
+)({
+  beforeLoad: async ({ context, params: { studyId, areaId, storageId, constraintId } }) => {
+    const constraints = await context.queryClient.ensureQueryData(
+      storageQueries.constraintList(studyId, areaId, storageId),
+    );
 
-function ConstraintForm({
-  studyId,
-  areaId,
-  storageId,
-  constraintId,
-  studyVersion,
-  onDelete,
-}: Props) {
+    if (!constraints.find(({ id }) => id === constraintId)) {
+      throw new Error(
+        i18n.t("study.area.storage.additionalConstraint.notFound", { id: constraintId }),
+      );
+    }
+  },
+  component: Constraint,
+});
+
+function Constraint() {
+  const study = useStudy();
+  const { areaId, storageId, constraintId } = Route.useParams();
+  const navigate = Route.useNavigate();
   const { t } = useTranslation();
   const [matrixDialogOpen, toggleMatrixDialogOpen] = useToggle(false);
+  const { confirm } = useDialog();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
+  const getConstraint = useCallback(
+    (constraints: QueryList<StorageConstraint>) => {
+      return constraints.find(({ id }) => id === constraintId);
+    },
+    [constraintId],
+  );
+
+  const { data: constraint } = useSuspenseQuery({
+    ...storageQueries.constraintList(study.id, areaId, storageId),
+    select: getConstraint,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues, values }: SubmitHandlerPlus<AdditionalConstraint>) => {
+  const handleSubmit = ({ dirtyValues, values }: SubmitHandlerPlus<StorageConstraint>) => {
     const { id, name, occurrences, ...rest } = dirtyValues;
 
-    return updateAdditionalConstraint({
-      studyId,
+    return updateStorageConstraint({
+      studyId: study.id,
       areaId,
       storageId,
       constraintId,
@@ -67,8 +95,34 @@ function ConstraintForm({
     });
   };
 
-  const handleDeleteClick = () => {
-    onDelete(constraintId);
+  const handleDelete = async () => {
+    const isConfirmed = await confirm({
+      content: t("study.modeling.storages.additionalConstraints.delete.confirm", {
+        name: constraintId,
+      }),
+      alert: "error",
+      titleIcon: DeleteIcon,
+    });
+
+    if (isConfirmed) {
+      try {
+        await deleteStorageConstraint({
+          studyId: study.id,
+          areaId,
+          storageId,
+          constraintId,
+        });
+
+        navigate({ to: "..", replace: true });
+      } catch (err) {
+        enqueueErrorSnackbar(
+          t("study.modeling.storages.additionalConstraints.delete.error", {
+            name: constraintId,
+          }),
+          toError(err),
+        );
+      }
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -76,18 +130,21 @@ function ConstraintForm({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
+    <ViewWrapper>
       <Form
-        key={buildKey(studyId, areaId, storageId, constraintId)}
+        key={constraintId}
         onSubmit={handleSubmit}
         config={{
-          defaultValues: () =>
-            getAdditionalConstraint({
-              studyId,
-              areaId,
-              storageId,
-              constraintId,
-            }),
+          disabled: constraint?.isOptimistic,
+          defaultValues: constraint?.isOptimistic
+            ? constraint
+            : () =>
+                getStorageConstraint({
+                  studyId: study.id,
+                  areaId,
+                  storageId,
+                  constraintId,
+                }),
         }}
         enableUndoRedo
         extraActions={
@@ -104,7 +161,7 @@ function ConstraintForm({
               variant="outlined"
               color="error"
               startIcon={<DeleteIcon />}
-              onClick={handleDeleteClick}
+              onClick={handleDelete}
             >
               {t("global.delete")}
             </Button>
@@ -122,11 +179,12 @@ function ConstraintForm({
           fullScreen
         >
           <Matrix
-            studyId={studyId}
+            key={constraintId}
+            studyId={study.id}
             title={t("global.timeSeries")}
             url={`input/st-storage/constraints/${areaId}/${storageId}/rhs_${constraintId}`}
             // Since v9.3 supports resize, older versions need fixed layout
-            {...(semver.lt(studyVersion, "9.3.0") && {
+            {...(semver.lt(study.version, "9.3.0") && {
               isTimeSeries: false,
               customColumns: ["TS 1"],
               enableFilters: true,
@@ -134,8 +192,6 @@ function ConstraintForm({
           />
         </OkDialog>
       )}
-    </>
+    </ViewWrapper>
   );
 }
-
-export default ConstraintForm;

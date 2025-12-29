@@ -14,12 +14,12 @@
 
 import type { Options } from "@/components/fieldEditors/SelectFE";
 import type {
-  AdditionalConstraintCreation,
-  AdditionalConstraintOperator,
-  AdditionalConstraintVariable,
+  StorageConstraintCreation,
+  StorageConstraintOperator,
+  StorageConstraintVariable,
 } from "@/services/api/studies/areas/storages/types";
 
-export const VARIABLE_OPTIONS: Options<AdditionalConstraintVariable> = [
+export const VARIABLE_OPTIONS: Options<StorageConstraintVariable> = [
   {
     value: "withdrawal",
     label: (t) => t("study.modeling.storages.additionalConstraints.charge"),
@@ -31,13 +31,13 @@ export const VARIABLE_OPTIONS: Options<AdditionalConstraintVariable> = [
   { value: "netting", label: (t) => t("study.modeling.storages.additionalConstraints.level") },
 ] as const;
 
-export const OPERATOR_OPTIONS: Options<AdditionalConstraintOperator> = [
+export const OPERATOR_OPTIONS: Options<StorageConstraintOperator> = [
   { value: "less", label: "<" },
   { value: "equal", label: "=" },
   { value: "greater", label: ">" },
 ] as const;
 
-export const DEFAULT_CONSTRAINT_VALUES: AdditionalConstraintCreation = {
+export const DEFAULT_CONSTRAINT_VALUES: StorageConstraintCreation = {
   name: "",
   variable: "withdrawal",
   operator: "less",

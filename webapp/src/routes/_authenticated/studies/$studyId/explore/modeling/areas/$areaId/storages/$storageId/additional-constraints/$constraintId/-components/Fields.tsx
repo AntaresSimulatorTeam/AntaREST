@@ -18,13 +18,13 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/components/Form";
 import type {
-  AdditionalConstraint,
-  AdditionalConstraintOccurrences,
+  StorageConstraint,
+  StorageConstraintOccurrences,
 } from "@/services/api/studies/areas/storages/types";
 import { Alert } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { isOccurrencesValid } from "../-utils";
-import { OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "../../AdditionalConstraints/constants";
+import { OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "../../-constants";
 import OccurrencesFE from "./OccurrencesFE";
 
 function Fields() {
@@ -34,7 +34,7 @@ function Fields() {
     control,
     setValue,
     formState: { defaultValues },
-  } = useFormContextPlus<AdditionalConstraint>();
+  } = useFormContextPlus<StorageConstraint>();
 
   // Display an alert if occurrences fetch from the server are invalid
   const displayAlert = !isOccurrencesValid(defaultValues?.occurrences);
@@ -43,7 +43,7 @@ function Fields() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleOccurrencesChange = (newOccurrences: AdditionalConstraintOccurrences) => {
+  const handleOccurrencesChange = (newOccurrences: StorageConstraintOccurrences) => {
     setValue("occurrences", newOccurrences);
   };
 

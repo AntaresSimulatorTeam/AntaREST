@@ -32,17 +32,15 @@ import useStudy from "../../../../../../../-shared/hook/useStudy";
 export interface TableTemplateFormDialogProps
   extends Pick<FormDialogProps<TableTemplate>, "title" | "titleIcon" | "onCancel"> {
   defaultValues: TableTemplate;
-  templates: TableTemplate[];
+  existingNames: string[];
 }
 
 function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
-  const { title, titleIcon, defaultValues, onCancel, templates } = props;
+  const { title, titleIcon, defaultValues, onCancel, existingNames } = props;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const study = useStudy();
   const isUpdateDialog = !!defaultValues.name;
-
-  const existingTables = useMemo(() => templates.map(({ name }) => name), [templates]);
 
   const typeOptions = useMemo(
     () =>
@@ -102,7 +100,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             control={control}
             rules={{
               validate: validateString({
-                existingValues: existingTables,
+                existingValues: existingNames,
                 editedValue: defaultValues?.name,
               }),
             }}

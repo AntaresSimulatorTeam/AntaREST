@@ -330,7 +330,6 @@
   "study.years": "Years",
   "study.type": "Type",
   "study.includeClusters": "Include clusters",
-  "study.area": "Area",
   "study.areas": "Areas",
   "study.cluster": "Cluster",
   "study.link": "Link",
@@ -567,6 +566,7 @@
   "study.modeling.map.districts.delete.confirm": "Are you sure you want to delete '{{0}}' district?",
   "study.modeling.load": "Load",
   "study.modeling.thermals": "Thermals",
+  "study.modeling.thermals.select": "Thermal",
   "study.modeling.thermals.parameters": "Parameters",
   "study.modeling.hydro": "Hydro",
   "study.modeling.hydro.correlation.viewMatrix": "View all correlations",
@@ -574,6 +574,7 @@
   "study.modeling.hydro.allocation.viewMatrix": "View all allocations",
   "study.modeling.hydro.allocation.error.field.delete": "Error when deleting the allocation",
   "study.modeling.storages": "Storages",
+  "study.modeling.storages.select": "Storage",
   "study.modeling.storages.injectionParameters": "Stored parameters",
   "study.modeling.storages.withdrawalParameters": "Released parameters",
   "study.modeling.storages.modulation": "Modulation",
@@ -626,6 +627,7 @@
   "study.modeling.wind": "Wind",
   "study.modeling.solar": "Solar",
   "study.modeling.renewables": "Renewables",
+  "study.modeling.renewables.select": "Renewable",
   "study.modeling.renewables.parameters": "Parameters",
   "study.modeling.reserves": "Reserves",
   "study.modeling.miscGen": "Misc. Gen.",
@@ -705,7 +707,6 @@
   "study.modeling.bindingConst.duplicate": "Duplicate binding constraint",
   "study.tableMode": "Table Mode",
   "study.tableMode.empty": "No table available",
-  "study.tableMode.notFound": "The table \"{{name}}\" could not be found",
   "study.tableMode.dialog.add.title": "Add table",
   "study.tableMode.dialog.edit.title": "Edit table",
   "study.tableMode.dialog.delete.text": "Are you sure you want to delete '{{name}}' table?",
@@ -772,6 +773,10 @@
   "study.success.studyIdCopy": "Study ID copied!",
   "study.success.jobIdCopy": "Job ID copied!",
   "study.success.modifiedStudy": "Study {{studyname}} updated successfully",
+  "study.notFound": "No study found with ID: {{id}}",
+  "study.tableMode.notFound": "No table found with ID: {{id}}",
+  "study.area.notFound": "No area found with ID: {{id}}",
+  "study.area.storage.additionalConstraint.notFound": "No additional constraint found with ID: {{id}}",
   "studies.question.delete": "Are you sure you want to delete the study: {{studyName}}?",
   "studies.question.deleteWithVariants": "Are you sure you want to delete the study '{{studyName}}' and its {{variantNb}} sub-variant(s)?",
   "studies.error.retrieveData": "Failed to retrieve data",
@@ -1019,5 +1024,6 @@
       "divide": "Divide",
       "absolute": "Absolute value"
     }
-  }
+  },
+  "route.noParameter": "No {{param}} provided in route parameters"
 }

@@ -19,7 +19,6 @@ import NumberFE from "@/components/fieldEditors/NumberFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
@@ -43,8 +42,7 @@ export const Route = createFileRoute(
 
 function Parameters() {
   const study = useStudy();
-  const area = useArea();
-  const { storageId } = Route.useParams();
+  const { areaId, storageId } = Route.useParams();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -52,7 +50,7 @@ function Parameters() {
   ////////////////////////////////////////////////////////////////
 
   const getDefaultValues = async () => {
-    const storage = await getStorage(study.id, area.id, storageId);
+    const storage = await getStorage(study.id, areaId, storageId);
     return convertRatioToPercentage(storage);
   };
 
@@ -63,7 +61,7 @@ function Parameters() {
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FormalizedStorage>) => {
     const updatedStorage = await updateStorage(
       study.id,
-      area.id,
+      areaId,
       storageId,
       convertPercentageToRatio(dirtyValues),
     );
@@ -77,7 +75,7 @@ function Parameters() {
 
   return (
     <Form
-      key={area.id + storageId}
+      key={areaId + storageId}
       config={{ defaultValues: getDefaultValues }}
       onSubmit={handleSubmit}
       enableUndoRedo

@@ -15,7 +15,6 @@
 import DataViewerDialog from "@/components/dialogs/DataViewerDialog";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
@@ -53,7 +52,7 @@ const resourceContentFetcher = (
 
 function Settings() {
   const [t] = useTranslation();
-  const study = useStudy();
+  const { studyId } = Route.useParams();
   const [resourceViewDialog, setResourceViewDialog] = useState<{
     filename: string;
     content: string;
@@ -62,53 +61,32 @@ function Settings() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
-  const settingsRes = usePromiseWithSnackbarError(
-    async () => {
-      if (study) {
-        return getXpansionSettings(study.id);
-      }
-    },
-    {
-      errorMessage: t("xpansion.error.loadConfiguration"),
-    },
-  );
+  const settingsRes = usePromiseWithSnackbarError(() => getXpansionSettings(studyId), {
+    errorMessage: t("xpansion.error.loadConfiguration"),
+    deps: [studyId],
+  });
 
   const { data: candidates } = usePromiseWithSnackbarError(
     async () => {
-      if (!study) {
-        return [];
-      }
-      const tempCandidates = await getAllCandidates(study.id);
+      const tempCandidates = await getAllCandidates(studyId);
       return tempCandidates.map((c) => c.name);
     },
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
       resetDataOnReload: false,
-      deps: [study],
+      deps: [studyId],
     },
   );
 
-  const { data: constraints } = usePromiseWithSnackbarError(
-    async () => {
-      if (study) {
-        return getAllConstraints(study.id);
-      }
-    },
-    {
-      errorMessage: t("xpansion.error.loadConfiguration"),
-    },
-  );
+  const { data: constraints } = usePromiseWithSnackbarError(() => getAllConstraints(studyId), {
+    errorMessage: t("xpansion.error.loadConfiguration"),
+    deps: [studyId],
+  });
 
-  const { data: weights } = usePromiseWithSnackbarError(
-    async () => {
-      if (study) {
-        return getAllWeights(study.id);
-      }
-    },
-    {
-      errorMessage: t("xpansion.error.loadConfiguration"),
-    },
-  );
+  const { data: weights } = usePromiseWithSnackbarError(() => getAllWeights(studyId), {
+    errorMessage: t("xpansion.error.loadConfiguration"),
+    deps: [studyId],
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -116,18 +94,16 @@ function Settings() {
 
   const updateSettings = async (value: XpansionSettings) => {
     try {
-      if (study) {
-        await updateXpansionSettings(
-          study.id,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          removeEmptyFields(value as Record<string, any>, [
-            "cut-type",
-            "solver",
-            "yearly-weights",
-            "additional-constraints",
-          ]) as XpansionSettings,
-        );
-      }
+      await updateXpansionSettings(
+        studyId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        removeEmptyFields(value as Record<string, any>, [
+          "cut-type",
+          "solver",
+          "yearly-weights",
+          "additional-constraints",
+        ]) as XpansionSettings,
+      );
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.updateSettings"), e as AxiosError);
     } finally {
@@ -140,14 +116,12 @@ function Settings() {
 
   const getResourceContent = async (resourceType: string, filename: string) => {
     try {
-      if (study) {
-        const content = await resourceContentFetcher(resourceType)(study.id, filename);
-        setResourceViewDialog({
-          filename,
-          content,
-          isMatrix: resourceType === XpansionResourceType.weights,
-        });
-      }
+      const content = await resourceContentFetcher(resourceType)(studyId, filename);
+      setResourceViewDialog({
+        filename,
+        content,
+        isMatrix: resourceType === XpansionResourceType.weights,
+      });
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
     }

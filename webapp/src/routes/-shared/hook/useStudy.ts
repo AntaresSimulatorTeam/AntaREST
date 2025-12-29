@@ -15,13 +15,19 @@
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudy } from "@/redux/selectors";
 import { useParams } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 function useStudy() {
-  const { studyId } = useParams({ from: "/_authenticated/studies/$studyId" });
-  const study = useAppSelector((state) => getStudy(state, studyId));
+  const { studyId } = useParams({ strict: false });
+  const study = useAppSelector((state) => (studyId ? getStudy(state, studyId) : undefined));
+  const { t } = useTranslation();
+
+  if (!studyId) {
+    throw new Error(t("route.noParameter", { param: "studyId" }));
+  }
 
   if (!study) {
-    throw new Error(`No study found with ID: ${studyId}`);
+    throw new Error(t("study.notFound", { id: studyId }));
   }
 
   return study;

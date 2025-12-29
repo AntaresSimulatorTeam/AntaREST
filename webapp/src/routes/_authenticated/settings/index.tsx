@@ -17,7 +17,8 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 export const Route = createFileRoute("/_authenticated/settings/")({
   beforeLoad: () => {
     throw redirect({
-      to: "/settings/general",
+      from: Route.fullPath,
+      to: "general",
       replace: true,
     });
   },

@@ -87,7 +87,6 @@ function BindingConstraints() {
           </ViewWrapper>
         </SplitView>
       )}
-      ifRejected={(error) => <EmptyView title={error?.toString()} />}
     />
   );
 }

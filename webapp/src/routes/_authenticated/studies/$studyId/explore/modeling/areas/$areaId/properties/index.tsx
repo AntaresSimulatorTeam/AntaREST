@@ -14,9 +14,7 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
-import useArea from "../../../../../../../../-shared/hook/useArea";
 import Fields from "./-components/Fields";
 import {
   getPropertiesFormFields,
@@ -31,8 +29,7 @@ export const Route = createFileRoute(
 });
 
 function Properties() {
-  const study = useStudy();
-  const area = useArea();
+  const { studyId, areaId } = Route.useParams();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -40,7 +37,7 @@ function Properties() {
 
   const handleSubmit = (data: SubmitHandlerPlus<PropertiesFormFields>) => {
     const { dirtyValues } = data;
-    return setPropertiesFormFields(study.id, area.id, dirtyValues);
+    return setPropertiesFormFields(studyId, areaId, dirtyValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -49,9 +46,9 @@ function Properties() {
 
   return (
     <Form
-      key={area.id}
+      key={areaId}
       config={{
-        defaultValues: () => getPropertiesFormFields(study.id, area.id),
+        defaultValues: () => getPropertiesFormFields(studyId, areaId),
       }}
       onSubmit={handleSubmit}
       enableUndoRedo

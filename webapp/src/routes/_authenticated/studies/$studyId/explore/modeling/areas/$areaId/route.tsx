@@ -16,6 +16,7 @@ import TabsView from "@/components/page/TabsView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudySynthesis } from "@/redux/selectors";
+import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -31,6 +32,9 @@ function AreaLayout() {
   const study = useStudy();
   const { t } = useTranslation();
   const params = Route.useParams();
+
+  // Allow to display an appropriate error if the area does not exist
+  useArea();
 
   // The value corresponds to the parameter "renewable-generation-modelling",
   // editable in "/studies/$studyId/explore/configuration/advanced-params"

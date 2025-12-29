@@ -22,7 +22,6 @@ import {
   getClustersWithCapacityTotals,
   toCapacityString,
 } from "@/routes/-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
@@ -49,20 +48,20 @@ const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
 function Thermals() {
   const study = useStudy();
-  const area = useArea();
+  const { areaId } = Route.useParams();
   const { t } = useTranslation();
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     ThermalClusterWithCapacity[]
   >(
     async () => {
-      const clusters = await getThermalClusters(study.id, area.id);
+      const clusters = await getThermalClusters(study.id, areaId);
       return clusters?.map(addClusterCapacity);
     },
     {
       resetDataOnReload: true,
       errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, area.id],
+      deps: [study.id, areaId],
     },
   );
 
@@ -124,19 +123,19 @@ function Thermals() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = async (values: TRow) => {
-    const cluster = await createThermalCluster(study.id, area.id, values);
+    const cluster = await createThermalCluster(study.id, areaId, values);
     return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
-    const cluster = await duplicateThermalCluster(study.id, area.id, row.id, newName);
+    const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
 
     return { ...row, ...cluster };
   };
 
   const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
-    return deleteThermalClusters(study.id, area.id, ids);
+    return deleteThermalClusters(study.id, areaId, ids);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -158,7 +157,7 @@ function Thermals() {
           to: "/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId",
           params: {
             studyId: study.id,
-            areaId: area.id,
+            areaId,
             thermalId: row.id,
           },
         })

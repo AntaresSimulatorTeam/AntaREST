@@ -19,7 +19,6 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { validateNumber } from "@/utils/validation/number";
 import { createFileRoute } from "@tanstack/react-router";
@@ -44,8 +43,7 @@ export const Route = createFileRoute(
 
 function Parameters() {
   const study = useStudy();
-  const area = useArea();
-  const { thermalId } = Route.useParams();
+  const { areaId, thermalId } = Route.useParams();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -53,7 +51,7 @@ function Parameters() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
-    return updateThermalCluster(study.id, area.id, thermalId, dirtyValues);
+    return updateThermalCluster(study.id, areaId, thermalId, dirtyValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -63,7 +61,7 @@ function Parameters() {
   return (
     <Form
       key={thermalId}
-      config={{ defaultValues: () => getThermalCluster(study.id, area.id, thermalId) }}
+      config={{ defaultValues: () => getThermalCluster(study.id, areaId, thermalId) }}
       onSubmit={handleSubmit}
       enableUndoRedo
     >

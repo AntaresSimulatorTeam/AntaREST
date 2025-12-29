@@ -12,14 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import EmptyView from "./EmptyView";
 
-export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/")({
-  beforeLoad: () => {
-    throw redirect({
-      from: Route.fullPath,
-      to: "modeling",
-      replace: true,
-    });
-  },
-});
+interface ErrorViewProps {
+  error: Error | string;
+}
+
+function ErrorView({ error }: ErrorViewProps) {
+  const title = typeof error === "string" ? error : error.message;
+  return <EmptyView title={title} icon={ErrorOutlineIcon} />;
+}
+
+export default ErrorView;

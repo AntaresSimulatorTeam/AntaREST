@@ -15,6 +15,9 @@
 import { ListItemButton } from "@mui/material";
 import { createLink, type LinkComponent } from "@tanstack/react-router";
 
+// Tanstack Router documentation:
+// https://tanstack.com/router/latest/docs/framework/react/guide/custom-link#button
+
 const CustomListItemButton = createLink(ListItemButton);
 
 export const RouterListItemButton: LinkComponent<typeof ListItemButton> = (props) => {

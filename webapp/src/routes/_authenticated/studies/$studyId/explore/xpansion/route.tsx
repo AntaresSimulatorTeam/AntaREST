@@ -20,7 +20,6 @@ import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../-shared/hook/useStudy";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import {
@@ -37,16 +36,16 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/x
 });
 
 function XpansionLayout() {
-  const study = useStudy();
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const navigate = Route.useNavigate();
   const params = Route.useParams();
   const search = Route.useSearch();
+  const { studyId } = params;
 
-  const response = usePromiseWithSnackbarError(() => xpansionConfigurationExist(study.id), {
+  const response = usePromiseWithSnackbarError(() => xpansionConfigurationExist(studyId), {
     errorMessage: t("xpansion.error.loadConfiguration"),
-    deps: [study.id, search.reload],
+    deps: [studyId, search.reload],
   });
 
   useEffect(() => {
@@ -63,7 +62,7 @@ function XpansionLayout() {
 
   const createXpansion = async () => {
     try {
-      await createXpansionConfiguration(study.id);
+      await createXpansionConfiguration(studyId);
       response.reload();
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.createConfiguration"), e as AxiosError);

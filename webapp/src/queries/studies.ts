@@ -12,14 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { createFileRoute, redirect } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/")({
-  beforeLoad: () => {
-    throw redirect({
-      from: Route.fullPath,
-      to: "modeling",
-      replace: true,
-    });
-  },
-});
+export const studyKeys = {
+  all: ["studies"] as const,
+};

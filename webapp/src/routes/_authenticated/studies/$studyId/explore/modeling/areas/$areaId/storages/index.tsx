@@ -15,8 +15,8 @@
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
+import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box, Tooltip } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
@@ -44,15 +44,15 @@ const columnHelper = createMRTColumnHelper<FormalizedStorage>();
 
 function Storages() {
   const study = useStudy();
-  const area = useArea();
+  const { areaId } = Route.useParams();
   const { t } = useTranslation();
 
   const { data: storages = [], isLoading } = usePromiseWithSnackbarError(
-    () => getStorages(study.id, area.id),
+    () => getStorages(study.id, areaId),
     {
       resetDataOnReload: true,
       errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, area.id],
+      deps: [study.id, areaId],
     },
   );
 
@@ -149,21 +149,27 @@ function Storages() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = (values: TRow) => {
-    return createStorage(study.id, area.id, values);
+    return createStorage(study.id, areaId, values);
   };
 
   const handleDuplicate = (row: FormalizedStorage, newName: string) => {
-    return duplicateStorage(study.id, area.id, row.id, newName);
+    return duplicateStorage(study.id, areaId, row.id, newName);
   };
 
   const handleDelete = (rows: FormalizedStorage[]) => {
     const ids = rows.map((row) => row.id);
-    return deleteStorages(study.id, area.id, ids);
+    return deleteStorages(study.id, areaId, ids);
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "8.6.0",
+    routePath: Route.path,
+  });
 
   return (
     <GroupedDataTable
@@ -180,7 +186,7 @@ function Storages() {
           to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
           params: {
             studyId: study.id,
-            areaId: area.id,
+            areaId,
             storageId: row.id,
           },
         })

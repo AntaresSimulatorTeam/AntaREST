@@ -24,8 +24,8 @@ import NumberSelectionsFE from "@/components/fieldEditors/NumberSelectionsFE";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import useConfirm from "@/hooks/useConfirm";
 import type {
-  AdditionalConstraint,
-  AdditionalConstraintOccurrences,
+  StorageConstraint,
+  StorageConstraintOccurrences,
 } from "@/services/api/studies/areas/storages/types";
 import { HOURS_IN } from "@/utils/date/constants";
 import { Box, Button, ButtonGroup, Divider } from "@mui/material";
@@ -47,9 +47,9 @@ import {
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  control: Control<AdditionalConstraint>;
-  occurrences: AdditionalConstraintOccurrences;
-  onEdit: (occurrences: AdditionalConstraintOccurrences) => void;
+  control: Control<StorageConstraint>;
+  occurrences: StorageConstraintOccurrences;
+  onEdit: (occurrences: StorageConstraintOccurrences) => void;
 }
 
 function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }: Props) {

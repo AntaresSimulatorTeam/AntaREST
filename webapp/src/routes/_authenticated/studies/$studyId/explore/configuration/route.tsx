@@ -24,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/c
 
 function ConfigurationLayout() {
   const study = useStudy();
+  const params = Route.useParams();
   const { t } = useTranslation();
 
   return (
@@ -34,7 +35,7 @@ function ConfigurationLayout() {
           label: "General",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/general",
-            params: { studyId: study.id },
+            params,
           }),
         },
         {
@@ -42,7 +43,7 @@ function ConfigurationLayout() {
           label: "Time-Series Generation",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/ts-generation",
-            params: { studyId: study.id },
+            params,
           }),
         },
         {
@@ -50,7 +51,7 @@ function ConfigurationLayout() {
           label: "Optimization",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/optimization",
-            params: { studyId: study.id },
+            params,
           }),
         },
         semver.gte(study.version, "8.3.0") && {
@@ -58,7 +59,7 @@ function ConfigurationLayout() {
           label: "Adequacy Patch",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/adequacy-patch",
-            params: { studyId: study.id },
+            params,
           }),
         },
         {
@@ -66,7 +67,7 @@ function ConfigurationLayout() {
           label: "Advanced Parameters",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/advanced-params",
-            params: { studyId: study.id },
+            params,
           }),
         },
         {
@@ -74,7 +75,7 @@ function ConfigurationLayout() {
           label: t("study.configuration.economicOpt"),
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/eco-options",
-            params: { studyId: study.id },
+            params,
           }),
         },
         {
@@ -82,7 +83,7 @@ function ConfigurationLayout() {
           label: t("study.configuration.geographicTrimming"),
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/geo-trimming",
-            params: { studyId: study.id },
+            params,
           }),
         },
       ].filter(Boolean)}

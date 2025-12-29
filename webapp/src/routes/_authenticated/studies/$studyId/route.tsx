@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import ErrorView from "@/components/page/ErrorView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { setCurrentStudy } from "@/redux/ducks/studies";
@@ -22,9 +23,12 @@ import { countDescendants, findNodeInTree } from "@/services/utils";
 import { WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import { addWsEventListener } from "@/services/webSocket/ws";
+import { toError } from "@/utils/fnUtils";
 import { Box, Divider } from "@mui/material";
 import { createFileRoute, Outlet, useMatch } from "@tanstack/react-router";
+import { isAxiosError } from "axios";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import FreezeStudy from "./-components/FreezeStudy";
 import NavHeader from "./-components/NavHeader";
 
@@ -36,6 +40,7 @@ function StudyHomeLayout() {
   const { studyId } = Route.useParams();
   const dispatch = useAppDispatch();
   const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
+  const { t } = useTranslation();
   const isExplorer = !!match;
 
   const res = usePromise(async () => {
@@ -127,6 +132,10 @@ function StudyHomeLayout() {
           </Box>
         </Box>
       )}
+      ifRejected={(err) => {
+        const is404 = isAxiosError(err) && err.response?.status === 404;
+        return <ErrorView error={is404 ? t("study.notFound", { id: studyId }) : toError(err)} />;
+      }}
     />
   );
 }

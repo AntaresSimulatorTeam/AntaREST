@@ -14,13 +14,11 @@
 
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import { compactSemanticVersion } from "@/utils/versionUtils";
+import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import semver from "semver";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/time-series/costs",
@@ -30,16 +28,14 @@ export const Route = createFileRoute(
 
 function Costs() {
   const study = useStudy();
-  const area = useArea();
-  const { storageId } = Route.useParams();
+  const { areaId, storageId } = Route.useParams();
   const { t } = useTranslation();
-  const minVersion = "9.2.0";
 
-  if (semver.lt(study.version, minVersion)) {
-    throw new Error(
-      `Costs matrices are only available for study version ${compactSemanticVersion(minVersion)} and above.`,
-    );
-  }
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "9.2.0",
+    routePath: Route.path,
+  });
 
   return (
     <SplitView splitId="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
@@ -49,7 +45,7 @@ function Costs() {
           key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.injectionCost")}
-          url={`input/st-storage/series/${area.id}/${storageId}/cost_injection`}
+          url={`input/st-storage/series/${areaId}/${storageId}/cost_injection`}
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}
@@ -61,7 +57,7 @@ function Costs() {
           key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.withdrawalCost")}
-          url={`input/st-storage/series/${area.id}/${storageId}/cost_withdrawal`}
+          url={`input/st-storage/series/${areaId}/${storageId}/cost_withdrawal`}
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}

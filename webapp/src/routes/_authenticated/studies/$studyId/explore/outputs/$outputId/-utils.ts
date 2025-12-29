@@ -20,7 +20,7 @@ import type {
   VariableViewParams,
   VariablesListDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { Area, LinkElement, Simulation } from "@/types/types";
+import type { LinkElement, Simulation } from "@/types/types";
 
 export const OUTPUT_ITEM_TYPES = ["areas", "links", "synthesis"] as const;
 export const DATA_TYPES = ["values", "details", "details-res", "id", "details-STstorage"] as const;
@@ -34,7 +34,7 @@ export type MonteCarloMode = (typeof MONTE_CARLO_MODES)[number];
 
 interface Params {
   output: Partial<Simulation> & { id: string; name: string };
-  item: (Area & { id: string }) | LinkElement;
+  item: AreaWithId | LinkElement;
   dataType: DataType;
   frequency: Frequency;
   year?: number;
@@ -120,7 +120,7 @@ export function buildVariableViewParams(
   dataType: string,
   selectedClusterId: string,
   selectedItemId: string,
-  selectedItem: (Area & { id: string }) | LinkElement,
+  selectedItem: AreaWithId | LinkElement,
   selectedVariable: string,
   frequency: Frequency,
 ): VariableViewParams {

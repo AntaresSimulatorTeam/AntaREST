@@ -57,7 +57,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { compareDesc, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/")({
   component: Outputs,
@@ -92,16 +91,16 @@ const iconStyle = {
 };
 
 function Outputs() {
-  const study = useStudy();
+  const { studyId } = Route.useParams();
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [dialogState, setDialogState] = useState<DialogState>({});
 
   const { data: studyJobs, isLoading: studyJobsLoading } = usePromiseWithSnackbarError(
-    () => getJobs({ studyId: study.id }),
+    () => getJobs({ studyId }),
     {
       errorMessage: t("results.error.jobs"),
-      deps: [study.id],
+      deps: [studyId],
     },
   );
 
@@ -109,9 +108,9 @@ function Outputs() {
     data: studyOutputs,
     isLoading: studyOutputsLoading,
     reload: reloadOutputs,
-  } = usePromiseWithSnackbarError(() => getStudyOutputs(study.id), {
+  } = usePromiseWithSnackbarError(() => getStudyOutputs(studyId), {
     errorMessage: t("results.error.outputs"),
-    deps: [study.id],
+    deps: [studyId],
   });
 
   const isLoading = studyJobsLoading || studyOutputsLoading;
@@ -192,8 +191,8 @@ function Outputs() {
     }
 
     const handler = output.archived
-      ? () => unarchiveOutput(study.id, output.name)
-      : () => archiveOutput(study.id, output.name);
+      ? () => unarchiveOutput(studyId, output.name)
+      : () => archiveOutput(studyId, output.name);
 
     const errorMessage = output.archived
       ? "studies.error.unarchiveOutput"
@@ -209,7 +208,7 @@ function Outputs() {
 
   const handleDeleteOutput = async (outputName: string) => {
     setDialogState({});
-    await deleteOutput(study.id, outputName);
+    await deleteOutput(studyId, outputName);
     reloadOutputs();
   };
 
@@ -327,7 +326,7 @@ function Outputs() {
         color="inherit"
         underline="hover"
         to="/studies/$studyId/explore/outputs/$outputId"
-        params={{ studyId: study.id, outputId: output.name }}
+        params={{ studyId, outputId: output.name }}
       >
         {output.name}
       </RouterLink>

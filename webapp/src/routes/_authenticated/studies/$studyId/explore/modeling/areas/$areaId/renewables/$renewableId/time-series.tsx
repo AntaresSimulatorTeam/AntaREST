@@ -13,8 +13,6 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useArea from "@/routes/-shared/hook/useArea";
-import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -24,15 +22,13 @@ export const Route = createFileRoute(
 });
 
 function TimeSeries() {
-  const study = useStudy();
-  const area = useArea();
-  const { renewableId } = Route.useParams();
+  const { studyId, areaId, renewableId } = Route.useParams();
 
   return (
     <Matrix
       key={renewableId}
-      studyId={study.id}
-      url={`input/renewables/series/${area.id}/${renewableId}/series`}
+      studyId={studyId}
+      url={`input/renewables/series/${areaId}/${renewableId}/series`}
       aggregateColumns="stats"
     />
   );

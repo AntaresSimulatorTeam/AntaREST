@@ -15,7 +15,6 @@
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TableMode from "@/components/TableMode";
 import { createFileRoute } from "@tanstack/react-router";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/geo-trimming/links",
@@ -24,15 +23,11 @@ export const Route = createFileRoute(
 });
 
 function Links() {
-  const study = useStudy();
+  const { studyId } = Route.useParams();
 
   return (
     <ViewWrapper>
-      <TableMode
-        studyId={study.id}
-        type="links"
-        columns={["filterYearByYear", "filterSynthesis"]}
-      />
+      <TableMode studyId={studyId} type="links" columns={["filterYearByYear", "filterSynthesis"]} />
     </ViewWrapper>
   );
 }

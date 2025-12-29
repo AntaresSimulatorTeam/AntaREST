@@ -15,8 +15,6 @@
 import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
 import TabsView from "@/components/page/TabsView";
 import usePromise from "@/hooks/usePromise";
-import useArea from "@/routes/-shared/hook/useArea";
-import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { getRenewableClusters } from "../-utils";
@@ -28,22 +26,21 @@ export const Route = createFileRoute(
 });
 
 function RenewablesLayout() {
-  const study = useStudy();
-  const area = useArea();
   const params = Route.useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { studyId, areaId, renewableId } = params;
 
-  const { data: renewableOptions = [params.renewableId], status: renewableOptionsStatus } =
+  const { data: renewableOptions = [renewableId], status: renewableOptionsStatus } =
     usePromise(async () => {
-      const renewables = await getRenewableClusters(study.id, area.id);
+      const renewables = await getRenewableClusters(studyId, areaId);
 
       return renewables.map((renewable) => ({
         label: renewable.name,
         value: renewable.id,
         group: renewable.group,
       }));
-    }, [study.id, area.id]);
+    }, [studyId, areaId]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -92,12 +89,13 @@ function RenewablesLayout() {
       ]}
       extraActions={
         <SelectFE
+          label={t("study.modeling.renewables.select")}
           value={params.renewableId}
           options={renewableOptions}
           onChange={handleChange}
           size="extra-small"
           disabled={renewableOptionsStatus !== "fulfilled"}
-          sx={{ maxWidth: 150 }}
+          sx={{ minWidth: 90, maxWidth: 150 }}
         />
       }
     />

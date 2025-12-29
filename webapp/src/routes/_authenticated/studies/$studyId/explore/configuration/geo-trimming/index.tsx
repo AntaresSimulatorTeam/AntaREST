@@ -17,10 +17,10 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/geo-trimming/",
 )({
-  beforeLoad: ({ params: { studyId } }) => {
+  beforeLoad: () => {
     throw redirect({
-      to: "/studies/$studyId/explore/configuration/geo-trimming/areas",
-      params: { studyId },
+      from: Route.fullPath,
+      to: "areas",
       replace: true,
     });
   },

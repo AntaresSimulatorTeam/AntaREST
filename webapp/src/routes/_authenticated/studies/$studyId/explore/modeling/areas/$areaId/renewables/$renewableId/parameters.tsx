@@ -19,7 +19,6 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -40,8 +39,7 @@ export const Route = createFileRoute(
 
 function Parameters() {
   const study = useStudy();
-  const area = useArea();
-  const { renewableId } = Route.useParams();
+  const { areaId, renewableId } = Route.useParams();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -49,7 +47,7 @@ function Parameters() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<RenewableCluster>) => {
-    return updateRenewableCluster(study.id, area.id, renewableId, dirtyValues);
+    return updateRenewableCluster(study.id, areaId, renewableId, dirtyValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -59,7 +57,7 @@ function Parameters() {
   return (
     <Form
       key={renewableId}
-      config={{ defaultValues: () => getRenewableCluster(study.id, area.id, renewableId) }}
+      config={{ defaultValues: () => getRenewableCluster(study.id, areaId, renewableId) }}
       onSubmit={handleSubmit}
       enableUndoRedo
       disableStickyFooter

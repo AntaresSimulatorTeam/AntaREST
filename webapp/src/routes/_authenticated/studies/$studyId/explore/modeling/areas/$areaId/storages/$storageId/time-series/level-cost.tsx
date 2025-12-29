@@ -13,12 +13,10 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import { compactSemanticVersion } from "@/utils/versionUtils";
+import { checkRouteAvailability } from "@/utils/routerUtils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import semver from "semver";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/time-series/level-cost",
@@ -28,23 +26,21 @@ export const Route = createFileRoute(
 
 function LevelCost() {
   const study = useStudy();
-  const area = useArea();
-  const { storageId } = Route.useParams();
+  const { areaId, storageId } = Route.useParams();
   const { t } = useTranslation();
-  const minVersion = "9.2.0";
 
-  if (semver.lt(study.version, minVersion)) {
-    throw new Error(
-      `Level Cost matrix is only available for study version ${compactSemanticVersion(minVersion)} and above.`,
-    );
-  }
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "9.2.0",
+    routePath: Route.path,
+  });
 
   return (
     <Matrix
       key={storageId}
       studyId={study.id}
       title={t("study.modeling.storages.levelCost")}
-      url={`input/st-storage/series/${area.id}/${storageId}/cost_level`}
+      url={`input/st-storage/series/${areaId}/${storageId}/cost_level`}
       isTimeSeries={false}
       enableFilters
       customColumns={["TS 1"]}

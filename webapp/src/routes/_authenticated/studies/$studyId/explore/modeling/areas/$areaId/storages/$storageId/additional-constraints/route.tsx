@@ -12,210 +12,63 @@
  * This file is part of the Antares project.
  */
 
-import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import SimpleLoader from "@/components/loaders/SimpleLoader";
 import EmptyView from "@/components/page/EmptyView";
-import SplitView from "@/components/page/SplitView";
-import ViewWrapper from "@/components/page/ViewWrapper";
-import PropertiesView from "@/components/PropertiesView";
-import useConfirm from "@/hooks/useConfirm";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import useArea from "@/routes/-shared/hook/useArea";
+import ListView from "@/components/page/ListView";
+import useDialog from "@/hooks/useDialog";
+import { storageQueries } from "@/queries/storages";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import {
-  deleteAdditionalConstraint,
-  getAdditionalConstraints,
-} from "@/services/api/studies/areas/storages";
-import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
-import { sortByName } from "@/services/utils";
-import { toError } from "@/utils/fnUtils";
-import { isSearchMatching } from "@/utils/stringUtils";
-import { Delete as DeleteIcon } from "@mui/icons-material";
-import { Box, List, ListItem, ListItemButton, ListItemText, Tooltip } from "@mui/material";
+import { checkRouteAvailability } from "@/utils/routerUtils";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import AddConstraintDialog from "./AdditionalConstraints/AddConstraintDialog";
-import ConstraintForm from "./AdditionalConstraints/ConstraintForm";
+import AddConstraintDialog from "./-components/AddConstraintDialog";
+import { constraintsToList } from "./-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints",
 )({
+  loader: async ({ context, params: { studyId, areaId, storageId } }) => {
+    await context.queryClient.ensureQueryData(
+      storageQueries.constraintList(studyId, areaId, storageId),
+    );
+  },
   component: AdditionalConstraints,
 });
 
 function AdditionalConstraints() {
+  const { studyId, areaId, storageId } = Route.useParams();
+  const { openDialog } = useDialog();
   const study = useStudy();
-  const area = useArea();
-  const { storageId } = Route.useParams();
-  const { t } = useTranslation();
-  const [searchValue, setSearchValue] = useState("");
-  const [constraints, setConstraints] = useState<AdditionalConstraint[]>([]);
-  const [selectedConstraintId, setSelectedConstraintId] = useState<string | null>(null);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const deleteAction = useConfirm<{ name: string }>();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const { isLoading, isRejected, error } = usePromiseWithSnackbarError(
-    () => getAdditionalConstraints({ studyId: study.id, areaId: area.id, storageId }),
-    {
-      onDataChange: (data = []) => setConstraints(data),
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, area.id, storageId],
-    },
-  );
-
-  const filteredAndSortedConstraints = useMemo(() => {
-    const filteredConstraints = searchValue
-      ? constraints.filter(({ name }) => isSearchMatching(searchValue, name))
-      : constraints;
-
-    return sortByName(filteredConstraints);
-  }, [constraints, searchValue]);
-
-  // Reset selected constraint ID if the current one is not valid
-  useEffect(() => {
-    if (
-      selectedConstraintId === null ||
-      !constraints.find(({ id }) => id === selectedConstraintId)
-    ) {
-      const firstVisibleConstraint = filteredAndSortedConstraints[0];
-      setSelectedConstraintId(firstVisibleConstraint?.id || null);
-    }
-  }, [constraints, filteredAndSortedConstraints, selectedConstraintId]);
+  const { data: list } = useSuspenseQuery({
+    ...storageQueries.constraintList(studyId, areaId, storageId),
+    select: constraintsToList,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleAdd = (createdConstraint: AdditionalConstraint) => {
-    setConstraints((prevConstraints) => [...prevConstraints, createdConstraint]);
-    setSelectedConstraintId(createdConstraint.id);
-  };
-
-  const handleDelete = async (constraintId: AdditionalConstraint["id"]) => {
-    const constraintToDelete = constraints.find(({ id }) => id === constraintId);
-
-    if (!constraintToDelete) {
-      return;
-    }
-
-    const isConfirm = await deleteAction.showConfirm({ data: { name: constraintToDelete.name } });
-
-    if (!isConfirm) {
-      return;
-    }
-
-    try {
-      setConstraints((prevConstraints) => prevConstraints.filter(({ id }) => id !== constraintId));
-
-      await deleteAdditionalConstraint({
-        studyId: study.id,
-        areaId: area.id,
-        storageId,
-        constraintId,
-      });
-    } catch (err) {
-      setConstraints((prevConstraints) => [...prevConstraints, constraintToDelete]);
-
-      enqueueErrorSnackbar(
-        t("study.modeling.storages.additionalConstraints.delete.error", {
-          name: constraintToDelete.name,
-        }),
-        toError(err),
-      );
-    }
+  const handleAdd = () => {
+    openDialog(({ onClose }) => <AddConstraintDialog onCancel={onClose} />);
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (isRejected) {
-    return <EmptyView title={error?.toString()} />;
-  }
-
-  const constraintsList = (
-    <List sx={{ overflow: "auto" }}>
-      {filteredAndSortedConstraints.map((constraint) => (
-        <ListItem key={constraint.id} disablePadding dense>
-          <ListItemButton
-            selected={selectedConstraintId === constraint.id}
-            onClick={() => setSelectedConstraintId(constraint.id)}
-          >
-            <Tooltip title={constraint.name}>
-              <ListItemText
-                primary={constraint.name}
-                slotProps={{
-                  primary: {
-                    sx: {
-                      textWrap: "nowrap",
-                      textOverflow: "ellipsis",
-                      overflow: "hidden",
-                    },
-                  },
-                }}
-              />
-            </Tooltip>
-          </ListItemButton>
-        </ListItem>
-      ))}
-    </List>
-  );
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "9.2.0",
+    routePath: Route.path,
+  });
 
   return (
-    <>
-      <SplitView splitId="storage-additionalConstraints">
-        {/* Left panel - Constraints list */}
-        <Box>
-          {isLoading ? (
-            <SimpleLoader />
-          ) : (
-            <PropertiesView
-              onSearchFilterChange={setSearchValue}
-              onAdd={() => setAddDialogOpen(true)}
-              mainContent={constraintsList}
-            />
-          )}
-        </Box>
-        {/* Right panel - Constraint form */}
-        <ViewWrapper elevation={2}>
-          {selectedConstraintId ? (
-            <ConstraintForm
-              studyId={study.id}
-              areaId={area.id}
-              storageId={storageId}
-              constraintId={selectedConstraintId}
-              studyVersion={study.version}
-              onDelete={handleDelete}
-            />
-          ) : (
-            <EmptyView />
-          )}
-        </ViewWrapper>
-      </SplitView>
-      <AddConstraintDialog
-        open={addDialogOpen}
-        onClose={() => setAddDialogOpen(false)}
-        onSave={handleAdd}
-        studyId={study.id}
-        areaId={area.id}
-        storageId={storageId}
-        existingNames={constraints.map((c) => c.name)}
-      />
-      <ConfirmationDialog
-        open={deleteAction.isPending}
-        onConfirm={deleteAction.yes}
-        onCancel={deleteAction.no}
-        alert="error"
-        titleIcon={DeleteIcon}
-      >
-        {t("study.modeling.storages.additionalConstraints.delete.confirm", {
-          name: deleteAction.data?.name,
-        })}
-      </ConfirmationDialog>
-    </>
+    <ListView
+      splitId="storage-additionalConstraints"
+      list={list}
+      emptyListContent={<EmptyView title="No additional constraints" />}
+      onAdd={handleAdd}
+    />
   );
 }
 

@@ -12,14 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { voidFn } from "./fnUtils";
 
-export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/")({
-  beforeLoad: () => {
-    throw redirect({
-      from: Route.fullPath,
-      to: "modeling",
-      replace: true,
-    });
-  },
-});
+export function unresolvedPromise<T>(): Promise<T> {
+  return new Promise<T>(voidFn);
+}

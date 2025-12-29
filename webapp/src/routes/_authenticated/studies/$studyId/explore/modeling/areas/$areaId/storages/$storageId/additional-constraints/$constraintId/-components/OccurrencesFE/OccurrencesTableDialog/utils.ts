@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { AdditionalConstraintOccurrences } from "@/services/api/studies/areas/storages/types";
+import type { StorageConstraintOccurrences } from "@/services/api/studies/areas/storages/types";
 import { HOURS_IN } from "@/utils/date/constants";
 import * as R from "ramda";
 
@@ -26,7 +26,7 @@ export const resizeRow = R.curry((resizeValue: number, rowData: RowData) => {
   return R.zipObj(indexes, values);
 });
 
-export const occurrencesToGridData = (occurrences: AdditionalConstraintOccurrences) => {
+export const occurrencesToGridData = (occurrences: StorageConstraintOccurrences) => {
   const data: OccurrencesData = {};
 
   for (let hour = 1; hour <= HOURS_IN.WEEK; hour++) {
@@ -47,10 +47,10 @@ export const getOccurrencesCountFromGridData = (data: OccurrencesData) => {
   return Object.keys(row).length;
 };
 
-export const gridDataToOccurrences = (data: OccurrencesData): AdditionalConstraintOccurrences => {
+export const gridDataToOccurrences = (data: OccurrencesData): StorageConstraintOccurrences => {
   // `OccurrencesData` and `RowData` use integer keys, so order is guaranteed
   // when using `Object.entries` and `Object.values`
-  return Object.entries(data).reduce<AdditionalConstraintOccurrences>(
+  return Object.entries(data).reduce<StorageConstraintOccurrences>(
     (occurrencesAcc, [hour, rowData]) => {
       Object.values(rowData).forEach((active, i) => {
         occurrencesAcc[i] ??= { hours: [] };

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { AdditionalConstraintOccurrences } from "@/services/api/studies/areas/storages/types";
+import type { StorageConstraintOccurrences } from "@/services/api/studies/areas/storages/types";
 import type { DeepPartial } from "react-hook-form";
 
 /**
@@ -22,7 +22,7 @@ import type { DeepPartial } from "react-hook-form";
  * @returns `true` if at least one occurrence has non-empty hours, `false` otherwise.
  */
 export const isOccurrencesValid = (
-  occurrences: DeepPartial<AdditionalConstraintOccurrences> | undefined,
+  occurrences: DeepPartial<StorageConstraintOccurrences> | undefined,
 ) => {
   return !!occurrences?.find((occ) => occ?.hours && occ.hours.length > 0);
 };

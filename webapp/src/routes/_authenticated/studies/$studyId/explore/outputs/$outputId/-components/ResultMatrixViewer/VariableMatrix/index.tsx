@@ -28,7 +28,7 @@ import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { Area, LinkElement } from "@/types/types";
+import type { LinkElement } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Skeleton } from "@mui/material";
 import { isAxiosError } from "axios";
@@ -40,7 +40,7 @@ interface VariableMatrixProps {
   variablesMetadata: VariablesListDTO | null;
   itemType: OutputItemType;
   selectedItemId: string;
-  selectedItem: (Area & { id: string }) | LinkElement | undefined;
+  selectedItem: AreaWithId | LinkElement | undefined;
   onMaterializeVariable: () => void;
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
@@ -54,7 +54,7 @@ function hasVariablesForItem(
   variablesMetadata: VariablesListDTO,
   itemType: OutputItemType,
   selectedItemId: string,
-  selectedItem: (Area & { id: string }) | LinkElement | undefined,
+  selectedItem: AreaWithId | LinkElement | undefined,
 ): boolean {
   // Variable-per-variable always uses mcInd
   const data = variablesMetadata.mcInd;

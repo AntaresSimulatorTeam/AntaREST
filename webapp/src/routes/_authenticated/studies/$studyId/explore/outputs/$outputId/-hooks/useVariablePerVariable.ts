@@ -42,7 +42,7 @@ import {
   getVariableViewData,
   materializeVariableView,
 } from "@/services/api/studies/outputs/variableViews";
-import type { Area, LinkElement } from "@/types/types";
+import type { LinkElement } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -55,7 +55,7 @@ interface UseVariablePerVariableProps {
   itemType: OutputItemType;
   frequency: Frequency;
   selectedItemId: string;
-  selectedItem: (Area & { id: string }) | LinkElement | undefined;
+  selectedItem: AreaWithId | LinkElement | undefined;
   dataType: string;
   selectedClusterId: string;
 }

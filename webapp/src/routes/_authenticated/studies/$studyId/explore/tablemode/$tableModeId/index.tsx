@@ -12,38 +12,46 @@
  * This file is part of the Antares project.
  */
 
-import EmptyView from "@/components/page/EmptyView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TableMode from "@/components/TableMode";
 import useDialog from "@/hooks/useDialog";
+import i18n from "@/i18n";
+import { getNames } from "@/services/utils";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import SearchOffIcon from "@mui/icons-material/SearchOff";
 import { Button } from "@mui/material";
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 import TableTemplateFormDialog from "./-components/TableTemplateFormDialog";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/tablemode/$tableModeId/",
 )({
+  loader: ({ params: { tableModeId } }) => {
+    const templates = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
+    const template = templates.find(({ name }) => name === tableModeId);
+
+    if (!template) {
+      throw new Error(i18n.t("study.tableMode.notFound", { id: tableModeId }));
+    }
+
+    return template;
+  },
   component: Table,
 });
 
 function Table() {
-  const study = useStudy();
-  const { tableModeId } = Route.useParams();
+  const { studyId } = Route.useParams();
   const { t } = useTranslation();
   const { openDialog, confirm } = useDialog();
   const navigate = Route.useNavigate();
+  const template = Route.useLoaderData();
 
-  const templates = useLoaderData({
+  const existingNames = useLoaderData({
     from: "/_authenticated/studies/$studyId/explore/tablemode",
+    select: getNames,
   });
-
-  const template = templates.find(({ name }) => name === tableModeId);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -59,7 +67,7 @@ function Table() {
         title={t("study.tableMode.dialog.edit.title")}
         titleIcon={EditIcon}
         defaultValues={template}
-        templates={templates}
+        existingNames={existingNames}
         onCancel={onClose}
       />
     ));
@@ -92,19 +100,10 @@ function Table() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (!template) {
-    return (
-      <EmptyView
-        title={t("study.tableMode.notFound", { name: tableModeId })}
-        icon={SearchOffIcon}
-      />
-    );
-  }
-
   return (
     <ViewWrapper>
       <TableMode
-        studyId={study.id}
+        studyId={studyId}
         name={template.name}
         type={template.type}
         columns={template.columns}

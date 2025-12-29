@@ -25,7 +25,7 @@ import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { Area, LinkElement, MatrixIndex } from "@/types/types";
+import type { LinkElement, MatrixIndex } from "@/types/types";
 import { Box } from "@mui/material";
 import type { PartialStudyOutput } from "../../-hooks/useStudyOutput";
 import {
@@ -63,7 +63,7 @@ interface ResultMatrixViewerProps {
   variablesMetadata: VariablesListDTO | null;
   itemType: OutputItemType;
   selectedItemId: string;
-  selectedItem: (Area & { id: string }) | LinkElement | undefined;
+  selectedItem: AreaWithId | LinkElement | undefined;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   onMaterializeVariable: () => void;

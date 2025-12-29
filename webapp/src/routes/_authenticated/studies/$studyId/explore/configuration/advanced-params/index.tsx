@@ -18,7 +18,6 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import { updateStudySynthesis } from "@/redux/ducks/studySyntheses";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { createFileRoute } from "@tanstack/react-router";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 import Fields from "./-components/Fields";
 import {
   getAdvancedParamsFormFields,
@@ -33,7 +32,7 @@ export const Route = createFileRoute(
 });
 
 function AdvancedParameters() {
-  const study = useStudy();
+  const { studyId } = Route.useParams();
   const dispatch = useAppDispatch();
 
   ////////////////////////////////////////////////////////////////
@@ -41,7 +40,7 @@ function AdvancedParameters() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
-    return setAdvancedParamsFormFields(study.id, dirtyValues);
+    return setAdvancedParamsFormFields(studyId, dirtyValues);
   };
 
   const handleSubmitSuccessful = ({
@@ -50,7 +49,7 @@ function AdvancedParameters() {
     if (renewableGenerationModelling) {
       dispatch(
         updateStudySynthesis({
-          id: study.id,
+          id: studyId,
           changes: { enr_modelling: renewableGenerationModelling },
         }),
       );
@@ -65,7 +64,7 @@ function AdvancedParameters() {
     <ViewWrapper>
       <Form
         config={{
-          defaultValues: () => getAdvancedParamsFormFields(study.id),
+          defaultValues: () => getAdvancedParamsFormFields(studyId),
         }}
         onSubmit={handleSubmit}
         onSubmitSuccessful={handleSubmitSuccessful}

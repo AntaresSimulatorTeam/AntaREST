@@ -16,18 +16,20 @@ import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getArea } from "@/redux/selectors";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { useParams } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 function useArea() {
   const study = useStudy();
+  const { areaId } = useParams({ strict: false });
+  const area = useAppSelector((state) => (areaId ? getArea(state, study.id, areaId) : undefined));
+  const { t } = useTranslation();
 
-  const { areaId } = useParams({
-    from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId",
-  });
-
-  const area = useAppSelector((state) => getArea(state, study.id, areaId));
+  if (!areaId) {
+    throw new Error(t("route.noParameter", { param: "areaId" }));
+  }
 
   if (!area) {
-    throw new Error(`No area found with ID: ${areaId}`);
+    throw new Error(t("study.area.notFound", { id: areaId }));
   }
 
   return area;

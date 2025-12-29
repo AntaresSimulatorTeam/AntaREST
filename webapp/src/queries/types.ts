@@ -12,14 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { createFileRoute, redirect } from "@tanstack/react-router";
+export interface QueryListItemBase {
+  id: string;
+  name: string;
+}
 
-export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/")({
-  beforeLoad: () => {
-    throw redirect({
-      from: Route.fullPath,
-      to: "modeling",
-      replace: true,
-    });
-  },
-});
+export type QueryList<T extends QueryListItemBase> = Array<T & { isOptimistic?: boolean }>;

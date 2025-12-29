@@ -14,8 +14,6 @@
 
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
-import useArea from "@/routes/-shared/hook/useArea";
-import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -27,9 +25,7 @@ export const Route = createFileRoute(
 });
 
 function Modulation() {
-  const study = useStudy();
-  const area = useArea();
-  const { storageId } = Route.useParams();
+  const { studyId, areaId, storageId } = Route.useParams();
   const { t } = useTranslation();
 
   return (
@@ -38,9 +34,9 @@ function Modulation() {
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
           key={storageId}
-          studyId={study.id}
+          studyId={studyId}
           title={t("study.modeling.storages.injectionModulation")}
-          url={`input/st-storage/series/${area.id}/${storageId}/pmax_injection`}
+          url={`input/st-storage/series/${areaId}/${storageId}/pmax_injection`}
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}
@@ -50,9 +46,9 @@ function Modulation() {
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
           key={storageId}
-          studyId={study.id}
+          studyId={studyId}
           title={t("study.modeling.storages.withdrawalModulation")}
-          url={`input/st-storage/series/${area.id}/${storageId}/pmax_withdrawal`}
+          url={`input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`}
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}

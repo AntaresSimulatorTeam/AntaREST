@@ -13,8 +13,6 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useArea from "@/routes/-shared/hook/useArea";
-import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 import { COMMON_MATRIX_COLS } from "../../-utils";
 
@@ -25,15 +23,13 @@ export const Route = createFileRoute(
 });
 
 function Common() {
-  const study = useStudy();
-  const area = useArea();
-  const { thermalId } = Route.useParams();
+  const { studyId, areaId, thermalId } = Route.useParams();
 
   return (
     <Matrix
       key={thermalId}
-      studyId={study.id}
-      url={`input/thermal/prepro/${area.id}/${thermalId}/modulation`}
+      studyId={studyId}
+      url={`input/thermal/prepro/${areaId}/${thermalId}/modulation`}
       customColumns={COMMON_MATRIX_COLS}
       isTimeSeries={false}
       enableFilters

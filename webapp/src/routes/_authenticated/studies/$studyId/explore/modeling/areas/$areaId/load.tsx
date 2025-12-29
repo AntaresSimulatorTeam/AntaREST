@@ -13,8 +13,6 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useArea from "@/routes/-shared/hook/useArea";
-import useStudy from "@/routes/-shared/hook/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -24,11 +22,10 @@ export const Route = createFileRoute(
 });
 
 function Load() {
-  const area = useArea();
-  const study = useStudy();
-  const url = `input/load/series/load_${area.id}`;
+  const { studyId, areaId } = Route.useParams();
+  const url = `input/load/series/load_${areaId}`;
 
-  return <Matrix key={area.id} studyId={study.id} url={url} aggregateColumns="stats" />;
+  return <Matrix key={areaId} studyId={studyId} url={url} aggregateColumns="stats" />;
 }
 
 export default Load;

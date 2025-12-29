@@ -16,7 +16,6 @@ import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { Box } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
@@ -49,20 +48,20 @@ const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
 function Renewables() {
   const study = useStudy();
-  const area = useArea();
+  const { areaId } = Route.useParams();
   const { t } = useTranslation();
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     RenewableClusterWithCapacity[]
   >(
     async () => {
-      const clusters = await getRenewableClusters(study.id, area.id);
+      const clusters = await getRenewableClusters(study.id, areaId);
       return clusters?.map(addClusterCapacity);
     },
     {
       resetDataOnReload: true,
       errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, area.id],
+      deps: [study.id, areaId],
     },
   );
 
@@ -117,19 +116,19 @@ function Renewables() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = async (values: TRow) => {
-    const cluster = await createRenewableCluster(study.id, area.id, values);
+    const cluster = await createRenewableCluster(study.id, areaId, values);
     return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (row: RenewableClusterWithCapacity, newName: string) => {
-    const cluster = await duplicateRenewableCluster(study.id, area.id, row.id, newName);
+    const cluster = await duplicateRenewableCluster(study.id, areaId, row.id, newName);
 
     return { ...row, ...cluster };
   };
 
   const handleDelete = (rows: RenewableClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
-    return deleteRenewableClusters(study.id, area.id, ids);
+    return deleteRenewableClusters(study.id, areaId, ids);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -151,7 +150,7 @@ function Renewables() {
           to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId",
           params: {
             studyId: study.id,
-            areaId: area.id,
+            areaId,
             renewableId: row.id,
           },
         })

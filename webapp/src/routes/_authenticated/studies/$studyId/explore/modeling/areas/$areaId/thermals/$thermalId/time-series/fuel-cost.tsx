@@ -13,11 +13,9 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import { compactSemanticVersion } from "@/utils/versionUtils";
+import { checkRouteAvailability } from "@/utils/routerUtils";
 import { createFileRoute } from "@tanstack/react-router";
-import semver from "semver";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId/time-series/fuel-cost",
@@ -27,21 +25,19 @@ export const Route = createFileRoute(
 
 function FuelCost() {
   const study = useStudy();
-  const area = useArea();
-  const { thermalId } = Route.useParams();
-  const minVersion = "8.7.0";
+  const { areaId, thermalId } = Route.useParams();
 
-  if (semver.lt(study.version, minVersion)) {
-    throw new Error(
-      `Fuel Cost matrix is only available for study version ${compactSemanticVersion(minVersion)} and above.`,
-    );
-  }
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "8.7.0",
+    routePath: Route.path,
+  });
 
   return (
     <Matrix
       key={thermalId}
       studyId={study.id}
-      url={`input/thermal/series/${area.id}/${thermalId}/fuelCost`}
+      url={`input/thermal/series/${areaId}/${thermalId}/fuelCost`}
     />
   );
 }

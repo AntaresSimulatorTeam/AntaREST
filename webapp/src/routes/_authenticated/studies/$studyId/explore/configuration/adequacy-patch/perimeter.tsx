@@ -15,7 +15,6 @@
 import ViewWrapper from "@/components/page/ViewWrapper";
 import TableMode from "@/components/TableMode";
 import { createFileRoute } from "@tanstack/react-router";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/perimeter",
@@ -24,11 +23,11 @@ export const Route = createFileRoute(
 });
 
 function Perimeter() {
-  const study = useStudy();
+  const { studyId } = Route.useParams();
 
   return (
     <ViewWrapper>
-      <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />
+      <TableMode studyId={studyId} type="areas" columns={["adequacyPatchMode"]} />
     </ViewWrapper>
   );
 }

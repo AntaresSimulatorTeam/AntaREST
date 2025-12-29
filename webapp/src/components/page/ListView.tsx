@@ -14,7 +14,15 @@
 
 import { isSearchMatching } from "@/utils/stringUtils";
 import AddIcon from "@mui/icons-material/Add";
-import { Box, Button, List, ListItem, Tooltip, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  Tooltip,
+} from "@mui/material";
 import { Outlet, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,30 +30,25 @@ import SearchFE from "../fieldEditors/SearchFE";
 import RouterListItemButton from "../router/RouterListItemButton";
 import SplitView from "./SplitView";
 
-interface BaseItem {
+interface BaseListItem {
   id: string;
   label: string;
+  loading?: boolean;
 }
 
-interface RouteItem extends BaseItem {
+export interface RouteListItem extends BaseListItem {
   linkOptions: ToOptions;
 }
 
-interface ListViewProps<TItems extends RouteItem[] = RouteItem[]> {
-  list: TItems;
+interface ListViewProps {
+  list: RouteListItem[];
   splitId: string;
   emptyListContent?: React.ReactNode;
   onAdd?(): void;
   actions?: React.ReactNode;
 }
 
-function ListView<TItems extends RouteItem[]>({
-  list,
-  splitId,
-  emptyListContent,
-  onAdd,
-  actions,
-}: ListViewProps<TItems>) {
+function ListView({ list, splitId, emptyListContent, onAdd, actions }: ListViewProps) {
   const [search, setSearch] = useState("");
   const { t } = useTranslation();
   const hasActions = !!onAdd || !!actions;
@@ -84,9 +87,12 @@ function ListView<TItems extends RouteItem[]>({
             .filter((item) => isSearchMatching(search, item.label))
             .map((item) => (
               <Tooltip key={item.id} title={item.label} placement="right">
-                <ListItem disablePadding>
+                <ListItem
+                  disablePadding
+                  secondaryAction={item.loading && <CircularProgress color="inherit" size={16} />}
+                >
                   <RouterListItemButton {...item.linkOptions}>
-                    <Typography noWrap>{item.label}</Typography>
+                    <ListItemText primary={item.label} slotProps={{ primary: { noWrap: true } }} />
                   </RouterListItemButton>
                 </ListItem>
               </Tooltip>

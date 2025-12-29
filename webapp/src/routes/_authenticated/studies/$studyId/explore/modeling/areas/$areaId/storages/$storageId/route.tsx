@@ -15,8 +15,8 @@
 import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
 import TabsView from "@/components/page/TabsView";
 import usePromise from "@/hooks/usePromise";
-import useArea from "@/routes/-shared/hook/useArea";
 import useStudy from "@/routes/-shared/hook/useStudy";
+import { checkRouteAvailability } from "@/utils/routerUtils";
 import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
@@ -30,21 +30,21 @@ export const Route = createFileRoute(
 
 function StorageLayout() {
   const study = useStudy();
-  const area = useArea();
   const params = Route.useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { areaId, storageId } = params;
 
-  const { data: storageOptions = [params.storageId], status: storageOptionsStatus } =
+  const { data: storageOptions = [storageId], status: storageOptionsStatus } =
     usePromise(async () => {
-      const storages = await getStorages(study.id, area.id);
+      const storages = await getStorages(study.id, areaId);
 
       return storages.map((storage) => ({
         label: storage.name,
         value: storage.id,
         group: storage.group,
       }));
-    }, [study.id, area.id]);
+    }, [study.id, areaId]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -65,6 +65,12 @@ function StorageLayout() {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "8.6.0",
+    routePath: Route.path,
+  });
 
   return (
     <TabsView
@@ -101,12 +107,13 @@ function StorageLayout() {
       ].filter(Boolean)}
       extraActions={
         <SelectFE
-          value={params.storageId}
+          label={t("study.modeling.storages.select")}
+          value={storageId}
           options={storageOptions}
           onChange={handleChange}
           size="extra-small"
           disabled={storageOptionsStatus !== "fulfilled"}
-          sx={{ maxWidth: 150 }}
+          sx={{ minWidth: 90, maxWidth: 150 }}
         />
       }
     />

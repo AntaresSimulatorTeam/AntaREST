@@ -14,8 +14,8 @@
 
 import FieldSkeleton from "@/components/fieldEditors/FieldSkeleton";
 import type {
-  AdditionalConstraint,
-  AdditionalConstraintOccurrences,
+  StorageConstraint,
+  StorageConstraintOccurrences,
 } from "@/services/api/studies/areas/storages/types";
 import { compactSelections, selectionToString } from "@/utils/numberSelectionsUtils";
 import { buildKey } from "@/utils/reactUtils";
@@ -40,8 +40,8 @@ import OccurrencesTableDialog from "./OccurrencesTableDialog";
 import { validateOccurrences } from "./utils";
 
 interface Props {
-  control: Control<AdditionalConstraint>;
-  onChange: (occurrences: AdditionalConstraintOccurrences) => void;
+  control: Control<StorageConstraint>;
+  onChange: (occurrences: StorageConstraintOccurrences) => void;
 }
 
 function OccurrencesFE({ control, onChange }: Props) {
@@ -65,7 +65,7 @@ function OccurrencesFE({ control, onChange }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (newOccurrences: AdditionalConstraintOccurrences) => {
+  const handleChange = (newOccurrences: StorageConstraintOccurrences) => {
     field.onChange(newOccurrences);
     onChange(newOccurrences);
   };

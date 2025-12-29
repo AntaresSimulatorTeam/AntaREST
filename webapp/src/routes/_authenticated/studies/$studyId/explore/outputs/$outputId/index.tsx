@@ -23,11 +23,10 @@ import {
 } from "@/components/Matrix/shared/utils";
 import SplitView from "@/components/page/SplitView/index";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { Area, LinkElement, MatrixIndex } from "@/types/types";
+import type { AreaWithId, LinkElement, MatrixIndex } from "@/types/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 import usePromise from "../../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks } from "../../../../../../../redux/selectors";
@@ -57,10 +56,9 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/o
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
 function Output() {
-  const study = useStudy();
   const { t } = useTranslation();
   const { isDarkMode } = useThemeColorScheme();
-  const { outputId } = Route.useParams();
+  const { studyId, outputId } = Route.useParams();
   const navigate = Route.useNavigate();
 
   const [mcMode, setMcMode] = useState<MonteCarloMode>("mc-all");
@@ -77,13 +75,10 @@ function Output() {
   const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
   const isSynthesis = itemType === "synthesis";
   const isVariablePerVariable = mcMode === "variable-per-variable";
-  const areas = useAppSelector((state) => getAreas(state, study.id));
-  const links = useAppSelector((state) => getLinks(state, study.id));
+  const areas = useAppSelector((state) => getAreas(state, studyId));
+  const links = useAppSelector((state) => getLinks(state, studyId));
 
-  const { data: output } = useStudyOutput({
-    studyId: study.id,
-    outputId: outputId,
-  });
+  const { data: output } = useStudyOutput({ studyId, outputId });
 
   useEffect(() => {
     if (mcMode === "mc-all") {
@@ -116,7 +111,7 @@ function Output() {
   }, [isSynthesis, items, searchValue]);
 
   const selectedItem = filteredItems.find((item) => item.id === selectedItemId) as
-    | (Area & { id: string })
+    | AreaWithId
     | LinkElement
     | undefined;
 
@@ -129,7 +124,7 @@ function Output() {
     handleMaterializeVariable,
     variableViewDataRes,
   } = useVariablePerVariable({
-    studyId: study.id,
+    studyId,
     outputId,
     isEnabled: isVariablePerVariable,
     itemType,
@@ -179,7 +174,7 @@ function Output() {
         });
       }
 
-      const res = await getStudyData(study.id, path);
+      const res = await getStudyData(studyId, path);
 
       // Handle string response (may contain NaN/Infinity)
       // TODO: This should be handled at the API level
@@ -201,7 +196,7 @@ function Output() {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [study.id, path, !!output, !!selectedItem, isSynthesis, isVariablePerVariable],
+      deps: [studyId, path, !!output, !!selectedItem, isSynthesis, isVariablePerVariable],
     },
   );
 
@@ -220,13 +215,13 @@ function Output() {
     () => {
       if (outputId && selectedItem && isSynthesis) {
         const path = `output/${outputId}/economy/mc-all/grid/${selectedItem.id}`;
-        return getStudyData(study.id, path);
+        return getStudyData(studyId, path);
       }
 
       return Promise.resolve(null);
     },
     {
-      deps: [study.id, outputId, selectedItem, isSynthesis],
+      deps: [studyId, outputId, selectedItem, isSynthesis],
     },
   );
 
@@ -237,10 +232,10 @@ function Output() {
         return Promise.resolve(undefined);
       }
 
-      return getStudyMatrixIndex(study.id, path);
+      return getStudyMatrixIndex(studyId, path);
     },
     {
-      deps: [study.id, path, isVariablePerVariable],
+      deps: [studyId, path, isVariablePerVariable],
     },
   );
 
@@ -367,7 +362,7 @@ function Output() {
           frequency={frequency}
           setFrequency={setFrequency}
           output={output}
-          studyId={study.id}
+          studyId={studyId}
           path={path}
           onColHeadersChange={handleColHeadersChange}
           onToggleFilter={handleToggleFilter}

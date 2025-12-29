@@ -330,7 +330,6 @@
   "study.years": "Années",
   "study.type": "Type",
   "study.includeClusters": "Inclure les clusters",
-  "study.area": "Zone",
   "study.areas": "Zones",
   "study.cluster": "Cluster",
   "study.link": "Lien",
@@ -567,6 +566,7 @@
   "study.modeling.map.districts.delete.confirm": "Êtes-vous sûr de vouloir supprimer le district '{{0}}' ?",
   "study.modeling.load": "Conso",
   "study.modeling.thermals": "Thermiques",
+  "study.modeling.thermals.select": "Thermique",
   "study.modeling.thermals.parameters": "Paramètres",
   "study.modeling.hydro": "Hydro",
   "study.modeling.hydro.correlation.viewMatrix": "Voir les correlations",
@@ -574,6 +574,7 @@
   "study.modeling.hydro.allocation.viewMatrix": "Voir les allocations",
   "study.modeling.hydro.allocation.error.field.delete": "Erreur lors de la suppression de l'allocation",
   "study.modeling.storages": "Stockages",
+  "study.modeling.storages.select": "Stockage",
   "study.modeling.storages.injectionParameters": "Paramètres de stockage",
   "study.modeling.storages.withdrawalParameters": "Paramètres de déstockage",
   "study.modeling.storages.modulation": "Modulation",
@@ -626,6 +627,7 @@
   "study.modeling.wind": "Éolien",
   "study.modeling.solar": "Solaire",
   "study.modeling.renewables": "Renouvelables",
+  "study.modeling.renewables.select": "Renouvelable",
   "study.modeling.renewables.parameters": "Paramètres",
   "study.modeling.reserves": "Réserves",
   "study.modeling.miscGen": "Divers Gen.",
@@ -705,7 +707,6 @@
   "study.modeling.bindingConst.duplicate": "Dupliquer la contrainte couplante",
   "study.tableMode": "Table Mode",
   "study.tableMode.empty": "Aucun tableau disponible",
-  "study.tableMode.notFound": "La table \"{{name}}\" est introuvable",
   "study.tableMode.dialog.add.title": "Ajouter une table",
   "study.tableMode.dialog.edit.title": "Modifier une table",
   "study.tableMode.dialog.delete.text": "Êtes-vous sûr de vouloir supprimer la table '{{name}}' ?",
@@ -772,6 +773,10 @@
   "study.success.studyIdCopy": "Identifiant de l'étude copié !",
   "study.success.jobIdCopy": "Identifiant de la tâche copié !",
   "study.success.modifiedStudy": "L'étude {{studyname}} a été modifié avec succès",
+  "study.notFound": "Aucune étude trouvée avec l'ID : {{id}}",
+  "study.tableMode.notFound": "Aucun tableau trouvé avec l'ID : {{id}}",
+  "study.area.notFound": "Aucune zone trouvée avec l'ID : {{id}}",
+  "study.area.storage.additionalConstraint.notFound": "Aucune contrainte additionnelle trouvée avec l'ID : {{id}}",
   "studies.question.delete": "Êtes-vous sûr de vouloir supprimer l'étude : {{studyName}} ?",
   "studies.question.deleteWithVariants": "Êtes-vous sûr de vouloir supprimer l'étude '{{studyName}}' ainsi que ses {{variantNb}} sous-variante(s) ?",
   "studies.error.retrieveData": "Échec de la récupération des données",
@@ -1019,5 +1024,6 @@
       "divide": "Diviser",
       "absolute": "Valeur absolue"
     }
-  }
+  },
+  "route.noParameter": "Aucun {{param}} fourni dans les paramètres de la route"
 }

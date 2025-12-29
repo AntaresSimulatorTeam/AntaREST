@@ -27,7 +27,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import type { XpansionCandidate } from "../-shared/types";
-import useStudy from "../../../../../../-shared/hook/useStudy";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import {
@@ -53,7 +52,7 @@ export const Route = createFileRoute(
 
 function Candidates() {
   const [t] = useTranslation();
-  const study = useStudy();
+  const { studyId } = Route.useParams();
   const navigate = useNavigate();
   const mounted = usePromiseWrapper();
   const [candidateCreationDialog, setCandidateCreationDialog] = useState<boolean>(false);
@@ -72,13 +71,10 @@ function Candidates() {
     reload,
   } = usePromiseWithSnackbarError(
     async () => {
-      if (!study) {
-        return [];
-      }
-      const exist = await xpansionConfigurationExist(study.id);
+      const exist = await xpansionConfigurationExist(studyId);
       if (exist) {
         // Candidates
-        const tempCandidates = await getAllCandidates(study.id);
+        const tempCandidates = await getAllCandidates(studyId);
         for (let i = 0; i < tempCandidates.length; i += 1) {
           tempCandidates[i].link = tempCandidates.map((item: { link: string }) =>
             item.link
@@ -94,25 +90,22 @@ function Candidates() {
     {
       errorMessage: t("xpansion.error.loadConfiguration"),
       resetDataOnReload: false,
-      deps: [study],
+      deps: [studyId],
     },
   );
 
   const { data: capaLinks, isLoading: isLinksLoading } = usePromiseWithSnackbarError(
     async () => {
-      if (!study) {
-        return {};
-      }
-      const exist = await xpansionConfigurationExist(study.id);
+      const exist = await xpansionConfigurationExist(studyId);
       if (exist) {
         return {
-          capacities: await getAllCapacities(study.id),
-          links: await getLinks({ studyId: study.id }),
+          capacities: await getAllCapacities(studyId),
+          links: await getLinks({ studyId }),
         };
       }
       return {};
     },
-    { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] },
+    { errorMessage: t("xpansion.error.loadConfiguration"), deps: [studyId] },
   );
 
   // Handle automatic selection of the first element
@@ -124,11 +117,11 @@ function Candidates() {
 
   const deleteXpansion = async () => {
     try {
-      await mounted(deleteXpansionConfiguration(study.id));
+      await mounted(deleteXpansionConfiguration(studyId));
 
       navigate({
         to: "/studies/$studyId/explore/xpansion",
-        params: { studyId: study.id },
+        params: { studyId },
         search: { reload: Date.now() },
         replace: true,
       });
@@ -140,7 +133,7 @@ function Candidates() {
   const createCandidate = async (candidate: XpansionCandidate) => {
     try {
       if (study) {
-        await mounted(addCandidate(study.id, candidate));
+        await mounted(addCandidate(studyId, candidate));
         setCandidateCreationDialog(false);
       }
     } catch (e) {
@@ -153,8 +146,8 @@ function Candidates() {
   const handleDeleteCandidate = async (name: string | undefined) => {
     if (candidates) {
       try {
-        if (study && name) {
-          await mounted(deleteCandidate(study.id, name));
+        if (name) {
+          await mounted(deleteCandidate(studyId, name));
         }
       } catch (e) {
         enqueueErrorSnackbar(t("xpansion.error.deleteCandidate"), e as AxiosError);
@@ -170,9 +163,9 @@ function Candidates() {
     value: XpansionCandidate | undefined,
   ) => {
     try {
-      if (study && name && value) {
+      if (name && value) {
         await updateCandidate(
-          study.id,
+          studyId,
           name,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           removeEmptyFields(value as Record<string, any>, [
@@ -197,10 +190,8 @@ function Candidates() {
 
   const getOneCapa = async (filename: string) => {
     try {
-      if (study) {
-        const content = await getCapacity(study.id, filename);
-        setCapacityViewDialog({ filename, content });
-      }
+      const content = await getCapacity(studyId, filename);
+      setCapacityViewDialog({ filename, content });
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.getFile"), e as AxiosError);
     }
