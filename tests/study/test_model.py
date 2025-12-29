@@ -132,7 +132,7 @@ class TestStudy:
             assert set(tag.label for tag in studies[0].tags) == {"test-tag-1"}
 
             # verify updating works
-            study = db_session.query(Study).get(study_id_1)
+            study = db_session.get(Study, study_id_1)
             study.tags = [Tag(label="test-tag-2"), Tag(label="test-tag-3")]
             db_session.merge(study)
             db_session.commit()

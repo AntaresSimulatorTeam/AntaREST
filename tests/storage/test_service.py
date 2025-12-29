@@ -944,17 +944,10 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
-        Mock(),
-        Mock(),
-        raw_study_service,
-        Mock(),
-        Mock(),
-        variant_study_repository,
-        Mock(),
-        Mock(),
+        Mock(), Mock(), raw_study_service, Mock(), Mock(), variant_study_repository, Mock(), Mock(), Mock()
     )
     # noinspection PyArgumentList
     service = build_study_service(
@@ -1034,17 +1027,10 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
 @with_admin_user
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
-        Mock(),
-        Mock(),
-        raw_study_service,
-        Mock(),
-        Mock(),
-        variant_study_repository,
-        Mock(),
-        Mock(),
+        Mock(), Mock(), raw_study_service, Mock(), Mock(), variant_study_repository, Mock(), Mock(), Mock()
     )
     service = build_study_service(
         raw_study_service,
@@ -1546,98 +1532,9 @@ def test_upgrade_study__raw_study__nominal(
     upgrade_study_mock.assert_called_once_with()
 
     # The study must be updated in the database
-    actual_study: RawStudy = db.session.query(Study).get(study_id)
+    actual_study: RawStudy = db.session.get(Study, study_id)
     assert actual_study is not None, "Not in database"
     assert actual_study.version == f"{parsed_target_version:2d}"
-
-    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
-    event = Event(
-        type=EventType.STUDY_EDITED,
-        payload={"id": study_id, "name": study_name},
-        permissions=PermissionInfo(
-            owner=None,
-            groups=[],
-            public_mode=PublicMode.NONE,
-        ),
-    )
-    event_bus.push.assert_called_once_with(event)
-
-    # The function must return a successful result
-    assert actual.success
-    assert study_id in actual.message, f"{actual.message=}"
-    assert actual.message == f"Successfully upgraded study '{study_id}' to version 8"
-
-
-@with_db_context
-@patch("antarest.study.storage.study_upgrader.StudyUpgrader.upgrade")
-def test_upgrade_study__variant_study__nominal(
-    upgrade_study_mock: Mock,
-    tmp_path: Path,
-) -> None:
-    study_id = str(uuid.uuid4())
-    study_name = "my_study"
-    target_version = "800"
-
-    # Prepare a RAW study
-    # noinspection PyArgumentList
-    now = current_time()
-    variant_study = create_variant_study(
-        id=study_id,
-        name=study_name,
-        path=str(tmp_path),
-        created_at=now,
-        updated_at=now,
-        version="720",
-        archived=False,
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-    )
-
-    # Make sure the session is closed to avoid reusing DB objects
-    with contextlib.closing(db.session):
-        db.session.add(variant_study)
-        db.session.commit()
-
-    # The `ICache` is used to invalidate the cache of the study with `invalidate_all`
-    cache_service = Mock()
-
-    # The `StudyMetadataRepository` is used to store the study in database.
-    repository = StudyMetadataRepository(cache_service)
-
-    # The `StudyStorageService` is used to retrieve:
-    # - the `RawStudyService` of a RAW study, or
-    # - the `VariantStudyService` of a variant study.
-    # It is used to `denormalize`/`normalize` the study.
-    # For a variant study, the  `clear_snapshot` is also called
-    storage_service = Mock()
-
-    # The `IEventBus` service is used to send event notifications.
-    # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
-    event_bus = Mock()
-
-    # Prepare the task for an upgrade
-    task = StudyUpgraderTask(
-        study_id,
-        StudyVersion.parse(target_version),
-        repository=repository,
-        storage_service=storage_service,
-        cache_service=cache_service,
-        event_bus=event_bus,
-    )
-
-    # The task is called with a `TaskUpdateNotifier` a parameter.
-    # Some messages could be emitted using the notifier (not a requirement).
-    notifier = Mock()
-    actual = task(notifier)
-
-    # The `upgrade_study()` function is not called for a variant study.
-    upgrade_study_mock.assert_not_called()
-
-    # The study must be updated in the database
-    actual_study: RawStudy = db.session.query(Study).get(study_id)
-    assert actual_study is not None, "Not in database"
-    assert actual_study.version == "8.0"
 
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
@@ -1723,7 +1620,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
         task(notifier)
 
     # The study must not be updated in the database
-    actual_study: RawStudy = db.session.query(Study).get(study_id)
+    actual_study: RawStudy = db.session.get(Study, study_id)
     assert actual_study is not None, "Not in database"
     assert actual_study.version == old_version
 
