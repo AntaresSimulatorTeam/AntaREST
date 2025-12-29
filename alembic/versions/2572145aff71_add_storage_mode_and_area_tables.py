@@ -69,6 +69,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name=op.f("pk_area_ui")),
         sa.UniqueConstraint("area_id", "layer_id", name=op.f("uq_area_ui_area_id_layer_id")),
     )
+    with op.batch_alter_table("area_ui") as batch_op:
+        batch_op.create_index(batch_op.f("ix_area_ui_area_id"), ["area_id"], unique=False)
+        batch_op.create_index(batch_op.f("ix_area_ui_layer_id"), ["layer_id"], unique=False)
 
 
 def downgrade() -> None:

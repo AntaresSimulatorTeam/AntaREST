@@ -17,11 +17,14 @@ This module defines the database tables used when a study has storage_mode=DATAB
 These tables store study data (areas, UI positions, etc.) in the database instead of the filesystem.
 """
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Index, Integer, String, Table, UniqueConstraint
 
 from antarest.dbmodel import Base
 
 metadata = Base.metadata
+
+# Default layer ID constant
+DEFAULT_LAYER_ID = "0"
 
 area = Table(
     "area",
@@ -38,12 +41,13 @@ area_ui = Table(
     "area_ui",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("area_id", Integer, ForeignKey("area.id", ondelete="CASCADE"), nullable=False),
-    Column("layer_id", String(10), nullable=False, default="0"),
+    Column("area_id", Integer, ForeignKey("area.id", ondelete="CASCADE"), nullable=False, index=True),
+    Column("layer_id", String(10), nullable=False, default=DEFAULT_LAYER_ID),
     Column("x", Integer, nullable=False, default=0),
     Column("y", Integer, nullable=False, default=0),
     Column("color_r", Integer, nullable=False, default=230),
     Column("color_g", Integer, nullable=False, default=108),
     Column("color_b", Integer, nullable=False, default=44),
     UniqueConstraint("area_id", "layer_id", name="uq_area_ui_area_id_layer_id"),
+    Index("ix_area_ui_layer_id", "layer_id"),
 )

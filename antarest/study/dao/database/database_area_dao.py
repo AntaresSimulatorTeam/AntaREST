@@ -26,7 +26,7 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.database.models import area, area_ui
+from antarest.study.dao.database.models import DEFAULT_LAYER_ID, area, area_ui
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
@@ -117,8 +117,8 @@ class DatabaseAreaDao(AreaDao):
             layer_y: Dict[str, int] = {}
             layer_color: Dict[str, str] = {}
 
-            # Find layer "0" (default layer)
-            default_ui = next((row for row in ui_rows if row.layer_id == "0"), None)
+            # Find default layer
+            default_ui = next((row for row in ui_rows if row.layer_id == DEFAULT_LAYER_ID), None)
 
             if default_ui:
                 ui_dict = {
@@ -127,7 +127,7 @@ class DatabaseAreaDao(AreaDao):
                     "color_r": default_ui.color_r,
                     "color_g": default_ui.color_g,
                     "color_b": default_ui.color_b,
-                    "layers": " ".join(sorted([row.layer_id for row in ui_rows if row.layer_id != "0"])),
+                    "layers": " ".join(sorted([row.layer_id for row in ui_rows if row.layer_id != DEFAULT_LAYER_ID])),
                 }
 
             # Build layer-specific data
@@ -141,13 +141,13 @@ class DatabaseAreaDao(AreaDao):
         return result
 
     @override
-    def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
+    def get_area_ui(self, area_id: str, layer: str = DEFAULT_LAYER_ID) -> AreaUI:
         """
         Retrieve UI information for a specific area and layer.
 
         Args:
             area_id: The area identifier.
-            layer: The layer identifier (typically "0", "1", etc.). Defaults to "0".
+            layer: The layer identifier (typically "0", "1", etc.). Defaults to DEFAULT_LAYER_ID.
 
         Returns:
             The UI properties for the area (x, y, color_rgb).
@@ -174,9 +174,11 @@ class DatabaseAreaDao(AreaDao):
         if ui_row:
             return AreaUI(x=ui_row.x, y=ui_row.y, color_rgb=(ui_row.color_r, ui_row.color_g, ui_row.color_b))
 
-        # If layer not found, fall back to layer "0"
-        if layer != "0":
-            stmt_ui_default = select(area_ui).where((area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == "0"))
+        # If layer not found, fall back to default layer
+        if layer != DEFAULT_LAYER_ID:
+            stmt_ui_default = select(area_ui).where(
+                (area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == DEFAULT_LAYER_ID)
+            )
             ui_row_default = session.execute(stmt_ui_default).fetchone()
 
             if ui_row_default:
@@ -216,12 +218,12 @@ class DatabaseAreaDao(AreaDao):
         stmt_area = insert(area).values(study_id=study_id, area_id=area_id, area_name=area_name).returning(area.c.id)
         new_area_id = session.execute(stmt_area).scalar_one()
 
-        # Create default UI for layer "0" using model defaults
+        # Create default UI for default layer using model defaults
         default_ui = AreaUI()
         r, g, b = default_ui.color_rgb
         stmt_ui = insert(area_ui).values(
             area_id=new_area_id,
-            layer_id="0",
+            layer_id=DEFAULT_LAYER_ID,
             x=default_ui.x,
             y=default_ui.y,
             color_r=r,
@@ -349,24 +351,36 @@ class DatabaseAreaDao(AreaDao):
             )
             session.execute(stmt_delete)
 
-        # Add layer to areas that don't have it yet
+        # Add layer to areas that don't have it yet (batch operation to avoid N+1 queries)
         to_add = target_area_db_ids - existing_area_db_ids
-        for area_db_id in to_add:
-            # Get default UI from layer "0" to copy position
-            stmt_default = select(area_ui).where((area_ui.c.area_id == area_db_id) & (area_ui.c.layer_id == "0"))
-            default_ui = session.execute(stmt_default).fetchone()
+        if to_add:
+            # Batch fetch all default UIs for areas to add
+            to_add_list = list(to_add)
+            stmt_defaults = select(area_ui).where(
+                (area_ui.c.area_id.in_(to_add_list)) & (area_ui.c.layer_id == DEFAULT_LAYER_ID)
+            )
+            default_uis = {row.area_id: row for row in session.execute(stmt_defaults).fetchall()}
 
-            if default_ui:
-                stmt_insert = insert(area_ui).values(
-                    area_id=area_db_id,
-                    layer_id=layer_id,
-                    x=default_ui.x,
-                    y=default_ui.y,
-                    color_r=default_ui.color_r,
-                    color_g=default_ui.color_g,
-                    color_b=default_ui.color_b,
-                )
-                session.execute(stmt_insert)
+            # Prepare batch insert values
+            insert_values = []
+            for area_db_id in to_add:
+                if area_db_id in default_uis:
+                    ui = default_uis[area_db_id]
+                    insert_values.append(
+                        {
+                            "area_id": area_db_id,
+                            "layer_id": layer_id,
+                            "x": ui.x,
+                            "y": ui.y,
+                            "color_r": ui.color_r,
+                            "color_g": ui.color_g,
+                            "color_b": ui.color_b,
+                        }
+                    )
+
+            # Execute batch insert
+            if insert_values:
+                session.execute(insert(area_ui), insert_values)
 
     # Time series methods - not yet implemented for database storage mode
     @override
