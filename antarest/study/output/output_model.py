@@ -30,7 +30,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.model import MatrixFrequency
 
 Variables: TypeAlias = Annotated[list[str], BeforeValidator(lambda x: sorted(x))]
 

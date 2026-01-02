@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import os
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -184,7 +185,7 @@ def test_list_workspaces(tmp_path: Path) -> None:
 
     assert result == expected
 
-    if os.name == "nt":
+    if sys.platform == "win32":
         config = build_config_windows(tmp_path)
         explorer = Explorer(config)
 

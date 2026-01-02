@@ -490,7 +490,7 @@ def test_sta_mini_copy(
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
     # The study is copied; therefore, it was normalized
-    assert "matrix://ef73d0226d966d7c085e03bf37f26986fb7bfaba0977f8f60acfa9109ded8c1f" == link_url_destination
+    assert "ef73d0226d966d7c085e03bf37f26986fb7bfaba0977f8f60acfa9109ded8c1f" == link_url_destination
 
     # We should first denormalize the copied study to ensure it's the same exact study.
     denormalized_path = tmp_path / "denormalized_study"
