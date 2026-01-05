@@ -577,13 +577,6 @@ def create_output_routes(
         thermal_id: str | None = None,
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
-        export_format: TableExportFormat | None = None,
-        with_header: bool = Query(
-            True, alias="header", description="Whether to include the header or not", title="With Header"
-        ),
-        with_index: bool = Query(
-            True, alias="index", description="Whether to include the index or not", title="With Index"
-        ),
     ) -> Response:
         """
         Fetches the variables view for a given output and a given configuration.
@@ -602,14 +595,52 @@ def create_output_routes(
             renewable_id=renewable_id,
             st_storage_id=st_storage_id,
         )
-        view = output_service.get_output_variables_view(uuid, output_id, item_id, variable_name, frequency, with_index)
+        view = output_service.get_output_variables_view(uuid, output_id, item_id, variable_name, frequency)
         if not isinstance(view, pd.DataFrame):
             return Response(status_code=HTTPStatus.NOT_FOUND, content=to_json(view), media_type="application/json")
 
-        # TODO: should be elsewhere
-        if not export_format:
-            content = view.to_dict(orient="split", index=False)
-            return Response(content=to_json(content), media_type="application/json")
+        content = view.to_dict(orient="split", index=False)
+        return Response(content=to_json(content), media_type="application/json")
+
+    @bp.get(
+        "/studies/{uuid}/output/{output_id}/variables-views/data/export",
+        summary="Export the variables view for a given output and a given configuration in a given format",
+    )
+    def export_output_variables_view(
+        uuid: str,
+        output_id: str,
+        variable_name: str,
+        frequency: MatrixFrequency,
+        type: OutputVariablesType,
+        area_id: str | None = None,
+        area_from_id: str | None = None,
+        area_to_id: str | None = None,
+        thermal_id: str | None = None,
+        renewable_id: str | None = None,
+        st_storage_id: str | None = None,
+        export_format: TableExportFormat = TableExportFormat.CSV,
+        with_header: bool = Query(
+            True, alias="header", description="Whether to include the header or not", title="With Header"
+        ),
+        with_index: bool = Query(
+            True, alias="index", description="Whether to include the index or not", title="With Index"
+        ),
+    ) -> Response:
+        uuid = sanitize_uuid(uuid)
+        output_id = sanitize_string(output_id)
+
+        item_id = _to_item_id(
+            type=type,
+            area_id=area_id,
+            area_from_id=area_from_id,
+            area_to_id=area_to_id,
+            thermal_id=thermal_id,
+            renewable_id=renewable_id,
+            st_storage_id=st_storage_id,
+        )
+        view = output_service.get_output_variables_view(uuid, output_id, item_id, variable_name, frequency, with_index)
+        if not isinstance(view, pd.DataFrame):
+            return Response(status_code=HTTPStatus.NOT_FOUND, content=to_json(view), media_type="application/json")
 
         buffer = BytesIO()
         export_format.export_table(view, buffer, with_header=with_header, with_index=with_index)

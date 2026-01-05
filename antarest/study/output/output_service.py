@@ -70,6 +70,7 @@ from antarest.study.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     QueryFileType,
+    add_time_index_to_dataframe,
     split_concatenated_columns_from_dataframe,
 )
 from antarest.study.output.variables_management import (
@@ -747,11 +748,6 @@ class OutputService:
         variables_list = self.get_output_variables_list(study_id, output_id)
         return OutputVariablesInformation.from_variables_list(variables_list)
 
-    def _with_time_index(self, df: pd.DataFrame, matrix_index: MatrixIndex) -> pd.DataFrame:
-        time_column = pd.date_range(start=matrix_index.start_date, periods=len(df), freq=matrix_index.level.value[0])
-        df.index = time_column
-        return df
-
     def get_output_variables_view(
         self,
         study_id: str,
@@ -776,11 +772,9 @@ class OutputService:
 
             # Return the dataframe
             df = self._matrix_service.get(db_model.matrix_id)
-            return (
-                self._with_time_index(df, self.get_output_time_index(study_id, output_id, frequency))
-                if with_index
-                else df
-            )
+            if with_index:
+                add_time_index_to_dataframe(df, self.get_output_time_index(study_id, output_id, frequency))
+            return df
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)

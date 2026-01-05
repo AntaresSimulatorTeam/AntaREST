@@ -14,7 +14,7 @@ from typing import Iterator, TypeAlias
 
 import pandas as pd
 
-from antarest.study.model import MatrixFrequency, TimeSerie
+from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
@@ -102,3 +102,8 @@ def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[Time
         splitted_col = column.split(" % ")
         name, unit = splitted_col[0], splitted_col[1]
         yield TimeSerie(name=name, unit=unit or " ", data=df[column].to_numpy())
+
+
+def add_time_index_to_dataframe(df: pd.DataFrame, matrix_index: MatrixIndex) -> None:
+    time_column = pd.date_range(start=matrix_index.start_date, periods=len(df), freq=matrix_index.level.value[0])
+    df.index = time_column
