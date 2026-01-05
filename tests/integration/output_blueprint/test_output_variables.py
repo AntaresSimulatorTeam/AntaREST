@@ -12,6 +12,7 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -263,9 +264,15 @@ def test_export_output_variables_view(client: TestClient, user_access_token: str
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
     url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
+    export_url = f"{url}/export"
 
     # Areas
     query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
+
+    # Export before materializing should return an error
+    res = client.get(export_url, params=query_params)
+    assert res.json() == {"status": "NOT_FOUND", "task_id": None}
+    assert res.status_code == 404
 
     # Materialize the data
     task_id = client.post(f"{url}/materialize", params=query_params).json()
@@ -273,7 +280,6 @@ def test_export_output_variables_view(client: TestClient, user_access_token: str
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
 
-    export_url = f"{url}/export"
     # Default format is CSV
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
@@ -290,3 +296,21 @@ def test_export_output_variables_view(client: TestClient, user_access_token: str
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
     assert content == ["46452000,46452000", "46452000,46452000"]
+
+    # Change format to TSV
+    query_params["export_format"] = "tsv"
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == ["46452000\t46452000", "46452000\t46452000"]
+
+    # Use Csv semicolon
+    query_params["export_format"] = "csv (semicolon)"
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == ["46452000;46452000", "46452000;46452000"]
+
+    # Format to Excel
+    query_params["export_format"] = "xlsx"
+    res = client.get(export_url, params=query_params)
+    df = pd.read_excel(res.content, header=None)
+    assert df.equals(pd.DataFrame([[46452000, 46452000], [46452000, 46452000]]))
