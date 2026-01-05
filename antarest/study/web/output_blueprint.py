@@ -603,7 +603,7 @@ def create_output_routes(
         return Response(content=to_json(content), media_type="application/json")
 
     @bp.get(
-        "/studies/{uuid}/output/{output_id}/variables-views/data/export",
+        "/studies/{uuid}/output/{output_id}/variables-views/export",
         summary="Export the variables view for a given output and a given configuration in a given format",
     )
     def export_output_variables_view(

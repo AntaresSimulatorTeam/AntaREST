@@ -248,7 +248,6 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
     res = client.get(f"{url}/data", params=query_params)
-    print(res.json()["data"])
     assert np.isnan(np.array(res.json()["data"])).all()
 
     # Ensures we raise before running the task when asking for materializing wrong data.
@@ -260,7 +259,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     }
 
 
-def test_get_output_variables_view_format(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_export_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
     url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
@@ -270,39 +269,24 @@ def test_get_output_variables_view_format(client: TestClient, user_access_token:
 
     # Materialize the data
     task_id = client.post(f"{url}/materialize", params=query_params).json()
-    # Ask for data with materializing in process -> Should return a 404 with a status `IN_PROGRESS`
-    res = client.get(f"{url}/data", params=query_params)
-    assert res.json() == {"status": "IN_PROGRESS", "task_id": task_id}
     # Wait for materializing to end
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
 
-    query_params["export_format"] = "CSV"
-    # Asks for the data. This time, it should succeed.
-    res = client.get(f"{url}/data", params=query_params)
-    assert (
-        res.content.decode("utf-8")
-        == """,1,2
-2018-01-07,46452000,46452000
-2018-01-14,46452000,46452000
-"""
-    )
+    export_url = f"{url}/export"
+    # Default format is CSV
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == [",1,2", "2018-01-07,46452000,46452000", "2018-01-14,46452000,46452000"]
 
+    # Without index
     query_params["index"] = "false"
-    res = client.get(f"{url}/data", params=query_params)
-    assert (
-        res.content.decode("utf-8")
-        == """1,2
-46452000,46452000
-46452000,46452000
-"""
-    )
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == ["1,2", "46452000,46452000", "46452000,46452000"]
 
+    # Without headers
     query_params["header"] = "false"
-    res = client.get(f"{url}/data", params=query_params)
-    assert (
-        res.content.decode("utf-8")
-        == """46452000,46452000
-46452000,46452000
-"""
-    )
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == ["46452000,46452000", "46452000,46452000"]
