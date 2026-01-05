@@ -113,8 +113,8 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
         ),
         pytest.param(
             STUDY_VERSION_8_6,
-            ThematicTrimming(sts_inj_by_plant=False),
-            {"variables selection": {"selected_vars_reset": True, "select_var -": ["STS inj by plant"]}},
+            ThematicTrimming(sts_inj_by_plant=False, nox_emis=False),
+            {"variables selection": {"selected_vars_reset": True, "select_var -": ["STS inj by plant", "NOX EMIS."]}},
             id="v8.6",
         ),
         pytest.param(
