@@ -27,6 +27,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_2,
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_1,
     STUDY_VERSION_9_3,
@@ -103,6 +104,12 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
             ),
             {"variables selection": {"selected_vars_reset": False, "select_var +": ["CONG. FEE (ALG.)"]}},
             id="v8.4",
+        ),
+        pytest.param(
+            STUDY_VERSION_8_5,
+            ThematicTrimming(lmr_viol=False),
+            {"variables selection": {"selected_vars_reset": True, "select_var -": ["LMR VIOL."]}},
+            id="v8.5",
         ),
         pytest.param(
             STUDY_VERSION_8_6,
