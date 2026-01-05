@@ -9,11 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.simulation import OutputSimulation
 
 
@@ -34,9 +36,9 @@ class Output(FolderNode):
         return children
 
     @override
-    def normalize(self) -> None:
-        pass  # no external store in this node
+    def get_matrix_nodes_to_normalize(self) -> list[MatrixNode]:
+        return []  # no external store in this node
 
     @override
-    def denormalize(self) -> None:
-        pass  # no external store in this node
+    def get_matrix_nodes_to_denormalize(self) -> list[MatrixNode]:
+        return []  # no external store in this node

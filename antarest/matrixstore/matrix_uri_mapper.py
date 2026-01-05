@@ -32,10 +32,6 @@ def extract_matrix_id(uri: str) -> str:
     return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
 
 
-def build_matrix_uri(id: str) -> str:
-    return f"{MATRIX_PROTOCOL_PREFIX}{id}"
-
-
 class NormalizedMatrixUriMapper(StrEnum):
     NORMALIZED = "normalized"
     DENORMALIZED = "denormalized"
@@ -59,20 +55,10 @@ class MatrixUriMapper(ABC):
     Defines the interface for URI schema handling related to matrices.
     The expected URI schema is "matrix://<id>", which maps to matrices
     stored in a matrix service.
-
-    Methods to implement:
-    - get_matrix: Retrieve a matrix from a URI.
-    - create_matrix: Create a matrix and return its URI.
-    - matrix_exists: Check if a matrix exists for a given URI.
-    - is_managed: Property indicating if the mapper is managed.
     """
 
     @abstractmethod
     def get_matrix(self, uri: str) -> pd.DataFrame:
-        pass
-
-    @abstractmethod
-    def create_matrix(self, matrix: pd.DataFrame) -> str:
         pass
 
     @abstractmethod
@@ -81,14 +67,6 @@ class MatrixUriMapper(ABC):
 
     @abstractmethod
     def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
-        pass
-
-    @abstractmethod
-    def normalize(self, node: MatrixNode) -> None:
-        pass
-
-    @abstractmethod
-    def denormalize(self, node: MatrixNode) -> None:
         pass
 
     @abstractmethod
@@ -136,38 +114,8 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.get(extract_matrix_id(uri))
 
     @override
-    def create_matrix(self, matrix: pd.DataFrame) -> str:
-        return build_matrix_uri(self._matrix_service.create(matrix))
-
-    @override
     def matrix_exists(self, uri: str) -> bool:
         return self._matrix_service.exists(extract_matrix_id(uri))
-
-    @override
-    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
-        pass
-
-    @override
-    def normalize(self, node: MatrixNode) -> None:
-        link_path = self.get_link_path(node)
-        if link_path.exists() or node.config.archive_path:
-            return
-
-        matrix = node.parse_as_dataframe()
-        matrix_uri = self.create_matrix(matrix)
-        link_path.write_text(matrix_uri)
-        node.config.path.unlink(missing_ok=True)
-
-    @override
-    def denormalize(self, node: MatrixNode) -> None:
-        link_path = self.get_link_path(node)
-        if node.config.path.exists() or not link_path.exists():
-            return
-
-        uuid = link_path.read_text()
-        matrix = self.get_matrix(uuid)
-        node.write_dataframe(matrix)
-        link_path.unlink()
 
     @override
     def delete(self, node: MatrixNode, url: Optional[List[str]] = None) -> None:

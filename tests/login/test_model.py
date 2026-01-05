@@ -38,16 +38,16 @@ class TestInitAdminUser:
         init_admin_user(db_engine, SESSION_ARGS, admin_password=TEST_ADMIN_PASS_WORD)
         make_session = sessionmaker(bind=db_engine)
         with make_session() as session:
-            user = session.query(User).get(ADMIN_ID)
+            user = session.get(User, ADMIN_ID)
             assert user is not None
             assert user.id == ADMIN_ID
             assert user.name == ADMIN_NAME
             assert user.password.check(TEST_ADMIN_PASS_WORD)
-            group = session.query(Group).get(GROUP_ID)
+            group = session.get(Group, GROUP_ID)
             assert group is not None
             assert group.id == GROUP_ID
             assert group.name == GROUP_NAME
-            role = session.query(Role).get((ADMIN_ID, GROUP_ID))
+            role = session.get(Role, (ADMIN_ID, GROUP_ID))
             assert role is not None
             assert role.identity is user
             assert role.group is group

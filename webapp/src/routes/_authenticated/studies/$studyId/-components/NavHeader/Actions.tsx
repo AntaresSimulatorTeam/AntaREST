@@ -12,11 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/CustomScrollbar";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { unarchiveStudy } from "@/services/api/study";
-import type { StudyMetadata } from "@/types/types";
-import { toError } from "@/utils/fnUtils";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -25,10 +20,16 @@ import { Box, Button, Chip, Divider, IconButton, Tooltip } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import FavoriteStudyToggle from "../../../../../-shared/components/studies/FavoriteStudyToggle";
-import StudyActionsMenu from "../../../../../-shared/components/studies/StudyActionsMenu";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { unarchiveStudy } from "@/services/api/study";
+import type { StudyMetadata } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
+import FavoriteStudyToggle from "../../shared/studies/FavoriteStudyToggle";
+import StudyActionsMenu from "../../shared/studies/StudyActionsMenu";
+import CommandsDrawer from "../CommandsDrawer";
 import Breadcrumb from "./Breadcrumb";
-import CommandsDrawer from "./CommandsDrawer";
+import Details from "./Details";
 
 export type DialogType = "commands";
 
@@ -95,8 +96,11 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
           gap: 1,
         }}
       >
-        <Box sx={{ flex: 1 }}>
+        <Box
+          sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}
+        >
           <Breadcrumb study={study} />
+          <Details study={study} parentStudy={parentStudy} variantNb={variantNb} />
         </Box>
         <Box sx={{ overflow: "auto" }}>
           <CustomScrollbar>

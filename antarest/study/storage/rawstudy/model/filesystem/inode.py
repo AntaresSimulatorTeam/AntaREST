@@ -13,11 +13,14 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, TypeAlias, TypeVar
 
 from antarest.core.exceptions import WritingInsideZippedFileException
 from antarest.core.utils.archives import extract_file_to_tmp_dir, read_original_file_in_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+
+if TYPE_CHECKING:
+    from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 G = TypeVar("G")
 S = TypeVar("S")
@@ -107,21 +110,17 @@ class INode(ABC, Generic[G, S, V]):
         """
         raise NotImplementedError()
 
-    def normalize(self) -> None:
+    def get_matrix_nodes_to_normalize(self) -> list["MatrixNode"]:
         """
-        Scan tree to send matrix in matrix store and replace by its links
-        Returns:
+        Scan tree to return matrix nodes to store in matrix store and replace by its links
+        """
+        return []
 
+    def get_matrix_nodes_to_denormalize(self) -> list["MatrixNode"]:
         """
-        pass
-
-    def denormalize(self) -> None:
+        Scan tree to return matrix nodes to replace its links by its data from the matrix store.
         """
-        Scan tree to fetch matrix by its links
-        Returns:
-
-        """
-        pass
+        return []
 
     def get_file_content(self) -> OriginalFile:
         suffix = self.config.path.suffix

@@ -31,13 +31,13 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat, is_managed, remove_from_cache
+from antarest.study.storage.utils import assert_permission_on_studies, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
+from antarest.study.storage.variantstudy.variant_command_generator import apply_commands_to_variant
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ class SnapshotGenerator:
             results = self._apply_commands(file_study, variant_study, cmd_blocks, listener)
             if denormalize:
                 logger.info(f"Denormalizing variant study {variant_study_id}")
-                file_study.tree.denormalize()
+                self.raw_study_service.denormalize_study(file_study)
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
@@ -160,12 +160,11 @@ class SnapshotGenerator:
     def _export_ref_study(self, snapshot_dir: Path, ref_study: Study) -> None:
         if isinstance(ref_study, VariantStudy):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-            export_study_flat(
+            self.raw_study_service.export_study_to_flat_directory(
                 ref_study.snapshot_dir,
                 snapshot_dir,
-                self.study_factory,
-                denormalize=False,  # de-normalization is done at the end
-                outputs=False,  # do NOT export outputs
+                outputs=False,
+                denormalize=False,
                 is_study_managed=is_managed(ref_study),
             )
         elif isinstance(ref_study, RawStudy):
@@ -186,8 +185,7 @@ class SnapshotGenerator:
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
-        generator = VariantCommandGenerator(self.study_factory)
-        results = generator.generate(commands, study=file_study, metadata=variant_study, listener=listener)
+        results = apply_commands_to_variant(commands, study=file_study, metadata=variant_study, listener=listener)
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
             if results.details:
