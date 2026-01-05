@@ -42,7 +42,7 @@ import {
   getVariableViewData,
   materializeVariableView,
 } from "@/services/api/studies/outputs/variableViews";
-import type { LinkElement } from "@/types/types";
+import type { AreaWithId, LinkElement } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";

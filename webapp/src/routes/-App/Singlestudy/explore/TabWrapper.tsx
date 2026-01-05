@@ -14,6 +14,7 @@
 
 import { Box, Link as MuiLink, Tab, Tabs, type LinkProps } from "@mui/material";
 import { forwardRef, useMemo } from "react";
+// @ts-expect-error Temporary fix for missing lib
 import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
 import type { StudyMetadata } from "../../../../types/types";
 

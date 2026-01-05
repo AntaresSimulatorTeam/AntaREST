@@ -15,7 +15,7 @@
 import EmptyView from "@/components/page/EmptyView";
 import ListView from "@/components/page/ListView";
 import useDialog from "@/hooks/useDialog";
-import { sortByName } from "@/services/utils";
+import { getNames, sortByName } from "@/services/utils";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import TableViewIcon from "@mui/icons-material/TableView";
 import { createFileRoute, linkOptions, redirect } from "@tanstack/react-router";
@@ -47,6 +47,7 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/t
 
 function TableModeLayout() {
   const templates = Route.useLoaderData();
+  const existingNames = Route.useLoaderData({ select: getNames });
   const params = Route.useParams();
   const { t } = useTranslation();
   const { openDialog } = useDialog();
@@ -66,7 +67,7 @@ function TableModeLayout() {
           columns: [],
         }}
         onCancel={onClose}
-        templates={templates}
+        existingNames={existingNames}
       />
     ));
   };

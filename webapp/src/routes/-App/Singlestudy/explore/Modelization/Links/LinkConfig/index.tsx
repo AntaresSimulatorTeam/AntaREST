@@ -14,6 +14,7 @@
 
 import { Chip, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
+// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import semver from "semver";
 import type { LinkElement, StudyMetadata } from "../../../../../../../types/types";

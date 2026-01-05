@@ -14,6 +14,7 @@
 
 import type { DynamicListProps } from "@/components/DynamicList";
 import { useMemo } from "react";
+// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../../../redux/selectors";

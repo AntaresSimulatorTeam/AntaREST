@@ -16,6 +16,7 @@ import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { Grid } from "@mui/material";
 import { useState } from "react";
+// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";

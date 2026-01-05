@@ -20,7 +20,7 @@ import type {
   VariableViewParams,
   VariablesListDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { LinkElement, Simulation } from "@/types/types";
+import type { AreaWithId, LinkElement, Simulation } from "@/types/types";
 
 export const OUTPUT_ITEM_TYPES = ["areas", "links", "synthesis"] as const;
 export const DATA_TYPES = ["values", "details", "details-res", "id", "details-STstorage"] as const;

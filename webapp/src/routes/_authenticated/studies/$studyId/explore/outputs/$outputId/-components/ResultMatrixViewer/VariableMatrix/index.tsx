@@ -28,7 +28,7 @@ import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { LinkElement } from "@/types/types";
+import type { AreaWithId, LinkElement } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Skeleton } from "@mui/material";
 import { isAxiosError } from "axios";

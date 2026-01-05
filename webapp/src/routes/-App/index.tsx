@@ -12,9 +12,8 @@
  * This file is part of the Antares project.
  */
 
+// @ts-expect-error Temporary fix for missing lib
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Renewables from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables";
-import RenewableConfig from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -63,9 +62,6 @@ function App() {
           <Route path="wind" element={<Wind />} />
 
           <Route path="solar" element={<Solar />} />
-
-          <Route path="renewables" element={<Renewables />} />
-          <Route path="renewables/:clusterId" element={<RenewableConfig />} />
 
           <Route path="reserves" element={<Reserve />} />
 

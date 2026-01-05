@@ -19,6 +19,7 @@ import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { getLinks } from "@/services/api/studies/links";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import usePromise from "../../../../../../hooks/usePromise";
 import { setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";

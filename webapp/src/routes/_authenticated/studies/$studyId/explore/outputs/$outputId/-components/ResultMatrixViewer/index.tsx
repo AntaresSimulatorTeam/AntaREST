@@ -25,7 +25,7 @@ import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { LinkElement, MatrixIndex } from "@/types/types";
+import type { AreaWithId, LinkElement, MatrixIndex } from "@/types/types";
 import { Box } from "@mui/material";
 import type { PartialStudyOutput } from "../../-hooks/useStudyOutput";
 import {

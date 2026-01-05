@@ -18,6 +18,7 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import usePromise from "../../../../../../hooks/usePromise";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";

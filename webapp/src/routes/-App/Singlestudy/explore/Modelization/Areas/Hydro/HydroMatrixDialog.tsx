@@ -20,6 +20,7 @@ import { Box, Button, Skeleton } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../../types/types";
 import { getAllocationMatrix } from "./Allocation/utils";

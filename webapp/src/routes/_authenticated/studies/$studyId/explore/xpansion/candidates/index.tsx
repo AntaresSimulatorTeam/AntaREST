@@ -132,10 +132,8 @@ function Candidates() {
 
   const createCandidate = async (candidate: XpansionCandidate) => {
     try {
-      if (study) {
-        await mounted(addCandidate(studyId, candidate));
-        setCandidateCreationDialog(false);
-      }
+      await mounted(addCandidate(studyId, candidate));
+      setCandidateCreationDialog(false);
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.createCandidate"), e as AxiosError);
     } finally {
