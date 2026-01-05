@@ -32,9 +32,9 @@ from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO, Ma
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
-from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import MatrixFrequency, RawStudy
 from antarest.study.output.output_model import OutputVariablesType, OutputVariablesViewsModel
+from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
@@ -339,6 +339,7 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
             }
 
 
+@with_db_context
 def test_output_variables_matrix_usage_provider(matrix_service: MatrixService) -> None:
     # Create a matrix to avoid ForeignKey issue
     matrix_id = matrix_service.create(pd.DataFrame([0]))

@@ -67,29 +67,3 @@ These steps should work on any linux system with docker and docker-compose insta
    
 This is an example of a deployment.
 You'll have to edit your own `docker-compose.yml` file and [`application.yaml` configuration](./1-CONFIG.md) to customize it to your needs.
-
-### GUI installer (windows only)
-
-Double-click on the AntaresWebInstaller.exe executable and follow the instructions. 
-In case you already have a local application, choose your current application path in order to update it.
-
-![installer_screenshot.png](../../assets/media/img/installer_screenshot.png)
-
-### CLI installer (linux only)
-
-Open a new command prompt or powershell instance.
-Run the following command:
-
-```
-AntaresWebInstaller -t <TARGET_DIR>
-```
-
-where `<TARGET_DIR>` is the directory where you want to install the Antares Web Desktop.
-
-Note that you can specify an existing directory as value of `TARGET_DIR`, in which case the installer will update the
-existing installation.
-
-By default, the installer will generate shortcuts and launch the server at the end of the installation, but you
-optionally can decide to deactivate these steps with `--no-shortcut` and `--no-launch`.
-
-Run ```AntaresWebInstaller --help``` for more options.

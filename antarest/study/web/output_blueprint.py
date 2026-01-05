@@ -18,6 +18,7 @@ from typing import Annotated, Any, Sequence
 
 import pandas as pd
 from fastapi import APIRouter, Depends, Query, UploadFile
+from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
@@ -25,15 +26,10 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.output.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-)
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.output.output_model import (
     OutputVariablesInformation,
@@ -42,6 +38,13 @@ from antarest.study.output.output_model import (
     OutputVariablesViewResponse,
 )
 from antarest.study.output.output_service import OutputService
+from antarest.study.output.utils import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
+from antarest.study.output.variables_management import OutputItemId
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -64,6 +67,33 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     values = [v.strip() for v in values]
     # remove duplicates and preserve order (to have a deterministic result for unit tests).
     return list(collections.OrderedDict.fromkeys(values))
+
+
+_ITEM_ID_TYPE_ADAPTER: TypeAdapter[OutputItemId] = TypeAdapter(OutputItemId)
+
+
+def _to_item_id(
+    type: OutputVariablesType,
+    area_id: str | None = None,
+    area_from_id: str | None = None,
+    area_to_id: str | None = None,
+    thermal_id: str | None = None,
+    renewable_id: str | None = None,
+    st_storage_id: str | None = None,
+) -> OutputItemId:
+    return _ITEM_ID_TYPE_ADAPTER.validate_python(
+        remove_nones(
+            {
+                "type": type,
+                "area_id": area_id,
+                "area_from_id": area_from_id,
+                "area_to_id": area_to_id,
+                "thermal_id": thermal_id,
+                "renewable_id": renewable_id,
+                "st_storage_id": st_storage_id,
+            }
+        )
+    )
 
 
 def create_output_routes(
@@ -538,9 +568,9 @@ def create_output_routes(
     def get_output_variables_view(
         uuid: str,
         output_id: str,
-        type: OutputVariablesType,
         variable_name: str,
         frequency: MatrixFrequency,
+        type: OutputVariablesType,
         area_id: str | None = None,
         area_from_id: str | None = None,
         area_to_id: str | None = None,
@@ -562,20 +592,17 @@ def create_output_routes(
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        view = output_service.get_output_variables_view(
-            uuid,
-            output_id,
-            type,
-            variable_name,
-            frequency,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
-            with_index,
+
+        item_id = _to_item_id(
+            type=type,
+            area_id=area_id,
+            area_from_id=area_from_id,
+            area_to_id=area_to_id,
+            thermal_id=thermal_id,
+            renewable_id=renewable_id,
+            st_storage_id=st_storage_id,
         )
+        view = output_service.get_output_variables_view(uuid, output_id, item_id, variable_name, frequency, with_index)
         if not isinstance(view, pd.DataFrame):
             return Response(status_code=HTTPStatus.NOT_FOUND, content=to_json(view), media_type="application/json")
 
@@ -595,9 +622,9 @@ def create_output_routes(
     def materialize_output_variables_view(
         uuid: str,
         output_id: str,
-        type: OutputVariablesType,
         variable_name: str,
         frequency: MatrixFrequency,
+        type: OutputVariablesType,
         area_id: str | None = None,
         area_from_id: str | None = None,
         area_to_id: str | None = None,
@@ -612,18 +639,21 @@ def create_output_routes(
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
+        item_id = _to_item_id(
+            type=type,
+            area_id=area_id,
+            area_from_id=area_from_id,
+            area_to_id=area_to_id,
+            thermal_id=thermal_id,
+            renewable_id=renewable_id,
+            st_storage_id=st_storage_id,
+        )
         return output_service.materialize_output_variables_view(
             uuid,
             output_id,
-            type,
+            item_id,
             variable_name,
             frequency,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
         )
 
     return bp
