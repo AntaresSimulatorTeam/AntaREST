@@ -596,11 +596,10 @@ def create_output_routes(
             st_storage_id=st_storage_id,
         )
         view = output_service.get_output_variables_view(uuid, output_id, item_id, variable_name, frequency)
-        if not isinstance(view, pd.DataFrame):
-            return Response(status_code=HTTPStatus.NOT_FOUND, content=to_json(view), media_type="application/json")
-
-        content = view.to_dict(orient="split", index=False)
-        return Response(content=to_json(content), media_type="application/json")
+        if isinstance(view, pd.DataFrame):
+            content = view.to_dict(orient="split", index=False)
+            return Response(content=to_json(content), media_type="application/json")
+        return Response(status_code=404, content=to_json(view), media_type="application/json")
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/variables-views/export",
