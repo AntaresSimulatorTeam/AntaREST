@@ -16,7 +16,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.maintenance.app import celery_app
 from antarest.maintenance.tasks.gc_blob import _delete_blobs
 from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
 
@@ -49,7 +48,6 @@ class TestDeleteBlobs:
 
 
 class TestCleanBlobsTask:
-    def test_raises_without_context(self, celery_ctx_backup):
-        celery_app.conf.maintenance_ctx = None
+    def test_raises_without_context(self, with_no_maintenance_ctx):
         with pytest.raises(RuntimeError, match="MaintenanceContext not in app.conf"):
             clean_blobs_task.run()

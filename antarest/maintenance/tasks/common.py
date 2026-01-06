@@ -25,8 +25,8 @@ class TaskStatus(StrEnum):
     ERROR = "error"
 
 
-class GCTaskResult(BaseModel):
-    """Result of a GC task run."""
+class GarbageCollectorTaskResult(BaseModel):
+    """Result of a garbage collector task run."""
 
     status: TaskStatus
     deleted_count: int

@@ -16,12 +16,12 @@ from celery import Task
 
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
-from antarest.maintenance.tasks.common import GCTaskResult
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 
-@celery_app.task(bind=True, name="antarest.maintenance.tasks.clean_blobs_task", pydantic=True)
-def clean_blobs_task(self: Task) -> GCTaskResult:  # type: ignore[type-arg]
+@celery_app.task(bind=True, name="blobs_cleaner", pydantic=True)
+def clean_blobs_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
     """Celery wrapper that delegates to clean_blobs()."""
     ctx: MaintenanceContext | None = getattr(self.app.conf, "maintenance_ctx", None)
     if not ctx:

@@ -97,7 +97,10 @@ def _clear_old_snapshots(study_service: StudyService, retention_days: int, dry_r
     """Clear variant snapshots older than retention_days."""
     logger.info(f"Clearing snapshots older than {retention_days} days" + (" [dry-run]" if dry_run else ""))
     if not dry_run:
-        study_service.storage_service.variant_study_service.clear_all_snapshots(datetime.timedelta(days=retention_days))
+        task_id = study_service.storage_service.variant_study_service.clear_all_snapshots(
+            datetime.timedelta(days=retention_days)
+        )
+        study_service.task_service.await_task(task_id)
 
 
 def archive_old_studies(

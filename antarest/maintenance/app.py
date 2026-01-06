@@ -13,7 +13,8 @@
 """
 Celery app for maintenance tasks.
 
-Config is loaded lazily via signals to avoid side effects at import time.
+This design allows the module to be imported without side effects, making it
+easier to test and avoiding issues with config loading during imports.
 """
 
 import logging
@@ -35,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 def _mask_url_credentials(url: str) -> str:
     """Mask password in URL for safe logging."""
+    # Matches ://user:password@ or ://:password@ and replaces password with ***
     return re.sub(r"(://[^:]*:)[^@]+(@)", r"\1***\2", url)
 
 

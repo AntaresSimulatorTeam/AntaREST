@@ -29,13 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 class BlobGarbageCollector(IService):
-    """
-    Background service that periodically cleans unused blobs.
-
-    This is used in non-Celery environments (desktop version) where
-    we can't rely on Celery Beat for scheduling.
-    """
-
     def __init__(self, blob_service: BlobService, sleeping_time: float, dry_run: bool):
         self.blob_service = blob_service
         self.sleeping_time = sleeping_time

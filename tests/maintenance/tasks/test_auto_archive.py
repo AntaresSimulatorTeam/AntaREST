@@ -18,7 +18,6 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.exceptions import TaskAlreadyRunning
-from antarest.maintenance.app import celery_app
 from antarest.maintenance.tasks.auto_archive import ArchiveStudyResult, _archive_study, _get_studies_to_archive
 from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
 from antarest.study.model import RawStudy
@@ -108,7 +107,6 @@ class TestArchiveStudy:
 
 
 class TestAutoArchiveTask:
-    def test_raises_without_context(self, celery_ctx_backup):
-        celery_app.conf.maintenance_ctx = None
+    def test_raises_without_context(self, with_no_maintenance_ctx):
         with pytest.raises(RuntimeError, match="MaintenanceContext not in app.conf"):
             auto_archive_task.run()

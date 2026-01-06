@@ -23,7 +23,7 @@ from typing import Set
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.common import GCTaskResult, LockId, TaskStatus
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, TaskStatus
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def _delete_matrices(matrix_service: MatrixService, matrices: Set[str], dry_run:
     return failures
 
 
-def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time: int) -> GCTaskResult:
+def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time: int) -> GarbageCollectorTaskResult:
     """
     Run matrix garbage collection.
 
@@ -78,7 +78,7 @@ def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time:
 
     except LockNotAcquired:
         logger.warning("Could not acquire lock, another GC is probably running")
-        return GCTaskResult(
+        return GarbageCollectorTaskResult(
             status=TaskStatus.SKIPPED,
             reason="lock_not_acquired",
             deleted_count=0,
@@ -86,7 +86,7 @@ def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time:
         )
     except Exception as e:
         logger.error("Matrix GC failed", exc_info=e)
-        return GCTaskResult(
+        return GarbageCollectorTaskResult(
             status=TaskStatus.ERROR,
             error=str(e),
             deleted_count=0,
@@ -97,7 +97,7 @@ def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time:
     status = TaskStatus.PARTIAL_SUCCESS if failures else TaskStatus.SUCCESS
     logger.info(f"Matrix GC done in {duration:.1f}s: {deleted_count} deleted, {failures} failed")
 
-    return GCTaskResult(
+    return GarbageCollectorTaskResult(
         status=status,
         deleted_count=deleted_count,
         failed_count=failures,

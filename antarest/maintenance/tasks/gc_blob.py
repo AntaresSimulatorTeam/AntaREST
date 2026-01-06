@@ -19,15 +19,15 @@ from typing import Set
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
-from antarest.maintenance.tasks.common import GCTaskResult, LockId, TaskStatus
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, TaskStatus
 
 logger = logging.getLogger(__name__)
 
 
-def _delete_blobs(blob_service: BlobService, blobs: Set[str], dry_run: bool) -> int:
+def _delete_blobs(blob_service: BlobService, blob_ids: Set[str], dry_run: bool) -> int:
     """Delete blobs and return the number of failures."""
     failures = 0
-    for blob_id in blobs:
+    for blob_id in blob_ids:
         if dry_run:
             logger.info(f"[dry-run] Would delete blob {blob_id}")
         else:
@@ -40,7 +40,7 @@ def _delete_blobs(blob_service: BlobService, blobs: Set[str], dry_run: bool) -> 
     return failures
 
 
-def clean_blobs(blob_service: BlobService, dry_run: bool) -> GCTaskResult:
+def clean_blobs(blob_service: BlobService, dry_run: bool) -> GarbageCollectorTaskResult:
     """Run blob garbage collection. Deletes blobs not referenced by any study."""
     start_time = time.time()
     deleted_count = 0
@@ -63,7 +63,7 @@ def clean_blobs(blob_service: BlobService, dry_run: bool) -> GCTaskResult:
 
     except LockNotAcquired:
         logger.warning("Could not acquire lock, another GC is probably running")
-        return GCTaskResult(
+        return GarbageCollectorTaskResult(
             status=TaskStatus.SKIPPED,
             reason="lock_not_acquired",
             deleted_count=0,
@@ -71,7 +71,7 @@ def clean_blobs(blob_service: BlobService, dry_run: bool) -> GCTaskResult:
         )
     except Exception as e:
         logger.error("Blob GC failed", exc_info=e)
-        return GCTaskResult(
+        return GarbageCollectorTaskResult(
             status=TaskStatus.ERROR,
             error=str(e),
             deleted_count=0,
@@ -82,7 +82,7 @@ def clean_blobs(blob_service: BlobService, dry_run: bool) -> GCTaskResult:
     status = TaskStatus.PARTIAL_SUCCESS if failures else TaskStatus.SUCCESS
     logger.info(f"Blob GC done in {duration:.1f}s: {deleted_count} deleted, {failures} failed")
 
-    return GCTaskResult(
+    return GarbageCollectorTaskResult(
         status=status,
         deleted_count=deleted_count,
         failed_count=failures,

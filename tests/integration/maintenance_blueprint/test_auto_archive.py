@@ -115,7 +115,8 @@ class TestArchiveOldStudiesIntegration:
             mock_study_service.repository = repository
             mock_study_service.storage_service = Mock()
             mock_study_service.storage_service.variant_study_service = Mock()
-            mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
+            mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = "snapshot_task"
+            mock_study_service.task_service = Mock()
 
         result = archive_old_studies(
             study_service=mock_study_service,
@@ -127,6 +128,7 @@ class TestArchiveOldStudiesIntegration:
 
         assert result.status == TaskStatus.SUCCESS
         assert result.archived_studies == 0
+        mock_study_service.task_service.await_task.assert_called_once_with("snapshot_task")
         assert result.duration_seconds >= 0
 
     def test_excludes_already_archived_studies(self, db_middleware):
