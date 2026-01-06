@@ -26,6 +26,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_1,
@@ -89,10 +90,25 @@ class ThematicTrimming(AntaresBaseModel):
     profit_by_plant: Optional[bool] = None
     # Since v8.4
     bc_marg_cost: Optional[bool] = None
+    # Since v8.5
+    lmr_viol: Optional[bool] = None
+    dtg_mrg_csr: Optional[bool] = None
     # Since v8.6
     sts_inj_by_plant: Optional[bool] = None
     sts_withdrawal_by_plant: Optional[bool] = None
     sts_lvl_by_plant: Optional[bool] = None
+    nh3_emis: Optional[bool] = None
+    nox_emis: Optional[bool] = None
+    pm2_5_emis: Optional[bool] = None
+    pm5_emis: Optional[bool] = None
+    pm10_emis: Optional[bool] = None
+    op1_emis: Optional[bool] = None
+    op2_emis: Optional[bool] = None
+    op3_emis: Optional[bool] = None
+    op4_emis: Optional[bool] = None
+    op5_emis: Optional[bool] = None
+    so2_emis: Optional[bool] = None
+    nmvoc_emis: Optional[bool] = None
     # Since v8.8
     sts_cashflow_by_cluster: Optional[bool] = None
     npcap_hours: Optional[bool] = None
@@ -260,6 +276,20 @@ class ThematicTrimmingUpdate(AntaresBaseModel):
     sts_by_group: Optional[bool] = None
     dispatch_gen: Optional[bool] = None
     renewable_gen: Optional[bool] = None
+    lmr_viol: Optional[bool] = None
+    dtg_mrg_csr: Optional[bool] = None
+    nh3_emis: Optional[bool] = None
+    nox_emis: Optional[bool] = None
+    pm2_5_emis: Optional[bool] = None
+    pm5_emis: Optional[bool] = None
+    pm10_emis: Optional[bool] = None
+    op1_emis: Optional[bool] = None
+    op2_emis: Optional[bool] = None
+    op3_emis: Optional[bool] = None
+    op4_emis: Optional[bool] = None
+    op5_emis: Optional[bool] = None
+    so2_emis: Optional[bool] = None
+    nmvoc_emis: Optional[bool] = None
 
 
 def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> set[str]:
@@ -339,6 +369,9 @@ def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> 
     if version >= STUDY_VERSION_8_4:
         fields.add("bc_marg_cost")
 
+    if version >= STUDY_VERSION_8_5:
+        fields.update(["lmr_viol", "dtg_mrg_csr"])
+
     if version >= STUDY_VERSION_8_6:
         fields.update(
             [
@@ -372,6 +405,18 @@ def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> 
                 "other5_injection",
                 "other5_withdrawal",
                 "other5_level",
+                "nh3_emis",
+                "nox_emis",
+                "pm2_5_emis",
+                "pm5_emis",
+                "pm10_emis",
+                "op1_emis",
+                "op2_emis",
+                "op3_emis",
+                "op4_emis",
+                "op5_emis",
+                "so2_emis",
+                "nmvoc_emis",
             ]
         )
 
