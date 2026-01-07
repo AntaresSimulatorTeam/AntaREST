@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-import pandas as pd
+import polars as pl
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
@@ -63,7 +63,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     @bp.post("/matrix", description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
         logger.info("Creating new matrix")
-        return service.create(pd.DataFrame(matrix))
+        return service.create(pl.DataFrame(matrix))
 
     @bp.post(
         "/matrix/_import",

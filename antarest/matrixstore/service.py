@@ -282,7 +282,7 @@ class MatrixService(ISimpleMatrixService):
         self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         matrix_id = compute_hash(matrix_factory())
         self._predefined_matrices[matrix_id] = matrix_factory
         return matrix_id
@@ -399,8 +399,8 @@ class MatrixService(ISimpleMatrixService):
         """
         if is_json:
             obj = from_json(file)
-            df = pl.DataFrame(data=obj["data"], index=obj["index"], columns=obj["columns"])
-            return self.create(df)
+            pandas_df = pd.DataFrame(data=obj["data"], index=obj["index"], columns=obj["columns"])
+            return self.create(pl.from_pandas(pandas_df))
         # noinspection PyTypeChecker
         matrix = np.loadtxt(io.BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix

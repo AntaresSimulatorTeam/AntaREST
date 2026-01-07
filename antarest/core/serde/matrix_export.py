@@ -36,7 +36,7 @@ def simplify_dataframe(dataframe: pl.DataFrame, np_type: type[pl.Int32] | type[p
 
     try:
         df_as_int = dataframe.cast(np_type)
-        assert_frame_equal(dataframe, df_as_int, check_dtype=False)
+        assert_frame_equal(dataframe, df_as_int, check_dtypes=False)
         return df_as_int
     except Exception:
         return dataframe
