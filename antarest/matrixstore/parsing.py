@@ -38,8 +38,8 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
             except NoDataError:  # if the dataframe is empty
                 df = pl.DataFrame()
     elif matrix_format == InternalMatrixFormat.HDF:
-        df = cast(pd.DataFrame, pd.read_hdf(path))
-        df = pl.from_pandas(df)
+        pandas_df = cast(pd.DataFrame, pd.read_hdf(path))
+        df = pl.from_pandas(pandas_df)
     elif matrix_format == InternalMatrixFormat.PARQUET:
         df = pl.read_parquet(path)
     elif matrix_format == InternalMatrixFormat.FEATHER:
@@ -54,14 +54,14 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
     return df
 
 
-def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pd.DataFrame, path: Path) -> None:
+def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pl.DataFrame, path: Path) -> None:
     if matrix_format == InternalMatrixFormat.TSV:
         write_dataframe_in_tsv_format(dataframe, path, headers=True)
     elif matrix_format == InternalMatrixFormat.HDF:
-        dataframe.to_hdf(str(path), key="data", index=False)
+        dataframe.to_pandas().to_hdf(str(path), key="data", index=False)
     elif matrix_format == InternalMatrixFormat.PARQUET:
-        dataframe.to_parquet(path, compression=None, index=False)
+        dataframe.write_parquet(path)
     elif matrix_format == InternalMatrixFormat.FEATHER:
-        dataframe.to_feather(path)
+        dataframe.write_ipc(path)
     else:
         raise NotImplementedError(f"Internal matrix format '{matrix_format}' is not implemented")
