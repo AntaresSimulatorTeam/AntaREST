@@ -22,6 +22,7 @@ from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type
 from uuid import uuid4
 
 import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
@@ -2298,26 +2299,27 @@ class StudyService:
         if isinstance(node, MatrixNode):
             df_matrix = node.parse_as_dataframe()
         elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
-            df_matrix = pd.DataFrame(**node.load())  # type: ignore
+            df_matrix = pl.DataFrame(**node.load())  # type: ignore
         else:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
+        pandas_df = df_matrix.to_pandas()
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
             time_column = pd.date_range(
-                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+                start=matrix_index.start_date, periods=len(pandas_df), freq=matrix_index.level.value[0]
             )
-            df_matrix.index = time_column
+            pandas_df.index = time_column
 
         adjust_matrix_columns_index(
-            df_matrix,
+            pandas_df,
             path,
             with_index=with_index,
             with_header=with_header,
             study_version=study_interface.version,
         )
 
-        return df_matrix
+        return pandas_df
 
     def asserts_no_thermal_in_binding_constraints(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
         """

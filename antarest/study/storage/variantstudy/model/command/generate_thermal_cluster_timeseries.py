@@ -16,7 +16,6 @@ from pathlib import PurePosixPath
 from typing import Any, Dict, Final, Optional
 
 import numpy as np
-import pandas as pd
 import polars as pl
 from antares.tsgen.duration_generator import ProbabilityLaw
 from antares.tsgen.random_generator import MersenneTwisterRNG
@@ -157,8 +156,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
                     generated_matrix = results.available_power
                     # 10- Write the matrix inside the matrix-store and store the id in memory
-                    df = pd.DataFrame(data=generated_matrix)
-                    df = df[list(df.columns)].astype(int)
+                    df = pl.DataFrame(data=generated_matrix)
+                    df = df[list(df.columns)].cast(pl.Int64)
                     matrix_id = self.command_context.matrix_service.create(df)
                     series_mapping.setdefault(area_id, {})[thermal_id] = matrix_id
                     # 11- Notify the progress to the notifier
