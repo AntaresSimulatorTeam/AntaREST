@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
+import polars as pl
 from fastapi import HTTPException
 from starlette.responses import FileResponse
 
@@ -167,7 +168,7 @@ class OutputVariablesViewMaterializationTask:
         # Transform the dataframe to save only what's needed inside DB
         dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
         df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=self._variable_name)
-        matrix_id = self._output_service._matrix_service.create(df_pivot)
+        matrix_id = self._output_service._matrix_service.create(pl.from_pandas(df_pivot))
 
         # Save the model inside DB
         db_model = create_output_view_db_model(

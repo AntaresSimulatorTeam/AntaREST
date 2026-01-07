@@ -24,7 +24,6 @@ import pandas as pd
 import polars as pl
 import py7zr
 from fastapi import UploadFile
-from pandas.api.types import infer_dtype
 from typing_extensions import override
 
 from antarest.core.config import Config, InternalMatrixFormat
@@ -101,9 +100,6 @@ class ISimpleMatrixService(ABC):
     def create(self, data: pl.DataFrame) -> str:
         """
         Creates a new matrix object with the specified data.
-
-        Warning:
-            DataFrame indexes are ignored, therefore providing one with a non-default one will raise an exception.
         """
         raise NotImplementedError()
 
@@ -112,9 +108,6 @@ class ISimpleMatrixService(ABC):
         """
         Creates several matrices with the specified data.
         Returns the list of the created matrices ids.
-
-        Warning:
-            DataFrame indexes are ignored, therefore providing one with a non-default one will raise an exception.
         """
         raise NotImplementedError()
 
@@ -239,16 +232,9 @@ def check_dataframe_compliance(df: pl.DataFrame) -> None:
     if df.is_empty():
         return
 
-    if not df.index.equals(pd.RangeIndex(0, df.shape[0])):
-        raise MatrixNotSupported("The matrixstore doesn't support dataframes with a non-default index")
-
-    supported_dtypes = [np.number, np.datetime64]
-    for k, dtype in enumerate(list(df.dtypes)):
-        if not any(np.issubdtype(dtype.type, supported_type) for supported_type in supported_dtypes):
-            if infer_dtype(df[df.columns[k]]) != "string":
-                raise MatrixNotSupported(
-                    f"Supported matrix data types are 'string, np.number, datetime' and you provided {dtype}"
-                )
+    for dtype in df.dtypes:
+        if not (dtype.is_numeric() or dtype.is_temporal()):
+            raise MatrixNotSupported(f"Supported matrix data types are 'number, datetime' and you provided {dtype}")
 
 
 def _matrix_to_dto(matrix: Matrix) -> MatrixMetadataDTO:
