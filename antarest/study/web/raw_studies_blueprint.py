@@ -96,7 +96,7 @@ class MatrixFormat(EnumIgnoreCase):
 
         buffer = io.BytesIO()
         if self == MatrixFormat.JSON:
-            dataframe.to_json(buffer, orient="split")
+            dataframe.to_pandas().to_json(buffer, orient="split")
             return Response(content=buffer.getvalue(), media_type="application/json")
 
         else:
