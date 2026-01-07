@@ -83,14 +83,14 @@ class InputSeriesMatrix(MatrixNode):
                     # Some matrices are optional and not required by the Simulator
                     # If so, we shouldn't raise but just return the `default_empty` value
                     if not self.should_exist:
-                        return pd.DataFrame(self.default_empty) if self.default_empty is not None else pd.DataFrame()
+                        return pl.DataFrame(self.default_empty) if self.default_empty is not None else pl.DataFrame()
                     # Otherwise, we raise a 404 'Not Found' exception.
                     logger.warning(f"Matrix file'{file_path}' not found")
                     study_id = self.config.study_id
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
-                matrix.columns = range(len(matrix.columns))
+                matrix.with_columns(range(len(matrix.columns)))
 
             stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
             if matrix.is_empty():
@@ -153,7 +153,7 @@ class InputSeriesMatrix(MatrixNode):
         if content == b"" and self.default_empty is not None:
             # The file is empty, we should return the `default_empty` value
             buffer = io.BytesIO()
-            dump_dataframe(pd.DataFrame(self.default_empty), buffer)
+            dump_dataframe(pl.DataFrame(self.default_empty), buffer)
             content = buffer.getvalue()
 
         return OriginalFile(content=content, suffix=suffix, filename=filename)

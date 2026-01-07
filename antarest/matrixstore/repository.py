@@ -192,25 +192,25 @@ def compute_hash(df: pl.DataFrame) -> str:
     Still, the legacy implementation is still used for backwards compatibility,
     for numeric-only tables.
     """
-    df = df.to_pandas()
+    pandas_df = df.to_pandas()
     # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
     legacy_format = False
-    if all(np.issubdtype(dtype.type, np.number) for dtype in df.dtypes):
+    if all(np.issubdtype(dtype.type, np.number) for dtype in pandas_df.dtypes):
         # We also need to check the headers to see if they correspond to the default ones
-        if df.columns.equals(pd.RangeIndex(0, df.shape[1])):
+        if pandas_df.columns.equals(pd.RangeIndex(0, pandas_df.shape[1])):
             legacy_format = True
 
     if not legacy_format:
         # We're computing the hash with the dataframe content and its headers
-        column_names_hashes = util.hash_pandas_object(df.columns, index=False)
-        row_hashes = util.hash_pandas_object(df, index=False)
+        column_names_hashes = util.hash_pandas_object(pandas_df.columns, index=False)
+        row_hashes = util.hash_pandas_object(pandas_df, index=False)
         df_hash = hashlib.sha256(column_names_hashes.to_numpy(dtype=np.int64).data)
         df_hash.update(row_hashes.to_numpy(dtype=np.int64).data)
         return df_hash.hexdigest()
 
     # We're using `np.ascontiguousarray` as hashlib requires C contiguous arrays,
     # while this is not the general behaviour of pandas to store its data this way
-    return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=np.float64)).data).hexdigest()
+    return hashlib.sha256(np.ascontiguousarray(pandas_df.to_numpy(dtype=np.float64)).data).hexdigest()
 
 
 class MatrixContentRepository:
