@@ -622,7 +622,7 @@ def test_get_single_capa(xpansion_manager: XpansionManager, study: StudyInterfac
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
 
     df = xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1)
-    pd.testing.assert_frame_equal(df, pd.DataFrame({0: [0.0]}))
+    pd.testing.assert_frame_equal(df.to_pandas(), pd.DataFrame({0: [0.0]}))
 
     with pytest.raises(MatrixImportFailed):
         xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
