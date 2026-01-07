@@ -19,6 +19,7 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from filelock import FileLock
 from pandas import util
 from sqlalchemy import select
@@ -230,7 +231,7 @@ class MatrixContentRepository:
         self.bucket_dir.mkdir(parents=True, exist_ok=True)
         self.format = format
 
-    def get(self, matrix_hash: str, matrix_version: int) -> pd.DataFrame:
+    def get(self, matrix_hash: str, matrix_version: int) -> pl.DataFrame:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
 
@@ -261,7 +262,7 @@ class MatrixContentRepository:
             return True
         return False
 
-    def save(self, content: pd.DataFrame) -> MatrixCreationResult:
+    def save(self, content: pl.DataFrame) -> MatrixCreationResult:
         """
         The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved

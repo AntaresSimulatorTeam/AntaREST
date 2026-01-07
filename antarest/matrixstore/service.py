@@ -236,7 +236,7 @@ def check_dataframe_compliance(df: pl.DataFrame) -> None:
     by to_hdf5, therefore we use `infer_dtype` to check object dtype are actually
     strings.
     """
-    if df.empty:
+    if df.is_empty():
         return
 
     if not df.index.equals(pd.RangeIndex(0, df.shape[0])):
@@ -282,7 +282,7 @@ class MatrixService(ISimpleMatrixService):
         self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
         matrix_id = compute_hash(matrix_factory())
         self._predefined_matrices[matrix_id] = matrix_factory
         return matrix_id
