@@ -151,8 +151,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
             self.matrix_mapper.remove_link(self)
         else:
             if isinstance(data, dict):
-                # Polars understands the data from a columns perspective so we have to transpose our dataframe.
-                df = pl.DataFrame(**data).transpose()
+                df = pl.DataFrame(np.array(data["data"]))
             else:
                 df = data
             self.write_dataframe(df)
