@@ -167,7 +167,7 @@ class MatrixCreationResult:
     new: bool
 
 
-def compute_hash(df: pd.DataFrame) -> str:
+def compute_hash(df: pl.DataFrame) -> str:
     """
     Computes a hash of the dataframe, with the goal of obtaining a stable
     and unique identifier for its content, including the headers.
@@ -192,7 +192,7 @@ def compute_hash(df: pd.DataFrame) -> str:
     Still, the legacy implementation is still used for backwards compatibility,
     for numeric-only tables.
     """
-
+    df = df.to_pandas()
     # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
     legacy_format = False
     if all(np.issubdtype(dtype.type, np.number) for dtype in df.dtypes):

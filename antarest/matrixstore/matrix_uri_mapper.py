@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
@@ -58,7 +59,7 @@ class MatrixUriMapper(ABC):
     """
 
     @abstractmethod
-    def get_matrix(self, uri: str) -> pd.DataFrame:
+    def get_matrix(self, uri: str) -> pl.DataFrame:
         pass
 
     @abstractmethod

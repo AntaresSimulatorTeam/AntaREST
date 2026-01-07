@@ -111,7 +111,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         df = self.parse_as_dataframe(file_path)
 
         stopwatch = StopWatch()
-        data = cast(JSON, df.to_dict(orient="split"))
+        data = cast(JSON, df.to_pandas().to_dict(orient="split"))
         stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
         return data
 
