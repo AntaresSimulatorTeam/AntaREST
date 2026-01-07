@@ -13,6 +13,7 @@ from abc import abstractmethod
 from typing import Iterator, Sequence
 
 import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
@@ -184,15 +185,15 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.link_exists(area1_id, area2_id)
 
     @override
-    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_indirect_capacities(area_from, area_to)
 
     @override
-    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_direct_capacities(area_from, area_to)
 
     @override
-    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_series(area_from, area_to)
 
     @override
@@ -212,23 +213,23 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.thermal_exists(area_id, thermal_id)
 
     @override
-    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_prepro(area_id, thermal_id)
 
     @override
-    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_modulation(area_id, thermal_id)
 
     @override
-    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_series(area_id, thermal_id)
 
     @override
-    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_fuel_cost(area_id, thermal_id)
 
     @override
-    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_co2_cost(area_id, thermal_id)
 
     @override
@@ -248,7 +249,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.renewable_exists(area_id, renewable_id)
 
     @override
-    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         return self._adaptee.get_renewable_series(area_id, renewable_id)
 
     @override
@@ -260,19 +261,19 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_constraint(constraint_id)
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._adaptee.get_constraint_values_matrix(constraint_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._adaptee.get_constraint_less_term_matrix(constraint_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._adaptee.get_constraint_greater_term_matrix(constraint_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._adaptee.get_constraint_equal_term_matrix(constraint_id)
 
     @override
@@ -292,43 +293,43 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.st_storage_exists(area_id, storage_id)
 
     @override
-    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_pmax_injection(area_id, storage_id)
 
     @override
-    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_pmax_withdrawal(area_id, storage_id)
 
     @override
-    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_lower_rule_curve(area_id, storage_id)
 
     @override
-    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_upper_rule_curve(area_id, storage_id)
 
     @override
-    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_inflows(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_injection(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_withdrawal(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_level(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_variation_injection(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
 
     @override
@@ -360,39 +361,39 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_hydro_correlation_matrix()
 
     @override
-    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_maxpower(area_id)
 
     @override
-    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_reservoir(area_id)
 
     @override
-    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_energy(area_id)
 
     @override
-    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_run_of_river(area_id)
 
     @override
-    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_modulation(area_id)
 
     @override
-    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_credit_modulations(area_id)
 
     @override
-    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_inflow_pattern(area_id)
 
     @override
-    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_water_values(area_id)
 
     @override
-    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_mingen(area_id)
 
     @override
@@ -538,21 +539,21 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_user_resources()
 
     @override
-    def get_load(self, area_id: str) -> pd.DataFrame:
+    def get_load(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_load(area_id)
 
     @override
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_misc_gen(area_id)
 
     @override
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
+    def get_reserves(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_reserves(area_id)
 
     @override
-    def get_solar(self, area_id: str) -> pd.DataFrame:
+    def get_solar(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_solar(area_id)
 
     @override
-    def get_wind(self, area_id: str) -> pd.DataFrame:
+    def get_wind(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_wind(area_id)
