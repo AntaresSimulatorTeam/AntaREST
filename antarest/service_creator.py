@@ -38,6 +38,8 @@ from antarest.core.persistence import upgrade_db
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
+from antarest.favorite.main import build_favorite_service
+from antarest.favorite.service import FavoriteService
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
 from antarest.login.main import build_login
@@ -147,6 +149,7 @@ class CoreServices:
     study_service: StudyService
     output_service: OutputService
     blob_service: BlobService
+    favorite_service: FavoriteService
 
 
 def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
@@ -185,6 +188,9 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         file_transfer_manager=filetransfer_service,
         event_bus=event_bus,
     )
+
+    favorite_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
+
     return CoreServices(
         cache=cache,
         event_bus=event_bus,
@@ -195,6 +201,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         study_service=study_service,
         output_service=output_service,
         blob_service=blob_service,
+        favorite_service=favorite_service,
     )
 
 
@@ -266,6 +273,7 @@ class Services:
     event_bus: IEventBus
     study: StudyService
     matrix: MatrixService
+    favorite: FavoriteService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
@@ -286,6 +294,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         app_ctxt,
         config,
         study_service=core_services.study_service,
+        favorite_service=core_services.favorite_service,
         output_service=core_services.output_service,
         login_service=core_services.login_service,
         event_bus=core_services.event_bus,
@@ -315,6 +324,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         event_bus=core_services.event_bus,
         study=core_services.study_service,
         matrix=core_services.matrix_service,
+        favorite=core_services.favorite_service,
         user=core_services.login_service,
         cache=core_services.cache,
         maintenance=maintenance_service,

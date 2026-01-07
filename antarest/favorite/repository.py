@@ -9,12 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional, Sequence
+from typing import Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session, joinedload
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.favorite.model import Favorite
+from antarest.study.model import Study
 
 
 class FavoriteRepository:
@@ -29,9 +31,18 @@ class FavoriteRepository:
 
     def save(self, favorite: Favorite) -> Favorite:
         session = self.session
-        session.add(favorite)
+        fav = session.merge(favorite)
+        session.add(fav)
         session.commit()
-        return favorite
+        return fav
 
-    def get_all(self) -> Sequence[Favorite]:
+    def get_all(self) -> list[Favorite]:
+        stmt = select(Favorite).options(joinedload(Favorite.study)).where(Study.id == Favorite.study_id)
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())
+
+    def delete(self, user_id: str, study_id: str) -> None:
         session = self.session
+        stmt = delete(Favorite).where(Favorite.user_id == user_id).where(Favorite.study_id == study_id)
+        session.execute(stmt)
+        session.commit()

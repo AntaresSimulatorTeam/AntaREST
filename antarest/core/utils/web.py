@@ -68,6 +68,7 @@ tags_metadata = [
     {
         "name": APITag.users,
     },
+    {"name": APITag.favorite},
     {
         "name": APITag.misc,
     },

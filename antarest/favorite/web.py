@@ -13,25 +13,28 @@ from fastapi import APIRouter
 
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
+from antarest.favorite.model import FavoriteDTO
 from antarest.favorite.service import FavoriteService
 from antarest.login.auth import Auth, logger
 
 
-def create_favorite_routes(favorite_service: FavoriteService, config: Config):
+def create_favorite_routes(favorite_service: FavoriteService, config: Config) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[auth.required()])
 
-    @bp.get("/favorite/", summary="Listing favorites for current user")
-    def list_favorites():
+    @bp.get("/favorite", summary="Listing favorites for current user")
+    def list_favorites() -> list[FavoriteDTO]:
         logger.info("Listing favorites for current user")
         return favorite_service.list_favorites()
 
     @bp.post("/favorite/{uuid}", summary="Create new favorite")
-    def create_favorite(uuid: str):
+    def add_favorite(uuid: str) -> FavoriteDTO:
         logger.info("Creating new favorite for current user")
-        favorite_service.add_favorite()
+        return favorite_service.add_favorite(uuid)
 
-    @bp.delete("/favorite/{uuid}", summary="Delete a favorite")
-    def delete_favorite(uuid: str):
+    @bp.delete("/favorite/{study_uuid}", summary="Delete a favorite")
+    def delete_favorite(study_uuid: str) -> None:
         logger.info("Deleting favorite for current user")
-        favorite_service.delete_favorite(uuid)
+        favorite_service.delete_favorite(study_uuid)
+
+    return bp
