@@ -23,6 +23,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
@@ -40,10 +41,10 @@ logger = logging.getLogger(__name__)
 
 
 class MatrixDTO(AntaresBaseModel, arbitrary_types_allowed=True):
-    index: list[int | str]
+    index: list[int]
     columns: list[int | str]
-    data: list[list[float | int | str]]
-    id: str = ""
+    data: NpArray
+    id: str
 
 
 def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: Config) -> APIRouter:
@@ -90,12 +91,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     def get(id: str) -> MatrixDTO:
         logger.info("Fetching matrix")
         df = service.get(id)
-        return MatrixDTO.model_construct(
-            id=id,
-            index=list(df.index),
-            columns=list(df.columns),
-            data=df.to_numpy().tolist(),
-        )
+        return MatrixDTO(id=id, index=list(range(len(df))), columns=list(df.columns), data=df.to_numpy())
 
     @bp.get(
         "/matrix/_references/",
