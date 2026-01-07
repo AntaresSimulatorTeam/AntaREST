@@ -55,7 +55,7 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
 
 MatrixId: TypeAlias = str
 # Either raw content, or dictionary representation, or dataframe.
-MatrixContent: TypeAlias = bytes | JSON | pd.DataFrame
+MatrixContent: TypeAlias = bytes | JSON | pl.DataFrame
 
 
 class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
