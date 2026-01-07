@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import { toError } from "@/utils/fnUtils";
+import axios from "axios";
 import isMatchWith from "lodash/isMatchWith";
 import * as RA from "ramda-adjunct";
 import type { FieldValues } from "react-hook-form";
 
-// From https://github.com/react-hook-form/react-hook-form/blob/master/src/utils/stringToPath.ts
-export function stringToPath(input: string): string[] {
-  return input
-    .replace(/["|']|\]/g, "")
-    .split(/\.|\[/)
-    .filter(Boolean);
-}
+// Any error under the `root` key are not persisted with each submission.
+// They will be deleted automatically.
+// cf. https://www.react-hook-form.com/api/useform/seterror/
+export const ROOT_FETCH_ERROR_KEY = "fetchError";
+export const ROOT_SUBMIT_ERROR_KEY = "submitError";
 
 /**
  * Performs a deep comparison between `object` and `source` to determine if `source` shape
@@ -48,4 +48,13 @@ export function isMatch<T extends FieldValues>(object: unknown, source: T): obje
   });
 }
 
-export const ROOT_ERROR_KEY = "default";
+export function getErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const description = error.response?.data?.description;
+    if (description) {
+      return description;
+    }
+  }
+
+  return toError(error).message;
+}

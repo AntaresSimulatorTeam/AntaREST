@@ -31,26 +31,25 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
-import axios from "axios";
 import clsx from "clsx";
 import * as RA from "ramda-adjunct";
 import { useEffect, useRef } from "react";
 import {
   FormProvider,
   useForm,
-  useFormContext as useFormContextOriginal,
   type FieldValues,
   type FormState,
   type SubmitErrorHandler,
   type UseFormProps,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useUpdateEffect } from "react-use";
+import { usePromise, useUpdateEffect } from "react-use";
 import CustomScrollbar from "../CustomScrollbar";
+import ErrorView from "../page/ErrorView";
 import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
-import { isMatch, ROOT_ERROR_KEY } from "./utils";
+import { getErrorMessage, isMatch, ROOT_FETCH_ERROR_KEY, ROOT_SUBMIT_ERROR_KEY } from "./utils";
 
 // TODO: Replace built-in validators by Zod (https://react-hook-form.com/docs/useform#resolver).
 
@@ -87,10 +86,6 @@ export interface FormProps<
   disableBlocker?: boolean;
 }
 
-export function useFormContextPlus<TFieldValues extends FieldValues>() {
-  return useFormContextOriginal() as UseFormReturnPlus<TFieldValues>;
-}
-
 function Form<TFieldValues extends FieldValues, TContext>({
   config,
   onSubmit,
@@ -117,20 +112,13 @@ function Form<TFieldValues extends FieldValues, TContext>({
   const { t } = useTranslation();
   const lastSubmittedData = useRef<TFieldValues>();
   const submitSuccessfulCb = useRef(voidFn);
+  const mounted = usePromise();
 
   const formApi = useForm<TFieldValues, TContext>({
     mode: "onChange",
     delayError: 750,
     ...config,
-    defaultValues: RA.isFunction(config?.defaultValues)
-      ? () => {
-          const fn = config?.defaultValues as () => Promise<TFieldValues>;
-          return fn().catch((err) => {
-            enqueueErrorSnackbar(t("form.asyncDefaultValues.error"), toError(err));
-            throw err;
-          });
-        }
-      : config?.defaultValues,
+    defaultValues: getDefaultValues(),
   });
 
   const { getValues, setError, handleSubmit, formState, reset } = formApi;
@@ -141,9 +129,8 @@ function Form<TFieldValues extends FieldValues, TContext>({
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
   const canSubmit = (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
-  const rootError = errors.root?.[ROOT_ERROR_KEY];
   const showSubmitButton = !hideSubmitButton;
-  const showFooter = showSubmitButton || enableUndoRedo || extraActions || rootError;
+  const showFooter = showSubmitButton || enableUndoRedo || extraActions || errors.root;
 
   const formApiPlus = useFormApiPlus(formApi);
 
@@ -182,6 +169,38 @@ function Form<TFieldValues extends FieldValues, TContext>({
   useEffect(() => setRef(apiRef, formApiPlus));
 
   ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const getExtraActions = () => {
+    return typeof extraActions === "function" ? extraActions({ canSubmit }) : extraActions;
+  };
+
+  function getDefaultValues() {
+    if (!config || !config.defaultValues) {
+      return;
+    }
+
+    const { defaultValues } = config;
+
+    if (typeof defaultValues !== "function") {
+      return defaultValues;
+    }
+
+    const wrapperFn: typeof defaultValues = async (payload) => {
+      try {
+        return await mounted(defaultValues(payload));
+      } catch (err) {
+        enqueueErrorSnackbar(t("form.asyncDefaultValues.error"), toError(err));
+        formApi.setError(`root.${ROOT_FETCH_ERROR_KEY}`, { message: getErrorMessage(err) });
+        throw err;
+      }
+    };
+
+    return wrapperFn;
+  }
+
+  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
@@ -208,13 +227,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
         };
       } catch (err) {
         enqueueErrorSnackbar(t("form.submit.error"), toError(err));
-
-        // Any error under the `root` key are not persisted with each submission.
-        // They will be deleted automatically.
-        // cf. https://www.react-hook-form.com/api/useform/seterror/
-        setError(`root.${ROOT_ERROR_KEY}`, {
-          message: axios.isAxiosError(err) ? err.response?.data.description : err?.toString(),
-        });
+        setError(`root.${ROOT_SUBMIT_ERROR_KEY}`, { message: getErrorMessage(err) });
       }
     }, onInvalid);
 
@@ -224,6 +237,15 @@ function Form<TFieldValues extends FieldValues, TContext>({
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  if (errors.root?.[ROOT_FETCH_ERROR_KEY]) {
+    return (
+      <ErrorView
+        error={errors.root[ROOT_FETCH_ERROR_KEY].message || t("form.asyncDefaultValues.error")}
+        extraActions={getExtraActions()}
+      />
+    );
+  }
 
   return (
     <Box
@@ -259,9 +281,9 @@ function Form<TFieldValues extends FieldValues, TContext>({
           }}
         >
           {!hideFooterDivider && <Divider flexItem />}
-          {rootError && (
+          {errors.root?.[ROOT_SUBMIT_ERROR_KEY] && (
             <Box color="error.main" sx={{ fontSize: "0.9rem" }}>
-              {rootError.message || t("form.submit.error")}
+              {errors.root?.[ROOT_SUBMIT_ERROR_KEY].message || t("form.submit.error")}
             </Box>
           )}
           <CustomScrollbar>
@@ -306,7 +328,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
               )}
               {extraActions && (
                 <Box sx={{ ml: "auto", pl: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                  {typeof extraActions === "function" ? extraActions({ canSubmit }) : extraActions}
+                  {getExtraActions()}
                 </Box>
               )}
             </Box>

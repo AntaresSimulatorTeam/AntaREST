@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { useState, forwardRef, useCallback } from "react";
-import { useSnackbar, SnackbarContent } from "notistack";
-import axios from "axios";
+import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Box,
   Card,
@@ -26,9 +26,9 @@ import {
   styled,
   Typography,
 } from "@mui/material";
-import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import axios from "axios";
+import { SnackbarContent, useSnackbar } from "notistack";
+import { forwardRef, useCallback, useState } from "react";
 
 const Snackbar = styled(SnackbarContent)(({ theme }) => ({
   [theme.breakpoints.up("sm")]: {
@@ -119,11 +119,11 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>((props: Props, ref) 
                 </Grid>
                 <Grid item xs={6}>
                   <Label>Exception: </Label>
-                  <Typography>{details.response?.data.exception}</Typography>
+                  <Typography>{details.response?.data?.exception}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Label>Description: </Label>
-                  <Typography>{details.response?.data.description}</Typography>
+                  <Typography>{details.response?.data?.description}</Typography>
                 </Grid>
               </Grid>
             ) : (

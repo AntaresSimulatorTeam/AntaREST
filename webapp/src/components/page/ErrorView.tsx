@@ -13,15 +13,15 @@
  */
 
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import EmptyView from "./EmptyView";
+import EmptyView, { type EmptyViewProps } from "./EmptyView";
 
-interface ErrorViewProps {
+interface ErrorViewProps extends Omit<EmptyViewProps, "title" | "icon"> {
   error: Error | string;
 }
 
-function ErrorView({ error }: ErrorViewProps) {
+function ErrorView({ error, ...rest }: ErrorViewProps) {
   const title = typeof error === "string" ? error : error.message;
-  return <EmptyView title={title} icon={ErrorOutlineIcon} />;
+  return <EmptyView {...rest} title={title} icon={ErrorOutlineIcon} />;
 }
 
 export default ErrorView;

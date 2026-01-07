@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { useFormContextPlus } from "@/components/Form";
 import NumberFE from "@/components/fieldEditors/NumberFE";
+import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import type { TimeSeriesTypeValue } from "@/services/api/studies/timeseries/types";
 import { validateNumber } from "@/utils/validation/number";
 import { TableCell } from "@mui/material";

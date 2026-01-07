@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { useFormContextPlus } from "@/components/Form";
 import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getLauncherMetrics } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";

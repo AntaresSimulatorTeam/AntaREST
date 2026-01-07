@@ -16,7 +16,7 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/components/Form";
+import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import type {
   StorageConstraint,
   StorageConstraintOccurrences,
