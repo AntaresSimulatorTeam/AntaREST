@@ -17,7 +17,7 @@ import TabsView from "@/components/page/TabsView";
 import usePromise from "@/hooks/usePromise";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import { checkRouteAvailability } from "@/utils/routerUtils";
-import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, linkOptions, useNavigate, useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import { getStorages } from "../-utils";
@@ -31,6 +31,7 @@ export const Route = createFileRoute(
 function StorageLayout() {
   const study = useStudy();
   const params = Route.useParams();
+  const { constraintId } = useParams({ strict: false });
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { areaId, storageId } = params;
@@ -54,7 +55,9 @@ function StorageLayout() {
     const newStorageId = event.target.value;
 
     navigate({
-      to: ".",
+      to: constraintId
+        ? "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints"
+        : ".",
       params: {
         ...params,
         storageId: newStorageId,

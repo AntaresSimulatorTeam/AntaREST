@@ -621,6 +621,7 @@
   "study.modeling.storages.additionalConstraints.occurrences.noEmpty": "Au moins une heure doit être spécifiée",
   "study.modeling.storages.additionalConstraints.occurrences.dialog.title": "Contrainte additionnelle '{{name}}'",
   "study.modeling.storages.additionalConstraints.occurrences.dialog.hours": "Heures",
+  "study.modeling.storages.additionalConstraints.create.error": "Échec de la création de la contrainte additionnelle '{{name}}'",
   "study.modeling.storages.additionalConstraints.delete.confirm": "Êtes-vous sûr de vouloir supprimer la contrainte additionnelle '{{name}}' ?",
   "study.modeling.storages.additionalConstraints.delete.error": "Échec de la suppression de la contrainte additionnelle '{{name}}'",
   "study.modeling.storages.additionalConstraints.properties": "Propriétés de la contrainte",

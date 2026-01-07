@@ -18,18 +18,15 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import Matrix from "@/components/Matrix";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import useDialog from "@/hooks/useDialog";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import i18n from "@/i18n";
 import { storageQueries } from "@/queries/storages";
 import type { QueryList } from "@/queries/types";
 import useStudy from "@/routes/-shared/hook/useStudy";
 import {
-  deleteStorageConstraint,
   getStorageConstraint,
   updateStorageConstraint,
 } from "@/services/api/studies/areas/storages";
 import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
-import { toError } from "@/utils/fnUtils";
+import { unresolvedPromise } from "@/utils/promiseUtils";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Button } from "@mui/material";
@@ -39,33 +36,21 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
 import semver from "semver";
+import useDeleteStorageConstraint from "../-hooks/useDeleteStorageConstraint";
 import Fields from "./-components/Fields";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId/",
 )({
-  beforeLoad: async ({ context, params: { studyId, areaId, storageId, constraintId } }) => {
-    const constraints = await context.queryClient.ensureQueryData(
-      storageQueries.constraintList(studyId, areaId, storageId),
-    );
-
-    if (!constraints.find(({ id }) => id === constraintId)) {
-      throw new Error(
-        i18n.t("study.area.storage.additionalConstraint.notFound", { id: constraintId }),
-      );
-    }
-  },
   component: Constraint,
 });
 
 function Constraint() {
   const study = useStudy();
   const { areaId, storageId, constraintId } = Route.useParams();
-  const navigate = Route.useNavigate();
   const { t } = useTranslation();
   const [matrixDialogOpen, toggleMatrixDialogOpen] = useToggle(false);
   const { confirm } = useDialog();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const getConstraint = useCallback(
     (constraints: QueryList<StorageConstraint>) => {
@@ -78,6 +63,8 @@ function Constraint() {
     ...storageQueries.constraintList(study.id, areaId, storageId),
     select: getConstraint,
   });
+
+  const deleteConstraint = useDeleteStorageConstraint();
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -105,23 +92,12 @@ function Constraint() {
     });
 
     if (isConfirmed) {
-      try {
-        await deleteStorageConstraint({
-          studyId: study.id,
-          areaId,
-          storageId,
-          constraintId,
-        });
-
-        navigate({ to: "..", replace: true });
-      } catch (err) {
-        enqueueErrorSnackbar(
-          t("study.modeling.storages.additionalConstraints.delete.error", {
-            name: constraintId,
-          }),
-          toError(err),
-        );
-      }
+      deleteConstraint.mutate({
+        studyId: study.id,
+        areaId,
+        storageId,
+        constraintId,
+      });
     }
   };
 
@@ -129,17 +105,20 @@ function Constraint() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  if (!constraint) {
+    throw new Error(t("study.area.storage.additionalConstraint.notFound", { id: constraintId }));
+  }
+
   return (
     <ViewWrapper>
       <Form
         key={constraintId}
         onSubmit={handleSubmit}
         config={{
-          disabled: constraint?.isOptimistic,
-          defaultValues: constraint?.isOptimistic
-            ? constraint
-            : () =>
-                getStorageConstraint({
+          defaultValues: () =>
+            constraint.isOptimistic
+              ? unresolvedPromise<StorageConstraint>()
+              : getStorageConstraint({
                   studyId: study.id,
                   areaId,
                   storageId,
@@ -154,6 +133,7 @@ function Constraint() {
               color="secondary"
               startIcon={<DatasetIcon />}
               onClick={toggleMatrixDialogOpen}
+              disabled={constraint.isOptimistic}
             >
               {t("global.timeSeries")}
             </Button>
@@ -162,6 +142,7 @@ function Constraint() {
               color="error"
               startIcon={<DeleteIcon />}
               onClick={handleDelete}
+              disabled={constraint.isOptimistic}
             >
               {t("global.delete")}
             </Button>

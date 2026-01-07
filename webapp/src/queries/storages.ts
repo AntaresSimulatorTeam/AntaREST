@@ -14,6 +14,7 @@
 
 import {
   createStorageConstraint,
+  deleteStorageConstraint,
   getStorageConstraints,
 } from "@/services/api/studies/areas/storages";
 import type { StorageParams } from "@/services/api/studies/areas/storages/types";
@@ -46,6 +47,12 @@ export const storageMutations = {
     return mutationOptions({
       mutationKey: ["createStorageConstraint"],
       mutationFn: createStorageConstraint,
+    });
+  },
+  deleteConstraint: () => {
+    return mutationOptions({
+      mutationKey: ["deleteStorageConstraint"],
+      mutationFn: deleteStorageConstraint,
     });
   },
 };

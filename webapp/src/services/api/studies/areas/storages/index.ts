@@ -47,9 +47,6 @@ export async function createStorageConstraints({
   constraints,
   ...params
 }: CreateStorageConstraintsParams) {
-  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
-  await new Promise((res) => setTimeout(() => res(1), 5000));
-
   const url = format(CONSTRAINTS_URL, params);
   const validConstraints = constraints.map(
     R.pick(["name", "variable", "operator", "occurrences", "enabled"]),
@@ -112,8 +109,5 @@ export async function deleteStorageConstraint({
   constraintId,
   ...params
 }: DeleteStorageConstraintParams) {
-  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
-  await new Promise((res) => setTimeout(() => res(1), 2000));
-
   await deleteStorageConstraints({ ...params, constraintIds: [constraintId] });
 }
