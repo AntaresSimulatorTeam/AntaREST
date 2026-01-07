@@ -16,8 +16,8 @@ import polars as pl
 
 
 def create_polars_dataframe(data: npt.NDArray[np.float64] | list[list[int | float]] | pd.DataFrame) -> pl.DataFrame:
-    if isinstance(data, pd.DataFrame):
-        length = len(data.columns)
-    else:
+    if isinstance(data, list):
         length = len(data)
+    else:
+        length = data.shape[1]
     return pl.DataFrame(data, schema=[str(i) for i in range(length)])
