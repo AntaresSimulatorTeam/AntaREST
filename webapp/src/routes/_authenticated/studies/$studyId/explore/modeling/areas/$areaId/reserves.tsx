@@ -13,15 +13,19 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useStudy from "@/routes/-shared/hook/useStudy";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import { createFileRoute } from "@tanstack/react-router";
 
-function Reserve() {
-  const currentArea = useAppSelector(getCurrentAreaId);
-  const study = useStudy();
-  const url = `input/reserves/${currentArea}`;
-  const columns = ["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"];
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves",
+)({
+  component: Reserves,
+});
+
+const COLUMNS = ["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"] as const;
+
+function Reserves() {
+  const { studyId, areaId } = Route.useParams();
+  const url = `input/reserves/${areaId}`;
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -29,14 +33,13 @@ function Reserve() {
 
   return (
     <Matrix
-      studyId={study.id}
+      key={areaId}
+      studyId={studyId}
       url={url}
-      customColumns={columns}
+      customColumns={COLUMNS}
       aggregateColumns={["total"]}
       isTimeSeries={false}
       enableFilters
     />
   );
 }
-
-export default Reserve;

@@ -14,7 +14,6 @@
 
 // @ts-expect-error Temporary fix for missing lib
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import MiscGen from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/MiscGen";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -22,7 +21,6 @@ import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMat
 import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
 import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
 import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";
 import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
 import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
 import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstraints";
@@ -62,10 +60,6 @@ function App() {
           <Route path="wind" element={<Wind />} />
 
           <Route path="solar" element={<Solar />} />
-
-          <Route path="reserves" element={<Reserve />} />
-
-          <Route path="miscGen" element={<MiscGen />} />
         </Route>
 
         <Route path="links" element={<Links />} />
