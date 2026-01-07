@@ -771,7 +771,7 @@ class OutputService:
             db.session.commit()
 
             # Return the dataframe
-            df = self._matrix_service.get(db_model.matrix_id)
+            df = self._matrix_service.get(db_model.matrix_id).to_pandas()
             if with_index:
                 add_time_index_to_dataframe(df, self.get_output_time_index(study_id, output_id, frequency))
             return df

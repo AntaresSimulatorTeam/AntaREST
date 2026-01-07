@@ -13,7 +13,7 @@ import io
 import logging
 from typing import Sequence
 
-import pandas as pd
+import polars as pl
 from fastapi import APIRouter, File, UploadFile
 from starlette.responses import Response
 
@@ -159,9 +159,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
         output = study_service.xpansion_manager.get_resource_content(study_interface, resource_type, filename)
 
-        if isinstance(output, pd.DataFrame):
+        if isinstance(output, pl.DataFrame):
             buffer = io.BytesIO()
-            output.to_json(buffer, orient="split")
+            output.to_pandas().to_json(buffer, orient="split")
             return Response(content=buffer.getvalue(), media_type="application/json")
 
         return Response(content=to_json(output.decode("utf-8")), media_type="application/json")
