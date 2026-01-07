@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
-import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError, NoDataError
 from typing_extensions import override
@@ -104,7 +103,7 @@ class InputSeriesMatrix(MatrixNode):
             return final_matrix
 
     @override
-    def write_dataframe(self, df: pd.DataFrame) -> None:
+    def write_dataframe(self, df: pl.DataFrame) -> None:
         # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
         # This way, we can write the content quicker, and the file takes less place on the fs.
         if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):

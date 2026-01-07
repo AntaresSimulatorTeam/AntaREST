@@ -16,7 +16,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
-import pandas as pd
 import polars as pl
 from typing_extensions import override
 
@@ -111,7 +110,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         self._matrix_service = matrix_service
 
     @override
-    def get_matrix(self, uri: str) -> pd.DataFrame:
+    def get_matrix(self, uri: str) -> pl.DataFrame:
         return self._matrix_service.get(extract_matrix_id(uri))
 
     @override
