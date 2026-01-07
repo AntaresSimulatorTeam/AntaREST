@@ -28,11 +28,11 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
             df = pl.DataFrame(data=np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2))
         else:
             try:
-                df = pl.read_csv(path, n_threads=1, separator="\t", has_header=False)
+                df = pl.read_csv(path, n_threads=1, separator="\t", has_header=True)
             except ComputeError:
                 # Happens for file `conversion.txt` as polars infer the data as int64, but the value is too big.
                 # In such cases, we'll read the data as a string and convert it in float64 afterward
-                df = pl.read_csv(path, n_threads=1, separator="\t", has_header=False, infer_schema=False).with_columns(
+                df = pl.read_csv(path, n_threads=1, separator="\t", has_header=True, infer_schema=False).with_columns(
                     pl.all().cast(pl.Float64)
                 )
             except NoDataError:  # if the dataframe is empty
