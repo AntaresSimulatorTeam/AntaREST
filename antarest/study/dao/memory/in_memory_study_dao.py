@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Dict, Iterator, List, Optional, Sequence
 
-import pandas as pd
 import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -716,7 +715,7 @@ class InMemoryStudyDao(StudyDao):
         return
 
     @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         return self._xpansion_resources[resource_type][filename]
 
     @override
