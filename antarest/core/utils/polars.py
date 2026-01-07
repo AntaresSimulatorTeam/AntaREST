@@ -11,8 +11,13 @@
 # This file is part of the Antares project.
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import polars as pl
 
 
-def create_polars_dataframe(data: npt.NDArray[np.float64] | list[list[int | float]]) -> pl.DataFrame:
-    return pl.DataFrame(data, schema=[str(i) for i in range(len(data))])
+def create_polars_dataframe(data: npt.NDArray[np.float64] | list[list[int | float]] | pd.DataFrame) -> pl.DataFrame:
+    if isinstance(data, pd.DataFrame):
+        length = len(data.columns)
+    else:
+        length = len(data)
+    return pl.DataFrame(data, schema=[str(i) for i in range(length)])
