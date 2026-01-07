@@ -17,7 +17,7 @@ import SplitView from "@/components/page/SplitView";
 import TabsView from "@/components/page/TabsView";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../../../types/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 
 interface Props {
   study: StudyMetadata;

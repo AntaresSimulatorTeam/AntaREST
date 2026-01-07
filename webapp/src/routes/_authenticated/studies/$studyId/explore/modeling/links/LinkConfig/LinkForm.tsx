@@ -22,7 +22,7 @@ import { AssetType, TransmissionCapacity } from "@/services/api/studies/links/co
 import type { Link, UpdateLinkParams } from "@/services/api/studies/links/types";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { LinkElement, StudyMetadata } from "../../../../../../../types/types";
+import type { LinkElement, StudyMetadata } from "../../../../../../../../types/types";
 import { getLinkUI } from "./utils";
 
 interface Props {

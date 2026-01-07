@@ -21,12 +21,12 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
-import usePromise from "../../../../../../hooks/usePromise";
-import { setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentLink } from "../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../types/types";
+import usePromise from "../../../../../../../hooks/usePromise";
+import { setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentLink } from "../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import LinkConfig from "./LinkConfig";
 import LinkPropsView from "./LinkPropsView";
 
