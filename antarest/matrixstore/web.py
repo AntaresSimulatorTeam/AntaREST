@@ -14,7 +14,6 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-import polars as pl
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
@@ -24,6 +23,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.np_array import NpArray
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
@@ -64,7 +64,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     @bp.post("/matrix", description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
         logger.info("Creating new matrix")
-        return service.create(pl.DataFrame(matrix, schema=[str(i) for i in range(len(matrix))]))
+        return service.create(create_polars_dataframe(matrix))
 
     @bp.post(
         "/matrix/_import",

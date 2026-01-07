@@ -24,6 +24,7 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
@@ -83,8 +84,7 @@ class InputSeriesMatrix(MatrixNode):
                     # If so, we shouldn't raise but just return the `default_empty` value
                     if not self.should_exist:
                         if self.default_empty is not None:
-                            schema = [str(i) for i in range(len(self.default_empty))]
-                            return pl.DataFrame(self.default_empty, schema=schema)
+                            return create_polars_dataframe(self.default_empty)
                         return pl.DataFrame()
                     # Otherwise, we raise a 404 'Not Found' exception.
                     logger.warning(f"Matrix file'{file_path}' not found")
@@ -92,7 +92,7 @@ class InputSeriesMatrix(MatrixNode):
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
-                matrix.with_columns(range(len(matrix.columns)))
+                matrix.columns = [str(i) for i in range(len(matrix.columns))]
 
             stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
             if matrix.is_empty():
@@ -102,7 +102,7 @@ class InputSeriesMatrix(MatrixNode):
             logger.warning(f"Empty file found when parsing {file_path}")
             final_matrix = pl.DataFrame()
             if self.default_empty is not None:
-                final_matrix = pl.DataFrame(self.default_empty, schema=[str(i) for i in range(len(self.default_empty))])
+                final_matrix = create_polars_dataframe(self.default_empty)
             return final_matrix
 
     @override

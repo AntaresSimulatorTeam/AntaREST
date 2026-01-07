@@ -17,9 +17,11 @@ from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -110,9 +112,9 @@ class TestInputSeriesMatrix:
         }
         link.write_text(matrix_uri)
 
-        def get_matrix(uri: str) -> pd.DataFrame:
+        def get_matrix(uri: str) -> pl.DataFrame:
             assert uri == matrix_uri
-            return pd.DataFrame(data=matrix_obj["data"])
+            return create_polars_dataframe(matrix_obj["data"])
 
         mapper = Mock(spec=MatrixUriMapper)
         mapper.get_matrix = get_matrix

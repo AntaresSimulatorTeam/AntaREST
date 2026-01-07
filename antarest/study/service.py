@@ -22,7 +22,6 @@ from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type
 from uuid import uuid4
 
 import pandas as pd
-import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
@@ -59,6 +58,7 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
@@ -2299,8 +2299,8 @@ class StudyService:
         if isinstance(node, MatrixNode):
             df_matrix = node.parse_as_dataframe()
         elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
-            matrix = node.load()
-            df_matrix = pl.DataFrame(**matrix, schema=[str(i) for i in range(len(matrix))])  # type: ignore
+            matrix = pd.DataFrame(**node.load())  # type: ignore
+            df_matrix = create_polars_dataframe(matrix)
         else:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
