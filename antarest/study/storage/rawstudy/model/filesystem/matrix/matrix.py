@@ -151,7 +151,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
             self.matrix_mapper.remove_link(self)
         else:
             if isinstance(data, dict):
-                df = pd.DataFrame(**data)
+                df = pl.DataFrame(**data)
             else:
                 df = data
             self.write_dataframe(df)
