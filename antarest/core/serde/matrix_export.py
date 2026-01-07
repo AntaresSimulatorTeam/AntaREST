@@ -14,6 +14,7 @@ from typing import IO, Iterator, Protocol
 
 import pandas as pd
 import polars as pl
+from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from antarest.core.serde.parquet_writer import write_dataframes_stream_parquet
@@ -35,7 +36,7 @@ def simplify_dataframe(dataframe: pl.DataFrame, np_type: type[pl.Int32] | type[p
 
     try:
         df_as_int = dataframe.cast(np_type)
-        pl.testing.assert_frame_equal(dataframe, df_as_int, check_dtype=False)
+        assert_frame_equal(dataframe, df_as_int, check_dtype=False)
         return df_as_int
     except Exception:
         return dataframe
