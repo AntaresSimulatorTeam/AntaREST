@@ -14,8 +14,8 @@
 
 import Matrix from "@/components/Matrix";
 import useStudy from "@/routes/-shared/hook/useStudy";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../redux/selectors";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 
 function Reserve() {
   const currentArea = useAppSelector(getCurrentAreaId);
