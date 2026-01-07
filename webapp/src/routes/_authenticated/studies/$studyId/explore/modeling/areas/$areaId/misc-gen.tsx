@@ -13,24 +13,28 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useStudy from "@/routes/-shared/hook/useStudy";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen",
+)({
+  component: MiscGen,
+});
+
+const COLUMNS = [
+  "CHP",
+  "Bio Mass",
+  "Bio Gaz",
+  "Waste",
+  "GeoThermal",
+  "Other",
+  "PSP",
+  "ROW Balance",
+] as const;
 
 function MiscGen() {
-  const currentArea = useAppSelector(getCurrentAreaId);
-  const study = useStudy();
-  const url = `input/misc-gen/miscgen-${currentArea}`;
-  const columns = [
-    "CHP",
-    "Bio Mass",
-    "Bio Gaz",
-    "Waste",
-    "GeoThermal",
-    "Other",
-    "PSP",
-    "ROW Balance",
-  ];
+  const { studyId, areaId } = Route.useParams();
+  const url = `input/misc-gen/miscgen-${areaId}`;
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -38,14 +42,13 @@ function MiscGen() {
 
   return (
     <Matrix
-      studyId={study.id}
+      key={areaId}
+      studyId={studyId}
       url={url}
-      customColumns={columns}
+      customColumns={COLUMNS}
       aggregateColumns={["total"]}
       isTimeSeries={false}
       enableFilters
     />
   );
 }
-
-export default MiscGen;

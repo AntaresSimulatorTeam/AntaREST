@@ -97,7 +97,14 @@ function AreaLayout() {
           //   condition: !(renewableGenerationModeling !== "aggregated"),
           // },
           // { label: "study.modeling.reserves", pathSuffix: "reserves" },
-          // { label: "study.modeling.miscGen", pathSuffix: "miscGen" },
+          {
+            id: "miscGen",
+            label: t("study.modeling.miscGen"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/areas/$areaId/misc-gen",
+              params,
+            }),
+          },
         ].filter(Boolean)}
       />
     </ViewWrapper>
