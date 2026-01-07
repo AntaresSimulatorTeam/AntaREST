@@ -2299,7 +2299,8 @@ class StudyService:
         if isinstance(node, MatrixNode):
             df_matrix = node.parse_as_dataframe()
         elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
-            df_matrix = pl.DataFrame(**node.load())  # type: ignore
+            matrix = node.load()
+            df_matrix = pl.DataFrame(**matrix, schema=[str(i) for i in range(len(matrix))])  # type: ignore
         else:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 

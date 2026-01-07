@@ -155,7 +155,7 @@ class ISimpleMatrixService(ABC):
         if isinstance(matrix, str):
             return matrix.removeprefix(MATRIX_PROTOCOL_PREFIX)
         elif isinstance(matrix, list):
-            return self.create(pl.DataFrame(data=matrix))
+            return self.create(pl.DataFrame(data=matrix, schema=[str(i) for i in range(len(matrix))]))
         else:
             raise TypeError(f"Invalid type for matrix: {type(matrix)}")
 
@@ -390,7 +390,7 @@ class MatrixService(ISimpleMatrixService):
         # noinspection PyTypeChecker
         matrix = np.loadtxt(io.BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        return self.create(pl.DataFrame(data=matrix))
+        return self.create(pl.DataFrame(data=matrix, schema=[str(i) for i in range(len(matrix))]))
 
     def get_dataset(self, id: str) -> Optional[MatrixDataSet]:
         dataset = self.repo_dataset.get(id)

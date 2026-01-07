@@ -64,7 +64,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     @bp.post("/matrix", description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
         logger.info("Creating new matrix")
-        return service.create(pl.DataFrame(matrix))
+        return service.create(pl.DataFrame(matrix, schema=[str(i) for i in range(len(matrix))]))
 
     @bp.post(
         "/matrix/_import",

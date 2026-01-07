@@ -82,7 +82,10 @@ class InputSeriesMatrix(MatrixNode):
                     # Some matrices are optional and not required by the Simulator
                     # If so, we shouldn't raise but just return the `default_empty` value
                     if not self.should_exist:
-                        return pl.DataFrame(self.default_empty) if self.default_empty is not None else pl.DataFrame()
+                        if self.default_empty is not None:
+                            schema = [str(i) for i in range(len(self.default_empty))]
+                            return pl.DataFrame(self.default_empty, schema=schema)
+                        return pl.DataFrame()
                     # Otherwise, we raise a 404 'Not Found' exception.
                     logger.warning(f"Matrix file'{file_path}' not found")
                     study_id = self.config.study_id
@@ -99,7 +102,7 @@ class InputSeriesMatrix(MatrixNode):
             logger.warning(f"Empty file found when parsing {file_path}")
             final_matrix = pl.DataFrame()
             if self.default_empty is not None:
-                final_matrix = pl.DataFrame(self.default_empty)
+                final_matrix = pl.DataFrame(self.default_empty, schema=[str(i) for i in range(len(self.default_empty))])
             return final_matrix
 
     @override

@@ -9,11 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
+import pandas as pd
 import polars as pl
 
 NULL_MATRIX = pl.DataFrame()
-NULL_SCENARIO_MATRIX = pl.DataFrame([[0.0]] * 8760)
-FIXED_4_COLUMNS = pl.DataFrame([[0.0, 0.0, 0.0, 0.0]] * 8760)
-FIXED_8_COLUMNS = pl.DataFrame([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+NULL_SCENARIO_MATRIX = pl.from_pandas(pd.DataFrame([[0.0]] * 8760))
+FIXED_4_COLUMNS = pl.from_pandas(pd.DataFrame([[0.0, 0.0, 0.0, 0.0]] * 8760))
+FIXED_8_COLUMNS = pl.from_pandas(pd.DataFrame([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760))
