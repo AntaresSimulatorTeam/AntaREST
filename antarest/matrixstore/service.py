@@ -88,7 +88,7 @@ Therefore, we rely on this version to know how to read the matrices
 
 class ISimpleMatrixService(ABC):
     @abstractmethod
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         """
         Registers a predefined matrix which will not created with factory function when requested.
 
@@ -178,7 +178,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         matrix_id = compute_hash(matrix_factory())
         self._predefined_matrices[matrix_id] = matrix_factory
         return matrix_id

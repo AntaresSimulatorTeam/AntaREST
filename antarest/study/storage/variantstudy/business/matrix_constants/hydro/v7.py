@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 
 
-import pandas as pd
+import polars as pl
 
-credit_modulations = pd.DataFrame(data=[[1.0] * 101] * 2)
-inflow_pattern = pd.DataFrame(data=[[1.0]] * 365)
-max_power = pd.DataFrame(data=[[0.0, 24.0, 0.0, 24.0]] * 365)
-reservoir = pd.DataFrame(data=[[0.0, 0.5, 1.0]] * 365)
+credit_modulations = pl.DataFrame(data=[[1.0] * 101] * 2)
+inflow_pattern = pl.DataFrame(data=[[1.0]] * 365)
+max_power = pl.DataFrame(data=[[0.0, 24.0, 0.0, 24.0]] * 365)
+reservoir = pl.DataFrame(data=[[0.0, 0.5, 1.0]] * 365)
