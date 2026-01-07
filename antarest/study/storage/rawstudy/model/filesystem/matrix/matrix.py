@@ -32,11 +32,11 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 logger = logging.getLogger(__name__)
 
 
-def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
-    if df.empty and isinstance(path_or_buf, Path):
+def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
+    if df.is_empty() and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        pl.from_pandas(df).write_csv(path_or_buf, separator="\t", include_header=False)
+        df.write_csv(path_or_buf, separator="\t", include_header=False)
 
 
 def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:

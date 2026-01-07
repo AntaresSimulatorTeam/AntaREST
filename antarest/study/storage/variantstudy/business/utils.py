@@ -12,7 +12,7 @@
 
 from typing import Any, Dict, List, Optional, Sequence
 
-import pandas as pd
+import polars as pl
 
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
@@ -45,7 +45,7 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
 
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
-        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=pd.DataFrame(matrix))
+        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=pl.DataFrame(matrix))
     elif isinstance(matrix, str):
         if not matrix:
             raise ValueError("The matrix ID cannot be empty")
