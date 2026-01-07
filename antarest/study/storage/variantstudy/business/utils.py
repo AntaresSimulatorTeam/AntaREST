@@ -45,7 +45,8 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
 
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
-        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=pl.DataFrame(matrix))
+        data = pl.DataFrame(matrix, schema=[str(i) for i in range(len(matrix))])
+        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data)
     elif isinstance(matrix, str):
         if not matrix:
             raise ValueError("The matrix ID cannot be empty")

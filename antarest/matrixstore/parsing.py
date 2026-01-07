@@ -47,10 +47,10 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
     else:
         raise NotImplementedError(f"Internal matrix format '{matrix_format}' is not implemented")
 
-    # Specific treatment on columns for each format to have the same behavior
+    # Specific treatment to change default polars columns
     length_range = range(len(df.columns))
-    if list(df.columns) == [str(k) for k in length_range]:
-        df.columns = pd.Index(length_range)  # type: ignore
+    if df.columns == [f"column_{k}" for k in length_range]:
+        df.columns = [str(k) for k in length_range]
     return df
 
 
