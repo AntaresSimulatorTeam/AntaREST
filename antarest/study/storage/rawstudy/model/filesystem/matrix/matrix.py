@@ -158,7 +158,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
             self.matrix_mapper.remove_link(self)
 
     @abstractmethod
-    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pl.DataFrame:
         """
         Parse the matrix content and return it as a DataFrame object
         """

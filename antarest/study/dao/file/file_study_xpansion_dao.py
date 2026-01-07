@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -148,7 +148,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                     raise XpansionFileNotFoundError(msg) from None
 
     @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         file_study = self.get_file_study()
         node = file_study.tree.get_node(self.get_resource_dir(resource_type) + [filename])
 

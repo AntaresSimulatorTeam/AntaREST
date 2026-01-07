@@ -62,7 +62,7 @@ class InputSeriesMatrix(MatrixNode):
         self.should_exist = should_exist
 
     @override
-    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pl.DataFrame:
         file_path = file_path or self.config.path
         try:
             stopwatch = StopWatch()
@@ -71,11 +71,11 @@ class InputSeriesMatrix(MatrixNode):
                 matrix = self.matrix_mapper.get_matrix(link_content)
             else:
                 try:
-                    polars_df = pl.read_csv(file_path, n_threads=1, separator="\t", has_header=False)
+                    matrix = pl.read_csv(file_path, n_threads=1, separator="\t", has_header=False)
                 except ComputeError:
                     # Happens for file `conversion.txt` as polars infer the data as int64, but the value is too big.
                     # In such cases, we'll read the data as a string and convert it in float64 afterward
-                    polars_df = pl.read_csv(
+                    matrix = pl.read_csv(
                         file_path, n_threads=1, separator="\t", has_header=False, infer_schema=False
                     ).with_columns(pl.all().cast(pl.Float64))
 
@@ -90,18 +90,17 @@ class InputSeriesMatrix(MatrixNode):
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
-                matrix = polars_df.to_pandas()
-                matrix.columns = pd.RangeIndex(len(matrix.columns))  # type: ignore
+                matrix.columns = range(len(matrix.columns))
 
             stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
-            if matrix.empty:
+            if matrix.is_empty():
                 raise NoDataError
             return matrix
         except NoDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
-            final_matrix = pd.DataFrame()
+            final_matrix = pl.DataFrame()
             if self.default_empty is not None:
-                final_matrix = pd.DataFrame(self.default_empty)
+                final_matrix = pl.DataFrame(self.default_empty)
             return final_matrix
 
     @override
