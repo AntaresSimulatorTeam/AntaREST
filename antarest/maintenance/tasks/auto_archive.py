@@ -23,7 +23,7 @@ from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.common import LockId, BackGroundTaskStatus
+from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.study.model import RawStudy, Study
 from antarest.study.output.output_service import OutputService
 from antarest.study.repository import AccessPermissions, StudyFilter

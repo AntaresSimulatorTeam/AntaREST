@@ -18,7 +18,7 @@ import pandas as pd
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, BackGroundTaskStatus
+from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.service import MatrixService
 

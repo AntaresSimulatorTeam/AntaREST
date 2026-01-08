@@ -15,7 +15,7 @@
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import create_lock
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, BackGroundTaskStatus
+from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 

@@ -71,7 +71,7 @@ celery_app.conf.update(
     result_serializer="json",
     accept_content=["json"],
     enable_utc=True,
-    worker_prefetch_multiplier=1, # Don't prefetch (tasks can be long)
+    worker_prefetch_multiplier=1,  # Don't prefetch (tasks can be long)
     worker_max_tasks_per_child=100,
     task_acks_late=True,
     task_reject_on_worker_lost=True,

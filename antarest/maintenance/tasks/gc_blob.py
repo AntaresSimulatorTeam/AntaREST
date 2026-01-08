@@ -19,7 +19,7 @@ from typing import Set
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, BackGroundTaskStatus
+from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 
 logger = logging.getLogger(__name__)
 

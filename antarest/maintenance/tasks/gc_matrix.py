@@ -23,7 +23,7 @@ from typing import Set
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, BackGroundTaskStatus
+from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
