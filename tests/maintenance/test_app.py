@@ -152,4 +152,4 @@ class TestSetupPeriodicTasks:
         _setup_periodic_tasks(sender=sender)
 
         names = [c[1]["name"] for c in sender.add_periodic_task.call_args_list]
-        assert names == ["matrix-gc", "blob-gc", "auto-archive"]
+        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver"]
