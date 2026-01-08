@@ -17,8 +17,8 @@ import { useTranslation } from "react-i18next";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import semver from "semver";
+import LinkForm from "../$linkId/LinkForm";
 import type { LinkElement, StudyMetadata } from "../../../../../../../../types/types";
-import LinkForm from "./LinkForm";
 import LinkMatrices from "./LinkMatrices";
 
 interface Props {
