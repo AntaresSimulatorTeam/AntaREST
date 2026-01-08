@@ -83,6 +83,9 @@ export interface ThematicTrimmingConfig {
   profitByPlant?: boolean;
   // Since v8.4
   bcMargCost?: boolean;
+  // Since v8.5
+  lmrViol?: boolean;
+  dtgMrgCsr?: boolean;
   // Since v8.6
   stsInjByPlant?: boolean;
   stsWithdrawalByPlant?: boolean;
@@ -114,6 +117,18 @@ export interface ThematicTrimmingConfig {
   other5Injection?: boolean;
   other5Withdrawal?: boolean;
   other5Level?: boolean;
+  nh3Emis?: boolean;
+  noxEmis?: boolean;
+  pm25Emis?: boolean;
+  pm5Emis?: boolean;
+  pm10Emis?: boolean;
+  op1Emis?: boolean;
+  op2Emis?: boolean;
+  op3Emis?: boolean;
+  op4Emis?: boolean;
+  op5Emis?: boolean;
+  so2Emis?: boolean;
+  nmvocEmis?: boolean;
   // Since v8.8
   stsCashflowByCluster?: boolean;
   npcapHours?: boolean;

@@ -26,6 +26,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_2,
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_1,
     STUDY_VERSION_9_3,
@@ -105,9 +106,15 @@ from tests.helpers import file_study_interface
             id="v8.4",
         ),
         pytest.param(
+            STUDY_VERSION_8_5,
+            ThematicTrimming(lmr_viol=False),
+            {"variables selection": {"selected_vars_reset": True, "select_var -": ["LMR VIOL."]}},
+            id="v8.5",
+        ),
+        pytest.param(
             STUDY_VERSION_8_6,
-            ThematicTrimming(sts_inj_by_plant=False),
-            {"variables selection": {"selected_vars_reset": True, "select_var -": ["STS inj by plant"]}},
+            ThematicTrimming(sts_inj_by_plant=False, nox_emis=False),
+            {"variables selection": {"selected_vars_reset": True, "select_var -": ["STS inj by plant", "NOX EMIS."]}},
             id="v8.6",
         ),
         pytest.param(
