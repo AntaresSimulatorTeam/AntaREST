@@ -18,11 +18,8 @@ import pandas as pd
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.gc_matrix import (
-    GCTaskResult,
-    TaskStatus,
-    clean_matrices,
-)
+from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult
+from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.service import MatrixService
 
 
@@ -50,8 +47,8 @@ class TestCleanMatricesIntegration:
             retention_time=3600,
         )
 
-        assert isinstance(result, GCTaskResult)
-        assert result.status == TaskStatus.SUCCESS
+        assert isinstance(result, GarbageCollectorTaskResult)
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1
         assert result.dry_run is False
 
@@ -72,7 +69,7 @@ class TestCleanMatricesIntegration:
             retention_time=3600,
         )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 0
 
         with db():
@@ -98,7 +95,7 @@ class TestCleanMatricesIntegration:
             retention_time=3600,
         )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1
         assert result.dry_run is True
 
@@ -114,6 +111,6 @@ class TestCleanMatricesIntegration:
             retention_time=3600,
         )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 0
         assert result.duration_seconds >= 0

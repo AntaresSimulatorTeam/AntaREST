@@ -10,25 +10,21 @@
 #
 # This file is part of the Antares project.
 
-"""Celery task for matrix garbage collection."""
+"""Celery task for blob garbage collection."""
 
 from celery import Task
 
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.common import GarbageCollectorTaskResult
-from antarest.maintenance.tasks.gc_matrix import clean_matrices
+from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 
-@celery_app.task(bind=True, name="matrices_cleaner", pydantic=True)
-def clean_matrices_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
-    """Celery wrapper that delegates to clean_matrices()."""
+@celery_app.task(bind=True, name="blobs_cleaner", pydantic=True)
+def clean_blobs_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
+    """Celery wrapper that delegates to clean_blobs()."""
     ctx: MaintenanceContext | None = getattr(self.app.conf, "maintenance_ctx", None)
     if not ctx:
         raise RuntimeError("MaintenanceContext not in app.conf - worker not initialized?")
 
-    return clean_matrices(
-        ctx.matrix_service,
-        ctx.config.storage.matrix_gc_dry_run,
-        ctx.config.storage.matrix_gc_retention_time,
-    )
+    return clean_blobs(ctx.blob_service, ctx.config.storage.blob_gc_dry_run)
