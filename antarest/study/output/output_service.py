@@ -70,6 +70,7 @@ from antarest.study.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     QueryFileType,
+    add_time_index_to_dataframe,
     split_concatenated_columns_from_dataframe,
 )
 from antarest.study.output.variables_management import (
@@ -454,7 +455,7 @@ class OutputService:
                     study_id,
                     output_id,
                     query_file,
-                    MatrixFrequency(data.level.value),
+                    data.level,
                     TableExportFormat.PARQUET,
                     data.columns,
                     data.filter,
@@ -767,6 +768,7 @@ class OutputService:
         output_item_id: OutputItemId,
         variable_name: str,
         frequency: MatrixFrequency,
+        with_index: bool = False,
     ) -> pd.DataFrame | OutputVariablesViewResponse:
         """
         If the view is already registered in DB, updates its `last_read` value and returns it.
@@ -782,7 +784,10 @@ class OutputService:
             db.session.commit()
 
             # Return the dataframe
-            return self._matrix_service.get(db_model.matrix_id)
+            df = self._matrix_service.get(db_model.matrix_id)
+            if with_index:
+                add_time_index_to_dataframe(df, self.get_output_time_index(study_id, output_id, frequency))
+            return df
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output
         available_variables = self.get_output_variables_list(study_id, output_id)
