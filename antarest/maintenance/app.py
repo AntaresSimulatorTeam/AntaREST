@@ -71,7 +71,7 @@ celery_app.conf.update(
     result_serializer="json",
     accept_content=["json"],
     enable_utc=True,
-    worker_prefetch_multiplier=1,
+    worker_prefetch_multiplier=1, # Don't prefetch (tasks can be long)
     worker_max_tasks_per_child=100,
     task_acks_late=True,
     task_reject_on_worker_lost=True,
@@ -121,9 +121,9 @@ def _setup_periodic_tasks(sender: Celery, **_: object) -> None:
     config: Optional[Config] = getattr(celery_app.conf, "antarest_config", None)
     storage = config.storage if config else StorageConfig()
 
-    sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name="matrix-gc")
-    sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name="blob-gc")
-    sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto-archive")
+    sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name="matrices_cleaner")
+    sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name="blobs_cleaner")
+    sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
 
     # Stagger first execution to avoid hitting everything at once
     clean_matrices_task.apply_async(countdown=60)

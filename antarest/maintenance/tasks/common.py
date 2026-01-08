@@ -15,7 +15,7 @@
 from enum import IntEnum, StrEnum
 from typing import Optional
 
-from pydantic import BaseModel
+from antarest.core.serde import AntaresBaseModel
 
 
 class TaskStatus(StrEnum):
@@ -25,7 +25,7 @@ class TaskStatus(StrEnum):
     ERROR = "error"
 
 
-class GarbageCollectorTaskResult(BaseModel):
+class GarbageCollectorTaskResult(AntaresBaseModel):
     """Result of a garbage collector task run."""
 
     status: TaskStatus

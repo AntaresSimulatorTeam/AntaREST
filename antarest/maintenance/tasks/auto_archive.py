@@ -47,7 +47,12 @@ class AutoArchiveTaskResult(BaseModel):
     reason: Optional[str] = None
 
 
-def _get_studies_to_archive(study_service: StudyService, threshold_days: int) -> list[tuple[str, bool]]:
+class StudyToArchive(NamedTuple):
+    study_id: str
+    is_raw_study: bool
+
+
+def _get_studies_to_archive(study_service: StudyService, threshold_days: int) -> list[StudyToArchive]:
     """Returns list of (study_id, is_raw_study) for studies inactive longer than threshold_days."""
     old_date = current_time() - datetime.timedelta(days=threshold_days)
 
@@ -58,7 +63,7 @@ def _get_studies_to_archive(study_service: StudyService, threshold_days: int) ->
     )
 
     return [
-        (study.id, isinstance(study, RawStudy))
+        StudyToArchive(str(study.id), isinstance(study, RawStudy))
         for study in studies
         if (last_activity := study.last_access or study.updated_at) is not None
         and last_activity < old_date
