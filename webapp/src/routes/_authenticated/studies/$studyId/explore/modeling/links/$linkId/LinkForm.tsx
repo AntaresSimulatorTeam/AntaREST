@@ -23,7 +23,7 @@ import type { Link, UpdateLinkParams } from "@/services/api/studies/links/types"
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { LinkElement, StudyMetadata } from "../../../../../../../../types/types";
-import { getLinkUI } from "./utils";
+import { getLinkUI } from "../LinkConfig/utils";
 
 interface Props {
   link: LinkElement;
