@@ -12,63 +12,63 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/fieldEditors/SelectFE";
+import SelectFE, { type Options } from "@/components/fieldEditors/SelectFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useStudy from "@/routes/-shared/hook/useStudy";
 import { getLink, updateLink } from "@/services/api/studies/links";
 import { AssetType, TransmissionCapacity } from "@/services/api/studies/links/constants";
-import type { Link, UpdateLinkParams } from "@/services/api/studies/links/types";
-import { useMemo } from "react";
+import type {
+  AssetTypeValue,
+  Link,
+  TransmissionCapacityValue,
+  UpdateLinkParams,
+} from "@/services/api/studies/links/types";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import type { LinkElement, StudyMetadata } from "../../../../../../../../types/types";
+import semver from "semver";
 import { getLinkUI } from "./utils";
 
-interface Props {
-  link: LinkElement;
-  study: StudyMetadata;
-  isOldStudy: boolean;
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/links/$linkId/properties",
+)({
+  component: Parameters,
+});
 
-function LinkForm({ study, link, isOldStudy }: Props) {
+const optionTransCap: Options<TransmissionCapacityValue> = Object.values(TransmissionCapacity).map(
+  (value) => ({
+    label: (t) => t(`study.modeling.links.transmissionCapacities.${value}`),
+    value,
+  }),
+);
+
+const assetTypeOptions: Options<AssetTypeValue> = Object.values(AssetType).map((value) => ({
+  label: (t) => t(`study.modeling.links.type.${value}`),
+  value,
+}));
+
+const FILTERS = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
+
+const filterOptions: Options<(typeof FILTERS)[number]> = FILTERS.map((item) => ({
+  label: (t) => t(`global.time.${item}`),
+  value: item,
+}));
+
+function Parameters() {
+  const { studyId, linkId } = Route.useParams();
+  const study = useStudy();
   const { t } = useTranslation();
-
-  const optionTransCap = Object.values(TransmissionCapacity).map((value) => ({
-    label: t(`study.modeling.links.transmissionCapacities.${value}`),
-    value,
-  }));
-
-  const assetTypeOptions = Object.values(AssetType).map((value) => ({
-    label: t(`study.modeling.links.type.${value}`),
-    value,
-  }));
-
-  const filterOptions = useMemo(
-    () =>
-      ["hourly", "daily", "weekly", "monthly", "annual"].map((item) => ({
-        label: t(`global.time.${item}`),
-        value: item,
-      })),
-    [t],
-  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues, values }: SubmitHandlerPlus<Link>) => {
-    const { id, area1, area2, filterSynthesis, filterYearByYear, assetType, ...rest } = dirtyValues;
+    const { id, area1, area2, assetType, ...rest } = dirtyValues;
 
     let config: UpdateLinkParams["config"] = rest;
-
-    if (filterSynthesis) {
-      config.filterSynthesis = values.filterSynthesis;
-    }
-
-    if (filterYearByYear) {
-      config.filterSynthesis = values.filterYearByYear;
-    }
 
     if (assetType) {
       config = {
@@ -77,11 +77,7 @@ function LinkForm({ study, link, isOldStudy }: Props) {
       };
     }
 
-    return updateLink({
-      studyId: study.id,
-      linkId: link.id,
-      config,
-    });
+    return updateLink({ studyId, linkId, config });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -90,14 +86,10 @@ function LinkForm({ study, link, isOldStudy }: Props) {
 
   return (
     <Form
-      key={link.id}
-      config={{
-        defaultValues: () => getLink({ studyId: study.id, linkId: link.id }),
-      }}
+      key={linkId}
+      config={{ defaultValues: () => getLink({ studyId, linkId }) }}
       onSubmit={handleSubmit}
       enableUndoRedo
-      hideFooterDivider
-      disableStickyFooter
     >
       {({ control }) => (
         <>
@@ -131,7 +123,7 @@ function LinkForm({ study, link, isOldStudy }: Props) {
               options={assetTypeOptions}
             />
           </Fieldset>
-          {!isOldStudy && (
+          {semver.gte(study.version, "8.2.0") && (
             <Fieldset legend={t("study.outputFilters")}>
               <SelectFE
                 label={t(`study.outputFilters.filterSynthesis`)}
@@ -158,5 +150,3 @@ function LinkForm({ study, link, isOldStudy }: Props) {
     </Form>
   );
 }
-
-export default LinkForm;

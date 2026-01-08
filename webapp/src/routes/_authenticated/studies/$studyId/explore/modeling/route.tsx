@@ -78,11 +78,14 @@ function ModelingLayout() {
           // onClick: handleAreasClick,
           // disabled: areas.length === 0,
         },
-        // {
-        //   label: t("study.links"),
-        //   path: `${basePath}/links`,
-        //   disabled: links.length === 0,
-        // },
+        {
+          id: "links",
+          label: t("study.links"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/links",
+            params,
+          }),
+        },
         // {
         //   label: t("study.bindingConstraints"),
         //   path: `${basePath}/bindingcontraint`,

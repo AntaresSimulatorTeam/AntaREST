@@ -24,7 +24,6 @@ import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/uti
 import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
 import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
 import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstraints";
-import Links from "./Singlestudy/explore/Modelization/Links";
 
 function App() {
   return (
@@ -61,8 +60,6 @@ function App() {
 
           <Route path="solar" element={<Solar />} />
         </Route>
-
-        <Route path="links" element={<Links />} />
 
         <Route path="bindingcontraint" element={<BindingConstraints />} />
       </Routes>

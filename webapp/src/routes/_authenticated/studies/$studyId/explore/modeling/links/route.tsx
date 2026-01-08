@@ -13,74 +13,75 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
-import SplitView from "@/components/page/SplitView";
-import ViewWrapper from "@/components/page/ViewWrapper";
+import ListView from "@/components/page/ListView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import { getLinks } from "@/services/api/studies/links";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getLinks } from "@/redux/selectors";
+import { createFileRoute, linkOptions, useParams } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-// @ts-expect-error Temporary fix for missing lib
-import { useOutletContext } from "react-router";
-import usePromise from "../../../../../../../hooks/usePromise";
-import { setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentLink } from "../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import LinkConfig from "./LinkConfig";
-import LinkPropsView from "./LinkPropsView";
 
-function Links() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [t] = useTranslation();
-  const dispatch = useAppDispatch();
-  const currentLink = useAppSelector((state) => getCurrentLink(state, study.id));
+export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/modeling/links")({
+  component: LinksLayout,
+});
 
-  const linksRes = usePromise(() => getLinks({ studyId: study.id }), [study.id]);
+function LinksLayout() {
+  const navigate = Route.useNavigate();
+  const { studyId } = Route.useParams();
+  const { linkId } = useParams({ strict: false });
+  const response = useStudySynthesis({ studyId, selector: getLinks });
 
-  // Handle automatic selection of the first link
+  // Redirect to first link if none is selected
   useEffect(() => {
-    const { data } = linksRes;
+    const { data } = response;
 
-    if (!data || data.length === 0 || currentLink) {
-      return;
+    if (!linkId && data && data.length > 0) {
+      navigate({
+        from: Route.fullPath,
+        to: "$linkId",
+        params: { linkId: data[0].id },
+        replace: true,
+      });
     }
-
-    dispatch(setCurrentLink(data[0].id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linksRes.data, currentLink, dispatch]);
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleLinkClick = (linkId: string) => {
-    dispatch(setCurrentLink(linkId));
-  };
+  }, [navigate, linkId, response, studyId]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView splitId="links">
-      {/* Left */}
-      <LinkPropsView studyId={study.id} onClick={handleLinkClick} />
-      {/* Right */}
-      <ViewWrapper>
-        <UsePromiseCond
-          response={linksRes}
-          ifFulfilled={(data) =>
-            data.length > 0 && currentLink ? (
-              <LinkConfig link={currentLink} />
-            ) : (
-              <EmptyView title={t("study.modeling.links.empty")} />
-            )
-          }
+    <UsePromiseCond
+      response={response}
+      ifFulfilled={(links) => (
+        <ListView
+          splitId="links"
+          list={links.map((link) => ({
+            id: link.id,
+            label: link.label,
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/links/$linkId",
+              params: { studyId, linkId: link.id },
+            }),
+          }))}
+          emptyListContent={<EmptyView title="No links" />}
         />
-      </ViewWrapper>
-    </SplitView>
+      )}
+    />
+    // <SplitView splitId="links">
+    //   {/* Left */}
+    //   <LinkPropsView studyId={study.id} onClick={handleLinkClick} />
+    //   {/* Right */}
+    //   <ViewWrapper>
+    //     <UsePromiseCond
+    //       response={linksRes}
+    //       ifFulfilled={(data) =>
+    //         data.length > 0 && currentLink ? (
+    //           <LinkConfig link={currentLink} />
+    //         ) : (
+    //           <EmptyView title={t("study.modeling.links.empty")} />
+    //         )
+    //       }
+    //     />
+    //   </ViewWrapper>
+    // </SplitView>
   );
 }
-
-export default Links;

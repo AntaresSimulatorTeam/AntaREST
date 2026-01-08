@@ -12,37 +12,55 @@
  * This file is part of the Antares project.
  */
 
-import { Chip, Divider } from "@mui/material";
+import TabsView from "@/components/page/TabsView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-// @ts-expect-error Temporary fix for missing lib
-import { useOutletContext } from "react-router";
-import semver from "semver";
-import LinkForm from "../$linkId/LinkForm";
-import type { LinkElement, StudyMetadata } from "../../../../../../../../types/types";
-import LinkMatrices from "./LinkMatrices";
 
-interface Props {
-  link: LinkElement;
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/links/$linkId",
+)({
+  component: LinkLayout,
+});
 
-function LinkConfig({ link }: Props) {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+function LinkLayout() {
+  const params = Route.useParams();
   const { t } = useTranslation();
-  const isOldStudy = semver.lt(study.version, "8.2.0");
+  // const isOldStudy = semver.lt(study.version, "8.2.0");
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <LinkForm link={link} study={study} isOldStudy={isOldStudy} />
-      <Divider sx={{ my: 2 }} variant="middle">
-        <Chip label={isOldStudy ? t("global.matrice") : t("global.matrices")} size="small" />
-      </Divider>
-      <LinkMatrices study={study} area1={link.area1} area2={link.area2} isOldStudy={isOldStudy} />
-    </>
+    // <>
+    //   <LinkForm link={link} study={study} isOldStudy={isOldStudy} />
+    //   <Divider sx={{ my: 2 }} variant="middle">
+    //     <Chip label={isOldStudy ? t("global.matrice") : t("global.matrices")} size="small" />
+    //   </Divider>
+    //   <LinkMatrices study={study} area1={link.area1} area2={link.area2} isOldStudy={isOldStudy} />
+    // </>
+    <ViewWrapper>
+      <TabsView
+        tabs={[
+          {
+            id: "properties",
+            label: "Properties",
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/links/$linkId/properties",
+              params,
+            }),
+          },
+          // {
+          //   id: "time-series",
+          //   label: t("global.timeSeries"),
+          //   linkOptions: linkOptions({
+          //     to: "/studies/$studyId/explore/modeling/links/$linkId/time-series",
+          //     params,
+          //   }),
+          // },
+        ]}
+      />
+    </ViewWrapper>
   );
 }
-
-export default LinkConfig;

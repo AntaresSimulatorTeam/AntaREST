@@ -21,7 +21,7 @@ import { createLink, type LinkComponent } from "@tanstack/react-router";
 const CustomListItemButton = createLink(ListItemButton);
 
 export const RouterListItemButton: LinkComponent<typeof ListItemButton> = (props) => {
-  return <CustomListItemButton activeProps={{ selected: true }} autoFocus {...props} />;
+  return <CustomListItemButton activeProps={{ selected: true }} {...props} />;
 };
 
 export default RouterListItemButton;
