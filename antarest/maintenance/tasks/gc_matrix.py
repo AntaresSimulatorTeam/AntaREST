@@ -23,7 +23,7 @@ from typing import Set
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, TaskStatus
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, BackGroundTaskStatus
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time:
     except LockNotAcquired:
         logger.warning("Could not acquire lock, another GC is probably running")
         return GarbageCollectorTaskResult(
-            status=TaskStatus.SKIPPED,
+            status=BackGroundTaskStatus.SKIPPED,
             reason="lock_not_acquired",
             deleted_count=0,
             duration_seconds=time.time() - start_time,
@@ -87,14 +87,14 @@ def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time:
     except Exception as e:
         logger.error("Matrix GC failed", exc_info=e)
         return GarbageCollectorTaskResult(
-            status=TaskStatus.ERROR,
+            status=BackGroundTaskStatus.ERROR,
             error=str(e),
             deleted_count=0,
             duration_seconds=time.time() - start_time,
         )
 
     duration = time.time() - start_time
-    status = TaskStatus.PARTIAL_SUCCESS if failures else TaskStatus.SUCCESS
+    status = BackGroundTaskStatus.PARTIAL_SUCCESS if failures else BackGroundTaskStatus.SUCCESS
     logger.info(f"Matrix GC done in {duration:.1f}s: {deleted_count} deleted, {failures} failed")
 
     return GarbageCollectorTaskResult(

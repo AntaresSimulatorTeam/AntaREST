@@ -17,7 +17,7 @@ from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
-from antarest.maintenance.tasks.common import TaskStatus
+from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.output.output_service import OutputService
 from antarest.study.repository import StudyMetadataRepository
@@ -89,7 +89,7 @@ def test_auto_archival() -> None:
         dry_run=False,
     )
 
-    assert result.status == TaskStatus.SUCCESS
+    assert result.status == BackGroundTaskStatus.SUCCESS
     mock_study_service.archive.assert_called_once_with("d")
     mock_output_service.archive_outputs.assert_called_once_with("e")
     mock_study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(

@@ -19,7 +19,7 @@ from typing import Set
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, TaskStatus
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, BackGroundTaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ def clean_blobs(blob_service: BlobService, dry_run: bool) -> GarbageCollectorTas
     except LockNotAcquired:
         logger.warning("Could not acquire lock, another GC is probably running")
         return GarbageCollectorTaskResult(
-            status=TaskStatus.SKIPPED,
+            status=BackGroundTaskStatus.SKIPPED,
             reason="lock_not_acquired",
             deleted_count=0,
             duration_seconds=time.time() - start_time,
@@ -72,14 +72,14 @@ def clean_blobs(blob_service: BlobService, dry_run: bool) -> GarbageCollectorTas
     except Exception as e:
         logger.error("Blob GC failed", exc_info=e)
         return GarbageCollectorTaskResult(
-            status=TaskStatus.ERROR,
+            status=BackGroundTaskStatus.ERROR,
             error=str(e),
             deleted_count=0,
             duration_seconds=time.time() - start_time,
         )
 
     duration = time.time() - start_time
-    status = TaskStatus.PARTIAL_SUCCESS if failures else TaskStatus.SUCCESS
+    status = BackGroundTaskStatus.PARTIAL_SUCCESS if failures else BackGroundTaskStatus.SUCCESS
     logger.info(f"Blob GC done in {duration:.1f}s: {deleted_count} deleted, {failures} failed")
 
     return GarbageCollectorTaskResult(

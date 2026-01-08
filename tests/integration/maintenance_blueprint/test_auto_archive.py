@@ -19,7 +19,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
-from antarest.maintenance.tasks.common import TaskStatus
+from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.output.output_service import OutputService
 from antarest.study.repository import StudyMetadataRepository
@@ -74,7 +74,7 @@ class TestArchiveOldStudiesIntegration:
             dry_run=True,
         )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.dry_run is True
         # In dry_run, we still count what would be archived (old_raw + old_variant)
         assert result.archived_studies == 2
@@ -126,7 +126,7 @@ class TestArchiveOldStudiesIntegration:
             dry_run=False,
         )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.archived_studies == 0
         mock_study_service.task_service.await_task.assert_called_once_with("snapshot_task")
         assert result.duration_seconds >= 0
@@ -165,5 +165,5 @@ class TestArchiveOldStudiesIntegration:
             dry_run=True,
         )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.archived_studies == 0

@@ -23,7 +23,7 @@ from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.common import LockId, TaskStatus
+from antarest.maintenance.tasks.common import LockId, BackGroundTaskStatus
 from antarest.study.model import RawStudy, Study
 from antarest.study.output.output_service import OutputService
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -39,7 +39,7 @@ class ArchiveStudyResult(NamedTuple):
 
 
 class AutoArchiveTaskResult(BaseModel):
-    status: TaskStatus
+    status: BackGroundTaskStatus
     archived_studies: int
     duration_seconds: float
     dry_run: bool
@@ -141,7 +141,7 @@ def archive_old_studies(
     except LockNotAcquired:
         logger.warning("Could not acquire lock, another auto-archive is probably running")
         return AutoArchiveTaskResult(
-            status=TaskStatus.SKIPPED,
+            status=BackGroundTaskStatus.SKIPPED,
             reason="lock_not_acquired",
             archived_studies=0,
             duration_seconds=time.time() - start_time,
@@ -150,7 +150,7 @@ def archive_old_studies(
     except Exception as e:
         logger.error("Auto-archive failed", exc_info=e)
         return AutoArchiveTaskResult(
-            status=TaskStatus.ERROR,
+            status=BackGroundTaskStatus.ERROR,
             archived_studies=archived_count,
             duration_seconds=time.time() - start_time,
             dry_run=dry_run,
@@ -158,7 +158,7 @@ def archive_old_studies(
         )
 
     duration = time.time() - start_time
-    status = TaskStatus.PARTIAL_SUCCESS if errors else TaskStatus.SUCCESS
+    status = BackGroundTaskStatus.PARTIAL_SUCCESS if errors else BackGroundTaskStatus.SUCCESS
     logger.info(f"Auto-archive done in {duration:.1f}s: {archived_count} archived, {len(errors)} errors")
 
     return AutoArchiveTaskResult(

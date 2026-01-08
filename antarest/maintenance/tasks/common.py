@@ -18,7 +18,7 @@ from typing import Optional
 from antarest.core.serde import AntaresBaseModel
 
 
-class TaskStatus(StrEnum):
+class BackGroundTaskStatus(StrEnum):
     SUCCESS = "success"
     PARTIAL_SUCCESS = "partial_success"
     SKIPPED = "skipped"
@@ -28,7 +28,7 @@ class TaskStatus(StrEnum):
 class GarbageCollectorTaskResult(AntaresBaseModel):
     """Result of a garbage collector task run."""
 
-    status: TaskStatus
+    status: BackGroundTaskStatus
     deleted_count: int
     failed_count: int = 0
     duration_seconds: float

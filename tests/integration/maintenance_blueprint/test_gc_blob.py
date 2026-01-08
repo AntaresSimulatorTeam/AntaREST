@@ -15,7 +15,7 @@
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import create_lock
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, TaskStatus
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, LockId, BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 
@@ -31,7 +31,7 @@ class TestCleanBlobsIntegration:
             )
 
         assert isinstance(result, GarbageCollectorTaskResult)
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1
         assert result.dry_run is False
 
@@ -47,7 +47,7 @@ class TestCleanBlobsIntegration:
                 dry_run=True,
             )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1
         assert result.dry_run is True
 
@@ -61,7 +61,7 @@ class TestCleanBlobsIntegration:
                 dry_run=False,
             )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 0
         assert result.duration_seconds >= 0
 
@@ -81,7 +81,7 @@ class TestCleanBlobsIntegration:
                 dry_run=False,
             )
 
-        assert result.status == TaskStatus.SUCCESS
+        assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 3
 
         for blob_id in blob_ids:
@@ -92,5 +92,5 @@ class TestCleanBlobsIntegration:
             with create_lock(db.session, lock_id=LockId.BLOB_GC):
                 result = clean_blobs(blob_service=simple_blob_service, dry_run=False)
 
-        assert result.status == TaskStatus.SKIPPED
+        assert result.status == BackGroundTaskStatus.SKIPPED
         assert result.reason == "lock_not_acquired"
