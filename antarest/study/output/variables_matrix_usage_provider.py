@@ -22,13 +22,14 @@
 # This file is part of the Antares project.
 import logging
 
+from sqlalchemy import select
 from typing_extensions import Iterable, override
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.storage.output_model import OutputVariablesViewsModel
+from antarest.study.output.output_model import OutputVariablesViewsModel
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class OutputVariablesMatrixUsageProvider(IMatrixUsageProvider):
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in output variables views")
         with db():
-            all_views = db.session.query(OutputVariablesViewsModel).all()
+            stmt = select(OutputVariablesViewsModel)
+            all_views = db.session.execute(stmt).scalars().all()
             for view in all_views:
                 yield MatrixReference(matrix_id=view.matrix_id, use_description="Matrix used inside variables views")

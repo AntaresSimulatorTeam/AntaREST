@@ -65,33 +65,58 @@ function VariableSelector({
 }: VariableSelectorProps) {
   const { t } = useTranslation();
 
+  const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
+
   const variableOptions = useMemo(() => {
     if (!variablesMetadata || !selectedItemId) {
       return [];
     }
 
     // For cluster data types, get variables from the specific cluster
-    const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
 
     if (isClusterDataType && selectedClusterId && itemType === "areas") {
       return getClusterVariables(variablesMetadata, selectedItemId, dataType, selectedClusterId);
     }
 
     return getVariables(variablesMetadata, itemType, selectedItemId, dataType);
-  }, [variablesMetadata, dataType, itemType, selectedItemId, selectedClusterId]);
+  }, [variablesMetadata, selectedItemId, isClusterDataType, selectedClusterId, itemType, dataType]);
 
   const isVariableValid = variableOptions.includes(selectedVariable);
 
   // Auto-select first variable when switching item types or when no valid variable is selected
   useEffect(() => {
     if (!isVariableValid && variablesMetadata && selectedItemId) {
-      const firstVariable = getFirstVariableForItem(variablesMetadata, itemType, selectedItemId);
+      let firstVariable = "";
+
+      // For cluster data types, get the first variable from the selected cluster
+      if (isClusterDataType && selectedClusterId && itemType === "areas") {
+        const clusterVariables = getClusterVariables(
+          variablesMetadata,
+          selectedItemId,
+          dataType,
+          selectedClusterId,
+        );
+
+        firstVariable = clusterVariables[0] || "";
+      } else {
+        // For non-cluster data types, get the first variable for the item
+        firstVariable = getFirstVariableForItem(variablesMetadata, itemType, selectedItemId);
+      }
 
       if (firstVariable) {
         onVariableSelect(firstVariable);
       }
     }
-  }, [isVariableValid, variablesMetadata, selectedItemId, itemType, onVariableSelect]);
+  }, [
+    isVariableValid,
+    variablesMetadata,
+    selectedItemId,
+    itemType,
+    dataType,
+    selectedClusterId,
+    onVariableSelect,
+    isClusterDataType,
+  ]);
 
   ////////////////////////////////////////////////////////////////
   // JSX

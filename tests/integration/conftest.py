@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import os
 import shutil
+import sys
 import typing as t
 import uuid
 import zipfile
@@ -24,17 +24,21 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
+from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
 from antarest.main import fastapi_app
 from antarest.service_creator import Services
+from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
+from tests.integration.utils import wait_for
 
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 
-RUN_ON_WINDOWS = os.name == "nt"
+RUN_ON_WINDOWS = sys.platform == "win32"
 
 
 @pytest.fixture(scope="session")
@@ -108,6 +112,16 @@ def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, S
         )
 
     app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
+
+    def is_study_scanned():
+        with db():
+            studies = services.study.get_studies_information(
+                StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))
+            )
+            return len(studies) == 1
+
+    wait_for(is_study_scanned, timeout=10, sleep_time=0.01)
+
     yield app, services
     services.watcher.stop()
 

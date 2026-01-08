@@ -16,6 +16,7 @@ import http
 import io
 import logging
 import os
+import shutil
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
@@ -105,16 +106,17 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
+    MatrixFrequency,
     MatrixIndex,
     RawStudy,
     Study,
     StudyContentStatus,
-    StudyDownloadLevelDTO,
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
@@ -134,11 +136,13 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
+    create_new_empty_study,
     get_start_date,
     is_managed,
     is_study_folder,
@@ -230,12 +234,14 @@ class ThermalClusterTimeSeriesGeneratorTask:
         storage_service: StudyStorageService,
         event_bus: IEventBus,
         study_interface_supplier: Callable[[Study], StudyInterface],
+        thermal_outage_details: bool,
     ):
         self._study_id = _study_id
         self.repository = repository
         self.storage_service = storage_service
         self.event_bus = event_bus
         self.study_interface_supplier = study_interface_supplier
+        self.thermal_outage_details = thermal_outage_details
 
     def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
@@ -244,7 +250,11 @@ class ThermalClusterTimeSeriesGeneratorTask:
         with db():
             study = self.repository.one(self._study_id)
             study_version = StudyVersion.parse(study.version)
-            command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=study_version)
+            command = GenerateThermalClusterTimeSeries(
+                command_context=command_context,
+                study_version=study_version,
+                thermal_outage_details=self.thermal_outage_details,
+            )
             self.study_interface_supplier(study).add_commands([command], listener)
 
             if isinstance(study, VariantStudy):
@@ -309,21 +319,16 @@ class StudyUpgraderTask:
         target_version = self._target_version
         is_study_denormalized = False
         with db():
-            # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
             study_to_upgrade = self.repository.one(study_id)
             try:
                 # sourcery skip: extract-method
-                if isinstance(study_to_upgrade, VariantStudy):
-                    self.storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
-                else:
-                    study_path = Path(study_to_upgrade.path)
-                    study_upgrader = StudyUpgrader(study_path, target_version)
-                    if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
-                        # We have to denormalize the study because the upgrade impacts study matrices
-                        file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
-                        file_study.tree.denormalize()
-                        is_study_denormalized = True
-                    study_upgrader.upgrade()
+                study_path = Path(study_to_upgrade.path)
+                study_upgrader = StudyUpgrader(study_path, target_version)
+                if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
+                    # We have to denormalize the study because the upgrade impacts study matrices
+                    self.storage_service.raw_study_service.denormalize_study(study_to_upgrade)
+                    is_study_denormalized = True
+                study_upgrader.upgrade()
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
                 study_to_upgrade.version = f"{target_version:2d}"
                 self.repository.save(study_to_upgrade)
@@ -336,8 +341,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
-                    file_study.tree.normalize()
+                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -404,7 +408,10 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.get_files()).read_only()
+        command_context = self._variant_study_service.command_factory.command_context
+        return FileStudyTreeDao(
+            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+        ).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
@@ -474,7 +481,10 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.get_files()).read_only()
+        command_context = self._variant_service.command_factory.command_context
+        return FileStudyTreeDao(
+            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+        ).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
@@ -963,15 +973,15 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
         output_id = None
-        level = StudyDownloadLevelDTO.HOURLY
+        frequency = MatrixFrequency.HOURLY
         if path:
             path_components = path.strip().strip("/").split("/")
             if len(path_components) > 2 and path_components[0] == "output":
                 output_id = path_components[1]
             data_node = file_study.tree.get_node(path_components)
             if isinstance(data_node, OutputSeriesMatrix) or isinstance(data_node, InputSeriesMatrix):
-                level = StudyDownloadLevelDTO(data_node.freq)
-        return get_start_date(file_study, output_id, level)
+                frequency = data_node.freq
+        return get_start_date(file_study, output_id, frequency)
 
     def remove_duplicates(self) -> None:
         duplicates = self.repository.list_duplicates()
@@ -1194,7 +1204,7 @@ class StudyService:
             study.groups = groups
 
             self._save_study(study)
-            self.normalize_study(study)
+            self.storage_service.raw_study_service.normalize_study(study)
 
             # Copying all jobs associated with the study
             jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
@@ -1422,7 +1432,7 @@ class StudyService:
         study.updated_at = current_time()
 
         self._save_study(study)
-        self.normalize_study(study)
+        self.storage_service.raw_study_service.normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -2152,7 +2162,7 @@ class StudyService:
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
 
-    def generate_timeseries(self, study: Study) -> str:
+    def generate_timeseries(self, study: Study, outage_details: bool) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
@@ -2170,6 +2180,7 @@ class StudyService:
             storage_service=self.storage_service,
             event_bus=self.event_bus,
             study_interface_supplier=self.get_study_interface,
+            thermal_outage_details=outage_details,
         )
 
         return self.task_service.add_task(
@@ -2281,8 +2292,9 @@ class StudyService:
         study = self.get_study(study_id)
         study_interface = self.get_study_interface(study)
 
-        if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            if matrix_path.parts[-1] == "allocation":
+        url = matrix_path.parts
+        if url in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
+            if url[-1] == "allocation":
                 hydro_matrix: HydroCorrelationMatrix | HydroAllocationMatrix = (
                     self.allocation_manager.get_allocation_matrix(study_interface)
                 )
@@ -2290,20 +2302,15 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        # Gets the data and checks given path existence
-        matrix_obj = self.get(study_id, path, depth=3, formatted=True)
-
         # Checks that the provided path refers to a matrix
-        url = path.split("/")
-        parent_dir = self.get(study_id, "/".join(url[:-1]), depth=3, formatted=True)
-        target_path = parent_dir[url[-1]]
-        if not isinstance(target_path, str) or not target_path.startswith(("matrix://", "matrixfile://")):
+        node = self.get_file_study(study).tree.get_node(list(url))
+        if isinstance(node, MatrixNode):
+            df_matrix = node.parse_as_dataframe()
+        elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
+            df_matrix = pd.DataFrame(**node.load())  # type: ignore
+        else:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
-        # Builds the dataframe
-        if not matrix_obj["data"]:
-            return pd.DataFrame()
-        df_matrix = pd.DataFrame(**matrix_obj)
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
             time_column = pd.date_range(
@@ -2420,14 +2427,7 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
-        self.normalize_study(study)
-
-    def normalize_study(self, study: Study) -> None:
-        """
-        Method used to normalize a study.
-        It will put every matrix in the study in the matrix-store.
-        """
-        self.storage_service.get_storage(study).get_raw(study).tree.normalize()
+        self.storage_service.raw_study_service.normalize_study(study)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
@@ -2574,3 +2574,30 @@ class StudyService:
         ##########################
 
         return StudyDataDTO.model_validate(obj)
+
+    def write_study_as_file_study(
+        self, study_id: str, path: Path, with_outputs: bool = False, normalize_matrices: bool = False
+    ) -> None:
+        study = self.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        source_dao = self.get_study_interface(study).get_study_dao()
+
+        # Create empty study on the filesystem
+        study_version = StudyVersion.parse(study.version)
+        assert study.name is not None
+        create_new_empty_study(study_version, path, study.name, study.author or "Unknown")
+
+        # Create the FileStudyDAO
+        file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(
+            path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
+        )
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+        # Write the given study input in the filesystem
+        converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
+        converter.convert_study_inputs()
+
+        # Copy the `output` folder if asked
+        output_src_path = Path(study.path) / "output"
+        if with_outputs and output_src_path.exists():
+            shutil.copytree(output_src_path, path / "output", dirs_exist_ok=True)

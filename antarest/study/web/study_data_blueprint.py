@@ -708,20 +708,22 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         table_type: TableModeType,
         data: TableDataDTO = Body(
             ...,
-            example={
-                "de / nuclear_cl1": {
-                    "enabled": True,
-                    "group": "Nuclear",
-                    "unitCount": 17,
-                    "nominalCapacity": 123,
-                },
-                "de / gas_cl1": {
-                    "enabled": True,
-                    "group": "Gas",
-                    "unitCount": 15,
-                    "nominalCapacity": 456,
-                },
-            },
+            examples=[
+                {
+                    "de / nuclear_cl1": {
+                        "enabled": True,
+                        "group": "Nuclear",
+                        "unitCount": 17,
+                        "nominalCapacity": 123,
+                    },
+                    "de / gas_cl1": {
+                        "enabled": True,
+                        "group": "Gas",
+                        "unitCount": 15,
+                        "nominalCapacity": 456,
+                    },
+                }
+            ],
         ),
     ) -> TableDataDTO:
         """
@@ -1083,12 +1085,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         data: HydroAllocation = Body(
             ...,
-            example=HydroAllocation(
-                allocation=[
-                    HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
-                    HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
-                ]
-            ),
+            examples=[
+                HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
+                        HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
+                    ]
+                )
+            ],
         ),
     ) -> HydroAllocation:
         """
@@ -1152,12 +1156,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         data: HydroCorrelation = Body(
             ...,
-            example=HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea.model_validate({"areaId": "east", "coefficient": 80}),
-                    HydroCorrelationArea.model_validate({"areaId": "north", "coefficient": 20}),
-                ]
-            ),
+            examples=[
+                HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea.model_validate({"areaId": "east", "coefficient": 80}),
+                        HydroCorrelationArea.model_validate({"areaId": "north", "coefficient": 20}),
+                    ]
+                )
+            ],
         ),
     ) -> HydroCorrelation:
         """
@@ -1199,16 +1205,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/timeseries/generate",
         summary="Generate timeseries",
     )
-    def generate_timeseries(uuid: str) -> str:
+    def generate_timeseries(uuid: str, outage_details: bool = Query(default=False)) -> str:
         """
         Generates time-series for thermal clusters and put them inside input data.
 
         Args:
         - `uuid`: The UUID of the study.
+        - `outage_details`: Whether to generate thermal outage details.
         """
         logger.info(f"Generating timeseries for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        return study_service.generate_timeseries(study)
+        return study_service.generate_timeseries(study, outage_details)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/properties/form",

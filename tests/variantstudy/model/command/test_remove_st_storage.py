@@ -175,14 +175,13 @@ class TestRemoveSTStorage:
         assert "sts" in study.config.get_st_storage_ids("fr")
         assert "constraint" in study.config.get_sts_constraint_ids("fr", "sts")
 
-        study_dao = FileStudyTreeDao(study)
+        study_dao = FileStudyTreeDao(study, command_context.generator_matrix_constants, command_context.blob_service)
         assert study_dao.get_st_storage("fr", "sts") is not None
 
         cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts", study_version=version)
         output = cmd.apply(study)
         assert output.status
 
-        study_dao = FileStudyTreeDao(study)
         with pytest.raises(STStorageNotFound):
             study_dao.get_st_storage("fr", "sts")
 

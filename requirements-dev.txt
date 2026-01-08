@@ -1,5 +1,6 @@
 -r requirements-test.txt
 -r requirements-desktop.txt
+celery-types~=0.23.0
 ruff~=0.9.6
 mypy~=1.15.0
 pre-commit~=4.1.0

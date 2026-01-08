@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, cast
+from unittest.mock import Mock
 
 import numpy as np
 from numpy import typing as npt
@@ -25,7 +26,9 @@ from typing_extensions import override
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.model import RawStudy, Study
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest_instances import create_admin_user
 
@@ -220,3 +223,10 @@ def create_variant_study(
         version=version,
         **kwargs,
     )
+
+
+def file_study_interface(file_study: FileStudy) -> FileStudyInterface:
+    """
+    Utils function to avoid declaring Mocks everywhere inside the tests
+    """
+    return FileStudyInterface(file_study, Mock(), Mock())

@@ -17,7 +17,6 @@ import os
 import re
 import shutil
 import tempfile
-import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Sequence, cast
@@ -53,13 +52,13 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_9_0,
+    MatrixFrequency,
     MatrixIndex,
     Study,
-    StudyDownloadLevelDTO,
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
@@ -211,12 +210,14 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
     )
 
 
-def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
+def create_new_empty_study(
+    version: StudyVersion, path_study: Path, name: str = "To be replaced", author: str = "Unknown"
+) -> None:
     if version not in STUDY_REFERENCE_TEMPLATES:
         msg = f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
         raise UnsupportedStudyVersion(msg)
 
-    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
+    app = CreateApp(study_dir=path_study, caption=name, version=version, author=author)
     app()
 
 
@@ -291,7 +292,7 @@ DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
 def get_start_date(
     file_study: FileStudy,
     output_id: Optional[str] = None,
-    level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY,
+    level: MatrixFrequency = MatrixFrequency.HOURLY,
 ) -> MatrixIndex:
     """
     Retrieve the index (start date and step count) for output or input matrices
@@ -324,17 +325,17 @@ def get_start_date(
     start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
 
     def _get_steps(
-        daily_steps: int, temporality: StudyDownloadLevelDTO, begin_date: datetime, is_output: Optional[str] = None
+        daily_steps: int, temporality: MatrixFrequency, begin_date: datetime, is_output: Optional[str] = None
     ) -> int:
         temporality_mapping = {
-            StudyDownloadLevelDTO.DAILY: daily_steps,
-            StudyDownloadLevelDTO.HOURLY: daily_steps * 24,
-            StudyDownloadLevelDTO.ANNUAL: 1,
-            StudyDownloadLevelDTO.WEEKLY: math.ceil(daily_steps / 7),
-            StudyDownloadLevelDTO.MONTHLY: 12,
+            MatrixFrequency.DAILY: daily_steps,
+            MatrixFrequency.HOURLY: daily_steps * 24,
+            MatrixFrequency.ANNUAL: 1,
+            MatrixFrequency.WEEKLY: math.ceil(daily_steps / 7),
+            MatrixFrequency.MONTHLY: 12,
         }
 
-        if temporality == StudyDownloadLevelDTO.MONTHLY and is_output:
+        if temporality == MatrixFrequency.MONTHLY and is_output:
             end_date = begin_date + timedelta(days=daily_steps)
             same_year = end_date.year == begin_date.year
             return 1 + end_date.month - begin_date.month if same_year else (13 - begin_date.month) + end_date.month
@@ -358,57 +359,6 @@ def get_start_date(
         first_week_size=first_week_size,
         level=level,
     )
-
-
-def export_study_flat(
-    study_dir: Path,
-    dest: Path,
-    study_factory: StudyFactory,
-    outputs: bool = True,
-    output_list_filter: Optional[List[str]] = None,
-    denormalize: bool = True,
-    output_src_path: Optional[Path] = None,
-    is_study_managed: bool = True,
-) -> None:
-    start_time = time.time()
-
-    output_src_path = output_src_path or study_dir / "output"
-    output_dest_path = dest / "output"
-
-    def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
-        return ["output"] if str(directory) == str(study_dir) else []
-
-    shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
-
-    if outputs and output_src_path.exists():
-        if output_list_filter is None:
-            # Retrieve all directories or ZIP files without duplicates
-            output_list_filter = list(
-                {f.with_suffix("").name for f in output_src_path.iterdir() if f.is_dir() or f.suffix == ".zip"}
-            )
-        # Copy each folder or uncompress each ZIP file to the destination dir.
-        shutil.rmtree(output_dest_path, ignore_errors=True)
-        output_dest_path.mkdir()
-        for output in output_list_filter:
-            zip_path = output_src_path / f"{output}.zip"
-            if zip_path.exists():
-                with ZipFile(zip_path) as zf:
-                    zf.extractall(output_dest_path / output)
-            else:
-                shutil.copytree(
-                    src=output_src_path / output,
-                    dst=output_dest_path / output,
-                )
-
-    stop_time = time.time()
-    duration = "{:.3f}".format(stop_time - start_time)
-    with_outputs = "with outputs" if outputs else "without outputs"
-    logger.info(f"Study '{study_dir}' exported ({with_outputs}, flat mode) in {duration}s")
-    study = study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
-    if denormalize:
-        study.tree.denormalize()
-        duration = "{:.3f}".format(time.time() - stop_time)
-        logger.info(f"Study '{study_dir}' denormalized in {duration}s")
 
 
 def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:

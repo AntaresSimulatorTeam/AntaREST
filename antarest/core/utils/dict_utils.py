@@ -18,6 +18,10 @@ W = TypeVar("W")
 X = TypeVar("X")
 
 
+def remove_nones(data: dict[T, V]) -> dict[T, V]:
+    return dict(filter(lambda x: x[1] is not None, data.items()))
+
+
 def iter_nested(data: dict[T, dict[U, V]]) -> Iterable[tuple[T, U, V]]:
     """
     Allows to flatten iterations on a nested dictionary.

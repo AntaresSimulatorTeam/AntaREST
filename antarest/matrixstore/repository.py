@@ -22,6 +22,7 @@ import pandas as pd
 from filelock import FileLock
 from pandas import util
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
@@ -126,11 +127,24 @@ class MatrixRepository:
         self.session.commit()
         return merged_matrix
 
+    def save_batch(self, matrices: list[Matrix]) -> None:
+        try:
+            self.session.add_all(matrices)
+            self.session.commit()
+        except IntegrityError:
+            # Can happen if one the matrices is already inside DB.
+            self.session.rollback()
+            for matrix in matrices:
+                self.save(matrix)
+
     def get(self, matrix_hash: str) -> Optional[Matrix]:
         return self.session.get(Matrix, matrix_hash)
 
     def get_matrices(self) -> list[Matrix]:
         return list(self.session.scalars(select(Matrix)))
+
+    def get_batch(self, matrix_hashes: list[str]) -> list[Matrix]:
+        return list(self.session.scalars(select(Matrix).filter(Matrix.id.in_(matrix_hashes))))
 
     def exists(self, matrix_hash: str) -> bool:
         result = self.session.get(Matrix, matrix_hash)
@@ -307,7 +321,7 @@ class MatrixContentRepository:
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
             # However, this deletion is possible when the matrix is no longer in use.
-            # This is done in `MatrixGarbageCollector` when matrix files are deleted.
+            # This is done by the matrix garbage collection Celery task when matrix files are deleted.
 
             return MatrixCreationResult(hash=matrix_hash, new=True)
 

@@ -13,17 +13,22 @@
 
 import pytest
 
-from antarest.blobstore.service import IBlobService
 from antarest.core.exceptions import ChildNotFoundError, STStorageNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.st_storage_management import STStorageManager
-from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup, STStorageUpdate
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.business.model.sts_model import (
+    STStorageAdditionalConstraintCreation,
+    STStorageCreation,
+    STStorageGroup,
+    STStorageUpdate,
+)
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 EXPECTED_STORAGES = {
     "de": [
@@ -79,15 +84,6 @@ EXPECTED_STORAGES = {
         },
     ],
 }
-
-
-@pytest.fixture
-def command_context(matrix_service: ISimpleMatrixService, blob_service: IBlobService) -> CommandContext:
-    matrix_constants = GeneratorMatrixConstants(matrix_service)
-    matrix_constants.init_constant_matrices()
-    return CommandContext(
-        generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
-    )
 
 
 @pytest.fixture
@@ -153,7 +149,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
 def study_interface(
     matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: CommandContext
 ) -> StudyInterface:
-    study_interface = FileStudyInterface(empty_study_930)
+    study_interface = file_study_interface(empty_study_930)
     _set_up_study(study_interface, command_context)
     return study_interface
 
@@ -244,3 +240,64 @@ class TestSTStorageManager:
         assert not st_storage_output.initial_level_optim
         assert st_storage_output.injection_nominal_capacity == 2000.0
         assert st_storage_output.efficiency == 0.94  # Asserts this field wasn't modified as we didn't ask to
+
+
+def test_delete_storages_from_sc_builder(manager: STStorageManager, study_interface: StudyInterface) -> None:
+    # Create 3 short-term storage additional constraints
+    c1 = STStorageAdditionalConstraintCreation(name="c1")
+    c2 = STStorageAdditionalConstraintCreation(name="c2")
+    c3 = STStorageAdditionalConstraintCreation(name="c3")
+    manager.create_additional_constraints(study_interface, "fr", "storage1", [c1])
+    manager.create_additional_constraints(study_interface, "fr", "storage2", [c2])
+    manager.create_additional_constraints(study_interface, "de", "storagede", [c3])
+    # Fill the scenario-builder
+    file_study = study_interface.get_files()
+    scenario_builder = {
+        "Default Ruleset": {
+            # Short-term storage part
+            "sts,fr,1,storage1": 4,
+            "sts,fr,1,storage2": 3,
+            "sts,de,1,storagede": 2,
+            # Additional constraints part
+            "sta,fr,1,storage1,c1": 11,
+            "sta,fr,1,storage2,c2": 12,
+            "sta,de,1,storagede,c3": 13,
+        }
+    }
+    file_study.tree.save(scenario_builder, ["settings", "scenariobuilder"])
+
+    # Remove the additional constraint `c3`. Its line only should disappear
+    manager.delete_additional_constraints(study_interface, "de", "storagede", ["c3"])
+    sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
+    assert sc_builder == {
+        "sts,fr,1,storage1": 4,
+        "sts,fr,1,storage2": 3,
+        "sts,de,1,storagede": 2,
+        "sta,fr,1,storage1,c1": 11,
+        "sta,fr,1,storage2,c2": 12,
+    }
+
+    # Remove the sts `storagede`. Its line only should disappear
+    manager.delete_storages(study_interface, "de", ["storagede"])
+    sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
+    assert sc_builder == {
+        "sts,fr,1,storage1": 4,
+        "sts,fr,1,storage2": 3,
+        "sta,fr,1,storage1,c1": 11,
+        "sta,fr,1,storage2,c2": 12,
+    }
+
+    # Remove the sts `storage1`. 2 lines should disappear, his one and the one concerning its constraint
+    manager.delete_storages(study_interface, "fr", ["storage1"])
+    sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
+    assert sc_builder == {
+        "sts,fr,1,storage2": 3,
+        "sta,fr,1,storage2,c2": 12,
+    }
+
+    # Remove the area `fr`. 2 lines should disappear as they concern objects inside area `fr`.
+    cmd = RemoveArea(command_context=manager._command_context, id="fr", study_version=file_study.config.version)
+    output = cmd.apply(file_study)
+    assert output.status
+    sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
+    assert sc_builder == {}

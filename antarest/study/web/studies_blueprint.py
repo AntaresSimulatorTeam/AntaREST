@@ -16,6 +16,7 @@ from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
+from antares.study.version import StudyVersion
 from fastapi import APIRouter, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
@@ -33,7 +34,6 @@ from antarest.study.model import (
     MatrixIndex,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
-    StudyVersionStr,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
@@ -82,8 +82,8 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         managed: Optional[bool] = Query(None, description="Filter studies based on their management status."),
         archived: Optional[bool] = Query(None, description="Filter studies based on their archive status."),
         variant: Optional[bool] = Query(None, description="Filter studies based on their variant status."),
-        versions: str = Query("", description="Comma-separated list of versions for filtering.", regex=QUERY_REGEX),
-        users: str = Query("", description="Comma-separated list of user IDs for filtering.", regex=QUERY_REGEX),
+        versions: str = Query("", description="Comma-separated list of versions for filtering.", pattern=QUERY_REGEX),
+        users: str = Query("", description="Comma-separated list of user IDs for filtering.", pattern=QUERY_REGEX),
         groups: str = Query("", description="Comma-separated list of group IDs for filtering."),
         tags: str = Query("", description="Comma-separated list of tags for filtering."),
         study_ids: str = Query("", description="Comma-separated list of study IDs for filtering.", alias="studyIds"),
@@ -163,8 +163,8 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         managed: Optional[bool] = Query(None, description="Management status filter."),
         archived: Optional[bool] = Query(None, description="Archive status filter."),
         variant: Optional[bool] = Query(None, description="Variant status filter."),
-        versions: str = Query("", description="Comma-separated versions filter.", regex=QUERY_REGEX),
-        users: str = Query("", description="Comma-separated user IDs filter.", regex=QUERY_REGEX),
+        versions: str = Query("", description="Comma-separated versions filter.", pattern=QUERY_REGEX),
+        users: str = Query("", description="Comma-separated user IDs filter.", pattern=QUERY_REGEX),
         groups: str = Query("", description="Comma-separated group IDs filter."),
         tags: str = Query("", description="Comma-separated tags filter."),
         study_ids: str = Query("", description="Comma-separated study IDs filter.", alias="studyIds"),
@@ -344,12 +344,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def create_study(
         name: str,
-        version: StudyVersionStr | None = None,
+        version: str | None = None,
         groups: str = "",
         directory: str = Query(
             "", description="Directory path where the study will be created (e.g., 'project/subfolder')"
         ),
     ) -> str:
+        study_version = StudyVersion.parse(version) if version else None
         logger.info(f"Creating new study '{name}'")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
@@ -357,7 +358,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         directory_path_sanitized = validate_folder_path(directory) if directory else ""
 
-        uuid = study_service.create_study(name_sanitized, version, group_ids, directory=directory_path_sanitized)
+        uuid = study_service.create_study(name_sanitized, study_version, group_ids, directory=directory_path_sanitized)
 
         return uuid
 

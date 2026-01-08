@@ -65,9 +65,9 @@ from antarest.launcher.service import (
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo, Study, StudyMetadataDTO
+from antarest.study.output.output_service import OutputService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService

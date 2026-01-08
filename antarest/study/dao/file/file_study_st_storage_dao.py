@@ -232,6 +232,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         for path in paths:
             study_data.tree.delete(path)
 
+        self._remove_st_storage_from_scenario_builder(area_id, storage_id)
+
         # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].st_storages.remove(storage)
         if study_data.config.version >= STUDY_VERSION_9_2:
@@ -287,6 +289,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             ]
             for path in paths:
                 study_data.tree.delete(path)
+
+        self._remove_st_storage_constraints_from_scenario_builder(area_id, storage_id, set(constraints))
 
         # Deleting the constraints in the configuration must be done AFTER deleting the files and folders.
         existing_ids = {
@@ -363,3 +367,29 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             if constraint.id in existing_ids:
                 area.st_storages_additional_constraints[storage_id].remove(existing_ids[constraint.id])
             area.st_storages_additional_constraints[storage_id].append(constraint)
+
+    def _remove_st_storage_from_scenario_builder(self, area_id: str, storage_id: str) -> None:
+        study_data = self.get_file_study()
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                symbol, *parts = key.split(",")
+                if symbol in {"sts", "sta"} and parts[0] == area_id and parts[2] == storage_id:
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+    def _remove_st_storage_constraints_from_scenario_builder(
+        self, area_id: str, storage_id: str, constraint_ids: set[str]
+    ) -> None:
+        study_data = self.get_file_study()
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                symbol, *parts = key.split(",")
+                if symbol == "sta" and parts[0] == area_id and parts[2] == storage_id and parts[3] in constraint_ids:
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])

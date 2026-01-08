@@ -25,7 +25,6 @@ from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfigurationUpdate,
     TimeSeriesType,
 )
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigManager,
 )
@@ -33,6 +32,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 @pytest.fixture
@@ -50,7 +50,7 @@ def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext
     # Checks default value
     assert file_study_820.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"]) == 1
 
-    study = FileStudyInterface(file_study_820)
+    study = file_study_interface(file_study_820)
 
     # Prepares the test
     config_manager = TimeSeriesConfigManager(command_context)
@@ -79,7 +79,7 @@ def test_missing_value(file_study_820: FileStudy, command_context: CommandContex
 
     # The reading method should still succeed and return the right value
     config_manager = TimeSeriesConfigManager(command_context)
-    study = FileStudyInterface(file_study_820)
+    study = file_study_interface(file_study_820)
 
     assert config_manager.get_timeseries_configuration(study) == TimeSeriesConfiguration(
         thermal=TimeSeriesType(number=1)

@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 import logging
+import warnings
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
+from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -19,18 +20,23 @@ import polars as pl
 from polars.exceptions import ComputeError
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.study.business.output.utils import (
+from antarest.study.model import MatrixFrequency
+from antarest.study.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
+    concatenate_dataframe_multi_indexed_columns,
     get_start_column,
     normalize_df_column_names,
     parse_headers,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+
+# We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
+# But it logs a FutureWarning every time so we silence it here.
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
 # noinspection SpellCheckingInspection
 AREA_COL = "area"
@@ -47,7 +53,6 @@ AREA_OR_LINK_INDEX__IND, AREA_OR_LINK_INDEX__ALL = 2, 1
 """Indexes in path parts starting from the output root `economy//mc-(ind/all)` to determine the area/link name."""
 CLUSTER_ID_COMPONENT = 0
 ACTUAL_COLUMN_COMPONENT = 1
-DUMMY_COMPONENT = 2
 
 logger = logging.getLogger(__name__)
 
@@ -68,13 +73,6 @@ def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc
         raise MCRootNotHandled(f"Unknown Monte Carlo root: {mc_root}")
 
     return new_column_order
-
-
-def _infer_time_id(df: pd.DataFrame, is_details: bool) -> List[int]:
-    if is_details:
-        return df[TIME_ID_COL].tolist()
-    else:
-        return list(range(1, len(df) + 1))
 
 
 def _filtered_files_listing(
@@ -98,6 +96,7 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
+        transform_columns_headers: bool,  # False when used by the Imagrid `/download` endpoint.
         mc_years: Optional[Sequence[int]] = None,
     ):
         self.output_path = output_path
@@ -120,6 +119,7 @@ class AggregatorManager:
             else MCRoot.MC_ALL
         )
         self._output_first_column = get_start_column(self.frequency)
+        self.transform_columns_headers = transform_columns_headers
 
     def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
         content = file_path.read_text(encoding="utf-8")
@@ -214,16 +214,15 @@ class AggregatorManager:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
+            df_columns = [col[0] for col in df.columns] if not self.transform_columns_headers else df.columns.to_list()
             if is_details:
                 filtered_columns = [CLUSTER_ID_COL, TIME_ID_COL] + [
-                    c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
+                    c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)
                 ]
             elif self.mc_root == MCRoot.MC_ALL:
-                filtered_columns = [
-                    c for c in df.columns.tolist() if any(regex in c.lower() for regex in lower_case_columns)
-                ]
+                filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
             else:
-                filtered_columns = [c for c in df.columns.tolist() if c.lower() in lower_case_columns]
+                filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
             df = df.loc[:, filtered_columns]
         return df
 
@@ -243,34 +242,27 @@ class AggregatorManager:
         Returns:
             the DataFrame with the correct columns and values
         """
-
-        df = self._parse_output_file(file_path, normalize_column_names=not is_details)
-        if not is_details:
+        normalize_cols = self.transform_columns_headers and not is_details
+        df = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
+        if not self.transform_columns_headers or not is_details:
             return df
 
-        # number of rows in the data frame
-        df_len = len(df)
-        cluster_dummy_product_cols = sorted(set([(x[CLUSTER_ID_COMPONENT], x[DUMMY_COMPONENT]) for x in df.columns]))
+        nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
         # actual columns without the cluster id (NODU, production etc.)
-        actual_cols = sorted(set(df.columns.map(lambda x: x[ACTUAL_COLUMN_COMPONENT])))
+        actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())
 
-        # using a dictionary to build the new data frame with the base columns (NO2, production etc.)
-        # and the cluster id and time id
-        new_obj: Dict[str, Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
+        # First perform the stack / unstack operation to have the final shape
+        final_df = df.stack(level=[CLUSTER_ID_COMPONENT, ACTUAL_COLUMN_COMPONENT]).unstack()
+        assert isinstance(final_df, pd.DataFrame)
 
-        # loop over the cluster id to extract the values of the actual columns
-        for cluster_id, dummy_component in cluster_dummy_product_cols:
-            for actual_col in actual_cols:
-                col_values = df[(cluster_id, actual_col, dummy_component)].tolist()
-                new_obj[actual_col] += col_values
-            new_obj[CLUSTER_ID_COL] += [cluster_id for _ in range(df_len)]
-            new_obj[TIME_ID_COL] += list(range(1, df_len + 1))
+        # Reset the index, drop the first column and rename the columns accordingly
+        final_df.reset_index(inplace=True)
+        final_df.drop(final_df.columns[0], axis=1, inplace=True)
+        final_df.columns = pd.Index([CLUSTER_ID_COL] + actual_cols, dtype="str")
 
-        # reorganize the data frame
-        columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols)
-        final_df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
-
-        return final_df
+        # Add the TIME_ID column and reindex to have the columns in the right order
+        final_df[TIME_ID_COL] = (final_df.index // nb_clusters) + 1
+        return final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))
 
     def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
@@ -290,6 +282,9 @@ class AggregatorManager:
             # columns filtering
             df = self.columns_filtering(df, is_details)
 
+            if not self.transform_columns_headers:
+                concatenate_dataframe_multi_indexed_columns(df)
+
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(df.columns.tolist(), column_name, is_details, self.mc_root)
 
@@ -304,10 +299,13 @@ class AggregatorManager:
                 relative_path_parts = file_path.relative_to(self.mc_all_path).parts
                 df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
 
-            # add a column for the time id
-            df[TIME_ID_COL] = _infer_time_id(df, is_details)
-            # Reorganize the columns
-            df = df.reindex(columns=pd.Index(new_column_order))
+            if self.transform_columns_headers:
+                # add a column for the time id
+                if not is_details:
+                    df[TIME_ID_COL] = range(1, len(df) + 1)
+
+                # Reorganize the columns
+                df = df.reindex(columns=pd.Index(new_column_order))
 
             yield df
 

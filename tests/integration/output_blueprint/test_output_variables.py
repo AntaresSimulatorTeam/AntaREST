@@ -12,13 +12,14 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.storage.output_model import OutputVariables, OutputVariablesViewsModel
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.model import MatrixFrequency
+from antarest.study.output.output_model import OutputVariables, OutputVariablesViewsModel
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 from tests.integration.utils import wait_task_completion
 
@@ -257,3 +258,59 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         "description": "Could not retrieve variables view for output '20201014-1425eco-goodbye' : The variable 'H. LEV' does not exist for area 'FAKE_AREA' and type 'area'.",
         "exception": "OutputVariablesViewError",
     }
+
+
+def test_export_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    output_id = "20201014-1425eco-goodbye"
+    url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
+    export_url = f"{url}/export"
+
+    # Areas
+    query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
+
+    # Export before materializing should return an error
+    res = client.get(export_url, params=query_params)
+    assert res.json() == {"status": "NOT_FOUND", "task_id": None}
+    assert res.status_code == 404
+
+    # Materialize the data
+    task_id = client.post(f"{url}/materialize", params=query_params).json()
+    # Wait for materializing to end
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+
+    # Default format is CSV
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == [",1,2", "2018-01-07,46452000,46452000", "2018-01-14,46452000,46452000"]
+
+    # Without index
+    query_params["index"] = "false"
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == ["1,2", "46452000,46452000", "46452000,46452000"]
+
+    # Without headers
+    query_params["header"] = "false"
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == ["46452000,46452000", "46452000,46452000"]
+
+    # Change format to TSV
+    query_params["export_format"] = "tsv"
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == ["46452000\t46452000", "46452000\t46452000"]
+
+    # Use Csv semicolon
+    query_params["export_format"] = "csv (semicolon)"
+    res = client.get(export_url, params=query_params)
+    content = res.content.decode("utf-8").splitlines()
+    assert content == ["46452000;46452000", "46452000;46452000"]
+
+    # Format to Excel
+    query_params["export_format"] = "xlsx"
+    res = client.get(export_url, params=query_params)
+    df = pd.read_excel(res.content, header=None)
+    assert df.equals(pd.DataFrame([[46452000, 46452000], [46452000, 46452000]]))

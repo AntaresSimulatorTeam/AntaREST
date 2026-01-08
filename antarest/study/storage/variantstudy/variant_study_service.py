@@ -46,12 +46,11 @@ from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.model import (
     RawStudy,
     Study,
     StudyMetadataDTO,
-    StudySimResultDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
@@ -61,7 +60,6 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService, copy_output_folders
 from antarest.study.storage.utils import (
     assert_permission,
-    export_study_flat,
     is_managed,
     remove_from_cache,
     update_antares_info,
@@ -80,7 +78,6 @@ from antarest.study.storage.variantstudy.model.model import (
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
-from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -99,18 +96,16 @@ class VariantStudyService(AbstractStorageService):
         repository: VariantStudyRepository,
         event_bus: IEventBus,
         config: Config,
+        matrix_service: ISimpleMatrixService,
     ):
-        super().__init__(
-            config=config,
-            study_factory=study_factory,
-            cache=cache,
-        )
+        super().__init__(config=config, cache=cache)
         self.task_service = task_service
         self.raw_study_service = raw_study_service
         self.repository = repository
         self.event_bus = event_bus
         self.command_factory = command_factory
-        self.generator = VariantCommandGenerator(self.study_factory)
+        self.study_factory = study_factory
+        self._matrix_service = matrix_service
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
@@ -356,9 +351,8 @@ class VariantStudyService(AbstractStorageService):
             )
             or []
         }
-        return cast(MatrixService, self.command_factory.command_context.matrix_service).download_matrix_list(
-            list(matrices), f"{study.name}_{study.id}_matrices"
-        )
+        matrix_service = cast(MatrixService, self._matrix_service)
+        return matrix_service.download_matrix_list(list(matrices), f"{study.name}_{study.id}_matrices")
 
     def _get_variant_study(
         self,
@@ -880,20 +874,6 @@ class VariantStudyService(AbstractStorageService):
         )
 
     @override
-    def get_study_sim_result(self, study: Study) -> List[StudySimResultDTO]:
-        """
-        Get global result information
-        Args:
-            study: study
-        Returns: study output data
-        """
-        if isinstance(study, VariantStudy):
-            self._safe_generation(study, timeout=600)
-        else:
-            raise TypeError(f"Expected {VariantStudy} but received {type(study)}")
-        return super().get_study_sim_result(study=study)
-
-    @override
     def delete(self, metadata: Study) -> None:
         """
         Delete study
@@ -905,20 +885,6 @@ class VariantStudyService(AbstractStorageService):
         if study_path.exists():
             shutil.rmtree(study_path)
             remove_from_cache(self.cache, metadata.id)
-
-    @override
-    def delete_output(self, metadata: Study, output_id: str) -> None:
-        """
-        Delete a simulation output
-        Args:
-            metadata: study
-            output_id: output simulation
-        Returns:
-        """
-        study_path = Path(metadata.path)
-        output_path = study_path / "output" / output_id
-        shutil.rmtree(output_path, ignore_errors=True)
-        remove_from_cache(self.cache, metadata.id)
 
     @override
     def get_study_path(self, metadata: Study) -> Path:
@@ -950,15 +916,8 @@ class VariantStudyService(AbstractStorageService):
 
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
         output_src_path = path_study / "output"
-        export_study_flat(
-            snapshot_path,
-            dst_path,
-            self.study_factory,
-            outputs,
-            output_list_filter,
-            denormalize,
-            output_src_path,
-            is_managed(metadata),
+        self.raw_study_service.export_study_to_flat_directory(
+            snapshot_path, dst_path, outputs, output_list_filter, denormalize, output_src_path, is_managed(metadata)
         )
 
     @override
@@ -1006,10 +965,6 @@ class VariantStudyService(AbstractStorageService):
             progress=None,
             custom_event_messages=None,
         )
-
-    @override
-    def get_output_path(self, study: Study, output_id: str) -> Path:
-        return Path(study.path) / "output" / output_id
 
 
 class SnapshotCleanerTask:
