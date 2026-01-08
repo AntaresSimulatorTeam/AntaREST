@@ -15,9 +15,9 @@ import pytest
 
 from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
 from antarest.study.business.playlist_management import PlaylistManager
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 @pytest.mark.parametrize(
@@ -80,5 +80,5 @@ def test_get_playlist(
 ) -> None:
     empty_study_880.tree.save(general_data_content, ["settings", "generaldata"])
     manager = PlaylistManager(command_context)
-    study = FileStudyInterface(empty_study_880)
+    study = file_study_interface(empty_study_880)
     assert manager.get_playlist(study) == expected_playlist

@@ -210,12 +210,14 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
     )
 
 
-def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
+def create_new_empty_study(
+    version: StudyVersion, path_study: Path, name: str = "To be replaced", author: str = "Unknown"
+) -> None:
     if version not in STUDY_REFERENCE_TEMPLATES:
         msg = f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
         raise UnsupportedStudyVersion(msg)
 
-    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
+    app = CreateApp(study_dir=path_study, caption=name, version=version, author=author)
     app()
 
 

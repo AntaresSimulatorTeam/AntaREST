@@ -19,7 +19,6 @@ from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
     get_thematic_trimming_fields_according_to_version,
 )
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.model import (
     STUDY_VERSION_7_0,
@@ -34,6 +33,7 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 @pytest.mark.parametrize(
@@ -158,7 +158,7 @@ def test_thematic_trimming_config(
         command_context=command_context,
     )
     empty_study_920.config.version = version
-    study = FileStudyInterface(empty_study_920)
+    study = file_study_interface(empty_study_920)
     study.file_study.tree.save(ini_content, ["settings", "generaldata"])
 
     # Initalize the expected fields to avoid writing them all inside the test

@@ -16,9 +16,9 @@ from antarest.study.business.model.config.optimization_config_model import (
     TransmissionCapacities,
 )
 from antarest.study.business.optimization_management import OptimizationManager
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 def test_missing_section(empty_study_880: FileStudy, command_context: CommandContext) -> None:
@@ -29,7 +29,7 @@ def test_missing_section(empty_study_880: FileStudy, command_context: CommandCon
     study.tree.save(general_data_content, ["settings", "generaldata"])
     # Ensures we're still able to read the data.
     manager = OptimizationManager(command_context)
-    params = manager.get_optimization_preferences(FileStudyInterface(study))
+    params = manager.get_optimization_preferences(file_study_interface(study))
     assert params == OptimizationPreferences()
 
 
@@ -41,5 +41,5 @@ def test_section_not_in_lowercase(empty_study_880: FileStudy, command_context: C
     study.tree.save(general_data_content, ["settings", "generaldata"])
     # Ensures we're still able to read the data.
     manager = OptimizationManager(command_context)
-    params = manager.get_optimization_preferences(FileStudyInterface(study))
+    params = manager.get_optimization_preferences(file_study_interface(study))
     assert params == OptimizationPreferences(transmission_capacities=TransmissionCapacities.LOCAL_VALUES)

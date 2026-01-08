@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -23,6 +23,10 @@ from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+
+if TYPE_CHECKING:
+    from antarest.blobstore.service import IBlobService
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class StudyInterface(ABC):
@@ -108,8 +112,15 @@ class FileStudyInterface(StudyInterface):
     Only used for test purposes, currently.
     """
 
-    def __init__(self, file_study: FileStudy):
+    def __init__(
+        self,
+        file_study: FileStudy,
+        generator_matrix_constants: "GeneratorMatrixConstants",
+        blob_service: "IBlobService",
+    ):
         self.file_study = file_study
+        self._generator_matrix_constants = generator_matrix_constants
+        self._blob_service = blob_service
 
     @override
     @property
@@ -138,4 +149,4 @@ class FileStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.file_study).read_only()
+        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service).read_only()

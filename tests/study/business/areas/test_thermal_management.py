@@ -28,11 +28,12 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterGroup,
     ThermalClusterUpdate,
 )
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 from tests.study.business.areas.assets import ASSETS_DIR
 
 
@@ -98,7 +99,7 @@ def manager(matrix_service: ISimpleMatrixService, blob_service: InMemoryBlobServ
 @pytest.fixture
 def study_interface(matrix_service: ISimpleMatrixService, study_path: Path) -> StudyInterface:
     file_study = create_file_study(matrix_service, study_id="my-study", path=study_path)
-    return FileStudyInterface(file_study)
+    return file_study_interface(file_study)
 
 
 class TestThermalManager:

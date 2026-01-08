@@ -22,12 +22,13 @@ from antarest.study.business.model.sts_model import (
     STStorageGroup,
     STStorageUpdate,
 )
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 EXPECTED_STORAGES = {
     "de": [
@@ -148,7 +149,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
 def study_interface(
     matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: CommandContext
 ) -> StudyInterface:
-    study_interface = FileStudyInterface(empty_study_930)
+    study_interface = file_study_interface(empty_study_930)
     _set_up_study(study_interface, command_context)
     return study_interface
 
