@@ -16,6 +16,7 @@ import http
 import io
 import logging
 import os
+import shutil
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
@@ -105,6 +106,7 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -140,6 +142,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
+    create_new_empty_study,
     get_start_date,
     is_managed,
     is_study_folder,
@@ -405,7 +408,10 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.get_files()).read_only()
+        command_context = self._variant_study_service.command_factory.command_context
+        return FileStudyTreeDao(
+            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+        ).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
@@ -475,7 +481,10 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.get_files()).read_only()
+        command_context = self._variant_service.command_factory.command_context
+        return FileStudyTreeDao(
+            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+        ).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
@@ -2565,3 +2574,30 @@ class StudyService:
         ##########################
 
         return StudyDataDTO.model_validate(obj)
+
+    def write_study_as_file_study(
+        self, study_id: str, path: Path, with_outputs: bool = False, normalize_matrices: bool = False
+    ) -> None:
+        study = self.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        source_dao = self.get_study_interface(study).get_study_dao()
+
+        # Create empty study on the filesystem
+        study_version = StudyVersion.parse(study.version)
+        assert study.name is not None
+        create_new_empty_study(study_version, path, study.name, study.author or "Unknown")
+
+        # Create the FileStudyDAO
+        file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(
+            path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
+        )
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+        # Write the given study input in the filesystem
+        converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
+        converter.convert_study_inputs()
+
+        # Copy the `output` folder if asked
+        output_src_path = Path(study.path) / "output"
+        if with_outputs and output_src_path.exists():
+            shutil.copytree(output_src_path, path / "output", dirs_exist_ok=True)
