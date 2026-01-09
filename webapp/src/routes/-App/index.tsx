@@ -14,7 +14,7 @@
 
 // @ts-expect-error Temporary fix for missing lib
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import BindingConstraints from "../_authenticated/studies/$studyId/explore/modeling/BindingConstraints";
+import BindingConstraints from "../_authenticated/studies/$studyId/explore/modeling/binding-constraints";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
