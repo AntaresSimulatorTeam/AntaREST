@@ -454,7 +454,7 @@ function EditionView(props: Props) {
               />
             </Tooltip>
             <a
-              href="https://antares-web.readthedocs.io/en/latest/user-guide/2-variant_manager/"
+              href="https://antares-web.readthedocs.io/en/latest/user-guide/3-variant_manager/"
               target="_blank"
               rel="noopener noreferrer"
             >
