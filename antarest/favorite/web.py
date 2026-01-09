@@ -32,9 +32,9 @@ def create_favorite_routes(favorite_service: FavoriteService, config: Config) ->
         logger.info("Creating new favorite for current user")
         return favorite_service.add_favorite(uuid)
 
-    @bp.delete("/favorite/{study_uuid}", summary="Delete a favorite")
-    def delete_favorite(study_uuid: str) -> None:
+    @bp.delete("/favorite/{uuid}", summary="Delete a favorite")
+    def delete_favorite(uuid: str) -> None:
         logger.info("Deleting favorite for current user")
-        favorite_service.delete_favorite(study_uuid)
+        favorite_service.delete_favorite(uuid)
 
     return bp

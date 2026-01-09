@@ -16,6 +16,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.favorite.model import Favorite
+from antarest.login.model import User
+from antarest.login.utils import get_user_id
 from antarest.study.model import Study
 
 
@@ -37,7 +39,7 @@ class FavoriteRepository:
         return fav
 
     def get_all(self) -> list[Favorite]:
-        stmt = select(Favorite).options(joinedload(Favorite.study)).where(Study.id == Favorite.study_id)
+        stmt = select(Favorite).options(joinedload(Favorite.study)).where((Study.id == Favorite.study_id) & (User.id == get_user_id()))
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 

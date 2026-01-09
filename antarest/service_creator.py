@@ -39,8 +39,9 @@ from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
-from antarest.favorite.main import build_favorite_service
+from antarest.favorite.repository import FavoriteRepository
 from antarest.favorite.service import FavoriteService
+from antarest.favorite.web import create_favorite_routes
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
 from antarest.login.main import build_login
@@ -154,6 +155,17 @@ class CoreServices:
     blob_service: BlobService
     favorite_service: FavoriteService
 
+def build_favorite_service(
+    config: Config, app_ctxt: Optional[AppBuildContext] = None, service: Optional[FavoriteService] = None
+) -> FavoriteService:
+    if service is None:
+        favorite_repository = FavoriteRepository()
+        service = FavoriteService(favorite_repository=favorite_repository)
+
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_favorite_routes(service, config=config))
+
+    return service
 
 def build_output_service(
     app_ctxt: Optional[AppBuildContext],
