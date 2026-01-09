@@ -44,8 +44,7 @@ interface Props {
   reloadConstraintsList: VoidFunction;
 }
 
-// TODO rename AddConstraintDialog
-function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }: Props) {
+function AddConstraintDialog({ open, onClose, existingConstraints, reloadConstraintsList }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
@@ -175,4 +174,4 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
   );
 }
 
-export default AddDialog;
+export default AddConstraintDialog;
