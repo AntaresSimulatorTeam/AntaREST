@@ -16,9 +16,9 @@ import FormDialog, { type FormDialogProps } from "@/components/dialogs/FormDialo
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import type { UseFieldArrayAppend } from "react-hook-form";
-import useStudySynthesis from "../../../../../../../../../../../redux/hooks/useStudySynthesis";
-import { getLinksAndClusters } from "../../../../../../../../../../../redux/selectors";
-import type { AllClustersAndLinks } from "../../../../../../../../../../../types/types";
+import useStudySynthesis from "../../../../../../../../../../../../redux/hooks/useStudySynthesis";
+import { getLinksAndClusters } from "../../../../../../../../../../../../redux/selectors";
+import type { AllClustersAndLinks } from "../../../../../../../../../../../../types/types";
 import { type BindingConstraint, type ConstraintTerm, isLinkTerm } from "../../../../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
 

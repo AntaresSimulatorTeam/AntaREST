@@ -20,7 +20,7 @@ import { getBindingConstraint } from "@/services/api/studydata";
 import { Box, Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import type { StudyMetadata } from "../../../../../../../types/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 
 interface Props {
   study: StudyMetadata;

@@ -16,7 +16,7 @@ import TabsView from "@/components/page/TabsView";
 import { useTranslation } from "react-i18next";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../types/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import ConstraintForm from "./ConstraintForm";
 import ConstraintMatrix from "./ConstraintMatrix";
 

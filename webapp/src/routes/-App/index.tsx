@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,6 +14,7 @@
 
 // @ts-expect-error Temporary fix for missing lib
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import BindingConstraints from "../_authenticated/studies/$studyId/explore/modeling/BindingConstraints";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -23,7 +24,6 @@ import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/Spl
 import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
 import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
-import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstraints";
 
 function App() {
   return (

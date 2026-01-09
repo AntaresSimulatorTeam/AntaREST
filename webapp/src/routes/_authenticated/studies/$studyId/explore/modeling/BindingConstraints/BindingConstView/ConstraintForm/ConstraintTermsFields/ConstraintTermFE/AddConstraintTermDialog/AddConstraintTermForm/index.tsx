@@ -18,7 +18,7 @@ import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRou
 import { Box, Button, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { AllClustersAndLinks } from "../../../../../../../../../../../../types/types";
+import type { AllClustersAndLinks } from "../../../../../../../../../../../../../types/types";
 import ConstraintElement from "../../../../../constraintviews/ConstraintElement";
 import OffsetInput from "../../../../../constraintviews/OffsetInput";
 import type { ConstraintTerm } from "../../../../../utils";

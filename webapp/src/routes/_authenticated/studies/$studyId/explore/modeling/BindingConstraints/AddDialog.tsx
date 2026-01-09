@@ -23,14 +23,14 @@ import { useTranslation } from "react-i18next";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import semver from "semver";
-import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { createBindingConstraint } from "../../../../../../services/api/studydata";
-import type { StudyMetadata } from "../../../../../../types/types";
 import {
   BindingConstraintOperator,
   TimeStep,
-} from "../../../../../_authenticated/studies/$studyId/-components/NavHeader/CommandsDrawer/EditionView/commandTypes";
+} from "../../../-components/NavHeader/CommandsDrawer/EditionView/commandTypes";
+import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
+import { createBindingConstraint } from "../../../../../../../services/api/studydata";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import {
   type BindingConstraint,
   OPERATOR_OPTIONS,

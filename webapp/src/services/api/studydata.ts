@@ -15,7 +15,7 @@
 import {
   bindingConstraintModelAdapter,
   type BindingConstraint,
-} from "@/routes/-App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
+} from "@/routes/_authenticated/studies/$studyId/explore/modeling/BindingConstraints/BindingConstView/utils";
 import type { StudyMapNode } from "../../redux/ducks/studyMaps";
 import type { AreaUIUpdatePayload, UpdateAreaUi } from "../../types/types";
 import client from "./client";
