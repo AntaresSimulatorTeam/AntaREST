@@ -155,6 +155,7 @@ class CoreServices:
     blob_service: BlobService
     favorite_service: FavoriteService
 
+
 def build_favorite_service(
     config: Config, app_ctxt: Optional[AppBuildContext] = None, service: Optional[FavoriteService] = None
 ) -> FavoriteService:
@@ -166,6 +167,7 @@ def build_favorite_service(
         app_ctxt.api_root.include_router(create_favorite_routes(service, config=config))
 
     return service
+
 
 def build_output_service(
     app_ctxt: Optional[AppBuildContext],

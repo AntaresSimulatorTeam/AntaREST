@@ -32,6 +32,7 @@ def test_add_favorite(favorite_service: FavoriteService, admin_user: JWTUser) ->
     expected_favorite_list = [favorite_dto_1, favorite_dto_2]
     assert actual_favorite_list == expected_favorite_list
 
+
 @with_db_context
 def test_delete_favorite(favorite_service: FavoriteService, admin_user: JWTUser) -> None:
     study_1 = create_study()

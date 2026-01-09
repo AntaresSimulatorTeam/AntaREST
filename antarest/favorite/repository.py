@@ -39,7 +39,11 @@ class FavoriteRepository:
         return fav
 
     def get_all(self) -> list[Favorite]:
-        stmt = select(Favorite).options(joinedload(Favorite.study)).where((Study.id == Favorite.study_id) & (User.id == get_user_id()))
+        stmt = (
+            select(Favorite)
+            .options(joinedload(Favorite.study))
+            .where((Study.id == Favorite.study_id) & (User.id == get_user_id()))
+        )
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
