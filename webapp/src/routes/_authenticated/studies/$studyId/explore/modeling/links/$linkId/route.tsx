@@ -26,20 +26,12 @@ export const Route = createFileRoute(
 function LinkLayout() {
   const params = Route.useParams();
   const { t } = useTranslation();
-  // const isOldStudy = semver.lt(study.version, "8.2.0");
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    // <>
-    //   <LinkForm link={link} study={study} isOldStudy={isOldStudy} />
-    //   <Divider sx={{ my: 2 }} variant="middle">
-    //     <Chip label={isOldStudy ? t("global.matrice") : t("global.matrices")} size="small" />
-    //   </Divider>
-    //   <LinkMatrices study={study} area1={link.area1} area2={link.area2} isOldStudy={isOldStudy} />
-    // </>
     <ViewWrapper>
       <TabsView
         tabs={[
@@ -51,14 +43,14 @@ function LinkLayout() {
               params,
             }),
           },
-          // {
-          //   id: "time-series",
-          //   label: t("global.timeSeries"),
-          //   linkOptions: linkOptions({
-          //     to: "/studies/$studyId/explore/modeling/links/$linkId/time-series",
-          //     params,
-          //   }),
-          // },
+          {
+            id: "time-series",
+            label: t("global.timeSeries"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/links/$linkId/time-series",
+              params,
+            }),
+          },
         ]}
       />
     </ViewWrapper>

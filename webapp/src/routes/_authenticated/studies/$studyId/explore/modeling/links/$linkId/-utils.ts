@@ -15,6 +15,8 @@
 import { AssetType, LinkStyle } from "@/services/api/studies/links/constants";
 import type { Link } from "@/services/api/studies/links/types";
 
+export const TABS_VIEW_MIN_VERSION = "8.2.0" as const;
+
 type LinkUI = Pick<Link, "assetType" | "linkWidth" | "linkStyle" | "colorr" | "colorb" | "colorg">;
 
 export function getLinkUI(assetType: Link["assetType"]): LinkUI {

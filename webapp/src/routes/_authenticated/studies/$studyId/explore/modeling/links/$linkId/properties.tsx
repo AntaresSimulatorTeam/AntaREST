@@ -24,7 +24,6 @@ import type {
   AssetTypeValue,
   Link,
   TransmissionCapacityValue,
-  UpdateLinkParams,
 } from "@/services/api/studies/links/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -65,19 +64,19 @@ function Parameters() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues, values }: SubmitHandlerPlus<Link>) => {
-    const { id, area1, area2, assetType, ...rest } = dirtyValues;
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<Link>) => {
+    const { id, area1, area2, assetType, ...config } = dirtyValues;
 
-    let config: UpdateLinkParams["config"] = rest;
-
-    if (assetType) {
-      config = {
-        ...config,
-        ...getLinkUI(assetType),
-      };
-    }
-
-    return updateLink({ studyId, linkId, config });
+    return updateLink({
+      studyId,
+      linkId,
+      config: assetType
+        ? {
+            ...config,
+            ...getLinkUI(assetType),
+          }
+        : config,
+    });
   };
 
   ////////////////////////////////////////////////////////////////
