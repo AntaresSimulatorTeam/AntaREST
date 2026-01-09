@@ -26,7 +26,7 @@ import {
   OPERATOR_OPTIONS,
   OUTPUT_FILTERS_OPTIONS,
   TIME_STEPS_OPTIONS,
-} from "../utils";
+} from "../../utils";
 
 interface Props {
   study: StudyMetadata;

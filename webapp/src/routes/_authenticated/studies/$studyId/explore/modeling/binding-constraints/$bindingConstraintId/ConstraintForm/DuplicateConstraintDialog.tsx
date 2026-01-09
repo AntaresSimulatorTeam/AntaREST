@@ -18,7 +18,7 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { validateString } from "@/utils/validation/string";
 import ContentCopy from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
-import type { BindingConstraint } from "../utils";
+import type { BindingConstraint } from "../../utils";
 
 interface Props {
   open: boolean;

@@ -17,7 +17,7 @@ import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { AllClustersAndLinks } from "../../../../../../../../../../../../../types/types";
-import { generateTermId, isTermExist, type ConstraintTerm } from "../../../../../utils";
+import { generateTermId, isTermExist, type ConstraintTerm } from "../../../../../../utils";
 
 interface Props {
   list: AllClustersAndLinks;

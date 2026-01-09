@@ -18,9 +18,9 @@ import { Box, Button, TextField, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AllClustersAndLinks } from "../../../../../../../../../../../types/types";
-import ConstraintElement from "../../../constraintviews/ConstraintElement";
-import OffsetInput from "../../../constraintviews/OffsetInput";
-import { isLinkTerm, type ConstraintTerm } from "../../../utils";
+import ConstraintElement from "../../../../constraintviews/ConstraintElement";
+import OffsetInput from "../../../../constraintviews/OffsetInput";
+import { isLinkTerm, type ConstraintTerm } from "../../../../utils";
 import OptionsList from "./OptionsList";
 
 interface Props {

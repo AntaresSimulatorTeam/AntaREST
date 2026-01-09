@@ -31,11 +31,7 @@ import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySy
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import { createBindingConstraint } from "../../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import {
-  type BindingConstraint,
-  OPERATOR_OPTIONS,
-  TIME_STEPS_OPTIONS,
-} from "./BindingConstView/utils";
+import { type BindingConstraint, OPERATOR_OPTIONS, TIME_STEPS_OPTIONS } from "./utils";
 
 interface Props {
   open: boolean;

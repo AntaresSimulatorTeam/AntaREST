@@ -17,8 +17,8 @@ import { useTranslation } from "react-i18next";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../../../types/types";
+import ConstraintMatrix from "../BindingConstView/ConstraintMatrix";
 import ConstraintForm from "./ConstraintForm";
-import ConstraintMatrix from "./ConstraintMatrix";
 
 interface Props {
   constraintId: string;

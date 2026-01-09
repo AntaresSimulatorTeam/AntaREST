@@ -36,7 +36,7 @@ import { Button } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import type { BindingConstraint } from "../utils";
+import type { BindingConstraint } from "../../utils";
 import ConstraintFields from "./ConstraintFields";
 import ConstraintTermsFields from "./ConstraintTermsFields";
 import DuplicateDialog from "./DuplicateConstraintDialog";

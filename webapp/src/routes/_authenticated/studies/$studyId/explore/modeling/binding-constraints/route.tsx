@@ -27,8 +27,8 @@ import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentBindingConstId } from "../../../../../../../redux/selectors";
 import { getBindingConstraintList } from "../../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../../types/types";
+import BindingConstView from "./$bindingConstraintId";
 import BindingConstPropsView from "./BindingConstPropsView";
-import BindingConstView from "./BindingConstView";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
