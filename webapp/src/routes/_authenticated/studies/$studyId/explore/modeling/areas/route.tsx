@@ -73,18 +73,10 @@ function AreasLayout() {
       });
     }
 
-    if (!areaId) {
-      return linkOptions({
-        to: "/studies/$studyId/explore/modeling/areas/$areaId/properties",
-        params,
-      });
-    }
-
-    // Keep the current sub-route when switching area.
-    // `linkOptions({ to: ".", params })` works but `href` in DOM don't get updated after tab switch,
-    // and current area item is not active anymore, because the component is not re-rendered.
-    // The mix of `to: ".."` and `href: "."` solves the problem, but is not documented.
-    return linkOptions({ to: "..", params, href: "." });
+    return linkOptions({
+      to: areaId ? "." : "/studies/$studyId/explore/modeling/areas/$areaId",
+      params,
+    });
   };
 
   ////////////////////////////////////////////////////////////////

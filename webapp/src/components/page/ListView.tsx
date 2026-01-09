@@ -23,7 +23,7 @@ import {
   ListItemText,
   Tooltip,
 } from "@mui/material";
-import { Outlet, type ToOptions } from "@tanstack/react-router";
+import { Outlet, useMatches, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchFE from "../fieldEditors/SearchFE";
@@ -52,6 +52,12 @@ function ListView({ list, splitId, emptyListContent, onAdd, actions }: ListViewP
   const [search, setSearch] = useState("");
   const { t } = useTranslation();
   const hasActions = !!onAdd || !!actions;
+
+  // Get current route ID to force rebuilds of links when the route changes.
+  // Allows to update relative links (e.g. `to: "."`).
+  const currentRouteId = useMatches({
+    select: (matches) => matches.at(-1)?.routeId,
+  });
 
   return (
     <SplitView splitId={splitId}>
@@ -91,7 +97,7 @@ function ListView({ list, splitId, emptyListContent, onAdd, actions }: ListViewP
                   disablePadding
                   secondaryAction={item.loading && <CircularProgress color="inherit" size={16} />}
                 >
-                  <RouterListItemButton {...item.linkOptions}>
+                  <RouterListItemButton key={currentRouteId} {...item.linkOptions}>
                     <ListItemText primary={item.label} slotProps={{ primary: { noWrap: true } }} />
                   </RouterListItemButton>
                 </ListItem>

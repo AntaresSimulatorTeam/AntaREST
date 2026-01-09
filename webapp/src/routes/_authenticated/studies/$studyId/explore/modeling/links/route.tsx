@@ -17,7 +17,6 @@ import ListView from "@/components/page/ListView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getLinks } from "@/redux/selectors";
-import type { LinkElement } from "@/types/types";
 import { createFileRoute, linkOptions, useParams } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -48,27 +47,6 @@ function LinksLayout() {
   }, [navigate, linkId, response, studyId]);
 
   ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const getLinkLinkOptions = (link: LinkElement) => {
-    const params = { studyId, linkId: link.id };
-
-    if (!linkId) {
-      return linkOptions({
-        to: "/studies/$studyId/explore/modeling/links/$linkId/properties",
-        params,
-      });
-    }
-
-    // Keep the current sub-route when switching area.
-    // `linkOptions({ to: ".", params })` works but `href` in DOM don't get updated after tab switch,
-    // and current area item is not active anymore, because the component is not re-rendered.
-    // The mix of `to: ".."` and `href: "."` solves the problem, but is not documented.
-    return linkOptions({ to: "..", params, href: "." });
-  };
-
-  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -81,7 +59,10 @@ function LinksLayout() {
           list={links.map((link) => ({
             id: link.id,
             label: link.label,
-            linkOptions: getLinkLinkOptions(link),
+            linkOptions: linkOptions({
+              to: linkId ? "." : "/studies/$studyId/explore/modeling/links/$linkId",
+              params: { studyId, linkId: link.id },
+            }),
           }))}
           emptyListContent={<EmptyView title={t("study.modeling.links.empty")} />}
         />
