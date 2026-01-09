@@ -15,7 +15,7 @@
 import PropertiesView from "@/components/PropertiesView";
 import { useEffect, useMemo, useState } from "react";
 import ListElement from "../../../../../../../components/ListElement";
-import AddDialog from "./AddConstraintDialog";
+import AddDialog from "./-components/AddConstraintDialog";
 import type { BindingConstraint } from "./utils";
 
 interface Props {

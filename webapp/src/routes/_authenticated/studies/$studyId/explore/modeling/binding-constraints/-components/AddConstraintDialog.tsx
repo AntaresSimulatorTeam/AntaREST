@@ -26,12 +26,12 @@ import semver from "semver";
 import {
   BindingConstraintOperator,
   TimeStep,
-} from "../../../-components/NavHeader/CommandsDrawer/EditionView/commandTypes";
-import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import { createBindingConstraint } from "../../../../../../../services/api/studydata";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import { type BindingConstraint, OPERATOR_OPTIONS, TIME_STEPS_OPTIONS } from "./utils";
+} from "../../../../-components/NavHeader/CommandsDrawer/EditionView/commandTypes";
+import { setCurrentBindingConst } from "../../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import { createBindingConstraint } from "../../../../../../../../services/api/studydata";
+import type { StudyMetadata } from "../../../../../../../../types/types";
+import { type BindingConstraint, OPERATOR_OPTIONS, TIME_STEPS_OPTIONS } from "../utils";
 
 interface Props {
   open: boolean;
