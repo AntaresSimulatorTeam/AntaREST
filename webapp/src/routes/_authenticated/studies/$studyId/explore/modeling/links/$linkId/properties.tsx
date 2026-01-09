@@ -28,7 +28,7 @@ import type {
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import { getLinkUI } from "./utils";
+import { getLinkUI } from "./-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/links/$linkId/properties",
