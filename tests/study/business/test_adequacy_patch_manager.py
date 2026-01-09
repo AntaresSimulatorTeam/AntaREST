@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,9 +13,9 @@ import copy
 
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters, PriceTakingOrder
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 EXPECTED_PARAMS = AdequacyPatchParameters(
     enable_adequacy_patch=False,
@@ -39,7 +39,7 @@ def test_missing_section(empty_study_880: FileStudy, command_context: CommandCon
     study.tree.save(general_data_content, ["settings", "generaldata"])
     # Ensures we're still able to read the data.
     manager = AdequacyPatchManager(command_context)
-    params = manager.get_adequacy_patch_parameters(FileStudyInterface(study))
+    params = manager.get_adequacy_patch_parameters(file_study_interface(study))
     assert params == EXPECTED_PARAMS
 
 
@@ -52,7 +52,7 @@ def test_section_not_in_lowercase(empty_study_880: FileStudy, command_context: C
     study.tree.save(general_data_content, ["settings", "generaldata"])
     # Ensures we're still able to read the data.
     manager = AdequacyPatchManager(command_context)
-    params = manager.get_adequacy_patch_parameters(FileStudyInterface(study))
+    params = manager.get_adequacy_patch_parameters(file_study_interface(study))
     expected_params = copy.deepcopy(EXPECTED_PARAMS)
     expected_params.price_taking_order = PriceTakingOrder.LOAD
     assert params == expected_params
