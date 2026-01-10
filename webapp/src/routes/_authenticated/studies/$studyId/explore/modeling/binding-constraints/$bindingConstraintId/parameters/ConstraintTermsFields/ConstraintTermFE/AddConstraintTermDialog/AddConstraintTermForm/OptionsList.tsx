@@ -16,8 +16,8 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { generateTermId, isTermExist, type ConstraintTerm } from "../../../../../../-utils";
 import type { AllClustersAndLinks } from "../../../../../../../../../../../../../types/types";
-import { generateTermId, isTermExist, type ConstraintTerm } from "../../../../../../utils";
 
 interface Props {
   list: AllClustersAndLinks;

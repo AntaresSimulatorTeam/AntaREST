@@ -20,13 +20,13 @@ import { validateString } from "@/utils/validation/string";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import type { StudyMetadata } from "../../../../../../../../../types/types";
 import {
   type BindingConstraint,
   OPERATOR_OPTIONS,
   OUTPUT_FILTERS_OPTIONS,
   TIME_STEPS_OPTIONS,
-} from "../../utils";
+} from "../../-utils";
+import type { StudyMetadata } from "../../../../../../../../../types/types";
 
 interface Props {
   study: StudyMetadata;
