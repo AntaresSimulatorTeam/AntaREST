@@ -23,7 +23,7 @@ from antarest.maintenance.tasks.gc_matrix import clean_matrices
 @celery_app.task(bind=True, name="matrices_cleaner", pydantic=True)
 def clean_matrices_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
     """Celery wrapper that delegates to clean_matrices()."""
-    ctx: MaintenanceContext | None = getattr(self.app.conf, "maintenance_ctx", None)
+    ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
     if not ctx:
         raise RuntimeError("MaintenanceContext not in app.conf - worker not initialized?")
 
