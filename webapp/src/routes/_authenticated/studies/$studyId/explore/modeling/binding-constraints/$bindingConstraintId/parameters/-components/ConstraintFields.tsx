@@ -25,8 +25,8 @@ import {
   OPERATOR_OPTIONS,
   OUTPUT_FILTERS_OPTIONS,
   TIME_STEPS_OPTIONS,
-} from "../../-utils";
-import type { StudyMetadata } from "../../../../../../../../../types/types";
+} from "../../../-utils";
+import type { StudyMetadata } from "../../../../../../../../../../types/types";
 
 interface Props {
   study: StudyMetadata;
