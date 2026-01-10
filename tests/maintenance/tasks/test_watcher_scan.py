@@ -12,19 +12,17 @@
 
 """Tests for watcher scan task."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
 from antarest.core.config import StorageConfig, WorkspaceConfig
-from antarest.maintenance.tasks.common import BackGroundTaskStatus
-from antarest.maintenance.tasks.watcher_scan import scan_workspaces
+from antarest.maintenance.tasks.watcher_scan import _collect_studies
 from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
 
-class TestScanWorkspaces:
-    @pytest.fixture
-    def mock_config(self, tmp_path):
+class TestCollectStudies:
+    def test_returns_empty_list_when_no_studies(self, tmp_path):
         workspace_path = tmp_path / "workspace1"
         workspace_path.mkdir()
         config = Mock()
@@ -39,59 +37,38 @@ class TestScanWorkspaces:
                 ),
             }
         )
-        return config
 
-    @pytest.fixture
-    def mock_study_service(self):
-        return Mock()
+        result = _collect_studies(config)
 
-    def test_returns_success_when_no_studies(self, mock_config, mock_study_service):
-        with (
-            patch("antarest.maintenance.tasks.watcher_scan.db"),
-            patch("antarest.maintenance.tasks.watcher_scan.create_lock"),
-        ):
-            result = scan_workspaces(mock_config, mock_study_service, dry_run=False)
+        assert result == []
 
-        assert result.status == BackGroundTaskStatus.SUCCESS
-        assert result.studies_found == 0
-        assert result.dry_run is False
-
-    def test_finds_studies_in_workspaces(self, mock_config, mock_study_service, tmp_path):
-        # Create a study in the workspace
+    def test_finds_studies_in_workspaces(self, tmp_path):
         workspace_path = tmp_path / "workspace1"
+        workspace_path.mkdir()
+        # Create a study in the workspace
         study_path = workspace_path / "my_study"
         study_path.mkdir()
         (study_path / "study.antares").touch()
 
-        with (
-            patch("antarest.maintenance.tasks.watcher_scan.db"),
-            patch("antarest.maintenance.tasks.watcher_scan.create_lock"),
-        ):
-            result = scan_workspaces(mock_config, mock_study_service, dry_run=False)
+        config = Mock()
+        config.storage = StorageConfig(
+            workspaces={
+                "default": WorkspaceConfig(path=tmp_path / "default"),
+                "workspace1": WorkspaceConfig(
+                    path=workspace_path,
+                    groups=["group1"],
+                    filter_in=[".*"],
+                    filter_out=[],
+                ),
+            }
+        )
 
-        assert result.status == BackGroundTaskStatus.SUCCESS
-        assert result.studies_found == 1
-        mock_study_service.sync_studies_on_disk.assert_called_once()
+        result = _collect_studies(config)
 
-    def test_dry_run_does_not_sync(self, mock_config, mock_study_service, tmp_path):
-        # Create a study in the workspace
-        workspace_path = tmp_path / "workspace1"
-        study_path = workspace_path / "my_study"
-        study_path.mkdir()
-        (study_path / "study.antares").touch()
+        assert len(result) == 1
+        assert result[0].path == study_path
 
-        with (
-            patch("antarest.maintenance.tasks.watcher_scan.db"),
-            patch("antarest.maintenance.tasks.watcher_scan.create_lock"),
-        ):
-            result = scan_workspaces(mock_config, mock_study_service, dry_run=True)
-
-        assert result.status == BackGroundTaskStatus.SUCCESS
-        assert result.studies_found == 1
-        assert result.dry_run is True
-        mock_study_service.sync_studies_on_disk.assert_not_called()
-
-    def test_skips_default_workspace(self, mock_study_service, tmp_path):
+    def test_skips_default_workspace(self, tmp_path):
         # Config with only default workspace
         config = Mock()
         config.storage = StorageConfig(
@@ -100,33 +77,47 @@ class TestScanWorkspaces:
             }
         )
 
-        with (
-            patch("antarest.maintenance.tasks.watcher_scan.db"),
-            patch("antarest.maintenance.tasks.watcher_scan.create_lock"),
-        ):
-            result = scan_workspaces(config, mock_study_service, dry_run=False)
+        result = _collect_studies(config)
 
-        assert result.status == BackGroundTaskStatus.SUCCESS
-        assert result.studies_found == 0
+        assert result == []
 
-    def test_returns_skipped_when_lock_not_acquired(self, mock_config, mock_study_service):
-        from antarest.core.utils.lock import LockNotAcquired
+    def test_finds_studies_in_multiple_workspaces(self, tmp_path):
+        workspace1_path = tmp_path / "workspace1"
+        workspace1_path.mkdir()
+        workspace2_path = tmp_path / "workspace2"
+        workspace2_path.mkdir()
 
-        with (
-            patch("antarest.maintenance.tasks.watcher_scan.db"),
-            patch("antarest.maintenance.tasks.watcher_scan.create_lock", side_effect=LockNotAcquired()),
-        ):
-            result = scan_workspaces(mock_config, mock_study_service, dry_run=False)
+        # Create studies
+        study1 = workspace1_path / "study1"
+        study1.mkdir()
+        (study1 / "study.antares").touch()
 
-        assert result.status == BackGroundTaskStatus.SKIPPED
-        assert result.reason == "lock_not_acquired"
+        study2 = workspace2_path / "study2"
+        study2.mkdir()
+        (study2 / "study.antares").touch()
 
-    def test_returns_error_on_exception(self, mock_config, mock_study_service):
-        with patch("antarest.maintenance.tasks.watcher_scan.db", side_effect=Exception("DB error")):
-            result = scan_workspaces(mock_config, mock_study_service, dry_run=False)
+        config = Mock()
+        config.storage = StorageConfig(
+            workspaces={
+                "default": WorkspaceConfig(path=tmp_path / "default"),
+                "workspace1": WorkspaceConfig(
+                    path=workspace1_path,
+                    groups=[],
+                    filter_in=[".*"],
+                    filter_out=[],
+                ),
+                "workspace2": WorkspaceConfig(
+                    path=workspace2_path,
+                    groups=[],
+                    filter_in=[".*"],
+                    filter_out=[],
+                ),
+            }
+        )
 
-        assert result.status == BackGroundTaskStatus.ERROR
-        assert "DB error" in result.error
+        result = _collect_studies(config)
+
+        assert len(result) == 2
 
 
 class TestWatcherScanTask:

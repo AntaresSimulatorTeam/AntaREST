@@ -21,7 +21,6 @@ from typing import List
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
-from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId, WatcherScanTaskResult
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
@@ -31,14 +30,23 @@ from antarest.study.storage.utils import rec_scan_for_studies
 logger = logging.getLogger(__name__)
 
 
-class _LogScanDuration:
-    """Functional object use to log the scanning duration of a workspace."""
+def _collect_studies(config: Config) -> List[StudyFolder]:
+    """
+    Collect studies from all workspaces (except default).
 
-    def __init__(self, workspace_name: str) -> None:
-        self.workspace_name = workspace_name
+    Args:
+        config: Application configuration.
 
-    def __call__(self, duration: float) -> None:
-        logger.info(f"Workspace {self.workspace_name} scanned in {duration}s")
+    Returns:
+        List of StudyFolder found in all workspaces.
+    """
+    studies: List[StudyFolder] = []
+    for name, workspace in config.storage.workspaces.items():
+        if name != DEFAULT_WORKSPACE_NAME:
+            path = Path(workspace.path)
+            groups = [Group(id=escape(g), name=escape(g)) for g in workspace.groups]
+            studies += rec_scan_for_studies(path, name, groups, workspace.filter_in, workspace.filter_out)
+    return studies
 
 
 def scan_workspaces(
@@ -65,25 +73,12 @@ def scan_workspaces(
     try:
         with db():
             with create_lock(db.session, lock_id=LockId.WATCHER_SCAN):
-                stopwatch = StopWatch()
-                studies: List[StudyFolder] = []
-
-                for name, workspace in config.storage.workspaces.items():
-                    if name != DEFAULT_WORKSPACE_NAME:
-                        path = Path(workspace.path)
-                        groups = [Group(id=escape(g), name=escape(g)) for g in workspace.groups]
-                        studies += rec_scan_for_studies(path, name, groups, workspace.filter_in, workspace.filter_out)
-                        stopwatch.log_elapsed(_LogScanDuration(name))
-
+                studies = _collect_studies(config)
                 studies_found = len(studies)
                 logger.info(f"Found {studies_found} studies across all workspaces")
 
                 if not dry_run:
                     study_service.sync_studies_on_disk(studies, None, True)
-                    stopwatch.log_elapsed(
-                        lambda x: logger.info(f"All studies synchronized in {x}s"),
-                        since_start=True,
-                    )
 
     except LockNotAcquired:
         logger.warning("Could not acquire lock, another watcher scan is probably running")
