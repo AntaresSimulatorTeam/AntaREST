@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -24,6 +24,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 def _check_add_commands(patched_func: Any, expected_cls: Any) -> None:
@@ -76,7 +77,7 @@ def study_with_sets(empty_study_880: FileStudy) -> FileStudyInterface:
             }
         }
     }
-    study = FileStudyInterface(empty_study_880)
+    study = file_study_interface(empty_study_880)
     study.file_study.tree.save(district_ini_content)
     study.file_study.config.districts = {
         "d1": District(id="d1", name="D1", add_areas=[], output=True),

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,36 +10,25 @@
 #
 # This file is part of the Antares project.
 
-"""
-Matrix garbage collection task wrapper for Celery.
-
-This task deletes unused matrices from the matrix store based on retention time.
-"""
+"""Celery task for matrix garbage collection."""
 
 from celery import Task
 
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
-from antarest.maintenance.tasks.gc_matrix import GCTaskResult, clean_matrices
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult
+from antarest.maintenance.tasks.gc_matrix import clean_matrices
 
 
-@celery_app.task(bind=True, name="antarest.maintenance.tasks.clean_matrices_task", pydantic=True)
-def clean_matrices_task(self: Task) -> GCTaskResult:  # type: ignore[type-arg]
-    """
-    Celery task wrapper for clean_matrices.
-
-    Retrieves dependencies from the Celery app configuration (injected during worker init)
-    and delegates to clean_matrices().
-
-    Args:
-        self: The bound task instance, provides access to self.app
-    """
+@celery_app.task(bind=True, name="matrices_cleaner", pydantic=True)
+def clean_matrices_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
+    """Celery wrapper that delegates to clean_matrices()."""
     ctx: MaintenanceContext | None = getattr(self.app.conf, "maintenance_ctx", None)
-    if ctx is None:
-        raise RuntimeError("MaintenanceContext not found in app.conf. Ensure worker was properly started.")
+    if not ctx:
+        raise RuntimeError("MaintenanceContext not in app.conf - worker not initialized?")
 
     return clean_matrices(
-        matrix_service=ctx.matrix_service,
-        dry_run=ctx.config.storage.matrix_gc_dry_run,
-        retention_time=ctx.config.storage.matrix_gc_retention_time,
+        ctx.matrix_service,
+        ctx.config.storage.matrix_gc_dry_run,
+        ctx.config.storage.matrix_gc_retention_time,
     )

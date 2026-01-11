@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -76,8 +76,8 @@ class FileStudyTreeDao(
     def __init__(
         self,
         study: FileStudy,
-        generator_matrix_constants: t.Optional["GeneratorMatrixConstants"] = None,
-        blob_service: t.Optional["IBlobService"] = None,
+        generator_matrix_constants: "GeneratorMatrixConstants",
+        blob_service: "IBlobService",
     ) -> None:
         self._file_study = study
         self._generator_matrix_constants = generator_matrix_constants

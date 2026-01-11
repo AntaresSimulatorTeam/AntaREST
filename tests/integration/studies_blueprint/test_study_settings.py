@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -269,6 +269,20 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
         "wind": True,
         "windOffshore": True,
         "windOnshore": True,
+        "lmrViol": True,
+        "dtgMrgCsr": True,
+        "nh3Emis": True,
+        "noxEmis": True,
+        "pm25Emis": True,
+        "pm5Emis": True,
+        "pm10Emis": True,
+        "op1Emis": True,
+        "op2Emis": True,
+        "op3Emis": True,
+        "op4Emis": True,
+        "op5Emis": True,
+        "so2Emis": True,
+        "nmvocEmis": True,
     }
 
     new_thematic_trimming = {
@@ -366,6 +380,20 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
         "other5Injection": True,
         "other5Withdrawal": True,
         "other5Level": True,
+        "lmrViol": False,
+        "dtgMrgCsr": True,
+        "nh3Emis": True,
+        "noxEmis": True,
+        "pm25Emis": True,
+        "pm5Emis": True,
+        "pm10Emis": True,
+        "op1Emis": True,
+        "op2Emis": True,
+        "op3Emis": True,
+        "op4Emis": True,
+        "op5Emis": True,
+        "so2Emis": False,
+        "nmvocEmis": True,
     }
 
     res = client.put(f"/v1/studies/{study_id}/config/thematictrimming/form", json=new_thematic_trimming)
