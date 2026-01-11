@@ -13,8 +13,8 @@
  */
 
 import { FormControlLabel, Switch, Typography } from "@mui/material";
-import { ConstraintElementData, ConstraintElementRoot } from "./style";
 import { useTranslation } from "react-i18next";
+import { ConstraintElementData, ConstraintElementRoot } from "../constraintviews/style";
 
 interface ElementProps {
   left: React.ReactNode;
