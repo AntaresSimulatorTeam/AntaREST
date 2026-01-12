@@ -85,7 +85,7 @@ class InputSeriesMatrix(MatrixNode):
                 raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
         if matrix.is_empty() and self.default_empty is not None:
-            return create_polars_dataframe(self.default_empty)
+            matrix = create_polars_dataframe(self.default_empty)
         stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
         return matrix
 
