@@ -24,6 +24,7 @@ import pandas as pd
 import polars as pl
 import py7zr
 from fastapi import UploadFile
+from polars import String
 from typing_extensions import override
 
 from antarest.core.config import Config, InternalMatrixFormat
@@ -234,7 +235,7 @@ def check_dataframe_compliance(df: pl.DataFrame) -> None:
         return
 
     for dtype in df.dtypes:
-        if not (dtype.is_numeric() or dtype.is_temporal()):
+        if not (dtype.is_numeric() or dtype.is_temporal() or dtype == String):
             raise MatrixNotSupported(f"Supported matrix data types are 'number, datetime' and you provided {dtype}")
 
 

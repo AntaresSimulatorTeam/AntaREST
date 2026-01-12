@@ -29,6 +29,7 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.login.utils import current_user_context
@@ -59,7 +60,7 @@ resource_path = (
     / "aggregate_areas_raw_data"
     / "test-01-all.result.tsv"
 )
-AGGREGATION_DF = pd.read_csv(resource_path, sep="\t")
+AGGREGATION_DF = create_polars_dataframe(pd.read_csv(resource_path, sep="\t"))
 
 
 class TestMatrixService:
@@ -68,7 +69,7 @@ class TestMatrixService:
         """Creates a new matrix object with the specified data."""
         # when a matrix is created (inserted) in the service
         data = TEST_MATRIX
-        df_to_save = pd.DataFrame(data)
+        df_to_save = create_polars_dataframe(data)
         matrix_id = matrix_service.create(df_to_save)
 
         # A "real" hash value is calculated
@@ -95,7 +96,7 @@ class TestMatrixService:
         matrix_repo = matrix_service.repo
         matrix_repo.save = Mock(side_effect=Exception("database error"))
         with pytest.raises(Exception, match="database error"):
-            matrix_service.create(pd.DataFrame(TEST_MATRIX))
+            matrix_service.create(create_polars_dataframe(TEST_MATRIX))
 
         # the associated matrix file must not be deleted
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
@@ -111,7 +112,7 @@ class TestMatrixService:
         """Get a matrix object from the database and the matrix content repository."""
         # when a matrix is created (inserted) in the service
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        matrix_id = matrix_service.create(create_polars_dataframe(data))
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
@@ -119,8 +120,7 @@ class TestMatrixService:
 
         assert df is not None, f"Missing Matrix object {matrix_id}"
         assert df.to_numpy().tolist() == data
-        assert list(df.index) == list(range(len(data)))
-        assert list(df.columns) == list(range(len(data[0])))
+        assert list(df.columns) == ["0", "1", "2"]
 
         # missing_case: the matrix is missing in the database
         with db():
@@ -196,7 +196,7 @@ class TestMatrixService:
         with db():
             for matrix in matrices:
                 mat = pd.read_csv(matrix)
-                matrix_service.create(mat)
+                matrix_service.create(create_polars_dataframe(mat))
 
             actual_matrices = matrix_service.get_matrices()
 
@@ -213,7 +213,7 @@ class TestMatrixService:
         """Test the exists method."""
         # when a matrix is created (inserted) in the service
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        matrix_id = matrix_service.create(create_polars_dataframe(data))
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
@@ -224,22 +224,25 @@ class TestMatrixService:
     @with_db_context
     def test_same_hash_with_int_and_float_matrices(self, matrix_service: MatrixService) -> None:
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        matrix_id = matrix_service.create(create_polars_dataframe(data))
         data_as_float = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-        matrix_id_as_float = matrix_service.create(pd.DataFrame(data_as_float))
+        matrix_id_as_float = matrix_service.create(create_polars_dataframe(data_as_float))
         assert matrix_id == matrix_id_as_float
 
     @with_db_context
     def test_different_hash_with_same_matrices_with_different_headers(self, matrix_service: MatrixService) -> None:
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
-        other_matrix_id = matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"]))
+        matrix_id = matrix_service.create(create_polars_dataframe(data))
+        other_matrix_id = matrix_service.create(
+            create_polars_dataframe(pd.DataFrame(data=data, columns=["c1", "c2", "c3"]))
+        )
         assert matrix_id != other_matrix_id
 
     @with_db_context
     def test_ability_to_save_matrices_with_strings(self, matrix_service: MatrixService) -> None:
         data = [["area_1", "area_2", "area_3"], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-        matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"], dtype=pd.StringDtype()))
+        df = pd.DataFrame(data=data, columns=["c1", "c2", "c3"], dtype=pd.StringDtype())
+        matrix_service.create(create_polars_dataframe(df))
 
     @with_db_context
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
@@ -609,23 +612,18 @@ def test_hashing_method() -> None:
 
 def test_check_compliance_method() -> None:
     # Success
-    df = pd.DataFrame(data=TEST_MATRIX)
+    df = create_polars_dataframe(TEST_MATRIX)
     check_dataframe_compliance(df)
 
-    df = pd.DataFrame(data=["test"], dtype=pd.StringDtype())
+    df = create_polars_dataframe(np.array(["test"]))
     check_dataframe_compliance(df)
 
-    df = pd.DataFrame(data=[datetime.datetime(2025, 4, 16)])
+    df = create_polars_dataframe(np.array([datetime.datetime(2025, 4, 16)]))
     check_dataframe_compliance(df)
 
     # Error
-    df = pd.DataFrame(index=["A", "B"], data=TEST_MATRIX)
-    with pytest.raises(
-        MatrixNotSupported, match=re.escape("The matrixstore doesn't support dataframes with a non-default index")
-    ):
-        check_dataframe_compliance(df)
 
-    df = pd.DataFrame(data=[[b"fake_byte/n"]])
+    df = create_polars_dataframe([[b"fake_byte/n"]])
     with pytest.raises(
         MatrixNotSupported,
         match=re.escape(
