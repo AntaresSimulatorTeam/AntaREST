@@ -275,7 +275,7 @@ class TestMatrixContentRepository:
         matrix_content_repo: MatrixContentRepository
         with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
             # when the data is saved in the repo
-            df_to_save = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
+            df_to_save = create_polars_dataframe([[1, 2, 3], [4, 5, 6]])
             matrix_hash = matrix_content_repo.save(df_to_save).hash
             # then the saved matrix object exists
             assert matrix_content_repo.exists(matrix_hash)
@@ -312,7 +312,7 @@ class TestMatrixContentRepository:
                 matrix_content_repo: MatrixContentRepository
                 with matrix_repository(tmp_path, repository_format) as matrix_content_repo:
                     data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-                    df = pd.DataFrame(data=data, columns=["A", "B", "C"])
+                    df = pl.DataFrame(data=data, schema=["A", "B", "C"])
                     associated_hash = matrix_content_repo.save(df).hash
                     matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{associated_hash}.{saved_format}")
 
@@ -345,7 +345,8 @@ class TestMatrixContentRepository:
         with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
             # Saves a matrix in the legacy format
             legacy_matrix = np.array([[1, 2, 3], [4, 5, 6]])
-            matrix_hash = compute_hash(pd.DataFrame(legacy_matrix))
+            df = create_polars_dataframe(legacy_matrix)
+            matrix_hash = compute_hash(df)
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             (matrix_path.parent / f"{matrix_hash}.tsv.lock").touch()
             np.savetxt(matrix_path, legacy_matrix, delimiter="\t")
@@ -353,7 +354,7 @@ class TestMatrixContentRepository:
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=LEGACY_MATRIX_VERSION)
             assert matrix.to_numpy().all() == legacy_matrix.all()
             # Ensures writing the same matrix in another format works
-            matrix_content_repo.save(pd.DataFrame(legacy_matrix))
+            matrix_content_repo.save(df)
             all_files = list(matrix_content_repo.bucket_dir.glob(f"*.{new_matrix_format}"))
             assert len(all_files) == 1
 
@@ -365,7 +366,7 @@ class TestMatrixContentRepository:
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             matrix_path.write_text("\n")
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=1)
-            assert matrix.empty
+            assert matrix.is_empty()
 
     @pytest.mark.parametrize("new_matrix_format", ["hdf", "parquet", "feather"])
     def test_null_matrix_mixed_formats(self, tmp_path: Path, new_matrix_format: str) -> None:
@@ -375,8 +376,8 @@ class TestMatrixContentRepository:
         with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             matrix_path.write_text("\n")
-            null_matrix = pd.DataFrame()
+            null_matrix = pl.DataFrame()
             matrix_id = matrix_content_repo.save(null_matrix).hash
             assert matrix_id == matrix_hash
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=2)
-            assert matrix.empty
+            assert matrix.is_empty()
