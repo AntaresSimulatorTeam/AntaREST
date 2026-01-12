@@ -417,14 +417,19 @@ class TestMatrixService:
             bucket_dir = matrix_service.matrix_content_repository.bucket_dir
             content_path = bucket_dir.joinpath(f"{info.id}.tsv")
             actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=NEW_MATRIX_VERSION)
-            assert actual.to_numpy().all() == matrix.all()
+            if actual.is_empty():
+                assert matrix.size == 0
+                expected_height = 0
+            else:
+                assert (actual.to_numpy() == matrix).all()
+                expected_height = matrix.shape[0]
 
             # A matrix object is stored in the database
             with db():
                 obj = matrix_service.repo.get(info.id)
                 assert obj is not None, f"Missing Matrix object {info.id}"
                 assert obj.width == (matrix.shape[1] if matrix.size else 0)
-                assert obj.height == matrix.shape[0]
+                assert obj.height == expected_height
                 now = current_time()
                 assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
