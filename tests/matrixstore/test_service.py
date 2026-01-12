@@ -232,11 +232,10 @@ class TestMatrixService:
 
     @with_db_context
     def test_different_hash_with_same_matrices_with_different_headers(self, matrix_service: MatrixService) -> None:
-        data = TEST_MATRIX
-        matrix_id = matrix_service.create(create_polars_dataframe(data))
-        other_matrix_id = matrix_service.create(
-            create_polars_dataframe(pd.DataFrame(data=data, columns=["c1", "c2", "c3"]))
-        )
+        df1 = pl.DataFrame(np.array(TEST_MATRIX))
+        matrix_id = matrix_service.create(df1)
+        df1.columns = ["c1", "c2", "c3"]
+        other_matrix_id = matrix_service.create(df1)
         assert matrix_id != other_matrix_id
 
     @with_db_context
