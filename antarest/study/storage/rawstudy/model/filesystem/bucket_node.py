@@ -45,11 +45,11 @@ class BucketNode(FolderNode):
         matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         registered_files: Optional[List[RegisteredFile]] = None,
-        default_file_node: type[RawFileNode] | type[InputSeriesMatrix] = RawFileNode,
+        use_matrix_mapper: bool = False,
     ):
         super().__init__(matrix_mapper, config)
         self.registered_files: List[RegisteredFile] = registered_files or []
-        self.default_file_node: type[RawFileNode] | type[InputSeriesMatrix] = default_file_node
+        self.use_matrix_mapper = use_matrix_mapper
 
     def _get_registered_file_by_key(self, key: str) -> Optional[RegisteredFile]:
         return next((rf for rf in self.registered_files if rf.key == key), None)
@@ -89,10 +89,10 @@ class BucketNode(FolderNode):
         elif isinstance(data, dict):
             node = BucketNode(self.matrix_mapper, self.config.next_file(key))
         elif isinstance(data, (str, bytes)):
-            if isinstance(self.default_file_node, RawFileNode):
-                node = RawFileNode(self.config.next_file(key))
-            else:
+            if self.use_matrix_mapper:
                 node = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(key))
+            else:
+                node = RawFileNode(self.config.next_file(key))
         else:
             raise TypeError(repr(type(data)))
         node.save(data)
@@ -109,11 +109,10 @@ class BucketNode(FolderNode):
                 node = registered_file.node
                 children[registered_file.key] = node(self.matrix_mapper, self.config.next_file(item.name))
             elif item.is_file():
-                if isinstance(self.default_file_node, RawFileNode):
-                    default_node = RawFileNode(self.config.next_file(item.name))
+                if self.use_matrix_mapper:
+                    children[item.name] = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(item.name))
                 else:
-                    default_node = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(item.name))
-                children[item.name] = default_node
+                    children[item.name] = RawFileNode(self.config.next_file(item.name))
             else:
                 children[item.name] = BucketNode(self.matrix_mapper, self.config.next_file(item.name))
 
