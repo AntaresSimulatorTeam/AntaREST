@@ -23,7 +23,7 @@ from antarest.maintenance.tasks.watcher_scan import scan_workspaces
 @celery_app.task(bind=True, name="watcher_scan", pydantic=True)
 def watcher_scan_task(self: Task) -> WatcherScanTaskResult:  # type: ignore[type-arg]
     """Celery wrapper that delegates to scan_workspaces()."""
-    ctx: MaintenanceContext | None = getattr(self.app.conf, "maintenance_ctx", None)
+    ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
     if not ctx:
         raise RuntimeError("MaintenanceContext not in app.conf - worker not initialized?")
 
