@@ -194,7 +194,6 @@ def compute_hash(df: pl.DataFrame) -> str:
     """
     # Convert polars dataframe to pandas one for backward compatibility of the hashing value.
     pandas_df = df.to_pandas()
-    pandas_df = pandas_df.replace({None: np.nan})
     if df.columns == [str(i) for i in range(len(df.columns))]:
         pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])  # type: ignore
 
