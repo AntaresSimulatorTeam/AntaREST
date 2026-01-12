@@ -26,7 +26,7 @@ class RegisteredFile:
     def __init__(
         self,
         key: str,
-        node: Optional[Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]]],
+        node: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
         filename: str = "",
     ):
         self.key = key
@@ -75,8 +75,7 @@ class BucketNode(FolderNode):
             if len(url) > 1:
                 registered_file = self._get_registered_file_by_key(key)
                 if registered_file:
-                    node = registered_file.node or self.default_file_node
-                    node(self.matrix_mapper, self.config.next_file(key)).save(data, url[1:])
+                    registered_file.node(self.matrix_mapper, self.config.next_file(key)).save(data, url[1:])
                 else:
                     BucketNode(self.matrix_mapper, self.config.next_file(key)).save(data, url[1:])
             else:
@@ -85,12 +84,7 @@ class BucketNode(FolderNode):
     def _save(self, data: SUB_JSON, key: str) -> None:
         registered_file = self._get_registered_file_by_key(key)
         if registered_file:
-            node, filename = (
-                registered_file.node or self.default_file_node,
-                registered_file.filename,
-            )
-
-            node(self.matrix_mapper, self.config.next_file(filename)).save(data)
+            registered_file.node(self.matrix_mapper, self.config.next_file(registered_file.filename)).save(data)
         elif isinstance(data, (str, bytes)):
             self.default_file_node(self.matrix_mapper, self.config.next_file(key)).save(data)
         elif isinstance(data, dict):
@@ -105,7 +99,7 @@ class BucketNode(FolderNode):
         for item in sorted(self.config.path.iterdir()):
             registered_file = self._get_registered_file_by_filename(item.name)
             if registered_file:
-                node = registered_file.node or self.default_file_node
+                node = registered_file.node
                 children[registered_file.key] = node(self.matrix_mapper, self.config.next_file(item.name))
             elif item.is_file():
                 children[item.name] = self.default_file_node(self.matrix_mapper, self.config.next_file(item.name))
