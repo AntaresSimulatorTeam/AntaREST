@@ -11,8 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from pathlib import Path
-from typing import List, Optional, Union, cast
+from typing import List, Optional, Union
 
 import pandas as pd
 from typing_extensions import override
@@ -64,7 +63,8 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         # noinspection SpellCheckingInspection
         return f"matrixfile://{self.config.path.name}"
 
-    def parse_dataframe(self, file_path: Path) -> pd.DataFrame:
+    def parse_dataframe(self) -> pd.DataFrame:
+        file_path = self.config.path
         try:
             df = pd.read_csv(
                 file_path,
@@ -89,10 +89,6 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix.columns = body.columns
         return matrix
 
-    def parse(self, file_path: Path) -> JSON:
-        matrix = self.parse_dataframe(file_path)
-        return cast(JSON, matrix.to_dict(orient="split"))
-
     @override
     def load(
         self,
@@ -113,7 +109,8 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
             if not file_path.exists():
                 raise FileNotFoundError(file_path)
-            return self.parse(file_path)
+            matrix = self.parse_dataframe()
+            return matrix.to_dict(orient="split")
         except FileNotFoundError as e:
             raise ChildNotFoundError(
                 f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"

@@ -59,7 +59,6 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
@@ -2306,14 +2305,14 @@ class StudyService:
         # Checks that the provided path refers to a matrix
         node = self.get_file_study(study).tree.get_node(list(url))
         if isinstance(node, MatrixNode):
-            df_matrix = node.parse_as_dataframe()
-        elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
-            matrix = pd.DataFrame(**node.load())  # type: ignore
-            df_matrix = create_polars_dataframe(matrix)
+            pandas_df = node.parse_as_dataframe().to_pandas()
+        elif isinstance(node, OutputSeriesMatrix):
+            pandas_df = node.parse_dataframe()
+        elif isinstance(node, OutputSynthesis):
+            pandas_df = pd.DataFrame(**node.load())
         else:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
-        pandas_df = df_matrix.to_pandas()
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
             time_column = pd.date_range(
