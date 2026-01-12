@@ -58,7 +58,7 @@ class TestInputSeriesMatrix:
         # checks formatted response
         actual = node.load(formatted=True)
         expected = {
-            "columns": [0, 1, 2, 3, 4, 5, 6, 7],
+            "columns": ["0", "1", "2", "3", "4", "5", "6", "7"],
             "data": [
                 [100000, 100000, 0.01, 0.01, 0, 0, 0, 3.14],
                 [100000, 100000, 0.01, 0.01, 0, 0, 0, 6.28],
@@ -86,7 +86,7 @@ class TestInputSeriesMatrix:
 
         # checks formatted response
         actual = node.load(formatted=True)
-        expected = {"index": [0, 1], "columns": [0, 1], "data": node.default_empty.tolist()}
+        expected = {"index": [0, 1], "columns": ["0", "1"], "data": node.default_empty.tolist()}
         assert actual == expected
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
@@ -107,7 +107,7 @@ class TestInputSeriesMatrix:
         matrix_obj = {
             "data": [[1, 2], [3, 4]],
             "index": [0, 1],
-            "columns": [0, 1],
+            "columns": ["0", "1"],
         }
         link.write_text(matrix_uri)
 
@@ -142,7 +142,7 @@ class TestInputSeriesMatrix:
         node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
 
         # Save different data than default
-        node.dump({"columns": [0, 1], "data": [[5.0, 6.0], [7.0, 8.0]], "index": [0, 1]})
+        node.dump({"columns": ["0", "1"], "data": [[5.0, 6.0], [7.0, 8.0]], "index": [0, 1]})
 
         # The file should contain saved data
         actual = my_study_config.path.read_text()
@@ -155,7 +155,7 @@ class TestInputSeriesMatrix:
         assert actual == expected
 
         # Now reset to default
-        node.dump({"columns": [0, 1], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]})
+        node.dump({"columns": ["0", "1"], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]})
 
         # The file should be empty now
         actual_text = my_study_config.path.read_text()
@@ -163,7 +163,7 @@ class TestInputSeriesMatrix:
 
         # Loading the matrix should return the default values
         actual = node.load()
-        assert actual == {"columns": [0, 1], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]}
+        assert actual == {"columns": ["0", "1"], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]}
 
 
 class TestCopyAndRenameFile:
