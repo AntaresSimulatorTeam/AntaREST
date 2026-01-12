@@ -22,7 +22,8 @@ from polars.exceptions import ComputeError, NoDataError
 def create_polars_dataframe(data: npt.NDArray[np.float64] | list[list[Any]] | pd.DataFrame) -> pl.DataFrame:
     if isinstance(data, list):
         data = np.array(data)
-    return pl.DataFrame(data, schema=[str(i) for i in range(data.shape[1])])
+    length = data.shape[1] if len(data.shape) == 2 else 1
+    return pl.DataFrame(data, schema=[str(i) for i in range(length)])
 
 
 def read_input_dataframe(path: Path, has_headers: bool) -> pl.DataFrame:
