@@ -17,7 +17,7 @@ from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from fastapi import APIRouter, Query, UploadFile
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -364,6 +364,11 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         Returns:
         - The ID of the newly created study.
         """
+        if storage_mode == StorageMode.DATABASE and not config.storage.database_mode_enabled:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_IMPLEMENTED,
+                detail="Database storage mode is not enabled on this server",
+            )
         study_version = StudyVersion.parse(version) if version else None
         logger.info(f"Creating new study '{name}' with storage_mode={storage_mode}")
         name_sanitized = validate_study_name(escape(name))

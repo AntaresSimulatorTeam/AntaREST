@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
-from antarest.study.dao.database.models import area, area_ui
+from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
 from antarest.study.model import StorageMode
 from tests.helpers import create_study
 
@@ -61,15 +61,23 @@ class TestDatabaseAreaDaoMethods:
             db_session.commit()
 
         with db_session:
+            study_id = dao.get_study_id()
+
             # Check area was created with both ID and original name
-            stmt_area = select(area).where((area.c.study_id == dao.get_study_id()) & (area.c.area_id == "paris"))
+            stmt_area = select(AREA_TABLE).where(
+                (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == "paris")
+            )
             area_row = db_session.execute(stmt_area).fetchone()
             assert area_row is not None
             assert area_row.area_id == "paris"
             assert area_row.area_name == "Paris"
 
             # Check default UI was created for layer "0"
-            stmt_ui = select(area_ui).where((area_ui.c.area_id == area_row.id) & (area_ui.c.layer_id == "0"))
+            stmt_ui = select(AREA_UI_TABLE).where(
+                (AREA_UI_TABLE.c.study_id == study_id)
+                & (AREA_UI_TABLE.c.area_id == "paris")
+                & (AREA_UI_TABLE.c.layer_id == "0")
+            )
             ui_row = db_session.execute(stmt_ui).fetchone()
             assert ui_row is not None
             assert ui_row.x == 0
@@ -104,7 +112,9 @@ class TestDatabaseAreaDaoMethods:
 
         with db_session:
             # Check area was deleted
-            stmt_area = select(area).where((area.c.study_id == dao.get_study_id()) & (area.c.area_id == "paris"))
+            stmt_area = select(AREA_TABLE).where(
+                (AREA_TABLE.c.study_id == dao.get_study_id()) & (AREA_TABLE.c.area_id == "paris")
+            )
             area_row = db_session.execute(stmt_area).fetchone()
             assert area_row is None
 
@@ -296,10 +306,12 @@ class TestDatabaseAreaDaoMethods:
 
             # Verify Berlin doesn't have layer "1"
             # (should fall back to layer "0")
-            stmt_area = select(area.c.id).where((area.c.study_id == dao.get_study_id()) & (area.c.area_id == "berlin"))
-            berlin_area_row = db_session.execute(stmt_area).fetchone()
-            assert berlin_area_row is not None
-            stmt_ui = select(area_ui).where((area_ui.c.area_id == berlin_area_row.id) & (area_ui.c.layer_id == "1"))
+            study_id = dao.get_study_id()
+            stmt_ui = select(AREA_UI_TABLE).where(
+                (AREA_UI_TABLE.c.study_id == study_id)
+                & (AREA_UI_TABLE.c.area_id == "berlin")
+                & (AREA_UI_TABLE.c.layer_id == "1")
+            )
             berlin_layer1 = db_session.execute(stmt_ui).fetchone()
             assert berlin_layer1 is None
 
@@ -310,24 +322,19 @@ class TestDatabaseAreaDaoMethods:
 
         with db_session:
             # Verify Paris and London no longer have layer "1"
-            stmt_area_paris = select(area.c.id).where(
-                (area.c.study_id == dao.get_study_id()) & (area.c.area_id == "paris")
-            )
-            paris_area_row = db_session.execute(stmt_area_paris).fetchone()
-            assert paris_area_row is not None
-            stmt_ui_paris = select(area_ui).where(
-                (area_ui.c.area_id == paris_area_row.id) & (area_ui.c.layer_id == "1")
+            study_id = dao.get_study_id()
+            stmt_ui_paris = select(AREA_UI_TABLE).where(
+                (AREA_UI_TABLE.c.study_id == study_id)
+                & (AREA_UI_TABLE.c.area_id == "paris")
+                & (AREA_UI_TABLE.c.layer_id == "1")
             )
             paris_layer1 = db_session.execute(stmt_ui_paris).fetchone()
             assert paris_layer1 is None
 
-            stmt_area_london = select(area.c.id).where(
-                (area.c.study_id == dao.get_study_id()) & (area.c.area_id == "london")
-            )
-            london_area_row = db_session.execute(stmt_area_london).fetchone()
-            assert london_area_row is not None
-            stmt_ui_london = select(area_ui).where(
-                (area_ui.c.area_id == london_area_row.id) & (area_ui.c.layer_id == "1")
+            stmt_ui_london = select(AREA_UI_TABLE).where(
+                (AREA_UI_TABLE.c.study_id == study_id)
+                & (AREA_UI_TABLE.c.area_id == "london")
+                & (AREA_UI_TABLE.c.layer_id == "1")
             )
             london_layer1 = db_session.execute(stmt_ui_london).fetchone()
             assert london_layer1 is None

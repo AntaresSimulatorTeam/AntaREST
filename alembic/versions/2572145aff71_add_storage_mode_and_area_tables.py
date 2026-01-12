@@ -33,7 +33,6 @@ def upgrade() -> None:
     # 2. Create area table
     op.create_table(
         "area",
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("area_name", sa.String(length=255), nullable=False),
@@ -43,17 +42,14 @@ def upgrade() -> None:
             name=op.f("fk_area_study_id_study"),
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_area")),
-        sa.UniqueConstraint("study_id", "area_id", name=op.f("uq_area_study_id_area_id")),
+        sa.PrimaryKeyConstraint("study_id", "area_id", name=op.f("pk_area")),
     )
-    with op.batch_alter_table("area") as batch_op:
-        batch_op.create_index(batch_op.f("ix_area_study_id"), ["study_id"], unique=False)
 
     # 3. Create area_ui table
     op.create_table(
         "area_ui",
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("area_id", sa.Integer(), nullable=False),
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("layer_id", sa.String(length=10), nullable=False),
         sa.Column("x", sa.Integer(), nullable=False),
         sa.Column("y", sa.Integer(), nullable=False),
@@ -61,17 +57,13 @@ def upgrade() -> None:
         sa.Column("color_g", sa.Integer(), nullable=False),
         sa.Column("color_b", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
-            ["area_id"],
-            ["area.id"],
-            name=op.f("fk_area_ui_area_id_area"),
+            ["study_id", "area_id"],
+            ["area.study_id", "area.area_id"],
+            name=op.f("fk_area_ui_study_id_area_id_area"),
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_area_ui")),
-        sa.UniqueConstraint("area_id", "layer_id", name=op.f("uq_area_ui_area_id_layer_id")),
+        sa.PrimaryKeyConstraint("study_id", "area_id", "layer_id", name=op.f("pk_area_ui")),
     )
-    with op.batch_alter_table("area_ui") as batch_op:
-        batch_op.create_index(batch_op.f("ix_area_ui_area_id"), ["area_id"], unique=False)
-        batch_op.create_index(batch_op.f("ix_area_ui_layer_id"), ["layer_id"], unique=False)
 
 
 def downgrade() -> None:
