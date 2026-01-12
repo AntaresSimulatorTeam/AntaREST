@@ -26,6 +26,7 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
         # Based on the matrix version, we assume its format
         if matrix_version == 1:
             df = pl.DataFrame(data=np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2))
+            df.columns = [str(k) for k in range(len(df.columns))]
         else:
             df = read_input_dataframe(path, has_headers=True)
     elif matrix_format == InternalMatrixFormat.HDF:
@@ -38,10 +39,8 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
     else:
         raise NotImplementedError(f"Internal matrix format '{matrix_format}' is not implemented")
 
-    # Specific treatment to change default polars columns
-    length_range = range(len(df.columns))
-    if df.columns == [f"column_{k}" for k in length_range]:
-        df.columns = [str(k) for k in length_range]
+    # Polars use `null` while pandas used `NaN` so we have to convert the data for compatibility.
+    df = df.fill_null(np.nan)
     return df
 
 
