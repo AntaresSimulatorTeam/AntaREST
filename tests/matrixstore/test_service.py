@@ -196,8 +196,8 @@ class TestMatrixService:
 
         with db():
             for matrix in matrices:
-                mat = pd.read_csv(matrix)
-                matrix_service.create(create_polars_dataframe(mat))
+                mat = pl.read_csv(matrix)
+                matrix_service.create(mat)
 
             actual_matrices = matrix_service.get_matrices()
 
