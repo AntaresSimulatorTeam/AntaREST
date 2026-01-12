@@ -9,16 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pandas as pd
-import polars as pl
 
-conversion = pl.from_pandas(
-    pd.DataFrame(
-        [
-            [-9999999980506447872.0, 0.0, 9999999980506447872.0],
-            [0.0, 0.0, 0.0],
-        ]
-    )
-)
+from antarest.core.utils.polars import create_polars_dataframe
 
-data = pl.from_pandas(pd.DataFrame([[1.0, 1.0, 0.0, 1.0, 1.0, 1.0]] * 12))
+conversion = create_polars_dataframe([[-9999999980506447872.0, 0.0, 9999999980506447872.0], [0.0, 0.0, 0.0]])
+data = create_polars_dataframe([[1.0, 1.0, 0.0, 1.0, 1.0, 1.0]] * 12)
