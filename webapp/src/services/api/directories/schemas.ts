@@ -16,81 +16,50 @@ import { z } from "zod";
 
 /**
  * Zod schemas for directories API validation and transformation
- * Following Zod best practices:
- * - Schemas are the single source of truth
- * - Use .transform() to convert API responses to frontend DTOs
- * - Types are inferred from schemas using z.infer<>
+ * Schemas are the single source of truth - types are inferred using z.infer<>
  */
 
 ////////////////////////////////////////////////////////////////
-// API Response Schemas
+// Base Schemas
 ////////////////////////////////////////////////////////////////
 
-
-const apiDirectorySchema = z.object({
-  id: z.string(),
+const baseDirectorySchema = z.object({
   name: z.string(),
-  description: z.string().optional(),
-  path: z.string().optional(),
-  created_at: z.string(),
-  updated_at: z.string(),
-});
-
-
-const apiDirectoriesListResponseSchema = z.object({
-  directories: z.array(apiDirectorySchema),
-  total: z.number().optional(),
+  parentId: z.string().nullable(),
 });
 
 ////////////////////////////////////////////////////////////////
-// Transformed Schemas (adapters)
+// Response Schemas
 ////////////////////////////////////////////////////////////////
 
+export const directorySchema = baseDirectorySchema.extend({
+  id: z.string(),
+});
 
-export const directorySchema = apiDirectorySchema.transform((data) => ({
-  id: data.id,
-  name: data.name,
-  description: data.description,
-  path: data.path,
-  createdAt: data.created_at,
-  updatedAt: data.updated_at,
-}));
+export const directoriesListResponseSchema = z.array(directorySchema);
 
-
-export const directoriesListResponseSchema =
-  apiDirectoriesListResponseSchema.transform((data) => ({
-    directories: data.directories.map((directory) => ({
-      id: directory.id,
-      name: directory.name,
-      description: directory.description,
-      path: directory.path,
-      createdAt: directory.created_at,
-      updatedAt: directory.updated_at,
-    })),
-    total: data.total,
-  }));
+export const updateDirectoryResponseSchema = baseDirectorySchema;
 
 ////////////////////////////////////////////////////////////////
-// Input Schemas (mutations)
+// Input Schemas
 ////////////////////////////////////////////////////////////////
-
 
 export const createDirectoryInputSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  path: z.string().optional(),
+  name: z.string().min(1),
+  parentId: z.string(),
 });
-
 
 export const updateDirectoryInputSchema = z.object({
-  name: z.string().min(1).optional(),
-  description: z.string().optional(),
-  path: z.string().optional(),
+  name: z.string().min(1),
+  parentId: z.string(),
 });
 
+////////////////////////////////////////////////////////////////
+// Filter Schemas
+////////////////////////////////////////////////////////////////
 
 export const directoryFiltersSchema = z.object({
   search: z.string().optional(),
-  sortBy: z.enum(["name", "created_at", "updated_at"]).optional(),
+  sortBy: z.enum(["name"]).optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
 });
