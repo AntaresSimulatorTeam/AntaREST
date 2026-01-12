@@ -17,7 +17,6 @@ from typing import Optional
 
 import numpy as np
 import polars as pl
-from polars.exceptions import NoDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -62,41 +61,33 @@ class InputSeriesMatrix(MatrixNode):
         self.should_exist = should_exist
 
     @override
-    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pl.DataFrame:
-        file_path = file_path or self.config.path
-        try:
-            stopwatch = StopWatch()
-            link_content = self.matrix_mapper.get_link_content(self)
-            if link_content:
-                matrix = self.matrix_mapper.get_matrix(link_content)
-            else:
-                try:
-                    matrix = read_input_dataframe(file_path, has_headers=False)
-                except FileNotFoundError as e:
-                    # Some matrices are optional and not required by the Simulator
-                    # If so, we shouldn't raise but just return the `default_empty` value
-                    if not self.should_exist:
-                        if self.default_empty is not None:
-                            return create_polars_dataframe(self.default_empty)
-                        return pl.DataFrame()
-                    # Otherwise, we raise a 404 'Not Found' exception.
-                    logger.warning(f"Matrix file'{file_path}' not found")
-                    study_id = self.config.study_id
-                    relpath = file_path.relative_to(self.config.study_path).as_posix()
-                    raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
-
+    def parse_as_dataframe(self) -> pl.DataFrame:
+        file_path = self.config.path
+        stopwatch = StopWatch()
+        link_content = self.matrix_mapper.get_link_content(self)
+        if link_content:
+            matrix = self.matrix_mapper.get_matrix(link_content)
+        else:
+            try:
+                matrix = read_input_dataframe(file_path, has_headers=False)
                 matrix.columns = [str(i) for i in range(len(matrix.columns))]
+            except FileNotFoundError as e:
+                # Some matrices are optional and not required by the Simulator
+                # If so, we shouldn't raise but just return the `default_empty` value
+                if not self.should_exist:
+                    if self.default_empty is not None:
+                        return create_polars_dataframe(self.default_empty)
+                    return pl.DataFrame()
+                # Otherwise, we raise a 404 'Not Found' exception.
+                logger.warning(f"Matrix file'{file_path}' not found")
+                study_id = self.config.study_id
+                relpath = file_path.relative_to(self.config.study_path).as_posix()
+                raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
-            stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
-            if matrix.is_empty():
-                raise NoDataError
-            return matrix
-        except NoDataError:
-            logger.warning(f"Empty file found when parsing {file_path}")
-            final_matrix = pl.DataFrame()
-            if self.default_empty is not None:
-                final_matrix = create_polars_dataframe(self.default_empty)
-            return final_matrix
+        if matrix.is_empty() and self.default_empty is not None:
+            return create_polars_dataframe(self.default_empty)
+        stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
+        return matrix
 
     @override
     def write_dataframe(self, df: pl.DataFrame) -> None:
