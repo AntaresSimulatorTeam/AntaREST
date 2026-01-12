@@ -499,7 +499,10 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.get_files()).read_only()
+        command_context = self._variant_service.command_factory.command_context
+        return FileStudyTreeDao(
+            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+        ).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:

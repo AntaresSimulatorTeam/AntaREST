@@ -373,7 +373,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         directory_path_sanitized = validate_folder_path(directory) if directory else ""
 
         uuid = study_service.create_study(
-            name_sanitized, study_version, group_ids, directory=directory_path_sanitized, storage_mode=storage_mode
+            name_sanitized, study_version, group_ids, storage_mode=storage_mode, directory=directory_path_sanitized
         )
 
         return uuid
