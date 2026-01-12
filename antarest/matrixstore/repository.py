@@ -193,6 +193,10 @@ def compute_hash(df: pl.DataFrame) -> str:
     for numeric-only tables.
     """
     pandas_df = df.to_pandas()
+    # Transform columns from ['0', '1', ...] to [0, 1, ...] for backward compatibility
+    if df.columns == [str(i) for i in range(len(df.columns))]:
+        pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])  # type: ignore
+
     # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
     legacy_format = False
     if all(np.issubdtype(dtype.type, np.number) for dtype in pandas_df.dtypes):

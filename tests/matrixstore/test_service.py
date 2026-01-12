@@ -601,10 +601,10 @@ def test_hashing_method() -> None:
     Non-Regression Test for the hashing method
     It's really important as the whole matrix-store behavior relies on this function
     """
-    df = pd.DataFrame(TEST_MATRIX)
+    df = create_polars_dataframe(TEST_MATRIX)
     assert compute_hash(df) == "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
 
-    other_df = pd.DataFrame(data=8760 * [1.0])
+    other_df = create_polars_dataframe(np.array(8760 * [1.0]))
     assert compute_hash(other_df) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
 
     assert compute_hash(AGGREGATION_DF) == "fa164563176cb9130c34c5799138f88dd9eb18e8a6054a2f117c58fcf2a8b519"
