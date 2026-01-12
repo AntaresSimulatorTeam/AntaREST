@@ -276,7 +276,7 @@ class TestFetchRawData:
         res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
         assert res.status_code == 200, res.json()
         assert res.json()["index"] == list(range(365))
-        assert res.json()["columns"] == list(range(6))
+        assert res.json()["columns"] == ["0", "1", "2", "3", "4", "5"]
         assert res.json()["data"] == default_data_matrix.tolist()
 
         # =============================
