@@ -1,7 +1,7 @@
 """add_storage_mode_and_area_tables
 
 Revision ID: 2572145aff71
-Revises: d2942741ae68
+Revises: 9770c0960334
 Create Date: 2025-01-17 00:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "2572145aff71"
-down_revision = "d2942741ae68"
+down_revision = "9770c0960334"
 branch_labels = None
 depends_on = None
 
