@@ -50,7 +50,7 @@ from antarest.matrixstore.service import NEW_MATRIX_VERSION, MatrixService, chec
 from tests.conftest import PROJECT_DIR
 from tests.helpers import with_db_context
 
-MatrixType = t.List[t.List[float]]
+MatrixType = list[list[float]]
 TEST_MATRIX = [[1, 2, 3], [4, 5, 6]]
 resource_path = (
     PROJECT_DIR
@@ -257,7 +257,7 @@ class TestMatrixService:
         """Delete a matrix object from the matrix content repository and the database."""
         # when a matrix is created (inserted) in the service
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        matrix_id = matrix_service.create(pl.DataFrame(data))
 
         # When the matrix id deleted
         with db():
@@ -342,14 +342,19 @@ class TestMatrixService:
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{info.id}.tsv")
         actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=NEW_MATRIX_VERSION)
-        assert actual.to_numpy().all() == matrix.all()
+        if actual.is_empty():
+            assert matrix.size == 0
+            expected_height = 0
+        else:
+            assert (actual.to_numpy() == matrix).all()
+            expected_height = matrix.shape[0]
 
-        # A matrix object is stored in the database
+            # A matrix object is stored in the database
         with db():
             obj = matrix_service.repo.get(info.id)
             assert obj is not None, f"Missing Matrix object {info.id}"
             assert obj.width == matrix.shape[1]
-            assert obj.height == matrix.shape[0]
+            assert obj.height == expected_height
             now = current_time()
             assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
@@ -362,12 +367,12 @@ class TestMatrixService:
         Check that the matrices are correctly imported.
         """
         # Prepare the matrix data to import
-        data_list: t.List[MatrixType] = [
+        data_list: list[MatrixType] = [
             TEST_MATRIX,
             [[7, 8, 9, 10, 11], [17, 18, 19, 20, 21], [27, 28, 29, 30, 31]],
             [[]],
         ]
-        matrix_list: t.List[np.ndarray[t.Any, np.dtype[np.float64]]] = [
+        matrix_list: list[np.ndarray[t.Any, np.dtype[np.float64]]] = [
             np.array(data, dtype=np.float64) for data in data_list
         ]
         if content_type == "application/json":
