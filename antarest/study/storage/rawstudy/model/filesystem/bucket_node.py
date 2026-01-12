@@ -109,7 +109,11 @@ class BucketNode(FolderNode):
                 node = registered_file.node
                 children[registered_file.key] = node(self.matrix_mapper, self.config.next_file(item.name))
             elif item.is_file():
-                children[item.name] = self.default_file_node(self.matrix_mapper, self.config.next_file(item.name))
+                if isinstance(self.default_file_node, RawFileNode):
+                    default_node = RawFileNode(self.config.next_file(item.name))
+                else:
+                    default_node = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(item.name))
+                children[item.name] = default_node
             else:
                 children[item.name] = BucketNode(self.matrix_mapper, self.config.next_file(item.name))
 
