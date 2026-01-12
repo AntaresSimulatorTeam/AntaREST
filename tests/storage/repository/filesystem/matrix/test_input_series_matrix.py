@@ -16,7 +16,6 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
-import pandas as pd
 import polars as pl
 import pytest
 
@@ -79,7 +78,7 @@ class TestInputSeriesMatrix:
             link_path = file_path.parent / f"{file_path.name}.link"
             link_path.touch()
             resolver = Mock(spec=MatrixUriMapper)
-            resolver.get_matrix.return_value = pd.DataFrame()
+            resolver.get_matrix.return_value = pl.DataFrame()
             matrix_service = Mock()
             matrix_service.create.return_value = "matrix://my-id"
             resolver.matrix_service = matrix_service
