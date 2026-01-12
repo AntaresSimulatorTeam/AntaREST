@@ -27,7 +27,7 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
         if matrix_version == 1:
             df = pl.DataFrame(data=np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2))
         else:
-            df = read_input_dataframe(path)
+            df = read_input_dataframe(path, has_headers=True)
     elif matrix_format == InternalMatrixFormat.HDF:
         pandas_df = cast(pd.DataFrame, pd.read_hdf(path))
         df = pl.from_pandas(pandas_df)

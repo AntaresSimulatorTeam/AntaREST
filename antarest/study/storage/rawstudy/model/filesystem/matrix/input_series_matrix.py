@@ -71,7 +71,7 @@ class InputSeriesMatrix(MatrixNode):
                 matrix = self.matrix_mapper.get_matrix(link_content)
             else:
                 try:
-                    matrix = read_input_dataframe(file_path)
+                    matrix = read_input_dataframe(file_path, has_headers=False)
                 except FileNotFoundError as e:
                     # Some matrices are optional and not required by the Simulator
                     # If so, we shouldn't raise but just return the `default_empty` value
