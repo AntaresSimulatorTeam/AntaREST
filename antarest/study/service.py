@@ -427,11 +427,11 @@ class RawStudyInterface(StudyInterface):
             dao: StudyDao = DatabaseStudyDao(study.id, db.session)
         else:
             file_study = self.get_files()
-            context = commands[0].command_context if commands else None
+            command_context = self._variant_study_service.command_factory.command_context
             dao = FileStudyTreeDao(
                 file_study,
-                context.generator_matrix_constants if context else None,
-                context.blob_service if context else None,
+                command_context.generator_matrix_constants,
+                command_context.blob_service,
             )
 
         # Apply all commands
