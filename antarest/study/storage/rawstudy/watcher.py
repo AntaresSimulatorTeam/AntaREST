@@ -10,6 +10,13 @@
 #
 # This file is part of the Antares project.
 
+"""
+Watcher service for non-Celery environments (e.g., desktop version).
+
+This service runs as a background thread and periodically scans workspaces for studies.
+In production (Celery mode), use the watcher_scan_task instead.
+"""
+
 import logging
 import tempfile
 from html import escape
@@ -51,7 +58,10 @@ class _LogScanDuration:
 
 class Watcher(IService):
     """
-    Files Watcher to listen raw studies changes and trigger a database update.
+    Background service that periodically scans workspaces for studies.
+
+    This is used in non-Celery environments (desktop version) where
+    we can't rely on Celery Beat for scheduling.
     """
 
     LOCK = Path(tempfile.gettempdir()) / "watcher"
@@ -69,6 +79,7 @@ class Watcher(IService):
         self.config = config
         self.should_stop = False
         self.allowed_to_start = not config.storage.watcher_lock or Watcher._get_lock(config.storage.watcher_lock_delay)
+        self.sleeping_time = config.storage.watcher_scan_sleeping_time
 
     @override
     def start(self, threaded: bool = True) -> None:
@@ -119,7 +130,8 @@ class Watcher(IService):
                         self.clean_desktop_studies()
             except Exception as e:
                 logger.error("Unexpected error when scanning workspaces", exc_info=e)
-            sleep(2)
+            logger.info(f"Sleeping for {self.sleeping_time}s")
+            sleep(self.sleeping_time)
 
     def oneshot_scan(
         self,
