@@ -19,6 +19,7 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 
 
@@ -44,11 +45,11 @@ class BucketNode(FolderNode):
         matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         registered_files: Optional[List[RegisteredFile]] = None,
-        default_file_node: Callable[..., INode[Any, Any, Any]] = RawFileNode,
+        default_file_node: type[RawFileNode] | type[InputSeriesMatrix] = RawFileNode,
     ):
         super().__init__(matrix_mapper, config)
         self.registered_files: List[RegisteredFile] = registered_files or []
-        self.default_file_node: Callable[..., INode[Any, Any, Any]] = default_file_node
+        self.default_file_node: type[RawFileNode] | type[InputSeriesMatrix] = default_file_node
 
     def _get_registered_file_by_key(self, key: str) -> Optional[RegisteredFile]:
         return next((rf for rf in self.registered_files if rf.key == key), None)
@@ -84,11 +85,17 @@ class BucketNode(FolderNode):
     def _save(self, data: SUB_JSON, key: str) -> None:
         registered_file = self._get_registered_file_by_key(key)
         if registered_file:
-            registered_file.node(self.matrix_mapper, self.config.next_file(registered_file.filename)).save(data)
-        elif isinstance(data, (str, bytes)):
-            self.default_file_node(self.matrix_mapper, self.config.next_file(key)).save(data)
+            node = registered_file.node(self.matrix_mapper, self.config.next_file(registered_file.filename))
         elif isinstance(data, dict):
-            BucketNode(self.matrix_mapper, self.config.next_file(key)).save(data)
+            node = BucketNode(self.matrix_mapper, self.config.next_file(key))
+        elif isinstance(data, (str, bytes)):
+            if isinstance(self.default_file_node, RawFileNode):
+                node = RawFileNode(self.config.next_file(key))
+            else:
+                node = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(key))
+        else:
+            raise TypeError(repr(type(data)))
+        node.save(data)
 
     @override
     def build(self) -> TREE:
