@@ -20,6 +20,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 from fastapi import UploadFile
 from starlette.datastructures import Headers
@@ -60,7 +61,7 @@ resource_path = (
     / "aggregate_areas_raw_data"
     / "test-01-all.result.tsv"
 )
-AGGREGATION_DF = create_polars_dataframe(pd.read_csv(resource_path, sep="\t"))
+AGGREGATION_DF = pl.read_csv(resource_path, separator="\t")
 
 
 class TestMatrixService:
