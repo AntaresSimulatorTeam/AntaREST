@@ -122,13 +122,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
 
 class LinkOutputSeriesMatrix(OutputSeriesMatrix):
-    def __init__(
-        self,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-        src: str,
-        dest: str,
-    ):
+    def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency, src: str, dest: str):
         super(LinkOutputSeriesMatrix, self).__init__(
             config=config,
             freq=freq,
@@ -138,12 +132,7 @@ class LinkOutputSeriesMatrix(OutputSeriesMatrix):
 
 
 class AreaOutputSeriesMatrix(OutputSeriesMatrix):
-    def __init__(
-        self,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-        area: str,
-    ):
+    def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency, area: str):
         super(AreaOutputSeriesMatrix, self).__init__(
             config=config,
             freq=freq,
@@ -153,11 +142,7 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
 
 
 class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
-    def __init__(
-        self,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-    ):
+    def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency):
         super(BindingConstraintOutputSeriesMatrix, self).__init__(
             config=config,
             freq=freq,
