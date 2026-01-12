@@ -17,14 +17,14 @@ from typing import Optional
 
 import numpy as np
 import polars as pl
-from polars.exceptions import ComputeError, NoDataError
+from polars.exceptions import NoDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
-from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
@@ -71,14 +71,7 @@ class InputSeriesMatrix(MatrixNode):
                 matrix = self.matrix_mapper.get_matrix(link_content)
             else:
                 try:
-                    matrix = pl.read_csv(file_path, n_threads=1, separator="\t", has_header=False)
-                except ComputeError:
-                    # Happens for file `conversion.txt` as polars infer the data as int64, but the value is too big.
-                    # In such cases, we'll read the data as a string and convert it in float64 afterward
-                    matrix = pl.read_csv(
-                        file_path, n_threads=1, separator="\t", has_header=False, infer_schema=False
-                    ).with_columns(pl.all().cast(pl.Float64))
-
+                    matrix = read_input_dataframe(file_path)
                 except FileNotFoundError as e:
                     # Some matrices are optional and not required by the Simulator
                     # If so, we shouldn't raise but just return the `default_empty` value

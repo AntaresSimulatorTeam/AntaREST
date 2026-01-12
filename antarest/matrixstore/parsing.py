@@ -15,10 +15,10 @@ from typing import cast
 import numpy as np
 import pandas as pd
 import polars as pl
-from polars.exceptions import ComputeError, NoDataError
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
+from antarest.core.utils.polars import read_input_dataframe
 
 
 def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version: int) -> pl.DataFrame:
@@ -27,16 +27,7 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
         if matrix_version == 1:
             df = pl.DataFrame(data=np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2))
         else:
-            try:
-                df = pl.read_csv(path, n_threads=1, separator="\t", has_header=True)
-            except ComputeError:
-                # Happens for file `conversion.txt` as polars infer the data as int64, but the value is too big.
-                # In such cases, we'll read the data as a string and convert it in float64 afterward
-                df = pl.read_csv(path, n_threads=1, separator="\t", has_header=True, infer_schema=False).with_columns(
-                    pl.all().cast(pl.Float64)
-                )
-            except NoDataError:  # if the dataframe is empty
-                df = pl.DataFrame()
+            df = read_input_dataframe(path)
     elif matrix_format == InternalMatrixFormat.HDF:
         pandas_df = cast(pd.DataFrame, pd.read_hdf(path))
         df = pl.from_pandas(pandas_df)
