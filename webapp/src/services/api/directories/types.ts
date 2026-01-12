@@ -14,27 +14,17 @@
 
 import type { z } from "zod";
 import type {
-	createDirectoryInputSchema,
-	directoriesListResponseSchema,
-	directoryFiltersSchema,
-	directorySchema,
-	updateDirectoryInputSchema,
+  createDirectoryInputSchema,
+  directoriesListResponseSchema,
+  directoryFiltersSchema,
+  directorySchema,
+  updateDirectoryInputSchema,
+  updateDirectoryResponseSchema,
 } from "./schemas";
 
-/**
- * TypeScript types inferred from Zod schemas
- * Following Zod best practices: schemas are the single source of truth
- * Types are automatically inferred using z.infer<>
- *
- * These types represent the transformed frontend DTOs (camelCase)
- * The schemas handle validation and transformation from backend (snake_case) automatically
- */
-
-
 export type Directory = z.infer<typeof directorySchema>;
-export type DirectoriesListResponse = z.infer<
-	typeof directoriesListResponseSchema
->;
+export type DirectoriesListResponse = z.infer<typeof directoriesListResponseSchema>;
 export type CreateDirectoryInput = z.infer<typeof createDirectoryInputSchema>;
 export type UpdateDirectoryInput = z.infer<typeof updateDirectoryInputSchema>;
+export type UpdateDirectoryResponse = z.infer<typeof updateDirectoryResponseSchema>;
 export type DirectoryFilters = z.infer<typeof directoryFiltersSchema>;

@@ -16,18 +16,20 @@ import client from "../client";
 import {
   directoriesListResponseSchema,
   directorySchema,
+  updateDirectoryResponseSchema,
 } from "./schemas";
 import type {
   CreateDirectoryInput,
   DirectoriesListResponse,
   Directory,
   UpdateDirectoryInput,
+  UpdateDirectoryResponse,
 } from "./types";
-
 
 export const directoriesApi = {
   /**
    * GET /v1/directories - List all directories
+   *
    * @returns Promise<DirectoriesListResponse> - List of directories data
    * @throws {Error} If the response doesn't match the expected schema
    */
@@ -38,6 +40,7 @@ export const directoriesApi = {
 
   /**
    * POST /v1/directories - Create a new directory
+   *
    * @param directoryData - Directory data to create
    * @returns Promise<Directory> - Created directory data
    * @throws {Error} If the response doesn't match the expected schema
@@ -49,6 +52,7 @@ export const directoriesApi = {
 
   /**
    * PATCH /v1/directories/{directory_id} - Update directory
+   *
    * @param directoryId - ID of the directory to update
    * @param directoryData - Partial directory data to update
    * @returns Promise<Directory> - Updated directory data
@@ -57,16 +61,14 @@ export const directoriesApi = {
   update: async (
     directoryId: string,
     directoryData: UpdateDirectoryInput,
-  ): Promise<Directory> => {
-    const { data } = await client.patch(
-      `/v1/directories/${directoryId}`,
-      directoryData,
-    );
-    return directorySchema.parse(data);
+  ): Promise<UpdateDirectoryResponse> => {
+    const { data } = await client.patch(`/v1/directories/${directoryId}`, directoryData);
+    return updateDirectoryResponseSchema.parse(data);
   },
 
   /**
    * DELETE /v1/directories/{directory_id} - Delete directory
+   *
    * @param directoryId - ID of the directory to delete
    * @returns Promise<void>
    */
