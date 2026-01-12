@@ -85,9 +85,6 @@ class OutputSimulationTsNumbers(FolderNode):
             )
         if (self.config.path / "thermal").exists():
             children["thermal"] = AreaMultipleMatrixList(
-                self.matrix_mapper,
-                self.config.next_file("thermal"),
-                ThermalMatrixList,
-                TsNumbersVector,  # type: ignore
+                self.matrix_mapper, self.config.next_file("thermal"), ThermalMatrixList, TsNumbersVector
             )
         return children

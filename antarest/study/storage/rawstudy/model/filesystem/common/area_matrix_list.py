@@ -120,7 +120,8 @@ class BindingConstraintMatrixList(FolderNode):
     def build(self) -> TREE:
         """Builds the folder structure and creates child nodes representing each matrix file."""
         return {
-            file.stem: TsNumbersVector(self.config.next_file(file.name)) for file in self.config.path.glob(TXT_PATTERN)
+            file.stem: TsNumbersVector(self.matrix_mapper, self.config.next_file(file.name))
+            for file in self.config.path.glob(TXT_PATTERN)
         }
 
 
