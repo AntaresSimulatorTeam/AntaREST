@@ -24,11 +24,7 @@ logger = logging.getLogger(__name__)
 class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
     @override
     def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> List[int]:
         file_path = self.config.path
 
@@ -43,11 +39,7 @@ class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
         return []
 
     @override
-    def dump(
-        self,
-        data: Union[str, bytes, List[int]],
-        url: Optional[List[str]] = None,
-    ) -> None:
+    def dump(self, data: Union[str, bytes, List[int]], url: Optional[List[str]] = None) -> None:
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         with open(self.config.path, "w") as fh:
             fh.write(f"size:1x{len(data)}\n")

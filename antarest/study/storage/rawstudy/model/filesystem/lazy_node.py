@@ -14,8 +14,6 @@ from typing import Generic, List, Optional
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
 
 
@@ -24,14 +22,6 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     A "lazy" node does not return its full content but a summarized, short representation
     when in the context of a tree expansion (typically getting children of a folder node).
     """
-
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-    ) -> None:
-        self.matrix_mapper = matrix_mapper
-        super().__init__(config)
 
     @override
     def get(

@@ -19,7 +19,6 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -45,13 +44,12 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
     ):
-        super().__init__(matrix_mapper=matrix_mapper, config=config)
+        super().__init__(config=config)
         self.date_serializer = date_serializer
         self.head_writer = head_writer
         self.freq = freq
@@ -129,14 +127,12 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 class LinkOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
         src: str,
         dest: str,
     ):
         super(LinkOutputSeriesMatrix, self).__init__(
-            matrix_mapper=matrix_mapper,
             config=config,
             freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, src),
@@ -147,13 +143,11 @@ class LinkOutputSeriesMatrix(OutputSeriesMatrix):
 class AreaOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
         area: str,
     ):
         super(AreaOutputSeriesMatrix, self).__init__(
-            matrix_mapper,
             config=config,
             freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, area),
@@ -164,12 +158,10 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
 class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
     ):
         super(BindingConstraintOutputSeriesMatrix, self).__init__(
-            matrix_mapper,
             config=config,
             freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, "system"),

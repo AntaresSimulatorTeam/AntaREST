@@ -19,6 +19,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers_data import (
+    TsNumbersVector,
+)
 
 TXT_PATTERN = "*.txt"
 
@@ -113,21 +116,11 @@ class HydroMatrixList(FolderNode):
 
 
 class BindingConstraintMatrixList(FolderNode):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
-    ):
-        super().__init__(matrix_mapper, config)
-        self.matrix_class = matrix_class
-
     @override
     def build(self) -> TREE:
         """Builds the folder structure and creates child nodes representing each matrix file."""
         return {
-            file.stem: self.matrix_class(self.matrix_mapper, self.config.next_file(file.name))
-            for file in self.config.path.glob(TXT_PATTERN)
+            file.stem: TsNumbersVector(self.config.next_file(file.name)) for file in self.config.path.glob(TXT_PATTERN)
         }
 
 

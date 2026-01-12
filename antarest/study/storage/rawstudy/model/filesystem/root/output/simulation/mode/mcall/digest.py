@@ -19,7 +19,6 @@ from typing_extensions import override
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 
@@ -83,8 +82,8 @@ def _get_district(df: pl.DataFrame) -> DigestMatrixUI:
 
 
 class DigestSynthesis(OutputSynthesis):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(matrix_mapper, config)
+    def __init__(self, config: FileStudyTreeConfig):
+        super().__init__(config)
 
     @override
     def load(

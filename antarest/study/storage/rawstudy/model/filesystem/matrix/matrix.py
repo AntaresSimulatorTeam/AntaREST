@@ -65,7 +65,8 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
     ) -> None:
-        LazyNode.__init__(self, matrix_mapper, config)
+        LazyNode.__init__(self, config)
+        self.matrix_mapper = matrix_mapper
         self.freq = freq
 
     @override
