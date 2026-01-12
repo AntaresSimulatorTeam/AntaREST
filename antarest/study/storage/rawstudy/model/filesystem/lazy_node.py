@@ -10,9 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Generic, List, Optional, Tuple
-from zipfile import ZipFile
+from typing import Generic, List, Optional
 
 from typing_extensions import override
 
@@ -34,27 +32,6 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     ) -> None:
         self.matrix_mapper = matrix_mapper
         super().__init__(config)
-
-    def _get_real_file_path(
-        self,
-    ) -> Tuple[Path, Any]:
-        tmp_dir = None
-        if self.config.archive_path:
-            path, tmp_dir = self._extract_file_to_tmp_dir(self.config.archive_path)
-        else:
-            path = self.config.path
-        return path, tmp_dir
-
-    def file_exists(self) -> bool:
-        if self.config.archive_path:
-            str_zipped_path = str(self.config.archive_path)
-            inside_zip_path = str(self.config.path)[len(str_zipped_path[:-4]) + 1 :]
-            str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
-            with ZipFile(file=self.config.archive_path) as zip_file:
-                file_names = zip_file.namelist()
-            return str_inside_zip_path in file_names
-        else:
-            return self.config.path.exists()
 
     @override
     def get(

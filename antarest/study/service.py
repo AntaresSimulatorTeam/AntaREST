@@ -2445,6 +2445,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
+        self.assert_study_unarchived(study)
         file_study = self.get_file_study(study)
         url = [item for item in path.split("/") if item]
         node, relative_url = file_study.tree.get_node_and_remainder(url)

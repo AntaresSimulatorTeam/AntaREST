@@ -106,9 +106,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         The only usage of formatted=False was via the R scripts inside the GET /raw endpoint.
         Now we're using the `parse_as_dataframe` method so we can always return the value as if formatted was True.
         """
-        file_path, _ = self._get_real_file_path()
-
-        df = self.parse_as_dataframe(file_path)
+        df = self.parse_as_dataframe(self.config.path)
 
         stopwatch = StopWatch()
         data = cast(JSON, df.to_pandas().to_dict(orient="split"))

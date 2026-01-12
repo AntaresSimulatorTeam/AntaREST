@@ -47,16 +47,13 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> bytes:
-        file_path, tmp_dir = self._get_real_file_path()
+        file_path = self.config.path
 
         if file_path.exists():
             bytes = file_path.read_bytes()
         else:
             logger.warning(f"Missing file {self.config.path}")
             bytes = b""
-
-        if tmp_dir:
-            tmp_dir.cleanup()
 
         return bytes
 

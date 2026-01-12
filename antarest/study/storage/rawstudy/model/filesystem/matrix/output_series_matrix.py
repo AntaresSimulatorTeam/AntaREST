@@ -12,10 +12,9 @@
 
 import logging
 from pathlib import Path
-from typing import Any, List, Optional, Union, cast
+from typing import List, Optional, Union, cast
 
 import pandas as pd
-from pandas import DataFrame
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
@@ -67,12 +66,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         # noinspection SpellCheckingInspection
         return f"matrixfile://{self.config.path.name}"
 
-    def parse_dataframe(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
-    ) -> DataFrame:
-        file_path = file_path or self.config.path
+    def parse_dataframe(self, file_path: Path) -> pd.DataFrame:
         try:
             df = pd.read_csv(
                 file_path,
@@ -89,9 +83,6 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
             relpath = file_path.relative_to(self.config.study_path).as_posix()
             raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
-        if tmp_dir:
-            tmp_dir.cleanup()
-
         date, body = self.date_serializer.extract_date(df)
 
         rename_unnamed(body)
@@ -100,12 +91,8 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix.columns = body.columns
         return matrix
 
-    def parse(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
-    ) -> JSON:
-        matrix = self.parse_dataframe(file_path, tmp_dir)
+    def parse(self, file_path: Path) -> JSON:
+        matrix = self.parse_dataframe(file_path)
         return cast(JSON, matrix.to_dict(orient="split"))
 
     @override
@@ -117,22 +104,18 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
         try:
-            file_path, tmp_dir = self._get_real_file_path()
+            file_path = self.config.path
             if not formatted:
                 if file_path.exists():
                     file_content = file_path.read_bytes()
-                    if tmp_dir:
-                        tmp_dir.cleanup()
                     return file_content
 
                 logger.warning(f"Missing file {self.config.path}")
-                if tmp_dir:
-                    tmp_dir.cleanup()
                 return b""
 
             if not file_path.exists():
                 raise FileNotFoundError(file_path)
-            return self.parse(file_path, tmp_dir)
+            return self.parse(file_path)
         except FileNotFoundError as e:
             raise ChildNotFoundError(
                 f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"
