@@ -43,7 +43,7 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
     elif matrix_format == InternalMatrixFormat.PARQUET:
         df = pl.read_parquet(path)
     elif matrix_format == InternalMatrixFormat.FEATHER:
-        df = pl.read_ipc(path)
+        df = pl.read_ipc(path, memory_map=False)
     else:
         raise NotImplementedError(f"Internal matrix format '{matrix_format}' is not implemented")
 
