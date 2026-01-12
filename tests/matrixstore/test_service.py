@@ -619,7 +619,7 @@ def test_check_compliance_method() -> None:
     df = create_polars_dataframe(np.array(["test"]))
     check_dataframe_compliance(df)
 
-    df = create_polars_dataframe(np.array([datetime.datetime(2025, 4, 16)]))
+    df = pl.DataFrame([datetime.datetime(2025, 4, 16)])
     check_dataframe_compliance(df)
 
     # Error
@@ -628,7 +628,7 @@ def test_check_compliance_method() -> None:
     with pytest.raises(
         MatrixNotSupported,
         match=re.escape(
-            "Could not save the matrix: Supported matrix data types are 'string, np.number, datetime' and you provided object"
+            "Could not save the matrix: Supported matrix data types are 'number, datetime, string' and you provided Binary"
         ),
     ):
         check_dataframe_compliance(df)

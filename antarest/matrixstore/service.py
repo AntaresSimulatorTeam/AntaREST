@@ -236,7 +236,9 @@ def check_dataframe_compliance(df: pl.DataFrame) -> None:
 
     for dtype in df.dtypes:
         if not (dtype.is_numeric() or dtype.is_temporal() or dtype == String):
-            raise MatrixNotSupported(f"Supported matrix data types are 'number, datetime' and you provided {dtype}")
+            raise MatrixNotSupported(
+                f"Supported matrix data types are 'number, datetime, string' and you provided {dtype}"
+            )
 
 
 def _matrix_to_dto(matrix: Matrix) -> MatrixMetadataDTO:
