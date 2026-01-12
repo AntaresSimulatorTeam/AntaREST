@@ -183,7 +183,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/series/de/mod",
             {
-                "columns": [0, 1, 2],
+                "columns": ["0", "1", "2"],
                 "index": list(range(365)),
                 "data": [[0.0]] * 365,
             },
@@ -196,7 +196,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/common/capacity/reservoir_fr",
             {
-                "columns": [0, 1, 2],
+                "columns": ["0", "1", "2"],
                 "index": list(range(365)),
                 "data": [[0, 0.5, 1]] * 365,
             },
@@ -204,7 +204,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/thermal/series/fr/05_nuclear/series",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[2000]] * 8760,
             },
@@ -219,7 +219,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/links/fr/it",
             {
-                "columns": list(range(8)),
+                "columns": ["0", "1", "2", "3", "4", "5", "6", "7"],
                 "index": list(range(8760)),
                 "data": [[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760,
             },
@@ -237,7 +237,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[i % 168 * 100] for i in range(8760)],
             },
@@ -245,7 +245,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
             {
-                "columns": [0, 1, 2, 3, 4, 5, 6, 7],
+                "columns": ["0", "1", "2", "3", "4", "5", "6", "7"],
                 "index": list(range(8760)),
                 "data": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760,
             },
@@ -253,7 +253,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/reserves/fr",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
@@ -262,7 +262,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/solar/series/solar_fr",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
@@ -271,7 +271,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/wind/series/wind_fr",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
