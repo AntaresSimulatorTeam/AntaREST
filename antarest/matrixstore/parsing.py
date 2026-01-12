@@ -39,8 +39,6 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
     else:
         raise NotImplementedError(f"Internal matrix format '{matrix_format}' is not implemented")
 
-    # Polars use `null` while pandas used `NaN` so we have to convert the data for compatibility.
-    df = df.fill_null(np.nan)
     return df
 
 
