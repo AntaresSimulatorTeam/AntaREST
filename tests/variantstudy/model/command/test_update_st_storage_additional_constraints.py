@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,7 +19,6 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintCreation,
     STStorageAdditionalConstraintUpdate,
 )
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -30,6 +29,7 @@ from antarest.study.storage.variantstudy.model.command.update_st_storage_additio
     UpdateSTStorageAdditionalConstraints,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 class TestUpdateSTStorageAdditionalConstraint:
@@ -137,7 +137,7 @@ class TestUpdateSTStorageAdditionalConstraint:
 
         # Ensures we can read the constraints
         manager = STStorageManager(command_context)
-        constraints = manager.get_all_additional_constraints(FileStudyInterface(study))
+        constraints = manager.get_all_additional_constraints(file_study_interface(study))
         assert constraints == {
             "de": {
                 "sts_de": [

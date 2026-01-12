@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,7 +19,6 @@ from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
     get_thematic_trimming_fields_according_to_version,
 )
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.model import (
     STUDY_VERSION_7_0,
@@ -27,12 +26,14 @@ from antarest.study.model import (
     STUDY_VERSION_8_2,
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_1,
     STUDY_VERSION_9_3,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 @pytest.mark.parametrize(
@@ -105,9 +106,15 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
             id="v8.4",
         ),
         pytest.param(
+            STUDY_VERSION_8_5,
+            ThematicTrimming(lmr_viol=False),
+            {"variables selection": {"selected_vars_reset": True, "select_var -": ["LMR VIOL."]}},
+            id="v8.5",
+        ),
+        pytest.param(
             STUDY_VERSION_8_6,
-            ThematicTrimming(sts_inj_by_plant=False),
-            {"variables selection": {"selected_vars_reset": True, "select_var -": ["STS inj by plant"]}},
+            ThematicTrimming(sts_inj_by_plant=False, nox_emis=False),
+            {"variables selection": {"selected_vars_reset": True, "select_var -": ["STS inj by plant", "NOX EMIS."]}},
             id="v8.6",
         ),
         pytest.param(
@@ -151,7 +158,7 @@ def test_thematic_trimming_config(
         command_context=command_context,
     )
     empty_study_920.config.version = version
-    study = FileStudyInterface(empty_study_920)
+    study = file_study_interface(empty_study_920)
     study.file_study.tree.save(ini_content, ["settings", "generaldata"])
 
     # Initalize the expected fields to avoid writing them all inside the test

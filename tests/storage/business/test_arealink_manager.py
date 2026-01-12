@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,7 +20,7 @@ from antarest.study.business.model.area_model import AreaCreation, AreaUIUpdate
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -30,6 +30,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
+from tests.helpers import file_study_interface
 
 
 def test_area_crud(
@@ -108,7 +109,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
     )
     file_tree_mock = Mock(spec=FileStudyTree, matrix_mapper=Mock(), config=config)
 
-    study_interface = FileStudyInterface(FileStudy(config, file_tree_mock))
+    study_interface = file_study_interface(FileStudy(config, file_tree_mock))
     file_tree_mock.get.side_effect = [
         {
             "a": {
