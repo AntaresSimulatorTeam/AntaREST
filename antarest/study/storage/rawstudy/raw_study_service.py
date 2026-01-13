@@ -473,8 +473,12 @@ class RawStudyService(AbstractStorageService):
             # The section is optional and AntaresWeb supports the default Simulator value
             if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
                 hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
-                if hydro_pmax_value == "hourly":
-                    raise NotImplementedError("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
+                if hydro_pmax_value in {"daily", "hourly"}:
+                    return
+                else:
+                    raise NotImplementedError(
+                        f"AntaresWeb doesn't support the value '{hydro_pmax_value}' for the flag 'hydro-pmax'"
+                    )
 
     def normalize_study(self, study: Study | FileStudy) -> None:
         """
