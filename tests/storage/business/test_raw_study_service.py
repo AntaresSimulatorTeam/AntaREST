@@ -549,10 +549,10 @@ def test_checks_study_compatibility(tmp_path: Path) -> None:
     # Use the new flag
     general_data = settings_path / "generaldata.ini"
     with open(general_data, "w") as f:
-        f.writelines(["[compatibility]\n", "hydro-pmax = hourly"])
+        f.writelines(["[compatibility]\n", "hydro-pmax = wrong_val"])
 
     # The new flag isn't supported, the check should fail
     with pytest.raises(
-        NotImplementedError, match="AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
+        NotImplementedError, match="AntaresWeb doesn't support the value 'wrong_val' for the flag 'hydro-pmax'"
     ):
         study_service.checks_antares_web_compatibility(raw_study)
