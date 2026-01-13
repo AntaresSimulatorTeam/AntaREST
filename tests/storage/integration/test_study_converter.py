@@ -13,7 +13,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import polars as pl
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.area_model import AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.common import FilterOption
@@ -98,12 +100,11 @@ def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_con
         ),
     ]
     series = file_study_dao.get_link_series("fr", "it")
-    expected_series = pd.DataFrame(data=np.zeros((8760, 8)))
-    expected_series[0] = 100000.0
-    expected_series[1] = 100000.0
-    expected_series[2] = 0.01
-    expected_series[3] = 0.01
-    pd.testing.assert_frame_equal(series, expected_series, check_dtype=False)
+    expected_series = create_polars_dataframe(np.zeros((8760, 8)))
+    expected_series = expected_series.with_columns(
+        [pl.lit(100000).alias("0"), pl.lit(100000).alias("1"), pl.lit(0.01).alias("2"), pl.lit(0.01).alias("3")]
+    )
+    pl.testing.assert_frame_equal(series, expected_series, check_dtypes=False)
 
     # Binding constraints
     assert file_study_dao.get_all_constraints() == {}
