@@ -12,7 +12,6 @@
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import polars as pl
 
 from antarest.core.utils.polars import create_polars_dataframe
@@ -252,12 +251,12 @@ def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_con
 
     # Load
     load = file_study_dao.get_load("fr")
-    expected_load = pd.DataFrame((53 * list(range(0, 168 * 100, 100)))[:8760], dtype=np.int64)
-    assert load.equals(expected_load)
+    expected_load = create_polars_dataframe(np.array(53 * list(range(0, 168 * 100, 100)))[:8760])
+    pl.testing.assert_frame_equal(load, expected_load, check_dtypes=False)
 
     # Thermal series
     thermal_series = file_study_dao.get_thermal_series("fr", "01_solar")
-    assert thermal_series.equals(pd.DataFrame(8760 * [2000]))
+    assert thermal_series.equals(create_polars_dataframe(8760 * [2000]))
 
     # Thermal clusters
     expected_clusters = {
