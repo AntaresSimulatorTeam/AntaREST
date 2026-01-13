@@ -131,7 +131,6 @@ def _setup_periodic_tasks(sender: Celery, **_: object) -> None:
     clean_matrices_task.apply_async(countdown=60)
     clean_blobs_task.apply_async(countdown=90)
     auto_archive_task.apply_async(countdown=120)
-    watcher_scan_task.apply_async(countdown=30)  # First scan early
 
     logger.info(
         f"Periodic tasks: matrix_gc={storage.matrix_gc_sleeping_time}s, "
