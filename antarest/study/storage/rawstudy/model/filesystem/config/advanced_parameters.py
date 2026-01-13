@@ -39,6 +39,12 @@ class AdvancedParametersSection(AntaresBaseModel):
     accuracy_on_correlation: AccuracyOnCorrelation | None = None
 
 
+class CompatibilitySection(AntaresBaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
+
+    hydro_pmax: str | None = None
+
+
 class SeedParametersSection(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True, alias_generator=to_kebab_case)
 
@@ -76,6 +82,7 @@ class AdvancedParametersFileData(AntaresBaseModel):
     other_preferences: OtherPreferencesSection | None = Field(default=None, alias="other preferences")
     seed_parameters: SeedParametersSection | None = Field(default=None, alias="seeds - Mersenne Twister")
     advanced_parameters: AdvancedParametersSection | None = Field(default=None, alias="advanced parameters")
+    compatibility: CompatibilitySection | None = Field(default=None, alias="compatibility")
 
     def to_model(self) -> AdvancedParameters:
         args = {}
@@ -85,6 +92,8 @@ class AdvancedParametersFileData(AntaresBaseModel):
             args.update(self.seed_parameters.model_dump(exclude_none=True))
         if self.advanced_parameters:
             args.update(self.advanced_parameters.model_dump(exclude_none=True))
+        if self.compatibility:
+            args.update(self.compatibility.model_dump(exclude_none=True))
         return AdvancedParameters.model_validate(args)
 
     @classmethod
@@ -93,6 +102,7 @@ class AdvancedParametersFileData(AntaresBaseModel):
         args["other_preferences"] = parameters.model_dump(include=set(OtherPreferencesSection.model_fields))
         args["seed_parameters"] = parameters.model_dump(include=set(SeedParametersSection.model_fields))
         args["advanced_parameters"] = parameters.model_dump(include=set(AdvancedParametersSection.model_fields))
+        args["compatibility"] = parameters.model_dump(include=set(CompatibilitySection.model_fields))
         return cls.model_validate(args)
 
 
