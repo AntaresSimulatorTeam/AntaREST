@@ -14,7 +14,7 @@
 
 from datetime import timedelta
 
-import pandas as pd
+import polars as pl
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
@@ -28,7 +28,7 @@ class TestCleanMatricesIntegration:
 
     def test_deletes_old_unused_matrices(self, matrix_service: MatrixService):
         """Test that old unused matrices are deleted."""
-        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
+        matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
             matrix_id = matrix_service.create(matrix_data)
@@ -58,7 +58,7 @@ class TestCleanMatricesIntegration:
 
     def test_keeps_recent_unused_matrices(self, matrix_service: MatrixService):
         """Test that recent unused matrices are NOT deleted."""
-        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
+        matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
             matrix_id = matrix_service.create(matrix_data)
@@ -78,7 +78,7 @@ class TestCleanMatricesIntegration:
 
     def test_dry_run_does_not_delete(self, matrix_service: MatrixService):
         """Test that dry_run mode does not delete matrices."""
-        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
+        matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
             matrix_id = matrix_service.create(matrix_data)
