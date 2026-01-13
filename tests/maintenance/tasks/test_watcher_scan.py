@@ -69,11 +69,17 @@ class TestCollectStudies:
         assert result[0].path == study_path
 
     def test_skips_default_workspace(self, tmp_path):
-        # Config with only default workspace
+        # Create a study in the default workspace - it should be ignored
+        default_path = tmp_path / "default"
+        default_path.mkdir()
+        study_in_default = default_path / "study_to_ignore"
+        study_in_default.mkdir()
+        (study_in_default / "study.antares").touch()
+
         config = Mock()
         config.storage = StorageConfig(
             workspaces={
-                "default": WorkspaceConfig(path=tmp_path / "default"),
+                "default": WorkspaceConfig(path=default_path),
             }
         )
 
