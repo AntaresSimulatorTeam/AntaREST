@@ -191,8 +191,8 @@ function Fields() {
             control={control}
           />
         )}
-        </Fieldset>
-      { semver.gte(study.version, "9.2.0") && (
+      </Fieldset>
+      {semver.gte(study.version, "9.2.0") && (
         <Fieldset legend={t("study.configuration.advancedParameters.compatibility")}>
           <SelectFE
             label={t("study.configuration.advancedParameters.compatibility.hydro-pmax")}
