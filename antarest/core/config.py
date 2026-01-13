@@ -158,7 +158,7 @@ class StorageConfig:
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
     download_default_expiration_timeout_minutes: int = 1440
-    matrix_gc_sleeping_time: int = 3600
+    matrix_gc_sleeping_time: int = 2
     matrix_gc_dry_run: bool = False
     matrix_gc_retention_time: int = 3600
     auto_archive_threshold_days: int = 60

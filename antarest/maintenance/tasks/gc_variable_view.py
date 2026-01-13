@@ -102,7 +102,7 @@ def clean_variable_views(
             with create_lock(db.session, lock_id=VV_GC_LOCK_ID):
                 failures = 0
                 deleted = 0
-                cutoff = current_time() - timedelta(days=retention_time)
+                cutoff = current_time() - timedelta(seconds=retention_time)
 
                 rows = (
                     db.session.query(OutputVariablesViewsModel)
@@ -117,7 +117,7 @@ def clean_variable_views(
                         duration_seconds=time.time() - start_time,
                     )
 
-                matrix_ids = [r.matrix_id for r in rows]
+                # matrix_ids = [r.matrix_id for r in rows]
 
                 logger.info("VBV GC: deleting %d view rows (dry_run=%s)", len(rows), dry_run)
 
@@ -127,9 +127,6 @@ def clean_variable_views(
                     db.session.commit()
 
                 deleted += len(rows)
-
-                # Delete matrices after deleting view rows so they become "unused"
-                failures += _delete_matrices(matrix_service, matrix_ids, dry_run=dry_run)
 
     except LockNotAcquired:
         logger.warning(

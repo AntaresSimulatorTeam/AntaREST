@@ -23,6 +23,7 @@ from typing_extensions import override
 
 from antarest.core.interfaces.service import IService
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
+from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ class MatrixGarbageCollector(IService):
         while True:
             try:
                 clean_matrices(self.matrix_service, self.dry_run, self.retention_time)
+                clean_variable_views(self.matrix_service, self.dry_run, self.retention_time)
             except Exception as e:
                 logger.error("Error while cleaning matrices", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")
