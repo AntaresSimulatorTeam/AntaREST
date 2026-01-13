@@ -184,22 +184,34 @@ def _setup_periodic_tasks(sender: Celery, **kwargs: object) -> None:
 
     # Import here to avoid circular imports
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
+    from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
 
     # Get config from app.conf (set by _configure_from_environment)
     config: Optional[Config] = getattr(celery_app.conf, "antarest_config", None)
     matrix_gc_interval = config.storage.matrix_gc_sleeping_time if config else 3600
+    vbv_output_gc_interval = config.storage.vbv_output_gc_sleeping_time if config else 3600
 
-    # Register periodic task
+    # Register periodic tasks
     sender.add_periodic_task(
         matrix_gc_interval,
         clean_matrices_task.s(),
         name="matrix-gc",
     )
 
+    sender.add_periodic_task(
+        vbv_output_gc_interval,
+        clean_variable_views_task.s(),
+        name="vbv-output-gc",
+    )
+
     # Schedule first execution shortly after startup (60 seconds to let workers initialize)
     clean_matrices_task.apply_async(countdown=60)
+    clean_variable_views_task.apply_async(countdown=90)
 
-    logger.info(f"Periodic tasks configured successfully (matrix_gc_interval={matrix_gc_interval}s)")
+    logger.info(
+        f"Periodic tasks configured successfully "
+        f"(matrix_gc_interval={matrix_gc_interval}s, vbv_output_gc_interval={vbv_output_gc_interval}s)"
+    )
 
 
 @worker_init.connect
