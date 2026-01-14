@@ -62,7 +62,7 @@ def _build_areas_and_districts(df: pl.DataFrame, first_row: int) -> DigestMatrix
     first_area_row = df.row(first_row)[2:]
     col_number = next((k for k, v in enumerate(first_area_row) if v == ""), df.shape[1])
     final_index = first_column.slice(first_row, None).to_list().index("") + first_row
-    data = df.slice(first_row, final_index - first_row).select(pl.all().slice(1, col_number)).to_numpy().tolist()
+    data = df[first_row:final_index, 2:].with_columns(pl.all().cast(pl.Float64, strict=False)).to_numpy().tolist()
     cols_raw = df.slice(first_row - 3, 3).select(pl.all().slice(2, col_number - 1)).to_numpy().tolist()
     columns = [[""]] + [[a, b, c] for a, b, c in zip(cols_raw[0], cols_raw[1], cols_raw[2])]
     return DigestMatrixUI(columns=columns, data=data, groupedColumns=True)
