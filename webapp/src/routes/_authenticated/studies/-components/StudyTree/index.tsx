@@ -12,18 +12,24 @@
  * This file is part of the Antares project.
  */
 
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import StorageIcon from "@mui/icons-material/Storage";
+import { Box, Divider } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudies } from "@/redux/selectors";
-import { Box } from "@mui/material";
 import ExternalTree from "./ExternalTree";
+import ManagedTree from "./ManagedTree";
+import TreeSection from "./TreeSection";
 
 function StudyTree() {
   const studies = useAppSelector(getStudies);
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
 
-  // Filter studies by management type
+  const managedStudies = studies.filter((s) => s.managed);
   const externalStudies = studies.filter((s) => !s.managed);
 
   ////////////////////////////////////////////////////////////////
@@ -39,8 +45,25 @@ function StudyTree() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ p: 2, pt: 0 }}>
-      <ExternalTree studies={externalStudies} onNodeClick={handleNodeClick} />
+    <Box sx={{ pt: 0 }}>
+      <TreeSection
+        variant="managed"
+        title={t("studies.tree.managed", { defaultValue: "Managed Studies" })}
+        icon={<AccountTreeIcon />}
+      >
+        <ManagedTree studies={managedStudies} onNodeClick={handleNodeClick} />
+      </TreeSection>
+
+      <Divider />
+
+      <TreeSection
+        variant="external"
+        title={t("studies.tree.external", { defaultValue: "External Storage" })}
+        subtitle={t("studies.tree.readOnly", { defaultValue: "(read-only)" })}
+        icon={<StorageIcon />}
+      >
+        <ExternalTree studies={externalStudies} onNodeClick={handleNodeClick} />
+      </TreeSection>
     </Box>
   );
 }
