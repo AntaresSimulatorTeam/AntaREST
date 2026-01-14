@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Stack, Typography, type SxProps, type Theme } from "@mui/material";
+import { Box, Stack, type SxProps, type Theme, Typography } from "@mui/material";
 
 type TreeSectionVariant = "managed" | "external";
 
@@ -35,10 +35,9 @@ const variantStyles: Record<
 > = {
   managed: {
     container: {
-      backgroundColor: (theme) => theme.palette.info.main + "08",
+      backgroundColor: (theme) => `${theme.palette.info.main}08`,
       borderLeft: (theme) => `3px solid ${theme.palette.info.main}`,
-      px: 2,
-      py: 1,
+      p: 0.5,
     },
     icon: {
       color: (theme) => theme.palette.info.main,
@@ -55,8 +54,7 @@ const variantStyles: Record<
     container: {
       backgroundColor: (theme) => theme.palette.action.hover,
       borderLeft: (theme) => `3px solid ${theme.palette.action.disabled}`,
-      px: 2,
-      py: 1,
+      p: 0.5,
     },
     icon: {
       color: (theme) => theme.palette.text.secondary,

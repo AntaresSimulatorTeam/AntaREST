@@ -43,6 +43,7 @@ function ManagedTree({ studies, onNodeClick }: ManagedTreeProps) {
   ////////////////////////////////////////////////////////////////
 
   // Empty state
+  // TODO: handle desktop mode - it may not require an empty state
   if (directories.length === 0) {
     return (
       <Box sx={{ p: 2 }}>

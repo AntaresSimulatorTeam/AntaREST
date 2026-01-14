@@ -19,6 +19,7 @@ import { Tooltip } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { treeItemStyles, treeNodeIcons, workspaceItemStyles } from "./styles";
 import type { ExternalTreeNodeMetadata, ExternalTreeNodeProps } from "./types";
 
 function prioritizeDefault(
@@ -37,55 +38,68 @@ function prioritizeDefault(
 const nameSort = R.sortBy(R.compose(R.toLower, R.prop("name")));
 const defaultFirstSort = R.sortWith([prioritizeDefault]);
 
-export default function ExternalTreeNode({
+function ExternalTreeNode({
   node,
   itemsLoading,
   onNodeClick,
   exploredFolders,
 }: ExternalTreeNodeProps) {
   const { hasChildren, children, path, name, isStudyFolder, alias } = node;
-  const isLoading = itemsLoading.includes(node.path);
+  const isLoading = itemsLoading.includes(path);
   const hasUnloadedChildren =
-    hasChildren && children.length === 0 && !exploredFolders.includes(node.path);
+    hasChildren && children.length === 0 && !exploredFolders.includes(path);
+  // A workspace is a direct child of root: path is "/<workspace>" with no additional slashes
+  const isWorkspace = path.startsWith("/") && !path.slice(1).includes("/");
   const { t } = useTranslation();
 
   const sortedChildren = useMemo(() => {
     const nodesToDisplay = children.filter((s) => !s.isScannedStudy);
     const sortedByName = nameSort(nodesToDisplay);
-    if (node.name === ROOT_NODE_NAME) {
-      return defaultFirstSort(sortedByName);
-    }
-    return sortedByName;
-  }, [children, node.name]);
+    return name === ROOT_NODE_NAME ? defaultFirstSort(sortedByName) : sortedByName;
+  }, [children, name]);
 
   const label = alias ? `${alias} (${name})` : name;
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  // Special handling for unscanned study folders with radar icon
+  if (isStudyFolder) {
+    return (
+      <TreeItemEnhanced
+        itemId={path}
+        label={label}
+        disabled
+        slots={{
+          collapseIcon: () => (
+            <Tooltip title={t("studies.tree.unscannedStudyFolder")}>
+              <RadarIcon color="warning" />
+            </Tooltip>
+          ),
+        }}
+        sx={{
+          ...treeItemStyles,
+          ".Mui-disabled": {
+            opacity: 1,
+            cursor: "default",
+          },
+        }}
+      />
+    );
+  }
+
   return (
     <TreeItemEnhanced
       itemId={path}
       label={label}
-      slots={
-        isStudyFolder
-          ? {
-              icon: () => (
-                <Tooltip title={t("studies.tree.unscannedStudyFolder")}>
-                  <RadarIcon color="warning" />
-                </Tooltip>
-              ),
-            }
-          : undefined
-      }
-      onClick={isStudyFolder ? undefined : () => onNodeClick(node.path)}
-      disabled={isStudyFolder}
-      sx={{
-        ".Mui-disabled": {
-          opacity: 1,
-          cursor: "default",
-        },
-      }}
+      onClick={() => onNodeClick(path)}
       loading={isLoading}
+      slots={{
+        collapseIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folderOpen,
+        expandIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folder,
+      }}
+      sx={isWorkspace ? workspaceItemStyles : treeItemStyles}
     >
       {/* the loading tree item bellow may seem useless but it's mandatory to display
           the little arrow on the left on folders without scanned studies*/}
@@ -108,3 +122,5 @@ export default function ExternalTreeNode({
     </TreeItemEnhanced>
   );
 }
+
+export default ExternalTreeNode;

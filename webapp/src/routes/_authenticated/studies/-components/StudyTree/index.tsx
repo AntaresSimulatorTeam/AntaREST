@@ -45,7 +45,7 @@ function StudyTree() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ pt: 0 }}>
+    <Box>
       <TreeSection
         variant="managed"
         title={t("studies.tree.managed", { defaultValue: "Managed Studies" })}

@@ -30,6 +30,7 @@ import HeaderActions from "./-components/HeaderActions";
 import RefreshButton from "./-components/RefreshButton";
 import StudiesList from "./-components/StudiesList";
 import StudyTree from "./-components/StudyTree";
+import CustomScrollbar from "@/components/CustomScrollbar";
 
 export const Route = createFileRoute("/_authenticated/studies/")({
   component: Studies,
@@ -56,11 +57,14 @@ function Studies() {
       headerActions={<HeaderActions onOpenFilterClick={() => setOpenFilter(true)} />}
     >
       <SplitView splitId="studies" minSize={[200, 400]}>
-        {/* Left */}
-        <Box sx={{ overflow: "auto" }}>
-          <StudyTree />
-        </Box>
-        {/* Right */}
+        {/* Left - Studies tree explorer */}
+        <CustomScrollbar>
+          <Box sx={{ overflow: "auto" }}>
+            <StudyTree />
+          </Box>
+        </CustomScrollbar>
+
+        {/* Right - Studies list */}
         <ViewWrapper flex disablePadding>
           {(studiesStatus === FetchStatus.Loading || studiesStatus === FetchStatus.Idle) && (
             <SimpleLoader />
