@@ -12,6 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import * as R from "ramda";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
 import { useAppMode } from "@/hooks/useAppMode";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
@@ -22,10 +26,6 @@ import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { getParentPaths } from "@/utils/pathUtils";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import * as R from "ramda";
-import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import ExternalTreeNode from "./ExternalTreeNode";
 import type { ExternalTreeProps, FolderDTO, WorkspaceDTO } from "./types";
 import { buildExternalTree, insertIfNotExist } from "./utils";
@@ -41,6 +41,7 @@ function ExternalTree({ studies, onNodeClick }: ExternalTreeProps) {
   const [t] = useTranslation();
   const { isDesktopMode } = useAppMode();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <todo: check this hook>
   useEffect(() => {
     getWorkspaces().then((nextWorkspaces) => {
       const filteredStudyFolders = subFolders.filter((folder) => isUnscannedStudy(studies, folder));
@@ -158,7 +159,7 @@ function ExternalTree({ studies, onNodeClick }: ExternalTreeProps) {
   // Also the expanse event isn't triggered when the item doesn't have any subfolder
   // but we still want to apply the filter on the clicked folder.
   const handleItemExpansionToggle = (
-    event: React.SyntheticEvent<Element, Event>,
+    _event: React.SyntheticEvent<Element, Event>,
     itemId: string,
     isExpanded: boolean,
   ) => {

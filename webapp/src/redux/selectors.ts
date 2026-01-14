@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { buildStudyTree } from "@/routes/_authenticated/studies/-components/StudyTree/utils";
+import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
+import type { F } from "ts-toolbelt";
 import { createLinkId } from "@/services/api/studies/links/utils";
 import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
@@ -37,8 +38,6 @@ import type { StudyMap, StudyMapLink, StudyMapNode, StudyMapsState } from "./duc
 import type { StudySynthesesState } from "./ducks/studySyntheses";
 import type { UIState } from "./ducks/ui";
 import type { UsersState } from "./ducks/users";
-
-// TODO resultEqualityCheck
 
 ////////////////////////////////////////////////////////////////
 // Auth
@@ -115,8 +114,6 @@ export const getStudiesFilteredAndSorted = createSelector(
 export const getStudyIdsFilteredAndSorted = createSelector(getStudiesFilteredAndSorted, (studies) =>
   studies.map((study) => study.id),
 );
-
-export const getStudiesTree = createSelector(getStudies, (studies) => buildStudyTree(studies));
 
 export const getStudyVersions = (state: AppState): StudiesState["versionList"] => {
   return getStudiesState(state).versionList;
