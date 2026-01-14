@@ -2308,6 +2308,7 @@ class StudyService:
             pandas_df = node.parse_as_dataframe().to_pandas()
         elif isinstance(node, OutputSeriesMatrix):
             pandas_df = node.parse_dataframe()
+            pandas_df.columns = pd.Index(pandas_df.columns)
         elif isinstance(node, OutputSynthesis):
             pandas_df = pd.DataFrame(**node.load())
         else:
@@ -2328,8 +2329,6 @@ class StudyService:
             study_version=study_interface.version,
         )
 
-        # Transform pd.MultiIndex to pd.Index for retro-compatibility.
-        pandas_df.columns = pd.Index(pandas_df.columns)
         return pandas_df
 
     def asserts_no_thermal_in_binding_constraints(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
