@@ -771,8 +771,12 @@ class OutputService:
             db.session.merge(db_model)
             db.session.commit()
 
-            # Return the dataframe
-            df = self._matrix_service.get(db_model.matrix_id).to_pandas()
+            # Get the dataframe inside the matrix-store
+            polars_df = self._matrix_service.get(db_model.matrix_id)
+            # Convert it to pandas and use np.NaN as null values for backward compatibility
+            if not all(dtype.is_numeric() for dtype in polars_df.dtypes):
+                polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
+            df = polars_df.to_pandas()
             if with_index:
                 add_time_index_to_dataframe(df, self.get_output_time_index(study_id, output_id, frequency))
             return df
