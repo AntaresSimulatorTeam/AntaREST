@@ -2328,6 +2328,8 @@ class StudyService:
             study_version=study_interface.version,
         )
 
+        # Transform pd.MultiIndex to pd.Index for retro-compatibility.
+        pandas_df.columns = pd.Index(pandas_df.columns)
         return pandas_df
 
     def asserts_no_thermal_in_binding_constraints(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
