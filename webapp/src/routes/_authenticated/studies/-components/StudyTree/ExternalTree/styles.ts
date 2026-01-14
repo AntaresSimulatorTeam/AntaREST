@@ -37,7 +37,7 @@ export const treeItemStyles: SxProps<Theme> = {
         backgroundColor: (theme) => theme.palette.action.hover,
       },
     },
-    "&.Mui-focused, &:active": {
+    "&.Mui-selected.Mui-focused": {
       backgroundColor: (theme) => `${theme.palette.info.main}25`,
     },
     "& .MuiTreeItem-iconContainer": {
