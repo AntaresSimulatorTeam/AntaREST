@@ -52,8 +52,8 @@ def _get_flow(df: pl.DataFrame, keyword: str) -> DigestMatrixUI:
     index_start = index + 2
     df_col_start = 1
     df_size = next((k for k, v in enumerate(first_column[index_start:]) if v == ""), len(first_column) - index_start)
-    flow_df = df.slice(index_start, df_size).select(pl.all().slice(df_col_start, df_size))
-    data = flow_df.slice(1, None).to_numpy().tolist()
+    flow_df = df[index_start : index_start + df_size, df_col_start : df_col_start + df_size]
+    data = flow_df.to_numpy().tolist()
     cols = [""] + list(flow_df.row(0)[1:])
     return DigestMatrixUI(columns=cols, data=data, groupedColumns=False)
 
