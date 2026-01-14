@@ -14,12 +14,11 @@ from typing import Any
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError, NoDataError
 
 
-def create_polars_dataframe(data: npt.NDArray[np.float64] | list[list[Any]] | pd.DataFrame) -> pl.DataFrame:
+def create_polars_dataframe(data: npt.NDArray[np.float64] | list[list[Any]]) -> pl.DataFrame:
     if isinstance(data, list):
         data = np.array(data)
     length = data.shape[1] if len(data.shape) == 2 else 1
