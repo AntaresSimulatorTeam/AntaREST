@@ -18,7 +18,6 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import polars as pl
 import pytest
 from numpy import typing as npt
@@ -244,7 +243,7 @@ class TestMatrixContentRepository:
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
             assert retrieved_matrix.is_empty()
 
-    def test_concurrent_save(self, tmp_path: str) -> None:
+    def test_concurrent_save(self, tmp_path: Path) -> None:
         """
         When 2 threads (or processes), want to create the same matrix, only one of them
         should actually create it.
@@ -253,11 +252,12 @@ class TestMatrixContentRepository:
         for more chances to generate problems.
         """
         trial_count = 10
+        matrix = pl.DataFrame(data=np.zeros(shape=(8760, 1)), schema=["0"])
+
         matrix_content_repo: MatrixContentRepository
-        with matrix_repository(Path(tmp_path), matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:
+        with matrix_repository(tmp_path, matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:
             with multiprocessing.pool.ThreadPool(2) as tp:
                 for i in range(0, trial_count):
-                    matrix = pd.DataFrame(data=np.zeros(shape=(8760, 1)))
                     results = tp.map(matrix_content_repo.save, [matrix, matrix])
 
                     assert results[0].new or results[1].new
