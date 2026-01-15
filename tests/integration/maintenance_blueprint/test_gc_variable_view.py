@@ -15,7 +15,7 @@
 import uuid
 from datetime import datetime, timedelta
 
-import pandas as pd
+import polars as pl
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
@@ -64,7 +64,7 @@ class TestCleanVariableViewsIntegration:
         """Test that old variable views are deleted."""
         study_id = str(uuid.uuid4())
         output_id = "test-output"
-        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
+        matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
             matrix_id = matrix_service.create(matrix_data)
@@ -96,7 +96,7 @@ class TestCleanVariableViewsIntegration:
         """Test that recent variable views are NOT deleted."""
         study_id = str(uuid.uuid4())
         output_id = "test-output"
-        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
+        matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
             matrix_id = matrix_service.create(matrix_data)
@@ -125,7 +125,7 @@ class TestCleanVariableViewsIntegration:
         """Test that dry_run mode does not delete variable views."""
         study_id = str(uuid.uuid4())
         output_id = "test-output"
-        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
+        matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
             matrix_id = matrix_service.create(matrix_data)
@@ -163,7 +163,7 @@ class TestCleanVariableViewsIntegration:
         """Test that only old views are deleted while recent ones are kept."""
         study_id = str(uuid.uuid4())
         output_id = "test-output"
-        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
+        matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
             matrix_id_old = matrix_service.create(matrix_data)
