@@ -15,10 +15,10 @@
 import SplitView, { type SplitViewProps } from "@/components/page/SplitView";
 import { Box } from "@mui/material";
 import HydroMatrix from "./HydroMatrix";
-import { type HydroMatrixType } from "./utils";
+import { type HydroMatrixTypeValue } from "./utils";
 
 interface Props {
-  types: [HydroMatrixType, HydroMatrixType];
+  types: [HydroMatrixTypeValue, HydroMatrixTypeValue];
   direction?: SplitViewProps["direction"];
   sizes: [number, number];
 }

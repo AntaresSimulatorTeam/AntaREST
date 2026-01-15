@@ -17,10 +17,10 @@ import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { format } from "@/utils/stringUtils";
 import { Box } from "@mui/material";
 import useArea from "../-hooks/useArea";
-import { type HydroMatrixType, MATRICES } from "./utils";
+import { type HydroMatrixTypeValue, MATRICES } from "./utils";
 
 interface Props {
-  type: HydroMatrixType;
+  type: HydroMatrixTypeValue;
 }
 
 function HydroMatrix({ type }: Props) {

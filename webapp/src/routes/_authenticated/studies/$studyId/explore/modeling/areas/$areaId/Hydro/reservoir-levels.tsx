@@ -13,21 +13,15 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
-import SplitHydroMatrix from "./SplitHydroMatrix";
+import HydroMatrix from "./HydroMatrix";
 import { HydroMatrixType } from "./utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels",
 )({
-  component: DailyPowerAndEnergyCredits,
+  component: ReservoirLevels,
 });
 
-function DailyPowerAndEnergyCredits() {
-  return (
-    <SplitHydroMatrix
-      types={[HydroMatrixType.DailyPower, HydroMatrixType.EnergyCredits]}
-      direction="vertical"
-      sizes={[30, 70]}
-    />
-  );
+function ReservoirLevels() {
+  return <HydroMatrix type={HydroMatrixType.ReservoirLevels} />;
 }

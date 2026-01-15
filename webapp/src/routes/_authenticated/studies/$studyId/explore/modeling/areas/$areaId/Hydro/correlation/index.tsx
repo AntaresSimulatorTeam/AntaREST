@@ -19,7 +19,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import HydroMatrixDialog from "../HydroMatrixDialog";
 import { FormBox, FormPaper } from "../style";
-import { HydroMatrix } from "../utils";
+import { HydroMatrixType } from "../utils";
 import ViewMatrixButton from "../ViewMatrixButton";
 import Fields from "./-components/Fields";
 import {
@@ -79,7 +79,7 @@ function Correlation() {
       </FormPaper>
       {matrixDialogOpen && (
         <HydroMatrixDialog
-          type={HydroMatrix.Correlation}
+          type={HydroMatrixType.Correlation}
           open={matrixDialogOpen}
           onClose={() => setMatrixDialogOpen(false)}
         />

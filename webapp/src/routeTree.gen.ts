@@ -87,6 +87,7 @@ import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdPropertie
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsThermalIdRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId/route'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesStorageIdRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/route'
@@ -691,6 +692,15 @@ const AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesR
         AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRoute,
     } as any,
   )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRouteImport.update(
+    {
+      id: '/reservoir-levels',
+      path: '/reservoir-levels',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute =
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRouteImport.update(
     {
@@ -1062,6 +1072,7 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesStorageIdRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsThermalIdRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
@@ -1157,6 +1168,7 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdIndexRoute
   '/studies/$studyId/explore/modeling/links/$linkId': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
@@ -1268,6 +1280,7 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesStorageIdRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsThermalIdRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
@@ -1382,6 +1395,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId'
     | '/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/'
@@ -1477,6 +1491,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId'
     | '/studies/$studyId/explore/modeling/links/$linkId'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro'
@@ -1587,6 +1602,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/'
@@ -2180,6 +2196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
+      path: '/reservoir-levels'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute
+    }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits': {
       id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
       path: '/daily-power-and-energy-credits'
@@ -2526,6 +2549,7 @@ const AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteWithChildren =
 
 interface AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAllocationIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAllocationIndexRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroCorrelationIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroCorrelationIndexRoute
@@ -2537,6 +2561,8 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteChildr
   {
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAllocationIndexRoute:

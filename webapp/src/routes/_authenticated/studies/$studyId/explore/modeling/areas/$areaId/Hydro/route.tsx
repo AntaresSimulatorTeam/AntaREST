@@ -28,10 +28,6 @@ function HydroLayout() {
   //   const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;
 
   //   return [
-  //     {
-  //       label: "Daily Power & Energy Credits",
-  //       path: `${basePath}/dailypower&energy`,
-  //     },
   //     { label: "Reservoir levels", path: `${basePath}/reservoirlevels` },
   //     { label: "Water values", path: `${basePath}/watervalues` },
   //     { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
@@ -87,6 +83,18 @@ function HydroLayout() {
             params,
           }),
         },
+        {
+          id: "reservoirLevels",
+          label: "Reservoir levels",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels",
+            params,
+          }),
+        },
+        //     { label: "Water values", path: `${basePath}/watervalues` },
+        //     { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
+        //     { label: "Run of river", path: `${basePath}/ror` },
+        //     semver.gte(study.version, "8.6.0") && { label: "Min Gen", path: `${basePath}/mingen` },
       ]}
     />
   );

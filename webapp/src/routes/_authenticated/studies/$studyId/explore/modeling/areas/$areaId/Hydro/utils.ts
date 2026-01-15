@@ -20,13 +20,12 @@ import type {
 import type { SplitViewProps } from "@/components/page/SplitView";
 import { getAllocationMatrix } from "./allocation/-utils";
 import { getCorrelationMatrix } from "./correlation/-utils";
-import InflowStructure from "./inflow-structure/-components/InflowStructureForm";
 
 ////////////////////////////////////////////////////////////////
 // Enums
 ////////////////////////////////////////////////////////////////
 
-export const HydroMatrix = {
+export const HydroMatrixType = {
   DailyPower: "DailyPower",
   EnergyCredits: "EnergyCredits",
   ReservoirLevels: "ReservoirLevels",
@@ -45,7 +44,7 @@ export const HydroMatrix = {
 ////////////////////////////////////////////////////////////////
 
 export type fetchMatrixFn = (studyId: string) => Promise<MatrixDataDTO>;
-export type HydroMatrixType = (typeof HydroMatrix)[keyof typeof HydroMatrix];
+export type HydroMatrixTypeValue = (typeof HydroMatrixType)[keyof typeof HydroMatrixType];
 
 export interface HydroMatrixProps {
   title: string;
@@ -61,15 +60,15 @@ export interface HydroMatrixProps {
   isTimeSeries?: boolean;
 }
 
-type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
+type Matrices = Record<HydroMatrixTypeValue, HydroMatrixProps>;
 
 export interface HydroRoute {
   path: string;
-  type: HydroMatrixType;
+  type: HydroMatrixTypeValue;
   isSplitView?: boolean;
   splitConfig?: {
     direction: SplitViewProps["direction"];
-    partnerType: HydroMatrixType;
+    partnerType: HydroMatrixTypeValue;
     sizes: [number, number];
   };
   form?: React.ComponentType;
@@ -86,50 +85,25 @@ export interface AreaCoefficientItem {
 
 export const HYDRO_ROUTES: HydroRoute[] = [
   {
-    path: "inflow-structure",
-    type: HydroMatrix.InflowPattern,
-    isSplitView: true,
-    splitConfig: {
-      direction: "horizontal",
-      partnerType: HydroMatrix.OverallMonthlyHydro,
-      sizes: [50, 50],
-    },
-    form: InflowStructure,
-  },
-  {
-    path: "dailypower&energy",
-    type: HydroMatrix.DailyPower,
-    isSplitView: true,
-    splitConfig: {
-      direction: "vertical",
-      partnerType: HydroMatrix.EnergyCredits,
-      sizes: [30, 70],
-    },
-  },
-  {
-    path: "reservoirlevels",
-    type: HydroMatrix.ReservoirLevels,
-  },
-  {
     path: "watervalues",
-    type: HydroMatrix.WaterValues,
+    type: HydroMatrixType.WaterValues,
   },
   {
     path: "hydrostorage",
-    type: HydroMatrix.HydroStorage,
+    type: HydroMatrixType.HydroStorage,
   },
   {
     path: "ror",
-    type: HydroMatrix.RunOfRiver,
+    type: HydroMatrixType.RunOfRiver,
   },
   {
     path: "mingen",
-    type: HydroMatrix.MinGen,
+    type: HydroMatrixType.MinGen,
   },
 ];
 
 export const MATRICES: Matrices = {
-  [HydroMatrix.DailyPower]: {
+  [HydroMatrixType.DailyPower]: {
     title: "Credit Modulations",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     columns: generateColumns("%"),
@@ -138,7 +112,7 @@ export const MATRICES: Matrices = {
     dateTimeColumn: false,
     isTimeSeries: false,
   },
-  [HydroMatrix.EnergyCredits]: {
+  [HydroMatrixType.EnergyCredits]: {
     title: "Standard Credits",
     url: "input/hydro/common/capacity/maxpower_{areaId}",
     columns: [
@@ -150,39 +124,39 @@ export const MATRICES: Matrices = {
     rowCountSource: "dataLength",
     isTimeSeries: false,
   },
-  [HydroMatrix.ReservoirLevels]: {
+  [HydroMatrixType.ReservoirLevels]: {
     title: "Reservoir Levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
     columns: ["Lev Low (%)", "Lev Avg (%)", "Lev High (%)"],
     isTimeSeries: false,
   },
-  [HydroMatrix.WaterValues]: {
+  [HydroMatrixType.WaterValues]: {
     title: "Water Values",
     url: "input/hydro/common/capacity/waterValues_{areaId}",
     columns: generateColumns("%"),
     isTimeSeries: false,
   },
-  [HydroMatrix.HydroStorage]: {
+  [HydroMatrixType.HydroStorage]: {
     title: "Hydro Storage",
     url: "input/hydro/series/{areaId}/mod",
     aggregates: "stats",
   },
-  [HydroMatrix.RunOfRiver]: {
+  [HydroMatrixType.RunOfRiver]: {
     title: "Run Of River",
     url: "input/hydro/series/{areaId}/ror",
     aggregates: "stats",
   },
-  [HydroMatrix.MinGen]: {
+  [HydroMatrixType.MinGen]: {
     title: "Min Gen",
     url: "input/hydro/series/{areaId}/mingen",
   },
-  [HydroMatrix.InflowPattern]: {
+  [HydroMatrixType.InflowPattern]: {
     title: "Inflow Pattern",
     url: "input/hydro/common/capacity/inflowPattern_{areaId}",
     columns: ["Inflow Pattern (X)"],
     isTimeSeries: false,
   },
-  [HydroMatrix.OverallMonthlyHydro]: {
+  [HydroMatrixType.OverallMonthlyHydro]: {
     title: "Overall Monthly Hydro",
     url: "input/hydro/prepro/{areaId}/energy",
     columns: ["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"],
@@ -204,14 +178,14 @@ export const MATRICES: Matrices = {
     dateTimeColumn: false,
     isTimeSeries: false,
   },
-  [HydroMatrix.Allocation]: {
+  [HydroMatrixType.Allocation]: {
     title: "Allocation",
     url: "",
     fetchFn: getAllocationMatrix,
     dateTimeColumn: false,
     readOnly: true,
   },
-  [HydroMatrix.Correlation]: {
+  [HydroMatrixType.Correlation]: {
     title: "Correlation",
     url: "",
     fetchFn: getCorrelationMatrix,

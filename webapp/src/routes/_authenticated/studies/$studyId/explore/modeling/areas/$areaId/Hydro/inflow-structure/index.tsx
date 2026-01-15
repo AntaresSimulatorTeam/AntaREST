@@ -15,7 +15,7 @@
 import { Stack } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import SplitHydroMatrix from "../SplitHydroMatrix";
-import { HydroMatrix } from "../utils";
+import { HydroMatrixType } from "../utils";
 import InflowStructureForm from "./-components/InflowStructureForm";
 
 export const Route = createFileRoute(
@@ -29,7 +29,7 @@ function InflowStructure() {
     <Stack direction="column" sx={{ height: 1 }}>
       <InflowStructureForm />
       <SplitHydroMatrix
-        types={[HydroMatrix.InflowPattern, HydroMatrix.OverallMonthlyHydro]}
+        types={[HydroMatrixType.InflowPattern, HydroMatrixType.OverallMonthlyHydro]}
         direction="horizontal"
         sizes={[50, 50]}
       />

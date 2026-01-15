@@ -24,7 +24,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getAllocationMatrix } from "./allocation/-utils";
 import { getCorrelationMatrix } from "./correlation/-utils";
-import type { HydroMatrixType } from "./utils";
+import type { HydroMatrixTypeValue } from "./utils";
 interface AdaptedMatrixData {
   data: number[][];
   columns: string[];
@@ -34,7 +34,7 @@ interface AdaptedMatrixData {
 interface Props {
   open: boolean;
   onClose: () => void;
-  type: HydroMatrixType;
+  type: HydroMatrixTypeValue;
 }
 
 const MATRIX_FETCHERS = {
