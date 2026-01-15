@@ -16,7 +16,6 @@ from pathlib import PurePosixPath
 from typing import Any, Dict, Final, Optional
 
 import numpy as np
-import pandas as pd
 import polars as pl
 from antares.tsgen.duration_generator import ProbabilityLaw
 from antares.tsgen.random_generator import MersenneTwisterRNG
@@ -41,7 +40,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 logger = logging.getLogger(__name__)
 
 
-MODULATION_CAPACITY_COLUMN = 2
+MODULATION_CAPACITY_COLUMN = "2"
 
 
 class GenerateThermalClusterTimeSeries(ICommand):
@@ -61,9 +60,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
     def _validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
         if info.context:
             version = info.context.version
-            if version < 2:
-                if "thermal_outage_details" not in values:
-                    values["thermal_outage_details"] = False
+            if version < 2 and "thermal_outage_details" not in values:
+                values["thermal_outage_details"] = False
         return values
 
     @override
@@ -97,12 +95,12 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     modulation_matrix = study_data.get_thermal_modulation(area_id, thermal_id)
                     modulation_capacity = modulation_matrix[MODULATION_CAPACITY_COLUMN].to_numpy()
                     prepro_matrix = study_data.get_thermal_prepro(area_id, thermal_id)
-                    fo_duration = np.array(prepro_matrix[0], dtype=int)
-                    po_duration = np.array(prepro_matrix[1], dtype=int)
-                    fo_rate = np.array(prepro_matrix[2], dtype=float)
-                    po_rate = np.array(prepro_matrix[3], dtype=float)
-                    npo_min = np.array(prepro_matrix[4], dtype=int)
-                    npo_max = np.array(prepro_matrix[5], dtype=int)
+                    fo_duration = np.array(prepro_matrix["0"], dtype=int)
+                    po_duration = np.array(prepro_matrix["1"], dtype=int)
+                    fo_rate = np.array(prepro_matrix["2"], dtype=float)
+                    po_rate = np.array(prepro_matrix["3"], dtype=float)
+                    npo_min = np.array(prepro_matrix["4"], dtype=int)
+                    npo_max = np.array(prepro_matrix["5"], dtype=int)
                     generation_params = OutageGenerationParameters(
                         unit_count=thermal.unit_count,
                         fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
@@ -157,8 +155,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
                     generated_matrix = results.available_power
                     # 10- Write the matrix inside the matrix-store and store the id in memory
-                    df = pd.DataFrame(data=generated_matrix)
-                    df = df[list(df.columns)].astype(int)
+                    df = pl.DataFrame(data=generated_matrix)
+                    df = df[list(df.columns)].cast(pl.Int64)
                     matrix_id = self.command_context.matrix_service.create(df)
                     series_mapping.setdefault(area_id, {})[thermal_id] = matrix_id
                     # 11- Notify the progress to the notifier

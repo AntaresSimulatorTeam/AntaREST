@@ -17,14 +17,13 @@ from typing_extensions import override
 
 from antarest.core.exceptions import MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 
 class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(matrix_mapper, config)
+    def __init__(self, config: FileStudyTreeConfig):
+        super().__init__(config)
 
     @override
     def get_lazy_content(

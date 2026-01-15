@@ -13,7 +13,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 
 import numpy as np
-import pandas as pd
+import polars as pl
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
@@ -203,47 +203,47 @@ class FileStudyHydroDao(HydroDao):
         file_study.tree.save({"[allocation]": data}, url)
 
     @override
-    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "prepro", area_id, "energy"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "series", area_id, "ror"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "series", area_id, "mod"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "series", area_id, "mingen"]
         return self.get_impl().get_matrix(url)
 

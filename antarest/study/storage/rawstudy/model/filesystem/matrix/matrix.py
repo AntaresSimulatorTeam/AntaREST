@@ -23,6 +23,7 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde.np_array import NpArray
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
@@ -32,11 +33,11 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 logger = logging.getLogger(__name__)
 
 
-def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
-    if df.empty and isinstance(path_or_buf, Path):
+def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
+    if df.is_empty() and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        pl.from_pandas(df).write_csv(path_or_buf, separator="\t", include_header=False)
+        df.write_csv(path_or_buf, separator="\t", include_header=False)
 
 
 def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
@@ -55,7 +56,7 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
 
 MatrixId: TypeAlias = str
 # Either raw content, or dictionary representation, or dataframe.
-MatrixContent: TypeAlias = bytes | JSON | pd.DataFrame
+MatrixContent: TypeAlias = bytes | JSON | pl.DataFrame
 
 
 class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
@@ -65,7 +66,8 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
     ) -> None:
-        LazyNode.__init__(self, matrix_mapper, config)
+        LazyNode.__init__(self, config)
+        self.matrix_mapper = matrix_mapper
         self.freq = freq
 
     @override
@@ -106,12 +108,10 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         The only usage of formatted=False was via the R scripts inside the GET /raw endpoint.
         Now we're using the `parse_as_dataframe` method so we can always return the value as if formatted was True.
         """
-        file_path, _ = self._get_real_file_path()
-
-        df = self.parse_as_dataframe(file_path)
+        df = self.parse_as_dataframe()
 
         stopwatch = StopWatch()
-        data = cast(JSON, df.to_dict(orient="split"))
+        data = cast(JSON, convert_polars_dataframe_to_pandas(df).to_dict(orient="split"))
         stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
         return data
 
@@ -151,19 +151,19 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
             self.matrix_mapper.remove_link(self)
         else:
             if isinstance(data, dict):
-                df = pd.DataFrame(**data)
+                df = pl.DataFrame(np.array(data["data"]))
             else:
                 df = data
             self.write_dataframe(df)
             self.matrix_mapper.remove_link(self)
 
     @abstractmethod
-    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+    def parse_as_dataframe(self) -> pl.DataFrame:
         """
         Parse the matrix content and return it as a DataFrame object
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def write_dataframe(self, df: pd.DataFrame) -> None:
+    def write_dataframe(self, df: pl.DataFrame) -> None:
         raise NotImplementedError()
