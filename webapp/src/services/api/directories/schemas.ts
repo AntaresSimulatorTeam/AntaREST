@@ -46,12 +46,12 @@ export const updateDirectoryResponseSchema = baseDirectorySchema;
 
 export const createDirectoryInputSchema = z.object({
   name: z.string().min(1),
-  parentId: z.string(),
+  parentId: z.string().nullable(), // ID is null for root directory creation
 });
 
 export const updateDirectoryInputSchema = z.object({
   name: z.string().min(1),
-  parentId: z.string(),
+  parentId: z.string().nullable(), // ID is null for root directory update
 });
 
 ////////////////////////////////////////////////////////////////
