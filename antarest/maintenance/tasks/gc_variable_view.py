@@ -34,8 +34,11 @@ def clean_variable_views(
 ) -> GarbageCollectorTaskResult:
     """
     Delete variable views if their last_read is older than retention_time.
-    Note: matrices are not deleted here. Once rows are deleted, their matrice ids are not returned
-    anymore by the variable view usage provider, so they become eligible for matrix GC.
+
+    Note: matrices are not deleted here. Once a row is deleted from OutputVariablesViewsModel,
+    its matrix id is not returned anymore by the variable view usage provider, so the matrix
+    for that view becomes eligible for matrix GC.
+
     Args:
         dry_run: If True, don't actually delete variable views rows
         retention_time: Time in days before unused variable views can be deleted
