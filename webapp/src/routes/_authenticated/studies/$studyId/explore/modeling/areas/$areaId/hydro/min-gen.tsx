@@ -17,7 +17,7 @@ import HydroMatrix from "./-components/HydroMatrix";
 import { HydroMatrixType } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/min-gen",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen",
 )({
   component: MinGen,
 });

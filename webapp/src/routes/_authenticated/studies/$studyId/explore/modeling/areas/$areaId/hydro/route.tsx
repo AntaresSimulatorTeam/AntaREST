@@ -18,7 +18,7 @@ import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import semver from "semver";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro",
 )({
   component: HydroLayout,
 });

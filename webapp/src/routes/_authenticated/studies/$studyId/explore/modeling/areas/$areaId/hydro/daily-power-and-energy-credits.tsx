@@ -17,7 +17,7 @@ import SplitHydroMatrix from "./-components/SplitHydroMatrix";
 import { HydroMatrixType } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/daily-power-and-energy-credits",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits",
 )({
   component: DailyPowerAndEnergyCredits,
 });

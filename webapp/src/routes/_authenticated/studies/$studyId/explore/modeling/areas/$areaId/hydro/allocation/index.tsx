@@ -29,7 +29,7 @@ import {
 } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/allocation/",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/allocation/",
 )({
   component: Allocation,
 });

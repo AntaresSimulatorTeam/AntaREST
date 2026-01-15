@@ -15,7 +15,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/",
 )({
   beforeLoad: () => {
     throw redirect({

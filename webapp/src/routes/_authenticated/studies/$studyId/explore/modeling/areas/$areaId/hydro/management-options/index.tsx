@@ -37,7 +37,7 @@ import {
 } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/management-options/",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/management-options/",
 )({
   component: ManagementOptions,
 });

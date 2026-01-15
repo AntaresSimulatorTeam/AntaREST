@@ -17,7 +17,7 @@ import HydroMatrix from "./-components/HydroMatrix";
 import { HydroMatrixType } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/water-values",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values",
 )({
   component: WaterValues,
 });
