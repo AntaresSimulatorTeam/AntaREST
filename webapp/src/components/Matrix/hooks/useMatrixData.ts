@@ -14,7 +14,7 @@
 
 import { TimeFrequency } from "@/components/Matrix/shared/constants";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import type { fetchMatrixFn } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/-utils";
+import type { fetchMatrixFn } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/dHydro/-utils";
 import { getStudyMatrixIndex } from "@/services/api/matrix";
 import { getStudyData } from "@/services/api/study";
 import type { MatrixIndex } from "@/types/types";

@@ -14,7 +14,7 @@
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import MatrixUpload from "@/components/Matrix/components/MatrixUpload";
-import type { fetchMatrixFn } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/-utils";
+import type { fetchMatrixFn } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/dHydro/-utils";
 import type { StudyMetadata } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Tooltip } from "@mui/material";

@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import HydroMatrix from "./-components/HydroMatrix";
+import { HydroMatrixType } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/min-gen",
 )({
-  beforeLoad: () => {
-    throw redirect({
-      from: Route.fullPath,
-      to: "management-options",
-      replace: true,
-    });
-  },
+  component: MinGen,
 });
+
+function MinGen() {
+  return <HydroMatrix type={HydroMatrixType.MinGen} />;
+}

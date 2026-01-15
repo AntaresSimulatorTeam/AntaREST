@@ -17,11 +17,11 @@ import HydroMatrix from "./-components/HydroMatrix";
 import { HydroMatrixType } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/water-values",
 )({
-  component: HydroStorage,
+  component: WaterValues,
 });
 
-function HydroStorage() {
-  return <HydroMatrix type={HydroMatrixType.HydroStorage} />;
+function WaterValues() {
+  return <HydroMatrix type={HydroMatrixType.WaterValues} />;
 }

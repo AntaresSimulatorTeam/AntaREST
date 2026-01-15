@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { createFileRoute } from "@tanstack/react-router";
-import HydroMatrix from "./-components/HydroMatrix";
-import { HydroMatrixType } from "./-utils";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/",
 )({
-  component: ReservoirLevels,
+  beforeLoad: () => {
+    throw redirect({
+      from: Route.fullPath,
+      to: "management-options",
+      replace: true,
+    });
+  },
 });
-
-function ReservoirLevels() {
-  return <HydroMatrix type={HydroMatrixType.ReservoirLevels} />;
-}

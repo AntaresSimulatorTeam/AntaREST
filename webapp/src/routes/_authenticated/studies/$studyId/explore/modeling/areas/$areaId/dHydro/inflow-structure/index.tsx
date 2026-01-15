@@ -19,7 +19,7 @@ import { HydroMatrixType } from "../-utils";
 import InflowStructureForm from "./-components/InflowStructureForm";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/inflow-structure/",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/inflow-structure/",
 )({
   component: InflowStructure,
 });

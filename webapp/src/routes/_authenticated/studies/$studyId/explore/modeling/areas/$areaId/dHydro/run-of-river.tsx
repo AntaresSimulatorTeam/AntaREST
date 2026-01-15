@@ -17,11 +17,11 @@ import HydroMatrix from "./-components/HydroMatrix";
 import { HydroMatrixType } from "./-utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/run-of-river",
 )({
-  component: MinGen,
+  component: RunOfRiver,
 });
 
-function MinGen() {
-  return <HydroMatrix type={HydroMatrixType.MinGen} />;
+function RunOfRiver() {
+  return <HydroMatrix type={HydroMatrixType.RunOfRiver} />;
 }
