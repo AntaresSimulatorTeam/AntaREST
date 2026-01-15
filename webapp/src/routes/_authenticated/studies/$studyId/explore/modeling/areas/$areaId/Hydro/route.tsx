@@ -12,43 +12,54 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo } from "react";
-import { useOutletContext } from "react-router";
-import semver from "semver";
-import TabWrapper from "../../../../../../../../-App/Singlestudy/explore/TabWrapper";
-import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../types/types";
+import TabsView from "@/components/page/TabsView";
+import { createFileRoute, linkOptions } from "@tanstack/react-router";
 
-function Hydro() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const areaId = useAppSelector(getCurrentAreaId);
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro",
+)({
+  component: HydroLayout,
+});
 
-  const tabList = useMemo(() => {
-    const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;
+function HydroLayout() {
+  const params = Route.useParams();
 
-    return [
-      { label: "Management options", path: `${basePath}/management` },
-      { label: "Inflow structure", path: `${basePath}/inflow-structure` },
-      { label: "Allocation", path: `${basePath}/allocation` },
-      { label: "Correlation", path: `${basePath}/correlation` },
-      {
-        label: "Daily Power & Energy Credits",
-        path: `${basePath}/dailypower&energy`,
-      },
-      { label: "Reservoir levels", path: `${basePath}/reservoirlevels` },
-      { label: "Water values", path: `${basePath}/watervalues` },
-      { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
-      { label: "Run of river", path: `${basePath}/ror` },
-      semver.gte(study.version, "8.6.0") && { label: "Min Gen", path: `${basePath}/mingen` },
-    ].filter(Boolean);
-  }, [areaId, study?.id, study.version]);
+  // const tabList = useMemo(() => {
+  //   const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;
+
+  //   return [
+  //     { label: "Management options", path: `${basePath}/management` },
+  //     { label: "Inflow structure", path: `${basePath}/inflow-structure` },
+  //     { label: "Allocation", path: `${basePath}/allocation` },
+  //     { label: "Correlation", path: `${basePath}/correlation` },
+  //     {
+  //       label: "Daily Power & Energy Credits",
+  //       path: `${basePath}/dailypower&energy`,
+  //     },
+  //     { label: "Reservoir levels", path: `${basePath}/reservoirlevels` },
+  //     { label: "Water values", path: `${basePath}/watervalues` },
+  //     { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
+  //     { label: "Run of river", path: `${basePath}/ror` },
+  //     semver.gte(study.version, "8.6.0") && { label: "Min Gen", path: `${basePath}/mingen` },
+  //   ].filter(Boolean);
+  // }, [areaId, study?.id, study.version]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <TabWrapper study={study} tabList={tabList} />;
+  return (
+    <TabsView
+      tabs={[
+        {
+          id: "managementOptions",
+          label: "Management options",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/management-options",
+            params,
+          }),
+        },
+      ]}
+    />
+  );
 }
-
-export default Hydro;

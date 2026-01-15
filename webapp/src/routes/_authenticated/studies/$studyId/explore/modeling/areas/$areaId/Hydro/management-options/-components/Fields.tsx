@@ -16,14 +16,13 @@ import NumberFE from "@/components/fieldEditors/NumberFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/components/Form";
-import type { StudyMetadata } from "@/types/types";
-import { useOutletContext } from "react-router-dom";
+import { useFormContextPlus } from "@/hooks/useFormContextPlus";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import semver from "semver";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "../-utils";
 
 function Fields() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const { control, watch } = useFormContextPlus<HydroFormFields>();
   const [reservoirDisabled, waterValuesDisabled, heuristicDisabled, leeWayDisabled] = watch([
     "reservoir",

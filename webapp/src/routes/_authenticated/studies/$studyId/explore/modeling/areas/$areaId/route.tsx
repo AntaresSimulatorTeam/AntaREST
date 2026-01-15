@@ -85,7 +85,14 @@ function AreaLayout() {
                 params,
               }),
             },
-          // { label: "study.modeling.hydro", pathSuffix: "hydro" },
+          {
+            id: "hydro",
+            label: t("study.modeling.hydro"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro",
+              params,
+            }),
+          },
           enrModelling === "aggregated" && {
             id: "wind",
             label: t("study.modeling.wind"),
