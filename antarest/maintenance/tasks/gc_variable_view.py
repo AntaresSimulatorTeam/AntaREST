@@ -53,12 +53,15 @@ def clean_variable_views(
             with create_lock(db.session, lock_id=LockId.VARIABLE_VIEW_GC):
                 cutoff = current_time() - timedelta(days=retention_time)
 
-                rows = (
-                    db.session.query(OutputVariablesViewsModel)
-                    .filter(OutputVariablesViewsModel.last_read < cutoff)
-                    .all()
-                )
-                if not rows:
+                query = db.session.query(OutputVariablesViewsModel).filter(OutputVariablesViewsModel.last_read < cutoff)
+
+                if dry_run:
+                    deleted_count = query.count()
+                else:
+                    deleted_count = query.delete()
+                    db.session.commit()
+
+                if deleted_count == 0:
                     return GarbageCollectorTaskResult(
                         status=BackGroundTaskStatus.SKIPPED,
                         reason="no_unused_variable_view",
@@ -66,14 +69,7 @@ def clean_variable_views(
                         duration_seconds=time.time() - start_time,
                     )
 
-                logger.info("Variable view GC: deleting %d view rows (dry_run=%s)", len(rows), dry_run)
-
-                if not dry_run:
-                    for r in rows:
-                        db.session.delete(r)
-                    db.session.commit()
-
-                deleted_count = len(rows)
+                logger.info("Variable view GC: deleted %d view rows (dry_run=%s)", deleted_count, dry_run)
 
     except LockNotAcquired:
         logger.warning(

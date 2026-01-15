@@ -43,8 +43,8 @@ class LockId(IntEnum):
     MATRIX_GC = 1001
     BLOB_GC = 1002
     AUTO_ARCHIVE = 1003
-    WATCHER_SCAN = 1005
-    VARIABLE_VIEW_GC = 1006
+    WATCHER_SCAN = 1004
+    VARIABLE_VIEW_GC = 1005
 
 
 class WatcherScanTaskResult(AntaresBaseModel):
