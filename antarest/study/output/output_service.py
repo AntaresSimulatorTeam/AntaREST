@@ -669,9 +669,7 @@ class OutputService:
         def aggregate_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 stopwatch = StopWatch()
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
-                )
+                logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
 
                 results = self._storage.aggregate_output_data(
                     uuid,
@@ -685,14 +683,12 @@ class OutputService:
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)
 
-                stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_path}'."))
+                stopwatch.log_elapsed(lambda x: logger.info(f"Created aggregated outputs file '{file_path}' in {x}s."))
 
                 if on_success:
                     on_success()
 
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Aggregated output file '{file_path}' is ready for download.")
-                )
+                logger.info(f"Aggregated output file '{file_path}' is ready for download.")
                 return TaskResult(
                     success=True,
                     message=f"Successfully aggregated output data for study '{uuid}'."
