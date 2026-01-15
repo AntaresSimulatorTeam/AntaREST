@@ -18,8 +18,8 @@ import { validateNumber } from "@/utils/validation/number";
 import { Grid, Typography } from "@mui/material";
 import type { FieldArrayWithId } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentArea } from "../../../../../../../../redux/selectors";
+import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentArea } from "../../../../../../../../../../redux/selectors";
 import type { CorrelationFormFields } from "./utils";
 
 interface Props {

@@ -18,21 +18,21 @@ import { Grid } from "@mui/material";
 import { useState } from "react";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../../../types/types";
 import HydroMatrixDialog from "../HydroMatrixDialog";
 import { FormBox, FormPaper } from "../style";
 import { HydroMatrix } from "../utils";
 import ViewMatrixButton from "../ViewMatrixButton";
 import Fields from "./Fields";
 import {
-  getCorrelationFormFields,
-  setCorrelationFormFields,
-  type CorrelationFormFields,
+  getAllocationFormFields,
+  setAllocationFormFields,
+  type AllocationFormFields,
 } from "./utils";
 
-function Correlation() {
+function Allocation() {
   const {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
@@ -43,9 +43,9 @@ function Correlation() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<CorrelationFormFields>) => {
-    return setCorrelationFormFields(studyId, areaId, {
-      correlation: data.values.correlation,
+  const handleSubmit = (data: SubmitHandlerPlus<AllocationFormFields>) => {
+    return setAllocationFormFields(studyId, areaId, {
+      allocation: data.values.allocation,
     });
   };
 
@@ -55,13 +55,17 @@ function Correlation() {
 
   return (
     <FormBox>
-      <FormPaper>
+      <FormPaper
+        sx={{
+          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+        }}
+      >
         <Grid container justifyContent="flex-end" alignItems="flex-start">
           <Grid item xs>
             <Form
               key={studyId + areaId}
               config={{
-                defaultValues: () => getCorrelationFormFields(studyId, areaId),
+                defaultValues: () => getAllocationFormFields(studyId, areaId),
               }}
               onSubmit={handleSubmit}
               sx={{ p: 3 }}
@@ -72,7 +76,7 @@ function Correlation() {
           </Grid>
           <Grid item>
             <ViewMatrixButton
-              label="study.modeling.hydro.correlation.viewMatrix"
+              label="study.modeling.hydro.allocation.viewMatrix"
               onClick={() => setMatrixDialogOpen(true)}
             />
           </Grid>
@@ -80,7 +84,7 @@ function Correlation() {
       </FormPaper>
       {matrixDialogOpen && (
         <HydroMatrixDialog
-          type={HydroMatrix.Correlation}
+          type={HydroMatrix.Allocation}
           open={matrixDialogOpen}
           onClose={() => setMatrixDialogOpen(false)}
         />
@@ -89,4 +93,4 @@ function Correlation() {
   );
 }
 
-export default Correlation;
+export default Allocation;

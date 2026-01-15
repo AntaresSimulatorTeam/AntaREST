@@ -36,5 +36,3 @@ function Solar() {
 
   return <Matrix key={areaId} studyId={study.id} url={url} aggregateColumns="stats" />;
 }
-
-export default Solar;

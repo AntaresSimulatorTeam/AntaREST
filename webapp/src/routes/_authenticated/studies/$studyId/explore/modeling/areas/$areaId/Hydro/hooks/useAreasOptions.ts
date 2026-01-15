@@ -16,9 +16,9 @@ import type { DynamicListProps } from "@/components/DynamicList";
 import { useMemo } from "react";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getAreas } from "../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
+import { getAreas } from "../../../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../../../types/types";
 import type { AreaCoefficientItem } from "../utils";
 
 export function useAreasOptions(fields: AreaCoefficientItem[]): DynamicListProps["options"] {

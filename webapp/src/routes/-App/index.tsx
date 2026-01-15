@@ -14,14 +14,13 @@
 
 // @ts-expect-error Temporary fix for missing lib
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Solar from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Solar";
-import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
-import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
-import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
-import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
-import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
-import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
-import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import Hydro from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro";
+import Allocation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/Allocation";
+import Correlation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/Correlation";
+import HydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/HydroMatrix";
+import ManagementOptions from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/ManagementOptions";
+import SplitHydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/SplitHydroMatrix";
+import { HYDRO_ROUTES } from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/utils";
 
 function App() {
   return (
@@ -53,8 +52,6 @@ function App() {
               );
             })}
           </Route>
-
-          <Route path="solar" element={<Solar />} />
         </Route>
       </Routes>
     </Router>

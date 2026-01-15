@@ -16,10 +16,10 @@ import { useMemo } from "react";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import semver from "semver";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import TabWrapper from "../../../TabWrapper";
+import TabWrapper from "../../../../../../../../-App/Singlestudy/explore/TabWrapper";
+import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../../types/types";
 
 function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

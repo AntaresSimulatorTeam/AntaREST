@@ -17,23 +17,22 @@ import { useFormContextPlus } from "@/components/Form";
 import { useFieldArray } from "react-hook-form";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getAreasById, getCurrentArea } from "../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
+import { getAreasById } from "../../../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../../../types/types";
 import { useAreasOptions } from "../hooks/useAreasOptions";
-import CorrelationField from "./CorrelationField";
-import type { CorrelationFormFields } from "./utils";
+import AllocationField from "./AllocationField";
+import type { AllocationFormFields } from "./utils";
 
 function Fields() {
   const {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();
   const areasById = useAppSelector((state) => getAreasById(state, studyId));
-  const currentArea = useAppSelector(getCurrentArea);
-  const { control } = useFormContextPlus<CorrelationFormFields>();
+  const { control } = useFormContextPlus<AllocationFormFields>();
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "correlation",
+    name: "allocation",
   });
 
   const options = useAreasOptions(fields);
@@ -46,7 +45,7 @@ function Fields() {
     <DynamicList
       items={fields}
       renderItem={(item, index) => (
-        <CorrelationField
+        <AllocationField
           key={item.id}
           field={item}
           index={index}
@@ -62,7 +61,6 @@ function Fields() {
       }
       onDelete={remove}
       allowEmpty={false}
-      disableDelete={(item) => item.areaId === currentArea?.id}
     />
   );
 }
