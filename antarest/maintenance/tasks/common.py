@@ -43,3 +43,4 @@ class LockId(IntEnum):
     MATRIX_GC = 1001
     BLOB_GC = 1002
     AUTO_ARCHIVE = 1003
+    VARIABLE_VIEW_GC = 1004
