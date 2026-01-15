@@ -21,7 +21,7 @@ import {
   type InflowStructureFields,
   getInflowStructureFields,
   updateInflowStructureFields,
-} from "./-utils";
+} from "../-utils";
 
 function InflowStructureForm() {
   const { studyId, areaId } = useParams({
