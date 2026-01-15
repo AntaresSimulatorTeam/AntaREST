@@ -18,7 +18,6 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/components/Form";
 import type { StudyMetadata } from "@/types/types";
-// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router-dom";
 import semver from "semver";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";

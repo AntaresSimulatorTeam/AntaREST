@@ -19,7 +19,6 @@ import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "@/redux/selectors";
 import type { StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
-// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import {
   type InflowStructureFields,

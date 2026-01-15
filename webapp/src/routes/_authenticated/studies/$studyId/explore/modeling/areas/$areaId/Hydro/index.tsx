@@ -13,7 +13,6 @@
  */
 
 import { useMemo } from "react";
-// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import semver from "semver";
 import TabWrapper from "../../../../../../../../-App/Singlestudy/explore/TabWrapper";

@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-// @ts-expect-error Temporary fix for missing lib
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Hydro from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro";
 import Allocation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/Allocation";
