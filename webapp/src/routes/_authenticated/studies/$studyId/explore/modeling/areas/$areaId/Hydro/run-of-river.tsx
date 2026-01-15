@@ -13,8 +13,8 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
-import HydroMatrix from "./HydroMatrix";
-import { HydroMatrixType } from "./utils";
+import HydroMatrix from "./-components/HydroMatrix";
+import { HydroMatrixType } from "./-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river",

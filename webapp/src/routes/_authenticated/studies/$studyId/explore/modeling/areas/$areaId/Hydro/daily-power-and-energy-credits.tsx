@@ -13,8 +13,8 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
-import SplitHydroMatrix from "./SplitHydroMatrix";
-import { HydroMatrixType } from "./utils";
+import SplitHydroMatrix from "./-components/SplitHydroMatrix";
+import { HydroMatrixType } from "./-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits",

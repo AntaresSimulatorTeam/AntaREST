@@ -14,8 +14,8 @@
 
 import SplitView, { type SplitViewProps } from "@/components/page/SplitView";
 import { Box } from "@mui/material";
+import { type HydroMatrixTypeValue } from "../-utils";
 import HydroMatrix from "./HydroMatrix";
-import { type HydroMatrixTypeValue } from "./utils";
 
 interface Props {
   types: [HydroMatrixTypeValue, HydroMatrixTypeValue];

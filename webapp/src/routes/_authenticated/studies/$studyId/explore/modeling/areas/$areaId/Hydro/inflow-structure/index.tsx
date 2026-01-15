@@ -14,8 +14,8 @@
 
 import { Stack } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
-import SplitHydroMatrix from "../SplitHydroMatrix";
-import { HydroMatrixType } from "../utils";
+import SplitHydroMatrix from "../-components/SplitHydroMatrix";
+import { HydroMatrixType } from "../-utils";
 import InflowStructureForm from "./-components/InflowStructureForm";
 
 export const Route = createFileRoute(

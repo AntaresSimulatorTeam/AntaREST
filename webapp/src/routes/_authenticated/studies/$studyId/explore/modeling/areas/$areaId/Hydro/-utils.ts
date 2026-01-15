@@ -83,25 +83,6 @@ export interface AreaCoefficientItem {
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const HYDRO_ROUTES: HydroRoute[] = [
-  {
-    path: "watervalues",
-    type: HydroMatrixType.WaterValues,
-  },
-  {
-    path: "hydrostorage",
-    type: HydroMatrixType.HydroStorage,
-  },
-  {
-    path: "ror",
-    type: HydroMatrixType.RunOfRiver,
-  },
-  {
-    path: "mingen",
-    type: HydroMatrixType.MinGen,
-  },
-];
-
 export const MATRICES: Matrices = {
   [HydroMatrixType.DailyPower]: {
     title: "Credit Modulations",

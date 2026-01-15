@@ -22,9 +22,9 @@ import { Box, Button } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getAllocationMatrix } from "./allocation/-utils";
-import { getCorrelationMatrix } from "./correlation/-utils";
-import type { HydroMatrixTypeValue } from "./utils";
+import type { HydroMatrixTypeValue } from "../-utils";
+import { getAllocationMatrix } from "../allocation/-utils";
+import { getCorrelationMatrix } from "../correlation/-utils";
 interface AdaptedMatrixData {
   data: number[][];
   columns: string[];

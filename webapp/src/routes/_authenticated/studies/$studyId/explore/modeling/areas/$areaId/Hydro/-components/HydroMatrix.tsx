@@ -16,8 +16,8 @@ import Matrix from "@/components/Matrix";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { format } from "@/utils/stringUtils";
 import { Box } from "@mui/material";
-import useArea from "../-hooks/useArea";
-import { type HydroMatrixTypeValue, MATRICES } from "./utils";
+import { type HydroMatrixTypeValue, MATRICES } from "../-utils";
+import useArea from "../../-hooks/useArea";
 
 interface Props {
   type: HydroMatrixTypeValue;

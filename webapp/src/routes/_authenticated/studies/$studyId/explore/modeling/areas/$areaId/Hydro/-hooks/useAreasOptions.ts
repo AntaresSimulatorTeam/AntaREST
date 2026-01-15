@@ -15,9 +15,9 @@
 import type { DynamicListProps } from "@/components/DynamicList";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useMemo } from "react";
+import type { AreaCoefficientItem } from "../-utils";
 import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../../../../../redux/selectors";
-import type { AreaCoefficientItem } from "../utils";
 
 export function useAreasOptions(fields: AreaCoefficientItem[]): DynamicListProps["options"] {
   const study = useStudy();

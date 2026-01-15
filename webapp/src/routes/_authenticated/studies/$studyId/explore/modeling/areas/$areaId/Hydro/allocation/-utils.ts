@@ -13,9 +13,9 @@
  */
 
 import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
+import type { AreaCoefficientItem } from "../-utils";
 import client from "../../../../../../../../../../services/api/client";
 import type { Area, StudyMetadata } from "../../../../../../../../../../types/types";
-import type { AreaCoefficientItem } from "../utils";
 
 ////////////////////////////////////////////////////////////////
 // Types

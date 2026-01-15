@@ -17,10 +17,10 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { Grid } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import HydroMatrixDialog from "../HydroMatrixDialog";
-import { FormBox, FormPaper } from "../style";
-import { HydroMatrixType } from "../utils";
-import ViewMatrixButton from "../ViewMatrixButton";
+import HydroMatrixDialog from "../-components/HydroMatrixDialog";
+import { FormBox, FormPaper } from "../-components/style";
+import ViewMatrixButton from "../-components/ViewMatrixButton";
+import { HydroMatrixType } from "../-utils";
 import Fields from "./-components/Fields";
 import {
   type AllocationFormFields,
