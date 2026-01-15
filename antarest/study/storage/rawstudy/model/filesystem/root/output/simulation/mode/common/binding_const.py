@@ -25,7 +25,6 @@ class OutputSimulationBindingConstraintItem(FolderNode):
         existing_files = [d.stem.replace("binding-constraints-", "") for d in self.config.path.iterdir()]
         children: TREE = {
             f"binding-constraints-{freq}": BindingConstraintOutputSeriesMatrix(
-                self.matrix_mapper,
                 self.config.next_file(f"binding-constraints-{freq}.txt"),
                 MatrixFrequency(freq),
             )

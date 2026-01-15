@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Sequence
 
-import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -110,10 +110,10 @@ class StudyConverter:
                 content = self._source_dao.get_xpansion_resource(resource_type, filename)
 
                 if resource_type == XpansionResourceFileType.WEIGHTS:
-                    assert isinstance(content, pd.DataFrame)
+                    assert isinstance(content, pl.DataFrame)
                     self._new_dao.save_xpansion_weight(filename, self._matrix_service.create(content))
                 elif resource_type == XpansionResourceFileType.CAPACITIES:
-                    assert isinstance(content, pd.DataFrame)
+                    assert isinstance(content, pl.DataFrame)
                     self._new_dao.save_xpansion_capacity(filename, self._matrix_service.create(content))
                 else:
                     assert isinstance(content, bytes)

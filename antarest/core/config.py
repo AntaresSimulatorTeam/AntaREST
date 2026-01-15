@@ -172,6 +172,8 @@ class StorageConfig:
     variable_view_gc_sleeping_time: int = 3600
     variable_view_gc_dry_run: bool = False
     variable_view_gc_retention_days: int = 30
+    watcher_scan_sleeping_time: int = 60
+    watcher_scan_dry_run: bool = False
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
@@ -216,6 +218,8 @@ class StorageConfig:
             variable_view_gc_retention_days=data.get(
                 "variable_view_gc_retention_days", defaults.variable_view_gc_retention_days
             ),
+            watcher_scan_sleeping_time=data.get("watcher_scan_sleeping_time", defaults.watcher_scan_sleeping_time),
+            watcher_scan_dry_run=data.get("watcher_scan_dry_run", defaults.watcher_scan_dry_run),
         )
 
     @classmethod

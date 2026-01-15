@@ -14,10 +14,10 @@ import configparser
 import re
 
 import numpy as np
-import pandas as pd
 import pytest
 from pydantic import ValidationError
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -51,8 +51,8 @@ class TestCreateCluster:
         assert cl.command_context is command_context
 
         # Check the command data
-        prepro_id = command_context.matrix_service.create(pd.DataFrame(prepro))
-        modulation_id = command_context.matrix_service.create(pd.DataFrame(modulation))
+        prepro_id = command_context.matrix_service.create(create_polars_dataframe(prepro))
+        modulation_id = command_context.matrix_service.create(create_polars_dataframe(modulation))
         assert cl.area_id == "foo"
         assert cl.parameters == ThermalClusterCreation(
             name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
@@ -183,8 +183,8 @@ class TestCreateCluster:
         )
         dto = command.to_dto()
 
-        prepro_id = command_context.matrix_service.create(pd.DataFrame(prepro))
-        modulation_id = command_context.matrix_service.create(pd.DataFrame(modulation))
+        prepro_id = command_context.matrix_service.create(create_polars_dataframe(prepro))
+        modulation_id = command_context.matrix_service.create(create_polars_dataframe(modulation))
         assert dto.model_dump() == {
             "action": "create_cluster",
             "args": {
