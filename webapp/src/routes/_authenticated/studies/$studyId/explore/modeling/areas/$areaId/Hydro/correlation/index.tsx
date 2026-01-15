@@ -24,12 +24,12 @@ import HydroMatrixDialog from "../HydroMatrixDialog";
 import { FormBox, FormPaper } from "../style";
 import { HydroMatrix } from "../utils";
 import ViewMatrixButton from "../ViewMatrixButton";
-import Fields from "./Fields";
+import Fields from "./-components/Fields";
 import {
   getCorrelationFormFields,
   setCorrelationFormFields,
   type CorrelationFormFields,
-} from "./utils";
+} from "./-utils";
 
 function Correlation() {
   const {

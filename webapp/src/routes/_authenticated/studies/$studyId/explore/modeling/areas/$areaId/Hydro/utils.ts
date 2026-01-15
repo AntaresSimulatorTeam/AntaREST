@@ -19,7 +19,7 @@ import type {
 } from "@/components/Matrix/shared/types";
 import type { SplitViewProps } from "@/components/page/SplitView";
 import { getAllocationMatrix } from "./allocation/-utils";
-import { getCorrelationMatrix } from "./correlation/utils";
+import { getCorrelationMatrix } from "./correlation/-utils";
 import InflowStructure from "./inflow-structure/-components/InflowStructureForm";
 
 ////////////////////////////////////////////////////////////////
