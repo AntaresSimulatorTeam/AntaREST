@@ -27,7 +27,7 @@ import InflowStructure from "./inflow-structure/-components/InflowStructureForm"
 ////////////////////////////////////////////////////////////////
 
 export const HydroMatrix = {
-  Dailypower: "Dailypower",
+  DailyPower: "DailyPower",
   EnergyCredits: "EnergyCredits",
   ReservoirLevels: "ReservoirLevels",
   WaterValues: "WaterValues",
@@ -98,7 +98,7 @@ export const HYDRO_ROUTES: HydroRoute[] = [
   },
   {
     path: "dailypower&energy",
-    type: HydroMatrix.Dailypower,
+    type: HydroMatrix.DailyPower,
     isSplitView: true,
     splitConfig: {
       direction: "vertical",
@@ -129,7 +129,7 @@ export const HYDRO_ROUTES: HydroRoute[] = [
 ];
 
 export const MATRICES: Matrices = {
-  [HydroMatrix.Dailypower]: {
+  [HydroMatrix.DailyPower]: {
     title: "Credit Modulations",
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     columns: generateColumns("%"),

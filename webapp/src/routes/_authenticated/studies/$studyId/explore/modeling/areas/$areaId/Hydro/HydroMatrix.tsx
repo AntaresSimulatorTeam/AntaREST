@@ -35,6 +35,7 @@ function HydroMatrix({ type }: Props) {
   return (
     <Box sx={{ width: 1, height: 1, p: 1 }}>
       <Matrix
+        key={area.id}
         studyId={study.id}
         title={hydroMatrix.title}
         url={format(hydroMatrix.url, { areaId: area.id })}

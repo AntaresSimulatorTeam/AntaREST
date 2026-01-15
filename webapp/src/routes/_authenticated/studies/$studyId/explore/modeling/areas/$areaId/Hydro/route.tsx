@@ -79,6 +79,14 @@ function HydroLayout() {
             params,
           }),
         },
+        {
+          id: "dailyPower&EnergyCredits",
+          label: "Daily Power & Energy Credits",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits",
+            params,
+          }),
+        },
       ]}
     />
   );
