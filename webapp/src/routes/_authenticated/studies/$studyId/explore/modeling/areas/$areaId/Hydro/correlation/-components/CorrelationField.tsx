@@ -19,8 +19,7 @@ import { Grid, Typography } from "@mui/material";
 import type { FieldArrayWithId } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { CorrelationFormFields } from "../-utils";
-import useAppSelector from "../../../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentArea } from "../../../../../../../../../../../redux/selectors";
+import useArea from "../../../-hooks/useArea";
 
 interface Props {
   field: FieldArrayWithId<CorrelationFormFields, "correlation">;
@@ -31,7 +30,7 @@ interface Props {
 // TODO merge with AllocationField
 function CorrelationField({ field, index, label }: Props) {
   const { control } = useFormContextPlus<CorrelationFormFields>();
-  const currentArea = useAppSelector(getCurrentArea);
+  const area = useArea();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -58,7 +57,7 @@ function CorrelationField({ field, index, label }: Props) {
           name={`correlation.${index}.coefficient` as const}
           control={control}
           rules={{ validate: validateNumber({ min: -100, max: 100 }) }}
-          disabled={field.areaId === currentArea?.id}
+          disabled={field.areaId === area.id}
           margin="dense"
         />
       </Grid>

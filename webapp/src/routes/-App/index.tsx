@@ -13,8 +13,6 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Allocation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/allocation";
-import Correlation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/correlation";
 import HydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/HydroMatrix";
 import SplitHydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/SplitHydroMatrix";
 import { HYDRO_ROUTES } from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/utils";
@@ -26,9 +24,7 @@ function App() {
         <Route path="area/:areaId">
           <Route path="hydro" element={<Navigate to="management" replace />} />
           <Route path="hydro">
-            <Route path="allocation" element={<Allocation />} />
-            <Route path="correlation" element={<Correlation />} />
-            {HYDRO_ROUTES.map(({ path, type, isSplitView, splitConfig, form, sx }) => {
+            {HYDRO_ROUTES.map(({ path, type, isSplitView, splitConfig }) => {
               return isSplitView && splitConfig ? (
                 <Route
                   key={path}
@@ -38,8 +34,6 @@ function App() {
                       types={[type, splitConfig.partnerType]}
                       direction={splitConfig.direction}
                       sizes={splitConfig.sizes}
-                      form={form}
-                      sx={sx}
                     />
                   }
                 />

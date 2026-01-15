@@ -13,23 +13,21 @@
  */
 
 import DynamicList from "@/components/DynamicList";
-import { useFormContextPlus } from "@/components/Form";
+import { useFormContextPlus } from "@/hooks/useFormContextPlus";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useFieldArray } from "react-hook-form";
-//
-import { useOutletContext } from "react-router";
 import type { CorrelationFormFields } from "../-utils";
 import { useAreasOptions } from "../../-hooks/useAreasOptions";
+import useArea from "../../../-hooks/useArea";
 import useAppSelector from "../../../../../../../../../../../redux/hooks/useAppSelector";
-import { getAreasById, getCurrentArea } from "../../../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../../../types/types";
+import { getAreasById } from "../../../../../../../../../../../redux/selectors";
 import CorrelationField from "./CorrelationField";
 
 function Fields() {
-  const {
-    study: { id: studyId },
-  } = useOutletContext<{ study: StudyMetadata }>();
-  const areasById = useAppSelector((state) => getAreasById(state, studyId));
-  const currentArea = useAppSelector(getCurrentArea);
+  const study = useStudy();
+  const area = useArea();
+  const areasById = useAppSelector((state) => getAreasById(state, study.id));
+
   const { control } = useFormContextPlus<CorrelationFormFields>();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -62,7 +60,7 @@ function Fields() {
       }
       onDelete={remove}
       allowEmpty={false}
-      disableDelete={(item) => item.areaId === currentArea?.id}
+      disableDelete={(item) => item.areaId === area.id}
     />
   );
 }

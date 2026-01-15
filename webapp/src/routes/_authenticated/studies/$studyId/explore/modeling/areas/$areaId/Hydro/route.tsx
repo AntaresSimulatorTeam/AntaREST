@@ -28,7 +28,6 @@ function HydroLayout() {
   //   const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;
 
   //   return [
-  //     { label: "Correlation", path: `${basePath}/correlation` },
   //     {
   //       label: "Daily Power & Energy Credits",
   //       path: `${basePath}/dailypower&energy`,
@@ -69,6 +68,14 @@ function HydroLayout() {
           label: "Allocation",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/allocation",
+            params,
+          }),
+        },
+        {
+          id: "correlation",
+          label: "Correlation",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/correlation",
             params,
           }),
         },

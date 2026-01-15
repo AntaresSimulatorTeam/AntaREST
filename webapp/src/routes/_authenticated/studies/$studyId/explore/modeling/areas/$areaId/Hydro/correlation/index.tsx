@@ -15,11 +15,8 @@
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { Grid } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useOutletContext } from "react-router";
-import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../../types/types";
 import HydroMatrixDialog from "../HydroMatrixDialog";
 import { FormBox, FormPaper } from "../style";
 import { HydroMatrix } from "../utils";
@@ -31,12 +28,15 @@ import {
   type CorrelationFormFields,
 } from "./-utils";
 
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/correlation/",
+)({
+  component: Correlation,
+});
+
 function Correlation() {
-  const {
-    study: { id: studyId },
-  } = useOutletContext<{ study: StudyMetadata }>();
+  const { studyId, areaId } = Route.useParams();
   const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
-  const areaId = useAppSelector(getCurrentAreaId);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -58,7 +58,7 @@ function Correlation() {
         <Grid container justifyContent="flex-end" alignItems="flex-start">
           <Grid item xs>
             <Form
-              key={studyId + areaId}
+              key={areaId}
               config={{
                 defaultValues: () => getCorrelationFormFields(studyId, areaId),
               }}
@@ -87,5 +87,3 @@ function Correlation() {
     </FormBox>
   );
 }
-
-export default Correlation;
