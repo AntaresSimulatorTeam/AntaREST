@@ -17,16 +17,14 @@ import BasicDialog, { type BasicDialogProps } from "@/components/dialogs/BasicDi
 import Matrix from "@/components/Matrix";
 import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Box, Button } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../../types/types";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
 import type { HydroMatrixType } from "./utils";
-
 interface AdaptedMatrixData {
   data: number[][];
   columns: string[];
@@ -69,7 +67,7 @@ function HydroMatrixDialog({ open, onClose, type }: Props) {
    */
 
   const { t } = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const fetchFn = MATRIX_FETCHERS[type as keyof typeof MATRIX_FETCHERS];
   const [matrix, setMatrix] = useState<AdaptedMatrixData | undefined>(undefined);

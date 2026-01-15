@@ -13,23 +13,19 @@
  */
 
 import SplitView, { type SplitViewProps } from "@/components/page/SplitView";
-import { mergeSxProp } from "@/utils/muiUtils";
-import { Box, type SxProps, type Theme } from "@mui/material";
+import { Box } from "@mui/material";
 import HydroMatrix from "./HydroMatrix";
-import type { HydroMatrixType } from "./utils";
+import { type HydroMatrixType } from "./utils";
 
 interface Props {
   types: [HydroMatrixType, HydroMatrixType];
   direction?: SplitViewProps["direction"];
   sizes: [number, number];
-  form?: React.ComponentType;
-  sx?: SxProps<Theme>;
 }
 
-function SplitHydroMatrix({ types, direction, sizes, form: Form, sx }: Props) {
+function SplitHydroMatrix({ types, direction, sizes }: Props) {
   return (
-    <Box sx={mergeSxProp({ width: 1, height: 1 }, sx)}>
-      {Form && <Form />}
+    <Box sx={{ width: 1, height: 1 }}>
       <SplitView splitId={`hydro-${types[0]}-${types[1]}`} direction={direction} sizes={sizes}>
         <HydroMatrix type={types[0]} />
         <HydroMatrix type={types[1]} />

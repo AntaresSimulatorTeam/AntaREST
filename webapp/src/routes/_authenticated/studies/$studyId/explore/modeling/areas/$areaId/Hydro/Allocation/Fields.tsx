@@ -13,21 +13,18 @@
  */
 
 import DynamicList from "@/components/DynamicList";
-import { useFormContextPlus } from "@/components/Form";
+import { useFormContextPlus } from "@/hooks/useFormContextPlus";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useFieldArray } from "react-hook-form";
-import { useOutletContext } from "react-router";
 import { useAreasOptions } from "../-hooks/useAreasOptions";
 import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
 import { getAreasById } from "../../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../../types/types";
 import AllocationField from "./AllocationField";
 import type { AllocationFormFields } from "./utils";
 
 function Fields() {
-  const {
-    study: { id: studyId },
-  } = useOutletContext<{ study: StudyMetadata }>();
-  const areasById = useAppSelector((state) => getAreasById(state, studyId));
+  const study = useStudy();
+  const areasById = useAppSelector((state) => getAreasById(state, study.id));
   const { control } = useFormContextPlus<AllocationFormFields>();
   const { fields, append, remove } = useFieldArray({
     control,

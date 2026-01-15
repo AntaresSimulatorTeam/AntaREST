@@ -13,19 +13,15 @@
  */
 
 import type { DynamicListProps } from "@/components/DynamicList";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useMemo } from "react";
-import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../../types/types";
 import type { AreaCoefficientItem } from "../utils";
 
 export function useAreasOptions(fields: AreaCoefficientItem[]): DynamicListProps["options"] {
-  const {
-    study: { id: studyId },
-  } = useOutletContext<{ study: StudyMetadata }>();
-
-  const areas = useAppSelector((state) => getAreas(state, studyId));
+  const study = useStudy();
+  const areas = useAppSelector((state) => getAreas(state, study.id));
 
   const options = useMemo(() => {
     const areaIds = fields.map((field) => field.areaId);

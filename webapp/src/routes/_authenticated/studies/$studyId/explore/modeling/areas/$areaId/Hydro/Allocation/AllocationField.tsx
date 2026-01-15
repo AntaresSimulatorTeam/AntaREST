@@ -13,7 +13,7 @@
  */
 
 import NumberFE from "@/components/fieldEditors/NumberFE";
-import { useFormContextPlus } from "@/components/Form";
+import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import { Grid, Typography } from "@mui/material";
 import type { FieldArrayWithId } from "react-hook-form";
 import type { AllocationFormFields } from "./utils";

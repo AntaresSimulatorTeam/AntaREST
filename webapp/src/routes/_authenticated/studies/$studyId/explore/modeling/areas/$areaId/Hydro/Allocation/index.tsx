@@ -14,27 +14,24 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Grid } from "@mui/material";
 import { useState } from "react";
-import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../../../types/types";
 import HydroMatrixDialog from "../HydroMatrixDialog";
 import { FormBox, FormPaper } from "../style";
 import { HydroMatrix } from "../utils";
 import ViewMatrixButton from "../ViewMatrixButton";
 import Fields from "./Fields";
 import {
+  type AllocationFormFields,
   getAllocationFormFields,
   setAllocationFormFields,
-  type AllocationFormFields,
 } from "./utils";
 
 function Allocation() {
-  const {
-    study: { id: studyId },
-  } = useOutletContext<{ study: StudyMetadata }>();
+  const study = useStudy();
   const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
   const areaId = useAppSelector(getCurrentAreaId);
 
@@ -43,7 +40,7 @@ function Allocation() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<AllocationFormFields>) => {
-    return setAllocationFormFields(studyId, areaId, {
+    return setAllocationFormFields(study.id, areaId, {
       allocation: data.values.allocation,
     });
   };
@@ -62,9 +59,9 @@ function Allocation() {
         <Grid container justifyContent="flex-end" alignItems="flex-start">
           <Grid item xs>
             <Form
-              key={studyId + areaId}
+              key={areaId}
               config={{
-                defaultValues: () => getAllocationFormFields(studyId, areaId),
+                defaultValues: () => getAllocationFormFields(study.id, areaId),
               }}
               onSubmit={handleSubmit}
               sx={{ p: 3 }}

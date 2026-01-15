@@ -14,19 +14,18 @@
 
 import Matrix from "@/components/Matrix";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { format } from "@/utils/stringUtils";
 import { Box } from "@mui/material";
-import useAppSelector from "../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../redux/selectors";
-import { MATRICES, type HydroMatrixType } from "./utils";
+import useArea from "../-hooks/useArea";
+import { type HydroMatrixType, MATRICES } from "./utils";
 
 interface Props {
   type: HydroMatrixType;
 }
 
 function HydroMatrix({ type }: Props) {
-  const areaId = useAppSelector(getCurrentAreaId);
   const study = useStudy();
-
+  const area = useArea();
   const hydroMatrix = MATRICES[type];
 
   ////////////////////////////////////////////////////////////////
@@ -38,7 +37,7 @@ function HydroMatrix({ type }: Props) {
       <Matrix
         studyId={study.id}
         title={hydroMatrix.title}
-        url={hydroMatrix.url.replace("{areaId}", areaId)}
+        url={format(hydroMatrix.url, { areaId: area.id })}
         customColumns={hydroMatrix.columns}
         customRowHeaders={hydroMatrix.rowHeaders}
         aggregateColumns={hydroMatrix.aggregates}
