@@ -112,7 +112,7 @@ function TermsFE() {
           display: "flex",
           flexDirection: "column",
           overflow: "auto",
-          maxHeight: 430,
+          minHeight: 345,
         },
         invalid && { borderColor: "error.main", borderWidth: 0.5, borderStyle: "solid" },
       ]}

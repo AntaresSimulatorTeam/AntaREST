@@ -78,8 +78,8 @@ function Parameters() {
         enableUndoRedo
       >
         {({ control }) => (
-          <Stack direction="column">
-            <Fieldset sx={{ flex: 1 }}>
+          <Stack direction="column" sx={{ height: 1 }}>
+            <Fieldset>
               <SwitchFE
                 name="enabled"
                 label={t("study.modeling.bindingConst.enabled")}
