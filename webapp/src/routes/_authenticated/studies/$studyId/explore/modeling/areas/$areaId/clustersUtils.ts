@@ -13,8 +13,8 @@
  */
 
 import type { MRT_AggregationFn } from "material-react-table";
-import type { RenewableClusterWithCapacity } from "../../../../../../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/-utils";
-import type { ThermalClusterWithCapacity } from "../../../../../../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/-utils";
+import type { RenewableClusterWithCapacity } from "./renewables/-utils";
+import type { ThermalClusterWithCapacity } from "./thermals/-utils";
 
 export function toCapacityString(enabledCapacity: number, installedCapacity: number) {
   return `${Math.round(enabledCapacity)} / ${Math.round(installedCapacity)}`;
