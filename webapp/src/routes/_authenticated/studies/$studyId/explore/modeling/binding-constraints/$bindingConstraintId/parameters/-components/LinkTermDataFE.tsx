@@ -87,6 +87,7 @@ function LinkTermDataFE({ index }: { index: number }) {
   return (
     <UsePromiseCond
       response={response}
+      keepLastResolvedOnReload
       ifPending={() => <TermDataFieldSkeleton />}
       ifFulfilled={([area1Options, area2Options]) => (
         <>

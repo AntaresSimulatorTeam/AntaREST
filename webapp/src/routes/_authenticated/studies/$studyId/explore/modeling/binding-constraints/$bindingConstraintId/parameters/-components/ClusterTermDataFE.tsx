@@ -89,6 +89,7 @@ function ClusterTermDataFE({ index }: { index: number }) {
   return (
     <UsePromiseCond
       response={response}
+      keepLastResolvedOnReload
       ifPending={() => <TermDataFieldSkeleton />}
       ifFulfilled={([areaOptions, clusterOptions]) => (
         <>
