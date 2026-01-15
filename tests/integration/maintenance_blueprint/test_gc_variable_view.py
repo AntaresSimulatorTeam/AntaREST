@@ -15,34 +15,25 @@
 import uuid
 from datetime import datetime, timedelta
 
+import pandas as pd
+
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
-from antarest.matrixstore.model import Matrix
+from antarest.matrixstore.service import MatrixService
 from antarest.study.model import MatrixFrequency, RawStudy
 from antarest.study.output.output_model import OutputVariablesType, OutputVariablesViewsModel
 
 
 def _create_study(study_id: str) -> RawStudy:
-    """Helper to create a minimal study for FK requirements."""
+    """Helper to create a minimal study."""
     return RawStudy(
         id=study_id,
         name="Test Study",
         version="8.6",
         path="/tmp/test",
         workspace="default",
-    )
-
-
-def _create_matrix(matrix_id: str) -> Matrix:
-    """Helper to create a minimal matrix for FK requirements."""
-    return Matrix(
-        id=matrix_id,
-        width=2,
-        height=2,
-        created_at=current_time(),
-        version=1,
     )
 
 
@@ -69,15 +60,15 @@ def _create_variable_view(
 class TestCleanVariableViewsIntegration:
     """Integration tests for clean_variable_views using real database."""
 
-    def test_deletes_old_variable_views(self):
+    def test_deletes_old_variable_views(self, matrix_service: MatrixService):
         """Test that old variable views are deleted."""
         study_id = str(uuid.uuid4())
-        matrix_id = "a" * 64
         output_id = "test-output"
+        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
 
         with db():
+            matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
-            db.session.add(_create_matrix(matrix_id))
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -101,15 +92,15 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 0
 
-    def test_keeps_recent_variable_views(self):
+    def test_keeps_recent_variable_views(self, matrix_service: MatrixService):
         """Test that recent variable views are NOT deleted."""
         study_id = str(uuid.uuid4())
-        matrix_id = "b" * 64
         output_id = "test-output"
+        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
 
         with db():
+            matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
-            db.session.add(_create_matrix(matrix_id))
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -130,15 +121,15 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 1
 
-    def test_dry_run_does_not_delete(self):
+    def test_dry_run_does_not_delete(self, matrix_service: MatrixService):
         """Test that dry_run mode does not delete variable views."""
         study_id = str(uuid.uuid4())
-        matrix_id = "c" * 64
         output_id = "test-output"
+        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
 
         with db():
+            matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
-            db.session.add(_create_matrix(matrix_id))
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -168,17 +159,16 @@ class TestCleanVariableViewsIntegration:
         assert result.deleted_count == 0
         assert result.duration_seconds >= 0
 
-    def test_deletes_only_old_views_keeps_recent(self):
+    def test_deletes_only_old_views_keeps_recent(self, matrix_service: MatrixService):
         """Test that only old views are deleted while recent ones are kept."""
         study_id = str(uuid.uuid4())
-        matrix_id_old = "d" * 64
-        matrix_id_recent = "e" * 64
         output_id = "test-output"
+        matrix_data = pd.DataFrame([[1, 2], [3, 4]])
 
         with db():
+            matrix_id_old = matrix_service.create(matrix_data)
+            matrix_id_recent = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
-            db.session.add(_create_matrix(matrix_id_old))
-            db.session.add(_create_matrix(matrix_id_recent))
 
             # Old view - should be deleted
             db.session.add(
