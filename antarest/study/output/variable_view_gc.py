@@ -22,22 +22,20 @@ import time
 from typing_extensions import override
 
 from antarest.core.interfaces.service import IService
-from antarest.maintenance.tasks.gc_matrix import clean_matrices
-from antarest.matrixstore.service import MatrixService
+from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
 
 logger = logging.getLogger(__name__)
 
 
-class MatrixGarbageCollector(IService):
+class VariableViewGarbageCollector(IService):
     """
-    Background service that periodically cleans unused matrices.
+    Background service that periodically cleans unused variable views.
 
     This is used in non-Celery environments (desktop version) where
     we can't rely on Celery Beat for scheduling.
     """
 
-    def __init__(self, matrix_service: MatrixService, sleeping_time: float, dry_run: bool, retention_time: int):
-        self.matrix_service = matrix_service
+    def __init__(self, sleeping_time: float, dry_run: bool, retention_time: int):
         self.sleeping_time = sleeping_time
         self.dry_run = dry_run
         self.retention_time = retention_time
@@ -46,8 +44,8 @@ class MatrixGarbageCollector(IService):
     def _loop(self) -> None:
         while True:
             try:
-                clean_matrices(self.matrix_service, self.dry_run, self.retention_time)
+                clean_variable_views(self.dry_run, self.retention_time)
             except Exception as e:
-                logger.error("Error while cleaning matrices", exc_info=e)
+                logger.error("Error while cleaning variable views", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")
             time.sleep(self.sleeping_time)

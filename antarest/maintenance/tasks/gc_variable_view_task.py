@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,11 +20,12 @@ from celery import Task
 
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
-from antarest.maintenance.tasks.gc_variable_view import GCTaskResult, clean_variable_views
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult
+from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
 
 
 @celery_app.task(bind=True, name="antarest.maintenance.tasks.clean_variable_views_task", pydantic=True)
-def clean_variable_views_task(self: Task) -> GCTaskResult:  # type: ignore[type-arg]
+def clean_variable_views_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
     """
     Celery task wrapper for clean_variable_views.
 
@@ -39,7 +40,6 @@ def clean_variable_views_task(self: Task) -> GCTaskResult:  # type: ignore[type-
         raise RuntimeError("MaintenanceContext not found in app.conf. Ensure worker was properly started.")
 
     return clean_variable_views(
-        matrix_service=ctx.matrix_service,
         dry_run=ctx.config.storage.variable_view_gc_dry_run,
-        retention_time=ctx.config.storage.variable_view_gc_retention_time,
+        retention_time=ctx.config.storage.variable_view_gc_retention_days,
     )

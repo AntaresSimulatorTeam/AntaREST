@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,151 +11,100 @@
 # This file is part of the Antares project.
 
 """
-Matrix garbage collection task, agnostic from the way it is executed.
+Variable view garbage collection task, agnostic from the way it is executed.
 
-This task deletes unused matrices from the matrix store based on retention time.
+This task deletes unused variable views from the variable view store based on retention time.
 """
 
 import logging
 import time
-from collections.abc import Sequence
 from datetime import timedelta
-from enum import StrEnum
-from typing import Optional
-
-from pydantic import BaseModel
-from sqlalchemy import or_
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
-from antarest.matrixstore.service import MatrixService
+from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 from antarest.study.output.output_model import OutputVariablesViewsModel
-
-
-class TaskStatus(StrEnum):
-    SUCCESS = "success"
-    PARTIAL_SUCCESS = "partial_success"
-    SKIPPED = "skipped"
-    ERROR = "error"
-
-
-class GCTaskResult(BaseModel):
-    """Result of a garbage collection task execution."""
-
-    status: TaskStatus
-    deleted_count: int
-    failed_count: int = 0
-    duration_seconds: float
-    dry_run: Optional[bool] = None
-    reason: Optional[str] = None
-    error: Optional[str] = None
-
 
 logger = logging.getLogger(__name__)
 
-VV_GC_LOCK_ID = 1001
-
-
-def _delete_matrices(matrix_service: MatrixService, matrix_ids: Sequence[str], dry_run: bool) -> int:
-    failures = 0
-    for mid in matrix_ids:
-        if not dry_run:
-            try:
-                matrix_service.delete(mid)
-            except Exception as e:
-                logger.error("Failed to delete matrix %s: %s", mid, e)
-                failures += 1
-    return failures
-
 
 def clean_variable_views(
-    matrix_service: MatrixService,
     dry_run: bool,
     retention_time: int,
-) -> GCTaskResult:
+) -> GarbageCollectorTaskResult:
     """
-    Core logic for matrix garbage collection.
+    Delete variable views if their last_read is older than retention_time.
 
-    This function:
-    1. Acquires a PostgreSQL advisory lock to prevent concurrent execution
-    2. Fetches all used matrices and all existing matrices
-    3. Compares their lifetimes to the retention_time configuration
-    4. Deletes matrices that are unused and exceed the retention period
+    Note: matrices are not deleted here. Once rows are deleted, their matrice ids are not returned
+    anymore by the variable view usage provider, so they become eligible for matrix GC.
 
     Args:
-        matrix_service: Service for matrix operations
-        dry_run: If True, don't actually delete matrices
-        retention_time: Time in seconds before unused matrices can be deleted
+        dry_run: If True, don't actually delete variable views rows
+        retention_time: Time in days before unused variable views can be deleted
 
     Returns:
-        GCTaskResult with execution stats (deleted count, duration, status)
+        GarbageCollectorTaskResult with execution stats (deleted count, duration, status)
     """
     start_time = time.time()
+
+    logger.info("Beginning variables view GC process")
+    logger.info(f"Configuration: dry_run={dry_run}, retention_time={retention_time} days")
+
     deleted_count = 0
-
-    logger.info("Beginning matrix GC process")
-    logger.info(f"Configuration: dry_run={dry_run}, retention_time={retention_time}s")
-
     try:
         with db():
-            with create_lock(db.session, lock_id=VV_GC_LOCK_ID):
-                failures = 0
-                deleted = 0
-                cutoff = current_time() - timedelta(seconds=retention_time)
+            with create_lock(db.session, lock_id=LockId.VARIABLE_VIEW_GC):
+                cutoff = current_time() - timedelta(days=retention_time)
 
                 rows = (
                     db.session.query(OutputVariablesViewsModel)
-                    .filter(or_(OutputVariablesViewsModel.last_read < cutoff))
+                    .filter(OutputVariablesViewsModel.last_read < cutoff)
                     .all()
                 )
                 if not rows:
-                    return GCTaskResult(
-                        status=TaskStatus.SKIPPED,
-                        reason="no_unused_variale_view",
+                    return GarbageCollectorTaskResult(
+                        status=BackGroundTaskStatus.SKIPPED,
+                        reason="no_unused_variable_view",
                         deleted_count=0,
                         duration_seconds=time.time() - start_time,
                     )
 
-                # matrix_ids = [r.matrix_id for r in rows]
-
-                logger.info("VBV GC: deleting %d view rows (dry_run=%s)", len(rows), dry_run)
+                logger.info("Variable view GC: deleting %d view rows (dry_run=%s)", len(rows), dry_run)
 
                 if not dry_run:
                     for r in rows:
                         db.session.delete(r)
                     db.session.commit()
 
-                deleted += len(rows)
+                deleted_count = len(rows)
 
     except LockNotAcquired:
         logger.warning(
-            f"Could not acquire advisory lock {VV_GC_LOCK_ID}. "
-            "Another matrix GC process is probably running. Skipping this run."
+            f"Could not acquire advisory lock {LockId.VARIABLE_VIEW_GC}. "
+            "Another variable GC process is probably running. Skipping this run."
         )
-        return GCTaskResult(
-            status=TaskStatus.SKIPPED,
+        return GarbageCollectorTaskResult(
+            status=BackGroundTaskStatus.SKIPPED,
             reason="lock_not_acquired",
             deleted_count=0,
             duration_seconds=time.time() - start_time,
         )
     except Exception as e:
-        logger.error("Error during matrix GC", exc_info=e)
-        return GCTaskResult(
-            status=TaskStatus.ERROR,
+        logger.error("Error during variable view GC", exc_info=e)
+        return GarbageCollectorTaskResult(
+            status=BackGroundTaskStatus.ERROR,
             error=str(e),
             deleted_count=0,
             duration_seconds=time.time() - start_time,
         )
 
     duration = time.time() - start_time
-    status = TaskStatus.PARTIAL_SUCCESS if failures > 0 else TaskStatus.SUCCESS
-    logger.info(f"Finished matrix GC in {duration}s (deleted {deleted_count}, failed {failures})")
+    logger.info(f"Finished variable view GC in {duration}s (deleted {deleted_count})")
 
-    return GCTaskResult(
-        status=status,
+    return GarbageCollectorTaskResult(
+        status=BackGroundTaskStatus.SUCCESS,
         deleted_count=deleted_count,
-        failed_count=failures,
         duration_seconds=duration,
         dry_run=dry_run,
     )

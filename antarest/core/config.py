@@ -158,7 +158,7 @@ class StorageConfig:
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
     download_default_expiration_timeout_minutes: int = 1440
-    matrix_gc_sleeping_time: int = 2
+    matrix_gc_sleeping_time: int = 3600
     matrix_gc_dry_run: bool = False
     matrix_gc_retention_time: int = 3600
     auto_archive_threshold_days: int = 60
@@ -171,7 +171,7 @@ class StorageConfig:
     blob_gc_dry_run: bool = False
     variable_view_gc_sleeping_time: int = 3600
     variable_view_gc_dry_run: bool = False
-    variable_view_gc_retention_time: int = 2592000  # 30 days in seconds
+    variable_view_gc_retention_days: int = 30
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
@@ -213,8 +213,8 @@ class StorageConfig:
                 "variable_view_gc_sleeping_time", defaults.variable_view_gc_sleeping_time
             ),
             variable_view_gc_dry_run=data.get("variable_view_gc_dry_run", defaults.variable_view_gc_dry_run),
-            variable_view_gc_retention_time=data.get(
-                "variable_view_gc_retention_time", defaults.variable_view_gc_retention_time
+            variable_view_gc_retention_days=data.get(
+                "variable_view_gc_retention_days", defaults.variable_view_gc_retention_days
             ),
         )
 
