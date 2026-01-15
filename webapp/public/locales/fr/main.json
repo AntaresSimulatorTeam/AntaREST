@@ -849,6 +849,7 @@
   "studies.tree.error.failToFetchFolder": "Échec lors de la récupération des sous dossiers de {{path}}",
   "studies.tree.unscannedStudyFolder": "Étude non scannée",
   "studies.tree.addRootDirectory": "Ajouter un répertoire racine",
+  "studies.tree.addSubFolder": "Ajouter un sous-dossier",
   "variants.createNewVariant": "Créer une nouvelle variante",
   "variants.newVariant": "Nouvelle variante",
   "variants.newCommand": "Ajouter une nouvelle commande",

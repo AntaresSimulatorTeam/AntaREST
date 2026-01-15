@@ -14,20 +14,45 @@
 
 import type { StudyMetadata } from "@/types/types";
 
+/**
+ * Represents a node in the directory tree structure
+ */
 export interface DirectoryTreeNode {
   id: string;
   name: string;
   path: string; // Using ID as path for consistency with tree navigation
-  parentId: string | null;
+  parentId: string | null; // null = root level directory, string = subdirectory
   children: DirectoryTreeNode[];
 }
 
+/**
+ * Props for the ManagedTreeNode component
+ * Handles rendering of individual tree nodes with CRUD operations
+ */
 export interface ManagedTreeNodeProps {
   node: DirectoryTreeNode;
   onNodeClick: (id: string) => void;
   selectedPath?: string;
+
+  // Folder creation handlers
+  // Note: parentId represents where the folder will be created
+  // - For root folders: parentId is null (handled in ManagedTree)
+  // - For subfolders: parentId is the directory ID that will contain the new folder
+  onAddSubFolder: (parentId: string) => void;
+  onSaveSubFolder: (parentId: string) => (name: string) => void;
+  onCancelSubFolder: () => void;
+  isCreatingSubFolder: (parentId: string) => boolean;
+
+  // Future: Add update/delete handlers
+  // onUpdateFolder?: (id: string, name: string) => void;
+  // onDeleteFolder?: (id: string) => void;
+  // isUpdatingFolder?: (id: string) => boolean;
+  // isDeletingFolder?: (id: string) => boolean;
 }
 
+/**
+ * Props for the main ManagedTree component
+ */
 export interface ManagedTreeProps {
   studies: StudyMetadata[];
   onNodeClick: (id: string) => void;

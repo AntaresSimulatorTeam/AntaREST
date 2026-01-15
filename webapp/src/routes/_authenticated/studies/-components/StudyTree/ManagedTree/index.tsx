@@ -12,32 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { directoryQueries } from "@/queries/directories/queries";
-import { directoryMutations } from "@/queries/directories/mutations";
-import { directoryKeys } from "@/queries/directories/keys";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudyFilters } from "@/redux/selectors";
 import { Box, Typography } from "@mui/material";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import * as R from "ramda";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Directory } from "@/services/api/directories/types";
+import { directoryQueries } from "@/queries/directories/queries";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyFilters } from "@/redux/selectors";
 import EditableTreeItem from "./EditableTreeItem";
+import { useDirectoryOperations } from "./hooks/useDirectoryOperations";
 import ManagedTreeNode from "./ManagedTreeNode";
 import type { ManagedTreeProps } from "./types";
 import { buildDirectoryTree, getDirectoryPath } from "./utils";
 
-function ManagedTree({
-  studies,
-  onNodeClick,
-  isCreatingFolder,
-  onFolderCreated,
-}: ManagedTreeProps) {
+function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
   const { t } = useTranslation();
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
-  const queryClient = useQueryClient();
 
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
@@ -48,58 +40,33 @@ function ManagedTree({
     [directoryTree, folder],
   );
 
-  const createMutation = useMutation({
-    ...directoryMutations.create(),
-    onMutate: async (newDirectory) => {
-      // Hide the editable item and notify parent
-      onFolderCreated();
+  const { startCreating, cancelOperation, createDirectory, isCreating } = useDirectoryOperations();
 
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: directoryKeys.all });
-
-      // Snapshot previous value
-      const previousDirectories = queryClient.getQueryData<Directory[]>(directoryKeys.list());
-
-      // Optimistically update with temporary directory
-      if (previousDirectories) {
-        const tempDirectory: Directory = {
-          id: `temp-${Date.now()}`,
-          name: newDirectory.name,
-          parentId: newDirectory.parentId,
-        };
-
-        queryClient.setQueryData<Directory[]>(directoryKeys.list(), [
-          ...previousDirectories,
-          tempDirectory,
-        ]);
-      }
-
-      return { previousDirectories };
-    },
-    onError: (_err, _newDirectory, context) => {
-      // Rollback on error
-      if (context?.previousDirectories) {
-        queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
-      }
-    },
-    onSuccess: () => {
-      // Refetch to get the real ID from server
-      queryClient.invalidateQueries({ queryKey: directoryKeys.all });
-    },
-  });
+  // Sync external isCreatingFolder prop with internal state
+  // When parent triggers root folder creation, start with null parentId
+  useEffect(() => {
+    if (isCreatingFolder) {
+      startCreating(null); // null = create at root level (no parent)
+    }
+  }, [isCreatingFolder, startCreating]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSave = (name: string) => {
-    createMutation.mutate({
-      name,
-      parentId: null, // null for root level directories
-    });
+  /**
+   * Curried handler for saving folders at any level
+   *
+   * @param parentId - null for root level folder, directory ID for subfolder
+   * @returns Function that accepts the folder name
+   */
+  const handleSaveFolder = (parentId: string | null) => (name: string) => {
+    createDirectory(name, parentId);
+    onFolderCreated();
   };
 
-  const handleCancel = () => {
+  const handleCancelFolder = () => {
+    cancelOperation();
     onFolderCreated();
   };
 
@@ -107,9 +74,7 @@ function ManagedTree({
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  // Empty state
-  // TODO: handle desktop mode - it may not require an empty state
-  // TODO: add "studies.tree.noDirectories" key
+  // Empty state - TODO: handle desktop mode
   if (directories.length === 0 && !isCreatingFolder) {
     return (
       <Box sx={{ p: 2 }}>
@@ -124,15 +89,24 @@ function ManagedTree({
 
   return (
     <SimpleTreeView defaultExpandedItems={expandedItems} defaultSelectedItems={folder}>
-      {isCreatingFolder && (
+      {/* Root level folder creation */}
+      {isCreating(null) && (
         <EditableTreeItem
-          itemId={`temp-${Date.now()}`}
+          itemId={`temp-root-${Date.now()}`}
           isEditing
-          onSave={handleSave}
-          onCancel={handleCancel}
+          onSave={handleSaveFolder(null)} // null = save as root level folder
+          onCancel={handleCancelFolder}
         />
       )}
-      <ManagedTreeNode node={directoryTree} onNodeClick={onNodeClick} selectedPath={folder} />
+      <ManagedTreeNode
+        node={directoryTree}
+        onNodeClick={onNodeClick}
+        selectedPath={folder}
+        onAddSubFolder={startCreating} // Pass parentId to create subfolder
+        onSaveSubFolder={handleSaveFolder} // Curried: (parentId) => (name) => save
+        onCancelSubFolder={handleCancelFolder}
+        isCreatingSubFolder={isCreating} // Check if creating under specific parent
+      />
     </SimpleTreeView>
   );
 }
