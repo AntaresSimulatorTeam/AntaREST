@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from pathlib import Path, PurePosixPath
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
@@ -35,9 +35,9 @@ def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_cont
     dao.save_user_resource(UserResourceDataCreation(path=path2, resource_type=ResourceType.FILE, blob_id=blob_id2))
 
     # Tests link matrices
-    matrix1 = pd.DataFrame([[1, 2], [3, 4]])
-    matrix2 = pd.DataFrame([[5, 6], [7, 8]])
-    matrix3 = pd.DataFrame([[9, 10], [11, 12]])
+    matrix1 = pl.DataFrame([[1, 2], [3, 4]])
+    matrix2 = pl.DataFrame([[5, 6], [7, 8]])
+    matrix3 = pl.DataFrame([[9, 10], [11, 12]])
 
     series_id_1 = command_context.matrix_service.create(matrix1)
     series_id_2 = command_context.matrix_service.create(matrix2)

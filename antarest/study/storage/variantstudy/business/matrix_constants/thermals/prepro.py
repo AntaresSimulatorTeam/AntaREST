@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pandas as pd
 
-data = pd.DataFrame([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0]] * 365)
-modulation = pd.DataFrame([[1.0, 1.0, 1.0, 0.0]] * 8760)
+from antarest.core.utils.polars import create_polars_dataframe
+
+data = create_polars_dataframe([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0]] * 365)
+modulation = create_polars_dataframe([[1.0, 1.0, 1.0, 0.0]] * 8760)

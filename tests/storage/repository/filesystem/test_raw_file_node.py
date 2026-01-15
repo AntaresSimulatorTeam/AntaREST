@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from unittest.mock import Mock
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
@@ -22,7 +21,6 @@ def test_get(tmp_path: Path) -> None:
     file.write_text("Hello")
 
     node = RawFileNode(
-        matrix_mapper=Mock(),
         config=FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="id"),
     )
     assert node.get() == b"Hello"
@@ -33,7 +31,6 @@ def test_save(tmp_path: Path) -> None:
     file.touch()
 
     node = RawFileNode(
-        matrix_mapper=Mock(),
         config=FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="id"),
     )
     node.save(b"Hello")
