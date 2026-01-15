@@ -94,11 +94,14 @@ function AreaLayout() {
               params,
             }),
           },
-          // {
-          //   label: "study.modeling.solar",
-          //   pathSuffix: "solar",
-          //   condition: !(renewableGenerationModeling !== "aggregated"),
-          // },
+          enrModelling === "aggregated" && {
+            id: "solar",
+            label: t("study.modeling.solar"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/areas/$areaId/solar",
+              params,
+            }),
+          },
           {
             id: "reserves",
             label: t("study.modeling.reserves"),

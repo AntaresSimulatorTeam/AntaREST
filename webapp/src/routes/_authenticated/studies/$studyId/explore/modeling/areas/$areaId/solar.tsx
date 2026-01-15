@@ -14,19 +14,27 @@
 
 import Matrix from "@/components/Matrix";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { createFileRoute } from "@tanstack/react-router";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import { getStudySynthesis } from "../../../../../../../../redux/selectors";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/solar",
+)({
+  component: Solar,
+});
 
 function Solar() {
-  const currentArea = useAppSelector(getCurrentAreaId);
+  const { studyId, areaId } = Route.useParams();
   const study = useStudy();
-  const url = `input/solar/series/solar_${currentArea}`;
+  const url = `input/solar/series/solar_${areaId}`;
+  const enrModelling = useAppSelector((state) => getStudySynthesis(state, studyId)?.enr_modelling);
 
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
+  if (enrModelling !== "aggregated") {
+    throw new Error(`${Route.path} is only available when 'enr_modelling' is of type aggregated.`);
+  }
 
-  return <Matrix studyId={study.id} url={url} aggregateColumns="stats" />;
+  return <Matrix key={areaId} studyId={study.id} url={url} aggregateColumns="stats" />;
 }
 
 export default Solar;
