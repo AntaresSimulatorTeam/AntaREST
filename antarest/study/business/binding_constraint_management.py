@@ -192,7 +192,7 @@ def _get_references_by_widths(
                 matrices["less term"] = study_dao.get_constraint_less_term_matrix(bc.id)
 
         for matrix_id, matrix in matrices.items():
-            if matrix.empty:
+            if matrix.is_empty():
                 # We ignore empty matrices as there are default matrices for the simulator.
                 continue
 

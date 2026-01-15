@@ -366,11 +366,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     # get single capa
     res = xp_client.get(f"resources/capacities/{filename_capa1}")
     assert res.status_code == 200
-    assert res.json() == {
-        "columns": [0],
-        "data": [[0.0]],
-        "index": [0],
-    }
+    assert res.json() == {"columns": ["0"], "data": [[0.0]], "index": [0]}
 
     res = xp_client.get("resources/capacities")
     assert res.status_code == 200

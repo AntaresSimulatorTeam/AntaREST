@@ -14,7 +14,8 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
-import pandas as pd
+import numpy as np
+import polars as pl
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -78,13 +79,13 @@ def test_get() -> None:
         width=2,
         height=2,
         created_at=0,
-        index=["1", "2"],
+        index=[0, 1],
         columns=["a", "b"],
         data=[[1, 2], [3, 4]],
     )
 
     service = Mock()
-    service.get.return_value = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a", "b"])
+    service.get.return_value = pl.DataFrame(data=np.array([[1, 2], [3, 4]]), schema=["a", "b"])
 
     app = create_app(service)
     client = TestClient(app)

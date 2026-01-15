@@ -12,7 +12,7 @@
 
 from typing import Callable, Dict, Iterator, List, Sequence
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
@@ -27,28 +27,28 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     """
 
     def __init__(self) -> None:
-        self._content: Dict[str, pd.DataFrame] = {}
+        self._content: Dict[str, pl.DataFrame] = {}
         self.usage_providers: List[IMatrixUsageProvider] = []
-        self._predefined_matrices: dict[str, Callable[[], pd.DataFrame]] = {}
+        self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         matrix_id = compute_hash(matrix_factory())
         self._predefined_matrices[matrix_id] = matrix_factory
         return matrix_id
 
     @override
-    def create(self, data: pd.DataFrame) -> str:
+    def create(self, data: pl.DataFrame) -> str:
         matrix_hash = compute_hash(data)
         self._content[matrix_hash] = data
         return matrix_hash
 
     @override
-    def create_batch(self, data: Iterator[pd.DataFrame]) -> list[str]:
+    def create_batch(self, data: Iterator[pl.DataFrame]) -> list[str]:
         return [self.create(df) for df in data]
 
     @override
-    def get(self, matrix_id: str) -> pd.DataFrame:
+    def get(self, matrix_id: str) -> pl.DataFrame:
         if matrix_id in self._predefined_matrices:
             return self._predefined_matrices[matrix_id]()
         return self._content[matrix_id]
