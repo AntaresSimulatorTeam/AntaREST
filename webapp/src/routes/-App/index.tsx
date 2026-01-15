@@ -14,13 +14,13 @@
 
 // @ts-expect-error Temporary fix for missing lib
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Hydro from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro";
-import Allocation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/Allocation";
-import Correlation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/Correlation";
-import HydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/HydroMatrix";
-import ManagementOptions from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/ManagementOptions";
-import SplitHydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/SplitHydroMatrix";
-import { HYDRO_ROUTES } from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Hydro/utils";
+import Hydro from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro";
+import Allocation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/Allocation";
+import Correlation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/Correlation";
+import HydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/HydroMatrix";
+import ManagementOptions from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/ManagementOptions";
+import SplitHydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/SplitHydroMatrix";
+import { HYDRO_ROUTES } from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/utils";
 
 function App() {
   return (
