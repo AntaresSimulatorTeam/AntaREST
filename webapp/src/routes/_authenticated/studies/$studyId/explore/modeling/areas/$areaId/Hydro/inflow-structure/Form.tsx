@@ -15,7 +15,7 @@
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { createFileRoute } from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import {
   type InflowStructureFields,
@@ -23,14 +23,10 @@ import {
   updateInflowStructureFields,
 } from "./-utils";
 
-export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/inflow-structure/",
-)({
-  component: InflowStructure,
-});
-
-function InflowStructure() {
-  const { studyId, areaId } = Route.useParams();
+function InflowStructureForm() {
+  const { studyId, areaId } = useParams({
+    from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/inflow-structure/",
+  });
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -89,3 +85,5 @@ function InflowStructure() {
     </Form>
   );
 }
+
+export default InflowStructureForm;
