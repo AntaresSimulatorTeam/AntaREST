@@ -14,11 +14,9 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Grid } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../../../redux/selectors";
 import HydroMatrixDialog from "../HydroMatrixDialog";
 import { FormBox, FormPaper } from "../style";
 import { HydroMatrix } from "../utils";
@@ -30,17 +28,22 @@ import {
   setAllocationFormFields,
 } from "./-utils";
 
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/allocation/",
+)({
+  component: Allocation,
+});
+
 function Allocation() {
-  const study = useStudy();
+  const { studyId, areaId } = Route.useParams();
   const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
-  const areaId = useAppSelector(getCurrentAreaId);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<AllocationFormFields>) => {
-    return setAllocationFormFields(study.id, areaId, {
+    return setAllocationFormFields(studyId, areaId, {
       allocation: data.values.allocation,
     });
   };
@@ -61,7 +64,7 @@ function Allocation() {
             <Form
               key={areaId}
               config={{
-                defaultValues: () => getAllocationFormFields(study.id, areaId),
+                defaultValues: () => getAllocationFormFields(studyId, areaId),
               }}
               onSubmit={handleSubmit}
               sx={{ p: 3 }}
@@ -88,5 +91,3 @@ function Allocation() {
     </FormBox>
   );
 }
-
-export default Allocation;

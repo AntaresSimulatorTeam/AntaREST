@@ -28,8 +28,6 @@ function HydroLayout() {
   //   const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;
 
   //   return [
-  //     { label: "Inflow structure", path: `${basePath}/inflow-structure` },
-  //     { label: "Allocation", path: `${basePath}/allocation` },
   //     { label: "Correlation", path: `${basePath}/correlation` },
   //     {
   //       label: "Daily Power & Energy Credits",
@@ -63,6 +61,14 @@ function HydroLayout() {
           label: "Inflow structure",
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/inflow-structure",
+            params,
+          }),
+        },
+        {
+          id: "allocation",
+          label: "Allocation",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/allocation",
             params,
           }),
         },
