@@ -16,7 +16,7 @@ from celery import Task
 
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, MaintenanceContextNotFoundError
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 
@@ -25,6 +25,6 @@ def clean_blobs_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[
     """Celery wrapper that delegates to clean_blobs()."""
     ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
     if not ctx:
-        raise RuntimeError("MaintenanceContext not in app.conf - worker not initialized?")
+        raise MaintenanceContextNotFoundError()
 
     return clean_blobs(ctx.blob_service, ctx.config.storage.blob_gc_dry_run)
