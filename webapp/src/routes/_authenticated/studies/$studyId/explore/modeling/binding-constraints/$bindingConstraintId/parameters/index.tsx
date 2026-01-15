@@ -124,6 +124,10 @@ function Parameters() {
                     options={OUTPUT_FILTERS_OPTIONS}
                     multiple
                     control={control}
+                    sx={{
+                      width: "auto !important",
+                      minWidth: 200,
+                    }}
                   />
                   <SelectFE
                     name="filterSynthesis"
@@ -131,6 +135,10 @@ function Parameters() {
                     options={OUTPUT_FILTERS_OPTIONS}
                     multiple
                     control={control}
+                    sx={{
+                      width: "auto !important",
+                      minWidth: 200,
+                    }}
                   />
                 </>
               )}
