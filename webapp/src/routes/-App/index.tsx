@@ -14,7 +14,6 @@
 
 // @ts-expect-error Temporary fix for missing lib
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Wind from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/Wind";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
@@ -54,8 +53,6 @@ function App() {
               );
             })}
           </Route>
-
-          <Route path="wind" element={<Wind />} />
 
           <Route path="solar" element={<Solar />} />
         </Route>

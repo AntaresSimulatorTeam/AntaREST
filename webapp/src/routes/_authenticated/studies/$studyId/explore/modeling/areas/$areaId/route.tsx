@@ -86,11 +86,14 @@ function AreaLayout() {
               }),
             },
           // { label: "study.modeling.hydro", pathSuffix: "hydro" },
-          // {
-          //   label: "study.modeling.wind",
-          //   pathSuffix: "wind",
-          //   condition: !(renewableGenerationModeling !== "aggregated"),
-          // },
+          enrModelling === "aggregated" && {
+            id: "wind",
+            label: t("study.modeling.wind"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/areas/$areaId/wind",
+              params,
+            }),
+          },
           // {
           //   label: "study.modeling.solar",
           //   pathSuffix: "solar",

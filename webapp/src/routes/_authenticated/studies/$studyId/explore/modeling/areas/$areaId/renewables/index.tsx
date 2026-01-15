@@ -16,6 +16,8 @@ import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudySynthesis } from "@/redux/selectors";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Box } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
@@ -30,11 +32,11 @@ import {
   toCapacityString,
 } from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
 import {
-  RENEWABLE_GROUPS,
   createRenewableCluster,
   deleteRenewableClusters,
   duplicateRenewableCluster,
   getRenewableClusters,
+  RENEWABLE_GROUPS,
   type RenewableClusterWithCapacity,
 } from "./-utils";
 
@@ -50,6 +52,7 @@ function Renewables() {
   const study = useStudy();
   const { areaId } = Route.useParams();
   const { t } = useTranslation();
+  const enrModelling = useAppSelector((state) => getStudySynthesis(state, study.id)?.enr_modelling);
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     RenewableClusterWithCapacity[]
@@ -134,6 +137,10 @@ function Renewables() {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  if (enrModelling !== "clusters") {
+    throw new Error(`${Route.path} is only available when 'enr_modelling' is of type clusters.`);
+  }
 
   return (
     <GroupedDataTable
