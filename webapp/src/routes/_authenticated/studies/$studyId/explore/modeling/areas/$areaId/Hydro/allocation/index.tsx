@@ -23,12 +23,12 @@ import HydroMatrixDialog from "../HydroMatrixDialog";
 import { FormBox, FormPaper } from "../style";
 import { HydroMatrix } from "../utils";
 import ViewMatrixButton from "../ViewMatrixButton";
-import Fields from "./Fields";
+import Fields from "./-components/Fields";
 import {
   type AllocationFormFields,
   getAllocationFormFields,
   setAllocationFormFields,
-} from "./utils";
+} from "./-utils";
 
 function Allocation() {
   const study = useStudy();
