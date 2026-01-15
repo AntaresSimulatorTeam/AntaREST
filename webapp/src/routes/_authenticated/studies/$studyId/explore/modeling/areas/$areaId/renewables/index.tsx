@@ -30,7 +30,7 @@ import {
   capacityAggregationFn,
   getClustersWithCapacityTotals,
   toCapacityString,
-} from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
+} from "../-clustersUtils";
 import {
   createRenewableCluster,
   deleteRenewableClusters,

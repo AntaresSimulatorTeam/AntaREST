@@ -16,7 +16,7 @@ import client from "@/services/api/client";
 import { nameToId } from "@/services/utils";
 import type { Area, Cluster, StudyMetadata } from "@/types/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
-import type { ClusterWithCapacity } from "../../../../../../../../-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
+import type { ClusterWithCapacity } from "../-clustersUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants

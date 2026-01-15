@@ -16,13 +16,13 @@ import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
   addClusterCapacity,
   capacityAggregationFn,
   getClustersWithCapacityTotals,
   toCapacityString,
-} from "@/routes/-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+} from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
 import { Box } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
