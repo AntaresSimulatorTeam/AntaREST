@@ -17,10 +17,10 @@ import { useFormContextPlus } from "@/components/Form";
 import { useFieldArray } from "react-hook-form";
 // @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
+import { useAreasOptions } from "../-hooks/useAreasOptions";
 import useAppSelector from "../../../../../../../../../../redux/hooks/useAppSelector";
 import { getAreasById, getCurrentArea } from "../../../../../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../../../../../types/types";
-import { useAreasOptions } from "../hooks/useAreasOptions";
 import CorrelationField from "./CorrelationField";
 import type { CorrelationFormFields } from "./utils";
 
