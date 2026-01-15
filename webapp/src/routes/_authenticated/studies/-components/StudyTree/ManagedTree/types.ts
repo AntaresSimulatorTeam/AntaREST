@@ -34,7 +34,7 @@ export interface ManagedTreeNodeProps {
   onNodeClick: (id: string) => void;
   selectedPath?: string;
 
-  // Folder creation handlers
+  // Create handlers
   // Note: parentId represents where the folder will be created
   // - For root folders: parentId is null (handled in ManagedTree)
   // - For subfolders: parentId is the directory ID that will contain the new folder
@@ -43,11 +43,15 @@ export interface ManagedTreeNodeProps {
   onCancelSubFolder: () => void;
   isCreatingSubFolder: (parentId: string) => boolean;
 
-  // Future: Add update/delete handlers
-  // onUpdateFolder?: (id: string, name: string) => void;
-  // onDeleteFolder?: (id: string) => void;
-  // isUpdatingFolder?: (id: string) => boolean;
-  // isDeletingFolder?: (id: string) => boolean;
+  // Update handlers
+  onStartUpdate: (directoryId: string) => void;
+  onSaveUpdate: (directoryId: string, name: string, parentId: string | null) => void;
+  onCancelUpdate: () => void;
+  isUpdating: (directoryId: string) => boolean;
+
+  // Delete handlers
+  onDelete: (directoryId: string) => void;
+  isDeleting: (directoryId: string) => boolean;
 }
 
 /**

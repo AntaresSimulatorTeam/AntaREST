@@ -13,6 +13,8 @@
  */
 
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
@@ -31,6 +33,12 @@ function ManagedTreeNode({
   onSaveSubFolder,
   onCancelSubFolder,
   isCreatingSubFolder,
+  onStartUpdate,
+  onSaveUpdate,
+  onCancelUpdate,
+  isUpdating,
+  onDelete,
+  isDeleting,
 }: ManagedTreeNodeProps) {
   const { t } = useTranslation();
   const { children, path, name, id } = node;
@@ -46,15 +54,23 @@ function ManagedTreeNode({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  /**
-   * Trigger subfolder creation for this directory
-   * Passes the current node's ID as the parentId
-   *
-   * @param e
-   */
   const handleAddSubFolder = (e: React.MouseEvent) => {
     e.stopPropagation();
     onAddSubFolder(id); // id becomes the parentId for the new subfolder
+  };
+
+  const handleStartUpdate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStartUpdate(id);
+  };
+
+  const handleSaveUpdate = (newName: string) => {
+    onSaveUpdate(id, newName, node.parentId);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(id);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -76,9 +92,28 @@ function ManagedTreeNode({
             onSaveSubFolder={onSaveSubFolder}
             onCancelSubFolder={onCancelSubFolder}
             isCreatingSubFolder={isCreatingSubFolder}
+            onStartUpdate={onStartUpdate}
+            onSaveUpdate={onSaveUpdate}
+            onCancelUpdate={onCancelUpdate}
+            isUpdating={isUpdating}
+            onDelete={onDelete}
+            isDeleting={isDeleting}
           />
         ))}
       </>
+    );
+  }
+
+  // If this directory is in update mode, render editable item
+  if (isUpdating(id)) {
+    return (
+      <EditableTreeItem
+        itemId={path}
+        initialValue={name}
+        isEditing
+        onSave={handleSaveUpdate}
+        onCancel={onCancelUpdate}
+      />
     );
   }
 
@@ -96,29 +131,82 @@ function ManagedTreeNode({
           }}
         >
           <Box component="span">{name}</Box>
-          <Tooltip
-            title={t("studies.tree.addSubFolder", { defaultValue: "Add subfolder" })}
-            placement="right"
-            arrow
+          <Box
+            sx={{
+              display: "flex",
+              gap: 0.25,
+            }}
           >
-            <IconButton
-              size="small"
-              onClick={handleAddSubFolder}
-              sx={{
-                p: 0.25,
-                opacity: 0,
-                ".MuiTreeItem-content:hover &": {
-                  opacity: 1,
-                },
-                "&:hover": {
-                  backgroundColor: (theme) => `${theme.palette.info.main}20`,
-                },
-              }}
-              aria-label={t("studies.tree.addSubFolder", { defaultValue: "Add subfolder" })}
+            <Tooltip
+              title={t("studies.tree.rename", { defaultValue: "Rename" })}
+              placement="right"
+              arrow
             >
-              <CreateNewFolderIcon sx={{ fontSize: 16, color: "info.main" }} />
-            </IconButton>
-          </Tooltip>
+              <IconButton
+                size="small"
+                onClick={handleStartUpdate}
+                sx={{
+                  p: 0.25,
+                  opacity: 0,
+                  ".MuiTreeItem-content:hover &": {
+                    opacity: 1,
+                  },
+                  "&:hover": {
+                    backgroundColor: (theme) => `${theme.palette.warning.main}20`,
+                  },
+                }}
+                aria-label={t("studies.tree.rename", { defaultValue: "Rename" })}
+              >
+                <EditIcon sx={{ fontSize: 16, color: "warning.main" }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip
+              title={t("studies.tree.addSubFolder", { defaultValue: "Add subfolder" })}
+              placement="right"
+              arrow
+            >
+              <IconButton
+                size="small"
+                onClick={handleAddSubFolder}
+                sx={{
+                  p: 0.25,
+                  opacity: 0,
+                  ".MuiTreeItem-content:hover &": {
+                    opacity: 1,
+                  },
+                  "&:hover": {
+                    backgroundColor: (theme) => `${theme.palette.info.main}20`,
+                  },
+                }}
+                aria-label={t("studies.tree.addSubFolder", { defaultValue: "Add subfolder" })}
+              >
+                <CreateNewFolderIcon sx={{ fontSize: 16, color: "info.main" }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip
+              title={t("studies.tree.delete", { defaultValue: "Delete" })}
+              placement="right"
+              arrow
+            >
+              <IconButton
+                size="small"
+                onClick={handleDelete}
+                sx={{
+                  p: 0.25,
+                  opacity: 0,
+                  ".MuiTreeItem-content:hover &": {
+                    opacity: 1,
+                  },
+                  "&:hover": {
+                    backgroundColor: (theme) => `${theme.palette.error.main}20`,
+                  },
+                }}
+                aria-label={t("studies.tree.delete", { defaultValue: "Delete" })}
+              >
+                <DeleteIcon sx={{ fontSize: 16, color: "error.main" }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       }
       onClick={() => onNodeClick(path)}
@@ -149,6 +237,12 @@ function ManagedTreeNode({
           onSaveSubFolder={onSaveSubFolder}
           onCancelSubFolder={onCancelSubFolder}
           isCreatingSubFolder={isCreatingSubFolder}
+          onStartUpdate={onStartUpdate}
+          onSaveUpdate={onSaveUpdate}
+          onCancelUpdate={onCancelUpdate}
+          isUpdating={isUpdating}
+          onDelete={onDelete}
+          isDeleting={isDeleting}
         />
       ))}
     </TreeItemEnhanced>
