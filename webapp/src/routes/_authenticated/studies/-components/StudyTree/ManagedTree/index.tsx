@@ -40,7 +40,17 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
     [directoryTree, folder],
   );
 
-  const { startCreating, cancelOperation, createDirectory, isCreating } = useDirectoryOperations();
+  const {
+    startCreating,
+    cancelOperation,
+    createDirectory,
+    isCreating,
+    startUpdating,
+    updateDirectory,
+    isUpdating,
+    deleteDirectory,
+    isDeleting,
+  } = useDirectoryOperations();
 
   // Sync external isCreatingFolder prop with internal state
   // When parent triggers root folder creation, start with null parentId
@@ -54,12 +64,6 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  /**
-   * Curried handler for saving folders at any level
-   *
-   * @param parentId - null for root level folder, directory ID for subfolder
-   * @returns Function that accepts the folder name
-   */
   const handleSaveFolder = (parentId: string | null) => (name: string) => {
     createDirectory(name, parentId);
     onFolderCreated();
@@ -68,6 +72,22 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
   const handleCancelFolder = () => {
     cancelOperation();
     onFolderCreated();
+  };
+
+  const handleStartUpdate = (directoryId: string) => {
+    startUpdating(directoryId);
+  };
+
+  const handleSaveUpdate = (directoryId: string, name: string, parentId: string | null) => {
+    updateDirectory(directoryId, name, parentId);
+  };
+
+  const handleCancelUpdate = () => {
+    cancelOperation();
+  };
+
+  const handleDelete = (directoryId: string) => {
+    deleteDirectory(directoryId);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -98,14 +118,21 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
           onCancel={handleCancelFolder}
         />
       )}
+
       <ManagedTreeNode
         node={directoryTree}
         onNodeClick={onNodeClick}
         selectedPath={folder}
-        onAddSubFolder={startCreating} // Pass parentId to create subfolder
-        onSaveSubFolder={handleSaveFolder} // Curried: (parentId) => (name) => save
+        onAddSubFolder={startCreating}
+        onSaveSubFolder={handleSaveFolder}
         onCancelSubFolder={handleCancelFolder}
-        isCreatingSubFolder={isCreating} // Check if creating under specific parent
+        isCreatingSubFolder={isCreating}
+        onStartUpdate={handleStartUpdate}
+        onSaveUpdate={handleSaveUpdate}
+        onCancelUpdate={handleCancelUpdate}
+        isUpdating={isUpdating}
+        onDelete={handleDelete}
+        isDeleting={isDeleting}
       />
     </SimpleTreeView>
   );

@@ -14,10 +14,13 @@
 
 import { useState } from "react";
 import { useCreateDirectory } from "./useCreateDirectory";
+import { useDeleteDirectory } from "./useDeleteDirectory";
+import { useUpdateDirectory } from "./useUpdateDirectory";
 
 export interface DirectoryOperation {
   type: "create" | "update" | "delete";
-  parentId: string | null; // null = root level directory, string = subdirectory of parent
+  parentId?: string | null; // For create: null = root level, string = subdirectory of parent
+  directoryId?: string; // For update/delete: ID of directory being modified
 }
 
 export function useDirectoryOperations() {
@@ -29,28 +32,77 @@ export function useDirectoryOperations() {
     },
   });
 
+  const updateMutation = useUpdateDirectory({
+    onSuccess: () => {
+      setCurrentOperation(null);
+    },
+  });
+
+  const deleteMutation = useDeleteDirectory({
+    onSuccess: () => {
+      setCurrentOperation(null);
+    },
+  });
+
+  ////////////////////////////////////////////////////////////////
+  // Create operations
+  ////////////////////////////////////////////////////////////////
+
   const startCreating = (parentId: string | null) => {
     setCurrentOperation({ type: "create", parentId });
-  };
-
-  const cancelOperation = () => {
-    setCurrentOperation(null);
   };
 
   const createDirectory = (name: string, parentId: string | null) => {
     createMutation.mutate({ name, parentId });
   };
 
-  // null to check root level, directory ID to check subfolder
   const isCreating = (parentId: string | null) => {
     return currentOperation?.type === "create" && currentOperation.parentId === parentId;
   };
 
-  // Future: Add update and delete handlers here
-  // const updateDirectory = (id: string, name: string) => { ... }
-  // const deleteDirectory = (id: string) => { ... }
-  // const isUpdating = (id: string) => { ... }
-  // const isDeleting = (id: string) => { ... }
+  ////////////////////////////////////////////////////////////////
+  // Update operations
+  ////////////////////////////////////////////////////////////////
+
+  const startUpdating = (directoryId: string) => {
+    setCurrentOperation({ type: "update", directoryId });
+  };
+
+  const updateDirectory = (directoryId: string, name: string, parentId: string | null) => {
+    updateMutation.mutate({ id: directoryId, data: { name, parentId } });
+  };
+
+  const isUpdating = (directoryId: string) => {
+    return currentOperation?.type === "update" && currentOperation.directoryId === directoryId;
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Delete operations
+  ////////////////////////////////////////////////////////////////
+
+  const startDeleting = (directoryId: string) => {
+    setCurrentOperation({ type: "delete", directoryId });
+  };
+
+  const deleteDirectory = (directoryId: string) => {
+    deleteMutation.mutate(directoryId);
+  };
+
+  const isDeleting = (directoryId: string) => {
+    return currentOperation?.type === "delete" && currentOperation.directoryId === directoryId;
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Shared operations
+  ////////////////////////////////////////////////////////////////
+
+  const cancelOperation = () => {
+    setCurrentOperation(null);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Return
+  ////////////////////////////////////////////////////////////////
 
   return {
     // State
@@ -63,10 +115,16 @@ export function useDirectoryOperations() {
     isCreating,
     isCreatingLoading: createMutation.isPending,
 
-    // Future: Export update/delete operations
-    // updateDirectory,
-    // deleteDirectory,
-    // isUpdating,
-    // isDeleting,
+    // Update operations
+    startUpdating,
+    updateDirectory,
+    isUpdating,
+    isUpdatingLoading: updateMutation.isPending,
+
+    // Delete operations
+    startDeleting,
+    deleteDirectory,
+    isDeleting,
+    isDeletingLoading: deleteMutation.isPending,
   };
 }
