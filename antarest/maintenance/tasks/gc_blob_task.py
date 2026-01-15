@@ -23,7 +23,7 @@ from antarest.maintenance.tasks.gc_blob import clean_blobs
 @celery_app.task(bind=True, name="blobs_cleaner", pydantic=True)
 def clean_blobs_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
     """Celery wrapper that delegates to clean_blobs()."""
-    ctx: MaintenanceContext | None = getattr(self.app.conf, "maintenance_ctx", None)
+    ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
     if not ctx:
         raise RuntimeError("MaintenanceContext not in app.conf - worker not initialized?")
 

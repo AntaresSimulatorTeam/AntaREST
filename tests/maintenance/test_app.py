@@ -124,11 +124,12 @@ class TestSetupPeriodicTasks:
 
         _setup_periodic_tasks(sender=sender)
 
-        assert sender.add_periodic_task.call_count == 3
+        assert sender.add_periodic_task.call_count == 4
         calls = sender.add_periodic_task.call_args_list
         assert calls[0][0][0] == 3600  # matrix GC default
         assert calls[1][0][0] == 86400  # blob GC default
         assert calls[2][0][0] == 3600  # auto-archive default
+        assert calls[3][0][0] == 60  # watcher scan default
 
     def test_uses_config_intervals(self, celery_app_config_backup):
         sender = Mock()
@@ -136,6 +137,7 @@ class TestSetupPeriodicTasks:
         config.storage.matrix_gc_sleeping_time = 7200
         config.storage.blob_gc_sleeping_time = 43200
         config.storage.auto_archive_sleeping_time = 1800
+        config.storage.watcher_scan_sleeping_time = 120
         celery_app.conf.antarest_config = config
 
         _setup_periodic_tasks(sender=sender)
@@ -144,6 +146,7 @@ class TestSetupPeriodicTasks:
         assert calls[0][0][0] == 7200
         assert calls[1][0][0] == 43200
         assert calls[2][0][0] == 1800
+        assert calls[3][0][0] == 120
 
     def test_task_names(self, celery_app_config_backup):
         sender = Mock()
@@ -152,4 +155,4 @@ class TestSetupPeriodicTasks:
         _setup_periodic_tasks(sender=sender)
 
         names = [c[1]["name"] for c in sender.add_periodic_task.call_args_list]
-        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver"]
+        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan"]
