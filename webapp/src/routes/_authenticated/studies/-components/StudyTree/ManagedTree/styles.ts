@@ -92,3 +92,60 @@ export const textFieldStyles: SxProps<Theme> = {
     borderWidth: 2,
   },
 };
+
+export const nodeLabelContainerStyles: SxProps<Theme> = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  width: "100%",
+  pr: 0.5,
+};
+
+export const nodeActionsContainerStyles: SxProps<Theme> = {
+  display: "flex",
+  gap: 0.25,
+};
+
+const baseActionButtonStyles: SxProps<Theme> = {
+  p: 0.25,
+  opacity: 0,
+  ".MuiTreeItem-content:hover &": {
+    opacity: 0.8,
+  },
+};
+
+export const renameButtonStyles: SxProps<Theme> = {
+  ...baseActionButtonStyles,
+  "&:hover": {
+    backgroundColor: (theme) => `${theme.palette.warning.main}10`,
+  },
+};
+
+export const renameIconStyles: SxProps<Theme> = {
+  fontSize: 16,
+  color: "primary.main",
+};
+
+export const addSubFolderButtonStyles: SxProps<Theme> = {
+  ...baseActionButtonStyles,
+  "&:hover": {
+    backgroundColor: (theme) => `${theme.palette.info.main}10`,
+  },
+};
+
+export const addSubFolderIconStyles: SxProps<Theme> = {
+  fontSize: 16,
+  color: "info.main",
+};
+
+export const deleteButtonStyles: SxProps<Theme> = {
+  ...baseActionButtonStyles,
+  "&:hover": {
+    backgroundColor: (theme) => `${theme.palette.error.main}10`,
+  },
+};
+
+export const deleteIconStyles: SxProps<Theme> = {
+  fontSize: 16,
+  color: "error.main",
+};

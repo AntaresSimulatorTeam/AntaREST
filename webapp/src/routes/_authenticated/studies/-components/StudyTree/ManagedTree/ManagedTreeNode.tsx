@@ -15,14 +15,24 @@
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
 import { ROOT_NODE_NAME } from "@/components/utils/constants";
 import EditableTreeItem from "./EditableTreeItem";
-import { treeItemStyles, treeNodeIcons } from "./styles";
+import {
+  addSubFolderButtonStyles,
+  addSubFolderIconStyles,
+  deleteButtonStyles,
+  deleteIconStyles,
+  nodeActionsContainerStyles,
+  nodeLabelContainerStyles,
+  renameButtonStyles,
+  renameIconStyles,
+  treeItemStyles,
+  treeNodeIcons,
+} from "./styles";
 import type { ManagedTreeNodeProps } from "./types";
 
 function ManagedTreeNode({
@@ -40,7 +50,6 @@ function ManagedTreeNode({
   onDelete,
   isDeleting,
 }: ManagedTreeNodeProps) {
-  const { t } = useTranslation();
   const { children, path, name, id } = node;
   const isRootNode = name === ROOT_NODE_NAME;
   const hasChildren = children.length > 0;
@@ -121,91 +130,18 @@ function ManagedTreeNode({
     <TreeItemEnhanced
       itemId={path}
       label={
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "100%",
-            pr: 0.5,
-          }}
-        >
+        <Box sx={nodeLabelContainerStyles}>
           <Box component="span">{name}</Box>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 0.25,
-            }}
-          >
-            <Tooltip
-              title={t("studies.tree.rename", { defaultValue: "Rename" })}
-              placement="right"
-              arrow
-            >
-              <IconButton
-                size="small"
-                onClick={handleStartUpdate}
-                sx={{
-                  p: 0.25,
-                  opacity: 0,
-                  ".MuiTreeItem-content:hover &": {
-                    opacity: 1,
-                  },
-                  "&:hover": {
-                    backgroundColor: (theme) => `${theme.palette.warning.main}20`,
-                  },
-                }}
-                aria-label={t("studies.tree.rename", { defaultValue: "Rename" })}
-              >
-                <EditIcon sx={{ fontSize: 16, color: "warning.main" }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip
-              title={t("studies.tree.addSubFolder", { defaultValue: "Add subfolder" })}
-              placement="right"
-              arrow
-            >
-              <IconButton
-                size="small"
-                onClick={handleAddSubFolder}
-                sx={{
-                  p: 0.25,
-                  opacity: 0,
-                  ".MuiTreeItem-content:hover &": {
-                    opacity: 1,
-                  },
-                  "&:hover": {
-                    backgroundColor: (theme) => `${theme.palette.info.main}20`,
-                  },
-                }}
-                aria-label={t("studies.tree.addSubFolder", { defaultValue: "Add subfolder" })}
-              >
-                <CreateNewFolderIcon sx={{ fontSize: 16, color: "info.main" }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip
-              title={t("studies.tree.delete", { defaultValue: "Delete" })}
-              placement="right"
-              arrow
-            >
-              <IconButton
-                size="small"
-                onClick={handleDelete}
-                sx={{
-                  p: 0.25,
-                  opacity: 0,
-                  ".MuiTreeItem-content:hover &": {
-                    opacity: 1,
-                  },
-                  "&:hover": {
-                    backgroundColor: (theme) => `${theme.palette.error.main}20`,
-                  },
-                }}
-                aria-label={t("studies.tree.delete", { defaultValue: "Delete" })}
-              >
-                <DeleteIcon sx={{ fontSize: 16, color: "error.main" }} />
-              </IconButton>
-            </Tooltip>
+          <Box sx={nodeActionsContainerStyles}>
+            <IconButton size="small" onClick={handleAddSubFolder} sx={addSubFolderButtonStyles}>
+              <CreateNewFolderIcon sx={addSubFolderIconStyles} />
+            </IconButton>
+            <IconButton size="small" onClick={handleStartUpdate} sx={renameButtonStyles}>
+              <EditIcon sx={renameIconStyles} />
+            </IconButton>
+            <IconButton size="small" onClick={handleDelete} sx={deleteButtonStyles}>
+              <DeleteIcon sx={deleteIconStyles} />
+            </IconButton>
           </Box>
         </Box>
       }
@@ -225,7 +161,6 @@ function ManagedTreeNode({
           onCancel={onCancelSubFolder}
         />
       )}
-
       {/* Recursively render child directories */}
       {sortedChildren.map((child) => (
         <ManagedTreeNode
