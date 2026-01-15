@@ -10,6 +10,13 @@
 #
 # This file is part of the Antares project.
 
+"""
+Watcher service for non-Celery environments (e.g., desktop version).
+
+This service runs as a background thread and periodically scans workspaces for studies.
+In production (Celery mode), use the watcher_scan_task instead.
+"""
+
 import logging
 import tempfile
 from html import escape
@@ -33,7 +40,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
-    should_ignore_folder_for_scan,
+    rec_scan_for_studies,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,7 +58,10 @@ class _LogScanDuration:
 
 class Watcher(IService):
     """
-    Files Watcher to listen raw studies changes and trigger a database update.
+    Background service that periodically scans workspaces for studies.
+
+    This is used in non-Celery environments (desktop version) where
+    we can't rely on Celery Beat for scheduling.
     """
 
     LOCK = Path(tempfile.gettempdir()) / "watcher"
@@ -69,6 +79,7 @@ class Watcher(IService):
         self.config = config
         self.should_stop = False
         self.allowed_to_start = not config.storage.watcher_lock or Watcher._get_lock(config.storage.watcher_lock_delay)
+        self.sleeping_time = config.storage.watcher_scan_sleeping_time
 
     @override
     def start(self, threaded: bool = True) -> None:
@@ -119,43 +130,8 @@ class Watcher(IService):
                         self.clean_desktop_studies()
             except Exception as e:
                 logger.error("Unexpected error when scanning workspaces", exc_info=e)
-            sleep(2)
-
-    def _rec_scan(
-        self,
-        path: Path,
-        workspace: str,
-        groups: List[Group],
-        filter_in: List[str],
-        filter_out: List[str],
-        max_depth: Optional[int] = None,
-    ) -> List[StudyFolder]:
-        try:
-            if should_ignore_folder_for_scan(path, filter_in, filter_out):
-                return []
-
-            if (path / "study.antares").exists():
-                logger.debug(f"Study {path.name} found in {workspace}")
-                return [StudyFolder(path, workspace, groups)]
-
-            if max_depth is not None and max_depth <= 0:
-                logger.info(f"Scan was configured to not go any deeper, max _depth : {max_depth}")
-                return []
-
-            else:
-                folders: List[StudyFolder] = list()
-                if path.is_dir():
-                    for child in path.iterdir():
-                        if max_depth is not None:
-                            max_depth = max_depth - 1
-                        try:
-                            folders += self._rec_scan(child, workspace, groups, filter_in, filter_out, max_depth)
-                        except Exception as e:
-                            logger.error(f"Failed to scan dir {child}", exc_info=e)
-                return folders
-        except Exception as e:
-            logger.error(f"Failed to scan dir {path}", exc_info=e)
-            return []
+            logger.info(f"Sleeping for {self.sleeping_time}s")
+            sleep(self.sleeping_time)
 
     def oneshot_scan(
         self,
@@ -209,7 +185,7 @@ class Watcher(IService):
         studies: List[StudyFolder] = list()
         directory_path: Optional[Path] = None
 
-        # max depth when we call _rec_scan
+        # max depth when we call rec_scan_for_studies
         max_depth = None if recursive else 1
 
         if workspace_directory_path is not None and workspace_name:
@@ -217,7 +193,7 @@ class Watcher(IService):
             directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
 
             groups = [Group(id=escape(g), name=escape(g)) for g in workspace.groups]
-            studies = self._rec_scan(
+            studies = rec_scan_for_studies(
                 directory_path, workspace_name, groups, workspace.filter_in, workspace.filter_out, max_depth=max_depth
             )
         elif workspace_directory_path is None and workspace_name is None:
@@ -225,7 +201,7 @@ class Watcher(IService):
                 if name != DEFAULT_WORKSPACE_NAME:
                     path = Path(workspace.path)
                     groups = [Group(id=escape(g), name=escape(g)) for g in workspace.groups]
-                    studies = studies + self._rec_scan(
+                    studies = studies + rec_scan_for_studies(
                         path, name, groups, workspace.filter_in, workspace.filter_out, max_depth=max_depth
                     )
                     stopwatch.log_elapsed(_LogScanDuration(name))
