@@ -23,6 +23,7 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde.np_array import NpArray
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
@@ -110,7 +111,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         df = self.parse_as_dataframe()
 
         stopwatch = StopWatch()
-        data = cast(JSON, df.to_pandas().to_dict(orient="split"))
+        data = cast(JSON, convert_polars_dataframe_to_pandas(df).to_dict(orient="split"))
         stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
         return data
 

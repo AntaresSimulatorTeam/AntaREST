@@ -59,6 +59,7 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
@@ -2305,7 +2306,7 @@ class StudyService:
         # Checks that the provided path refers to a matrix
         node = self.get_file_study(study).tree.get_node(list(url))
         if isinstance(node, MatrixNode):
-            pandas_df = node.parse_as_dataframe().to_pandas()
+            pandas_df = convert_polars_dataframe_to_pandas(node.parse_as_dataframe())
         elif isinstance(node, OutputSeriesMatrix):
             pandas_df = node.parse_dataframe()
             pandas_df.columns = pd.Index(pandas_df.columns)

@@ -20,6 +20,7 @@ from starlette.responses import Response
 from antarest.core.config import Config
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.json import to_json
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
@@ -161,7 +162,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
 
         if isinstance(output, pl.DataFrame):
             buffer = io.BytesIO()
-            output.to_pandas().to_json(buffer, orient="split")
+            convert_polars_dataframe_to_pandas(output).to_json(buffer, orient="split")
             return Response(content=buffer.getvalue(), media_type="application/json")
 
         return Response(content=to_json(output.decode("utf-8")), media_type="application/json")

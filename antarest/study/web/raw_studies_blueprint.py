@@ -27,6 +27,7 @@ from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
 from antarest.core.swagger import get_path_examples
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -96,7 +97,7 @@ class MatrixFormat(EnumIgnoreCase):
 
         buffer = io.BytesIO()
         if self == MatrixFormat.JSON:
-            dataframe.to_pandas().to_json(buffer, orient="split")
+            convert_polars_dataframe_to_pandas(dataframe).to_json(buffer, orient="split")
             return Response(content=buffer.getvalue(), media_type="application/json")
 
         else:

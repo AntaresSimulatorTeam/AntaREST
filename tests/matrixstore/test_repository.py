@@ -252,7 +252,7 @@ class TestMatrixContentRepository:
         for more chances to generate problems.
         """
         trial_count = 10
-        matrix = pl.DataFrame(data=np.zeros(shape=(8760, 1)), schema=["0"])
+        matrix = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
 
         matrix_content_repo: MatrixContentRepository
         with matrix_repository(tmp_path, matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:

@@ -18,7 +18,7 @@ import polars as pl
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
-from antarest.core.utils.polars import read_input_dataframe
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas, read_input_dataframe
 
 
 def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version: int) -> pl.DataFrame:
@@ -46,7 +46,7 @@ def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pl.DataFrame, pa
     if matrix_format == InternalMatrixFormat.TSV:
         write_dataframe_in_tsv_format(dataframe, path, headers=True)
     elif matrix_format == InternalMatrixFormat.HDF:
-        dataframe.to_pandas().to_hdf(str(path), key="data", index=False)
+        convert_polars_dataframe_to_pandas(dataframe).to_hdf(str(path), key="data", index=False)
     elif matrix_format == InternalMatrixFormat.PARQUET:
         dataframe.write_parquet(path)
     elif matrix_format == InternalMatrixFormat.FEATHER:

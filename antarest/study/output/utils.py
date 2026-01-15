@@ -19,6 +19,7 @@ import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
 
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 
 """Column name for the Monte Carlo year."""
@@ -143,7 +144,7 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     output_headers = parse_headers(content, first_column)
     polars_df = _parse_output_dataframe(file_path)
 
-    df = polars_df[polars_df.columns[first_column:]].to_pandas().astype(np.float64)
+    df = convert_polars_dataframe_to_pandas(polars_df[polars_df.columns[first_column:]]).astype(np.float64)
 
     df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
     return OutputDataFrame(data=df, headers=output_headers)
