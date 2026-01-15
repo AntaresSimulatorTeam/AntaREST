@@ -15,6 +15,7 @@
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import StorageIcon from "@mui/icons-material/Storage";
 import { Box, Divider } from "@mui/material";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -29,6 +30,8 @@ function StudyTree() {
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
 
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
   const managedStudies = studies.filter((s) => s.managed);
   const externalStudies = studies.filter((s) => !s.managed);
 
@@ -38,6 +41,14 @@ function StudyTree() {
 
   const handleNodeClick = (itemId: string) => {
     dispatch(updateStudyFilters({ folder: itemId }));
+  };
+
+  const handleAddFolderClick = () => {
+    setIsCreatingFolder(true);
+  };
+
+  const handleFolderCreated = () => {
+    setIsCreatingFolder(false);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -50,8 +61,14 @@ function StudyTree() {
         variant="managed"
         title={t("studies.tree.managed", { defaultValue: "Managed Studies" })}
         icon={<AccountTreeIcon />}
+        onAddFolder={handleAddFolderClick}
       >
-        <ManagedTree studies={managedStudies} onNodeClick={handleNodeClick} />
+        <ManagedTree
+          studies={managedStudies}
+          onNodeClick={handleNodeClick}
+          isCreatingFolder={isCreatingFolder}
+          onFolderCreated={handleFolderCreated}
+        />
       </TreeSection>
 
       <Divider />

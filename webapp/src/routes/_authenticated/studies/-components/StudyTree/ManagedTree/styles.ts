@@ -55,3 +55,40 @@ export const treeItemStyles: SxProps<Theme> = {
     fontWeight: 450,
   },
 };
+
+export const editableTreeItemStyles: SxProps<Theme> = {
+  ...treeItemStyles,
+  "& > .MuiTreeItem-content": {
+    ...(treeItemStyles["& > .MuiTreeItem-content"] as object),
+    backgroundColor: (theme) => `${theme.palette.info.main}08`,
+    "&:hover": {
+      backgroundColor: (theme) => `${theme.palette.info.main}12`,
+    },
+  },
+};
+
+export const textFieldStyles: SxProps<Theme> = {
+  width: "auto",
+  maxWidth: "250px",
+  "& .MuiInputBase-root": {
+    backgroundColor: "background.paper",
+  },
+  "& .MuiInputBase-input": {
+    py: 0.25,
+    px: 1,
+    fontSize: 14,
+    fontWeight: 450,
+    color: "text.primary",
+  },
+  "& .MuiOutlinedInput-notchedOutline": {
+    borderColor: "info.main",
+    borderWidth: 1,
+  },
+  "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+    borderColor: "info.main",
+  },
+  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    borderColor: "info.main",
+    borderWidth: 2,
+  },
+};

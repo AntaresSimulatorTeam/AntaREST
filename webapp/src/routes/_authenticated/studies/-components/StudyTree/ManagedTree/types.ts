@@ -14,10 +14,6 @@
 
 import type { StudyMetadata } from "@/types/types";
 
-/**
- * Directory tree node with hierarchical structure
- * Built from flat Directory[] using parentId relationships
- */
 export interface DirectoryTreeNode {
   id: string;
   name: string;
@@ -26,19 +22,15 @@ export interface DirectoryTreeNode {
   children: DirectoryTreeNode[];
 }
 
-/**
- * Props for ManagedTreeNode component
- */
 export interface ManagedTreeNodeProps {
   node: DirectoryTreeNode;
   onNodeClick: (id: string) => void;
   selectedPath?: string;
 }
 
-/**
- * Props for ManagedTree component
- */
 export interface ManagedTreeProps {
   studies: StudyMetadata[];
   onNodeClick: (id: string) => void;
+  isCreatingFolder: boolean;
+  onFolderCreated: () => void;
 }
