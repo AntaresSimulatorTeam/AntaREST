@@ -13,9 +13,9 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import Allocation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/allocation";
 import Correlation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/Correlation";
 import HydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/HydroMatrix";
-import Allocation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/sAllocation";
 import SplitHydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/SplitHydroMatrix";
 import { HYDRO_ROUTES } from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/utils";
 
