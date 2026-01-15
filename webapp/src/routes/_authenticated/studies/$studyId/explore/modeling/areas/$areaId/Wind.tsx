@@ -14,8 +14,8 @@
 
 import Matrix from "@/components/Matrix";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../redux/selectors";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 
 function Wind() {
   const currentArea = useAppSelector(getCurrentAreaId);
