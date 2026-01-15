@@ -13,7 +13,9 @@
  */
 
 import TabsView from "@/components/page/TabsView";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
+import semver from "semver";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro",
@@ -23,18 +25,7 @@ export const Route = createFileRoute(
 
 function HydroLayout() {
   const params = Route.useParams();
-
-  // const tabList = useMemo(() => {
-  //   const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;
-
-  //   return [
-  //     { label: "Reservoir levels", path: `${basePath}/reservoirlevels` },
-  //     { label: "Water values", path: `${basePath}/watervalues` },
-  //     { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
-  //     { label: "Run of river", path: `${basePath}/ror` },
-  //     semver.gte(study.version, "8.6.0") && { label: "Min Gen", path: `${basePath}/mingen` },
-  //   ].filter(Boolean);
-  // }, [areaId, study?.id, study.version]);
+  const study = useStudy();
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -91,11 +82,39 @@ function HydroLayout() {
             params,
           }),
         },
-        //     { label: "Water values", path: `${basePath}/watervalues` },
-        //     { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
-        //     { label: "Run of river", path: `${basePath}/ror` },
-        //     semver.gte(study.version, "8.6.0") && { label: "Min Gen", path: `${basePath}/mingen` },
-      ]}
+        {
+          id: "waterValues",
+          label: "Water values",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values",
+            params,
+          }),
+        },
+        {
+          id: "hydroStorage",
+          label: "Hydro Storage",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage",
+            params,
+          }),
+        },
+        {
+          id: "runOfRiver",
+          label: "Run of river",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river",
+            params,
+          }),
+        },
+        semver.gte(study.version, "8.6.0") && {
+          id: "minGen",
+          label: "Min Gen",
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen",
+            params,
+          }),
+        },
+      ].filter(Boolean)}
     />
   );
 }
