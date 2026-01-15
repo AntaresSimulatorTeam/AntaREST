@@ -16,77 +16,45 @@ import FormDialog from "@/components/dialogs/FormDialog";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import type { BindingConstraintCreationDTO } from "@/services/api/studies/bindingConstraints/type";
+import { getNames } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
-import { Box } from "@mui/material";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-// @ts-expect-error Temporary fix for missing lib
-import { useOutletContext } from "react-router";
 import semver from "semver";
-import {
-  BindingConstraintOperator,
-  TimeStep,
-} from "../../../../-components/NavHeader/CommandsDrawer/EditionView/commandTypes";
-import { setCurrentBindingConst } from "../../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import { createBindingConstraint } from "../../../../../../../../services/api/studydata";
-import type { StudyMetadata } from "../../../../../../../../types/types";
-import { type BindingConstraint, OPERATOR_OPTIONS, TIME_STEPS_OPTIONS } from "../utils";
+import useCreateBindingConstraint from "../-hooks/useCreateBindingConstraint";
+import { DEFAULT_CONSTRAINT_VALUES, OPERATOR_OPTIONS, TIME_STEPS_OPTIONS } from "../-utils";
 
 interface Props {
-  open: boolean;
-  onClose: VoidFunction;
-  existingConstraints: Array<BindingConstraint["id"]>;
-  reloadConstraintsList: VoidFunction;
+  onCancel: VoidFunction;
 }
 
-function AddConstraintDialog({ open, onClose, existingConstraints, reloadConstraintsList }: Props) {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const dispatch = useAppDispatch();
-  const [t] = useTranslation();
+function AddConstraintDialog({ onCancel }: Props) {
+  const study = useStudy();
+  const { t } = useTranslation();
+  const createConstraint = useCreateBindingConstraint();
 
-  const defaultValues = {
-    name: "",
-    group: semver.gte(study.version, "8.7.0") ? "default" : undefined,
-    enabled: true,
-    timeStep: TimeStep.HOURLY,
-    operator: BindingConstraintOperator.LESS,
-    comments: "",
+  const { data: existingNames } = useSuspenseQuery({
+    ...bindingConstraintQueries.list(study.id),
+    select: getNames,
+  });
+
+  const defaultValues: BindingConstraintCreationDTO = {
+    ...DEFAULT_CONSTRAINT_VALUES,
+    group: semver.gte(study.version, "8.7.0") ? "default" : "",
   };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values }: SubmitHandlerPlus<typeof defaultValues>) => {
-    return createBindingConstraint(study.id, values);
-  };
-
-  const handleSubmitSuccessful = (
-    _data: SubmitHandlerPlus<typeof defaultValues>,
-    createdConstraint: BindingConstraint,
-  ) => {
-    /**
-     * !WARNING: Current Implementation Issues & Future Directions
-     *
-     * Issues Identified:
-     * 1. State vs. Router: Utilizes global state for navigation-related concerns better suited for URL routing, reducing shareability and persistence.
-     * 2. Full List Reload: Inefficiently reloads the entire list after adding an item, leading to unnecessary network use and performance hits.
-     * 3. Global State Overuse: Over-relies on global state for operations that could be localized, complicating the application unnecessarily.
-     *
-     * Future Solutions:
-     * - React Router Integration: Leverage URL parameters for selecting and displaying binding constraints, improving UX and state persistence.
-     * - React Query for State Management: Utilize React Query for data fetching and state management. This introduces benefits like:
-     *    - Automatic Revalidation: Only fetches data when needed, reducing unnecessary network requests.
-     *    - Optimistic Updates: Immediately reflect changes in the UI while the backend processes the request, enhancing perceived performance.
-     *    - Cache Management: Efficiently manage and invalidate cache, ensuring data consistency without manual reloads.
-     * - Efficient State Updates: Post-creation, append the new item to the existing list or use React Query's mutation to update the list optimally.
-     *
-     * Adopting these strategies will significantly enhance efficiency, maintainability, and UX, addressing current architectural weaknesses.
-     */
-    reloadConstraintsList();
-    dispatch(setCurrentBindingConst(createdConstraint.id));
-    onClose();
+  const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraintCreationDTO>) => {
+    createConstraint.mutate({ studyId: study.id, values });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -95,22 +63,16 @@ function AddConstraintDialog({ open, onClose, existingConstraints, reloadConstra
 
   return (
     <FormDialog
-      key={study.id}
+      open
       title={t("study.modeling.bindingConst.newBindingConst")}
+      titleIcon={AddCircleIcon}
       config={{ defaultValues }}
       onSubmit={handleSubmit}
-      onSubmitSuccessful={handleSubmitSuccessful}
-      onCancel={onClose}
-      open={open}
+      onSubmitSuccessful={onCancel}
+      onCancel={onCancel}
     >
       {({ control }) => (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
+        <Fieldset fullFieldWidth>
           <SwitchFE
             name="enabled"
             label={t("study.modeling.bindingConst.enabled")}
@@ -123,7 +85,7 @@ function AddConstraintDialog({ open, onClose, existingConstraints, reloadConstra
             rules={{
               validate: (v) =>
                 validateString(v, {
-                  existingValues: existingConstraints,
+                  existingValues: existingNames,
                   specialChars: "@&_-()",
                 }),
             }}
@@ -164,7 +126,7 @@ function AddConstraintDialog({ open, onClose, existingConstraints, reloadConstra
             options={OPERATOR_OPTIONS}
             control={control}
           />
-        </Box>
+        </Fieldset>
       )}
     </FormDialog>
   );

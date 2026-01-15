@@ -264,11 +264,9 @@ function Form<TFieldValues extends FieldValues, TContext>({
       className={clsx("Form", className)}
     >
       <Box className="Form__Content" sx={{ overflow: "auto" }}>
-        {RA.isFunction(children) ? (
-          children(formApiPlus)
-        ) : (
-          <FormProvider {...formApiPlus}>{children}</FormProvider>
-        )}
+        <FormProvider {...formApiPlus}>
+          {RA.isFunction(children) ? children(formApiPlus) : children}
+        </FormProvider>
       </Box>
       {showFooter && (
         <Box

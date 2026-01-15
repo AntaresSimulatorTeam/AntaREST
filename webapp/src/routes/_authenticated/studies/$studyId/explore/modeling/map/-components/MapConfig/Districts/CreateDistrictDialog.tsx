@@ -17,7 +17,7 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useMemo } from "react";

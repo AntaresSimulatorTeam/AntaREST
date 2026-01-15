@@ -27,5 +27,3 @@ function Load() {
 
   return <Matrix key={areaId} studyId={studyId} url={url} aggregateColumns="stats" />;
 }
-
-export default Load;

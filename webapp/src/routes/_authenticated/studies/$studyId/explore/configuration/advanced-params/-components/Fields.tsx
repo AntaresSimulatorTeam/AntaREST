@@ -35,7 +35,7 @@ import {
   UnitCommitmentMode,
   type AdvancedParamsFormFields,
 } from "../-utils";
-import useStudy from "../../../../../../../-shared/hook/useStudy";
+import useStudy from "../../../../-hooks/useStudy";
 
 function Fields() {
   const [t] = useTranslation();

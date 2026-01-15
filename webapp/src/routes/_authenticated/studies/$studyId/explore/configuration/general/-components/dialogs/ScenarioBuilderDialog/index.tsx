@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import BasicDialog from "@/components/dialogs/BasicDialog";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import { getScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
 import { TabContext, TabList, type TabListProps, TabPanel } from "@mui/lab";
-import { Box, Button, Skeleton, Tab } from "@mui/material";
+import { Box, Button, Tab } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePromiseWithSnackbarError from "../../../../../../../../../../hooks/usePromiseWithSnackbarError";
@@ -93,7 +94,7 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
             <UsePromiseCond
               response={scenarioData}
               ifFulfilled={(data) => <EnhancedTable type={type} config={data} />}
-              ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+              ifPending={() => <DataGridSkeleton />}
             />
           </TabPanel>
         ))}

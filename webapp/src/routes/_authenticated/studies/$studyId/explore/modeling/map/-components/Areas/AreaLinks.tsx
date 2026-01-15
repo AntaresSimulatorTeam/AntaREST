@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useTranslation } from "react-i18next";
 import {
   setCurrentArea,

@@ -15,7 +15,7 @@
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box, Tooltip } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";

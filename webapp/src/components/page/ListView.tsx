@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import useCurrentRouteId from "@/hooks/router/useCurrentRouteId";
 import { isSearchMatching } from "@/utils/stringUtils";
 import AddIcon from "@mui/icons-material/Add";
 import {
@@ -23,7 +24,7 @@ import {
   ListItemText,
   Tooltip,
 } from "@mui/material";
-import { Outlet, useMatches, type ToOptions } from "@tanstack/react-router";
+import { Outlet, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchFE from "../fieldEditors/SearchFE";
@@ -55,9 +56,7 @@ function ListView({ list, splitId, emptyListContent, onAdd, actions }: ListViewP
 
   // Get current route ID to force rebuilds of links when the route changes.
   // Allows to update relative links (e.g. `to: "."`).
-  const currentRouteId = useMatches({
-    select: (matches) => matches.at(-1)?.routeId,
-  });
+  const currentRouteId = useCurrentRouteId();
 
   return (
     <SplitView splitId={splitId}>
@@ -95,7 +94,15 @@ function ListView({ list, splitId, emptyListContent, onAdd, actions }: ListViewP
               <Tooltip key={item.id} title={item.label} placement="right">
                 <ListItem
                   disablePadding
-                  secondaryAction={item.loading && <CircularProgress color="inherit" size={16} />}
+                  secondaryAction={
+                    item.loading && (
+                      <CircularProgress
+                        color="inherit"
+                        size={16}
+                        sx={{ verticalAlign: "middle" }}
+                      />
+                    )
+                  }
                 >
                   <RouterListItemButton key={currentRouteId} {...item.linkOptions}>
                     <ListItemText primary={item.label} slotProps={{ primary: { noWrap: true } }} />

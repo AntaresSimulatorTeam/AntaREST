@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import DataGridViewer from "@/components/DataGridViewer";
 import { generateCustomColumns } from "@/components/Matrix/shared/utils";
 import EmptyView from "@/components/page/EmptyView";
@@ -19,7 +20,6 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 export interface SynthesisData {
@@ -42,7 +42,7 @@ function SynthesisViewer({ synthesisRes }: SynthesisViewerProps) {
     <ViewWrapper flex>
       <UsePromiseCond
         response={synthesisRes}
-        ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+        ifPending={() => <DataGridSkeleton />}
         ifFulfilled={(matrix) => {
           if (!matrix) {
             return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;

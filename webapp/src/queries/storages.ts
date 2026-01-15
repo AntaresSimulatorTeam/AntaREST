@@ -20,38 +20,59 @@ import {
 import type { StorageParams } from "@/services/api/studies/areas/storages/types";
 import type { AreaWithId, StudyMetadata } from "@/types/types";
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
-import { areaKeys } from "./areas";
+import { areaQueries } from "./areas";
 import { queryList } from "./utils";
 
 export const storageQueries = {
-  all: () => [...areaKeys.all, "storages"],
+  all: () => [...areaQueries.all(), "storages"],
   list: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
     return [...storageQueries.all(), { studyId, areaId }];
   },
+  allConstraints: () => [...storageQueries.all(), "storageConstraints"],
   constraintList: (
     studyId: StudyMetadata["id"],
     areaId: AreaWithId["id"],
     storageId: StorageParams["storageId"],
   ) => {
     return queryOptions({
-      queryKey: [...storageQueries.all(), "constraints", { studyId, areaId, storageId }],
-      queryFn: async () => {
-        return queryList(await getStorageConstraints({ studyId, areaId, storageId }));
-      },
+      queryKey: [...storageQueries.allConstraints(), { studyId, areaId, storageId }],
+      queryFn: async () => queryList(await getStorageConstraints({ studyId, areaId, storageId })),
+      refetchOnWindowFocus: (query) => !query.state.data?.some((c) => c.isOptimistic),
+      refetchOnReconnect: (query) => !query.state.data?.some((c) => c.isOptimistic),
+      refetchOnMount: (query) => !query.state.data?.some((c) => c.isOptimistic),
     });
   },
 };
 
 export const storageMutations = {
-  createConstraint: () => {
+  constraintList: (
+    studyId: StudyMetadata["id"],
+    areaId: AreaWithId["id"],
+    storageId: StorageParams["storageId"],
+  ) => [...storageQueries.allConstraints(), { studyId, areaId, storageId }],
+  createConstraint: (
+    studyId: StudyMetadata["id"],
+    areaId: AreaWithId["id"],
+    storageId: StorageParams["storageId"],
+  ) => {
     return mutationOptions({
-      mutationKey: ["createStorageConstraint"],
+      mutationKey: [
+        ...storageMutations.constraintList(studyId, areaId, storageId),
+        "createStorageConstraint",
+      ],
       mutationFn: createStorageConstraint,
     });
   },
-  deleteConstraint: () => {
+  deleteConstraint: (
+    studyId: StudyMetadata["id"],
+    areaId: AreaWithId["id"],
+    storageId: StorageParams["storageId"],
+  ) => {
     return mutationOptions({
-      mutationKey: ["deleteStorageConstraint"],
+      mutationKey: [
+        ...storageMutations.constraintList(studyId, areaId, storageId),
+        "deleteStorageConstraint",
+      ],
       mutationFn: deleteStorageConstraint,
     });
   },

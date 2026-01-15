@@ -12,41 +12,60 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
-import { getBindingConstraint } from "@/services/api/studydata";
-import { Box, Skeleton } from "@mui/material";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { getBindingConstraint } from "@/services/api/studies/bindingConstraints";
+import { Box } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import useBindingConstraint from "./-hooks/useBindingConstraint";
 
-interface Props {
-  study: StudyMetadata;
-  constraintId: string;
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series",
+)({
+  component: TimeSeries,
+});
 
-const URL_BASE = "input/bindingconstraints/" as const;
-
-function ConstraintMatrix({ study, constraintId }: Props) {
+function TimeSeries() {
+  const study = useStudy();
+  const constraint = useBindingConstraint();
   const { t } = useTranslation();
+  const urlBase = `input/bindingconstraints/${constraint.id}`;
+  const isLegacy = semver.lt(study.version, "8.7.0");
 
-  const constraintRes = usePromise(
-    () => getBindingConstraint(study.id, constraintId),
-    [study.id, constraintId],
+  const response = usePromise(
+    () => {
+      return getBindingConstraint({
+        studyId: study.id,
+        constraintId: constraint.id,
+      });
+    },
+    {
+      deps: [study.id, constraint.id],
+      disabled: isLegacy,
+    },
   );
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (semver.lt(study.version, "8.7.0")) {
+  if (constraint.isOptimistic) {
+    return <DataGridSkeleton />;
+  }
+
+  if (isLegacy) {
     return (
       <Matrix
+        key={constraint.id}
         studyId={study.id}
         title={t("global.matrix")}
-        url={`${URL_BASE}${constraintId}`}
+        url={urlBase}
         customColumns={["<", ">", "="]}
       />
     );
@@ -54,53 +73,56 @@ function ConstraintMatrix({ study, constraintId }: Props) {
 
   return (
     <UsePromiseCond
-      response={constraintRes}
+      response={response}
+      ifPending={() => <DataGridSkeleton />}
       ifFulfilled={({ operator }) => (
-        <Box sx={{ height: 1, width: 1 }}>
+        <>
           {operator === "less" && (
             <Matrix
+              key={constraint.id}
               studyId={study.id}
               title={t("study.modeling.bindingConst.timeSeries.less")}
-              url={`${URL_BASE}${constraintId}_lt`}
+              url={`${urlBase}_lt`}
             />
           )}
           {operator === "equal" && (
             <Matrix
+              key={constraint.id}
               studyId={study.id}
               title={t("study.modeling.bindingConst.timeSeries.equal")}
-              url={`${URL_BASE}${constraintId}_eq`}
+              url={`${urlBase}_eq`}
             />
           )}
           {operator === "greater" && (
             <Matrix
+              key={constraint.id}
               studyId={study.id}
               title={t("study.modeling.bindingConst.timeSeries.greater")}
-              url={`${URL_BASE}${constraintId}_gt`}
+              url={`${urlBase}_gt`}
             />
           )}
           {operator === "both" && (
             <SplitView splitId="binding-constraints-matrix" sizes={[50, 50]}>
-              <Box sx={{ px: 2 }}>
+              <Box sx={{ p: 2 }}>
                 <Matrix
+                  key={constraint.id}
                   studyId={study.id}
                   title={t("study.modeling.bindingConst.timeSeries.less")}
-                  url={`${URL_BASE}${constraintId}_lt`}
+                  url={`${urlBase}_lt`}
                 />
               </Box>
-              <Box sx={{ px: 2 }}>
+              <Box sx={{ p: 2 }}>
                 <Matrix
+                  key={constraint.id}
                   studyId={study.id}
                   title={t("study.modeling.bindingConst.timeSeries.greater")}
-                  url={`${URL_BASE}${constraintId}_gt`}
+                  url={`${urlBase}_gt`}
                 />
               </Box>
             </SplitView>
           )}
-        </Box>
+        </>
       )}
-      ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
     />
   );
 }
-
-export default ConstraintMatrix;

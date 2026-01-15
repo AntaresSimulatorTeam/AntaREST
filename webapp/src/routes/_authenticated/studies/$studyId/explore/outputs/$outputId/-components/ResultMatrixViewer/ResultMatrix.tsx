@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import FilterableMatrixGrid, {
   type FilterableMatrixGridHandle,
 } from "@/components/Matrix/components/FilterableMatrixGrid";
@@ -27,7 +28,6 @@ import type { UsePromiseResponse } from "@/hooks/usePromise";
 import type { MatrixIndex } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 interface ResultMatrixProps {
@@ -58,10 +58,10 @@ function ResultMatrix({
   return (
     <UsePromiseCond
       response={matrixRes}
-      ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+      ifPending={() => <DataGridSkeleton />}
       ifFulfilled={() => {
         if (resultColHeaders.length === 0) {
-          return <Skeleton sx={{ height: 1, transform: "none" }} />;
+          return <DataGridSkeleton />;
         }
 
         if (!isNonEmptyMatrix(filteredData)) {

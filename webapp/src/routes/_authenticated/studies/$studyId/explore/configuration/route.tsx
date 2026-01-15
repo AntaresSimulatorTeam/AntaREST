@@ -16,7 +16,7 @@ import TabsView from "@/components/page/TabsView";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import useStudy from "../../../../../-shared/hook/useStudy";
+import useStudy from "../../-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/configuration")({
   component: ConfigurationLayout,

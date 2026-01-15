@@ -17,7 +17,7 @@ import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import EmptyView from "@/components/page/EmptyView";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { deleteFile } from "@/services/api/studies/raw";
 import { toError } from "@/utils/fnUtils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";

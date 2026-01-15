@@ -13,50 +13,40 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
-import SplitView from "@/components/page/SplitView";
-import ViewWrapper from "@/components/page/ViewWrapper";
-import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import { useEffect } from "react";
+import ListView from "@/components/page/ListView";
+import useDialog from "@/hooks/useDialog";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-// @ts-expect-error Temporary fix for missing lib
-import { useOutletContext } from "react-router";
-import usePromise from "../../../../../../../hooks/usePromise";
-import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentBindingConstId } from "../../../../../../../redux/selectors";
-import { getBindingConstraintList } from "../../../../../../../services/api/studydata";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import BindingConstView from "./$bindingConstraintId";
-import BindingConstPropsView from "./BindingConstPropsView";
+import AddConstraintDialog from "./-components/AddConstraintDialog";
+import { bindingConstraintsToList } from "./-utils";
 
-function BindingConstraints() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [t] = useTranslation();
-  const dispatch = useAppDispatch();
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/binding-constraints",
+)({
+  loader: async ({ context, params: { studyId } }) => {
+    await context.queryClient.ensureQueryData(bindingConstraintQueries.list(studyId));
+  },
+  component: BindingConstraintsLayout,
+});
 
-  const currentConstraintId = useAppSelector(getCurrentBindingConstId);
+function BindingConstraintsLayout() {
+  const { studyId } = Route.useParams();
+  const { openDialog } = useDialog();
+  const { t } = useTranslation();
 
-  const constraintsRes = usePromise(() => getBindingConstraintList(study.id), [study.id]);
-
-  useEffect(() => {
-    const { data } = constraintsRes;
-
-    if (!data || data.length === 0 || currentConstraintId) {
-      return;
-    }
-
-    const firstConstraintId = data[0].id;
-    dispatch(setCurrentBindingConst(firstConstraintId));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [constraintsRes.data, currentConstraintId, dispatch]);
+  const { data: list } = useSuspenseQuery({
+    ...bindingConstraintQueries.list(studyId),
+    select: bindingConstraintsToList,
+  });
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
+  // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleConstraintChange = (constraintId: string): void => {
-    dispatch(setCurrentBindingConst(constraintId));
+  const handleAdd = () => {
+    openDialog(({ onClose }) => <AddConstraintDialog onCancel={onClose} />);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -64,32 +54,11 @@ function BindingConstraints() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <UsePromiseCond
-      response={constraintsRes}
-      ifFulfilled={(data) => (
-        <SplitView splitId="binding-constraints">
-          {/* Left */}
-          <BindingConstPropsView // TODO rename ConstraintsList
-            list={data}
-            onClick={handleConstraintChange}
-            currentConstraint={currentConstraintId}
-            reloadConstraintsList={constraintsRes.reload}
-          />
-          {/* Right */}
-          <ViewWrapper>
-            {data.length > 0 && currentConstraintId ? (
-              <BindingConstView
-                constraintId={currentConstraintId}
-                reloadConstraintsList={constraintsRes.reload}
-              />
-            ) : (
-              <EmptyView title={t("study.bindingConstraints.empty")} />
-            )}
-          </ViewWrapper>
-        </SplitView>
-      )}
+    <ListView
+      splitId="binding-constraints"
+      list={list}
+      emptyListContent={<EmptyView title={t("study.bindingConstraints.empty")} />}
+      onAdd={handleAdd}
     />
   );
 }
-
-export default BindingConstraints;

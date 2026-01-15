@@ -13,7 +13,7 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Box, Button, Typography } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useState } from "react";

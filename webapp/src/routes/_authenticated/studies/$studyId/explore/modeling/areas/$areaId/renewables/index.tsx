@@ -16,7 +16,7 @@ import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { TRow } from "@/components/GroupedDataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Box } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
@@ -173,5 +173,3 @@ function Renewables() {
     />
   );
 }
-
-export default Renewables;

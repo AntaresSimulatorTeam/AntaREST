@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import usePromise from "@/hooks/usePromise";
 import { getTableMode, setTableMode } from "@/services/api/studies/tableMode";
 import type {
@@ -102,6 +103,7 @@ function TableMode<T extends TableModeType>({
       )}
       <UsePromiseCond
         response={res}
+        ifPending={() => <DataGridSkeleton />}
         ifFulfilled={(data) =>
           gridColumns.length > 0 ? (
             <DataGridForm

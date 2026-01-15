@@ -14,7 +14,7 @@
 
 import BackButton from "@/components/buttons/BackButton";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
-import { Box, Tab, type SxProps, type Theme } from "@mui/material";
+import { Box, Stack, Tab, type SxProps, type Theme } from "@mui/material";
 import { Outlet, useMatchRoute, type ToOptions } from "@tanstack/react-router";
 import { useState } from "react";
 import RouterLink from "../router/RouterLink";
@@ -115,7 +115,7 @@ function TabsView({
       <TabContext value={activeTabValue}>
         <Box
           sx={[
-            !!onBack && { display: "flex" },
+            (!!onBack || !!extraActions) && { display: "flex" },
             divider && { borderBottom: 1, borderColor: "divider" },
           ]}
         >
@@ -142,7 +142,9 @@ function TabsView({
             ))}
           </TabList>
           {extraActions && (
-            <Box sx={{ display: "flex", alignItems: "center", px: 1 }}>{extraActions}</Box>
+            <Stack gap={1} sx={{ pr: 1 }}>
+              {extraActions}
+            </Stack>
           )}
         </Box>
         {hasRouteTabs ? (

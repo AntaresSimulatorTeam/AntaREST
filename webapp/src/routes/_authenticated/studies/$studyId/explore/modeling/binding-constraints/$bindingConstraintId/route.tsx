@@ -13,53 +13,108 @@
  */
 
 import TabsView from "@/components/page/TabsView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import useDialog from "@/hooks/useDialog";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { Delete } from "@mui/icons-material";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Button } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-// @ts-expect-error Temporary fix for missing lib
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../types/types";
-import ConstraintForm from "./ConstraintForm";
-import ConstraintMatrix from "./ConstraintMatrix";
+import DuplicateConstraintDialog from "../-components/DuplicateConstraintDialog";
+import useDeleteBindingConstraint from "../-hooks/useDeleteBindingConstraint";
+import useBindingConstraint from "./-hooks/useBindingConstraint";
 
-interface Props {
-  constraintId: string;
-  reloadConstraintsList: VoidFunction;
-}
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId",
+)({
+  component: BindingConstraintLayout,
+});
 
-function BindingConstView({ constraintId, reloadConstraintsList }: Props) {
+function BindingConstraintLayout() {
+  const study = useStudy();
+  const params = Route.useParams();
   const { t } = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { openDialog, confirm } = useDialog();
+  const constraint = useBindingConstraint();
+  const deleteConstraint = useDeleteBindingConstraint();
+  const { bindingConstraintId } = params;
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  const handleDuplicate = () => {
+    openDialog(({ onClose }) => (
+      <DuplicateConstraintDialog constraintToDuplicate={constraint} onCancel={onClose} />
+    ));
+  };
+
+  const handleDelete = async () => {
+    const isConfirmed = await confirm({
+      content: t("study.modeling.bindingConst.question.deleteBindingConstraint", {
+        name: constraint.name,
+      }),
+      alert: "error",
+      titleIcon: DeleteIcon,
+    });
+
+    if (isConfirmed) {
+      deleteConstraint.mutate({
+        studyId: study.id,
+        constraintId: bindingConstraintId,
+      });
+    }
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TabsView
-      divider
-      tabs={[
-        {
-          id: "parameters",
-          label: t("global.parameters"),
-          content: (
-            <ConstraintForm
-              study={study}
-              constraintId={constraintId}
-              reloadConstraintsList={reloadConstraintsList}
-            />
-          ),
-        },
-        {
-          id: "time-series",
-          label: t("global.timeSeries"),
-          content: (
-            // Force a remount of ConstraintMatrix when `constraintId` changes.
-            // This avoids stale data from `usePromise` that keep returning previous results.
-            <ConstraintMatrix key={constraintId} study={study} constraintId={constraintId} />
-          ),
-        },
-      ]}
-    />
+    <ViewWrapper>
+      <TabsView
+        tabs={[
+          {
+            id: "parameters",
+            label: t("global.parameters"),
+            linkOptions: {
+              to: "/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/parameters",
+              params,
+            },
+          },
+          {
+            id: "time-series",
+            label: t("global.timeSeries"),
+            linkOptions: {
+              to: "/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series",
+              params,
+            },
+          },
+        ]}
+        extraActions={
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<ContentCopyIcon />}
+              onClick={handleDuplicate}
+              disabled={constraint.isOptimistic}
+            >
+              {t("global.duplicate")}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Delete />}
+              color="error"
+              onClick={handleDelete}
+              disabled={constraint.isOptimistic}
+            >
+              {t("global.delete")}
+            </Button>
+          </>
+        }
+      />
+    </ViewWrapper>
   );
 }
-
-export default BindingConstView;

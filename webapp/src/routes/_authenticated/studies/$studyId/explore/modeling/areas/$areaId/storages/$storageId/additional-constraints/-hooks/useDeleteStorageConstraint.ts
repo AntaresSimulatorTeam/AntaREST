@@ -29,19 +29,18 @@ function useDeleteStorageConstraint() {
   const { t } = useTranslation();
 
   const { studyId, areaId, storageId } = params;
-  const queryOptions = storageQueries.constraintList(studyId, areaId, storageId);
-  const { queryKey } = queryOptions;
+  const { queryKey: queryListKey } = storageQueries.constraintList(studyId, areaId, storageId);
 
   const mutation = useMutation({
-    ...storageMutations.deleteConstraint(),
+    ...storageMutations.deleteConstraint(studyId, areaId, storageId),
     onMutate: async (variables, context) => {
       const { constraintId } = variables;
 
-      await context.client.cancelQueries({ queryKey });
+      await context.client.cancelQueries({ queryKey: queryListKey });
 
-      const prevConstraints = context.client.getQueryData(queryKey);
+      const prevConstraints = context.client.getQueryData(queryListKey);
 
-      context.client.setQueryData(queryKey, (old) => {
+      context.client.setQueryData(queryListKey, (old) => {
         return old?.filter((constraint) => constraint.id !== constraintId);
       });
 
@@ -71,19 +70,25 @@ function useDeleteStorageConstraint() {
       const { prevConstraints } = onMutateResult || {};
       const { constraintId } = variables;
 
-      context.client.setQueryData(queryKey, prevConstraints);
+      context.client.setQueryData(queryListKey, prevConstraints);
 
       enqueueErrorSnackbar(
         t("study.modeling.storages.additionalConstraints.delete.error", {
           name:
-            context.client.getQueryData(queryKey)?.find((c) => c.id === constraintId)?.name ||
+            context.client.getQueryData(queryListKey)?.find((c) => c.id === constraintId)?.name ||
             constraintId,
         }),
         error,
       );
     },
     onSettled: (data, error, variables, onMutateResult, context) => {
-      context.client.invalidateQueries({ queryKey });
+      const mutationNb = context.client.isMutating({
+        mutationKey: storageMutations.constraintList(studyId, areaId, storageId),
+      });
+
+      if (mutationNb === 1) {
+        context.client.invalidateQueries({ queryKey: queryListKey });
+      }
     },
   });
 

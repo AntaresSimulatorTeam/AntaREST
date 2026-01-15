@@ -266,6 +266,7 @@ export default {
   MuiStack: {
     defaultProps: {
       direction: "row",
+      useFlexGap: true,
     },
     variants: [
       {

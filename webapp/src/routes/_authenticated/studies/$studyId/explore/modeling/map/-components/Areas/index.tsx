@@ -13,7 +13,7 @@
  */
 
 import PropertiesView from "@/components/PropertiesView";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useEffect, useState } from "react";
 import ListElement from "../../../../../../../../../components/ListElement";
 import type { StudyMapNode } from "../../../../../../../../../redux/ducks/studyMaps";

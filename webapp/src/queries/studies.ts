@@ -12,6 +12,6 @@
  * This file is part of the Antares project.
  */
 
-export const studyKeys = {
-  all: ["studies"] as const,
+export const studyQueries = {
+  all: () => ["studies"] as const,
 };

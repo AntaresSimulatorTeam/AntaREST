@@ -18,9 +18,7 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import Matrix from "@/components/Matrix";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import useDialog from "@/hooks/useDialog";
-import { storageQueries } from "@/queries/storages";
-import type { QueryList } from "@/queries/types";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
   getStorageConstraint,
   updateStorageConstraint,
@@ -30,14 +28,13 @@ import { unresolvedPromise } from "@/utils/promiseUtils";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Button } from "@mui/material";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
 import semver from "semver";
 import useDeleteStorageConstraint from "../-hooks/useDeleteStorageConstraint";
 import Fields from "./-components/Fields";
+import useStorageConstraint from "./-hooks/useStorageConstraint";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId/",
@@ -51,20 +48,8 @@ function Constraint() {
   const { t } = useTranslation();
   const [matrixDialogOpen, toggleMatrixDialogOpen] = useToggle(false);
   const { confirm } = useDialog();
-
-  const getConstraint = useCallback(
-    (constraints: QueryList<StorageConstraint>) => {
-      return constraints.find(({ id }) => id === constraintId);
-    },
-    [constraintId],
-  );
-
-  const { data: constraint } = useSuspenseQuery({
-    ...storageQueries.constraintList(study.id, areaId, storageId),
-    select: getConstraint,
-  });
-
   const deleteConstraint = useDeleteStorageConstraint();
+  const constraint = useStorageConstraint();
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -85,7 +70,7 @@ function Constraint() {
   const handleDelete = async () => {
     const isConfirmed = await confirm({
       content: t("study.modeling.storages.additionalConstraints.delete.confirm", {
-        name: constraintId,
+        name: constraint.name,
       }),
       alert: "error",
       titleIcon: DeleteIcon,
@@ -104,10 +89,6 @@ function Constraint() {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-
-  if (!constraint) {
-    throw new Error(t("study.area.storage.additionalConstraint.notFound", { id: constraintId }));
-  }
 
   return (
     <ViewWrapper>

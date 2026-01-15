@@ -12,11 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import MatrixUpload from "@/components/Matrix/components/MatrixUpload";
 import type { fetchMatrixFn } from "@/routes/-App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import type { StudyMetadata } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Box, Skeleton, Tooltip } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomScrollbar from "../CustomScrollbar";
@@ -141,7 +142,7 @@ function Matrix({
   ////////////////////////////////////////////////////////////////
 
   if (isLoading) {
-    return <Skeleton sx={{ height: 1, transform: "none" }} />;
+    return <DataGridSkeleton />;
   }
 
   if (error) {

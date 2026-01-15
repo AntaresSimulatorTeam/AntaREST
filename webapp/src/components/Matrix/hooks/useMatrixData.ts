@@ -63,7 +63,7 @@ export function useMatrixData({
 
   const { t } = useTranslation();
   const [index, setIndex] = useState<MatrixIndex>();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [updateCount, setUpdateCount] = useState(0);

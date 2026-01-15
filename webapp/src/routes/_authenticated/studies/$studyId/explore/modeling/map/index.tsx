@@ -23,7 +23,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
 import AutoSizer from "react-virtualized-auto-sizer";
-import useStudy from "../../../../../../-shared/hook/useStudy";
+import useStudy from "../../../-hooks/useStudy";
 import useDebouncedState from "../../../../../../../hooks/useDebouncedState";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {

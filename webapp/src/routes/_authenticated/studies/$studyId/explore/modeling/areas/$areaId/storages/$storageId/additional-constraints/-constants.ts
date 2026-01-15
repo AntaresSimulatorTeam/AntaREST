@@ -37,10 +37,10 @@ export const OPERATOR_OPTIONS: Options<StorageConstraintOperator> = [
   { value: "greater", label: ">" },
 ] as const;
 
-export const DEFAULT_CONSTRAINT_VALUES: StorageConstraintCreation = {
+export const DEFAULT_CONSTRAINT_VALUES = {
   name: "",
-  variable: "withdrawal",
+  variable: "netting",
   operator: "less",
   enabled: true,
   occurrences: [],
-};
+} satisfies StorageConstraintCreation;

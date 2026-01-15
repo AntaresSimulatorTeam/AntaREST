@@ -17,7 +17,7 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { getLink, updateLink } from "@/services/api/studies/links";
 import { AssetType, TransmissionCapacity } from "@/services/api/studies/links/constants";
 import type {

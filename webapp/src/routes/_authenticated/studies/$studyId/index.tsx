@@ -18,9 +18,9 @@ import usePromise from "@/hooks/usePromise";
 import { getVariantParents, getVariantTree } from "@/services/api/variant";
 import { Box } from "@mui/material";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import useStudy from "../../../-shared/hook/useStudy";
 import InformationView from "./-components/InformationView";
 import StudyTreeView from "./-components/StudyTreeView";
+import useStudy from "./-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
   component: StudyHome,

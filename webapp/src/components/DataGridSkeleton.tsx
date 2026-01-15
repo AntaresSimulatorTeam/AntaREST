@@ -12,16 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Box, styled } from "@mui/material";
+import { Skeleton } from "@mui/material";
 
-export const ConstraintElementRoot = styled(Box)(() => ({
-  display: "flex",
-  flexDirection: "column",
-}));
+function DataGridSkeleton() {
+  return <Skeleton sx={{ height: 1, transform: "none" }} />;
+}
 
-export const ConstraintElementData = styled(Box)(() => ({
-  width: "100%",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-}));
+export default DataGridSkeleton;

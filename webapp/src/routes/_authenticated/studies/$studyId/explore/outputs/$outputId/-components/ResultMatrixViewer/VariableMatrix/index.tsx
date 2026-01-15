@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import FilterableMatrixGrid, {
   type FilterableMatrixGridHandle,
 } from "@/components/Matrix/components/FilterableMatrixGrid";
@@ -30,7 +31,6 @@ import type {
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { AreaWithId, LinkElement } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Skeleton } from "@mui/material";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import type { OutputItemType } from "../../../-utils";
@@ -102,7 +102,7 @@ function VariableMatrix({
   return (
     <UsePromiseCond
       response={variableViewDataRes}
-      ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+      ifPending={() => <DataGridSkeleton />}
       ifFulfilled={(matrix) => {
         if (!matrix || !isNonEmptyMatrix(matrix.data)) {
           return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;

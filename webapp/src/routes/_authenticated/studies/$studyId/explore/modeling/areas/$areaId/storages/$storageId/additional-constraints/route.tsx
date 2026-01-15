@@ -16,10 +16,11 @@ import EmptyView from "@/components/page/EmptyView";
 import ListView from "@/components/page/ListView";
 import useDialog from "@/hooks/useDialog";
 import { storageQueries } from "@/queries/storages";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import AddConstraintDialog from "./-components/AddConstraintDialog";
 import { constraintsToList } from "./-utils";
 
@@ -38,6 +39,7 @@ function AdditionalConstraints() {
   const { studyId, areaId, storageId } = Route.useParams();
   const { openDialog } = useDialog();
   const study = useStudy();
+  const { t } = useTranslation();
 
   const { data: list } = useSuspenseQuery({
     ...storageQueries.constraintList(studyId, areaId, storageId),
@@ -66,10 +68,8 @@ function AdditionalConstraints() {
     <ListView
       splitId="storage-additionalConstraints"
       list={list}
-      emptyListContent={<EmptyView title="No additional constraints" />}
+      emptyListContent={<EmptyView title={t("study.bindingConstraints.empty")} />}
       onAdd={handleAdd}
     />
   );
 }
-
-export default AdditionalConstraints;

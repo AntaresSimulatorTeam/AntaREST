@@ -18,7 +18,7 @@ import { useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 function useStudy() {
-  const { studyId } = useParams({ strict: false });
+  const { studyId } = useParams({ from: "/_authenticated/studies/$studyId" });
   const study = useAppSelector((state) => (studyId ? getStudy(state, studyId) : undefined));
   const { t } = useTranslation();
 

@@ -16,7 +16,7 @@ import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import { createFileRoute } from "@tanstack/react-router";
-import useStudy from "../../../../../../-shared/hook/useStudy";
+import useStudy from "../../../-hooks/useStudy";
 import Fields from "./-components/Fields";
 import {
   getGeneralFormFields,

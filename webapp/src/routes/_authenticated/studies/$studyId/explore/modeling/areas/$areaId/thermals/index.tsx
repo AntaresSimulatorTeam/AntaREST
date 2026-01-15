@@ -22,7 +22,7 @@ import {
   getClustersWithCapacityTotals,
   toCapacityString,
 } from "@/routes/-App/Singlestudy/explore/Modelization/Areas/common/clustersUtils";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Box } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";

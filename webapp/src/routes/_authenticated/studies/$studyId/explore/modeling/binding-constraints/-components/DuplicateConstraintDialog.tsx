@@ -15,30 +15,33 @@
 import FormDialog from "@/components/dialogs/FormDialog";
 import StringFE from "@/components/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
+import { getNames } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 import ContentCopy from "@mui/icons-material/ContentCopy";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import type { BindingConstraint } from "../-utils";
+import useDuplicateBindingConstraint from "../-hooks/useDuplicateBindingConstraint";
 
 interface Props {
-  open: boolean;
-  onClose: VoidFunction;
-  constraintName: string;
-  existingConstraints: Array<BindingConstraint["id"]>;
-  onDuplicate: (newName: string) => Promise<void>;
+  constraintToDuplicate: BindingConstraint;
+  onCancel: VoidFunction;
 }
 
-function DuplicateConstraintDialog({
-  open,
-  onClose,
-  constraintName,
-  existingConstraints,
-  onDuplicate,
-}: Props) {
-  const [t] = useTranslation();
+function DuplicateConstraintDialog({ constraintToDuplicate, onCancel }: Props) {
+  const study = useStudy();
+  const { t } = useTranslation();
+  const duplicateConstraint = useDuplicateBindingConstraint();
+
+  const { data: existingNames } = useSuspenseQuery({
+    ...bindingConstraintQueries.list(study.id),
+    select: getNames,
+  });
 
   const defaultValues = {
-    name: `${constraintName} (copy)`,
+    name: `${constraintToDuplicate.name} (copy)`,
   };
 
   ////////////////////////////////////////////////////////////////
@@ -46,7 +49,11 @@ function DuplicateConstraintDialog({
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<typeof defaultValues>) => {
-    return onDuplicate(values.name);
+    duplicateConstraint.mutate({
+      studyId: study.id,
+      constraintId: constraintToDuplicate.id,
+      newConstraintName: values.name,
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -55,13 +62,13 @@ function DuplicateConstraintDialog({
 
   return (
     <FormDialog
+      open
       title={t("study.modeling.bindingConst.duplicate")}
       titleIcon={ContentCopy}
       maxWidth="sm"
-      open={open}
-      onCancel={onClose}
+      onCancel={onCancel}
       onSubmit={handleSubmit}
-      onSubmitSuccessful={onClose}
+      onSubmitSuccessful={onCancel}
       config={{ defaultValues }}
       allowSubmitOnPristine
     >
@@ -73,7 +80,7 @@ function DuplicateConstraintDialog({
           fullWidth
           rules={{
             validate: validateString({
-              existingValues: existingConstraints,
+              existingValues: existingNames,
               specialChars: "@&_-()",
             }),
           }}

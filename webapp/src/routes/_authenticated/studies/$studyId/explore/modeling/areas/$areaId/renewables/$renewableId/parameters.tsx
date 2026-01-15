@@ -19,7 +19,7 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";

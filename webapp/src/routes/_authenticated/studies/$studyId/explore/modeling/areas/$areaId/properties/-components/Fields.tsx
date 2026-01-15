@@ -17,7 +17,7 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import { useFormContextPlus } from "@/hooks/useFormContextPlus";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";

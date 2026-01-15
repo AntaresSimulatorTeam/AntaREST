@@ -19,7 +19,7 @@ import NumberFE from "@/components/fieldEditors/NumberFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";

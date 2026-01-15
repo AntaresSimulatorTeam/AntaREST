@@ -15,7 +15,7 @@
 import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
 import TabsView from "@/components/page/TabsView";
 import usePromise from "@/hooks/usePromise";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { createFileRoute, linkOptions, useNavigate, useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";

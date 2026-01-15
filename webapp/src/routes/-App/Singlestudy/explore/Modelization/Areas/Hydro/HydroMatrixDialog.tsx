@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import BasicDialog, { type BasicDialogProps } from "@/components/dialogs/BasicDialog";
 import Matrix from "@/components/Matrix";
 import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { Box, Button, Skeleton } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-// @ts-expect-error Temporary fix for missing lib
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../../types/types";
 import { getAllocationMatrix } from "./Allocation/utils";
@@ -132,7 +132,7 @@ function HydroMatrixDialog({ open, onClose, type }: Props) {
             canImport
           />
         ) : (
-          <Skeleton sx={{ height: 1, transform: "none" }} />
+          <DataGridSkeleton />
         )}
       </Box>
     </BasicDialog>

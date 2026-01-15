@@ -13,7 +13,7 @@
  */
 
 import Matrix from "@/components/Matrix";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { createFileRoute } from "@tanstack/react-router";
 import semver from "semver";
 

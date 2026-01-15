@@ -14,7 +14,7 @@
 
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { parseLinkId } from "@/services/api/studies/links/utils";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box } from "@mui/material";

@@ -23,38 +23,6 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/m
 function ModelingLayout() {
   const { t } = useTranslation();
   const params = Route.useParams();
-  // const dispatch = useAppDispatch();
-  // const navigate = useNavigate();
-  // const { areaId: paramAreaId } = useParams();
-  // const areas = useAppSelector((state) => getAreas(state, study.id));
-  // const links = useAppSelector((state) => getLinks(state, study.id));
-  // const areaId = useAppSelector(getCurrentAreaId);
-
-  // useEffect(() => {
-  //   if (!areaId && paramAreaId) {
-  //     dispatch(setCurrentArea(paramAreaId));
-  //   }
-  // }, [paramAreaId, dispatch, areaId]);
-
-  // const tabList = useMemo(() => {
-  // const basePath = `/studies/${study.id}/explore/modelization`;
-
-  // const handleAreasClick = () => {
-  //   if (areaId.length === 0 && areas.length > 0) {
-  //     const firstAreaId = areas[0].id ?? null;
-
-  //     if (firstAreaId) {
-  //       dispatch(setCurrentArea(firstAreaId));
-  //       navigate(`${basePath}/area/${firstAreaId}`, {
-  //         replace: true,
-  //       });
-  //     }
-  //   }
-  // };
-
-  // const areaPath = [basePath, "area", encodeURI(areaId || areas[0]?.id || "")].join("/");
-
-  // }, [areaId, areas, dispatch, links, navigate, study.id, t]);
 
   return (
     <TabsView
@@ -74,9 +42,6 @@ function ModelingLayout() {
             to: "/studies/$studyId/explore/modeling/areas",
             params,
           }),
-          // path: areaPath,
-          // onClick: handleAreasClick,
-          // disabled: areas.length === 0,
         },
         {
           id: "links",
@@ -86,10 +51,14 @@ function ModelingLayout() {
             params,
           }),
         },
-        // {
-        //   label: t("study.bindingConstraints"),
-        //   path: `${basePath}/bindingcontraint`,
-        // },
+        {
+          id: "bindingConstraints",
+          label: t("study.bindingConstraints"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/binding-constraints",
+            params,
+          }),
+        },
       ]}
       divider
     />

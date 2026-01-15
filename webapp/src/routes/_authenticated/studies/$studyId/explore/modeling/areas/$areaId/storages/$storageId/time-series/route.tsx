@@ -13,7 +13,7 @@
  */
 
 import TabsView from "@/components/page/TabsView";
-import useStudy from "@/routes/-shared/hook/useStudy";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
