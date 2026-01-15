@@ -15,28 +15,30 @@
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "@/redux/selectors";
-import type { StudyMetadata } from "@/types/types";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
 import {
   type InflowStructureFields,
   getInflowStructureFields,
   updateInflowStructureFields,
-} from "./utils";
+} from "./-utils";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/inflow-structure/",
+)({
+  component: InflowStructure,
+});
 
 function InflowStructure() {
-  const [t] = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const areaId = useAppSelector(getCurrentAreaId);
+  const { studyId, areaId } = Route.useParams();
+  const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<InflowStructureFields>) => {
-    return updateInflowStructureFields(study.id, areaId, data.values);
+    return updateInflowStructureFields(studyId, areaId, data.values);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -45,9 +47,9 @@ function InflowStructure() {
 
   return (
     <Form
-      key={study.id + areaId}
+      key={areaId}
       config={{
-        defaultValues: () => getInflowStructureFields(study.id, areaId),
+        defaultValues: () => getInflowStructureFields(studyId, areaId),
       }}
       onSubmit={handleSubmit}
       miniSubmitButton
@@ -87,5 +89,3 @@ function InflowStructure() {
     </Form>
   );
 }
-
-export default InflowStructure;

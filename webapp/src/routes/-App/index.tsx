@@ -13,11 +13,9 @@
  */
 
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import Hydro from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro";
 import Allocation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/Allocation";
 import Correlation from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/Correlation";
 import HydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/HydroMatrix";
-import ManagementOptions from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/ManagementOptions";
 import SplitHydroMatrix from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/SplitHydroMatrix";
 import { HYDRO_ROUTES } from "../_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/utils";
 
@@ -27,8 +25,7 @@ function App() {
       <Routes>
         <Route path="area/:areaId">
           <Route path="hydro" element={<Navigate to="management" replace />} />
-          <Route path="hydro" element={<Hydro />}>
-            <Route path="management" element={<ManagementOptions />} />
+          <Route path="hydro">
             <Route path="allocation" element={<Allocation />} />
             <Route path="correlation" element={<Correlation />} />
             {HYDRO_ROUTES.map(({ path, type, isSplitView, splitConfig, form, sx }) => {
