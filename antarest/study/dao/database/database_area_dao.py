@@ -24,16 +24,14 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
+from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE, DEFAULT_LAYER_ID
+from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
 def area_exists(session: Session, study_id: str, area_id: str) -> bool:
-    stmt = select(AREA_TABLE.c.area_id).where(
-        (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id)
-    )
+    stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
     return session.execute(stmt).fetchone() is not None
 
 

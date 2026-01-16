@@ -20,11 +20,9 @@ These tables store study data (areas, UI positions, etc.) in the database instea
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
+from antarest.study.business.model.area_model import DEFAULT_LAYER_ID
 
 metadata = Base.metadata
-
-# Default layer ID constant
-DEFAULT_LAYER_ID = "0"
 
 AREA_TABLE = Table(
     "area",

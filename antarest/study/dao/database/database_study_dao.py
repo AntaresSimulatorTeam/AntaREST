@@ -14,11 +14,11 @@
 Database implementation of StudyDao using SQLAlchemy.
 
 This DAO provides database-backed storage for studies when storage_mode=DATABASE.
-Currently implements only Area operations via composition with DatabaseAreaDao.
+Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
 from pathlib import PurePosixPath
-from typing import Dict, Iterator, List, Optional, Sequence
+from typing import Dict, Iterator, Optional, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -26,7 +26,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -64,15 +63,9 @@ from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class DatabaseStudyDao(StudyDao):
+class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
     """
-    Database implementation of StudyDao for area operations.
-
-    This DAO uses database storage for areas when storage_mode=DATABASE.
-    It uses composition with DatabaseAreaDao to provide area-related functionality.
-
-    Note: This is a minimal implementation focused on area operations only.
-    Some methods from StudyDao are not supported in database mode and will raise NotImplementedError.
+    Database implementation of StudyDao.
 
     Note: Write operations do NOT commit transactions. The caller (service layer)
     is responsible for transaction management (commit/rollback).
@@ -90,10 +83,7 @@ class DatabaseStudyDao(StudyDao):
             study_id: The study ID for database queries
             db_session: SQLAlchemy session for database operations
         """
-        self._study_id = study_id
-        self._db_session = db_session
-        # Use composition for area operations
-        self._area_dao = DatabaseAreaDao(study_id, db_session)
+        DatabaseAreaDao.__init__(self, study_id, db_session)
 
     # Implementation of abstract methods required by StudyDao
     @override
@@ -839,32 +829,3 @@ class DatabaseStudyDao(StudyDao):
     @override
     def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    # Area operations - delegated to DatabaseAreaDao via composition
-    @override
-    def get_all_areas_info(self) -> List[AreaInfo]:
-        return self._area_dao.get_all_areas_info()
-
-    @override
-    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
-        return self._area_dao.get_all_areas_ui_info()
-
-    @override
-    def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
-        return self._area_dao.get_area_ui(area_id, layer)
-
-    @override
-    def save_area(self, area_name: str) -> None:
-        self._area_dao.save_area(area_name)
-
-    @override
-    def delete_area(self, area_id: str) -> None:
-        self._area_dao.delete_area(area_id)
-
-    @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        self._area_dao.save_area_ui(area_id, layer, area_ui)
-
-    @override
-    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
-        self._area_dao.save_layer_areas(layer_id, area_ids)
