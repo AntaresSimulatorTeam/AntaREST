@@ -454,6 +454,8 @@ class RawStudyInterface(StudyInterface):
         # Update editor metadata
         self._update_editor_and_lastsave(dao)
 
+        db.session.commit()
+
         # Notify changes to child variants
         self._variant_study_service.on_parent_change(study.id)
 
@@ -464,9 +466,8 @@ class RawStudyInterface(StudyInterface):
             last_save = current_time().timestamp()
             # Update file (no-op for database storage mode)
             dao.update_antares_file(user_name, last_save)
-            # Update DB metadata
+            # Update DB metadata (will be committed by caller)
             self._study.editor = user_name
-            self._repository.save(self._study)
 
 
 class VariantStudyInterface(StudyInterface):
