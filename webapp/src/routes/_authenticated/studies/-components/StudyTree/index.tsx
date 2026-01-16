@@ -76,7 +76,7 @@ function StudyTree() {
       <TreeSection
         variant="external"
         title={t("studies.tree.external", { defaultValue: "External Storage" })}
-        subtitle={t("studies.tree.readOnly", { defaultValue: "(read-only)" })}
+        //subtitle={t("studies.tree.readOnly", { defaultValue: "(read-only)" })}
         icon={<StorageIcon />}
       >
         <ExternalTree studies={externalStudies} onNodeClick={handleNodeClick} />

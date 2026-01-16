@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { ExternalTreeNodeMetadata, FolderDTO } from "../types";
+import type { FolderDTO } from "@/queries/explorer/schemas";
+import type { ExternalTreeNodeMetadata } from "../types";
 import { insertFoldersIfNotExist } from "../utils";
 import { FIXTURES } from "./fixtures";
 

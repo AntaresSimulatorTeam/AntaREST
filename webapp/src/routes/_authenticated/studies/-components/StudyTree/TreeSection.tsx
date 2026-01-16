@@ -52,7 +52,7 @@ const variantStyles: Record<
     },
     icon: {
       color: "info.main",
-      fontSize: 20,
+      fontSize: 18,
     },
     title: {
       color: "info.main",
@@ -69,7 +69,7 @@ const variantStyles: Record<
     },
     icon: {
       color: "text.secondary",
-      fontSize: 20,
+      fontSize: 18,
     },
     title: {
       color: "text.secondary",
@@ -88,24 +88,11 @@ const addFolderButtonStyles: Record<TreeSectionVariant, SxProps<Theme>> = {
   managed: {
     ml: "auto !important",
     p: 0.5,
-    color: "info.main",
-    opacity: 0.75,
-    "&:hover": {
-      opacity: 1,
-      backgroundColor: (theme) => `${theme.palette.info.main}15`,
-      transform: "scale(1.05)",
-    },
   },
   external: {
     ml: "auto !important",
     p: 0.5,
     color: "text.secondary",
-    opacity: 0.75,
-    "&:hover": {
-      opacity: 1,
-      backgroundColor: "action.hover",
-      transform: "scale(1.05)",
-    },
   },
 };
 

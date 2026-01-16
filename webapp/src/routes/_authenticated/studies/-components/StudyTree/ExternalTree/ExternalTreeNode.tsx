@@ -12,31 +12,38 @@
  * This file is part of the Antares project.
  */
 
-import TreeItemEnhanced from "@/components/TreeItemEnhanced";
-import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/utils/constants";
 import RadarIcon from "@mui/icons-material/Radar";
 import { Tooltip } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/utils/constants";
 import { treeItemStyles, treeNodeIcons, workspaceItemStyles } from "./styles";
 import type { ExternalTreeNodeMetadata, ExternalTreeNodeProps } from "./types";
 
-function prioritizeDefault(
+// Prioritizes the default workspace in sorting
+const prioritizeDefault = (
   folderA: ExternalTreeNodeMetadata,
   folderB: ExternalTreeNodeMetadata,
-): number {
+): number => {
   if (folderA.name === DEFAULT_WORKSPACE_NAME) {
     return -1;
-  } else if (folderB.name === DEFAULT_WORKSPACE_NAME) {
-    return 1;
-  } else {
-    return 0;
   }
-}
+  if (folderB.name === DEFAULT_WORKSPACE_NAME) {
+    return 1;
+  }
+  return 0;
+};
 
-const nameSort = R.sortBy(R.compose(R.toLower, R.prop("name")));
-const defaultFirstSort = R.sortWith([prioritizeDefault]);
+const sortByName = R.sortBy<ExternalTreeNodeMetadata>(R.compose(R.toLower, R.prop("name")));
+const sortDefaultFirst = R.sortWith<ExternalTreeNodeMetadata>([prioritizeDefault]);
+const filterScannedStudies = R.reject<ExternalTreeNodeMetadata>(
+  (node) => node.isScannedStudy === true,
+);
+
+const isWorkspacePath = (path: string): boolean =>
+  path.startsWith("/") && !path.slice(1).includes("/");
 
 function ExternalTreeNode({
   node,
@@ -45,17 +52,17 @@ function ExternalTreeNode({
   exploredFolders,
 }: ExternalTreeNodeProps) {
   const { hasChildren, children, path, name, isStudyFolder, alias } = node;
+  const { t } = useTranslation();
+
   const isLoading = itemsLoading.includes(path);
   const hasUnloadedChildren =
     hasChildren && children.length === 0 && !exploredFolders.includes(path);
-  // A workspace is a direct child of root: path is "/<workspace>" with no additional slashes
-  const isWorkspace = path.startsWith("/") && !path.slice(1).includes("/");
-  const { t } = useTranslation();
+  const isWorkspace = isWorkspacePath(path);
 
   const sortedChildren = useMemo(() => {
-    const nodesToDisplay = children.filter((s) => !s.isScannedStudy);
-    const sortedByName = nameSort(nodesToDisplay);
-    return name === ROOT_NODE_NAME ? defaultFirstSort(sortedByName) : sortedByName;
+    const nodesToDisplay = filterScannedStudies(children);
+    const sortedByName = sortByName(nodesToDisplay);
+    return name === ROOT_NODE_NAME ? sortDefaultFirst(sortedByName) : sortedByName;
   }, [children, name]);
 
   const label = alias ? `${alias} (${name})` : name;
@@ -101,8 +108,7 @@ function ExternalTreeNode({
       }}
       sx={isWorkspace ? workspaceItemStyles : treeItemStyles}
     >
-      {/* the loading tree item bellow may seem useless but it's mandatory to display
-          the little arrow on the left on folders without scanned studies*/}
+      {/* Loading placeholder to show expand arrow for folders with unloaded children */}
       {hasUnloadedChildren && (
         <TreeItemEnhanced
           itemId={`${path}//loading`}

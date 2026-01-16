@@ -22,13 +22,11 @@ import TreeItemEnhanced from "@/components/TreeItemEnhanced";
 import { ROOT_NODE_NAME } from "@/components/utils/constants";
 import EditableTreeItem from "./EditableTreeItem";
 import {
-  addSubFolderButtonStyles,
+  actionButtonStyles,
   addSubFolderIconStyles,
-  deleteButtonStyles,
   deleteIconStyles,
   nodeActionsContainerStyles,
   nodeLabelContainerStyles,
-  renameButtonStyles,
   renameIconStyles,
   treeItemStyles,
   treeNodeIcons,
@@ -133,13 +131,13 @@ function ManagedTreeNode({
         <Box sx={nodeLabelContainerStyles}>
           <Box component="span">{name}</Box>
           <Box sx={nodeActionsContainerStyles}>
-            <IconButton size="small" onClick={handleAddSubFolder} sx={addSubFolderButtonStyles}>
+            <IconButton size="small" onClick={handleAddSubFolder} sx={actionButtonStyles}>
               <CreateNewFolderIcon sx={addSubFolderIconStyles} />
             </IconButton>
-            <IconButton size="small" onClick={handleStartUpdate} sx={renameButtonStyles}>
+            <IconButton size="small" onClick={handleStartUpdate} sx={actionButtonStyles}>
               <EditIcon sx={renameIconStyles} />
             </IconButton>
-            <IconButton size="small" onClick={handleDelete} sx={deleteButtonStyles}>
+            <IconButton size="small" onClick={handleDelete} sx={actionButtonStyles}>
               <DeleteIcon sx={deleteIconStyles} />
             </IconButton>
           </Box>

@@ -24,20 +24,6 @@ export interface ExternalTreeNodeMetadata {
   alias?: string;
 }
 
-export interface FolderDTO {
-  name: string;
-  path: string;
-  workspace: string;
-  parentPath: string;
-  hasChildren?: boolean;
-  isStudyFolder?: boolean;
-}
-
-export interface WorkspaceDTO {
-  name: string;
-  diskName: string;
-}
-
 export interface ExternalTreeNodeProps {
   node: ExternalTreeNodeMetadata;
   itemsLoading: string[];
