@@ -211,7 +211,9 @@ class StorageConfig:
             blob_gc_dry_run=data.get("blob_gc_dry_run", defaults.blob_gc_dry_run),
             watcher_scan_sleeping_time=data.get("watcher_scan_sleeping_time", defaults.watcher_scan_sleeping_time),
             watcher_scan_dry_run=data.get("watcher_scan_dry_run", defaults.watcher_scan_dry_run),
-            database_mode_enabled=data.get("database_mode_enabled", defaults.database_mode_enabled),
+            database_mode_enabled=data.get("study", {})
+            .get("storage", {})
+            .get("database_mode_enabled", defaults.database_mode_enabled),
         )
 
     @classmethod

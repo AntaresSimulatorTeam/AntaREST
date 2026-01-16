@@ -102,18 +102,13 @@ class DatabaseAreaDao(AreaDao):
             )
             .where(AREA_TABLE.c.study_id == study_id)
         )
-        rows = session.execute(stmt).fetchall()
-
-        if not rows:
-            return {}
+        rows = session.execute(stmt)
 
         # Group UI rows by area_id
         ui_by_area: Dict[str, List[Any]] = {}
         for row in rows:
             area_id = row.area_id
-            if area_id not in ui_by_area:
-                ui_by_area[area_id] = []
-            ui_by_area[area_id].append(row)
+            ui_by_area.setdefault(area_id, []).append(row)
 
         # Build result
         result: Dict[str, AreaUIData] = {}
