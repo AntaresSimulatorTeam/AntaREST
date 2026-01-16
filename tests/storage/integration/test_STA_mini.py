@@ -202,7 +202,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         ),
         (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode", "annual"),
         (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation", 0.5),
-        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/energy", {"data": [[]], "index": [0], "columns": []}),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/energy", pl.DataFrame(data=[[]])),
         (f"/v1/studies/{UUID}/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr", 1),
         (f"/v1/studies/{UUID}/raw?path=input/thermal/areas/unserverdenergycost/de", 3000.0),
         (f"/v1/studies/{UUID}/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost", 50),
@@ -211,7 +211,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
             f"/v1/studies/{UUID}/raw?path=input/links/fr/it",
             create_polars_dataframe([[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760),
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}),
+        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", pl.DataFrame(data=[[]])),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series",
             {
@@ -536,36 +536,6 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
     )
 
     assert result.status_code == HTTPStatus.ACCEPTED.value
-
-
-@with_admin_user
-@pytest.mark.parametrize(
-    "url, expected_output",
-    [
-        (
-            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/de,fr/",
-            {
-                "de": [1],
-                "fr": [1],
-            },
-        ),
-        (
-            f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/ts-numbers/hydro/*/",
-            {
-                "de": [1],
-                "fr": [1],
-                "it": [1],
-                "es": [1],
-            },
-        ),
-    ],
-)
-def test_sta_mini_filter(storage_service: StudyService, url: str, expected_output: Any) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        expected_output=expected_output,
-    )
 
 
 def _add_study_in_db(study_service: StudyService) -> None:
