@@ -96,8 +96,8 @@ class MatrixFormat(EnumIgnoreCase):
 
         buffer = io.BytesIO()
         if self == MatrixFormat.JSON:
-            dataframe.to_pandas().to_json(buffer, orient="split")
-            return Response(content=buffer.getvalue(), media_type="application/json")
+            content = to_json(dataframe.to_pandas().to_dict(orient="split"))
+            return Response(content=content, media_type="application/json")
 
         else:
             compression_mapping: dict[MatrixFormat, Literal["zstd", "uncompressed"]] = {
