@@ -60,8 +60,6 @@ function Parameters() {
       config={{ defaultValues: () => getRenewableCluster(study.id, areaId, renewableId) }}
       onSubmit={handleSubmit}
       enableUndoRedo
-      disableStickyFooter
-      hideFooterDivider
     >
       {({ control }) => (
         <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>
