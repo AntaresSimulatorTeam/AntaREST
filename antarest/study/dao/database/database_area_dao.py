@@ -19,7 +19,7 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 from typing import Any, Dict, List
 
 import polars as pl
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import case, delete, insert, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -28,6 +28,18 @@ from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIDat
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE, DEFAULT_LAYER_ID
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+
+
+def area_exists(session: Session, study_id: str, area_id: str) -> bool:
+    stmt = select(AREA_TABLE.c.area_id).where(
+        (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id)
+    )
+    return session.execute(stmt).fetchone() is not None
+
+
+def validate_area_exists(session: Session, study_id: str, area_id: str) -> None:
+    if not area_exists(session, study_id, area_id):
+        raise AreaNotFound(area_id)
 
 
 class DatabaseAreaDao(AreaDao):
@@ -159,41 +171,27 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Check if area exists
-        stmt_area = select(AREA_TABLE.c.area_id).where(
-            (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id)
-        )
-        if not session.execute(stmt_area).fetchone():
-            raise AreaNotFound(area_id)
+        # Fetch both specified layer and default layer in one query
+        layers_to_fetch = [layer, DEFAULT_LAYER_ID] if layer != DEFAULT_LAYER_ID else [DEFAULT_LAYER_ID]
 
-        # Get UI for the specified layer
-        stmt_ui = select(AREA_UI_TABLE).where(
+        stmt = select(AREA_UI_TABLE).where(
             (AREA_UI_TABLE.c.study_id == study_id)
             & (AREA_UI_TABLE.c.area_id == area_id)
-            & (AREA_UI_TABLE.c.layer_id == layer)
+            & (AREA_UI_TABLE.c.layer_id.in_(layers_to_fetch))
         )
-        ui_row = session.execute(stmt_ui).fetchone()
+        rows = {row.layer_id: row for row in session.execute(stmt)}
+
+        # If no UI found, check if area exists (to raise proper error)
+        if not rows:
+            validate_area_exists(session, study_id, area_id)
+            return AreaUI()
+
+        # Prefer specified layer, fall back to default
+        ui_row = rows.get(layer) or rows.get(DEFAULT_LAYER_ID)
 
         if ui_row:
             return AreaUI(x=ui_row.x, y=ui_row.y, color_rgb=(ui_row.color_r, ui_row.color_g, ui_row.color_b))
 
-        # If layer not found, fall back to default layer
-        if layer != DEFAULT_LAYER_ID:
-            stmt_ui_default = select(AREA_UI_TABLE).where(
-                (AREA_UI_TABLE.c.study_id == study_id)
-                & (AREA_UI_TABLE.c.area_id == area_id)
-                & (AREA_UI_TABLE.c.layer_id == DEFAULT_LAYER_ID)
-            )
-            ui_row_default = session.execute(stmt_ui_default).fetchone()
-
-            if ui_row_default:
-                return AreaUI(
-                    x=ui_row_default.x,
-                    y=ui_row_default.y,
-                    color_rgb=(ui_row_default.color_r, ui_row_default.color_g, ui_row_default.color_b),
-                )
-
-        # If no UI found at all, return defaults
         return AreaUI()
 
     @override
@@ -212,13 +210,7 @@ class DatabaseAreaDao(AreaDao):
 
         area_id = transform_name_to_id(area_name)
 
-        # Check if area already exists
-        stmt_check = select(AREA_TABLE.c.area_id).where(
-            (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id)
-        )
-        existing = session.execute(stmt_check).fetchone()
-
-        if existing:
+        if area_exists(session, study_id, area_id):
             raise ValueError(f"Area '{area_name}' already exists and could not be created")
 
         # Insert new area
@@ -254,12 +246,7 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Check if area exists
-        stmt_check = select(AREA_TABLE.c.area_id).where(
-            (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id)
-        )
-        if not session.execute(stmt_check).fetchone():
-            raise AreaNotFound(area_id)
+        validate_area_exists(session, study_id, area_id)
 
         # Delete area (cascade will delete area_ui automatically)
         stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
@@ -281,12 +268,7 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Check if area exists
-        stmt_area = select(AREA_TABLE.c.area_id).where(
-            (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id)
-        )
-        if not session.execute(stmt_area).fetchone():
-            raise AreaNotFound(area_id)
+        validate_area_exists(session, study_id, area_id)
 
         r, g, b = area_ui_data.color_rgb
 
@@ -335,29 +317,43 @@ class DatabaseAreaDao(AreaDao):
                      Areas not in this list will be removed from the layer.
 
         Raises:
-            LayerNotFound: If the layer does not exist.
-
-        Note: This implementation is simplified for now. Layer existence check
-              and full layer management will be implemented when layers are migrated to database.
+            AreaNotFound: If any area_id does not exist.
         """
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Get all valid area_ids for this study
-        stmt_areas = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_id == study_id)
-        valid_area_ids = {row.area_id for row in session.execute(stmt_areas).fetchall()}
-
-        # Get current areas in this study that have this layer
-        stmt_existing = select(AREA_UI_TABLE.c.area_id).where(
-            (AREA_UI_TABLE.c.study_id == study_id) & (AREA_UI_TABLE.c.layer_id == layer_id)
+        # Get all areas and which ones already have this layer
+        stmt = (
+            select(
+                AREA_TABLE.c.area_id,
+                case((AREA_UI_TABLE.c.area_id.isnot(None), True), else_=False).label("has_layer"),
+            )
+            .select_from(
+                AREA_TABLE.outerjoin(
+                    AREA_UI_TABLE,
+                    (AREA_TABLE.c.area_id == AREA_UI_TABLE.c.area_id)
+                    & (AREA_UI_TABLE.c.study_id == study_id)
+                    & (AREA_UI_TABLE.c.layer_id == layer_id),
+                )
+            )
+            .where(AREA_TABLE.c.study_id == study_id)
         )
-        existing_area_ids = {row.area_id for row in session.execute(stmt_existing).fetchall()}
 
-        # Filter target area_ids to only include valid ones
-        target_area_ids = {aid for aid in area_ids if aid in valid_area_ids}
+        all_area_ids = set()
+        areas_with_layer = set()
+        for row in session.execute(stmt):
+            all_area_ids.add(row.area_id)
+            if row.has_layer:
+                areas_with_layer.add(row.area_id)
+
+        # Check for invalid area_ids
+        target_area_ids = set(area_ids)
+        invalid_ids = target_area_ids - all_area_ids
+        if invalid_ids:
+            raise AreaNotFound(next(iter(invalid_ids)))
 
         # Remove layer from areas not in the target list
-        to_remove = existing_area_ids - target_area_ids
+        to_remove = areas_with_layer - target_area_ids
         if to_remove:
             stmt_delete = delete(AREA_UI_TABLE).where(
                 (AREA_UI_TABLE.c.study_id == study_id)
@@ -367,7 +363,7 @@ class DatabaseAreaDao(AreaDao):
             session.execute(stmt_delete)
 
         # Add layer to areas that don't have it yet (batch operation to avoid N+1 queries)
-        to_add = target_area_ids - existing_area_ids
+        to_add = target_area_ids - areas_with_layer
         if to_add:
             # Batch fetch all default UIs for areas to add
             stmt_defaults = select(AREA_UI_TABLE).where(
