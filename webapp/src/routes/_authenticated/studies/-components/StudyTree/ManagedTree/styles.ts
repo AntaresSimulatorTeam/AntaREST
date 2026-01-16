@@ -106,43 +106,20 @@ export const nodeActionsContainerStyles: SxProps<Theme> = {
   gap: 0.25,
 };
 
-const baseActionButtonStyles: SxProps<Theme> = {
+export const actionButtonStyles: SxProps<Theme> = {
   p: 0.25,
   opacity: 0,
   ".MuiTreeItem-content:hover &": {
-    opacity: 0.8,
-  },
-};
-
-export const renameButtonStyles: SxProps<Theme> = {
-  ...baseActionButtonStyles,
-  "&:hover": {
-    backgroundColor: (theme) => `${theme.palette.warning.main}10`,
+    opacity: 1,
   },
 };
 
 export const renameIconStyles: SxProps<Theme> = {
   fontSize: 16,
-  color: "primary.main",
-};
-
-export const addSubFolderButtonStyles: SxProps<Theme> = {
-  ...baseActionButtonStyles,
-  "&:hover": {
-    backgroundColor: (theme) => `${theme.palette.info.main}10`,
-  },
 };
 
 export const addSubFolderIconStyles: SxProps<Theme> = {
   fontSize: 16,
-  color: "info.main",
-};
-
-export const deleteButtonStyles: SxProps<Theme> = {
-  ...baseActionButtonStyles,
-  "&:hover": {
-    backgroundColor: (theme) => `${theme.palette.error.main}10`,
-  },
 };
 
 export const deleteIconStyles: SxProps<Theme> = {
