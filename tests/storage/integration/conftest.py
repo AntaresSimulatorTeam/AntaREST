@@ -50,7 +50,7 @@ def sta_mini_path(tmp_path: Path) -> Path:
     return tmp_path / "studies" / "STA-mini"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def sta_mini_zip_path(project_path: Path) -> Path:
     return project_path / "examples/studies/STA-mini.zip"
 
@@ -69,8 +69,11 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
     return target
 
 
-@pytest.fixture
-def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tuple[StudyService, OutputService, Config]:
+@pytest.fixture(scope="session")
+def services(
+    tmp_path_factory: Path, project_path: Path, sta_mini_zip_path: Path
+) -> tuple[StudyService, OutputService, Config]:
+    tmp_path = tmp_path_factory.mktemp("tmp_path")
     path_studies = tmp_path / "studies"
 
     path_resources = project_path / "resources"
@@ -166,16 +169,16 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
     return study_service, output_service, config
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def storage_service(services: tuple[StudyService, OutputService]) -> StudyService:
     return services[0]
 
 
-@pytest.fixture(name="output_service")
+@pytest.fixture(name="output_service", scope="session")
 def output_service_fixture(services: tuple[StudyService, OutputService]) -> OutputService:
     return services[1]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def config(services: tuple[StudyService, OutputService, Config]) -> Config:
     return services[2]
