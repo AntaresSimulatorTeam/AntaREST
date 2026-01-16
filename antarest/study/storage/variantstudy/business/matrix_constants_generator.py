@@ -19,10 +19,10 @@ from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixSe
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
-    FIXED_4_COLUMNS,
-    FIXED_8_COLUMNS,
-    NULL_MATRIX,
-    NULL_SCENARIO_MATRIX,
+    fixed_4_columns,
+    fixed_8_columns,
+    null_matrix,
+    null_scenario_matrix,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
@@ -103,10 +103,10 @@ class GeneratorMatrixConstants:
         self.hashes[LINK_DIRECT] = self.matrix_service.add_predefined_matrix(matrix_constants.link.v8.direct)
         self.hashes[LINK_INDIRECT] = self.matrix_service.add_predefined_matrix(matrix_constants.link.v8.indirect)
 
-        self.hashes[NULL_MATRIX_NAME] = self.matrix_service.add_predefined_matrix(NULL_MATRIX)
-        self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(NULL_SCENARIO_MATRIX)
-        self.hashes[RESERVES_TS] = self.matrix_service.add_predefined_matrix(FIXED_4_COLUMNS)
-        self.hashes[MISCGEN_TS] = self.matrix_service.add_predefined_matrix(FIXED_8_COLUMNS)
+        self.hashes[NULL_MATRIX_NAME] = self.matrix_service.add_predefined_matrix(null_matrix)
+        self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(null_scenario_matrix)
+        self.hashes[RESERVES_TS] = self.matrix_service.add_predefined_matrix(fixed_4_columns)
+        self.hashes[MISCGEN_TS] = self.matrix_service.add_predefined_matrix(fixed_8_columns)
 
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87
