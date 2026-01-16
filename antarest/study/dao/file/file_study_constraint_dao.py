@@ -263,14 +263,14 @@ def generate_replacement_matrices(
             BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
             BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
             BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
-        }[new_time_step].tolist()
+        }[new_time_step]().tolist()
         yield target, matrix
     else:
         matrix = {
             BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
             BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
-        }[new_time_step].tolist()
+        }[new_time_step]().tolist()
         matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[current_operator]
         for matrix_name in matrices_to_replace:
             matrix_id = matrix_name.format(bc_id=bc_id)

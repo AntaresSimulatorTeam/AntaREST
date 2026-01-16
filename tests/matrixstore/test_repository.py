@@ -253,7 +253,7 @@ class TestMatrixContentRepository:
         """
         trial_count = 10
         # note: important to have different instances, which will be the cas in real usage
-        #       when using the same instance, polars can deadlock
+        #       when using the same instance, polars may deadlock
         matrix1 = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
         matrix2 = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
 

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from collections.abc import Callable
 from typing import List, TypedDict
 
 import numpy as np
@@ -28,24 +28,31 @@ class MatrixInfo(TypedDict, total=False):
     name: str
     freq: MatrixFrequency
     start_version: StudyVersion
-    default_empty: NpArray
+    default_empty: Callable[[], NpArray]
 
 
-default_maxpower = np.zeros((365, 4), dtype=np.float64)
-default_maxpower[:, 1] = 24
-default_maxpower[:, 3] = 24
-default_maxpower.flags.writeable = False
+def default_maxpower() -> NpArray:
+    maxpower = np.zeros((365, 4), dtype=np.float64)
+    maxpower[:, 1] = 24
+    maxpower[:, 3] = 24
+    return maxpower
 
-default_reservoir = np.zeros((365, 3), dtype=np.float64)
-default_reservoir[:, 1] = 0.5
-default_reservoir[:, 2] = 1
-default_reservoir.flags.writeable = False
 
-default_credit_modulation = np.ones((2, 100), dtype=np.float64)
-default_credit_modulation.flags.writeable = False
+def default_reservoir() -> NpArray:
+    reservoir = np.zeros((365, 3), dtype=np.float64)
+    reservoir[:, 1] = 0.5
+    reservoir[:, 2] = 1
+    reservoir.flags.writeable = False
+    return reservoir
 
-default_water_values = np.zeros((365, 101), dtype=np.float64)
-default_water_values.flags.writeable = False
+
+def default_credit_modulation() -> NpArray:
+    return np.ones((2, 100), dtype=np.float64)
+
+
+def default_water_values() -> NpArray:
+    return np.zeros((365, 101), dtype=np.float64)
+
 
 INITIAL_VERSION = StudyVersion.parse(0)
 # noinspection SpellCheckingInspection

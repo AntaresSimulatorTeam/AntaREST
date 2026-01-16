@@ -13,7 +13,7 @@ import io
 import logging
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional, TypeAlias
 
 import numpy as np
 import polars as pl
@@ -34,6 +34,9 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 logger = logging.getLogger(__name__)
 
 
+MatrixSupplier: TypeAlias = Callable[[], NpArray]
+
+
 class InputSeriesMatrix(MatrixNode):
     """
     Generic node to handle input matrix behavior
@@ -45,17 +48,12 @@ class InputSeriesMatrix(MatrixNode):
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
-        default_empty: Optional[NpArray] = None,  # optional only for the capacity matrix in Xpansion
+        default_empty: Optional[MatrixSupplier] = None,  # optional only for the capacity matrix in Xpansion
         should_exist: bool = True,
     ):
         super().__init__(matrix_mapper=matrix_mapper, config=config, freq=freq)
         self.nb_columns = nb_columns
-        if default_empty is None:
-            self.default_empty = None
-        else:
-            # Clone the template value and make it writable
-            self.default_empty = np.copy(default_empty)
-            self.default_empty.flags.writeable = True
+        self.default_empty = default_empty
         # Removes the .link suffix if the matrix is normalized
         self.config.path = self.config.path.parent / self.config.path.name.removesuffix(".link")
         self.should_exist = should_exist
@@ -76,7 +74,7 @@ class InputSeriesMatrix(MatrixNode):
                 # If so, we shouldn't raise but just return the `default_empty` value
                 if not self.should_exist:
                     if self.default_empty is not None:
-                        return create_polars_dataframe(self.default_empty)
+                        return create_polars_dataframe(self.default_empty())
                     return pl.DataFrame()
                 # Otherwise, we raise a 404 'Not Found' exception.
                 logger.warning(f"Matrix file'{file_path}' not found")
@@ -85,7 +83,7 @@ class InputSeriesMatrix(MatrixNode):
                 raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
         if matrix.is_empty() and self.default_empty is not None:
-            matrix = create_polars_dataframe(self.default_empty)
+            matrix = create_polars_dataframe(self.default_empty())
         stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
         return matrix
 
@@ -93,7 +91,7 @@ class InputSeriesMatrix(MatrixNode):
     def write_dataframe(self, df: pl.DataFrame) -> None:
         # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
         # This way, we can write the content quicker, and the file takes less place on the fs.
-        if df.is_empty() or self.default_empty is not None and np.array_equal(df.to_numpy(), self.default_empty):
+        if df.is_empty() or self.default_empty is not None and np.array_equal(df.to_numpy(), self.default_empty()):
             self.config.path.write_text("")
         else:
             write_dataframe_in_tsv_format(df, self.config.path)
