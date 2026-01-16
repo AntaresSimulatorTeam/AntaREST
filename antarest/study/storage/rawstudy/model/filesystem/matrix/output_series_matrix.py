@@ -54,12 +54,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         self.freq = freq
 
     @override
-    def get_lazy_content(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> str:
+    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
         # noinspection SpellCheckingInspection
         return f"matrixfile://{self.config.path.name}"
 
