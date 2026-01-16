@@ -59,6 +59,7 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
@@ -2453,6 +2454,9 @@ class StudyService:
         # Return a dataframe when possible instead of less memory & computation - efficient python objects
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
+        elif isinstance(node, OutputSeriesMatrix):
+            pandas_df = node.parse_dataframe()
+            return create_polars_dataframe(pandas_df.to_numpy())
 
         return node.get(url=relative_url, depth=depth, formatted=formatted)
 
