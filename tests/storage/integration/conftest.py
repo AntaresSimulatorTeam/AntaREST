@@ -67,7 +67,7 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
 @pytest.fixture(scope="session")
 def services(
     tmp_path_factory, project_path: Path, sta_mini_zip_path: Path
-) -> tuple[StudyService, OutputService, Config]:
+) -> tuple[StudyService, OutputService, Config, Path]:
     tmp_path = tmp_path_factory.mktemp("tmp_path")
     path_studies = tmp_path / "studies"
 
@@ -161,7 +161,7 @@ def services(
         matrix_service=matrix_service,
     )
 
-    return study_service, output_service, config
+    return study_service, output_service, config, tmp_path
 
 
 @pytest.fixture(scope="session")
