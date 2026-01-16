@@ -13,6 +13,7 @@
  */
 
 import { useState } from "react";
+import type { Directory } from "@/services/api/directories/types";
 import { useCreateDirectory } from "./useCreateDirectory";
 import { useDeleteDirectory } from "./useDeleteDirectory";
 import { useUpdateDirectory } from "./useUpdateDirectory";
@@ -23,12 +24,17 @@ export interface DirectoryOperation {
   directoryId?: string; // For update/delete: ID of directory being modified
 }
 
-export function useDirectoryOperations() {
+export interface UseDirectoryOperationsOptions {
+  onDirectoryCreated?: (directory: Directory) => void;
+}
+
+export function useDirectoryOperations(options?: UseDirectoryOperationsOptions) {
   const [currentOperation, setCurrentOperation] = useState<DirectoryOperation | null>(null);
 
   const createMutation = useCreateDirectory({
-    onSuccess: () => {
+    onSuccess: (directory) => {
       setCurrentOperation(null);
+      options?.onDirectoryCreated?.(directory);
     },
   });
 

@@ -16,7 +16,7 @@ import { Box, Typography } from "@mui/material";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import * as R from "ramda";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { directoryQueries } from "@/queries/directories/queries";
 import useAppSelector from "@/redux/hooks/useAppSelector";
@@ -35,10 +35,12 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
 
   const directoryTree = useMemo(() => buildDirectoryTree(directories), [directories]);
 
-  const expandedItems = useMemo(
+  const initialExpandedItems = useMemo(
     () => (folder ? getDirectoryPath(directoryTree, folder) : []),
     [directoryTree, folder],
   );
+
+  const [expandedItems, setExpandedItems] = useState<string[]>(() => initialExpandedItems);
 
   const {
     startCreating,
@@ -50,7 +52,12 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
     isUpdating,
     deleteDirectory,
     isDeleting,
-  } = useDirectoryOperations();
+  } = useDirectoryOperations({
+    onDirectoryCreated: (directory) => {
+      // Expand the newly created directory
+      setExpandedItems((prev) => [...prev, directory.id]);
+    },
+  });
 
   // Sync external isCreatingFolder prop with internal state
   // When parent triggers root folder creation, start with null parentId
@@ -90,6 +97,14 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
     deleteDirectory(directoryId);
   };
 
+  const handleAddSubFolder = (parentId: string | null) => {
+    startCreating(parentId);
+    // Expand the parent node if it's not already expanded
+    if (parentId && !expandedItems.includes(parentId)) {
+      setExpandedItems((prev) => [...prev, parentId]);
+    }
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -108,7 +123,11 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
   }
 
   return (
-    <SimpleTreeView defaultExpandedItems={expandedItems} defaultSelectedItems={folder}>
+    <SimpleTreeView
+      expandedItems={expandedItems}
+      onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+      defaultSelectedItems={folder}
+    >
       {/* Root level folder creation */}
       {isCreating(null) && (
         <EditableTreeItem
@@ -123,7 +142,7 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
         node={directoryTree}
         onNodeClick={onNodeClick}
         selectedPath={folder}
-        onAddSubFolder={startCreating}
+        onAddSubFolder={handleAddSubFolder}
         onSaveSubFolder={handleSaveFolder}
         onCancelSubFolder={handleCancelFolder}
         isCreatingSubFolder={isCreating}

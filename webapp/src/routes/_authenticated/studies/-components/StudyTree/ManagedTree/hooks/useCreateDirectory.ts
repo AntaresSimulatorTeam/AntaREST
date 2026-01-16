@@ -18,7 +18,7 @@ import { directoryMutations } from "@/queries/directories/mutations";
 import type { Directory } from "@/services/api/directories/types";
 
 interface UseCreateDirectoryOptions {
-  onSuccess?: () => void;
+  onSuccess?: (directory: Directory) => void;
 }
 
 export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
@@ -51,9 +51,9 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: directoryKeys.all });
-      options?.onSuccess?.();
+      options?.onSuccess?.(data);
     },
   });
 }
