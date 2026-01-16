@@ -20,8 +20,8 @@ def link() -> pl.DataFrame:
 
 
 def direct() -> pl.DataFrame:
-    return create_polars_dataframe([[1.0]] * 8760)
+    return create_polars_dataframe([[0.0]] * 8760)
 
 
 def indirect() -> pl.DataFrame:
-    return create_polars_dataframe([[1.0]] * 8760)
+    return create_polars_dataframe([[0.0]] * 8760)
