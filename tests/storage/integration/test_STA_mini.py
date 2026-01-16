@@ -20,6 +20,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 from fastapi import FastAPI
 from sqlalchemy import Engine
@@ -30,6 +31,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.main import add_study_routes
@@ -82,7 +84,8 @@ def assert_url_content(client: TestClient, url: str, expected_output: dict[str, 
 def assert_with_errors(storage_service: StudyService, url: str, expected_output: Union[str, dict[str, Any]]) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
-    output = storage_service.get(uuid=uuid, url=url, depth=3, formatted=True)
+    # We use the `get_raw_content` method as it's the one called by the GET /raw endpoint.
+    output = storage_service.get_raw_content(uuid=uuid, path=url, depth=3, formatted=True)
     assert_study(
         output,
         expected_output,
@@ -182,11 +185,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (f"/v1/studies/{UUID}/raw?path=input/bindingconstraints/bindingconstraints", {}),
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/series/de/mod",
-            {
-                "columns": ["0", "1", "2"],
-                "index": list(range(365)),
-                "data": [[0.0]] * 365,
-            },
+            pl.DataFrame(data=[[0.0]] * 365, schema=["0"]),
         ),
         (f"/v1/studies/{UUID}/raw?path=input/areas/list", ["DE", "ES", "FR", "IT"]),
         (f"/v1/studies/{UUID}/raw?path=input/areas/sets/all areas/output", False),
@@ -195,19 +194,11 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (f"/v1/studies/{UUID}/raw?path=input/hydro/allocation/de/[allocation]/de", 1),
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/common/capacity/reservoir_fr",
-            {
-                "columns": ["0", "1", "2"],
-                "index": list(range(365)),
-                "data": [[0, 0.5, 1]] * 365,
-            },
+            pl.DataFrame(data=[[0, 0.5, 1]] * 365, schema=["0", "1", "2"]),
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/thermal/series/fr/05_nuclear/series",
-            {
-                "columns": ["0"],
-                "index": list(range(8760)),
-                "data": [[2000]] * 8760,
-            },
+            pl.DataFrame(data=[[2000]] * 8760, schema=["0"]),
         ),
         (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode", "annual"),
         (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation", 0.5),
@@ -218,11 +209,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (f"/v1/studies/{UUID}/raw?path=input/links/fr/properties/it/hurdles-cost", True),
         (
             f"/v1/studies/{UUID}/raw?path=input/links/fr/it",
-            {
-                "columns": ["0", "1", "2", "3", "4", "5", "6", "7"],
-                "index": list(range(8760)),
-                "data": [[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760,
-            },
+            create_polars_dataframe([[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760),
         ),
         (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}),
         (
@@ -236,46 +223,17 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
-            {
-                "columns": ["0"],
-                "index": list(range(8760)),
-                "data": [[i % 168 * 100] for i in range(8760)],
-            },
+            pl.DataFrame(data=[[i % 168 * 100] for i in range(8760)], schema=["0"]),
         ),
         pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
-            {
-                "columns": ["0", "1", "2", "3", "4", "5", "6", "7"],
-                "index": list(range(8760)),
-                "data": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760,
-            },
+            create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760),
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/reserves/fr",
-            {
-                "columns": ["0"],
-                "index": list(range(8760)),
-                "data": [[0.0]] * 8760,
-            },
-        ),
-        (f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/solar/series/solar_fr",
-            {
-                "columns": ["0"],
-                "index": list(range(8760)),
-                "data": [[0.0]] * 8760,
-            },
-        ),
-        (f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/wind/series/wind_fr",
-            {
-                "columns": ["0"],
-                "index": list(range(8760)),
-                "data": [[0.0]] * 8760,
-            },
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/reserves/fr", pl.DataFrame(data=[[0.0]] * 8760, schema=["0"])),
+        (f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k", pl.DataFrame(data=[[]], schema=["0"])),
+        (f"/v1/studies/{UUID}/raw?path=input/solar/series/solar_fr", pl.DataFrame(data=[[0.0]] * 8760, schema=["0"])),
+        (f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k", pl.DataFrame(data=[[]], schema=["0"])),
+        (f"/v1/studies/{UUID}/raw?path=input/wind/series/wind_fr", pl.DataFrame(data=[[0.0]] * 8760, schema=["0"])),
     ],
 )
 def test_sta_mini_input(storage_service: StudyService, url: str, expected_output: Any) -> None:
