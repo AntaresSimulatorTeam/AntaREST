@@ -45,11 +45,6 @@ from tests.helpers import create_raw_study
 UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 
-@pytest.fixture
-def sta_mini_path(tmp_path: Path) -> Path:
-    return tmp_path / "studies" / "STA-mini"
-
-
 @pytest.fixture(scope="session")
 def sta_mini_zip_path(project_path: Path) -> Path:
     return project_path / "examples/studies/STA-mini.zip"

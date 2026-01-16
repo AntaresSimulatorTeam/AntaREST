@@ -485,20 +485,6 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
     )
 
 
-def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_mini_path: Path) -> None:
-    # TODO why a wrong test should success
-    (sta_mini_path / "output" / "maps").mkdir()
-
-    url = f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo/infotip"
-    expected_output = "Antares Study7.0: STA-mini"
-
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        expected_output=expected_output,
-    )
-
-
 @with_admin_user
 def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
     path_study = storage_service.get_study_path(UUID)
