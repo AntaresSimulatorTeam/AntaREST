@@ -117,6 +117,7 @@ def _setup_periodic_tasks(sender: Celery, **_: object) -> None:
     from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
+    from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
     from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
     config: Optional[Config] = getattr(celery_app.conf, "antarest_config", None)
@@ -126,6 +127,9 @@ def _setup_periodic_tasks(sender: Celery, **_: object) -> None:
     sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name="blobs_cleaner")
     sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
     sender.add_periodic_task(storage.watcher_scan_sleeping_time, watcher_scan_task.s(), name="watcher_scan")
+    sender.add_periodic_task(
+        storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name="variable_view_cleaner"
+    )
 
     # Stagger first execution to avoid hitting everything at once
     clean_matrices_task.apply_async(countdown=60)
@@ -135,7 +139,7 @@ def _setup_periodic_tasks(sender: Celery, **_: object) -> None:
     logger.info(
         f"Periodic tasks: matrix_gc={storage.matrix_gc_sleeping_time}s, "
         f"blob_gc={storage.blob_gc_sleeping_time}s, auto_archive={storage.auto_archive_sleeping_time}s, "
-        f"watcher_scan={storage.watcher_scan_sleeping_time}s"
+        f"watcher_scan={storage.watcher_scan_sleeping_time}s, variable_view_gc={storage.variable_view_gc_sleeping_time}s"
     )
 
 

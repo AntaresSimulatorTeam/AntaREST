@@ -124,12 +124,13 @@ class TestSetupPeriodicTasks:
 
         _setup_periodic_tasks(sender=sender)
 
-        assert sender.add_periodic_task.call_count == 4
+        assert sender.add_periodic_task.call_count == 5
         calls = sender.add_periodic_task.call_args_list
         assert calls[0][0][0] == 3600  # matrix GC default
         assert calls[1][0][0] == 86400  # blob GC default
         assert calls[2][0][0] == 3600  # auto-archive default
         assert calls[3][0][0] == 60  # watcher scan default
+        assert calls[4][0][0] == 3600  # variable view GC default
 
     def test_uses_config_intervals(self, celery_app_config_backup):
         sender = Mock()
@@ -155,4 +156,4 @@ class TestSetupPeriodicTasks:
         _setup_periodic_tasks(sender=sender)
 
         names = [c[1]["name"] for c in sender.add_periodic_task.call_args_list]
-        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan"]
+        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan", "variable_view_cleaner"]

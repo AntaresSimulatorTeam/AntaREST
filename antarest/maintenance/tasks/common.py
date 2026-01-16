@@ -18,6 +18,13 @@ from typing import Optional
 from antarest.core.serde import AntaresBaseModel
 
 
+class MaintenanceContextNotFoundError(RuntimeError):
+    """Raised when MaintenanceContext is not found in app.conf."""
+
+    def __init__(self) -> None:
+        super().__init__("MaintenanceContext not in app.conf - worker not initialized?")
+
+
 class BackGroundTaskStatus(StrEnum):
     SUCCESS = "success"
     PARTIAL_SUCCESS = "partial_success"
@@ -44,6 +51,7 @@ class LockId(IntEnum):
     BLOB_GC = 1002
     AUTO_ARCHIVE = 1003
     WATCHER_SCAN = 1004
+    VARIABLE_VIEW_GC = 1005
 
 
 class WatcherScanTaskResult(AntaresBaseModel):
