@@ -108,7 +108,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
 
     @override
     def update_antares_file(self, editor: str, last_save: float) -> None:
-        # No-op: in DB mode, there is no study.antares file to update.
         pass
 
     @override

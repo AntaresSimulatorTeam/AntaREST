@@ -447,8 +447,7 @@ class RawStudyInterface(StudyInterface):
         # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
-        elif study.storage_mode == StorageMode.FILESYSTEM:
-            # Update cache only in FILESYSTEM mode when not invalidated
+        elif study.storage_mode == StorageMode.FILESYSTEM and file_study is not None:
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
 
