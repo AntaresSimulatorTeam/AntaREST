@@ -16,12 +16,12 @@ from pathlib import Path
 from typing import Callable, Optional, TypeAlias
 
 import numpy as np
+import numpy.typing as npt
 import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
-from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
 from antarest.core.utils.utils import StopWatch
@@ -34,7 +34,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 logger = logging.getLogger(__name__)
 
 
-MatrixSupplier: TypeAlias = Callable[[], NpArray]
+MatrixSupplier: TypeAlias = Callable[[], npt.NDArray[np.float64]]
 
 
 class InputSeriesMatrix(MatrixNode):
