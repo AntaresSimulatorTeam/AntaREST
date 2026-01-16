@@ -137,7 +137,7 @@ class InputSeriesMatrix(MatrixNode):
         if content == b"" and self.default_empty is not None:
             # The file is empty, we should return the `default_empty` value
             buffer = io.BytesIO()
-            dump_dataframe(pl.DataFrame(self.default_empty), buffer)
+            dump_dataframe(pl.DataFrame(self.default_empty()), buffer)
             content = buffer.getvalue()
 
         return OriginalFile(content=content, suffix=suffix, filename=filename)
