@@ -89,7 +89,7 @@ class TestInputSeriesMatrix:
 
         # checks formatted response
         actual = node.load(formatted=True)
-        expected = {"index": [0, 1], "columns": ["0", "1"], "data": node.default_empty.tolist()}
+        expected = {"index": [0, 1], "columns": ["0", "1"], "data": node.default_empty().tolist()}
         assert actual == expected
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
@@ -141,7 +141,10 @@ class TestInputSeriesMatrix:
 
     def test_reset_to_default(self, my_study_config: FileStudyTreeConfig) -> None:
         """Test reseting the matrix to default values."""
-        default_matrix = np.array([[1.0, 2.0], [3.0, 4.0]])
+
+        def default_matrix():
+            return np.array([[1.0, 2.0], [3.0, 4.0]])
+
         node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
 
         # Save different data than default

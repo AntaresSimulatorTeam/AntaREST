@@ -42,7 +42,6 @@ def default_reservoir() -> NpArray:
     reservoir = np.zeros((365, 3), dtype=np.float64)
     reservoir[:, 1] = 0.5
     reservoir[:, 2] = 1
-    reservoir.flags.writeable = False
     return reservoir
 
 

@@ -56,17 +56,17 @@ AFTER_650 = {
 
 AFTER_860 = {
     "mod": {
-        "default_empty": default_scenario_daily.tolist(),
+        "default_empty": default_scenario_daily().tolist(),
         "freq": MatrixFrequency.DAILY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly().tolist(),
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
     "mingen": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly().tolist(),
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
@@ -110,7 +110,7 @@ class TestInputHydroSeriesArea:
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
             actual_obj[key] = {
-                "default_empty": value.default_empty.tolist(),
+                "default_empty": value.default_empty().tolist(),
                 "freq": value.freq,
                 "nb_columns": value.nb_columns,
             }
