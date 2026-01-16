@@ -12,26 +12,34 @@
 
 import numpy as np
 
-default_scenario_hourly = np.zeros((8760, 1), dtype=np.float64)
-default_scenario_hourly.flags.writeable = False
 
-default_scenario_hourly_ones = np.ones((8760, 1), dtype=np.float64)
-default_scenario_hourly_ones.flags.writeable = False
+def default_scenario_hourly() -> np.ndarray:
+    return np.zeros((8760, 1), dtype=np.float64)
 
-default_scenario_daily = np.zeros((365, 1), dtype=np.float64)
-default_scenario_daily.flags.writeable = False
 
-default_scenario_daily_ones = np.ones((365, 1), dtype=np.float64)
-default_scenario_daily_ones.flags.writeable = False
+def default_scenario_hourly_ones() -> np.ndarray:
+    return np.ones((8760, 1), dtype=np.float64)
 
-default_scenario_monthly = np.zeros((12, 1), dtype=np.float64)
-default_scenario_monthly.flags.writeable = False
 
-default_4_fixed_hourly = np.zeros((8760, 4), dtype=np.float64)
-default_4_fixed_hourly.flags.writeable = False
+def default_scenario_daily() -> np.ndarray:
+    return np.zeros((365, 1), dtype=np.float64)
 
-default_6_fixed_hourly = np.zeros((8760, 6), dtype=np.float64)
-default_6_fixed_hourly.flags.writeable = False
 
-default_8_fixed_hourly = np.zeros((8760, 8), dtype=np.float64)
-default_8_fixed_hourly.flags.writeable = False
+def default_scenario_daily_ones() -> np.ndarray:
+    return np.ones((365, 1), dtype=np.float64)
+
+
+def default_scenario_monthly() -> np.ndarray:
+    return np.zeros((12, 1), dtype=np.float64)
+
+
+def default_4_fixed_hourly() -> np.ndarray:
+    return np.zeros((8760, 4), dtype=np.float64)
+
+
+def default_6_fixed_hourly() -> np.ndarray:
+    return np.zeros((8760, 6), dtype=np.float64)
+
+
+def default_8_fixed_hourly() -> np.ndarray:
+    return np.zeros((8760, 8), dtype=np.float64)

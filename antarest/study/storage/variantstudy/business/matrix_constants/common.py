@@ -13,7 +13,18 @@ import polars as pl
 
 from antarest.core.utils.polars import create_polars_dataframe
 
-NULL_MATRIX = pl.DataFrame()
-NULL_SCENARIO_MATRIX = create_polars_dataframe([[0.0]] * 8760)
-FIXED_4_COLUMNS = create_polars_dataframe([[0.0, 0.0, 0.0, 0.0]] * 8760)
-FIXED_8_COLUMNS = create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+
+def null_matrix() -> pl.DataFrame:
+    return pl.DataFrame()
+
+
+def null_scenario_matrix() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0]] * 8760)
+
+
+def fixed_4_columns() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0, 0.0, 0.0, 0.0]] * 8760)
+
+
+def fixed_8_columns() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
