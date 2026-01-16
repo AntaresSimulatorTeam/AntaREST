@@ -28,8 +28,6 @@ from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config
-from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
@@ -48,13 +46,6 @@ from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hour
 from tests.storage.integration.data.digest_file import digest_file
 from tests.storage.integration.data.set_id_annual import set_id_annual
 from tests.storage.integration.data.set_values_monthly import set_values_monthly
-
-ADMIN = JWTUser(
-    id=1,
-    impersonator=1,
-    type="users",
-    groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
-)
 
 
 @pytest.fixture
