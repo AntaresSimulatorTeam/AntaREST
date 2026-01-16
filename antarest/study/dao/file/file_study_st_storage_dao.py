@@ -13,7 +13,7 @@ import operator
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Sequence
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, STStorageConfigNotFound, STStorageNotFound
@@ -99,44 +99,44 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             return False
 
     @override
-    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "pmax_injection"])
 
     @override
-    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "pmax_withdrawal"])
 
     @override
-    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "lower_rule_curve"])
 
     @override
-    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "upper_rule_curve"])
 
     @override
-    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "inflows"])
 
     @override
-    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_injection"])
 
     @override
-    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_withdrawal"])
 
     @override
-    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_level"])
 
     @override
-    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         url = ["input", "st-storage", "series", area_id, storage_id, "cost_variation_injection"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         url = ["input", "st-storage", "series", area_id, storage_id, "cost_variation_withdrawal"]
         return self.get_impl().get_matrix(url)
 

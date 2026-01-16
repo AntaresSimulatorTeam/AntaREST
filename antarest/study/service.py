@@ -59,6 +59,7 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
@@ -2330,28 +2331,31 @@ class StudyService:
         # Checks that the provided path refers to a matrix
         node = self.get_file_study(study).tree.get_node(list(url))
         if isinstance(node, MatrixNode):
-            df_matrix = node.parse_as_dataframe()
-        elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
-            df_matrix = pd.DataFrame(**node.load())  # type: ignore
+            pandas_df = convert_polars_dataframe_to_pandas(node.parse_as_dataframe())
+        elif isinstance(node, OutputSeriesMatrix):
+            pandas_df = node.parse_dataframe()
+            pandas_df.columns = pd.Index(pandas_df.columns)
+        elif isinstance(node, OutputSynthesis):
+            pandas_df = pd.DataFrame(**node.load())
         else:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
             time_column = pd.date_range(
-                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+                start=matrix_index.start_date, periods=len(pandas_df), freq=matrix_index.level.value[0]
             )
-            df_matrix.index = time_column
+            pandas_df.index = time_column
 
         adjust_matrix_columns_index(
-            df_matrix,
+            pandas_df,
             path,
             with_index=with_index,
             with_header=with_header,
             study_version=study_interface.version,
         )
 
-        return df_matrix
+        return pandas_df
 
     def asserts_no_thermal_in_binding_constraints(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
@@ -2467,6 +2471,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
+        self.assert_study_unarchived(study)
         file_study = self.get_file_study(study)
         url = [item for item in path.split("/") if item]
         node, relative_url = file_study.tree.get_node_and_remainder(url)

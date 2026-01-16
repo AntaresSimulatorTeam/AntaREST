@@ -26,5 +26,5 @@ class OutputSimulationModeMcAllGrid(FolderNode):
         children: TREE = {}
         for file in files:
             synthesis_class = DigestSynthesis if file == "digest" else OutputSynthesis
-            children[file] = synthesis_class(self.matrix_mapper, self.config.next_file(f"{file}.txt"))
+            children[file] = synthesis_class(self.config.next_file(f"{file}.txt"))
         return children

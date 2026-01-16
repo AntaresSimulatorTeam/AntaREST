@@ -12,8 +12,9 @@
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
+import polars as pl
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.area_model import AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.common import FilterOption
@@ -98,12 +99,11 @@ def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_con
         ),
     ]
     series = file_study_dao.get_link_series("fr", "it")
-    expected_series = pd.DataFrame(data=np.zeros((8760, 8)))
-    expected_series[0] = 100000.0
-    expected_series[1] = 100000.0
-    expected_series[2] = 0.01
-    expected_series[3] = 0.01
-    pd.testing.assert_frame_equal(series, expected_series, check_dtype=False)
+    expected_series = create_polars_dataframe(np.zeros((8760, 8)))
+    expected_series = expected_series.with_columns(
+        [pl.lit(100000).alias("0"), pl.lit(100000).alias("1"), pl.lit(0.01).alias("2"), pl.lit(0.01).alias("3")]
+    )
+    pl.testing.assert_frame_equal(series, expected_series, check_dtypes=False)
 
     # Binding constraints
     assert file_study_dao.get_all_constraints() == {}
@@ -251,12 +251,12 @@ def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_con
 
     # Load
     load = file_study_dao.get_load("fr")
-    expected_load = pd.DataFrame((53 * list(range(0, 168 * 100, 100)))[:8760], dtype=np.int64)
-    assert load.equals(expected_load)
+    expected_load = create_polars_dataframe(np.array(53 * list(range(0, 168 * 100, 100)))[:8760])
+    pl.testing.assert_frame_equal(load, expected_load, check_dtypes=False)
 
     # Thermal series
     thermal_series = file_study_dao.get_thermal_series("fr", "01_solar")
-    assert thermal_series.equals(pd.DataFrame(8760 * [2000]))
+    assert thermal_series.equals(create_polars_dataframe(8760 * [2000]))
 
     # Thermal clusters
     expected_clusters = {

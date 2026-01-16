@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Dict, Iterator, List, Optional, Sequence
 
-import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
@@ -239,17 +239,17 @@ class InMemoryStudyDao(StudyDao):
             raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
 
     @override
-    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._link_indirect_capacities[link_key(area_from, area_to)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._link_direct_capacities[link_key(area_from, area_to)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._link_capacities[link_key(area_from, area_to)]
         return self._matrix_service.get(matrix_id)
 
@@ -293,27 +293,27 @@ class InMemoryStudyDao(StudyDao):
         return cluster_key(area_id, thermal_id) in self._thermals
 
     @override
-    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_prepro[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_modulation[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_series[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_fuel_cost[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_co2_cost[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
@@ -414,7 +414,7 @@ class InMemoryStudyDao(StudyDao):
         return cluster_key(area_id, renewable_id) in self._renewables
 
     @override
-    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         matrix_id = self._renewable_series[cluster_key(area_id, renewable_id)]
         return self._matrix_service.get(matrix_id)
 
@@ -444,22 +444,22 @@ class InMemoryStudyDao(StudyDao):
         return self._constraints[constraint_id]
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
         matrix_id = self._constraints_values_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         matrix_id = self._constraints_less_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         matrix_id = self._constraints_greater_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         matrix_id = self._constraints_equal_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
@@ -509,52 +509,52 @@ class InMemoryStudyDao(StudyDao):
         return cluster_key(area_id, storage_id) in self._st_storages
 
     @override
-    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_pmax_injection[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_lower_rule_curve[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_upper_rule_curve[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_inflows[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_injection[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_withdrawal[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_level[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_variation_injection[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
@@ -715,7 +715,7 @@ class InMemoryStudyDao(StudyDao):
         return
 
     @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         return self._xpansion_resources[resource_type][filename]
 
     @override
@@ -967,47 +967,47 @@ class InMemoryStudyDao(StudyDao):
         self._layer_areas[layer_id] = set(area_ids)
 
     @override
-    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_maxpower[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_reservoir[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_energy[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_run_of_river[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_modulation[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_credit_modulations[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_inflow_pattern[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_water_values[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_mingen[area_id]
         return self._matrix_service.get(matrix_id)
 
@@ -1048,27 +1048,27 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_mingen[area_id] = series_id
 
     @override
-    def get_load(self, area_id: str) -> pd.DataFrame:
+    def get_load(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._load[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._misc_gen[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
+    def get_reserves(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._reserves[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_solar(self, area_id: str) -> pd.DataFrame:
+    def get_solar(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._solar[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_wind(self, area_id: str) -> pd.DataFrame:
+    def get_wind(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._wind[area_id]
         return self._matrix_service.get(matrix_id)
 

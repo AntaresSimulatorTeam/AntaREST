@@ -43,3 +43,15 @@ class LockId(IntEnum):
     MATRIX_GC = 1001
     BLOB_GC = 1002
     AUTO_ARCHIVE = 1003
+    WATCHER_SCAN = 1004
+
+
+class WatcherScanTaskResult(AntaresBaseModel):
+    """Result of a watcher scan task run."""
+
+    status: BackGroundTaskStatus
+    studies_found: int
+    duration_seconds: float
+    dry_run: bool = False
+    reason: Optional[str] = None
+    error: Optional[str] = None
