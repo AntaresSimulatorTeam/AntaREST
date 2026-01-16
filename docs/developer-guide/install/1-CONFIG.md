@@ -720,6 +720,7 @@ server:
   services:
     - watcher
     - matrix_gc
+    - variable_view_gc
 ```
 
 # redis
