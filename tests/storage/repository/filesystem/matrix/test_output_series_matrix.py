@@ -48,7 +48,7 @@ class TestOutputSeriesMatrix:
             version=800,
         )
 
-    def test_load(self, my_study_config: FileStudyTreeConfig) -> None:
+    def test_parse_dataframe(self, my_study_config: FileStudyTreeConfig) -> None:
         file = my_study_config.path
         file.write_text("\n\n\n\nmock\tfile\ndummy\tdummy\ndummy\tdummy\ndummy\tdummy")
 
@@ -77,9 +77,9 @@ class TestOutputSeriesMatrix:
             date_serializer=serializer,
             head_writer=AreaHeadWriter(area="", data_type="", freq=""),
         )
-        assert node.load() == matrix.to_dict(orient="split")
+        pd.testing.assert_frame_equal(node.parse_dataframe(), matrix, check_dtype=False)
 
-    def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
+    def test_parse_dataframe_file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = OutputSeriesMatrix(
             config=my_study_config,
             freq=MatrixFrequency.DAILY,
@@ -87,7 +87,7 @@ class TestOutputSeriesMatrix:
             head_writer=AreaHeadWriter(area="", data_type="", freq=""),
         )
         with pytest.raises(ChildNotFoundError) as ctx:
-            node.load()
+            node.parse_dataframe()
         err_msg = str(ctx.value)
         assert "'matrix-daily.txt" in err_msg
         assert my_study_config.study_id in err_msg
