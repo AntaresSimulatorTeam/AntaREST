@@ -13,5 +13,5 @@
 from antarest.core.utils.polars import create_polars_dataframe
 
 link = create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
-direct = create_polars_dataframe([[1.0]] * 8760)
-indirect = create_polars_dataframe([[1.0]] * 8760)
+direct = create_polars_dataframe([[0.0]] * 8760)
+indirect = create_polars_dataframe([[0.0]] * 8760)
