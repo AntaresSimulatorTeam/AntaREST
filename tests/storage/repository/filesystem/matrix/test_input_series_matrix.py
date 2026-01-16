@@ -70,7 +70,10 @@ class TestInputSeriesMatrix:
     @pytest.mark.parametrize("link", [True, False])
     def test_load_empty_file(self, my_study_config: FileStudyTreeConfig, link: bool) -> None:
         file_path = my_study_config.path
-        default_matrix = np.array([[1, 2], [3, 4]])
+
+        def default_matrix():
+            return np.array([[1, 2], [3, 4]])
+
         if not link:
             file_path.touch()
             node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
