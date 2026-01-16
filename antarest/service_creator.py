@@ -50,6 +50,7 @@ from antarest.study.main import build_study_service
 from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
 from antarest.study.output.file_output_storage import FileOutputStorage
 from antarest.study.output.output_service import OutputService
+from antarest.study.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
@@ -83,6 +84,7 @@ class Module(StrEnum):
     ARCHIVE_WORKER = "archive_worker"
     AUTO_ARCHIVER = "auto_archiver"
     BLOB_GC = "blob_gc"
+    VARIABLE_VIEW_GC = "variable_view_gc"
 
 
 def init_db_engine(
@@ -256,6 +258,14 @@ def create_blob_gc(config: Config, blob_service: BlobService) -> BlobGarbageColl
     )
 
 
+def create_variable_view_gc(config: Config) -> VariableViewGarbageCollector:
+    return VariableViewGarbageCollector(
+        sleeping_time=config.storage.variable_view_gc_sleeping_time,
+        dry_run=config.storage.variable_view_gc_dry_run,
+        retention_time=config.storage.variable_view_gc_retention_days,
+    )
+
+
 def create_watcher(
     config: Config,
     app_ctxt: Optional[AppBuildContext],
@@ -314,6 +324,7 @@ class Services:
     matrix_gc: Optional[MatrixGarbageCollector] = None
     auto_archiver: Optional[AutoArchiveService] = None
     blob_gc: Optional[BlobGarbageCollector] = None
+    variable_view_gc: Optional[VariableViewGarbageCollector] = None
 
 
 def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Services:
@@ -350,6 +361,10 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
         auto_archiver = AutoArchiveService(core_services.study_service, core_services.output_service, config)
 
+    variable_view_gc = None
+    if config.server.services and Module.VARIABLE_VIEW_GC.value in config.server.services or create_all:
+        variable_view_gc = create_variable_view_gc(config)
+
     return Services(
         watcher=watcher,
         explorer=explorer_service,
@@ -363,4 +378,5 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,
         blob_gc=blob_garbage_collector,
+        variable_view_gc=variable_view_gc,
     )

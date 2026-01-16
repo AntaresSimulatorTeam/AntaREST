@@ -16,7 +16,7 @@ from celery import Task
 
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
-from antarest.maintenance.tasks.common import WatcherScanTaskResult
+from antarest.maintenance.tasks.common import MaintenanceContextNotFoundError, WatcherScanTaskResult
 from antarest.maintenance.tasks.watcher_scan import scan_workspaces
 
 
@@ -25,7 +25,7 @@ def watcher_scan_task(self: Task) -> WatcherScanTaskResult:  # type: ignore[type
     """Celery wrapper that delegates to scan_workspaces()."""
     ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
     if not ctx:
-        raise RuntimeError("MaintenanceContext not in app.conf - worker not initialized?")
+        raise MaintenanceContextNotFoundError()
 
     return scan_workspaces(
         ctx.config,
