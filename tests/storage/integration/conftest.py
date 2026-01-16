@@ -66,7 +66,7 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
 
 @pytest.fixture(scope="session")
 def services(
-    tmp_path_factory: Path, project_path: Path, sta_mini_zip_path: Path
+    tmp_path_factory, project_path: Path, sta_mini_zip_path: Path
 ) -> tuple[StudyService, OutputService, Config]:
     tmp_path = tmp_path_factory.mktemp("tmp_path")
     path_studies = tmp_path / "studies"
