@@ -348,7 +348,7 @@ class DatabaseAreaDao(AreaDao):
         target_area_ids = set(area_ids)
         invalid_ids = target_area_ids - all_area_ids
         if invalid_ids:
-            raise AreaNotFound(next(iter(invalid_ids)))
+            raise AreaNotFound(*invalid_ids)
 
         # Remove layer from areas not in the target list
         to_remove = areas_with_layer - target_area_ids
