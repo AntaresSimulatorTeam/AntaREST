@@ -13,10 +13,10 @@ from collections.abc import Callable
 from typing import List, TypedDict
 
 import numpy as np
+import numpy.typing as npt
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.serde.np_array import NpArray
 from antarest.study.model import STUDY_VERSION_6_5, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -28,28 +28,28 @@ class MatrixInfo(TypedDict, total=False):
     name: str
     freq: MatrixFrequency
     start_version: StudyVersion
-    default_empty: Callable[[], NpArray]
+    default_empty: Callable[[], npt.NDArray[np.float64]]
 
 
-def default_maxpower() -> NpArray:
+def default_maxpower() -> npt.NDArray[np.float64]:
     maxpower = np.zeros((365, 4), dtype=np.float64)
     maxpower[:, 1] = 24
     maxpower[:, 3] = 24
     return maxpower
 
 
-def default_reservoir() -> NpArray:
+def default_reservoir() -> npt.NDArray[np.float64]:
     reservoir = np.zeros((365, 3), dtype=np.float64)
     reservoir[:, 1] = 0.5
     reservoir[:, 2] = 1
     return reservoir
 
 
-def default_credit_modulation() -> NpArray:
+def default_credit_modulation() -> npt.NDArray[np.float64]:
     return np.ones((2, 100), dtype=np.float64)
 
 
-def default_water_values() -> NpArray:
+def default_water_values() -> npt.NDArray[np.float64]:
     return np.zeros((365, 101), dtype=np.float64)
 
 
