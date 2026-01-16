@@ -105,6 +105,13 @@ class FileStudyTreeDao(
     def save_comments(self, comments: str) -> None:
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
 
+    @override
+    def update_antares_file(self, editor: str, last_save: float) -> None:
+        study_antares = self._file_study.tree.get(["study", "antares"])
+        study_antares["editor"] = editor
+        study_antares["lastsave"] = last_save
+        self._file_study.tree.save(study_antares, ["study", "antares"])
+
     def get_matrix(self, url: list[str]) -> pl.DataFrame:
         """
         Given a url pointing towards an input matrix, parses it and returns it as a pandas dataframe.

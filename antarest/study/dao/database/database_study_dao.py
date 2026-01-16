@@ -107,6 +107,11 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
+    def update_antares_file(self, editor: str, last_save: float) -> None:
+        # No-op: in DB mode, there is no study.antares file to update.
+        pass
+
+    @override
     def get_file_study(self) -> FileStudy:
         """
         Get the FileStudy instance.

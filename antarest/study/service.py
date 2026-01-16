@@ -447,26 +447,25 @@ class RawStudyInterface(StudyInterface):
         # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
-        elif file_study is not None:
+        elif study.storage_mode == StorageMode.FILESYSTEM:
             # Update cache only in FILESYSTEM mode when not invalidated
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
 
-        # Update editor metadata (only in FILESYSTEM mode)
-        if file_study is not None:
-            self._update_editor_and_lastsave(file_study)
+        # Update editor metadata
+        self._update_editor_and_lastsave(dao)
 
         # Notify changes to child variants
         self._variant_study_service.on_parent_change(study.id)
 
-    def _update_editor_and_lastsave(self, file_study: FileStudy) -> None:
+    def _update_editor_and_lastsave(self, dao: StudyDao) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
         if user:
             user_name = user.name or ""
-            study_antares = file_study.tree.get(["study", "antares"])
-            study_antares["editor"] = user_name
-            study_antares["lastsave"] = current_time()
-            file_study.tree.save(study_antares, ["study", "antares"])
+            last_save = current_time().timestamp()
+            # Update file (no-op for database storage mode)
+            dao.update_antares_file(user_name, last_save)
+            # Update DB metadata
             self._study.editor = user_name
             self._repository.save(self._study)
 
