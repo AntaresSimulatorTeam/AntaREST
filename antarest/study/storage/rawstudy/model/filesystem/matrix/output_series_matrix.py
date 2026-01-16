@@ -91,30 +91,9 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
     @override
     def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
+        self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> Union[bytes, JSON]:
-        try:
-            file_path = self.config.path
-            if not formatted:
-                if file_path.exists():
-                    file_content = file_path.read_bytes()
-                    return file_content
-
-                logger.warning(f"Missing file {self.config.path}")
-                return b""
-
-            if not file_path.exists():
-                raise FileNotFoundError(file_path)
-            matrix = self.parse_dataframe()
-            return matrix.to_dict(orient="split")
-        except FileNotFoundError as e:
-            raise ChildNotFoundError(
-                f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"
-            ) from e
+        raise NotImplementedError("Legacy implementation. Now we parse the dataframe directly to be faster.")
 
     @override
     def dump(self, data: Union[bytes, JSON], url: Optional[List[str]] = None) -> None:
