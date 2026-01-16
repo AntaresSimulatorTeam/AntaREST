@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,7 +15,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, List, Optional, TypeAlias
 
-import pandas as pd
+import polars as pl
 from pydantic import ConfigDict, field_serializer
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -104,7 +104,7 @@ class MatrixMetadataDTO(AntaresBaseModel, extra="forbid", populate_by_name=True)
 @dataclass(frozen=True)
 class MatrixContent:
     id: str
-    data: pd.DataFrame
+    data: pl.DataFrame
 
 
 class MatrixDataSetRelation(Base):

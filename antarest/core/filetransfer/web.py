@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter
@@ -21,6 +22,8 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
+logger = logging.getLogger(__name__)
+
 
 def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: Config) -> APIRouter:
     auth = Auth(config)
@@ -28,6 +31,7 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
 
     @bp.get("/downloads", summary="Get available downloads")
     def get_downloads() -> list[FileDownloadDTO]:
+        logger.info("Retrieving downloads list.")
         return filetransfer_manager.list_downloads()
 
     @bp.get(
@@ -35,7 +39,9 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
         summary="Retrieve download file",
     )
     def fetch_download(download_id: str) -> FileResponse:
-        download = filetransfer_manager.fetch_download(download_id)
+        sanitized_download_id = sanitize_uuid(download_id)
+        logger.info(f"Retrieving content for download {sanitized_download_id}.")
+        download = filetransfer_manager.fetch_download(sanitized_download_id)
         return FileResponse(
             Path(download.path),
             headers={"Content-Disposition": f'attachment; filename="{download.filename}"'},
@@ -48,6 +54,7 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
     )
     def get_download_metadata(download_id: str, wait_for_availability: bool = False) -> FileDownloadDTO:
         sanitized_download_id = sanitize_uuid(download_id)
+        logger.info(f"Retrieving metadata for download {sanitized_download_id} (waiting: {wait_for_availability}).")
         return filetransfer_manager.get_download_metadata(sanitized_download_id, wait_for_availability)
 
     return bp

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Sequence
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
@@ -59,19 +59,19 @@ class FileStudyLinkDao(LinkDao, ABC):
             return False
 
     @override
-    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         area_from, area_to = sorted((area_from, area_to))
         url = ["input", "links", area_from, "capacities", f"{area_to}_indirect"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         area_from, area_to = sorted((area_from, area_to))
         url = ["input", "links", area_from, "capacities", f"{area_to}_direct"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         study_data = self.get_file_study()
         area_from, area_to = sorted((area_from, area_to))
         if study_data.config.version < STUDY_VERSION_8_2:

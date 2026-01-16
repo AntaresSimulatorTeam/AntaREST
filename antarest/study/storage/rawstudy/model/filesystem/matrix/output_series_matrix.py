@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,16 +11,13 @@
 # This file is part of the Antares project.
 
 import logging
-from pathlib import Path
-from typing import Any, List, Optional, Union, cast
+from typing import List, Optional, Union
 
 import pandas as pd
-from pandas import DataFrame
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -46,13 +43,12 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
         date_serializer: IDateMatrixSerializer,
         head_writer: HeadWriter,
     ):
-        super().__init__(matrix_mapper=matrix_mapper, config=config)
+        super().__init__(config=config)
         self.date_serializer = date_serializer
         self.head_writer = head_writer
         self.freq = freq
@@ -67,12 +63,8 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         # noinspection SpellCheckingInspection
         return f"matrixfile://{self.config.path.name}"
 
-    def parse_dataframe(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
-    ) -> DataFrame:
-        file_path = file_path or self.config.path
+    def parse_dataframe(self) -> pd.DataFrame:
+        file_path = self.config.path
         try:
             df = pd.read_csv(
                 file_path,
@@ -89,9 +81,6 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
             relpath = file_path.relative_to(self.config.study_path).as_posix()
             raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
-        if tmp_dir:
-            tmp_dir.cleanup()
-
         date, body = self.date_serializer.extract_date(df)
 
         rename_unnamed(body)
@@ -99,14 +88,6 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix.index = date
         matrix.columns = body.columns
         return matrix
-
-    def parse(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
-    ) -> JSON:
-        matrix = self.parse_dataframe(file_path, tmp_dir)
-        return cast(JSON, matrix.to_dict(orient="split"))
 
     @override
     def load(
@@ -117,22 +98,19 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
         try:
-            file_path, tmp_dir = self._get_real_file_path()
+            file_path = self.config.path
             if not formatted:
                 if file_path.exists():
                     file_content = file_path.read_bytes()
-                    if tmp_dir:
-                        tmp_dir.cleanup()
                     return file_content
 
                 logger.warning(f"Missing file {self.config.path}")
-                if tmp_dir:
-                    tmp_dir.cleanup()
                 return b""
 
             if not file_path.exists():
                 raise FileNotFoundError(file_path)
-            return self.parse(file_path, tmp_dir)
+            matrix = self.parse_dataframe()
+            return matrix.to_dict(orient="split")
         except FileNotFoundError as e:
             raise ChildNotFoundError(
                 f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"
@@ -144,16 +122,8 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
 
 class LinkOutputSeriesMatrix(OutputSeriesMatrix):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-        src: str,
-        dest: str,
-    ):
+    def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency, src: str, dest: str):
         super(LinkOutputSeriesMatrix, self).__init__(
-            matrix_mapper=matrix_mapper,
             config=config,
             freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, src),
@@ -162,15 +132,8 @@ class LinkOutputSeriesMatrix(OutputSeriesMatrix):
 
 
 class AreaOutputSeriesMatrix(OutputSeriesMatrix):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-        area: str,
-    ):
+    def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency, area: str):
         super(AreaOutputSeriesMatrix, self).__init__(
-            matrix_mapper,
             config=config,
             freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, area),
@@ -179,14 +142,8 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
 
 
 class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-    ):
+    def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency):
         super(BindingConstraintOutputSeriesMatrix, self).__init__(
-            matrix_mapper,
             config=config,
             freq=freq,
             date_serializer=FactoryDateSerializer.create(freq, "system"),

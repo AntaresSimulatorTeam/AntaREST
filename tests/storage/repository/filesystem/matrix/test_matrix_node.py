@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -34,7 +34,7 @@ class MockMatrixNode(MatrixNode):
         )
 
     @override
-    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+    def parse_as_dataframe(self) -> pd.DataFrame:
         return MOCK_MATRIX
 
     @override

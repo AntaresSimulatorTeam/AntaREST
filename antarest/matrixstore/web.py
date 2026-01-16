@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,7 +14,6 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
@@ -23,6 +22,8 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.np_array import NpArray
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
@@ -40,10 +41,10 @@ logger = logging.getLogger(__name__)
 
 
 class MatrixDTO(AntaresBaseModel, arbitrary_types_allowed=True):
-    index: list[int | str]
+    index: list[int]
     columns: list[int | str]
-    data: list[list[float | int | str]]
-    id: str = ""
+    data: NpArray
+    id: str
 
 
 def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: Config) -> APIRouter:
@@ -63,7 +64,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     @bp.post("/matrix", description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
         logger.info("Creating new matrix")
-        return service.create(pd.DataFrame(matrix))
+        return service.create(create_polars_dataframe(matrix))
 
     @bp.post(
         "/matrix/_import",
@@ -90,12 +91,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     def get(id: str) -> MatrixDTO:
         logger.info("Fetching matrix")
         df = service.get(id)
-        return MatrixDTO.model_construct(
-            id=id,
-            index=list(df.index),
-            columns=list(df.columns),
-            data=df.to_numpy().tolist(),
-        )
+        return MatrixDTO(id=id, index=list(range(len(df))), columns=list(df.columns), data=df.to_numpy())
 
     @bp.get(
         "/matrix/_references/",

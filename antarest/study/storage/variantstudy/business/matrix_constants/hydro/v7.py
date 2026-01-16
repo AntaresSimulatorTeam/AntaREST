@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,10 +10,9 @@
 #
 # This file is part of the Antares project.
 
+from antarest.core.utils.polars import create_polars_dataframe
 
-import pandas as pd
-
-credit_modulations = pd.DataFrame(data=[[1.0] * 101] * 2)
-inflow_pattern = pd.DataFrame(data=[[1.0]] * 365)
-max_power = pd.DataFrame(data=[[0.0, 24.0, 0.0, 24.0]] * 365)
-reservoir = pd.DataFrame(data=[[0.0, 0.5, 1.0]] * 365)
+credit_modulations = create_polars_dataframe([[1.0] * 101] * 2)
+inflow_pattern = create_polars_dataframe([[1.0]] * 365)
+max_power = create_polars_dataframe([[0.0, 24.0, 0.0, 24.0]] * 365)
+reservoir = create_polars_dataframe([[0.0, 0.5, 1.0]] * 365)

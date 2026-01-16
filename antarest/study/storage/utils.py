@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -47,6 +47,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
+from antarest.login.model import Group
 from antarest.login.utils import require_current_user
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -55,6 +56,7 @@ from antarest.study.model import (
     MatrixFrequency,
     MatrixIndex,
     Study,
+    StudyFolder,
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
@@ -210,12 +212,14 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
     )
 
 
-def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
+def create_new_empty_study(
+    version: StudyVersion, path_study: Path, name: str = "To be replaced", author: str = "Unknown"
+) -> None:
     if version not in STUDY_REFERENCE_TEMPLATES:
         msg = f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
         raise UnsupportedStudyVersion(msg)
 
-    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
+    app = CreateApp(study_dir=path_study, caption=name, version=version, author=author)
     app()
 
 
@@ -445,3 +449,53 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
         except (PermissionError, OSError):
             logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
     return False
+
+
+def rec_scan_for_studies(
+    path: Path,
+    workspace: str,
+    groups: List[Group],
+    filter_in: List[str],
+    filter_out: List[str],
+    max_depth: Optional[int] = None,
+) -> List[StudyFolder]:
+    """
+    Recursively scan a directory for studies.
+
+    A study is identified by the presence of a "study.antares" file.
+
+    Args:
+        path: The directory path to scan.
+        workspace: The workspace name.
+        groups: The groups to associate with found studies.
+        filter_in: Regex patterns for folders to include.
+        filter_out: Regex patterns for folders to exclude.
+        max_depth: Maximum depth to scan. None means unlimited.
+
+    Returns:
+        A list of StudyFolder objects representing found studies.
+    """
+    try:
+        if should_ignore_folder_for_scan(path, filter_in, filter_out):
+            return []
+
+        if (path / "study.antares").exists():
+            logger.debug(f"Study {path.name} found in {workspace}")
+            return [StudyFolder(path, workspace, groups)]
+
+        if max_depth is not None and max_depth <= 0:
+            logger.info(f"Scan was configured to not go any deeper, max_depth: {max_depth}")
+            return []
+
+        folders: List[StudyFolder] = []
+        if path.is_dir():
+            for child in path.iterdir():
+                child_max_depth = max_depth - 1 if max_depth is not None else None
+                try:
+                    folders += rec_scan_for_studies(child, workspace, groups, filter_in, filter_out, child_max_depth)
+                except Exception as e:
+                    logger.error(f"Failed to scan dir {child}", exc_info=e)
+        return folders
+    except Exception as e:
+        logger.error(f"Failed to scan dir {path}", exc_info=e)
+        return []

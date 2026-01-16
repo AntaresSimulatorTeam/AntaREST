@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-
 import numpy as np
 import pytest
 
@@ -20,11 +19,11 @@ from antarest.study.business.model.hydro_allocation_model import (
     HydroAllocationArea,
     HydroAllocationMatrix,
 )
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 
 def _set_up(command_context: CommandContext, study: FileStudy) -> None:
@@ -110,7 +109,7 @@ def test_get_allocation_matrix(
 ) -> None:
     _set_up(command_context, empty_study_920)
 
-    study = FileStudyInterface(empty_study_920)
+    study = file_study_interface(empty_study_920)
     matrix = manager.get_allocation_matrix(study)
 
     # Check
@@ -151,7 +150,7 @@ def test_get_allocation_for_area(
         "w": HydroAllocation(allocation=[HydroAllocationArea(area_id="w", coefficient=1.0)]),
     }
 
-    study = FileStudyInterface(empty_study_920)
+    study = file_study_interface(empty_study_920)
     for area_id in expected_allocations:
         allocation = manager.get_allocation_for_area(study, area_id)
         assert allocation == expected_allocations[area_id]
@@ -162,7 +161,7 @@ def test_set_allocation_for_area(
 ) -> None:
     _set_up(command_context, empty_study_920)
 
-    study = FileStudyInterface(empty_study_920)
+    study = file_study_interface(empty_study_920)
 
     new_allocation = HydroAllocation(
         allocation=[

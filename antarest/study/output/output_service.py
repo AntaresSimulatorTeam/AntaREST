@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, BinaryIO, Callable, Optional, Sequence
 
 import pandas as pd
+import polars as pl
 from fastapi import HTTPException
 from starlette.responses import FileResponse
 
@@ -39,6 +40,7 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -167,7 +169,7 @@ class OutputVariablesViewMaterializationTask:
         # Transform the dataframe to save only what's needed inside DB
         dataframe["idx"] = dataframe.groupby(MCYEAR_COL).cumcount()
         df_pivot = dataframe.pivot(index="idx", columns=MCYEAR_COL, values=self._variable_name)
-        matrix_id = self._output_service._matrix_service.create(df_pivot)
+        matrix_id = self._output_service._matrix_service.create(pl.from_pandas(df_pivot))
 
         # Save the model inside DB
         db_model = create_output_view_db_model(
@@ -669,9 +671,7 @@ class OutputService:
         def aggregate_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 stopwatch = StopWatch()
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
-                )
+                logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
 
                 results = self._storage.aggregate_output_data(
                     uuid,
@@ -685,14 +685,12 @@ class OutputService:
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)
 
-                stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_path}'."))
+                stopwatch.log_elapsed(lambda x: logger.info(f"Created aggregated outputs file '{file_path}' in {x}s."))
 
                 if on_success:
                     on_success()
 
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Aggregated output file '{file_path}' is ready for download.")
-                )
+                logger.info(f"Aggregated output file '{file_path}' is ready for download.")
                 return TaskResult(
                     success=True,
                     message=f"Successfully aggregated output data for study '{uuid}'."
@@ -770,8 +768,12 @@ class OutputService:
             db.session.merge(db_model)
             db.session.commit()
 
-            # Return the dataframe
-            df = self._matrix_service.get(db_model.matrix_id)
+            # Get the dataframe inside the matrix-store
+            polars_df = self._matrix_service.get(db_model.matrix_id)
+            # Convert it to pandas and use np.NaN as null values for backward compatibility
+            if not all(dtype.is_numeric() for dtype in polars_df.dtypes):
+                polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
+            df = convert_polars_dataframe_to_pandas(polars_df)
             if with_index:
                 add_time_index_to_dataframe(df, self.get_output_time_index(study_id, output_id, frequency))
             return df

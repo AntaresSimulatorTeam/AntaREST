@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 
 from typing import Dict
 
-import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
@@ -115,23 +115,23 @@ class GeneratorMatrixConstants:
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87
         self.hashes[BINDING_CONSTRAINT_HOURLY_v86] = self.matrix_service.add_predefined_matrix(
-            lambda: pd.DataFrame(series_before_87.default_bc_hourly)
+            lambda: pl.DataFrame(series_before_87.default_bc_hourly)
         )
         self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86] = self.matrix_service.add_predefined_matrix(
-            lambda: pd.DataFrame(series_before_87.default_bc_weekly_daily)
+            lambda: pl.DataFrame(series_before_87.default_bc_weekly_daily)
         )
 
         series_after_87 = matrix_constants.binding_constraint.series_after_v87
         self.hashes[BINDING_CONSTRAINT_HOURLY_v87] = self.matrix_service.add_predefined_matrix(
-            lambda: pd.DataFrame(series_after_87.default_bc_hourly)
+            lambda: pl.DataFrame(series_after_87.default_bc_hourly)
         )
         self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87] = self.matrix_service.add_predefined_matrix(
-            lambda: pd.DataFrame(series_after_87.default_bc_weekly_daily)
+            lambda: pl.DataFrame(series_after_87.default_bc_weekly_daily)
         )
 
         # Some short-term storage matrices use np.ones((8760, 1))
         self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(
-            lambda: pd.DataFrame(matrix_constants.st_storage.series.pmax_injection)
+            lambda: pl.DataFrame(matrix_constants.st_storage.series.pmax_injection)
         )
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:

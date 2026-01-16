@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,7 +18,7 @@ def test_get_matrices(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     matrix = [[1, 2], [1, 7]]
-    matrix_1 = [[3, 6], [5, 10, 28]]
+    matrix_1 = [[3, 6, 4], [5, 10, 28]]
     time_format = "%Y-%m-%d %H:%M:%S.%f"
 
     # Creating matrix and checking the metadata inside it

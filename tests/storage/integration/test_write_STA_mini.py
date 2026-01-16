@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -150,7 +150,7 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
         (
             f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k",
             [[0]],
-            {"data": [[0.0]], "index": [0], "columns": [0]},
+            {"data": [[0.0]], "index": [0], "columns": ["0"]},
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
@@ -360,7 +360,7 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
                     98,
                     99,
                 ],
-                "columns": [0],
+                "columns": ["0"],
             },
         ),
         (

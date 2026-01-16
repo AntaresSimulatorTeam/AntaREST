@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
@@ -92,23 +92,23 @@ class FileStudyThermalDao(ThermalDao, ABC):
             return False
 
     @override
-    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "data"])
 
     @override
-    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
 
     @override
-    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "series"])
 
     @override
-    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
 
     @override
-    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,7 +16,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
@@ -58,7 +58,7 @@ class MatrixUriMapper(ABC):
     """
 
     @abstractmethod
-    def get_matrix(self, uri: str) -> pd.DataFrame:
+    def get_matrix(self, uri: str) -> pl.DataFrame:
         pass
 
     @abstractmethod
@@ -110,7 +110,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         self._matrix_service = matrix_service
 
     @override
-    def get_matrix(self, uri: str) -> pd.DataFrame:
+    def get_matrix(self, uri: str) -> pl.DataFrame:
         return self._matrix_service.get(extract_matrix_id(uri))
 
     @override

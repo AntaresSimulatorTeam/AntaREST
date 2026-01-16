@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -50,7 +50,7 @@ class ReadOnlyXpansionDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod

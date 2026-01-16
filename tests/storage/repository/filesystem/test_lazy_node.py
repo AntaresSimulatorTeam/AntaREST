@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,18 +16,15 @@ from unittest.mock import Mock
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperManaged
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperManaged
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from tests.storage.repository.filesystem.matrix.test_matrix_node import MockMatrixNode
 
 
 class MockLazyNode(LazyNode[str, str, str]):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
-        super().__init__(
-            config=config,
-            matrix_mapper=matrix_mapper,
-        )
+    def __init__(self, config: FileStudyTreeConfig) -> None:
+        super().__init__(config=config)
 
     @override
     def load(
@@ -54,10 +51,7 @@ def test_get_no_expanded_txt(tmp_path: Path) -> None:
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
-    node = MockLazyNode(
-        matrix_mapper=Mock(),
-        config=config,
-    )
+    node = MockLazyNode(config=config)
     assert "Mock Matrix Content" == node.get(expanded=False)
 
 
@@ -68,10 +62,7 @@ def test_get_expanded_txt(tmp_path: Path) -> None:
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
-    node = MockLazyNode(
-        matrix_mapper=Mock(),
-        config=config,
-    )
+    node = MockLazyNode(config=config)
     assert "file://lazy.txt" == node.get(expanded=True)
 
 

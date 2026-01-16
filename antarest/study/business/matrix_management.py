@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,7 +17,9 @@ from typing import List, Tuple, cast
 
 import numpy as np
 import pandas as pd
+import polars as pl
 
+from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -249,7 +251,8 @@ class MatrixManager:
 
         try:
             logger.info(f"Loading matrix data from node '{path}'...")
-            matrix_df = matrix_node.parse_as_dataframe()
+            matrix_df = convert_polars_dataframe_to_pandas(matrix_node.parse_as_dataframe())
+            matrix_df.columns = [int(i) for i in matrix_df.columns]  # type: ignore
         except ValueError as exc:
             raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
 
@@ -280,7 +283,7 @@ class MatrixManager:
                 raise MatrixEditError(instr, reason=str(exc)) from None
 
         logger.info(f"Writing matrix data of shape {matrix_df.shape}...")
-        new_matrix_id = matrix_service.create(matrix_df)
+        new_matrix_id = matrix_service.create(pl.from_pandas(matrix_df))
 
         logger.info(f"Preparing 'ReplaceMatrix' command for path '{path}'...")
         command = [

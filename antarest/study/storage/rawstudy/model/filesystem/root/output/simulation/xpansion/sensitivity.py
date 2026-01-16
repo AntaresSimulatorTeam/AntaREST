@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -22,5 +22,5 @@ class Sensitivity(FolderNode):
     def build(self) -> TREE:
         return {
             "out": JsonFileNode(self.config.next_file("sensitivity_out.json")),
-            "log": RawFileNode(self.matrix_mapper, self.config.next_file("sensitivity_log.txt")),
+            "log": RawFileNode(self.config.next_file("sensitivity_log.txt")),
         }
