@@ -18,7 +18,7 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 
 from typing import Any, Dict, List
 
-import pandas as pd
+import polars as pl
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -406,23 +406,23 @@ class DatabaseAreaDao(AreaDao):
 
     # Time series methods - not yet implemented for database storage mode
     @override
-    def get_load(self, area_id: str) -> pd.DataFrame:
+    def get_load(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
+    def get_reserves(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def get_solar(self, area_id: str) -> pd.DataFrame:
+    def get_solar(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def get_wind(self, area_id: str) -> pd.DataFrame:
+    def get_wind(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
