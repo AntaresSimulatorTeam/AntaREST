@@ -39,6 +39,10 @@ export const HydroMatrix = {
   OverallMonthlyHydro: "OverallMonthlyHydro",
   Allocation: "Allocation",
   Correlation: "Correlation",
+  MaxHourlyGenPower: "MaxHourlyGenPower",
+  MaxHourlyPumpPower: "MaxHourlyPumpPower",
+  MaxDailyGenEnergy: "MaxDailyGenEnergy",
+  MaxDailyPumpEnergy: "MaxDailyPumpEnergy",
 } as const;
 
 ////////////////////////////////////////////////////////////////
@@ -129,6 +133,22 @@ export const HYDRO_ROUTES: HydroRoute[] = [
     path: "mingen",
     type: HydroMatrix.MinGen,
   },
+  {
+    path: "maxHourlyGenPower",
+    type: HydroMatrix.MaxHourlyGenPower,
+  },
+  {
+    path: "maxHourlyPumpPower",
+    type: HydroMatrix.MaxHourlyPumpPower,
+  },
+  {
+    path: "maxDailyGenEnergy",
+    type: HydroMatrix.MaxDailyGenEnergy,
+  },
+  {
+    path: "maxDailyPumpEnergy",
+    type: HydroMatrix.MaxDailyPumpEnergy,
+  },
 ];
 
 export const MATRICES: Matrices = {
@@ -178,6 +198,22 @@ export const MATRICES: Matrices = {
   [HydroMatrix.MinGen]: {
     title: "Min Gen",
     url: "input/hydro/series/{areaId}/mingen",
+  },
+  [HydroMatrix.MaxHourlyGenPower]: {
+    title: "Max Hourly Gen Power",
+    url: "input/hydro/series/{areaId}/maxHourlyGenPower",
+  },
+  [HydroMatrix.MaxHourlyPumpPower]: {
+    title: "Max Hourly Pump Power",
+    url: "input/hydro/series/{areaId}/maxHourlyPumpPower",
+  },
+  [HydroMatrix.MaxDailyGenEnergy]: {
+    title: "Max Daily Gen Energy",
+    url: "input/hydro/common/capacity/maxDailyGenEnergy_{areaId}",
+  },
+  [HydroMatrix.MaxDailyPumpEnergy]: {
+    title: "Max Daily Pump Energy",
+    url: "input/hydro/common/capacity/maxDailyPumpEnergy_{areaId}",
   },
   [HydroMatrix.InflowPattern]: {
     title: "Inflow Pattern",

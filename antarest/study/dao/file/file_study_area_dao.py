@@ -330,6 +330,27 @@ class FileStudyAreaDao(AreaDao):
         if (study_data.tree.config.path / "user" / "ts-generator-output" / "thermal" / area_id).exists():
             study_data.tree.delete(["user", "ts-generator-output", "thermal", area_id])
 
+        if study_version >= STUDY_VERSION_9_2:
+            if (
+                study_data.tree.config.path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower"
+            ).exists() and (
+                study_data.tree.config.path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower"
+            ).exists():
+                study_data.tree.delete(["input", "hydro", "series", area_id, "maxHourlyGenPower"])
+                study_data.tree.delete(["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
+            if (
+                study_data.tree.config.path / "input" / "hydro" / "common" / "capacity" / f"maxDailyGenEnergy_{area_id}"
+            ).exists() and (
+                study_data.tree.config.path
+                / "input"
+                / "hydro"
+                / "common"
+                / "capacity"
+                / f"maxDailyPumpEnergy_{area_id}"
+            ).exists():
+                study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
+                study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
+
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
 

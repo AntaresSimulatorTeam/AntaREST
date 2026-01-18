@@ -291,3 +291,43 @@ class FileStudyHydroDao(HydroDao):
     def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
         file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mingen"])
+
+    @override
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "series", area_id, "maxHourlyGenPower"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "series", area_id, "maxHourlyPumpPower"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pd.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyGenPower"])
+
+    @override
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
+
+    @override
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
+
+    @override
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])

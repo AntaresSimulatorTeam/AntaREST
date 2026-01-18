@@ -42,6 +42,7 @@ from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix im
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
+from antarest.study.storage.variantstudy.model.command.hydro_pmax_converter import HydroPmaxConverter
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
@@ -167,6 +168,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_TIMESERIES_CONFIG.value: UpdateTimeSeriesConfig,
     CommandName.REPLACE_HYDRO_ALLOCATION.value: ReplaceHydroAllocation,
     CommandName.REPLACE_HYDRO_CORRELATION.value: ReplaceHydroCorrelation,
+    CommandName.HYDRO_PMAX_CONVERTER.value: HydroPmaxConverter,
     CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
 }

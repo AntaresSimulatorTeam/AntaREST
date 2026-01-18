@@ -17,7 +17,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.serde.np_array import NpArray
-from antarest.study.model import STUDY_VERSION_6_5, MatrixFrequency
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_9_2, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_daily_ones
@@ -46,6 +46,12 @@ default_credit_modulation.flags.writeable = False
 
 default_water_values = np.zeros((365, 101), dtype=np.float64)
 default_water_values.flags.writeable = False
+
+default_max_daily_gen_energy = np.full((365, 1), 24)
+default_max_daily_gen_energy.flags.writeable = False
+
+default_max_daily_pump_energy = np.full((365, 1), 24)
+default_max_daily_pump_energy.flags.writeable = False
 
 INITIAL_VERSION = StudyVersion.parse(0)
 # noinspection SpellCheckingInspection
@@ -80,6 +86,18 @@ MATRICES_INFO: List[MatrixInfo] = [
         "start_version": STUDY_VERSION_6_5,
         "default_empty": default_water_values,
     },
+    {
+        "name": "maxDailyGenEnergy",
+        "freq": MatrixFrequency.DAILY,
+        "start_version": STUDY_VERSION_9_2,
+        "default_empty": default_max_daily_gen_energy,
+    },
+    {
+        "name": "maxDailyPumpEnergy",
+        "freq": MatrixFrequency.DAILY,
+        "start_version": STUDY_VERSION_9_2,
+        "default_empty": default_max_daily_pump_energy,
+    },
 ]
 
 
@@ -91,10 +109,12 @@ class InputHydroCommonCapacity(FolderNode):
             if self.config.version >= info["start_version"]:
                 for area in self.config.area_names():
                     name = f"{info['name']}_{area}"
+                    is_optional = info["name"] in ["maxDailyGenEnergy", "maxDailyPumpEnergy"]
                     children[name] = InputSeriesMatrix(
                         self.matrix_mapper,
                         self.config.next_file(f"{name}.txt"),
                         freq=info["freq"],
                         default_empty=info["default_empty"],
+                        should_exist=not is_optional,
                     )
         return children

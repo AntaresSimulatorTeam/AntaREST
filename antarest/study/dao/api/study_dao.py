@@ -556,3 +556,19 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_wind(self, area_id: str) -> pd.DataFrame:
         return self._adaptee.get_wind(area_id)
+
+    @override
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_max_hourly_gen_power(area_id)
+
+    @override
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_max_hourly_pump_power(area_id)
+
+    @override
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_max_daily_gen_energy(area_id)
+
+    @override
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pd.DataFrame:
+        return self._adaptee.get_hydro_max_daily_pump_energy(area_id)

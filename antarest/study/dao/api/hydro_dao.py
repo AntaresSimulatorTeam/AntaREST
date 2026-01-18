@@ -88,6 +88,22 @@ class ReadOnlyHydroDao(ABC):
     def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
 
 class HydroDao(ReadOnlyHydroDao):
     @abstractmethod
@@ -140,4 +156,20 @@ class HydroDao(ReadOnlyHydroDao):
 
     @abstractmethod
     def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
         raise NotImplementedError()
