@@ -16,7 +16,7 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.hydro_pmax_converter import HydroPmaxConverter
 from antarest.study.storage.variantstudy.model.command.update_advanced_parameters import UpdateAdvancedParameters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 class AdvancedParamsManager:
     def __init__(self, command_context: CommandContext) -> None:
@@ -41,7 +41,7 @@ class AdvancedParamsManager:
             parameters.hydro_pmax is not None and current_parameters.hydro_pmax != parameters.hydro_pmax
         )
 
-        commands = []
+        commands : list[ICommand] = []
 
         commands.append(
             UpdateAdvancedParameters(
