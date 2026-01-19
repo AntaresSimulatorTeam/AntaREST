@@ -164,6 +164,6 @@ def services(
     return study_service, output_service, config, tmp_path
 
 
-@pytest.fixture()
+@pytest.fixture
 def storage_service(services: tuple[StudyService, OutputService]) -> StudyService:
     return services[0]
