@@ -10,10 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, cast
+from typing import List, Optional
 
 import polars as pl
-from Cryptodome.SelfTest.Cipher.test_DES3 import index
 from pydantic import Field
 from typing_extensions import override
 
@@ -89,9 +88,7 @@ class DigestSynthesis(OutputSynthesis):
         formatted: bool = True,
     ) -> JSON:
         df = self._parse_digest_file()
-
-        output = df.to_pandas().to_dict(orient="split", index=False)
-        return cast(JSON, output)
+        return df.to_pandas().to_dict(orient="split", index=False)
 
     def get_ui(self) -> DigestUI:
         """

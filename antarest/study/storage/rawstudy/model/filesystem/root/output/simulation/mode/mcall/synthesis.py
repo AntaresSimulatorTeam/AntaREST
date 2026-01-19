@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, cast
+from typing import List, Optional
 
 import pandas as pd
 from typing_extensions import override
@@ -31,10 +31,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     ) -> JSON:
         file_path = self.config.path
         df = pd.read_csv(file_path, sep="\t")
-        df.fillna("", inplace=True)  # replace NaN values for the front-end
-        output = df.to_dict(orient="split")
-        del output["index"]
-        return cast(JSON, output)
+        return df.to_dict(orient="split", index=False)
 
     @override
     def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
