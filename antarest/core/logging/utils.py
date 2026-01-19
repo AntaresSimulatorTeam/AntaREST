@@ -169,7 +169,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
         "DEBUG",
     ]:
         logging_config["loggers"][""]["level"] = config.logging.level
-    if config.logging.json:
+    if config.logging.json_format:
         logging_config["handlers"]["default"]["formatter"] = "json"
 
     logging.config.dictConfig(logging_config)

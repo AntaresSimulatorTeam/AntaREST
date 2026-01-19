@@ -63,7 +63,7 @@ def launcher_config(tmp_path: Path) -> SlurmConfig:
         "enable_nb_cores_detection": False,
         "nb_cores": {"min": 1, "default": 34, "max": 36},
     }
-    return SlurmConfig.from_dict(data)
+    return SlurmConfig.model_validate(data)
 
 
 def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
