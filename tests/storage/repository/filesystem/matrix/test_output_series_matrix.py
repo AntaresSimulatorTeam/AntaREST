@@ -48,6 +48,7 @@ class TestOutputSeriesMatrix:
         )
 
     def test_parse_dataframe(self, my_study_config: FileStudyTreeConfig) -> None:
+        # The content corresponds to a real `values-annual.txt` file.
         content = b"AT\tarea\tva\tannual\n\tVARIABLES\tBEGIN\tEND\n\t9\t1\t1\n\nAT\tannual\tOV. COST\tMRG. PRICE\tBattery_injection\tBattery_withdrawal\tBattery_level\tUNSP. ENRG\tSPIL. ENRG\tLOLD\tLOLP\n\t\tEuro\tEuro\tMW\tMW\tMWh\tMWh\tMWh\tHours\t%\n\t\t\t\t\t\t\t\t\t\t\n\tAnnual\t3573604931\t87.1175\t0\t0\t0\t0\t0\t0\t100.00\n"
         my_study_config.path.write_bytes(content)
 
