@@ -17,6 +17,7 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.sts_model import STStorageCreation
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
@@ -64,22 +65,26 @@ def test_optional_matrices(
         study.tree.get_node(url).delete()
 
         # Ensures we can still fetch its content without raising an issue as these files are optional for the Simulator.
-        content = study.tree.get(url)
-        assert content["data"] == expected_content
+        matrix_node = study.tree.get_node(url)
+        assert isinstance(matrix_node, MatrixNode)
+        matrix = matrix_node.parse_as_dataframe()
+        assert matrix.to_numpy().tolist() == expected_content
 
     # Ensures the normalization succeeds even if the files are missing
     raw_study_service.normalize_study(study)
 
     # Removes a file that's not optional for the Simulator
     url = ["input", "thermal", "series", "fr", "thermal_cluster", "series"]
-    study.tree.get_node(url).delete()
+    matrix_node = study.tree.get_node(url)
+    assert isinstance(matrix_node, MatrixNode)
+    matrix_node.delete()
 
     # Ensures retrieving its content raises an Exception
     with pytest.raises(
         ChildNotFoundError,
         match="404: File 'input/thermal/series/fr/thermal_cluster/series.txt' not found in the study ''",
     ):
-        study.tree.get(url)
+        matrix_node.parse_as_dataframe()
 
     # Ensures normalization also fails
     with pytest.raises(
