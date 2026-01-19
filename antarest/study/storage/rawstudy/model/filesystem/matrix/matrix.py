@@ -91,11 +91,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
 
     @override
     def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> JSON:
         raise NotImplementedError("Legacy method. We should use `parse_as_dataframe` from now on.")
 
@@ -106,11 +102,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         super().delete(url)
 
     @override
-    def dump(
-        self,
-        data: MatrixId | MatrixContent,
-        url: Optional[List[str]] = None,
-    ) -> None:
+    def dump(self, data: MatrixId | MatrixContent, url: Optional[List[str]] = None) -> None:
         """
         Write matrix data to file.
 
