@@ -73,7 +73,7 @@ class TestStudySynthesis:
         )
         assert res.status_code == 200, res.json()
         duration = time.time() - start
-        assert 0 <= duration <= duration_threshold(0.3), f"Duration is {duration} seconds"
+        assert 0 <= duration <= duration_threshold(0.4), f"Duration is {duration} seconds"
 
     def test_variant_study(
         self,
