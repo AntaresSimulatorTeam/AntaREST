@@ -11,13 +11,10 @@
 # This file is part of the Antares project.
 
 import datetime
-import shutil
-import zipfile
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
-import py7zr
 import pytest
 
 from antarest.blobstore.repository import BlobContentRepository
@@ -52,16 +49,7 @@ def sta_mini_zip_path(project_path: Path) -> Path:
 
 @pytest.fixture
 def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path:
-    target = project_path / "examples/studies/STA-mini.7z"
-    if target.is_file():
-        return target
-    with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
-        zf.extractall(sta_mini_zip_path.parent)
-    extracted_dir_path = sta_mini_zip_path.parent / "STA-mini"
-    with py7zr.SevenZipFile(target, "w") as szf:
-        szf.writeall(extracted_dir_path, arcname="")
-    shutil.rmtree(extracted_dir_path)
-    return target
+    return project_path / "examples/studies/STA-mini.7z"
 
 
 @pytest.fixture(scope="session")
