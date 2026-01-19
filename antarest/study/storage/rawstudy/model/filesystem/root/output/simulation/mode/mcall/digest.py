@@ -13,6 +13,7 @@
 from typing import List, Optional, cast
 
 import polars as pl
+from Cryptodome.SelfTest.Cipher.test_DES3 import index
 from pydantic import Field
 from typing_extensions import override
 
@@ -89,8 +90,7 @@ class DigestSynthesis(OutputSynthesis):
     ) -> JSON:
         df = self._parse_digest_file()
 
-        output = df.to_pandas().to_dict(orient="split")
-        del output["index"]
+        output = df.to_pandas().to_dict(orient="split", index=False)
         return cast(JSON, output)
 
     def get_ui(self) -> DigestUI:
