@@ -489,8 +489,6 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
     path_study_output = storage_service.get_study_path(UUID) / "output" / "20201014-1422eco-hello"
     sta_mini_output_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study_output)
 
-    shutil.rmtree(path_study_output)
-
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
 
     study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
