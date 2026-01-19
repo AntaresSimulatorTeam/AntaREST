@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import pandas as pd
 from typing_extensions import override
@@ -35,7 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import 
 logger = logging.getLogger(__name__)
 
 
-class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON]):
+class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
     """
     Generic node to handle output matrix behavior.
     Node needs a DateSerializer and a HeadWriter to work
@@ -87,11 +87,19 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
     @override
     def load(
         self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
-    ) -> Union[bytes, JSON]:
-        raise NotImplementedError("Legacy implementation. Now we parse the dataframe directly to be faster.")
+    ) -> bytes | JSON:
+        if not formatted:
+            try:
+                return self.config.path.read_bytes()
+            except FileNotFoundError:
+                logger.warning(f"Missing file {self.config.path}")
+                return b""
+
+        matrix = self.parse_dataframe()
+        return matrix.to_dict(orient="split")
 
     @override
-    def dump(self, data: Union[bytes, JSON], url: Optional[List[str]] = None) -> None:
+    def dump(self, data: bytes | JSON, url: Optional[List[str]] = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
 
 
