@@ -58,12 +58,7 @@ MatrixContent: TypeAlias = bytes | JSON | pl.DataFrame
 
 
 class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-    ) -> None:
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, freq: MatrixFrequency) -> None:
         LazyNode.__init__(self, config)
         self.matrix_mapper = matrix_mapper
         self.freq = freq
