@@ -36,8 +36,10 @@ from antarest.study.main import add_study_routes
 from antarest.study.output.output_model import OutputVariablesInformation
 from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from antarest.study.storage.variantstudy.business.matrix_constants.common import fixed_4_columns
 from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
@@ -202,7 +204,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
             f"/v1/studies/{UUID}/raw?path=input/links/fr/it",
             create_polars_dataframe([[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760),
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", pl.DataFrame(data=[[]])),
+        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", create_polars_dataframe(default_k())),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series",
             {
@@ -220,10 +222,10 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
             create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760),
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/reserves/fr", pl.DataFrame(data=[[0.0]] * 8760, schema=["0"])),
-        (f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k", pl.DataFrame(data=[[]], schema=["0"])),
+        (f"/v1/studies/{UUID}/raw?path=input/reserves/fr", fixed_4_columns()),
+        (f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k", create_polars_dataframe(default_k())),
         (f"/v1/studies/{UUID}/raw?path=input/solar/series/solar_fr", pl.DataFrame(data=[[0.0]] * 8760, schema=["0"])),
-        (f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k", pl.DataFrame(data=[[]], schema=["0"])),
+        (f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k", create_polars_dataframe(default_k())),
         (f"/v1/studies/{UUID}/raw?path=input/wind/series/wind_fr", pl.DataFrame(data=[[0.0]] * 8760, schema=["0"])),
     ],
 )
