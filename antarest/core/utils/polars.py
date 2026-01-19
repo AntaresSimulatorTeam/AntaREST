@@ -9,24 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import threading
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError, NoDataError
-
-_LOCK = threading.Lock()
-
-
-def convert_polars_dataframe_to_pandas(df: pl.DataFrame) -> pd.DataFrame:
-    with _LOCK:
-        # When multiple threads call `to_pandas()` concurrently, we can hit a deadlock scenario.
-        # So we use our own lock to avoid this issue.
-        return df.to_pandas()
 
 
 def create_polars_dataframe(data: npt.NDArray[np.float64] | list[list[Any]]) -> pl.DataFrame:

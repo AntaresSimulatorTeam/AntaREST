@@ -277,7 +277,7 @@ class TestFetchRawData:
         assert res.status_code == 200, res.json()
         assert res.json()["index"] == list(range(365))
         assert res.json()["columns"] == ["0", "1", "2", "3", "4", "5"]
-        assert res.json()["data"] == default_data_matrix.tolist()
+        assert res.json()["data"] == default_data_matrix().tolist()
 
         # =============================
         #  ERRORS

@@ -19,8 +19,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.ar
     InputHydroPreproAreaPrepro,
 )
 
-default_energy = np.zeros((12, 5), dtype=np.float64)
-default_energy.flags.writeable = False
+
+def default_energy() -> np.ndarray:
+    return np.zeros((12, 5), dtype=np.float64)
 
 
 class InputHydroPreproArea(FolderNode):

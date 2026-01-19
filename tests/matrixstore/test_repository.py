@@ -252,13 +252,16 @@ class TestMatrixContentRepository:
         for more chances to generate problems.
         """
         trial_count = 10
-        matrix = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
+        # note: important to have different instances, which will be the case in real usage.
+        #       When using the same instance, polars may deadlock.
+        matrix1 = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
+        matrix2 = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
 
         matrix_content_repo: MatrixContentRepository
         with matrix_repository(tmp_path, matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:
             with multiprocessing.pool.ThreadPool(2) as tp:
                 for i in range(0, trial_count):
-                    results = tp.map(matrix_content_repo.save, [matrix, matrix])
+                    results = tp.map(matrix_content_repo.save, [matrix1, matrix2])
 
                     assert results[0].new or results[1].new
                     assert not (results[0].new and results[1].new)

@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -251,7 +250,7 @@ class MatrixManager:
 
         try:
             logger.info(f"Loading matrix data from node '{path}'...")
-            matrix_df = convert_polars_dataframe_to_pandas(matrix_node.parse_as_dataframe())
+            matrix_df = matrix_node.parse_as_dataframe().to_pandas()
             matrix_df.columns = [int(i) for i in matrix_df.columns]  # type: ignore
         except ValueError as exc:
             raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc

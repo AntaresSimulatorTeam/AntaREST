@@ -230,7 +230,7 @@ def test_generate_replacement_matrices() -> None:
     )
     assert len(matrices) == 1
     assert matrices[0][0] == f"input/bindingconstraints/{bc_id}"
-    assert matrices[0][1] == default_bc_hourly_86.tolist()
+    assert matrices[0][1] == default_bc_hourly_86().tolist()
 
     # 8,7,0 DAILY BOTH
     bc_id = "bc_1"
@@ -243,9 +243,9 @@ def test_generate_replacement_matrices() -> None:
     )
     assert len(matrices) == 2
     assert matrices[0][0] == f"input/bindingconstraints/{bc_id}_lt"
-    assert matrices[0][1] == default_bc_weekly_daily_87.tolist()
+    assert matrices[0][1] == default_bc_weekly_daily_87().tolist()
     assert matrices[1][0] == f"input/bindingconstraints/{bc_id}_gt"
-    assert matrices[1][1] == default_bc_weekly_daily_87.tolist()
+    assert matrices[1][1] == default_bc_weekly_daily_87().tolist()
 
     # 8,7,0 WEEKLY LESS
 
@@ -257,4 +257,4 @@ def test_generate_replacement_matrices() -> None:
     assert len(matrices) == 1
     target = f"input/bindingconstraints/{bc_id}_lt"
     assert matrices[0][0] == target
-    assert matrices[0][1] == default_bc_weekly_daily_87.tolist()
+    assert matrices[0][1] == default_bc_weekly_daily_87().tolist()
