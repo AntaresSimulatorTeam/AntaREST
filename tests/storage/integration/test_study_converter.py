@@ -392,7 +392,7 @@ def test_nominal_case(services, command_context: CommandContext) -> None:
 
 
 @with_admin_user
-def test_no_outputs(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
+def test_no_outputs(storage_service: StudyService, tmp_path: Path) -> None:
     """
     Ensures the outputs aren't copied when didn't asked to
     """
@@ -402,7 +402,7 @@ def test_no_outputs(storage_service: StudyService, tmp_path: Path, command_conte
 
 
 @with_admin_user
-def test_matrices_normalized(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
+def test_matrices_normalized(storage_service: StudyService, tmp_path: Path) -> None:
     """
     Ensures the matrices are normalized when asked to.
     """
