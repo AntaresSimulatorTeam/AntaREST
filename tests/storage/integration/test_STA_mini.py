@@ -260,7 +260,6 @@ def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_out
                     ("contrainte (<)", " ", "min"),
                     ("contrainte (<)", " ", "max"),
                 ],
-                "index": ["Annual"],
                 "data": [[0.0, 0.0, 0.0, 0.0]],
             },
         ),
