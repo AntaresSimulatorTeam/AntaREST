@@ -367,11 +367,7 @@ def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_out
     ],
 )
 def test_sta_mini_output(storage_service: StudyService, url: str, expected_output: Any) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        expected_output=expected_output,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output)
 
 
 @with_admin_user
@@ -405,11 +401,7 @@ def test_sta_mini_output(storage_service: StudyService, url: str, expected_outpu
     ],
 )
 def test_sta_mini_expansion(storage_service: StudyService, url: str, expected_output: Any) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        expected_output=expected_output,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output)
 
 
 @with_admin_user
@@ -477,11 +469,7 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
         }
     }
     url = "/v1/studies"
-    assert_url_content(
-        client=client,
-        url=url,
-        expected_output=expected_output,
-    )
+    assert_url_content(client=client, url=url, expected_output=expected_output)
 
 
 @with_admin_user
