@@ -12,9 +12,11 @@
 
 from typing import Optional
 
+import numpy as np
 import pytest
 
 from antarest.core.model import SUB_JSON
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.service import StudyService
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
@@ -31,7 +33,7 @@ def assert_with_errors(
     res = storage_service.edit_study(uuid=uuid, url=url, new=new)
     assert res == new
 
-    res = storage_service.get(uuid=uuid, url=url, depth=-1, formatted=True)
+    res = storage_service.get_raw_content(uuid=uuid, path=url, depth=-1, formatted=True)
     if expected is not None:
         assert res == expected
     else:
@@ -147,11 +149,7 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
             42,
             None,
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k",
-            [[0]],
-            {"data": [[0.0]], "index": [0], "columns": ["0"]},
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", [[0]], create_polars_dataframe(data=np.array([[0.0]]))),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
             [[i] for i in range(100)],
