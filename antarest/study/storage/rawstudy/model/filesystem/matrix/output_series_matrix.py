@@ -82,9 +82,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
                 return b""
 
         matrix = self.parse_dataframe()
-        content = matrix.to_dict(orient="split")
-        del content["index"]
-        return content
+        return matrix.to_dict(orient="split", index=False)
 
     @override
     def dump(self, data: bytes | JSON, url: Optional[List[str]] = None) -> None:
