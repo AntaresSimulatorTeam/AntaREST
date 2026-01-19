@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from checksumdir import dirhash
-
 import configparser
+
+from checksumdir import dirhash
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.binding_constraint_model import (
@@ -304,28 +304,10 @@ class TestRemoveArea:
         empty_study, area_id = self._set_up(empty_study_920, command_context)
         study_path = empty_study.config.study_path
 
-        daily_gen = (
-            study_path
-            / "input"
-            / "hydro"
-            / "common"
-            / "capacity"
-            / f"maxDailyGenEnergy_{area_id}.txt.link"
-        )
-        daily_pump = (
-            study_path
-            / "input"
-            / "hydro"
-            / "common"
-            / "capacity"
-            / f"maxDailyPumpEnergy_{area_id}.txt.link"
-        )
-        hourly_gen = (
-            study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
-        )
-        hourly_pump = (
-            study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
-        )
+        daily_gen = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyGenEnergy_{area_id}.txt.link"
+        daily_pump = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyPumpEnergy_{area_id}.txt.link"
+        hourly_gen = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
+        hourly_pump = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
 
         assert daily_gen.exists()
         assert daily_pump.exists()

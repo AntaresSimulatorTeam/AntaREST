@@ -202,28 +202,10 @@ class TestCreateArea:
         )
         assert output.status, output.message
 
-        daily_gen = (
-            study_path
-            / "input"
-            / "hydro"
-            / "common"
-            / "capacity"
-            / f"maxDailyGenEnergy_{area_id}.txt.link"
-        )
-        daily_pump = (
-            study_path
-            / "input"
-            / "hydro"
-            / "common"
-            / "capacity"
-            / f"maxDailyPumpEnergy_{area_id}.txt.link"
-        )
-        hourly_gen = (
-            study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
-        )
-        hourly_pump = (
-            study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
-        )
+        daily_gen = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyGenEnergy_{area_id}.txt.link"
+        daily_pump = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyPumpEnergy_{area_id}.txt.link"
+        hourly_gen = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
+        hourly_pump = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
 
         assert daily_gen.exists()
         assert daily_pump.exists()
