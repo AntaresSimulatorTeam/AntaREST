@@ -13,7 +13,9 @@
 from typing import Optional
 
 import numpy as np
+import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.polars import create_polars_dataframe
@@ -35,7 +37,10 @@ def assert_with_errors(
 
     res = storage_service.get_raw_content(uuid=uuid, path=url, depth=-1, formatted=True)
     if expected is not None:
-        assert res == expected
+        if isinstance(expected, pl.DataFrame):
+            assert_frame_equal(expected, res, check_dtypes=False)
+        else:
+            assert res == expected
     else:
         assert res == new
 
