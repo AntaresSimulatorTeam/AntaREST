@@ -22,15 +22,6 @@ from antarest.study.model import MatrixFrequency
 from antarest.study.output.utils import get_start_column, parse_output_file
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
-    FactoryDateSerializer,
-    IDateMatrixSerializer,
-)
-from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import (
-    AreaHeadWriter,
-    HeadWriter,
-    LinkHeadWriter,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -41,16 +32,8 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
     Node needs a DateSerializer and a HeadWriter to work
     """
 
-    def __init__(
-        self,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-        date_serializer: IDateMatrixSerializer,
-        head_writer: HeadWriter,
-    ):
+    def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency):
         super().__init__(config=config)
-        self.date_serializer = date_serializer
-        self.head_writer = head_writer
         self.freq = freq
 
     @override
@@ -91,29 +74,14 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
 
 class LinkOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency, src: str, dest: str):
-        super(LinkOutputSeriesMatrix, self).__init__(
-            config=config,
-            freq=freq,
-            date_serializer=FactoryDateSerializer.create(freq, src),
-            head_writer=LinkHeadWriter(src, dest, freq),
-        )
+        super().__init__(config=config, freq=freq)
 
 
 class AreaOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency, area: str):
-        super(AreaOutputSeriesMatrix, self).__init__(
-            config=config,
-            freq=freq,
-            date_serializer=FactoryDateSerializer.create(freq, area),
-            head_writer=AreaHeadWriter(area, config.path.name[:2], freq),
-        )
+        super().__init__(config=config, freq=freq)
 
 
 class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(self, config: FileStudyTreeConfig, freq: MatrixFrequency):
-        super(BindingConstraintOutputSeriesMatrix, self).__init__(
-            config=config,
-            freq=freq,
-            date_serializer=FactoryDateSerializer.create(freq, "system"),
-            head_writer=AreaHeadWriter("system", config.path.name[:2], freq),
-        )
+        super().__init__(config=config, freq=freq)
