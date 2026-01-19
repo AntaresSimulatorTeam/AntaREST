@@ -33,7 +33,7 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.main import add_study_routes
-from antarest.study.output.output_model import OutputVariablesInformation
+from antarest.study.output.output_model import OutputVariables, OutputVariablesInformation
 from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
@@ -505,19 +505,24 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
     assert result.status_code == HTTPStatus.ACCEPTED.value
 
 
-def _add_study_in_db(study_service: StudyService) -> None:
-    """Adds the study UUID inside the DB to avoid ForeginKey issues"""
+def _clean_db() -> None:
+    """Cleans the OutputVariables table for other tests"""
     with db():
-        study = study_service.get_study(UUID)
-        db.session.add(study)
+        db.session.query(OutputVariables).delete()
         db.session.commit()
 
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_nominal_case(services) -> None:
+def test_sta_mini_output_variables(services) -> None:
     study_service, output_service, _, _ = services
-    _add_study_in_db(study_service)
+    # Adds the study UUID inside the DB to avoid ForeignKey issues
+    with db():
+        study = study_service.get_study(UUID)
+        db.session.add(study)
+        db.session.commit()
+
+    # Nominal case
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     assert variables.model_dump() == {
         "area": [
@@ -571,21 +576,8 @@ def test_sta_mini_output_variables_nominal_case(services) -> None:
         ],
     }
 
-
-@with_admin_user
-@with_db_context
-def test_sta_mini_output_variables_no_mc_ind(services) -> None:
-    study_service, output_service, _, _ = services
-    _add_study_in_db(study_service)
-    res = output_service.get_output_variables_information(UUID, "20201014-1427eco")
-    assert res == OutputVariablesInformation(area=[], link=[])
-
-
-@with_admin_user
-@with_db_context
-def test_sta_mini_output_variables_no_links(services) -> None:
-    study_service, output_service, _, _ = services
-    _add_study_in_db(study_service)
+    # No links (clean DB first)
+    _clean_db()
     study_path = Path(study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
@@ -593,13 +585,8 @@ def test_sta_mini_output_variables_no_links(services) -> None:
     # When there's no links folder, asserts the endpoint doesn't fail and simply return an empty list
     assert variables.link == []
 
-
-@with_admin_user
-@with_db_context
-def test_sta_mini_output_variables_no_areas(services) -> None:
-    study_service, output_service, _, _ = services
-    _add_study_in_db(study_service)
-    study_path = Path(study_service.get_study(UUID).path)
+    # No areas (clean DB first)
+    _clean_db()
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)
@@ -607,3 +594,7 @@ def test_sta_mini_output_variables_no_areas(services) -> None:
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     # When there's no areas folder, asserts the endpoint doesn't fail and simply return an empty list
     assert variables.area == []
+
+    # No mc-ind
+    res = output_service.get_output_variables_information(UUID, "20201014-1427eco")
+    assert res == OutputVariablesInformation(area=[], link=[])
