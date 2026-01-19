@@ -515,8 +515,9 @@ def _add_study_in_db(study_service: StudyService) -> None:
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_nominal_case(storage_service: StudyService, output_service: OutputService) -> None:
-    _add_study_in_db(storage_service)
+def test_sta_mini_output_variables_nominal_case(services) -> None:
+    study_service, output_service, _, _ = services
+    _add_study_in_db(study_service)
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     assert variables.model_dump() == {
         "area": [
@@ -573,17 +574,19 @@ def test_sta_mini_output_variables_nominal_case(storage_service: StudyService, o
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_mc_ind(storage_service: StudyService, output_service: OutputService) -> None:
-    _add_study_in_db(storage_service)
+def test_sta_mini_output_variables_no_mc_ind(services) -> None:
+    study_service, output_service, _, _ = services
+    _add_study_in_db(study_service)
     res = output_service.get_output_variables_information(UUID, "20201014-1427eco")
     assert res == OutputVariablesInformation(area=[], link=[])
 
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_links(storage_service: StudyService, output_service: OutputService) -> None:
-    _add_study_in_db(storage_service)
-    study_path = Path(storage_service.get_study(UUID).path)
+def test_sta_mini_output_variables_no_links(services) -> None:
+    study_service, output_service, _, _ = services
+    _add_study_in_db(study_service)
+    study_path = Path(study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
@@ -593,9 +596,10 @@ def test_sta_mini_output_variables_no_links(storage_service: StudyService, outpu
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_areas(storage_service: StudyService, output_service: OutputService) -> None:
-    _add_study_in_db(storage_service)
-    study_path = Path(storage_service.get_study(UUID).path)
+def test_sta_mini_output_variables_no_areas(services) -> None:
+    study_service, output_service, _, _ = services
+    _add_study_in_db(study_service)
+    study_path = Path(study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)
