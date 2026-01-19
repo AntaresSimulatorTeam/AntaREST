@@ -165,5 +165,5 @@ def services(
 
 
 @pytest.fixture
-def storage_service(services: tuple[StudyService, OutputService]) -> StudyService:
+def storage_service(services: tuple[StudyService, OutputService, Config, Path]) -> StudyService:
     return services[0]
