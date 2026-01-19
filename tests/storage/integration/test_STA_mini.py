@@ -27,14 +27,12 @@ from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
-from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.main import add_study_routes
 from antarest.study.output.output_model import OutputVariables, OutputVariablesInformation
-from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -52,9 +50,7 @@ from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
 
 @pytest.fixture
-def client(
-    storage_service: StudyService, output_service: OutputService, db_engine: Engine, config: Config
-) -> TestClient:
+def client(services, db_engine: Engine) -> TestClient:
     app = FastAPI(title=__name__)
     app.add_middleware(
         DBSessionMiddleware,
@@ -62,9 +58,10 @@ def client(
         session_args={"autocommit": False, "autoflush": False},
     )
     build_ctxt = create_app_ctxt(app)
-    add_study_routes(build_ctxt, storage_service, Mock(), config)
+    study_service, output_service, config, _ = services
+    add_study_routes(build_ctxt, study_service, Mock(), config)
     build_ctxt.api_root.include_router(
-        create_output_routes(output_service, storage_service.file_transfer_manager, config)
+        create_output_routes(output_service, study_service.file_transfer_manager, config)
     )
 
     return TestClient(build_ctxt.build())

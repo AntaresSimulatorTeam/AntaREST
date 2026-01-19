@@ -167,13 +167,3 @@ def services(
 @pytest.fixture(scope="session")
 def storage_service(services: tuple[StudyService, OutputService]) -> StudyService:
     return services[0]
-
-
-@pytest.fixture(name="output_service", scope="session")
-def output_service_fixture(services: tuple[StudyService, OutputService]) -> OutputService:
-    return services[1]
-
-
-@pytest.fixture(scope="session")
-def config(services: tuple[StudyService, OutputService, Config]) -> Config:
-    return services[2]
