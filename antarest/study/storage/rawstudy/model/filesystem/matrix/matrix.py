@@ -14,7 +14,7 @@ import io
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Self, TypeAlias, cast
+from typing import List, Optional, Self, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,6 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde.np_array import NpArray
-from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -98,16 +97,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> JSON:
-        """
-        The only usage of formatted=False was via the R scripts inside the GET /raw endpoint.
-        Now we're using the `parse_as_dataframe` method so we can always return the value as if formatted was True.
-        """
-        df = self.parse_as_dataframe()
-
-        stopwatch = StopWatch()
-        data = cast(JSON, df.to_pandas().to_dict(orient="split"))
-        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
-        return data
+        raise NotImplementedError("Legacy method. We should use `parse_as_dataframe` from now on.")
 
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
