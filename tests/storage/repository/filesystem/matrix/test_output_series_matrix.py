@@ -19,7 +19,6 @@ import pytest
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 
 MATRIX_DAILY_DATA = """\
@@ -71,21 +70,11 @@ class TestOutputSeriesMatrix:
             index=["01/02", "01/01"],
         )
 
-        node = OutputSeriesMatrix(
-            config=my_study_config,
-            freq=MatrixFrequency.DAILY,
-            date_serializer=serializer,
-            head_writer=AreaHeadWriter(area="", data_type="", freq=""),
-        )
+        node = OutputSeriesMatrix(config=my_study_config, freq=MatrixFrequency.DAILY)
         pd.testing.assert_frame_equal(node.parse_dataframe(), matrix, check_dtype=False)
 
     def test_parse_dataframe_file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
-        node = OutputSeriesMatrix(
-            config=my_study_config,
-            freq=MatrixFrequency.DAILY,
-            date_serializer=Mock(),
-            head_writer=AreaHeadWriter(area="", data_type="", freq=""),
-        )
+        node = OutputSeriesMatrix(config=my_study_config, freq=MatrixFrequency.DAILY)
         with pytest.raises(ChildNotFoundError) as ctx:
             node.parse_dataframe()
         err_msg = str(ctx.value)
@@ -94,12 +83,7 @@ class TestOutputSeriesMatrix:
         assert "not found" in err_msg.lower()
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
-        node = OutputSeriesMatrix(
-            config=my_study_config,
-            freq=MatrixFrequency.DAILY,
-            date_serializer=Mock(),
-            head_writer=AreaHeadWriter(area="de", data_type="va", freq="hourly"),
-        )
+        node = OutputSeriesMatrix(config=my_study_config, freq=MatrixFrequency.DAILY)
 
         with pytest.raises(MustNotModifyOutputException, match="Should not modify output file"):
             node.dump(data={})
