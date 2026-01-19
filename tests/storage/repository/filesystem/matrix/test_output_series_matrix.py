@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from unittest.mock import Mock
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -48,30 +48,25 @@ class TestOutputSeriesMatrix:
         )
 
     def test_parse_dataframe(self, my_study_config: FileStudyTreeConfig) -> None:
-        file = my_study_config.path
-        file.write_text("\n\n\n\nmock\tfile\ndummy\tdummy\ndummy\tdummy\ndummy\tdummy")
+        content = b"AT\tarea\tva\tannual\n\tVARIABLES\tBEGIN\tEND\n\t9\t1\t1\n\nAT\tannual\tOV. COST\tMRG. PRICE\tBattery_injection\tBattery_withdrawal\tBattery_level\tUNSP. ENRG\tSPIL. ENRG\tLOLD\tLOLP\n\t\tEuro\tEuro\tMW\tMW\tMWh\tMWh\tMWh\tHours\t%\n\t\t\t\t\t\t\t\t\t\t\n\tAnnual\t3573604931\t87.1175\t0\t0\t0\t0\t0\t0\t100.00\n"
+        my_study_config.path.write_bytes(content)
 
-        serializer = Mock()
-        serializer.extract_date.return_value = (
-            pd.Index(["01/02", "01/01"]),
-            pd.DataFrame(
-                data={
-                    ("01_solar", "MWh", "EXP"): [27000, 48000],
-                    ("02_wind_on", "MWh", "EXP"): [600, 34400],
-                }
-            ),
+        data = np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0]])
+        columns = pd.Index(
+            [
+                ("Battery_injection", "MW", ""),
+                ("Battery_withdrawal", "MW", ""),
+                ("Battery_level", "MWh", ""),
+                ("UNSP. ENRG", "MWh", ""),
+                ("SPIL. ENRG", "MWh", ""),
+                ("LOLD", "Hours", ""),
+                ("LOLP", "%", ""),
+            ],
         )
-
-        matrix = pd.DataFrame(
-            data={
-                ("01_solar", "MWh", "EXP"): [27000, 48000],
-                ("02_wind_on", "MWh", "EXP"): [600, 34400],
-            },
-            index=["01/02", "01/01"],
-        )
+        expected_result = pd.DataFrame(data, columns=columns)
 
         node = OutputSeriesMatrix(config=my_study_config, freq=MatrixFrequency.DAILY)
-        pd.testing.assert_frame_equal(node.parse_dataframe(), matrix, check_dtype=False)
+        pd.testing.assert_frame_equal(node.parse_dataframe(), expected_result, check_dtype=False)
 
     def test_parse_dataframe_file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = OutputSeriesMatrix(config=my_study_config, freq=MatrixFrequency.DAILY)
