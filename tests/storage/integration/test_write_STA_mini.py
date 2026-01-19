@@ -56,11 +56,7 @@ def assert_with_errors(
     ],
 )
 def test_sta_mini_settings(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
 
 
 @with_admin_user
@@ -74,11 +70,7 @@ def test_sta_mini_settings(storage_service: StudyService, url: str, new: SUB_JSO
     ],
 )
 def test_sta_mini_layers_layers(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
 
 
 @with_admin_user
@@ -100,11 +92,7 @@ def test_sta_mini_layers_layers(storage_service: StudyService, url: str, new: SU
     ],
 )
 def test_sta_mini_desktop(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
 
 
 @with_admin_user
@@ -122,11 +110,7 @@ def test_sta_mini_desktop(storage_service: StudyService, url: str, new: SUB_JSON
     ],
 )
 def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
 
 
 @with_admin_user
@@ -188,12 +172,7 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
     ],
 )
 def test_sta_mini_input(storage_service: StudyService, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-        expected=expected,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new, expected=expected)
 
 
 @with_admin_user
@@ -215,8 +194,4 @@ def test_sta_mini_input(storage_service: StudyService, url: str, new: SUB_JSON, 
     ],
 )
 def test_sta_mini_output(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
