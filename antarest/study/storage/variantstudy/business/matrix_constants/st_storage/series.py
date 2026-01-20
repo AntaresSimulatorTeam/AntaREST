@@ -12,23 +12,30 @@
 
 import numpy as np
 
-pmax_injection = np.ones((8760, 1), dtype=np.float64)
-pmax_injection.flags.writeable = False
 
-pmax_withdrawal = np.ones((8760, 1), dtype=np.float64)
-pmax_withdrawal.flags.writeable = False
+def pmax_injection() -> np.ndarray:
+    return np.ones((8760, 1), dtype=np.float64)
 
-inflows = np.zeros((8760, 1), dtype=np.float64)
-inflows.flags.writeable = False
 
-lower_rule_curve = np.zeros((8760, 1), dtype=np.float64)
-lower_rule_curve.flags.writeable = False
+def pmax_withdrawal() -> np.ndarray:
+    return np.ones((8760, 1), dtype=np.float64)
 
-upper_rule_curve = np.ones((8760, 1), dtype=np.float64)
-upper_rule_curve.flags.writeable = False
 
-costs = np.zeros((8760, 1), dtype=np.float64)
-costs.flags.writeable = False
+def inflows() -> np.ndarray:
+    return np.zeros((8760, 1), dtype=np.float64)
 
-additional_constraints = np.zeros((8760, 1), dtype=np.float64)
-additional_constraints.flags.writeable = False
+
+def lower_rule_curve() -> np.ndarray:
+    return np.zeros((8760, 1), dtype=np.float64)
+
+
+def upper_rule_curve() -> np.ndarray:
+    return np.ones((8760, 1), dtype=np.float64)
+
+
+def costs() -> np.ndarray:
+    return np.zeros((8760, 1), dtype=np.float64)
+
+
+def additional_constraints() -> np.ndarray:
+    return np.zeros((8760, 1), dtype=np.float64)

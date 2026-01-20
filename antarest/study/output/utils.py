@@ -9,10 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from dataclasses import dataclass
 from enum import Enum, StrEnum
+from pathlib import Path
 from typing import Iterator, TypeAlias
 
+import numpy as np
 import pandas as pd
+import polars as pl
+from polars.exceptions import ComputeError
 
 from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 
@@ -107,3 +112,38 @@ def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[Time
 def add_time_index_to_dataframe(df: pd.DataFrame, matrix_index: MatrixIndex) -> None:
     time_column = pd.date_range(start=matrix_index.start_date, periods=len(df), freq=matrix_index.level.value[0])
     df.index = time_column
+
+
+def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
+    try:
+        return pl.read_csv(file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1)
+    except ComputeError:
+        # Happens if polars wrongly inferred the schema. If so, we specify that he shouldn't try.
+        # This way the parsing does not fail, but it is significantly slower.
+        # This case does not seem to happen very often.
+        return pl.read_csv(
+            file_path,
+            skip_lines=7,
+            separator="\t",
+            has_header=False,
+            null_values="N/A",
+            infer_schema=False,
+            n_threads=1,
+        )
+
+
+@dataclass(frozen=True)
+class OutputDataFrame:
+    data: pd.DataFrame
+    headers: list[list[str]]
+
+
+def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
+    content = file_path.read_text(encoding="utf-8")
+    output_headers = parse_headers(content, first_column)
+    polars_df = _parse_output_dataframe(file_path)
+
+    df = polars_df[polars_df.columns[first_column:]].to_pandas().astype(np.float64)
+
+    df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
+    return OutputDataFrame(data=df, headers=output_headers)

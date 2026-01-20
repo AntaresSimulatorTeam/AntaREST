@@ -10,14 +10,15 @@
 #
 # This file is part of the Antares project.
 
-import pandas as pd
+
+import polars as pl
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 
 
 def test_matrix_service() -> None:
     service = InMemorySimpleMatrixService()
-    df = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
+    df = pl.DataFrame([[1, 2, 3], [4, 5, 6]])
     matrix_id = service.create(df)
     assert service.exists(matrix_id)
     created_df = service.get(matrix_id)

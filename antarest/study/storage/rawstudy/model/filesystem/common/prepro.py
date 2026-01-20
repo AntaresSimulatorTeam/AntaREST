@@ -30,15 +30,18 @@ class PreproAreaSettings(IniFileNode):
         IniFileNode.__init__(self, config)
 
 
-default_k = np.zeros((24, 12), dtype=np.float64)
-default_k.flags.writeable = False
+def default_k() -> np.ndarray:
+    return np.zeros((24, 12), dtype=np.float64)
 
-default_conversion = np.array([[-9999999980506447872, 0, -9999999980506447872], [0, 0, 0]], dtype=np.float64)
-default_conversion.flags.writeable = False
 
-default_data = np.ones((12, 6), dtype=np.float64)
-default_data[:, 2] = 0
-default_data.flags.writeable = False
+def default_conversion() -> np.ndarray:
+    return np.array([[-9999999980506447872, 0, -9999999980506447872], [0, 0, 0]], dtype=np.float64)
+
+
+def default_data() -> np.ndarray:
+    res = np.ones((12, 6), dtype=np.float64)
+    res[:, 2] = 0
+    return res
 
 
 class PreproArea(FolderNode):

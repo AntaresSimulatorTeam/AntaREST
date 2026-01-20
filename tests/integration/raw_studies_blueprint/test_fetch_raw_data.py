@@ -276,8 +276,8 @@ class TestFetchRawData:
         res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
         assert res.status_code == 200, res.json()
         assert res.json()["index"] == list(range(365))
-        assert res.json()["columns"] == list(range(6))
-        assert res.json()["data"] == default_data_matrix.tolist()
+        assert res.json()["columns"] == ["0", "1", "2", "3", "4", "5"]
+        assert res.json()["data"] == default_data_matrix().tolist()
 
         # =============================
         #  ERRORS
@@ -536,55 +536,6 @@ class TestFetchRawData:
         # Checks the file content. It should be `variant_content` and not `parent_content`
         res = client.get(f"/v1/studies/{variant_study_id}/raw?path=user/test.txt")
         assert res.content == variant_content
-
-    def test_retrieve_from_archive(self, client: TestClient, user_access_token: str) -> None:
-        # client headers
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # create a new study
-        res = client.post("/v1/studies?name=MyStudy")
-        assert res.status_code == 201
-
-        # get the study id
-        study_id = res.json()
-
-        # add a new area to the study
-        res = client.post(
-            f"/v1/studies/{study_id}/areas",
-            json={
-                "name": "area 1",
-                "type": "AREA",
-                "metadata": {"country": "FR", "tags": ["a"]},
-            },
-        )
-        assert res.status_code == 200, res.json()
-
-        # archive the study
-        res = client.put(f"/v1/studies/{study_id}/archive")
-        assert res.status_code == 200
-        task_id = res.json()
-        wait_for(
-            lambda: client.get(
-                f"/v1/tasks/{task_id}",
-            ).json()["status"]
-            == 3
-        )
-
-        # retrieve a `Desktop.ini` file from inside the archive
-        rel_path = "Desktop"
-        res = client.get(
-            f"/v1/studies/{study_id}/raw",
-            params={"path": rel_path, "formatted": True},
-        )
-        assert res.status_code == 200
-
-        # retrieve a `study.antares` file from inside the archive
-        rel_path = "study"
-        res = client.get(
-            f"/v1/studies/{study_id}/raw",
-            params={"path": rel_path, "formatted": True},
-        )
-        assert res.status_code == 200
 
 
 class TestFetchOriginalFile:

@@ -275,6 +275,8 @@ def fastapi_app(
         services.auto_archiver.start()
     if services.blob_gc and Module.BLOB_GC in config.server.services:
         services.blob_gc.start()
+    if services.variable_view_gc and Module.VARIABLE_VIEW_GC in config.server.services:
+        services.variable_view_gc.start()
 
     customize_openapi(application)
 

@@ -26,7 +26,7 @@ class Settings(FolderNode):
         children: TREE = {
             "resources": Resources(self.matrix_mapper, self.config.next_file("resources")),
             "simulations": SettingsSimulations(self.matrix_mapper, self.config.next_file("simulations")),
-            "comments": RawFileNode(self.matrix_mapper, self.config.next_file("comments.txt")),
+            "comments": RawFileNode(self.config.next_file("comments.txt")),
             "generaldata": GeneralData(self.config.next_file("generaldata.ini")),
             "scenariobuilder": ScenarioBuilder(self.config.next_file("scenariobuilder.dat")),
         }

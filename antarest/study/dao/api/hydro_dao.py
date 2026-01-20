@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
@@ -55,39 +55,39 @@ class ReadOnlyHydroDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
