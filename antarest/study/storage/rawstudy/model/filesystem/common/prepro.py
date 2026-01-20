@@ -33,11 +33,10 @@ class PreproAreaSettings(IniFileNode):
 default_k = np.zeros((24, 12), dtype=np.float64)
 default_k.flags.writeable = False
 
-default_conversion = np.array([[-9999999980506447872, 0, -9999999980506447872], [0, 0, 0]], dtype=np.float64)
+default_conversion = np.zeros((2, 3), dtype=np.float64)
 default_conversion.flags.writeable = False
 
-default_data = np.ones((12, 6), dtype=np.float64)
-default_data[:, 2] = 0
+default_data = np.zeros((12, 6), dtype=np.float64)
 default_data.flags.writeable = False
 
 

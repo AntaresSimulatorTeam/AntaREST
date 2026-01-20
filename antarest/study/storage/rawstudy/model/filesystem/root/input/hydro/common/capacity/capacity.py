@@ -33,16 +33,12 @@ class MatrixInfo(TypedDict, total=False):
 
 
 default_maxpower = np.zeros((365, 4), dtype=np.float64)
-default_maxpower[:, 1] = 24
-default_maxpower[:, 3] = 24
 default_maxpower.flags.writeable = False
 
 default_reservoir = np.zeros((365, 3), dtype=np.float64)
-default_reservoir[:, 1] = 0.5
-default_reservoir[:, 2] = 1
 default_reservoir.flags.writeable = False
 
-default_credit_modulation = np.ones((2, 100), dtype=np.float64)
+default_credit_modulation = np.zeros((2, 101), dtype=np.float64)
 default_credit_modulation.flags.writeable = False
 
 default_water_values = np.zeros((365, 101), dtype=np.float64)
