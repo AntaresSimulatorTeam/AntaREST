@@ -14,7 +14,6 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Iterator, TypeAlias
 
-import numpy as np
 import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
@@ -56,6 +55,11 @@ class MCAllLinksQueryFile(StrEnum):
 
 QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
+@dataclass
+class OutputDataFrame:
+    data: pl.DataFrame
+    headers: list[list[str]] | list[str]
+
 
 def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
     if mc_root == MCRoot.MC_IND:
@@ -92,11 +96,11 @@ def parse_headers(content: str, start_col: int) -> list[list[str]]:
     return header_lines
 
 
-def concatenate_dataframe_multi_indexed_columns(df: pd.DataFrame) -> None:
+def concatenate_dataframe_multi_indexed_columns(data: OutputDataFrame ) -> None:
     """
     Used inside Imagrid endpoint as we want to keep the unit of the column but pyarrow doesn't handle MultiIndex.
     """
-    df.columns = pd.Index([" % ".join(col) for col in df.columns])
+    data.headers = [" % ".join(col) for col in data.headers]
 
 
 def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[TimeSerie]:
@@ -132,18 +136,10 @@ def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
         )
 
 
-@dataclass(frozen=True)
-class OutputDataFrame:
-    data: pd.DataFrame
-    headers: list[list[str]]
-
-
 def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     content = file_path.read_text(encoding="utf-8")
     output_headers = parse_headers(content, first_column)
     polars_df = _parse_output_dataframe(file_path)
 
-    df = polars_df[polars_df.columns[first_column:]].to_pandas().astype(np.float64)
-
-    df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
+    df = polars_df[polars_df.columns[first_column:]]
     return OutputDataFrame(data=df, headers=output_headers)

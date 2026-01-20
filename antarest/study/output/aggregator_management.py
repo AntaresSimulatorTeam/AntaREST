@@ -15,8 +15,10 @@ from pathlib import Path
 from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence
 
 import pandas as pd
+import polars as pl
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.model import MatrixFrequency
 from antarest.study.output.utils import (
     MCYEAR_COL,
@@ -24,6 +26,7 @@ from antarest.study.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
+    OutputDataFrame,
     QueryFileType,
     concatenate_dataframe_multi_indexed_columns,
     get_start_column,
@@ -54,7 +57,7 @@ ACTUAL_COLUMN_COMPONENT = 1
 logger = logging.getLogger(__name__)
 
 
-def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
+def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> list[str]:
     # original columns
     org_cols = df_cols.copy()
     if is_details:
@@ -118,13 +121,13 @@ class AggregatorManager:
         self._output_first_column = get_start_column(self.frequency)
         self.transform_columns_headers = transform_columns_headers
 
-    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
+    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> OutputDataFrame:
         output_data = parse_output_file(file_path, self._output_first_column)
 
         if normalize_column_names:
-            output_data.data.columns = pd.Index(normalize_df_column_names(self.mc_root, output_data.headers))
+            output_data.headers = normalize_df_column_names(self.mc_root, output_data.headers)  # type: ignore
 
-        return output_data.data
+        return output_data
 
     def _filter_ids(self, folder_path: Path) -> List[str]:
         if self.output_type == "areas":
@@ -185,11 +188,11 @@ class AggregatorManager:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         return all_output_files
 
-    def columns_filtering(self, df: pd.DataFrame, is_details: bool) -> pd.DataFrame:
+    def columns_filtering(self, data: OutputDataFrame, is_details: bool) -> OutputDataFrame:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
-            df_columns = [col[0] for col in df.columns] if not self.transform_columns_headers else df.columns.to_list()
+            df_columns = [col[0] for col in data.headers] if not self.transform_columns_headers else data.headers
             if is_details:
                 filtered_columns = [CLUSTER_ID_COL, TIME_ID_COL] + [
                     c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)
@@ -198,10 +201,12 @@ class AggregatorManager:
                 filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
             else:
                 filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
-            df = df.loc[:, filtered_columns]
-        return df
+            data.headers = filtered_columns
+            # todo
+            # df = df.loc[:, filtered_columns]
+        return data
 
-    def _process_df(self, file_path: Path, is_details: bool) -> pd.DataFrame:
+    def _process_df(self, file_path: Path, is_details: bool) -> OutputDataFrame:
         """
         Process the output file to return a DataFrame with the correct columns and values
             - In the case of a details file, the DataFrame, the columns include two parts cluster name + actual column name
@@ -218,10 +223,12 @@ class AggregatorManager:
             the DataFrame with the correct columns and values
         """
         normalize_cols = self.transform_columns_headers and not is_details
-        df = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
+        output_data = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
         if not self.transform_columns_headers or not is_details:
-            return df
+            return output_data
 
+        df = output_data.data.to_pandas()
+        df.columns = output_data.headers  # type: ignore
         nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())
@@ -237,9 +244,10 @@ class AggregatorManager:
 
         # Add the TIME_ID column and reindex to have the columns in the right order
         final_df[TIME_ID_COL] = (final_df.index // nb_clusters) + 1
-        return final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))
+        pandas_df = final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))
+        return OutputDataFrame(headers=pandas_df.columns.tolist(), data=create_polars_dataframe(pandas_df.to_numpy()))
 
-    def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
+    def _build_dataframes(self, files: Sequence[Path]) -> Iterator[OutputDataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         is_details = self.query_file in [
@@ -252,37 +260,44 @@ class AggregatorManager:
         ]
 
         for k, file_path in enumerate(files):
-            df = self._process_df(file_path, is_details)
+            output_data = self._process_df(file_path, is_details)
 
             # columns filtering
-            df = self.columns_filtering(df, is_details)
+            output_data = self.columns_filtering(output_data, is_details)
 
             if not self.transform_columns_headers:
-                concatenate_dataframe_multi_indexed_columns(df)
+                concatenate_dataframe_multi_indexed_columns(output_data)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-            new_column_order = _columns_ordering(df.columns.tolist(), column_name, is_details, self.mc_root)
+            new_column_order = _columns_ordering(output_data.headers, column_name, is_details, self.mc_root)
 
             if self.mc_root == MCRoot.MC_IND:
                 # add column for links/areas
                 relative_path_parts = file_path.relative_to(self.mc_ind_path).parts
-                df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__IND]
+                data = relative_path_parts[AREA_OR_LINK_INDEX__IND]
+                output_data.data = output_data.data.with_columns(pl.lit(data).alias(column_name))
+                output_data.headers.append(column_name)
                 # add column to record the Monte Carlo year
-                df[MCYEAR_COL] = int(relative_path_parts[MC_YEAR_INDEX])
+                value = int(relative_path_parts[MC_YEAR_INDEX])
+                output_data.data = output_data.data.with_columns(pl.lit(value).alias(MCYEAR_COL))
+                output_data.headers.append(MCYEAR_COL)
             else:
                 # add column for links/areas
                 relative_path_parts = file_path.relative_to(self.mc_all_path).parts
-                df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
+                data = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
+                output_data.data = output_data.data.with_columns(pl.lit(data).alias(column_name))
+                output_data.headers.append(column_name)
 
             if self.transform_columns_headers:
                 # add a column for the time id
                 if not is_details:
-                    df[TIME_ID_COL] = range(1, len(df) + 1)
+                    data = range(1, len(output_data.data) + 1)
+                    output_data.data = output_data.data.with_columns(pl.lit(data).alias(TIME_ID_COL))
 
                 # Reorganize the columns
-                df = df.reindex(columns=pd.Index(new_column_order))
+                output_data.headers = new_column_order
 
-            yield df
+            yield output_data
 
     def _check_mc_root_folder_exists(self) -> None:
         if self.mc_root == MCRoot.MC_IND:
