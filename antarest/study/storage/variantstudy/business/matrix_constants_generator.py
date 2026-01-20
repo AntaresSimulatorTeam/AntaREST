@@ -29,7 +29,10 @@ from antarest.study.storage.variantstudy.business.matrix_constants.matrix_consta
     ConstantsMatrixUsageProvider,
 )
 
-# TODO: put index into variable
+"""
+This file references all the default matrices used by the application when creating objects.
+These matrices may differ from the Simulator default ones as we want to be able to create objects with specific matrices by default.
+"""
 
 HYDRO_COMMON_CAPACITY_MAX_POWER_V7 = "hydro/common/capacity/max_power/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V7 = "hydro/common/capacity/reservoir/v7"
