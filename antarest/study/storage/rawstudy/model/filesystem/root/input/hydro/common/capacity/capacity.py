@@ -52,6 +52,8 @@ def default_credit_modulation() -> npt.NDArray[np.float64]:
 def default_water_values() -> npt.NDArray[np.float64]:
     return np.zeros((365, 101), dtype=np.float64)
 
+def default_max_daily() -> npt.NDArray[np.float64]:
+    return np.zeros((365, 1), dtype=np.float64)
 
 INITIAL_VERSION = StudyVersion.parse(0)
 # noinspection SpellCheckingInspection
@@ -90,13 +92,13 @@ MATRICES_INFO: List[MatrixInfo] = [
         "name": "maxDailyGenEnergy",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
-        "default_empty": default_max_daily_gen_energy,
+        "default_empty": default_max_daily,
     },
     {
         "name": "maxDailyPumpEnergy",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
-        "default_empty": default_max_daily_pump_energy,
+        "default_empty": default_max_daily,
     },
 ]
 
