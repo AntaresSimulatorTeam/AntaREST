@@ -164,5 +164,12 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def parse_content(self) -> pl.DataFrame:
+        """
+        Same behavior as `parse_as_dataframe` but does not return the Simulator default matrix if the file is empty.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def write_dataframe(self, df: pl.DataFrame) -> None:
         raise NotImplementedError()
