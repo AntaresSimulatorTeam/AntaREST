@@ -173,9 +173,6 @@ class GeneratorMatrixConstants:
     def get_null_matrix(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
 
-    def get_null_scenario_matrix(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[EMPTY_SCENARIO_MATRIX]
-
     def get_default_reserves(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[RESERVES_TS]
 
