@@ -26,18 +26,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.prope
 
 
 def default_link_legacy_matrix() -> np.ndarray:
-    link_legacy_matrix = np.zeros((8760, 8), dtype=np.float64)
-    link_legacy_matrix[:, :2] = 1
-    return link_legacy_matrix
+    return np.zeros((8760, 8), dtype=np.float64)
 
 
 class InputLinkArea(FolderNode):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        area: str,
-    ):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, area: str):
         super().__init__(matrix_mapper, config)
         self.area = area
 
