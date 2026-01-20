@@ -23,6 +23,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.common import
     fixed_8_columns,
     null_matrix,
     null_scenario_matrix,
+    ones_scenario_matrix,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
@@ -127,7 +128,7 @@ class GeneratorMatrixConstants:
 
         # Some short-term storage matrices use np.ones((8760, 1))
         self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(
-            lambda: pl.DataFrame(matrix_constants.st_storage.series.pmax_injection())
+            lambda: pl.DataFrame(ones_scenario_matrix())
         )
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:
