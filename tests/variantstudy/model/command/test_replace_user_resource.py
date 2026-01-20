@@ -27,7 +27,7 @@ def _set_up(command_context: CommandContext) -> list[str]:
     return [blob_1, blob_2, blob_3]
 
 
-def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext):
+def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_930
     blob_ids = _set_up(command_context)
 
@@ -63,7 +63,7 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
     assert content == {"second_folder": {}}
 
 
-def test_error_case(empty_study_930: FileStudy, command_context: CommandContext):
+def test_error_case(empty_study_930: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_930
     _set_up(command_context)
 

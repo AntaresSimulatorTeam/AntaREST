@@ -15,7 +15,7 @@ from antarest.core.tasks.model import TaskDTO, TaskStatus
 from tests.integration.utils import wait_task_completion
 
 
-def test_list_tasks(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_list_tasks(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     # getting an internal study and doing multiple actions, so we can add tasks on it

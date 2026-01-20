@@ -24,7 +24,7 @@ from tests.integration.utils import wait_task_completion
 ASSETS_DIR = assets_dir / "output_variables_list"
 
 
-def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     # Checks the endpoint works correctly
@@ -97,7 +97,9 @@ def test_get_output_variables_list_limit_case(
     assert res.status_code == 200
 
 
-def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_get_output_variables_imagrid_endpoint(
+    client: TestClient, user_access_token: str, internal_study_id: str
+) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
     res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/variables")
@@ -155,7 +157,7 @@ def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_t
     assert res.json() == expected_result
 
 
-def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
     url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"

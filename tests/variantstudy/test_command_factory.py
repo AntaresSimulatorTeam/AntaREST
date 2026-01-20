@@ -1582,7 +1582,7 @@ def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory) ->
     assert "metadata" not in dto.args
 
 
-def test_parse_legacy_create_user_resource_command(command_factory: CommandFactory):
+def test_parse_legacy_create_user_resource_command(command_factory: CommandFactory) -> None:
     """Test that version 1 format (with content field) can still be loaded."""
     dto = CommandDTO(
         action=CommandName.CREATE_USER_RESOURCE.value,

@@ -20,7 +20,7 @@ from antarest.blobstore.service import BlobService
 
 
 @pytest.fixture
-def blob_garbage_collector(tmp_path: Path):
+def blob_garbage_collector(tmp_path: Path) -> BlobGarbageCollector:
     """
     Fixture for creating a BlobGarbageCollector object.
     """
@@ -29,7 +29,7 @@ def blob_garbage_collector(tmp_path: Path):
 
 def test_delete_unused_saved_blobs(
     blob_garbage_collector: BlobGarbageCollector,
-):
+) -> None:
     unused_blobs = {"blob1", "blob2"}
     blob_garbage_collector.blob_service.delete = Mock()
     blob_garbage_collector._delete_unused_saved_blobs(unused_blobs)
@@ -43,7 +43,7 @@ def test_delete_unused_saved_blobs(
     blob_garbage_collector.blob_service.delete.assert_not_called()
 
 
-def test_clean_blobs(blob_garbage_collector: BlobGarbageCollector):
+def test_clean_blobs(blob_garbage_collector: BlobGarbageCollector) -> None:
     blob_garbage_collector.blob_service.get_saved_blobs.return_value = ["blob_saved", "blob_used"]
     blob_garbage_collector.blob_service.get_used_blobs.return_value = [
         BlobReference(blob_id="blob_used", use_description="Used in variant 1")
@@ -55,7 +55,7 @@ def test_clean_blobs(blob_garbage_collector: BlobGarbageCollector):
     blob_garbage_collector._delete_unused_saved_blobs.assert_called_once_with(unused_blobs={"blob_saved"})
 
 
-def test_clean_matrices_with_actual_service(simple_blob_service: BlobService):
+def test_clean_matrices_with_actual_service(simple_blob_service: BlobService) -> None:
     gc = BlobGarbageCollector(blob_service=simple_blob_service, sleeping_time=3600, dry_run=False)
 
     blob_id = simple_blob_service.save(b"Hello World !")
