@@ -13,7 +13,7 @@
 import itertools
 import logging
 import operator
-from typing import List, Tuple, cast
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -59,11 +59,13 @@ class MatrixIndexError(MatrixUpdateError):
 
 
 def update_matrix_content_with_slices(
-    matrix_data: pd.DataFrame,
+    matrix_data: pl.DataFrame,
     slices: List[MatrixSlice],
     operation: Operation,
-) -> pd.DataFrame:
-    mask = pd.DataFrame(np.zeros(matrix_data.shape), dtype=bool)
+) -> pl.DataFrame:
+    pandas_df = matrix_data.to_pandas()
+    pandas_df.columns = range(len(pandas_df.columns))  # type: ignore
+    mask = pd.DataFrame(np.zeros(pandas_df.shape), dtype=bool)
 
     for matrix_slice in slices:
         # note: the `.loc` attribute doesn't raise `IndexError`
@@ -73,11 +75,11 @@ def update_matrix_content_with_slices(
         ] = True
 
     # noinspection PyTypeChecker
-    new_matrix_data = matrix_data.where(mask).apply(operation.compute)
-    new_matrix_data[new_matrix_data.isnull()] = matrix_data
+    new_matrix_data = pandas_df.where(mask).apply(operation.compute)
+    new_matrix_data[new_matrix_data.isnull()] = pandas_df
 
     # noinspection PyTypeChecker
-    return cast(pd.DataFrame, new_matrix_data.astype(matrix_data.dtypes))
+    return create_polars_dataframe(new_matrix_data.to_numpy())
 
 
 def update_matrix_content_with_coordinates(
@@ -267,13 +269,11 @@ class MatrixManager:
         for instr in edit_instructions:
             try:
                 if instr.slices:
-                    pandas_df = matrix_df.to_pandas()
-                    pandas_df = update_matrix_content_with_slices(
-                        matrix_data=pandas_df,
+                    matrix_df = update_matrix_content_with_slices(
+                        matrix_data=matrix_df,
                         slices=instr.slices,
                         operation=instr.operation,
                     )
-                    matrix_df = create_polars_dataframe(pandas_df.to_numpy())
                 elif instr.coordinates:
                     matrix_df = update_matrix_content_with_coordinates(
                         df=matrix_df,
