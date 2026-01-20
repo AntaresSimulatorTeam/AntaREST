@@ -92,7 +92,7 @@ def update_matrix_content_with_coordinates(
             value = operation.compute(df[row, column], use_coords=True)
             if isinstance(value, float) and schema[columns[column]].is_integer():
                 # Polars will round the float value without saying a thing.
-                # To avoid this we first have to change the column dtype and then we can assign the value
+                # To avoid this we first have to change the column dtype, and then we can assign the value
                 col_name = columns[column]
                 schema[col_name] = pl.Float64
                 df = df.with_columns(pl.col(col_name).cast(pl.Float64).alias(col_name))
