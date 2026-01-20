@@ -107,10 +107,7 @@ class InputSeriesMatrix(MatrixNode):
     def write_dataframe(self, df: pd.DataFrame) -> None:
         # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
         # This way, we can write the content quicker, and the file takes less place on the fs.
-        if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):
-            self.config.path.write_text("")
-        else:
-            write_dataframe_in_tsv_format(df, self.config.path)
+        write_dataframe_in_tsv_format(df, self.config.path)
 
     def _infer_path(self) -> Path:
         link_path = self.matrix_mapper.get_link_path(self)

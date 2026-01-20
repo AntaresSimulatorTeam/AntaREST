@@ -1417,7 +1417,6 @@ class StudyService:
         study.updated_at = current_time()
 
         self._save_study(study)
-        self.normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
