@@ -95,7 +95,7 @@ def update_matrix_content_with_coordinates(
                 # To avoid this we first have to change the column dtype, and then we can assign the value
                 col_name = columns[column]
                 schema[col_name] = pl.Float64
-                df = df.with_columns(pl.col(col_name).cast(pl.Float64).alias(col_name))
+                df = df.with_columns(pl.col(col_name).cast(pl.Float64))
             df[row, column] = value
         except IndexError as exc:
             raise MatrixIndexError(operation, (row, column), exc) from None
