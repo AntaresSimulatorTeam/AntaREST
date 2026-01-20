@@ -12,6 +12,11 @@
 
 import numpy as np
 
+"""
+These matrices are the default Simulator ones.
+We show them in the IHM when the matrix file is empty.
+"""
+
 
 def default_scenario_hourly() -> np.ndarray:
     return np.zeros((8760, 1), dtype=np.float64)
@@ -46,13 +51,11 @@ def default_k() -> np.ndarray:
 
 
 def default_conversion() -> np.ndarray:
-    return np.array([[-9999999980506447872, 0, -9999999980506447872], [0, 0, 0]], dtype=np.float64)
+    return np.zeros((2, 3), dtype=np.float64)
 
 
 def default_data() -> np.ndarray:
-    res = np.ones((12, 6), dtype=np.float64)
-    res[:, 2] = 0
-    return res
+    return np.zeros((12, 6), dtype=np.float64)
 
 
 def default_maxpower() -> np.ndarray:
