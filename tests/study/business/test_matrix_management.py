@@ -12,8 +12,11 @@
 
 from typing import List, Tuple
 
+import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.matrixstore.model import MatrixData
@@ -268,15 +271,15 @@ def test_update_matrix_content_with_coordinates(
     operation: Operation,
     expected_result: List[List[MatrixData]],
 ) -> None:
-    matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
+    matrix_data = pl.DataFrame(np.full((5, 5), -1))
 
     output_matrix = update_matrix_content_with_coordinates(df=matrix_data, coordinates=coords, operation=operation)
 
-    assert output_matrix.equals(pd.DataFrame(expected_result).astype(matrix_data.dtypes))
+    assert_frame_equal(output_matrix, pl.DataFrame(np.array(expected_result)), check_dtypes=False)
 
 
 def test_update_matrix_content_with_coordinates__out_of_bounds() -> None:
-    matrix_data = pd.DataFrame([[]], dtype=float)
+    matrix_data = pl.DataFrame([[]])
     with pytest.raises(MatrixIndexError):
         update_matrix_content_with_coordinates(
             df=matrix_data,

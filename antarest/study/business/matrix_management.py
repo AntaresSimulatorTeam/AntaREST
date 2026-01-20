@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -80,17 +81,25 @@ def update_matrix_content_with_slices(
 
 
 def update_matrix_content_with_coordinates(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     coordinates: List[Tuple[int, int]],
     operation: Operation,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
+    schema = df.schema
+    columns = df.columns
     for row, column in coordinates:
         try:
-            df.iat[row, column] = operation.compute(df.iat[row, column], use_coords=True)
+            value = operation.compute(df[row, column], use_coords=True)
+            if isinstance(value, float) and schema[columns[column]].is_integer():
+                # Polars will round the float value without saying a thing.
+                # To avoid this we first have to change the column dtype and then we can assign the value
+                col_name = columns[column]
+                schema[col_name] = pl.Float64
+                df = df.with_columns(pl.col(col_name).cast(pl.Float64).alias(col_name))
+            df[row, column] = value
         except IndexError as exc:
             raise MatrixIndexError(operation, (row, column), exc) from None
-    # noinspection PyTypeChecker
-    return df.astype(dict(df.dtypes))
+    return df
 
 
 def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
@@ -250,8 +259,7 @@ class MatrixManager:
 
         try:
             logger.info(f"Loading matrix data from node '{path}'...")
-            matrix_df = matrix_node.parse_as_dataframe().to_pandas()
-            matrix_df.columns = [int(i) for i in matrix_df.columns]  # type: ignore
+            matrix_df = matrix_node.parse_as_dataframe()
         except ValueError as exc:
             raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
 
@@ -262,11 +270,13 @@ class MatrixManager:
         for instr in edit_instructions:
             try:
                 if instr.slices:
-                    matrix_df = update_matrix_content_with_slices(
-                        matrix_data=matrix_df,
+                    pandas_df = matrix_df.to_pandas()
+                    pandas_df = update_matrix_content_with_slices(
+                        matrix_data=pandas_df,
                         slices=instr.slices,
                         operation=instr.operation,
                     )
+                    matrix_df = create_polars_dataframe(pandas_df.to_numpy())
                 elif instr.coordinates:
                     matrix_df = update_matrix_content_with_coordinates(
                         df=matrix_df,
@@ -282,7 +292,7 @@ class MatrixManager:
                 raise MatrixEditError(instr, reason=str(exc)) from None
 
         logger.info(f"Writing matrix data of shape {matrix_df.shape}...")
-        new_matrix_id = matrix_service.create(pl.from_pandas(matrix_df))
+        new_matrix_id = matrix_service.create(matrix_df)
 
         logger.info(f"Preparing 'ReplaceMatrix' command for path '{path}'...")
         command = [
