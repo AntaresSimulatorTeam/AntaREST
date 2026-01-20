@@ -1114,9 +1114,9 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # They all belong to the same group.
     writers = db_session.query(Group).filter(Group.name == "Writers").one()
     studies = [
-        create_study(id=uuid.uuid4(), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
-        create_study(id=uuid.uuid4(), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
-        create_study(id=uuid.uuid4(), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        create_study(id=str(uuid.uuid4()), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
+        create_study(id=str(uuid.uuid4()), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        create_study(id=str(uuid.uuid4()), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
     ]
 
     # All admin and writers should have WRITE access to the studies.
@@ -1133,7 +1133,9 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # Jack creates a additional variant study and adds it to the readers and writers groups.
     readers = db_session.query(Group).filter(Group.name == "Readers").one()
     studies.append(
-        create_study(id=uuid.uuid4(), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers])
+        create_study(
+            id=str(uuid.uuid4()), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers]
+        )
     )
 
     # All admin and writers should have READ access to the studies.
