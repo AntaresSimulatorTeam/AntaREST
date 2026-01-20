@@ -18,7 +18,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderN
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_6_fixed_hourly,
-    default_link_legacy_matrix,
+    default_8_fixed_hourly,
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.capacities.capacities import (
@@ -39,7 +39,7 @@ class InputLinkArea(FolderNode):
         cfg = self.config
         if cfg.version < STUDY_VERSION_8_2:
             children = {
-                link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt"), default_empty=default_link_legacy_matrix)
+                link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt"), default_empty=default_8_fixed_hourly)
                 for link in cfg.get_links(self.area)
             }
         else:

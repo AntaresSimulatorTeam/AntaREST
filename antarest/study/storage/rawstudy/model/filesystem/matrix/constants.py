@@ -75,9 +75,5 @@ def default_energy() -> np.ndarray:
     return np.zeros((12, 5), dtype=np.float64)
 
 
-def default_link_legacy_matrix() -> np.ndarray:
-    return np.zeros((8760, 8), dtype=np.float64)
-
-
 def cost_level() -> np.ndarray:
     return np.full((8760, 1), -1e-6)
