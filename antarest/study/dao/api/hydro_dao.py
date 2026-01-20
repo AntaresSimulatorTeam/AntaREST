@@ -21,6 +21,8 @@ from antarest.study.business.model.hydro_model import (
     HydroProperties,
     InflowStructure,
 )
+from typing import Optional, Callable
+from antarest.matrixstore.service import ISimpleMatrixService
 
 
 class ReadOnlyHydroDao(ABC):
@@ -172,4 +174,13 @@ class HydroDao(ReadOnlyHydroDao):
 
     @abstractmethod
     def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def convert_hydro_pmax(
+        self,
+        hydro_pmax: str,
+        matrix_service: ISimpleMatrixService,
+        progress_callback: Optional[Callable[[int], None]] = None,
+    ) -> None:
         raise NotImplementedError()

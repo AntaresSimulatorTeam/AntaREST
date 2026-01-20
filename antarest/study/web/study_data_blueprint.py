@@ -1224,15 +1224,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def set_compatibility_parameters(uuid: str, field_values: CompatibilityParametersUpdate) -> CompatibilityParameters:
         logger.info(f"Updating Compatibility parameters values for study {uuid}")
-        """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.compatibility_parameters_manager.update_compatibility_parameters(study_interface, field_values)
-        """
-        pass
-
-    # To this
-
     @bp.put(
         "/studies/{uuid}/timeseries/generate",
         summary="Generate timeseries",

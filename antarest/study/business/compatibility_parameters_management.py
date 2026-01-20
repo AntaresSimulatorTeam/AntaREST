@@ -11,17 +11,27 @@
 # This file is part of the Antares project.
 
 
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, CompatibilityParametersUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.model.command.hydro_pmax_converter import HydroPMaxConverter
 
 
 class CompatibilityParamsManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
-
     def get_compatibility_parameters(self, study: StudyInterface) -> CompatibilityParameters:
         """
         Get Compatibility parameters values for the webapp form
         """
         return study.get_study_dao().get_compatibility_parameters()
+
+    def update_compatibility_parameters(self, study: StudyInterface, parameters: CompatibilityParametersUpdate) -> CompatibilityParameters:
+        """
+        Update Compatibility parameters values from the webapp form
+        """
+        command = HydroPMaxConverter(
+            parameters=parameters, command_context=self._command_context, study_version=study.version
+        )
+        study.add_commands([command])
+        return self.get_compatibility_parameters(study)
