@@ -268,6 +268,9 @@ class AggregatorManager:
             if not self.transform_columns_headers:
                 concatenate_dataframe_multi_indexed_columns(output_data)
 
+            # Starting from here, output_data.headers are just a list of strings.
+            # We can use them as colons for our polars dataframe !!!!
+
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(output_data.headers, column_name, is_details, self.mc_root)
 
