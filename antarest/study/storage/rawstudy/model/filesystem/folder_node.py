@@ -85,21 +85,10 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
         if depth == 0:
             return {}
-
-        result: JSON = {}
-        for name, node in children.items():
-            # Hide optional matrices when neither .txt nor .link exists
-            if isinstance(node, MatrixNode):
-                should_exist = getattr(node, "should_exist", True)
-                if not should_exist:
-                    has_file = node.file_exists()
-                    has_link = node.matrix_mapper.has_link(node)
-                    if not has_file and not has_link:
-                        continue
-
-            result[name] = node.get(depth=depth - 1, expanded=True, formatted=formatted) if depth != 1 else {}
-
-        return result
+        return {
+            name: node.get(depth=depth - 1, expanded=True, formatted=formatted) if depth != 1 else {}
+            for name, node in children.items()
+        }
 
     @override
     def get(

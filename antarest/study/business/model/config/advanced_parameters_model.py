@@ -116,8 +116,6 @@ class AdvancedParameters(AntaresBaseModel):
     seed_initial_reservoir_levels: int = 10005489
     # Field removed in v9.2
     initial_reservoir_levels: Optional[InitialReservoirLevel] = None
-    # Field introduced in v9.2
-    hydro_pmax: Optional[str] | None = None
     # Field introduced in v9.3
     accurate_shave_peaks_include_short_term_storage: Optional[bool] = None
 
@@ -147,8 +145,6 @@ class AdvancedParametersUpdate(AntaresBaseModel):
     seed_initial_reservoir_levels: Optional[int] = None
     initial_reservoir_levels: Optional[InitialReservoirLevel] = None
     accurate_shave_peaks_include_short_term_storage: Optional[bool] = None
-    # Field introduced in v9.2
-    hydro_pmax: Optional[str] | None = None
 
 
 def update_advanced_parameters(

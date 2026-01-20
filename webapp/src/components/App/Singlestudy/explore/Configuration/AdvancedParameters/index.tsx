@@ -21,6 +21,7 @@ import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
   getAdvancedParamsFormFields,
+  getCompatibilityParamsFormFields,
   setAdvancedParamsFormFields,
   type AdvancedParamsFormFields,
 } from "./utils";
@@ -58,7 +59,17 @@ function AdvancedParameters() {
     <Form
       key={study.id}
       config={{
-        defaultValues: () => getAdvancedParamsFormFields(study.id),
+        defaultValues: async () => {
+          const [advancedParams, compatibilityParams] = await Promise.all([
+            getAdvancedParamsFormFields(study.id),
+            getCompatibilityParamsFormFields(study.id),
+          ]);
+
+          return {
+            ...advancedParams,
+            ...compatibilityParams,
+          };
+        },
       }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}

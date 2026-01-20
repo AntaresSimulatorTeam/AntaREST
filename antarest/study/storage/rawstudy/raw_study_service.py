@@ -26,12 +26,11 @@ from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
@@ -467,18 +466,7 @@ class RawStudyService(AbstractStorageService):
         For now AntaresWeb doesn't support the field `hydro-pmax` when it's set at `hourly`.
         If we find this value, we want to raise an Exception
         """
-        if StudyVersion.parse(study.version) >= STUDY_VERSION_9_2:
-            general_data_path = Path(study.path) / "settings" / "generaldata.ini"
-            ini_content = read_ini(general_data_path)
-            # The section is optional and AntaresWeb supports the default Simulator value
-            if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
-                hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
-                if hydro_pmax_value in {"daily", "hourly"}:
-                    return
-                else:
-                    raise NotImplementedError(
-                        f"AntaresWeb doesn't support the value '{hydro_pmax_value}' for the flag 'hydro-pmax'"
-                    )
+        pass
 
     def normalize_study(self, study: Study | FileStudy) -> None:
         """

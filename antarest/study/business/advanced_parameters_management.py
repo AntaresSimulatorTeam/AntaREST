@@ -13,8 +13,6 @@
 
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters, AdvancedParametersUpdate
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.hydro_pmax_converter import HydroPmaxConverter
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_advanced_parameters import UpdateAdvancedParameters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -35,29 +33,8 @@ class AdvancedParamsManager:
         """
         Update Advanced parameters values from the webapp form
         """
-        current_parameters = self.get_advanced_parameters(study)
-
-        # Check if hydro_pmax actually changed
-        hydro_pmax_changed = (
-            parameters.hydro_pmax is not None and current_parameters.hydro_pmax != parameters.hydro_pmax
+        command = UpdateAdvancedParameters(
+            command_context=self._command_context, study_version=study.version, parameters=parameters
         )
-
-        commands: list[ICommand] = []
-
-        commands.append(
-            UpdateAdvancedParameters(
-                command_context=self._command_context, study_version=study.version, parameters=parameters
-            )
-        )
-
-        if hydro_pmax_changed:
-            commands.append(
-                HydroPmaxConverter(
-                    command_context=self._command_context,
-                    study_version=study.version,
-                    hydro_pmax=parameters.hydro_pmax,
-                )
-            )
-
-        study.add_commands(commands)
+        study.add_commands([command])
         return self.get_advanced_parameters(study)

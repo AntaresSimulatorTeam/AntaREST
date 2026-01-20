@@ -41,7 +41,7 @@ class FileStudyAdvancedParametersDao(AdvancedParametersDao, ABC):
     def get_advanced_parameters(self) -> AdvancedParameters:
         file_study = self.get_file_study()
         args = {}
-        for keyword in ["seeds - Mersenne Twister", "other preferences", "advanced parameters", "compatibility"]:
+        for keyword in ["seeds - Mersenne Twister", "other preferences", "advanced parameters"]:
             try:
                 data = file_study.tree.get(["settings", "generaldata", keyword])
             except KeyError:

@@ -12,18 +12,12 @@
 
 from typing import Optional
 
-import numpy as np
-import pandas as pd
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    command_failed,
-    command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -35,17 +29,19 @@ class HydroPmaxConverter(ICommand):
     Command used to convert hydro-pmax value from daily to hourly and vice versa
     """
 
-    command_name: CommandName = CommandName.HYDRO_PMAX_CONVERTER
+    command_name: CommandName = CommandName.CONVERT_HYDRO_PMAX
 
     hydro_pmax: str
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         # Mapping to store BOTH matrix IDs per area: {area_id: {"gen": matrix_id, "pump": matrix_id}}
-        hourly_matrix_mapping: dict[str, dict[str, str]] = {}
-        daily_matrix_mapping: dict[str, dict[str, str]] = {}
+        # hourly_matrix_mapping: dict[str, dict[str, str]] = {}
+        # daily_matrix_mapping: dict[str, dict[str, str]] = {}
 
         # 1 - Get all areas
+        """
+        # Do that inside DAO class with method something like convert_hydro_pmax
         areas = study_data.get_file_study().config.areas.keys()
         total_areas = len(areas)
         file_study = study_data.get_file_study()
@@ -129,6 +125,7 @@ class HydroPmaxConverter(ICommand):
         return command_succeeded(
             f"Hydro pmax converted from {hydro_pmax_before_change} to {self.hydro_pmax} successfully."
         )
+        """
 
     @override
     def to_dto(self) -> CommandDTO:

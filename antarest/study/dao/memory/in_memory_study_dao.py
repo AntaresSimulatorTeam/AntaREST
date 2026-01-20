@@ -25,6 +25,7 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -164,6 +165,8 @@ class InMemoryStudyDao(StudyDao):
         self._optimization_preferences: OptimizationPreferences = OptimizationPreferences()
         # Advanced parameters config
         self._advanced_parameters: AdvancedParameters = AdvancedParameters()
+        # Compatibility parameters config
+        self._compatibility_parameters: CompatibilityParameters = CompatibilityParameters()
         # Xpansion
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
         self._xpansion_settings: XpansionSettings = XpansionSettings()
@@ -670,6 +673,10 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_advanced_parameters(self) -> AdvancedParameters:
         return self._advanced_parameters
+
+    @override
+    def get_compatibility_parameters(self) -> CompatibilityParameters:
+        return self._compatibility_parameters
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:

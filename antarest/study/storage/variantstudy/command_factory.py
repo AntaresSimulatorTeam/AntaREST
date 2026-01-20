@@ -168,7 +168,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_TIMESERIES_CONFIG.value: UpdateTimeSeriesConfig,
     CommandName.REPLACE_HYDRO_ALLOCATION.value: ReplaceHydroAllocation,
     CommandName.REPLACE_HYDRO_CORRELATION.value: ReplaceHydroCorrelation,
-    CommandName.HYDRO_PMAX_CONVERTER.value: HydroPmaxConverter,
+    CommandName.CONVERT_HYDRO_PMAX.value: HydroPmaxConverter,
     CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
 }

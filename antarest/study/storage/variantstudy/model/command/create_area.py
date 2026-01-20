@@ -12,14 +12,10 @@
 
 from typing import Any, Dict, Final, Optional
 
-import numpy as np
-import pandas as pd
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.core.serde.ini_reader import read_ini
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.area_properties_model import AdequacyPatchMode, AreaProperties
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
@@ -96,6 +92,8 @@ class CreateArea(ICommand):
             study_data.save_hydro_mingen(area_id, null_matrix)
         if self.study_version >= STUDY_VERSION_9_2:
             # Read hydro-pmax from generaldata.ini when available (default to "daily")
+            """
+            # Do this inside get_compatibility_parameters()
             hydro_pmax = "daily"
             try:
                 file_study = study_data.get_file_study()
@@ -129,6 +127,7 @@ class CreateArea(ICommand):
                 )
                 study_data.save_hydro_max_hourly_gen_power(area_id, hourly_gen)
                 study_data.save_hydro_max_hourly_pump_power(area_id, hourly_pump)
+            """
         # Matrices
         study_data.save_load(area_id, null_matrix)
         study_data.save_solar(area_id, null_matrix)
