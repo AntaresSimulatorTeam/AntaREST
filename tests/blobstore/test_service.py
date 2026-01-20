@@ -24,7 +24,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
 
-def test_hashing_method():
+def test_hashing_method() -> None:
     """
     Non-Regression Test for the hashing method
     """
@@ -35,7 +35,7 @@ def test_hashing_method():
     )
 
 
-def test_lifecycle(simple_blob_service: BlobService):
+def test_lifecycle(simple_blob_service: BlobService) -> None:
     bucket_dir = simple_blob_service.blob_content_repository.bucket_dir
 
     # Create 2 blobs

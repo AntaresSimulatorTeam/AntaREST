@@ -594,7 +594,7 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
 
 
 @with_db_context
-def test_get_tasks(core_config: Config, event_bus: IEventBus):
+def test_get_tasks(core_config: Config, event_bus: IEventBus) -> None:
     # Create a user who has no admin rights
     regular_user = User(id=99, name="regular")
     db.session.add(regular_user)
