@@ -55,6 +55,7 @@ class MCAllLinksQueryFile(StrEnum):
 
 QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
+
 @dataclass
 class OutputDataFrame:
     data: pl.DataFrame
@@ -96,7 +97,7 @@ def parse_headers(content: str, start_col: int) -> list[list[str]]:
     return header_lines
 
 
-def concatenate_dataframe_multi_indexed_columns(data: OutputDataFrame ) -> None:
+def concatenate_dataframe_multi_indexed_columns(data: OutputDataFrame) -> None:
     """
     Used inside Imagrid endpoint as we want to keep the unit of the column but pyarrow doesn't handle MultiIndex.
     """

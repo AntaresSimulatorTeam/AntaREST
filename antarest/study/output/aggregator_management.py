@@ -202,8 +202,8 @@ class AggregatorManager:
             else:
                 filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
             data.headers = filtered_columns
-            # todo
-            # df = df.loc[:, filtered_columns]
+            data.data = data.data.select(filtered_columns)
+
         return data
 
     def _process_df(self, file_path: Path, is_details: bool) -> OutputDataFrame:
@@ -247,7 +247,7 @@ class AggregatorManager:
         pandas_df = final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))
         return OutputDataFrame(headers=pandas_df.columns.tolist(), data=create_polars_dataframe(pandas_df.to_numpy()))
 
-    def _build_dataframes(self, files: Sequence[Path]) -> Iterator[OutputDataFrame]:
+    def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pl.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         is_details = self.query_file in [
@@ -269,38 +269,37 @@ class AggregatorManager:
                 concatenate_dataframe_multi_indexed_columns(output_data)
 
             # Starting from here, output_data.headers are just a list of strings.
-            # We can use them as colons for our polars dataframe !!!!
+            # We can use them as colons for our dataframe.
+            df = output_data.data
+            df.columns = output_data.headers  # type: ignore
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-            new_column_order = _columns_ordering(output_data.headers, column_name, is_details, self.mc_root)
+            new_column_order = _columns_ordering(df.columns, column_name, is_details, self.mc_root)
 
             if self.mc_root == MCRoot.MC_IND:
                 # add column for links/areas
                 relative_path_parts = file_path.relative_to(self.mc_ind_path).parts
                 data = relative_path_parts[AREA_OR_LINK_INDEX__IND]
-                output_data.data = output_data.data.with_columns(pl.lit(data).alias(column_name))
-                output_data.headers.append(column_name)
+                df = df.with_columns(pl.lit(data).alias(column_name))
+
                 # add column to record the Monte Carlo year
                 value = int(relative_path_parts[MC_YEAR_INDEX])
-                output_data.data = output_data.data.with_columns(pl.lit(value).alias(MCYEAR_COL))
-                output_data.headers.append(MCYEAR_COL)
+                df = df.with_columns(pl.lit(value).alias(MCYEAR_COL))
             else:
                 # add column for links/areas
                 relative_path_parts = file_path.relative_to(self.mc_all_path).parts
                 data = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
-                output_data.data = output_data.data.with_columns(pl.lit(data).alias(column_name))
-                output_data.headers.append(column_name)
+                df = df.with_columns(pl.lit(data).alias(column_name))
 
             if self.transform_columns_headers:
                 # add a column for the time id
                 if not is_details:
-                    data = range(1, len(output_data.data) + 1)
-                    output_data.data = output_data.data.with_columns(pl.lit(data).alias(TIME_ID_COL))
+                    df = df.with_columns(pl.lit(range(1, len(df) + 1)).alias(TIME_ID_COL))
 
                 # Reorganize the columns
-                output_data.headers = new_column_order
+                df = df.select(new_column_order)
 
-            yield output_data
+            yield df
 
     def _check_mc_root_folder_exists(self) -> None:
         if self.mc_root == MCRoot.MC_IND:
