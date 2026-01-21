@@ -23,7 +23,9 @@ import {
   getAdvancedParamsFormFields,
   getCompatibilityParamsFormFields,
   setAdvancedParamsFormFields,
+  setCompatibilityParamsFormFields,
   type AdvancedParamsFormFields,
+  type CompatibilityParamsFormFields,
 } from "./utils";
 
 function AdvancedParameters() {
@@ -34,8 +36,22 @@ function AdvancedParameters() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
-    return setAdvancedParamsFormFields(study.id, dirtyValues);
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<AdvancedParamsFormFields> & CompatibilityParamsFormFields) => {
+    const { hydroPmax, ...advancedParams } = dirtyValues;
+    
+    const promises: Promise<unknown>[] = [];
+    
+    // Update advanced parameters if there are any changes
+    if (Object.keys(advancedParams).length > 0) {
+      promises.push(setAdvancedParamsFormFields(study.id, advancedParams));
+    }
+    
+    // Update compatibility parameters if hydroPmax changed
+    if (hydroPmax !== undefined) {
+      promises.push(setCompatibilityParamsFormFields(study.id, { hydroPmax }));
+    }
+    
+    return Promise.all(promises);
   };
 
   const handleSubmitSuccessful = ({

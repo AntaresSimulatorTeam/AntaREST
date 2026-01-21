@@ -10,10 +10,11 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Callable, Dict, Optional
 
 import polars as pl
 
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import (
@@ -21,8 +22,6 @@ from antarest.study.business.model.hydro_model import (
     HydroProperties,
     InflowStructure,
 )
-from typing import Optional, Callable
-from antarest.matrixstore.service import ISimpleMatrixService
 
 
 class ReadOnlyHydroDao(ABC):
@@ -91,19 +90,19 @@ class ReadOnlyHydroDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
 
@@ -161,19 +160,19 @@ class HydroDao(ReadOnlyHydroDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+    def save_hydro_max_hourly_gen_power(self, area_id: str, matrix_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+    def save_hydro_max_hourly_pump_power(self, area_id: str, matrix_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+    def save_hydro_max_daily_gen_energy(self, area_id: str, matrix_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+    def save_hydro_max_daily_pump_energy(self, area_id: str, matrix_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod

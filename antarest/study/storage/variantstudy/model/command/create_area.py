@@ -91,43 +91,14 @@ class CreateArea(ICommand):
         if self.study_version >= STUDY_VERSION_8_6:
             study_data.save_hydro_mingen(area_id, null_matrix)
         if self.study_version >= STUDY_VERSION_9_2:
-            # Read hydro-pmax from generaldata.ini when available (default to "daily")
-            """
-            # Do this inside get_compatibility_parameters()
-            hydro_pmax = "daily"
-            try:
-                file_study = study_data.get_file_study()
-                generaldata_path = file_study.config.study_path / "settings" / "generaldata.ini"
-                if generaldata_path.exists():
-                    ini_content = read_ini(generaldata_path)
-                    hydro_pmax = (
-                        ini_content.get("compatibility", {}).get("hydro-pmax", "daily")
-                        if isinstance(ini_content.get("compatibility"), dict)
-                        else "daily"
-                    )
-            except Exception:
-                hydro_pmax = "daily"
-
-            # Always create daily matrices; create hourly only when hydro-pmax is "hourly"
-            daily_gen = MATRIX_PROTOCOL_PREFIX + self.command_context.matrix_service.create(
-                pd.DataFrame(np.full((365, 1), 24))
-            )
-            daily_pump = MATRIX_PROTOCOL_PREFIX + self.command_context.matrix_service.create(
-                pd.DataFrame(np.full((365, 1), 24))
-            )
-            study_data.save_hydro_max_daily_gen_energy(area_id, daily_gen)
-            study_data.save_hydro_max_daily_pump_energy(area_id, daily_pump)
-
+            # Read hydro-pmax from generaldata.ini
+            compatibility_parameters = study_data.get_compatibility_parameters()
+            hydro_pmax = compatibility_parameters.hydro_pmax
             if hydro_pmax == "hourly":
-                hourly_gen = MATRIX_PROTOCOL_PREFIX + self.command_context.matrix_service.create(
-                    pd.DataFrame(np.zeros((8760, 1)))
-                )
-                hourly_pump = MATRIX_PROTOCOL_PREFIX + self.command_context.matrix_service.create(
-                    pd.DataFrame(np.zeros((8760, 1)))
-                )
-                study_data.save_hydro_max_hourly_gen_power(area_id, hourly_gen)
-                study_data.save_hydro_max_hourly_pump_power(area_id, hourly_pump)
-            """
+                study_data.save_hydro_max_hourly_gen_power(area_id, constants.get_hydro_max_hourly_gen_power())
+                study_data.save_hydro_max_hourly_pump_power(area_id, constants.get_hydro_max_hourly_pump_power())
+                study_data.save_hydro_max_daily_gen_energy(area_id, constants.get_hydro_max_daily_gen_energy())
+                study_data.save_hydro_max_daily_pump_energy(area_id, constants.get_hydro_max_daily_pump_energy())
         # Matrices
         study_data.save_load(area_id, null_matrix)
         study_data.save_solar(area_id, null_matrix)

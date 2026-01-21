@@ -26,8 +26,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
+from typing import Callable, Optional
+
 from typing_extensions import override
 
+from antarest.core.utils.polars import create_polars_dataframe
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
@@ -37,9 +41,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
     serialize_inflow_structure,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.matrixstore.service import ISimpleMatrixService
-from typing import Optional, Callable
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 
 HYDRO_PATH = ["input", "hydro", "hydro"]
 CORRELATION_PATH = ["input", "hydro", "prepro", "correlation", "annual"]
@@ -296,22 +297,22 @@ class FileStudyHydroDao(HydroDao):
         file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mingen"])
 
     @override
-    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "series", area_id, "maxHourlyGenPower"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "series", area_id, "maxHourlyPumpPower"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"]
         return self.get_impl().get_matrix(url)
 
@@ -350,21 +351,21 @@ class FileStudyHydroDao(HydroDao):
         total_areas = len(file_study.config.areas)
 
         for index, area_id in enumerate(areas):
-            # when we go to hourly, we need to create matrices 
+            # when we go to hourly, we need to create matrices
             if hydro_pmax == "hourly":
                 matrix_id_gen = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    pd.DataFrame(np.zeros((8760, 1)))
+                    create_polars_dataframe(np.zeros((8760, 1)))
                 )
                 matrix_id_pump = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    pd.DataFrame(np.zeros((8760, 1)))
+                    create_polars_dataframe(np.zeros((8760, 1)))
                 )
                 hourly_matrix_mapping[area_id] = {"gen": matrix_id_gen, "pump": matrix_id_pump}
 
                 matrix_id_gen = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    pd.DataFrame(np.full((365, 1), 24))
+                    create_polars_dataframe(np.full((365, 1), 24))
                 )
                 matrix_id_pump = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    pd.DataFrame(np.full((365, 1), 24))
+                    create_polars_dataframe(np.full((365, 1), 24))
                 )
                 daily_matrix_mapping[area_id] = {"gen": matrix_id_gen, "pump": matrix_id_pump}
             else:
@@ -389,3 +390,11 @@ class FileStudyHydroDao(HydroDao):
                     self.save_hydro_max_daily_pump_energy(area_id, daily_matrix_mapping[area_id]["pump"])
                 except ChildNotFoundError:
                     pass
+        try:
+            compatibility_data = file_study.tree.get(["settings", "generaldata", "compatibility"])
+        except KeyError:
+            compatibility_data = {}
+
+        # Update hydro-pmax field
+        compatibility_data["hydro-pmax"] = hydro_pmax
+        file_study.tree.save(compatibility_data, ["settings", "generaldata", "compatibility"])

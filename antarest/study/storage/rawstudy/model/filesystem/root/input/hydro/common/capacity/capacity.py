@@ -52,8 +52,10 @@ def default_credit_modulation() -> npt.NDArray[np.float64]:
 def default_water_values() -> npt.NDArray[np.float64]:
     return np.zeros((365, 101), dtype=np.float64)
 
+
 def default_max_daily() -> npt.NDArray[np.float64]:
     return np.zeros((365, 1), dtype=np.float64)
+
 
 INITIAL_VERSION = StudyVersion.parse(0)
 # noinspection SpellCheckingInspection
@@ -111,12 +113,10 @@ class InputHydroCommonCapacity(FolderNode):
             if self.config.version >= info["start_version"]:
                 for area in self.config.area_names():
                     name = f"{info['name']}_{area}"
-                    is_optional = info["name"] in ["maxDailyGenEnergy", "maxDailyPumpEnergy"]
                     children[name] = InputSeriesMatrix(
                         self.matrix_mapper,
                         self.config.next_file(f"{name}.txt"),
                         freq=info["freq"],
                         default_empty=info["default_empty"],
-                        should_exist=not is_optional,
                     )
         return children

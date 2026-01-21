@@ -386,22 +386,22 @@ class InMemoryStudyDao(StudyDao):
         return HydroCorrelationMatrix.from_hydro_correlations(self._hydro_correlation)
 
     @override
-    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_max_hourly_gen_power[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_max_hourly_pump_power[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_max_daily_gen_energy[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_max_daily_pump_energy[area_id]
         return self._matrix_service.get(matrix_id)
 
@@ -422,20 +422,20 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_correlation[area_id] = correlation
 
     @override
-    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_hourly_gen_power[area_id] = series_id
+    def save_hydro_max_hourly_gen_power(self, area_id: str, matrix_id: str) -> None:
+        self._hydro_max_hourly_gen_power[area_id] = matrix_id
 
     @override
-    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_hourly_pump_power[area_id] = series_id
+    def save_hydro_max_hourly_pump_power(self, area_id: str, matrix_id: str) -> None:
+        self._hydro_max_hourly_pump_power[area_id] = matrix_id
 
     @override
-    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_daily_gen_energy[area_id] = series_id
+    def save_hydro_max_daily_gen_energy(self, area_id: str, matrix_id: str) -> None:
+        self._hydro_max_daily_gen_energy[area_id] = matrix_id
 
     @override
-    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_daily_pump_energy[area_id] = series_id
+    def save_hydro_max_daily_pump_energy(self, area_id: str, matrix_id: str) -> None:
+        self._hydro_max_daily_pump_energy[area_id] = matrix_id
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
