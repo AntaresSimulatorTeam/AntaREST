@@ -123,16 +123,17 @@ def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
     try:
         return pl.read_csv(file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1)
     except ComputeError:
-        # Happens if polars wrongly inferred the schema. If so, we specify that he shouldn't try.
-        # This way the parsing does not fail, but it is significantly slower.
-        # This case does not seem to happen very often.
+        # Happens if polars wrongly inferred the schema.
+        # If so, we specify that it should read the entire file to be sure it doesn't infer a false schema.
+        # It's significantly slower but it does not fail.
+        # As no file is longer than 10.000 rows we use this value.
         return pl.read_csv(
             file_path,
             skip_lines=7,
             separator="\t",
             has_header=False,
             null_values="N/A",
-            infer_schema=False,
+            infer_schema_length=10000,
             n_threads=1,
         )
 
