@@ -18,7 +18,6 @@ import pandas as pd
 import polars as pl
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.model import MatrixFrequency
 from antarest.study.output.utils import (
     MCYEAR_COL,
@@ -245,7 +244,7 @@ class AggregatorManager:
         # Add the TIME_ID column and reindex to have the columns in the right order
         final_df[TIME_ID_COL] = (final_df.index // nb_clusters) + 1
         pandas_df = final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))
-        return OutputDataFrame(headers=pandas_df.columns.tolist(), data=create_polars_dataframe(pandas_df.to_numpy()))
+        return OutputDataFrame(headers=pandas_df.columns.tolist(), data=pl.DataFrame(pandas_df))
 
     def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pl.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
