@@ -294,7 +294,7 @@ class AggregatorManager:
             if self.transform_columns_headers:
                 # add a column for the time id
                 if not is_details:
-                    df = df.with_columns(pl.lit(range(1, len(df) + 1)).alias(TIME_ID_COL))
+                    df = df.with_row_index(TIME_ID_COL, offset=1)
 
                 # Reorganize the columns
                 df = df.select(new_column_order)
