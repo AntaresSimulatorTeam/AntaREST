@@ -21,8 +21,10 @@ from polars.exceptions import ComputeError, NoDataError
 def create_polars_dataframe(data: npt.NDArray[np.float64] | list[list[Any]]) -> pl.DataFrame:
     if isinstance(data, list):
         data = np.array(data)
-    length = data.shape[1] if len(data.shape) == 2 else 1
-    return pl.DataFrame(data, schema=[str(i) for i in range(length)])
+    polars_df = pl.DataFrame(data)
+    # We have to rename the columns as polars uses `column_0`, `column_1`, ... by default.
+    # But we cannot give him a schema at creation as it can transpose the data for some obscure reason in that case.
+    return polars_df.rename({col: str(k) for k, col in enumerate(polars_df.columns)})
 
 
 def read_input_dataframe(path: Path, has_headers: bool) -> pl.DataFrame:
