@@ -311,7 +311,7 @@ class AggregatorManager:
         else:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
 
-    def aggregate_output_data(self) -> Iterator[pd.DataFrame]:
+    def aggregate_output_data(self) -> Iterator[pl.DataFrame]:
         """
         Aggregates the output data of a study and returns it as a DataFrame
         """
