@@ -114,3 +114,18 @@ export interface MaterializeVariableViewParams {
   outputId: string;
   params: VariableViewParams;
 }
+
+////////////////////////////////////////////////////////////////
+// Export
+////////////////////////////////////////////////////////////////
+
+export type VariableViewExportFormat = "csv" | "csv (semicolon)" | "xlsx" | "tsv";
+
+export interface ExportVariableViewParams {
+  studyId: string;
+  outputId: string;
+  params: VariableViewParams;
+  format?: VariableViewExportFormat;
+  header?: boolean;
+  index?: boolean;
+}

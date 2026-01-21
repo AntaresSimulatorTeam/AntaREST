@@ -16,6 +16,7 @@ import type { DateTimeMetadataDTO } from "@/components/Matrix/shared/types";
 import client from "@/services/api/client";
 import { adaptVariableViewParamsToDto, sanitizeNaNResponse } from "./adapters";
 import type {
+  ExportVariableViewParams,
   GetTimeIndexParams,
   GetVariablesListParams,
   GetVariableViewDataParams,
@@ -60,6 +61,30 @@ export async function getVariableViewData({
       // Custom transformer to handle NaN values from backend
       // The backend sends invalid JSON with literal NaN tokens that must be sanitized
       transformResponse: [(data) => sanitizeNaNResponse(data)],
+    },
+  );
+  return data;
+}
+
+export async function exportVariableViewData({
+  studyId,
+  outputId,
+  params,
+  format,
+  header,
+  index,
+}: ExportVariableViewParams) {
+  const queryParams = adaptVariableViewParamsToDto(params);
+  const { data } = await client.get<Blob>(
+    `/v1/studies/${studyId}/output/${outputId}/variables-views/export`,
+    {
+      params: {
+        ...queryParams,
+        ...(format !== undefined && { export_format: format }),
+        ...(header !== undefined && { header }),
+        ...(index !== undefined && { index }),
+      },
+      responseType: "blob",
     },
   );
   return data;
