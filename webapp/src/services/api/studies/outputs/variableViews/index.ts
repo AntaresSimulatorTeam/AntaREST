@@ -78,12 +78,7 @@ export async function exportVariableViewData({
   const { data } = await client.get<Blob>(
     `/v1/studies/${studyId}/output/${outputId}/variables-views/export`,
     {
-      params: {
-        ...queryParams,
-        ...(format !== undefined && { export_format: format }),
-        ...(header !== undefined && { header }),
-        ...(index !== undefined && { index }),
-      },
+      params: { ...queryParams, export_format: format, header, index },
       responseType: "blob",
     },
   );
