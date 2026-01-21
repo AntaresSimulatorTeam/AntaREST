@@ -205,9 +205,9 @@ class AggregatorManager:
             else:
                 filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
 
-            indices = [k for k, c in enumerate(data.headers) if c in filtered_columns]
+            indices = [k for k, c in enumerate(df_columns) if c in filtered_columns]
             data.data = data.data.select([data.data.columns[i] for i in indices])
-            data.headers = filtered_columns
+            data.headers = [data.headers[i] for i in indices]  # type: ignore
 
         return data
 
