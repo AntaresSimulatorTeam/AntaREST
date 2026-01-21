@@ -228,7 +228,7 @@ class AggregatorManager:
             return output_data
 
         df = output_data.data.to_pandas()
-        df.columns = output_data.headers  # type: ignore
+        df.columns = pd.MultiIndex.from_tuples(output_data.headers)  # type: ignore
         nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())

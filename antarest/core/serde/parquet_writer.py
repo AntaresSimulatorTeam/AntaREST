@@ -77,8 +77,8 @@ def write_dataframes_in_parquet_format_by_column_sets(
                     current_schema = table.schema
                     current_writer = _parquet_writer(file_path, current_schema)
                 else:
-                    df = df.select([pl.col(c) if c in df.columns else pl.lit(None).alias(c) for c in new_index])
-                    # We're specifying the schema to use to be able to append NaN values to existing values.
+                    if df.columns != new_index:
+                        df = df.select([pl.col(c) if c in df.columns else pl.lit(None).alias(c) for c in new_index])
                     table = df.to_arrow()
 
                 current_writer.write_table(table)
