@@ -23,6 +23,13 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
     return ParquetWriter(output_file, schema, compression="zstd", data_page_version="2.0")
 
 
+def _adapt_table_schema(table: pa.Table, schema: pa.Schema) -> pa.Table:
+    if not table.schema.equals(schema, check_metadata=False):
+        # We're specifying the schema to use because if it differs the writing will fail.
+        table = table.cast(schema)
+    return table
+
+
 def write_dataframes_in_parquet_format_by_column_sets(
     path: Path, dataframes: Iterator[pl.DataFrame]
 ) -> tuple[list[Path], list[str]]:
@@ -81,9 +88,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
                         df = df.select([pl.col(c) if c in df.columns else pl.lit(None).alias(c) for c in new_index])
                     table = df.to_arrow()
 
-                    if not table.schema.equals(current_schema, check_metadata=False):
-                        # We're specifying the schema to use because if it differs the writing will fail.
-                        table = table.cast(current_schema)
+                    table = _adapt_table_schema(table, current_schema)
 
                 current_writer.write_table(table)
 
@@ -126,4 +131,5 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
         writer.write_table(first_table)
         for df in dataframes:
             table = pa.Table.from_pandas(df)
+            table = _adapt_table_schema(table, schema)
             writer.write_table(table)
