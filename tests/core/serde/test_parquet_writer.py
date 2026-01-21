@@ -25,10 +25,10 @@ from antarest.core.serde.parquet_writer import (
 def test_different_columns(tmp_path: Path) -> None:
     dataframes = iter(
         [
-            pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"]),
-            pl.DataFrame(data=[(5, 6, 7), (8, 9, 10)], schema=["A", "B", "C"]),
-            pl.DataFrame(data=[(11, 12), (13, 14)], schema=["A", "B"]),
-            pl.DataFrame(data=[(15, 16, 17), (18, 19, 20)], schema=["B", "A", "D"]),
+            pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row"),
+            pl.DataFrame(data=[(5, 6, 7), (8, 9, 10)], schema=["A", "B", "C"], orient="row"),
+            pl.DataFrame(data=[(11, 12), (13, 14)], schema=["A", "B"], orient="row"),
+            pl.DataFrame(data=[(15, 16, 17), (18, 19, 20)], schema=["B", "A", "D"], orient="row"),
         ]
     )
 
