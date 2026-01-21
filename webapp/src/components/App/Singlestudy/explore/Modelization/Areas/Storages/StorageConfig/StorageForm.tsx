@@ -170,7 +170,10 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
               name="efficiency"
               control={control}
               rules={{
-                validate: validateNumber({ min: 0, max: 100 }),
+                validate: validateNumber({
+                  min: 0,
+                  max: semver.gte(studyVersion, "9.2.0") ? undefined : 100,
+                }),
               }}
             />
             {semver.gte(studyVersion, "9.2.0") && (
@@ -211,7 +214,10 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                       name="efficiencyWithdrawal"
                       control={control}
                       rules={{
-                        validate: validateNumber({ min: 0, max: 100 }),
+                        validate: validateNumber({
+                          min: 0,
+                          max: semver.gte(studyVersion, "9.2.0") ? undefined : 100,
+                        }),
                       }}
                     />
                   </Box>

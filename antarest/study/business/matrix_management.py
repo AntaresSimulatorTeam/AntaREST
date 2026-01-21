@@ -13,12 +13,13 @@
 import itertools
 import logging
 import operator
-from typing import List, Tuple, cast
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
 import polars as pl
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -58,11 +59,13 @@ class MatrixIndexError(MatrixUpdateError):
 
 
 def update_matrix_content_with_slices(
-    matrix_data: pd.DataFrame,
+    matrix_data: pl.DataFrame,
     slices: List[MatrixSlice],
     operation: Operation,
-) -> pd.DataFrame:
-    mask = pd.DataFrame(np.zeros(matrix_data.shape), dtype=bool)
+) -> pl.DataFrame:
+    pandas_df = matrix_data.to_pandas()
+    pandas_df.columns = range(len(pandas_df.columns))  # type: ignore
+    mask = pd.DataFrame(np.zeros(pandas_df.shape), dtype=bool)
 
     for matrix_slice in slices:
         # note: the `.loc` attribute doesn't raise `IndexError`
@@ -72,25 +75,30 @@ def update_matrix_content_with_slices(
         ] = True
 
     # noinspection PyTypeChecker
-    new_matrix_data = matrix_data.where(mask).apply(operation.compute)
-    new_matrix_data[new_matrix_data.isnull()] = matrix_data
+    new_matrix_data = pandas_df.where(mask).apply(operation.compute)
+    new_matrix_data[new_matrix_data.isnull()] = pandas_df
 
     # noinspection PyTypeChecker
-    return cast(pd.DataFrame, new_matrix_data.astype(matrix_data.dtypes))
+    return create_polars_dataframe(new_matrix_data.to_numpy())
 
 
 def update_matrix_content_with_coordinates(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     coordinates: List[Tuple[int, int]],
     operation: Operation,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
+    columns = df.columns
     for row, column in coordinates:
         try:
-            df.iat[row, column] = operation.compute(df.iat[row, column], use_coords=True)
+            value = operation.compute(df[row, column], use_coords=True)
+            if isinstance(value, float) and df.schema[columns[column]].is_integer():
+                # Polars will round the float value without saying a thing.
+                # To avoid this we first have to change the column dtype, and then we can assign the value
+                df = df.with_columns(pl.col(columns[column]).cast(pl.Float64))
+            df[row, column] = value
         except IndexError as exc:
             raise MatrixIndexError(operation, (row, column), exc) from None
-    # noinspection PyTypeChecker
-    return df.astype(dict(df.dtypes))
+    return df
 
 
 def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
@@ -250,8 +258,7 @@ class MatrixManager:
 
         try:
             logger.info(f"Loading matrix data from node '{path}'...")
-            matrix_df = matrix_node.parse_as_dataframe().to_pandas()
-            matrix_df.columns = [int(i) for i in matrix_df.columns]  # type: ignore
+            matrix_df = matrix_node.parse_as_dataframe()
         except ValueError as exc:
             raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
 
@@ -282,7 +289,7 @@ class MatrixManager:
                 raise MatrixEditError(instr, reason=str(exc)) from None
 
         logger.info(f"Writing matrix data of shape {matrix_df.shape}...")
-        new_matrix_id = matrix_service.create(pl.from_pandas(matrix_df))
+        new_matrix_id = matrix_service.create(matrix_df)
 
         logger.info(f"Preparing 'ReplaceMatrix' command for path '{path}'...")
         command = [
