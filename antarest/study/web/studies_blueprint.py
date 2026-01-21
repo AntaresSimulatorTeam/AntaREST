@@ -364,7 +364,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         Returns:
         - The ID of the newly created study.
         """
-        if storage_mode == StorageMode.DATABASE and not config.storage.database_mode_enabled:
+        if storage_mode == StorageMode.DATABASE and not config.storage.study_storage.database_mode_enabled:
             raise HTTPException(
                 status_code=HTTPStatus.NOT_IMPLEMENTED,
                 detail="Database storage mode is not enabled on this server",

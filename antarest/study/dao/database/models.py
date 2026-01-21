@@ -20,7 +20,6 @@ These tables store study data (areas, UI positions, etc.) in the database instea
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
-from antarest.study.business.model.area_model import DEFAULT_LAYER_ID
 
 metadata = Base.metadata
 
@@ -38,12 +37,12 @@ AREA_UI_TABLE = Table(
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
-    Column("layer_id", String(10), nullable=False, primary_key=True, default=DEFAULT_LAYER_ID),
-    Column("x", Integer, nullable=False, default=0),
-    Column("y", Integer, nullable=False, default=0),
-    Column("color_r", Integer, nullable=False, default=230),
-    Column("color_g", Integer, nullable=False, default=108),
-    Column("color_b", Integer, nullable=False, default=44),
+    Column("layer_id", String(10), nullable=False, primary_key=True),
+    Column("x", Integer, nullable=False),
+    Column("y", Integer, nullable=False),
+    Column("color_r", Integer, nullable=False),
+    Column("color_g", Integer, nullable=False),
+    Column("color_b", Integer, nullable=False),
     ForeignKeyConstraint(
         ["study_id", "area_id"],
         ["area.study_id", "area.area_id"],
