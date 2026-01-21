@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.capac
 from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.properties import InputLinkAreaProperties
 
 default_link_legacy_matrix = np.zeros((8760, 8), dtype=np.float64)
-default_link_legacy_matrix[:, :2] = 1
 default_link_legacy_matrix.flags.writeable = False
 
 

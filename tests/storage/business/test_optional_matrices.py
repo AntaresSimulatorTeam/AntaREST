@@ -53,16 +53,22 @@ def test_optional_matrices(empty_study_920: FileStudy, command_context: CommandC
         ["input", "thermal", "series", "fr", "thermal_cluster", "CO2Cost"],
         ["input", "st-storage", "series", "fr", "sts", "cost_injection"],
         ["input", "st-storage", "series", "fr", "sts", "cost_withdrawal"],
-        ["input", "st-storage", "series", "fr", "sts", "cost_level"],
         ["input", "st-storage", "series", "fr", "sts", "cost_variation_injection"],
         ["input", "st-storage", "series", "fr", "sts", "cost_variation_withdrawal"],
     ]:
         # Removes the file from the fs
         study.tree.get_node(url).delete()
 
-        # Ensures we can still fetch its content without raising an issue as these files are optional for the Simulator.
-        content = study.tree.get(url)
-        assert content["data"] == expected_content
+    # Ensures we can still fetch its content without raising an issue as these files are optional for the Simulator.
+    content = study.tree.get(url)
+    assert content["data"] == expected_content
+
+    # Cost level has specific default values
+    study.tree.get_node(["input", "st-storage", "series", "fr", "sts", "cost_level"]).delete()
+    assert (
+        study.tree.get(["input", "st-storage", "series", "fr", "sts", "cost_level"])["data"]
+        == (-1e-6 * np.ones((8760, 1))).tolist()
+    )
 
     # Ensures the normalization succeeds even if the files are missing
     study.tree.normalize()

@@ -65,7 +65,7 @@ class InputSTStorageAreaStorage(FolderNode):
             children["cost_level"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("cost-level.txt"),
-                default_empty=series.costs,
+                default_empty=series.costs_level,
                 should_exist=False,
             )
             children["cost_variation_injection"] = InputSeriesMatrix(

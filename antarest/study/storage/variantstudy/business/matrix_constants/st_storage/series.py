@@ -30,5 +30,8 @@ upper_rule_curve.flags.writeable = False
 costs = np.zeros((8760, 1), dtype=np.float64)
 costs.flags.writeable = False
 
+costs_level = -1e-6 * np.ones((8760, 1), dtype=np.float64)
+costs.flags.writeable = False
+
 additional_constraints = np.zeros((8760, 1), dtype=np.float64)
 additional_constraints.flags.writeable = False

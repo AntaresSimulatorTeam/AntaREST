@@ -20,7 +20,9 @@ from antarest.core.serde.np_array import NpArray
 from antarest.study.model import STUDY_VERSION_6_5
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_daily_ones
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+    default_scenario_daily,
+)
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
@@ -33,16 +35,12 @@ class MatrixInfo(TypedDict, total=False):
 
 
 default_maxpower = np.zeros((365, 4), dtype=np.float64)
-default_maxpower[:, 1] = 24
-default_maxpower[:, 3] = 24
 default_maxpower.flags.writeable = False
 
 default_reservoir = np.zeros((365, 3), dtype=np.float64)
-default_reservoir[:, 1] = 0.5
-default_reservoir[:, 2] = 1
 default_reservoir.flags.writeable = False
 
-default_credit_modulation = np.ones((2, 100), dtype=np.float64)
+default_credit_modulation = np.zeros((2, 101), dtype=np.float64)
 default_credit_modulation.flags.writeable = False
 
 default_water_values = np.zeros((365, 101), dtype=np.float64)
@@ -67,7 +65,7 @@ MATRICES_INFO: List[MatrixInfo] = [
         "name": "inflowPattern",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_6_5,
-        "default_empty": default_scenario_daily_ones,
+        "default_empty": default_scenario_daily,
     },
     {
         "name": "creditmodulations",
