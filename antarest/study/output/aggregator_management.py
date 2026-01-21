@@ -187,12 +187,15 @@ class AggregatorManager:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         return all_output_files
 
+    def _ensures_typing(self, headers: list[str] | list[list[str]]) -> list[str]:
+        # Method used to fix mypy typing inside `columns_filtering` method
+        return [col[0] for col in headers] if not self.transform_columns_headers else headers  # type: ignore
+
     def columns_filtering(self, data: OutputDataFrame, is_details: bool) -> OutputDataFrame:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
-            headers = data.headers
-            df_columns = [col[0] for col in headers] if not self.transform_columns_headers else headers
+            df_columns = self._ensures_typing(data.headers)
             if is_details:
                 filtered_columns = [CLUSTER_ID_COL, TIME_ID_COL] + [
                     c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)
