@@ -48,12 +48,23 @@ function Hydro() {
       { label: "Hydro Storage", path: `${basePath}/hydrostorage` },
       { label: "Run of river", path: `${basePath}/ror` },
       semver.gte(study.version, "8.6.0") && { label: "Min Gen", path: `${basePath}/mingen` },
-      semver.gte(study.version, "9.2.0") && hydroPmax === "hourly" && [
-        { label: "Max Pump Power", path: `${basePath}/maxHourlyPumpPower` },
-        { label: "Max Gen Power", path: `${basePath}/maxHourlyGenPower` },
-        { label: "Max Pump Energy", path: `${basePath}/maxDailyPumpEnergy` },
-        { label: "Max Gen Energy", path: `${basePath}/maxDailyGenEnergy` },
-      ],
+      semver.gte(study.version, "9.2.0") &&
+      hydroPmax === "hourly" && {
+        label: "Max Pump Power",
+        path: `${basePath}/maxHourlyPumpPower`,
+      },
+    semver.gte(study.version, "9.2.0") &&
+      hydroPmax === "hourly" && { label: "Max Gen Power", path: `${basePath}/maxHourlyGenPower` },
+    semver.gte(study.version, "9.2.0") &&
+      hydroPmax === "hourly" && {
+        label: "Max Pump Energy",
+        path: `${basePath}/maxDailyPumpEnergy`,
+      },
+    semver.gte(study.version, "9.2.0") &&
+      hydroPmax === "hourly" && {
+        label: "Max Gen Energy",
+        path: `${basePath}/maxDailyGenEnergy`,
+      },
     ].filter(Boolean);
   }, [areaId, study?.id, study.version, hydroPmax]);
 

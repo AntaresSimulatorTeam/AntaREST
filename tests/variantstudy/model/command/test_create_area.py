@@ -170,10 +170,10 @@ class TestCreateArea:
         assert not output.status
 
     @pytest.mark.parametrize(
-        ("hydro_pmax", "expect_hourly"),
+        ("hydro_pmax"),
         [
-            ("daily", False),
-            ("hourly", True),
+            "daily",
+            "hourly",
         ],
     )
     def test_apply_hydro_pmax_920(
@@ -181,7 +181,6 @@ class TestCreateArea:
         empty_study_920: FileStudy,
         command_context: CommandContext,
         hydro_pmax: str,
-        expect_hourly: bool,
     ) -> None:
         study = empty_study_920
         study_version = study.config.version
@@ -202,12 +201,23 @@ class TestCreateArea:
         )
         assert output.status, output.message
 
+        should_exist = hydro_pmax == "hourly"
+
+        # Check hydro_pmax related files
         daily_gen = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyGenEnergy_{area_id}.txt.link"
         daily_pump = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyPumpEnergy_{area_id}.txt.link"
         hourly_gen = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
         hourly_pump = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
 
-        assert daily_gen.exists()
-        assert daily_pump.exists()
-        assert hourly_gen.exists() == expect_hourly
-        assert hourly_pump.exists() == expect_hourly
+        assert daily_gen.exists() == should_exist, (
+            f"maxDailyGenEnergy should {'exist' if should_exist else 'not exist'} when hydro_pmax={hydro_pmax}"
+        )
+        assert daily_pump.exists() == should_exist, (
+            f"maxDailyPumpEnergy should {'exist' if should_exist else 'not exist'} when hydro_pmax={hydro_pmax}"
+        )
+        assert hourly_gen.exists() == should_exist, (
+            f"maxHourlyGenPower should {'exist' if should_exist else 'not exist'} when hydro_pmax={hydro_pmax}"
+        )
+        assert hourly_pump.exists() == should_exist, (
+            f"maxHourlyPumpPower should {'exist' if should_exist else 'not exist'} when hydro_pmax={hydro_pmax}"
+        )

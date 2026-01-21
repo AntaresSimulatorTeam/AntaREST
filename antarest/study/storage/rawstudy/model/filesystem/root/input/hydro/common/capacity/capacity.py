@@ -29,6 +29,7 @@ class MatrixInfo(TypedDict, total=False):
     freq: MatrixFrequency
     start_version: StudyVersion
     default_empty: Callable[[], npt.NDArray[np.float64]]
+    should_exist: bool = True
 
 
 def default_maxpower() -> npt.NDArray[np.float64]:
@@ -95,12 +96,14 @@ MATRICES_INFO: List[MatrixInfo] = [
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
         "default_empty": default_max_daily,
+        "should_exist": False,
     },
     {
         "name": "maxDailyPumpEnergy",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
         "default_empty": default_max_daily,
+        "should_exist": False,
     },
 ]
 
@@ -118,5 +121,6 @@ class InputHydroCommonCapacity(FolderNode):
                         self.config.next_file(f"{name}.txt"),
                         freq=info["freq"],
                         default_empty=info["default_empty"],
+                        should_exist=info.get("should_exist", True),
                     )
         return children

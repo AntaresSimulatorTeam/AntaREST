@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParametersUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.hydro_pmax_converter import HydroPmaxConverter
@@ -36,7 +37,7 @@ def test_hydro_pmax_converter_creates_and_cleans_matrices(
     output = HydroPmaxConverter(
         command_context=command_context,
         study_version=study_version,
-        hydro_pmax="hourly",
+        parameters=CompatibilityParametersUpdate(hydro_pmax="hourly"),
     ).apply(study_data=study)
     assert output.status, output.message
 
@@ -48,11 +49,11 @@ def test_hydro_pmax_converter_creates_and_cleans_matrices(
     output = HydroPmaxConverter(
         command_context=command_context,
         study_version=study_version,
-        hydro_pmax="daily",
+        parameters=CompatibilityParametersUpdate(hydro_pmax="daily"),
     ).apply(study_data=study)
     assert output.status, output.message
 
-    assert daily_gen.exists()
-    assert daily_pump.exists()
+    assert not daily_gen.exists()
+    assert not daily_pump.exists()
     assert not hourly_gen.exists()
     assert not hourly_pump.exists()

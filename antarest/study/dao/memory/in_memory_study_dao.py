@@ -12,14 +12,16 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, Iterator, List, Optional, Sequence
+from typing import Callable, Dict, Iterator, List, Optional, Sequence
 
+import numpy as np
 import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.core.utils.polars import create_polars_dataframe
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
@@ -436,6 +438,53 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_hydro_max_daily_pump_energy(self, area_id: str, matrix_id: str) -> None:
         self._hydro_max_daily_pump_energy[area_id] = matrix_id
+
+    @override
+    def convert_hydro_pmax(
+        self,
+        hydro_pmax: str,
+        matrix_service: ISimpleMatrixService,
+        progress_callback: Optional[Callable[[int], None]] = None,
+    ) -> None:
+        # Update compatibility parameters
+        self._compatibility_parameters.hydro_pmax = hydro_pmax
+
+        # Get all areas
+        areas = self._area_names
+        total_areas = len(areas)
+
+        if hydro_pmax == "hourly":
+            # When converting to hourly, create and save the matrices
+            for index, area_id in enumerate(areas):
+                # Create matrices using the matrix service
+                hourly_gen_matrix = create_polars_dataframe(np.zeros((8760, 1)))
+                hourly_pump_matrix = create_polars_dataframe(np.zeros((8760, 1)))
+                daily_gen_matrix = create_polars_dataframe(np.full((365, 1), 24))
+                daily_pump_matrix = create_polars_dataframe(np.full((365, 1), 24))
+
+                # Save matrix IDs
+                self.save_hydro_max_hourly_gen_power(
+                    area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly_gen_matrix)
+                )
+                self.save_hydro_max_hourly_pump_power(
+                    area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly_pump_matrix)
+                )
+                self.save_hydro_max_daily_gen_energy(
+                    area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily_gen_matrix)
+                )
+                self.save_hydro_max_daily_pump_energy(
+                    area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily_pump_matrix)
+                )
+
+                if progress_callback:
+                    progress_callback(int(((index + 1) / total_areas) * 100))
+        else:
+            # When converting away from hourly, remove the matrices from in-memory storage
+            for area_id in areas:
+                self._hydro_max_hourly_gen_power.pop(area_id, None)
+                self._hydro_max_hourly_pump_power.pop(area_id, None)
+                self._hydro_max_daily_gen_energy.pop(area_id, None)
+                self._hydro_max_daily_pump_energy.pop(area_id, None)
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:

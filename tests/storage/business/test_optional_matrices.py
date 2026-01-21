@@ -67,15 +67,6 @@ def test_optional_matrices(
         content = study.tree.get(url)
         assert content["data"] == expected_content
 
-    daily_expected_content = np.full((365, 1), 24).tolist()
-    for url in [
-        ["input", "hydro", "common", "capacity", "maxDailyGenEnergy_fr"],
-        ["input", "hydro", "common", "capacity", "maxDailyPumpEnergy_fr"],
-    ]:
-        study.tree.get_node(url).delete()
-        content = study.tree.get(url)
-        assert content["data"] == daily_expected_content
-
     # Ensures the normalization succeeds even if the files are missing
     raw_study_service.normalize_study(study)
 
