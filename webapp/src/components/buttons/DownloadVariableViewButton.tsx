@@ -13,17 +13,12 @@
  */
 
 import { exportVariableViewData } from "@/services/api/studies/outputs/variableViews";
-import type {
-  VariableViewExportFormat,
-  VariableViewParams,
-} from "@/services/api/studies/outputs/variableViews/types";
+import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
 import type { StudyMetadata } from "@/types/types";
 import { downloadFile } from "@/utils/fileUtils";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
-import type { Options } from "./SplitButton";
-
-type ExportFormat = "csv" | "csv (semicolon)" | "csv (header)" | "csv (semicolon header)" | "xlsx";
+import { EXPORT_FORMAT_OPTIONS, FORMAT_TO_OPTIONS, type ExportFormat } from "./exportFormatOptions";
 
 export interface DownloadVariableViewButtonProps {
   studyId: StudyMetadata["id"];
@@ -32,36 +27,6 @@ export interface DownloadVariableViewButtonProps {
   disabled?: boolean;
   label?: string;
 }
-
-const OPTIONS: Readonly<Options<ExportFormat>> = [
-  { label: (t) => t("matrix.export.format.csv"), value: "csv" },
-  { label: (t) => t("matrix.export.format.csvWithHeader"), value: "csv (header)" },
-  {
-    label: (t) => t("matrix.export.format.csvSemicolon"),
-    value: "csv (semicolon)",
-  },
-  {
-    label: (t) => t("matrix.export.format.csvSemicolonWithHeader"),
-    value: "csv (semicolon header)",
-  },
-  { label: (t) => t("matrix.export.format.xlsx"), value: "xlsx" },
-];
-
-const formatToOptions: Record<
-  ExportFormat,
-  { format: VariableViewExportFormat; header: boolean; index: boolean; extension: string }
-> = {
-  csv: { format: "csv", header: false, index: true, extension: "csv" },
-  "csv (header)": { format: "csv", header: true, index: true, extension: "csv" },
-  "csv (semicolon)": { format: "csv (semicolon)", header: true, index: false, extension: "csv" },
-  "csv (semicolon header)": {
-    format: "csv (semicolon)",
-    header: true,
-    index: true,
-    extension: "csv",
-  },
-  xlsx: { format: "xlsx", header: true, index: true, extension: "xlsx" },
-} as const;
 
 function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
   const { t } = useTranslation();
@@ -72,7 +37,7 @@ function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   const handleDownload = async (format: ExportFormat) => {
-    const { extension, ...options } = formatToOptions[format];
+    const { extension, ...options } = FORMAT_TO_OPTIONS[format];
 
     const blob = await exportVariableViewData({
       studyId,
@@ -90,7 +55,7 @@ function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DownloadButton options={OPTIONS} onClick={handleDownload} disabled={disabled}>
+    <DownloadButton options={EXPORT_FORMAT_OPTIONS} onClick={handleDownload} disabled={disabled}>
       {label}
     </DownloadButton>
   );
