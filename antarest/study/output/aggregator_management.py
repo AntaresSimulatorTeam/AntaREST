@@ -191,7 +191,8 @@ class AggregatorManager:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
-            df_columns = [col[0] for col in data.headers] if not self.transform_columns_headers else data.headers
+            headers = data.headers
+            df_columns = [col[0] for col in headers] if not self.transform_columns_headers else headers
             if is_details:
                 filtered_columns = [CLUSTER_ID_COL, TIME_ID_COL] + [
                     c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)
@@ -200,8 +201,10 @@ class AggregatorManager:
                 filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
             else:
                 filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
+
+            indices = [k for k, c in enumerate(data.headers) if c in filtered_columns]
+            data.data = data.data.select([data.data.columns[i] for i in indices])
             data.headers = filtered_columns
-            data.data = data.data.select(filtered_columns)
 
         return data
 
