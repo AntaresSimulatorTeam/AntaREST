@@ -13,6 +13,7 @@
  */
 
 import type { Frequency } from "@/routes/_authenticated/studies/$studyId/explore/outputs/$outputId/-utils";
+import type { TableExportFormatValue } from "@/services/api/studies/raw/types";
 
 export interface ThermalClusterVariablesDTO {
   name: string;
@@ -119,13 +120,11 @@ export interface MaterializeVariableViewParams {
 // Export
 ////////////////////////////////////////////////////////////////
 
-export type VariableViewExportFormat = "csv" | "csv (semicolon)" | "xlsx" | "tsv";
-
 export interface ExportVariableViewParams {
   studyId: string;
   outputId: string;
   params: VariableViewParams;
-  format?: VariableViewExportFormat;
+  format?: TableExportFormatValue;
   header?: boolean;
   index?: boolean;
 }

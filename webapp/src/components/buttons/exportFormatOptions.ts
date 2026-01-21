@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { TableExportFormatValue } from "@/services/api/studies/raw/types";
 import type { Options } from "./SplitButton";
 
 export type ExportFormat =
@@ -20,8 +21,6 @@ export type ExportFormat =
   | "csv (header)"
   | "csv (semicolon header)"
   | "xlsx";
-
-export type TableExportFormatValue = "csv" | "csv (semicolon)" | "xlsx" | "tsv";
 
 export interface ExportFormatOptions {
   format: TableExportFormatValue;
@@ -55,4 +54,4 @@ export const FORMAT_TO_OPTIONS: Record<ExportFormat, ExportFormatOptions> = {
     extension: "csv",
   },
   xlsx: { format: "xlsx", header: true, index: true, extension: "xlsx" },
-} as const;
+};
