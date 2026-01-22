@@ -58,7 +58,7 @@ def client(services, db_engine: Engine) -> TestClient:
         session_args={"autocommit": False, "autoflush": False},
     )
     build_ctxt = create_app_ctxt(app)
-    study_service, output_service, config, _ = services
+    study_service, output_service, config = services
     add_study_routes(build_ctxt, study_service, Mock(), config)
     build_ctxt.api_root.include_router(
         create_output_routes(output_service, study_service.file_transfer_manager, config)
@@ -510,7 +510,7 @@ def _clean_db() -> None:
 @with_admin_user
 @with_db_context
 def test_sta_mini_output_variables(services) -> None:
-    study_service, output_service, _, _ = services
+    study_service, output_service, _ = services
     # Adds the study UUID inside the DB to avoid ForeignKey issues
     with db():
         study = study_service.get_study(UUID)

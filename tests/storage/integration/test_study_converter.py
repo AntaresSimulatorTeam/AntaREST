@@ -57,11 +57,10 @@ from tests.storage.integration.conftest import UUID
 
 
 @with_admin_user
-def test_nominal_case(services, command_context: CommandContext) -> None:
+def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandContext) -> None:
     """
     Ensures we can represent a study as a filesystem one.
     """
-    storage_service, _, _, tmp_path = services
     source_path = tmp_path / "studies" / UUID
     new_path = tmp_path / "studies" / "new_study" / UUID
     storage_service.write_study_as_file_study(UUID, new_path, with_outputs=True)
