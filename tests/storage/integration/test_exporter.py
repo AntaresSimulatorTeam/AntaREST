@@ -131,25 +131,33 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path, sta_mi
     assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
-@pytest.mark.parametrize("outputs", [True, False, "prout"])
+@pytest.fixture(scope="session")
+def exporter_setup(tmp_path_factory, sta_mini_zip_path: Path) -> Path:
+    tmp_path = tmp_path_factory.mktemp("exporter_setup")
+    path_studies = tmp_path / "studies"
+    path_studies.mkdir(exist_ok=True)
+
+    with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
+        zip_output.extractall(path=path_studies)
+
+    return path_studies
+
+
+@pytest.mark.parametrize("outputs", [True, False, "foo"])
 @pytest.mark.parametrize("output_list", [None, [], ["20201014-1427eco"], ["20201014-1430adq-2"]])
 @pytest.mark.parametrize("denormalize", [True, False])
 def test_export_flat(
     raw_study_service: RawStudyService,
     tmp_path: Path,
-    sta_mini_zip_path: Path,
+    exporter_setup: Path,
     outputs: bool,
     output_list: Optional[List[str]],
     denormalize: bool,
 ) -> None:
-    path_studies = tmp_path / "studies"
-    path_studies.mkdir(exist_ok=True)
+    path_studies = exporter_setup
 
     export_path = tmp_path / "exports"
     export_path.mkdir()
-
-    with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
-        zip_output.extractall(path=path_studies)
 
     raw_study_service.export_study_to_flat_directory(
         path_studies / "STA-mini", export_path / "STA-mini-export", outputs, output_list, denormalize=denormalize

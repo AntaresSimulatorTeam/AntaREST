@@ -60,6 +60,13 @@ class InputSeriesMatrix(MatrixNode):
 
     @override
     def parse_as_dataframe(self) -> pl.DataFrame:
+        return self._parse_dataframe(use_default_empty=True)
+
+    @override
+    def parse_content(self) -> pl.DataFrame:
+        return self._parse_dataframe(use_default_empty=False)
+
+    def _parse_dataframe(self, use_default_empty: bool) -> pl.DataFrame:
         file_path = self.config.path
         stopwatch = StopWatch()
         link_content = self.matrix_mapper.get_link_content(self)
@@ -70,10 +77,9 @@ class InputSeriesMatrix(MatrixNode):
                 matrix = read_input_dataframe(file_path, has_headers=False)
                 matrix.columns = [str(i) for i in range(len(matrix.columns))]
             except FileNotFoundError as e:
-                # Some matrices are optional and not required by the Simulator
-                # If so, we shouldn't raise but just return the `default_empty` value
+                # Some matrices are optional and not required by the Simulator. If so, we shouldn't raise.
                 if not self.should_exist:
-                    if self.default_empty is not None:
+                    if use_default_empty and self.default_empty is not None:
                         return create_polars_dataframe(self.default_empty())
                     return pl.DataFrame()
                 # Otherwise, we raise a 404 'Not Found' exception.
@@ -82,7 +88,7 @@ class InputSeriesMatrix(MatrixNode):
                 relpath = file_path.relative_to(self.config.study_path).as_posix()
                 raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
 
-        if matrix.is_empty() and self.default_empty is not None:
+        if matrix.is_empty() and use_default_empty and self.default_empty is not None:
             matrix = create_polars_dataframe(self.default_empty())
         stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
         return matrix

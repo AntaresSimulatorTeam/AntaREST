@@ -20,7 +20,9 @@ from typing import Any, Callable, Dict, List, Optional, cast
 from unittest.mock import Mock
 
 import numpy as np
+import polars as pl
 from numpy import typing as npt
+from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from antarest.core.model import SUB_JSON
@@ -86,7 +88,9 @@ def _assert_array(
 
 
 def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
-    if isinstance(a, dict) and isinstance(b, dict):
+    if isinstance(a, pl.DataFrame) and isinstance(b, pl.DataFrame):
+        assert_frame_equal(a, b, check_dtypes=False)
+    elif isinstance(a, dict) and isinstance(b, dict):
         _assert_dict(a, b)
     elif isinstance(a, list) and isinstance(b, list):
         _assert_list(a, b)
