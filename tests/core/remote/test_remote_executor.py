@@ -14,7 +14,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.config import Config, RemoteWorkerConfig
+from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.remote.remote_executor import RemoteWorkerExecutor
@@ -25,8 +25,8 @@ from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 
 def test_remote_executor():
-    config = Config()
-    config.tasks.remote_workers.append(RemoteWorkerConfig("worker", queues=["q1", "q2"]))
+    # Config is frozen, so we need to create it with the remote_workers already set
+    config = Config(tasks={"remote_workers": [{"name": "worker", "queues": ["q1", "q2"]}]})
 
     event_bus = EventBusService(LocalEventBus())
     executor = RemoteWorkerExecutor(event_bus=event_bus, config=config)
@@ -62,8 +62,8 @@ def test_remote_executor():
 
 
 def test_remote_executor_should_reject_unknown_queue():
-    config = Config()
-    config.tasks.remote_workers.append(RemoteWorkerConfig("worker", queues=["q1", "q2"]))
+    # Config is frozen, so we need to create it with the remote_workers already set
+    config = Config(tasks={"remote_workers": [{"name": "worker", "queues": ["q1", "q2"]}]})
 
     executor = RemoteWorkerExecutor(event_bus=Mock(), config=config)
 

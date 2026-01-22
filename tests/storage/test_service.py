@@ -329,26 +329,27 @@ def test_sync_studies_from_disk() -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
     )
 
-    # Folders scanned
+    # setup existing studies
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me, mg]]
+    # Use model_construct to bypass workspace overlap validation (both workspaces use same empty path,
+    # which is invalid in production but needed for this test's relative path logic)
+    storage = StorageConfig.model_construct(
+        workspaces={
+            "workspace1": WorkspaceConfig(),
+            "workspace2": WorkspaceConfig(),
+        }
+    )
+    config = Config.model_construct(storage=storage)
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
+
+    # Folders scanned (paths are relative within their respective workspaces)
     fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     fa2 = StudyFolder(path=Path("a"), workspace="workspace2", groups=[])
     fc = StudyFolder(path=Path("c"), workspace="workspace1", groups=[])
     fe = StudyFolder(path=Path("e"), workspace="workspace1", groups=[])
     ff = StudyFolder(path=Path("f"), workspace="workspace1", groups=[])
     ff2 = StudyFolder(path=Path("f"), workspace="workspace2", groups=[])
-
-    # setup existing studies
-    repository = Mock()
-    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me, mg]]
-    config = Config(
-        storage=StorageConfig(
-            workspaces={
-                "workspace1": WorkspaceConfig(),
-                "workspace2": WorkspaceConfig(),
-            }
-        )
-    )
-    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     # call function with scanned folders
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])

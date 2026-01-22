@@ -328,8 +328,15 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
 def test_scan_disabled_exception(study_tree: Path) -> None:
     clean_files()
 
-    # Build a configuration with desktop_mode enabled
-    config = build_config(study_tree, desktop_mode=True)
+    # Build a configuration with desktop_mode enabled (only default workspace allowed)
+    config = Config(
+        desktop_mode=True,
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_tree / DEFAULT_WORKSPACE_NAME, groups=["toto"]),
+            }
+        ),
+    )
     service = Mock()
     watcher = Watcher(config, service, task_service=SimpleSyncTaskService())
 
