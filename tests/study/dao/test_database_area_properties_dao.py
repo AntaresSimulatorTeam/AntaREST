@@ -54,3 +54,12 @@ def test_save_area_creates_area_with_default_properties(db_session: Session, dao
 
     rows = db_session.execute(select(AREA_PROPERTIES_TABLE)).fetchall()
     assert not rows
+
+
+"""
+Other tests to add:
+- Create 2 areas and ensures get_all returns the 2 areas + ensure only 1 DB call is made
+- Try to get for unexisting area
+- Try to save for unexisting area
+- Save for existing area and ensure it works
+"""
