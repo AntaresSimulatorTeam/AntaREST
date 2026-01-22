@@ -16,6 +16,7 @@ import zipfile
 from pathlib import Path
 
 from antares.study.version.upgrade_app import UpgradeApp
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
@@ -32,7 +33,7 @@ class TestStudyVersions:
         # =============================
         #  SET UP
         # =============================
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         zip_path = ASSETS_DIR / "STA-mini.zip"
 
@@ -80,7 +81,7 @@ class TestStudyVersions:
         # =============================
         #  SET UP
         # =============================
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # =============================
         #  LIFECYCLE

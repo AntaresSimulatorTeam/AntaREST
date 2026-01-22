@@ -21,6 +21,7 @@ from unittest.mock import ANY
 import numpy as np
 import pandas as pd
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -64,7 +65,7 @@ class TestFetchRawData:
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
             study_dir = pathlib.Path(study.path)
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         shutil.copytree(
             ASSETS_DIR.joinpath("user"),
@@ -317,7 +318,7 @@ class TestFetchRawData:
         # =============================
         #  SET UP
         # =============================
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         if study_type == "variant":
             # Copies the study, to convert it into a managed one.
@@ -421,7 +422,7 @@ class TestFetchRawData:
     def test_create_folder(
         self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         if study_type == "variant":
             # Copies the study, to convert it into a managed one.
@@ -491,7 +492,7 @@ class TestFetchRawData:
         assert expected_msg in res.json()["description"]
 
     def test_create_user_resource_complex_case(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # create a Raw study
         res = client.post("/v1/studies?name=MyStudy")
@@ -537,7 +538,6 @@ class TestFetchRawData:
         res = client.get(f"/v1/studies/{variant_study_id}/raw?path=user/test.txt")
         assert res.content == variant_content
 
-
 class TestFetchOriginalFile:
     """
     Check the retrieval of a file from Study folder
@@ -564,7 +564,7 @@ class TestFetchOriginalFile:
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
             study_dir = pathlib.Path(study.path)
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         original_file_url = f"/v1/studies/{internal_study_id}/raw/original-file"
 
         shutil.copytree(
@@ -620,7 +620,7 @@ class TestFetchOriginalFile:
     @pytest.mark.parametrize("archive", [True, False])
     def test_retrieve_original_files(self, client: TestClient, user_access_token: str, archive: bool) -> None:
         # client headers
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # create a new study
         res = client.post("/v1/studies", params={"name": "MyStudy", "version": "880"})

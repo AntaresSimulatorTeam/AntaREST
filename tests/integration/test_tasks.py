@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
@@ -16,7 +17,7 @@ from tests.integration.utils import wait_task_completion
 
 
 def test_list_tasks(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     # getting an internal study and doing multiple actions, so we can add tasks on it
     expected_task_list = []

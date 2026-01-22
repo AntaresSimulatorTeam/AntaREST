@@ -10,12 +10,13 @@
 #
 # This file is part of the Antares project.
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
 class TestMove:
     def test_move_endpoint(self, client: TestClient, internal_study_id: str, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         res = client.post("/v1/studies?name=study_test")
         assert res.status_code == 201
@@ -53,7 +54,7 @@ class TestMove:
 
     def test_move_with_auto_directory_creation(self, client: TestClient, user_access_token: str) -> None:
         """Test that move creates missing directories automatically."""
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create a study
         res = client.post("/v1/studies?name=study_move")

@@ -15,6 +15,7 @@ import typing as t
 from pathlib import Path
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
@@ -123,7 +124,7 @@ class TestHydroAllocation:
         area_id: str,
         expected: t.List[t.List[float]],
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         """Check `get_allocation_matrix` end point"""
         res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/allocation/matrix")
         assert res.status_code == http.HTTPStatus.OK, res.json()

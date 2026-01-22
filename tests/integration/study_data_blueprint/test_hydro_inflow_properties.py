@@ -12,6 +12,7 @@
 from http import HTTPStatus
 from unittest.mock import ANY
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
@@ -29,7 +30,7 @@ class TestHydroInflowProperties:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         area_id = "fr"
 
         # ====================
@@ -114,7 +115,7 @@ class TestHydroInflowProperties:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         area_id = "fr"
 
         # Update the values with invalid values

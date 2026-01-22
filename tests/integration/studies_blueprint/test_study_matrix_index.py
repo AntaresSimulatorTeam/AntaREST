@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
@@ -28,7 +29,7 @@ class TestStudyMatrixIndex:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Check the matrix index for Thermal clusters
         # ===========================================
@@ -130,7 +131,7 @@ class TestStudyMatrixIndex:
         """
         Test the new time-index endpoint for outputs with different frequencies.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         output_id = "20201014-1427eco"
 
