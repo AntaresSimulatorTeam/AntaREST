@@ -14,7 +14,7 @@ import uuid
 import pytest
 from sqlalchemy.orm import Session
 
-from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import StorageMode
 from tests.helpers import create_study
 
@@ -32,6 +32,6 @@ def study_id(db_session: Session) -> str:
 
 
 @pytest.fixture
-def dao(db_session: Session, study_id: str) -> DatabaseAreaDao:
+def dao(db_session: Session, study_id: str) -> DatabaseStudyDao:
     """Create a DatabaseAreaDao instance for testing."""
-    return DatabaseAreaDao(study_id, db_session)
+    return DatabaseStudyDao(study_id, db_session)
