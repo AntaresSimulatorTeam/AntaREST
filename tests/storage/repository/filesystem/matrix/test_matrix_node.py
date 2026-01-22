@@ -14,32 +14,33 @@ from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_8, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
-MOCK_MATRIX = pd.DataFrame([[1, 2], [3, 4]])
+MOCK_MATRIX = create_polars_dataframe([[1, 2], [3, 4]])
 
 
 class MockMatrixNode(MatrixNode):
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
-        super().__init__(
-            config=config,
-            matrix_mapper=matrix_mapper,
-            freq=MatrixFrequency.ANNUAL,
-        )
+        super().__init__(config=config, matrix_mapper=matrix_mapper, freq=MatrixFrequency.ANNUAL)
 
     @override
-    def parse_as_dataframe(self) -> pd.DataFrame:
+    def parse_as_dataframe(self) -> pl.DataFrame:
         return MOCK_MATRIX
 
     @override
-    def write_dataframe(self, df: pd.DataFrame) -> None:
-        df.to_csv(self.config.path, sep="\t", header=False, index=False)
+    def parse_content(self) -> pl.DataFrame:
+        return MOCK_MATRIX
+
+    @override
+    def write_dataframe(self, df: pl.DataFrame) -> None:
+        df.write_csv(self.config.path, separator="\t", include_header=False)
 
     def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         pass  # not used

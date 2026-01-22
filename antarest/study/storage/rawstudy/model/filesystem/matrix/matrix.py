@@ -131,7 +131,14 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
     @abstractmethod
     def parse_as_dataframe(self) -> pl.DataFrame:
         """
-        Parse the matrix content and return it as a DataFrame object
+        Parse the matrix content and return it as a DataFrame object.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def parse_content(self) -> pl.DataFrame:
+        """
+        Same behavior as `parse_as_dataframe` but does not return the Simulator default matrix if the file is empty.
         """
         raise NotImplementedError()
 

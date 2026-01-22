@@ -57,7 +57,6 @@ def test_optional_matrices(
         ["input", "thermal", "series", "fr", "thermal_cluster", "CO2Cost"],
         ["input", "st-storage", "series", "fr", "sts", "cost_injection"],
         ["input", "st-storage", "series", "fr", "sts", "cost_withdrawal"],
-        ["input", "st-storage", "series", "fr", "sts", "cost_level"],
         ["input", "st-storage", "series", "fr", "sts", "cost_variation_injection"],
         ["input", "st-storage", "series", "fr", "sts", "cost_variation_withdrawal"],
     ]:
@@ -69,6 +68,13 @@ def test_optional_matrices(
         assert isinstance(matrix_node, MatrixNode)
         matrix = matrix_node.parse_as_dataframe()
         assert matrix.to_numpy().tolist() == expected_content
+
+    # Specific test for `cost_level` as it has different Simulator default values
+    url = ["input", "st-storage", "series", "fr", "sts", "cost_level"]
+    expected_cost_level_content = np.full((8760, 1), -1e-6).tolist()
+    study.tree.get_node(url).delete()
+    content = study.tree.get(url)
+    assert content["data"] == expected_cost_level_content
 
     # Ensures the normalization succeeds even if the files are missing
     raw_study_service.normalize_study(study)

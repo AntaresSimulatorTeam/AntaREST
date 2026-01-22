@@ -169,6 +169,23 @@ class TestInputSeriesMatrix:
         expected = pl.DataFrame(data=np.array([[1.0, 2.0], [3.0, 4.0]]), schema=["0", "1"])
         assert_frame_equal(actual, expected, check_dtypes=False)
 
+    def test_default_empty(self, my_study_config: FileStudyTreeConfig) -> None:
+        file_path = my_study_config.path
+
+        def default_matrix():
+            return np.array([[1, 2], [3, 4]])
+
+        file_path.touch()
+        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
+
+        # Ensures `parse_as_dataframe` returns the default matrix
+        result = node.parse_as_dataframe()
+        assert_frame_equal(result, create_polars_dataframe(default_matrix()), check_dtypes=False)
+
+        # Ensures `parse_content` returns an empty matrix
+        result = node.parse_content()
+        assert result.is_empty()
+
 
 class TestCopyAndRenameFile:
     node: InputSeriesMatrix
