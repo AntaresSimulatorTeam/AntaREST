@@ -126,6 +126,8 @@ export interface AdvancedParamsFormFields {
   unitCommitmentMode: string;
   // Since v9.3
   accurateShavePeaksIncludeShortTermStorage?: boolean;
+  // Since v9.2 - Compatibility parameter
+  hydroPmax?: `${HydroPMax}`;
 }
 
 export interface CompatibilityParamsFormFields {
@@ -153,7 +155,9 @@ function makeCompatibilityRequestURL(studyId: StudyMetadata["id"]): string {
 }
 
 export async function getCompatibilityParamsFormFields(studyId: StudyMetadata["id"]) {
-  const { data } = await client.get<CompatibilityParamsFormFields_RAW>(makeCompatibilityRequestURL(studyId));
+  const { data } = await client.get<CompatibilityParamsFormFields_RAW>(
+    makeCompatibilityRequestURL(studyId),
+  );
   return data;
 }
 
@@ -168,8 +172,6 @@ export async function getAdvancedParamsFormFields(studyId: StudyMetadata["id"]) 
       .filter(Boolean),
   } as AdvancedParamsFormFields;
 }
-
-
 
 export async function setAdvancedParamsFormFields(
   studyId: StudyMetadata["id"],
