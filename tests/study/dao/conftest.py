@@ -33,5 +33,5 @@ def study_id(db_session: Session) -> str:
 
 @pytest.fixture
 def dao(db_session: Session, study_id: str) -> DatabaseStudyDao:
-    """Create a DatabaseAreaDao instance for testing."""
+    """Create a DatabaseStudyDao instance for testing."""
     return DatabaseStudyDao(study_id, db_session)

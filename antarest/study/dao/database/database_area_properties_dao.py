@@ -83,7 +83,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
             (AREA_PROPERTIES_TABLE.c.study_id == study_id) & (AREA_PROPERTIES_TABLE.c.area_id == area_id)
         )
 
-        row = session.execute(stmt)
+        row = session.execute(stmt).fetchone()
         if not row:
             raise AreaNotFound(area_id)
         return _convert_db_properties_to_model(row)
