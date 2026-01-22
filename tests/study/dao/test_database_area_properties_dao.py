@@ -44,3 +44,13 @@ def test_save_area_creates_area_with_default_properties(db_session: Session, dao
     # Ensures we're able to read the data
     properties = dao.get_area_properties(area_id="paris")
     assert properties == AreaProperties()
+
+    # Delete the area to ensure it cascades to properties
+    with db_session:
+        dao.delete_area("paris")
+        db_session.commit()
+
+    assert dao.get_all_area_properties() == {}
+
+    rows = db_session.execute(select(AREA_PROPERTIES_TABLE)).fetchall()
+    assert not rows
