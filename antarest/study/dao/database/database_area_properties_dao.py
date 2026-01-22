@@ -16,7 +16,8 @@ Database implementation of AreaDao using SQLAlchemy Core.
 This module provides database-backed storage for areas when storage_mode=DATABASE.
 """
 
-from typing import Any
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
@@ -32,6 +33,9 @@ from antarest.study.dao.database.common import (
     validate_area_exists,
 )
 from antarest.study.dao.database.models import AREA_PROPERTIES_TABLE
+
+if TYPE_CHECKING:
+    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
 def _convert_db_properties_to_model(db_row: Any) -> AreaProperties:
@@ -63,6 +67,10 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
     def get_session(self) -> Session:
         """Get the SQLAlchemy session for database operations."""
         return self._db_session
+
+    @abstractmethod
+    def get_impl(self) -> "DatabaseStudyDao":
+        pass
 
     @override
     def get_area_properties(self, area_id: str) -> AreaProperties:
