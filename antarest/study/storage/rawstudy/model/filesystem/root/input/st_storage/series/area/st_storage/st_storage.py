@@ -16,7 +16,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderN
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
-    cost_level,
+    default_cost_level,
     default_scenario_hourly,
     default_scenario_hourly_ones,
 )
@@ -69,7 +69,7 @@ class InputSTStorageAreaStorage(FolderNode):
             children["cost_level"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("cost-level.txt"),
-                default_empty=cost_level,
+                default_empty=default_cost_level,
                 should_exist=False,
             )
             children["cost_variation_injection"] = InputSeriesMatrix(

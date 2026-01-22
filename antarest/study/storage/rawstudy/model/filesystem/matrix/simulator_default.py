@@ -78,5 +78,5 @@ def default_energy() -> np.ndarray:
     return np.zeros((12, 5), dtype=np.float64)
 
 
-def cost_level() -> np.ndarray:
+def default_cost_level() -> np.ndarray:
     return np.full((8760, 1), -1e-6)

@@ -159,7 +159,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
     @abstractmethod
     def parse_as_dataframe(self) -> pl.DataFrame:
         """
-        Parse the matrix content and return it as a DataFrame object
+        Parse the matrix content and return it as a DataFrame object.
         """
         raise NotImplementedError()
 

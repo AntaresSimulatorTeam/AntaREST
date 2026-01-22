@@ -130,9 +130,7 @@ class GeneratorMatrixConstants:
         )
 
         # Some short-term storage matrices use np.ones((8760, 1))
-        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(
-            lambda: pl.DataFrame(ones_scenario_matrix())
-        )
+        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(ones_scenario_matrix)
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:
         if version > STUDY_VERSION_6_5:
