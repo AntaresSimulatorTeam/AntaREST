@@ -16,7 +16,8 @@ Database implementation of AreaDao using SQLAlchemy Core.
 This module provides database-backed storage for areas when storage_mode=DATABASE.
 """
 
-from typing import Any, Dict, List
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, List
 
 import polars as pl
 from sqlalchemy import case, delete, insert, select, update
@@ -25,10 +26,14 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.database.common import area_exists, validate_area_exists
 from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+
+if TYPE_CHECKING:
+    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
 class DatabaseAreaDao(AreaDao):
@@ -52,6 +57,10 @@ class DatabaseAreaDao(AreaDao):
     def get_session(self) -> Session:
         """Get the SQLAlchemy session for database operations."""
         return self._db_session
+
+    @abstractmethod
+    def get_impl(self) -> "DatabaseStudyDao":
+        pass
 
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:
@@ -190,20 +199,8 @@ class DatabaseAreaDao(AreaDao):
         stmt_area = insert(AREA_TABLE).values(study_id=study_id, area_id=area_id, area_name=area_name)
         session.execute(stmt_area)
 
-        # Create default UI for default layer using model defaults
-        default_ui = AreaUI()
-        r, g, b = default_ui.color_rgb
-        stmt_ui = insert(AREA_UI_TABLE).values(
-            study_id=study_id,
-            area_id=area_id,
-            layer_id=DEFAULT_LAYER_ID,
-            x=default_ui.x,
-            y=default_ui.y,
-            color_r=r,
-            color_g=g,
-            color_b=b,
-        )
-        session.execute(stmt_ui)
+        self.save_area_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
+        self.get_impl().save_area_properties(area_id, AreaProperties())
 
     @override
     def delete_area(self, area_id: str) -> None:

@@ -18,7 +18,7 @@ Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
 from pathlib import PurePosixPath
-from typing import Dict, Iterator, Optional, Sequence
+from typing import Dict, Iterator, Optional, Self, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -73,11 +73,7 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
     This allows combining multiple DAO operations into a single atomic transaction.
     """
 
-    def __init__(
-        self,
-        study_id: str,
-        db_session: Session,
-    ) -> None:
+    def __init__(self, study_id: str, db_session: Session) -> None:
         """
         Initialize DatabaseStudyDao.
 
@@ -100,6 +96,10 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
         stmt = select(Study.version).where(Study.id == self._study_id)
         version_str = self._db_session.execute(stmt).scalar_one()
         return StudyVersion.parse(version_str)
+
+    @override
+    def get_impl(self) -> Self:
+        return self
 
     @override
     def get_comments(self) -> str:
