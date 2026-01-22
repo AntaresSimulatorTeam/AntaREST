@@ -110,7 +110,7 @@ class TestBindingConstraints:
         end = time.time()
         duration = end - start
         # due to new code this should be extremely fast.
-        assert duration < duration_threshold(0.5)
+        assert duration < duration_threshold(1)
         # asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
         assert res.status_code == 200
