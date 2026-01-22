@@ -17,9 +17,10 @@ This module defines the database tables used when a study has storage_mode=DATAB
 These tables store study data (areas, UI positions, etc.) in the database instead of the filesystem.
 """
 
-from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Table, Text
 
 from antarest.dbmodel import Base
+from antarest.study.business.model.area_properties_model import AdequacyPatchMode
 
 metadata = Base.metadata
 
@@ -43,6 +44,29 @@ AREA_UI_TABLE = Table(
     Column("color_r", Integer, nullable=False),
     Column("color_g", Integer, nullable=False),
     Column("color_b", Integer, nullable=False),
+    ForeignKeyConstraint(
+        ["study_id", "area_id"],
+        ["area.study_id", "area.area_id"],
+        ondelete="CASCADE",
+    ),
+)
+
+# Relation: One to one with `AREA_TABLE`
+AREA_PROPERTIES_TABLE = Table(
+    "area_properties",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("area_id", String(255), nullable=False, primary_key=True),
+    Column("energy_cost_unsupplied", Float, nullable=False),
+    Column("energy_cost_spilled", Float, nullable=False),
+    Column("non_dispatch_power", Boolean, nullable=False),
+    Column("dispatch_hydro_power", Boolean, nullable=False),
+    Column("other_dispatch_power", Boolean, nullable=False),
+    Column("spread_unsupplied_energy_cost", Float, nullable=False),
+    Column("spread_spilled_energy_cost", Float, nullable=False),
+    Column("filter_synthesis", Text, nullable=False),
+    Column("filter_by_year", Text, nullable=False),
+    Column("adequacy_patch_mode", Enum(AdequacyPatchMode), nullable=True),  # Since v8.3
     ForeignKeyConstraint(
         ["study_id", "area_id"],
         ["area.study_id", "area.area_id"],

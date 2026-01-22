@@ -26,28 +26,13 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.dao.api.area_dao import AreaDao
+from antarest.study.dao.database.common import area_exists, validate_area_exists
 from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
-def area_exists(session: Session, study_id: str, area_id: str) -> bool:
-    stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
-    return session.execute(stmt).fetchone() is not None
-
-
-def validate_area_exists(session: Session, study_id: str, area_id: str) -> None:
-    if not area_exists(session, study_id, area_id):
-        raise AreaNotFound(area_id)
-
-
 class DatabaseAreaDao(AreaDao):
-    """
-    Database implementation of AreaDao.
-
-    Note: Write operations do NOT commit transactions. The caller (service layer)
-    is responsible for transaction management (commit/rollback). This allows
-    combining multiple DAO operations into a single atomic transaction.
-    """
+    """Database implementation of AreaDao"""
 
     def __init__(self, study_id: str, db_session: Session) -> None:
         """
@@ -100,18 +85,8 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Single query with JOIN to get all areas and their UI info
-        stmt = (
-            select(AREA_TABLE.c.area_id, AREA_UI_TABLE)
-            .select_from(
-                AREA_TABLE.join(
-                    AREA_UI_TABLE,
-                    (AREA_TABLE.c.study_id == AREA_UI_TABLE.c.study_id)
-                    & (AREA_TABLE.c.area_id == AREA_UI_TABLE.c.area_id),
-                )
-            )
-            .where(AREA_TABLE.c.study_id == study_id)
-        )
+        # Single query to get all areas and their UI info
+        stmt = select(AREA_UI_TABLE).where(AREA_UI_TABLE.c.study_id == study_id)
         rows = session.execute(stmt)
 
         # Group UI rows by area_id

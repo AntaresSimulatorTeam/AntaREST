@@ -59,16 +59,18 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
+from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
+class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
     """
     Database implementation of StudyDao.
 
     Note: Write operations do NOT commit transactions. The caller (service layer)
     is responsible for transaction management (commit/rollback).
+    This allows combining multiple DAO operations into a single atomic transaction.
     """
 
     def __init__(
@@ -84,6 +86,7 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
             db_session: SQLAlchemy session for database operations
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
+        DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
 
     # Implementation of abstract methods required by StudyDao
     @override
