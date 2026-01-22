@@ -142,7 +142,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                 file_type = field.split("_")[1]
                 try:
                     file_url = ["user", "expansion", file_type, file]
-                    file_study.tree.get(file_url)
+                    file_study.tree.get_node(file_url)
                 except ChildNotFoundError:
                     msg = f"Additional {file_type} file '{file}' does not exist"
                     raise XpansionFileNotFoundError(msg) from None

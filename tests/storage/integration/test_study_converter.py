@@ -57,7 +57,7 @@ from tests.storage.integration.conftest import UUID
 
 
 @with_admin_user
-def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
+def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandContext) -> None:
     """
     Ensures we can represent a study as a filesystem one.
     """
@@ -391,7 +391,7 @@ def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_con
 
 
 @with_admin_user
-def test_no_outputs(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
+def test_no_outputs(storage_service: StudyService, tmp_path: Path) -> None:
     """
     Ensures the outputs aren't copied when didn't asked to
     """
@@ -401,7 +401,7 @@ def test_no_outputs(storage_service: StudyService, tmp_path: Path, command_conte
 
 
 @with_admin_user
-def test_matrices_normalized(storage_service: StudyService, tmp_path: Path, command_context: CommandContext) -> None:
+def test_matrices_normalized(storage_service: StudyService, tmp_path: Path) -> None:
     """
     Ensures the matrices are normalized when asked to.
     """
