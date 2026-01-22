@@ -58,6 +58,9 @@ class MCAllLinksQueryFile(StrEnum):
 
 QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
+SingleOutputHeaders: TypeAlias = list[str]
+MultipleOutputHeaders: TypeAlias = list[list[str]]
+
 
 @dataclass
 class OutputDataFrame:
@@ -66,7 +69,7 @@ class OutputDataFrame:
     """
 
     data: pl.DataFrame
-    headers: list[list[str]] | list[str]
+    headers: SingleOutputHeaders | MultipleOutputHeaders
 
 
 def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
@@ -90,7 +93,7 @@ def get_start_column(frequency: MatrixFrequency) -> int:
         raise NotImplementedError(f"Unknown frequency {frequency.value}")
 
 
-def parse_headers(content: str, start_col: int) -> list[list[str]]:
+def parse_headers(content: str, start_col: int) -> MultipleOutputHeaders:
     lines = content.splitlines()
     header_lines = []
     for idx, line in enumerate(lines[4:7]):

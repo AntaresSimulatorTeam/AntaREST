@@ -12,7 +12,7 @@
 import logging
 import warnings
 from pathlib import Path
-from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence
+from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence, cast
 
 import pandas as pd
 import polars as pl
@@ -26,8 +26,10 @@ from antarest.study.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
+    MultipleOutputHeaders,
     OutputDataFrame,
     QueryFileType,
+    SingleOutputHeaders,
     concatenate_dataframe_multi_indexed_columns,
     get_start_column,
     normalize_df_column_names,
@@ -123,7 +125,8 @@ class AggregatorManager:
         output_data = parse_output_file(file_path, self._output_first_column)
 
         if normalize_column_names:
-            output_data.headers = normalize_df_column_names(self.mc_root, output_data.headers)  # type: ignore
+            headers = cast(MultipleOutputHeaders, output_data.headers)
+            output_data.headers = normalize_df_column_names(self.mc_root, headers)
 
         return output_data
 
@@ -188,7 +191,10 @@ class AggregatorManager:
 
     def _ensures_typing(self, headers: list[str] | list[list[str]]) -> list[str]:
         # Method used to fix mypy typing inside `columns_filtering` method
-        return [col[0] for col in headers] if not self.transform_columns_headers else headers  # type: ignore
+        if not self.transform_columns_headers:
+            multiple_headers = cast(MultipleOutputHeaders, headers)
+            return [col[0] for col in multiple_headers]
+        return cast(SingleOutputHeaders, headers)
 
     def columns_filtering(self, data: OutputDataFrame, is_details: bool) -> OutputDataFrame:
         # columns filtering
@@ -206,7 +212,8 @@ class AggregatorManager:
 
             indices = [k for k, c in enumerate(df_columns) if c in filtered_columns]
             data.data = data.data.select([data.data.columns[i] for i in indices])
-            data.headers = [data.headers[i] for i in indices]  # type: ignore
+            headers = cast(MultipleOutputHeaders, data.headers)
+            data.headers = [headers[i] for i in indices]
 
         return data
 
@@ -275,7 +282,7 @@ class AggregatorManager:
             # Starting from here, output_data.headers are just a list of strings.
             # We can use them as columns for our dataframe.
             df = output_data.data
-            df.columns = output_data.headers  # type: ignore
+            df.columns = cast(SingleOutputHeaders, output_data.headers)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(df.columns, column_name, is_details, self.mc_root)
