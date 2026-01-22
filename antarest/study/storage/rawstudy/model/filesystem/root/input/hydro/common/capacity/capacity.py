@@ -29,7 +29,7 @@ class MatrixInfo(TypedDict, total=False):
     freq: MatrixFrequency
     start_version: StudyVersion
     default_empty: Callable[[], npt.NDArray[np.float64]]
-    should_exist: bool = True
+    should_exist: bool
 
 
 def default_maxpower() -> npt.NDArray[np.float64]:
