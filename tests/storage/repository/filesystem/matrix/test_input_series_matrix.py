@@ -18,6 +18,7 @@ from unittest.mock import Mock
 import numpy as np
 import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.utils.polars import create_polars_dataframe
@@ -170,6 +171,23 @@ class TestInputSeriesMatrix:
         # Loading the matrix should return the default values
         actual = node.load()
         assert actual == {"columns": ["0", "1"], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]}
+
+    def test_default_empty(self, my_study_config: FileStudyTreeConfig) -> None:
+        file_path = my_study_config.path
+
+        def default_matrix():
+            return np.array([[1, 2], [3, 4]])
+
+        file_path.touch()
+        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
+
+        # Ensures `parse_as_dataframe` returns the default matrix
+        result = node.parse_as_dataframe()
+        assert_frame_equal(result, create_polars_dataframe(default_matrix()), check_dtypes=False)
+
+        # Ensures `parse_content` returns an empty matrix
+        result = node.parse_content()
+        assert result.is_empty()
 
 
 class TestCopyAndRenameFile:

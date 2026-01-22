@@ -487,7 +487,7 @@ class RawStudyService(AbstractStorageService):
         if not matrix_nodes:
             return
 
-        matrix_ids = self._matrix_service.create_batch((node.parse_as_dataframe() for node in matrix_nodes))
+        matrix_ids = self._matrix_service.create_batch((node.parse_content() for node in matrix_nodes))
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
 

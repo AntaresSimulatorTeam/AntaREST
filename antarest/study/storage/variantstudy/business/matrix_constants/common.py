@@ -22,6 +22,10 @@ def null_scenario_matrix() -> pl.DataFrame:
     return create_polars_dataframe([[0.0]] * 8760)
 
 
+def ones_scenario_matrix() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0]] * 8760)
+
+
 def fixed_4_columns() -> pl.DataFrame:
     return create_polars_dataframe([[0.0, 0.0, 0.0, 0.0]] * 8760)
 

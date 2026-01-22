@@ -17,7 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderN
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.variantstudy.business.matrix_constants.st_storage import series
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
 
 
 class InputSTStorageConstraintsSTStorage(FolderNode):
@@ -33,7 +33,7 @@ class InputSTStorageConstraintsSTStorage(FolderNode):
             children[f"rhs_{constraint.id}"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file(f"rhs_{constraint.id}.txt"),
-                default_empty=series.additional_constraints,
+                default_empty=default_scenario_hourly,
                 should_exist=False,
             )
 
