@@ -9,19 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import numpy as np
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_energy
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.prepro import (
     InputHydroPreproAreaPrepro,
 )
-
-
-def default_energy() -> np.ndarray:
-    return np.zeros((12, 5), dtype=np.float64)
 
 
 class InputHydroPreproArea(FolderNode):
