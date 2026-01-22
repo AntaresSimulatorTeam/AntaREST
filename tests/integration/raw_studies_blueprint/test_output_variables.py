@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -25,7 +26,7 @@ ASSETS_DIR = assets_dir / "output_variables_list"
 
 
 def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     # Checks the endpoint works correctly
     output_id = "20201014-1425eco-goodbye"
@@ -86,7 +87,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
 def test_get_output_variables_list_limit_case(
     client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
 ) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     # Some areas have a `-` inside their ids. We need to ensure we're able to read their links' related variables
     output_id = "20201014-1425eco-goodbye"
@@ -100,7 +101,7 @@ def test_get_output_variables_list_limit_case(
 def test_get_output_variables_imagrid_endpoint(
     client: TestClient, user_access_token: str, internal_study_id: str
 ) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
     output_id = "20201014-1425eco-goodbye"
     res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/variables")
     expected_result = {
@@ -158,7 +159,7 @@ def test_get_output_variables_imagrid_endpoint(
 
 
 def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
     output_id = "20201014-1425eco-goodbye"
     url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
 

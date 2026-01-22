@@ -11,11 +11,12 @@
 # This file is part of the Antares project.
 from datetime import datetime
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
 def test_get_matrices(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     matrix = [[1, 2], [1, 7]]
     matrix_1 = [[3, 6], [5, 10, 28]]
@@ -69,7 +70,7 @@ def test_get_matrices_fail(client: TestClient, user_access_token: str) -> None:
 
 
 def test_get_matrix(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     matrix = [[1, 2], [3, 4]]
 

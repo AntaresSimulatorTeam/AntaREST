@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
@@ -28,7 +29,7 @@ class TestupdateStudyMetadata:
         This test verifies that we can update the tags of a study.
         It also tests the tags normalization.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # Classic usage: set some tags to a study
         study_tags = ["Tag1", "Tag2"]
         res = client.put(f"/v1/studies/{internal_study_id}", json={"tags": study_tags})
@@ -67,7 +68,7 @@ class TestupdateStudyMetadata:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # We cannot have empty tags
         study_tags = [""]
         res = client.put(f"/v1/studies/{internal_study_id}", json={"tags": study_tags})
@@ -86,7 +87,7 @@ class TestupdateStudyMetadata:
     def test_update_tags__remove_all_tags(
         self, client: TestClient, user_access_token: str, internal_study_id: str
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         study_tags = ["Tag1", "Tag2"]
         client.put(f"/v1/studies/{internal_study_id}", json={"tags": study_tags})
@@ -104,7 +105,7 @@ class TestupdateStudyMetadata:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         res = client.get(f"/v1/studies/{internal_study_id}")
         assert res.status_code == 200

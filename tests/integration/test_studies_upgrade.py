@@ -13,6 +13,7 @@
 import os
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -75,7 +76,7 @@ class TestStudyUpgrade:
         """
 
         # set the admin access token in the client headers
-        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
         # create a raw study
         res = client.post("/v1/studies", params={"name": "My Study"})

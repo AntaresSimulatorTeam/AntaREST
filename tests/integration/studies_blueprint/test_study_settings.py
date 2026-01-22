@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.config.optimization_config_model import (
@@ -20,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
 def test_study_settings(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     created = client.post("/v1/studies", params={"name": "foo", "version": 870})
     study_id = created.json()

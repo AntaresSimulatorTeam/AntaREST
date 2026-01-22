@@ -14,6 +14,7 @@ import io
 import time
 from xml.etree import ElementTree
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
@@ -39,7 +40,7 @@ class TestStudyComments:
         This test verifies that we can retrieve and modify the comments of a study.
         It also performs performance measurements and analyzes.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # Get the comments of the study and compare with the expected file
         res = client.get(f"/v1/studies/{internal_study_id}/comments")
         assert res.status_code == 200, res.json()
@@ -77,7 +78,7 @@ class TestStudyComments:
         This test verifies that we can retrieve and modify the comments of a VARIANT study.
         It also performs performance measurements and analyzes.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # First, we create a copy of the study, and we convert it to a managed study.
         res = client.post(
             f"/v1/studies/{internal_study_id}/copy",

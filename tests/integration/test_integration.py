@@ -19,6 +19,7 @@ from unittest.mock import ANY
 
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
@@ -31,7 +32,7 @@ from tests.integration.utils import wait_for
 
 
 def test_main(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # create some new users
     # TODO check for bad username or empty password
@@ -348,7 +349,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
 
 
 def test_area_management(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     created = client.post("/v1/studies", params={"name": "foo", "version": 870})
     study_id = created.json()
@@ -991,7 +992,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
 
 def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, internal_study_id: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # =============================
     # OUTPUT PART
@@ -1076,7 +1077,7 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # Create non admin user
     res = client.post(
@@ -1136,7 +1137,7 @@ def zip_study(src_path: Path, dest_path: Path) -> None:
 
 
 def test_import(client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     zip_path = ASSETS_DIR / "STA-mini.zip"
     seven_zip_path = ASSETS_DIR / "STA-mini.7z"
@@ -1288,7 +1289,7 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
 def test_import_with_editor(
     client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path
 ) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # 1. Create two users: 'creator' and 'importer'
     client.post("/v1/users", json={"name": "creator", "password": "password123"})
@@ -1344,7 +1345,7 @@ def test_import_with_editor(
 
 
 def test_copy_with_editor_preservation(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # 1. Create a group and two users
     group_name = "test_copy_group"
@@ -1423,7 +1424,7 @@ def test_copy_with_editor_preservation(client: TestClient, admin_access_token: s
 
 
 def test_copy(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # Copy a study with admin user who belongs to a group
     copied = client.post(f"/v1/studies/{internal_study_id}/copy?study_name=copied&use_task=false")
@@ -1464,7 +1465,7 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study_id: st
 
 
 def test_copy_variant_as_raw(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # Create a Raw Study with 2 areas
     raw = client.post("/v1/studies?name=raw")
@@ -1503,7 +1504,7 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str) -> Non
 
 
 def test_copy_with_jobs(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     raw = client.post("/v1/studies?name=raw")
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
@@ -1537,7 +1538,7 @@ def test_copy_with_jobs(client: TestClient, admin_access_token: str, tmp_path: P
 
 
 def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # Create a raw study and a variant
     raw = client.post("/v1/studies?name=raw")
@@ -1571,7 +1572,7 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
 
 
 def test_copy_variant_with_specific_path(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     raw = client.post("/v1/studies?name=raw")
     assert raw.status_code == 201
@@ -1600,7 +1601,7 @@ def test_copy_variant_with_specific_path(client: TestClient, admin_access_token:
 
 
 def test_copy_with_specific_output(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     raw = client.post("/v1/studies?name=raw")
     copy_with_output(client, tmp_path, raw.json())
@@ -1744,7 +1745,7 @@ def test_areas_deletion_with_binding_constraints(
     """
 
     # set client headers to user access token
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     area1_id = "france"
     area2_id = "germany"
@@ -1844,7 +1845,7 @@ def test_links_deletion_with_binding_constraints(
     """
 
     # set client headers to user access token
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     # Create an area "area_1" in the study
     res = client.post(
@@ -1909,7 +1910,7 @@ def test_links_deletion_with_binding_constraints(
 
 
 def test_update_with_editor(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # 1. Create a group and two users
     group_name = "test_copy_group"
@@ -2048,7 +2049,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str) -> None
 
 
 def test_update_variant_with_editor(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # 1. Create a group and two users
     group_name = "test_copy_group"

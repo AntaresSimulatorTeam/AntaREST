@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import pytest
 from antares.study.version import StudyVersion
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
@@ -40,7 +41,7 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
         res = client.post(f"/v1/studies?name=study&version={study_version}")
         assert res.status_code == 201
@@ -57,7 +58,7 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
         res = client.post("/v1/studies?name=study1")
         assert res.status_code == 201
@@ -86,7 +87,7 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
         # First create the directory structure
         res = client.post("/v1/directories", json={"name": "project"})
@@ -112,7 +113,7 @@ class TestCreateStudy:
         client: TestClient,
         admin_access_token: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
         res = client.post("/v1/studies?name=test-study&directory=workspace/experiments/test")
         assert res.status_code == 201

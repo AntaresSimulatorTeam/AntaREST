@@ -10,12 +10,13 @@
 #
 # This file is part of the Antares project.
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
 class TestDigest:
     def test_get_digest_endpoint(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Nominal case
         output_id = "20201014-1422eco-hello"
