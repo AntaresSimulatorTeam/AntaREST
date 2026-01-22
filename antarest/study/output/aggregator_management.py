@@ -273,7 +273,7 @@ class AggregatorManager:
                 concatenate_dataframe_multi_indexed_columns(output_data)
 
             # Starting from here, output_data.headers are just a list of strings.
-            # We can use them as colons for our dataframe.
+            # We can use them as columns for our dataframe.
             df = output_data.data
             df.columns = output_data.headers  # type: ignore
 

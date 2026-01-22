@@ -61,6 +61,10 @@ QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLink
 
 @dataclass
 class OutputDataFrame:
+    """
+    We separate the polars dataframe and its headers as polars does not handle multi-headers columns.
+    """
+
     data: pl.DataFrame
     headers: list[list[str]] | list[str]
 
