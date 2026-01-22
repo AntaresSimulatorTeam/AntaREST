@@ -21,6 +21,7 @@ from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, O
 from antarest.study.model import MatrixFrequency
 from antarest.study.output.utils import (
     MCYEAR_COL,
+    TIME_ID_COL,
     MCAllAreasQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
@@ -42,8 +43,6 @@ AREA_COL = "area"
 """Column name for the area."""
 LINK_COL = "link"
 """Column name for the link."""
-TIME_ID_COL = "timeId"
-"""Column name for the time index."""
 CLUSTER_ID_COL = "cluster"
 """Column name for the cluster id."""
 MC_YEAR_INDEX = 0

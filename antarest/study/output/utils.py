@@ -23,6 +23,9 @@ from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
 
+"""Column name for the time index."""
+TIME_ID_COL = "timeId"
+
 
 class MCRoot(Enum):
     MC_IND = "mc-ind"

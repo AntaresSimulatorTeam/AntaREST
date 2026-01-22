@@ -18,6 +18,8 @@ import polars as pl
 import pyarrow as pa
 from pyarrow.parquet import ParquetFile, ParquetWriter
 
+from antarest.study.output.utils import MCYEAR_COL, TIME_ID_COL
+
 
 def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
     return ParquetWriter(output_file, schema, compression="zstd", data_page_version="2.0")
@@ -25,7 +27,7 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
 
 def _adapt_polars_schema(df: pl.DataFrame) -> pl.DataFrame:
     # We have to use Float64 as a schema because if it differs the writing will fail.
-    return df.with_columns(pl.selectors.numeric().cast(pl.Float64))
+    return df.with_columns(pl.selectors.numeric().exclude([MCYEAR_COL, TIME_ID_COL]).cast(pl.Float64))
 
 
 def write_dataframes_in_parquet_format_by_column_sets(
