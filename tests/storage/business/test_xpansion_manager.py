@@ -12,9 +12,12 @@
 
 import io
 
+import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 from fastapi import UploadFile
+from polars.testing import assert_frame_equal
 
 from antarest.core.exceptions import (
     AreaNotFound,
@@ -44,6 +47,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from tests.helpers import file_study_interface
 
 
@@ -490,11 +494,11 @@ def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface)
     assert content2 == expected2
 
     assert filename3 in study.get_files().tree.get(["user", "expansion", "weights"])
-    assert {
-        "columns": ["0"],
-        "data": [[2.0]],
-        "index": [0],
-    } == study.get_files().tree.get(["user", "expansion", "weights", filename3])
+    matrix_node = study.get_files().tree.get_node(["user", "expansion", "weights", filename3])
+    assert isinstance(matrix_node, MatrixNode)
+    matrix = matrix_node.parse_as_dataframe()
+    expected_matrix = pl.DataFrame(np.array([[2.0]]), schema=["0"])
+    assert_frame_equal(matrix, expected_matrix)
 
     settings = xpansion_manager.get_xpansion_settings(study)
     settings.yearly_weights = filename3
@@ -574,18 +578,18 @@ def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> N
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "capa"])
-    assert {
-        "columns": ["0"],
-        "data": [[0.0]],
-        "index": [0],
-    } == study.get_files().tree.get(["user", "expansion", "capa", filename1])
+    matrix_node = study.get_files().tree.get_node(["user", "expansion", "capa", filename1])
+    assert isinstance(matrix_node, MatrixNode)
+    matrix = matrix_node.parse_as_dataframe()
+    expected_matrix = pl.DataFrame(np.array([[0.0]]), schema=["0"])
+    assert_frame_equal(matrix, expected_matrix)
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
-    assert {
-        "columns": ["0"],
-        "data": [[1.0]],
-        "index": [0],
-    } == study.get_files().tree.get(["user", "expansion", "capa", filename2])
+    matrix_node = study.get_files().tree.get_node(["user", "expansion", "capa", filename2])
+    assert isinstance(matrix_node, MatrixNode)
+    matrix = matrix_node.parse_as_dataframe()
+    expected_matrix = pl.DataFrame(np.array([[1.0]]), schema=["0"])
+    assert_frame_equal(matrix, expected_matrix)
 
 
 def test_delete_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:

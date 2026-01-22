@@ -71,5 +71,4 @@ de_details_hourly = {
             7.0,
         ]
     ],
-    "index": ["Annual"],
 }
