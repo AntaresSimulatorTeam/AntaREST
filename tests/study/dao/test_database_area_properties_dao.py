@@ -10,35 +10,4 @@
 #
 # This file is part of the Antares project.
 
-"""
-Unit tests for DatabaseAreaDao.
-"""
 
-import uuid
-
-import pytest
-from sqlalchemy.orm import Session
-
-from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
-from antarest.study.model import StorageMode
-from tests.helpers import create_study
-
-
-class TestDatabaseAreaPropertiesDaoMethods:
-    """Test suite for DatabaseAreaPropertiesDao methods."""
-
-    @pytest.fixture
-    def study_id(self, db_session: Session) -> str:
-        """Create a test study in database mode and return its ID."""
-        study_id = str(uuid.uuid4())
-        with db_session:
-            study = create_study(id=study_id, name="Test Study")
-            study.storage_mode = StorageMode.DATABASE
-            db_session.add(study)
-            db_session.commit()
-        return study_id
-
-    @pytest.fixture
-    def dao(self, db_session: Session, study_id: str) -> DatabaseAreaDao:
-        """Create a DatabaseAreaDao instance for testing."""
-        return DatabaseAreaDao(study_id, db_session)
