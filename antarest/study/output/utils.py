@@ -144,4 +144,9 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     polars_df = _parse_output_dataframe(file_path)
 
     df = polars_df[polars_df.columns[first_column:]]
+
+    # At this point we only have numeric values in our df. But NaN columns are considered to be String by polars.
+    # So we change this to be Float64 to harmonize everything.
+    df = df.with_columns(pl.col(pl.Utf8).cast(pl.Float64))
+
     return OutputDataFrame(data=df, headers=output_headers)
