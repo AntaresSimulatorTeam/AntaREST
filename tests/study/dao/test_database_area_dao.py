@@ -20,11 +20,11 @@ from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaUI
-from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
 
 
-def test_save_area_creates_area_with_default_ui(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_save_area_creates_area_with_default_ui(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that save_area creates a new area with default UI for layer '0'.
     """
@@ -57,7 +57,7 @@ def test_save_area_creates_area_with_default_ui(db_session: Session, dao: Databa
         assert ui_row.color_b == 44
 
 
-def test_save_area_raises_error_if_exists(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_save_area_raises_error_if_exists(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that save_area raises ValueError if area already exists.
     """
@@ -70,7 +70,7 @@ def test_save_area_raises_error_if_exists(db_session: Session, dao: DatabaseArea
             dao.save_area("Paris")
 
 
-def test_delete_area_removes_area_and_ui(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_delete_area_removes_area_and_ui(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that delete_area removes the area and cascades to area_ui.
     """
@@ -91,7 +91,7 @@ def test_delete_area_removes_area_and_ui(db_session: Session, dao: DatabaseAreaD
         assert area_row is None
 
 
-def test_delete_area_raises_error_if_not_exists(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_delete_area_raises_error_if_not_exists(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that delete_area raises AreaNotFound if area doesn't exist.
     """
@@ -100,7 +100,7 @@ def test_delete_area_raises_error_if_not_exists(db_session: Session, dao: Databa
             dao.delete_area("nonexistent")
 
 
-def test_get_all_areas_info_returns_areas(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_get_all_areas_info_returns_areas(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that get_all_areas_info returns all areas for a study with original names preserved.
     """
@@ -123,7 +123,7 @@ def test_get_all_areas_info_returns_areas(db_session: Session, dao: DatabaseArea
         assert all(a.thermals is None for a in areas)
 
 
-def test_get_area_ui_returns_ui_for_layer(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_get_area_ui_returns_ui_for_layer(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that get_area_ui returns UI data for a specific layer.
     """
@@ -139,7 +139,7 @@ def test_get_area_ui_returns_ui_for_layer(db_session: Session, dao: DatabaseArea
         assert ui.color_rgb == (230, 108, 44)
 
 
-def test_get_area_ui_falls_back_to_layer_zero(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_get_area_ui_falls_back_to_layer_zero(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that get_area_ui falls back to layer '0' if requested layer doesn't exist.
     """
@@ -155,7 +155,7 @@ def test_get_area_ui_falls_back_to_layer_zero(db_session: Session, dao: Database
         assert ui.color_rgb == (230, 108, 44)
 
 
-def test_get_area_ui_raises_error_if_area_not_exists(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_get_area_ui_raises_error_if_area_not_exists(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that get_area_ui raises AreaNotFound if area doesn't exist.
     """
@@ -164,7 +164,7 @@ def test_get_area_ui_raises_error_if_area_not_exists(db_session: Session, dao: D
             dao.get_area_ui("nonexistent")
 
 
-def test_save_area_ui_updates_existing(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_save_area_ui_updates_existing(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that save_area_ui updates existing UI data.
     """
@@ -186,7 +186,7 @@ def test_save_area_ui_updates_existing(db_session: Session, dao: DatabaseAreaDao
         assert ui.color_rgb == (255, 0, 0)
 
 
-def test_save_area_ui_creates_new_layer(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_save_area_ui_creates_new_layer(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that save_area_ui creates UI for a new layer.
     """
@@ -213,7 +213,7 @@ def test_save_area_ui_creates_new_layer(db_session: Session, dao: DatabaseAreaDa
         assert ui_layer1.color_rgb == (0, 255, 0)
 
 
-def test_save_area_ui_raises_error_if_area_not_exists(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_save_area_ui_raises_error_if_area_not_exists(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that save_area_ui raises AreaNotFound if area doesn't exist.
     """
@@ -223,7 +223,7 @@ def test_save_area_ui_raises_error_if_area_not_exists(db_session: Session, dao: 
             dao.save_area_ui("nonexistent", "0", new_ui)
 
 
-def test_get_all_areas_ui_info_returns_all_layers(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_get_all_areas_ui_info_returns_all_layers(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that get_all_areas_ui_info returns UI data for all areas and layers.
     """
@@ -264,7 +264,7 @@ def test_get_all_areas_ui_info_returns_all_layers(db_session: Session, dao: Data
         assert london_ui.layer_color == {"0": "230, 108, 44", "1": "0, 0, 255"}
 
 
-def test_save_layer_areas_adds_and_removes(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_save_layer_areas_adds_and_removes(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that save_layer_areas adds and removes areas from a layer.
     """
@@ -326,7 +326,7 @@ def test_save_layer_areas_adds_and_removes(db_session: Session, dao: DatabaseAre
         assert berlin_ui is not None
 
 
-def test_save_layer_areas_copies_default_ui(db_session: Session, dao: DatabaseAreaDao) -> None:
+def test_save_layer_areas_copies_default_ui(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that save_layer_areas copies default UI from layer '0' when adding areas to a new layer.
     """

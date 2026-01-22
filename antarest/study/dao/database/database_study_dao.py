@@ -26,7 +26,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -679,18 +678,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
 
     @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_area_properties(self, area_id: str) -> AreaProperties:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_area_properties(self) -> dict[str, AreaProperties]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
