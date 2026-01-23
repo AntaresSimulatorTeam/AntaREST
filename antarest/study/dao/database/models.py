@@ -30,6 +30,16 @@ AREA_TABLE = Table(
     Column("study_id", String(36), ForeignKey("study.id", ondelete="CASCADE"), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("area_name", String(255), nullable=False),
+    Column("energy_cost_unsupplied", Float, nullable=False),
+    Column("energy_cost_spilled", Float, nullable=False),
+    Column("non_dispatch_power", Boolean, nullable=False),
+    Column("dispatch_hydro_power", Boolean, nullable=False),
+    Column("other_dispatch_power", Boolean, nullable=False),
+    Column("spread_unsupplied_energy_cost", Float, nullable=False),
+    Column("spread_spilled_energy_cost", Float, nullable=False),
+    Column("filter_synthesis", Text, nullable=False),
+    Column("filter_by_year", Text, nullable=False),
+    Column("adequacy_patch_mode", Enum(AdequacyPatchMode), nullable=True),  # Since v8.3
 )
 
 # Relation: One area can have multiple UI configurations (one per layer)
@@ -44,29 +54,6 @@ AREA_UI_TABLE = Table(
     Column("color_r", Integer, nullable=False),
     Column("color_g", Integer, nullable=False),
     Column("color_b", Integer, nullable=False),
-    ForeignKeyConstraint(
-        ["study_id", "area_id"],
-        ["area.study_id", "area.area_id"],
-        ondelete="CASCADE",
-    ),
-)
-
-# Relation: One to one with `AREA_TABLE`
-AREA_PROPERTIES_TABLE = Table(
-    "area_properties",
-    metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("area_id", String(255), nullable=False, primary_key=True),
-    Column("energy_cost_unsupplied", Float, nullable=False),
-    Column("energy_cost_spilled", Float, nullable=False),
-    Column("non_dispatch_power", Boolean, nullable=False),
-    Column("dispatch_hydro_power", Boolean, nullable=False),
-    Column("other_dispatch_power", Boolean, nullable=False),
-    Column("spread_unsupplied_energy_cost", Float, nullable=False),
-    Column("spread_spilled_energy_cost", Float, nullable=False),
-    Column("filter_synthesis", Text, nullable=False),
-    Column("filter_by_year", Text, nullable=False),
-    Column("adequacy_patch_mode", Enum(AdequacyPatchMode), nullable=True),  # Since v8.3
     ForeignKeyConstraint(
         ["study_id", "area_id"],
         ["area.study_id", "area.area_id"],
