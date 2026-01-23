@@ -9,12 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+from db_statement_recorder import DBStatementRecorder
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models import AREA_PROPERTIES_TABLE
+from antarest.study.dao.database.models import AREA_TABLE
 
 
 def test_save_area_creates_area_with_default_properties(db_session: Session, dao: DatabaseStudyDao) -> None:
@@ -26,7 +29,7 @@ def test_save_area_creates_area_with_default_properties(db_session: Session, dao
         study_id = dao.get_study_id()
 
         # Check default AreaProperties were created
-        stmt_properties = select(AREA_PROPERTIES_TABLE).where(AREA_PROPERTIES_TABLE.c.study_id == study_id)
+        stmt_properties = select(AREA_TABLE).where(AREA_TABLE.c.study_id == study_id)
         row = db_session.execute(stmt_properties).fetchone()
         assert row.study_id == study_id
         assert row.area_id == "paris"
@@ -52,8 +55,33 @@ def test_save_area_creates_area_with_default_properties(db_session: Session, dao
 
     assert dao.get_all_area_properties() == {}
 
-    rows = db_session.execute(select(AREA_PROPERTIES_TABLE)).fetchall()
+    rows = db_session.execute(select(AREA_TABLE)).fetchall()
     assert not rows
+
+
+def test_multiple_areas(db_session: Session, dao: DatabaseStudyDao) -> None:
+    with db_session:
+        dao.save_area("Paris")
+        dao.save_area("London")
+        db_session.commit()
+
+    # Ensures we do not perform N+1 requests
+    with DBStatementRecorder(db_session.bind) as db_recorder:
+        all_properties = dao.get_all_area_properties()
+        default_props = AreaProperties()
+        assert all_properties == {"paris": default_props, "london": default_props}
+
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+
+
+def test_error_cases(db_session: Session, dao: DatabaseStudyDao) -> None:
+    # Try to get properties for a fake area
+    with pytest.raises(AreaNotFound, match="Area is not found: 'fake_area'"):
+        dao.get_area_properties("fake_area")
+
+    # Try to set properties for a fake area
+    with pytest.raises(AreaNotFound, match="Area is not found: 'fake_area'"):
+        dao.save_area_properties("fake_area", AreaProperties())
 
 
 """

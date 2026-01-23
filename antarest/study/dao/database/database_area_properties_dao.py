@@ -19,12 +19,11 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import insert, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, DuplicateAreaName
+from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao
 from antarest.study.dao.database.common import (
@@ -101,11 +100,15 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        try:
-            # Insert new area
-            stmt_area = insert(AREA_TABLE).values(
-                study_id=study_id,
-                area_id=area_id,
+        stmt_check = select(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+        existing_properties = session.execute(stmt_check).fetchone()
+        if not existing_properties:
+            raise AreaNotFound(area_id)
+
+        stmt_update = (
+            update(AREA_TABLE)
+            .where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+            .values(
                 energy_cost_unsupplied=area_properties.energy_cost_unsupplied,
                 energy_cost_spilled=area_properties.energy_cost_spilled,
                 non_dispatch_power=area_properties.non_dispatch_power,
@@ -117,7 +120,5 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
                 filter_by_year=serialize_frequency_filters(area_properties.filter_by_year),
                 adequacy_patch_mode=area_properties.adequacy_patch_mode,
             )
-            session.execute(stmt_area)
-        except IntegrityError:
-            # The area already existed
-            raise DuplicateAreaName(area_id)
+        )
+        session.execute(stmt_update)
