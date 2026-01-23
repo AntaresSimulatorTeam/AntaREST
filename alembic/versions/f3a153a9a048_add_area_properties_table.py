@@ -18,17 +18,17 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("area") as batch_op:
-        batch_op.add_column(sa.Column("energy_cost_unsupplied", sa.Float(), nullable=False)),
-        batch_op.add_columns(sa.Column("energy_cost_spilled", sa.Float(), nullable=False)),
-        batch_op.add_columns(sa.Column("non_dispatch_power", sa.Boolean(), nullable=False)),
-        batch_op.add_columns(sa.Column("dispatch_hydro_power", sa.Boolean(), nullable=False)),
-        batch_op.add_columns(sa.Column("other_dispatch_power", sa.Boolean(), nullable=False)),
-        batch_op.add_columns(sa.Column("spread_unsupplied_energy_cost", sa.Float(), nullable=False)),
-        batch_op.add_columns(sa.Column("spread_spilled_energy_cost", sa.Float(), nullable=False)),
-        batch_op.add_columns(sa.Column("filter_synthesis", sa.Text(), nullable=False)),
-        batch_op.add_column(sa.Column("filter_by_year", sa.Text(), nullable=False)),
-        batch_op.add_column(sa.Column("adequacy_patch_mode", sa.Enum('outside', 'inside', 'virtual', name='adequacypatchmode'), nullable=True)),
+    with op.batch_alter_table("area", schema=None) as batch_op:
+        batch_op.add_column(sa.Column("energy_cost_unsupplied", sa.Float(), nullable=False))
+        batch_op.add_column(sa.Column("energy_cost_spilled", sa.Float(), nullable=False))
+        batch_op.add_column(sa.Column("non_dispatch_power", sa.Boolean(), nullable=False))
+        batch_op.add_column(sa.Column("dispatch_hydro_power", sa.Boolean(), nullable=False))
+        batch_op.add_column(sa.Column("other_dispatch_power", sa.Boolean(), nullable=False))
+        batch_op.add_column(sa.Column("spread_unsupplied_energy_cost", sa.Float(), nullable=False))
+        batch_op.add_column(sa.Column("spread_spilled_energy_cost", sa.Float(), nullable=False))
+        batch_op.add_column(sa.Column("filter_synthesis", sa.Text(), nullable=False))
+        batch_op.add_column(sa.Column("filter_by_year", sa.Text(), nullable=False))
+        batch_op.add_column(sa.Column("adequacy_patch_mode", sa.Enum('outside', 'inside', 'virtual', name='adequacypatchmode'), nullable=True))
 
 
 def downgrade() -> None:
