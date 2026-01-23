@@ -545,3 +545,10 @@ def test_checks_study_compatibility(tmp_path: Path) -> None:
 
     # The legacy flag is supported, the check should succeed
     study_service.checks_antares_web_compatibility(raw_study)
+
+    general_data = settings_path / "generaldata.ini"
+    with open(general_data, "w") as f:
+        f.writelines(["[compatibility]\n", "hydro-pmax = hourly"])
+
+    # The new flag now is supported, the check should pass
+    study_service.checks_antares_web_compatibility(raw_study)

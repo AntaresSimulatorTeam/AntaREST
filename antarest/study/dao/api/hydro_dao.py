@@ -10,11 +10,12 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Optional
+from typing import Dict
 
 import polars as pl
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import (
@@ -160,26 +161,25 @@ class HydroDao(ReadOnlyHydroDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_hourly_gen_power(self, area_id: str, matrix_id: str) -> None:
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_hourly_pump_power(self, area_id: str, matrix_id: str) -> None:
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_daily_gen_energy(self, area_id: str, matrix_id: str) -> None:
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_daily_pump_energy(self, area_id: str, matrix_id: str) -> None:
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
     def convert_hydro_pmax(
         self,
-        hydro_pmax: str,
+        hydro_pmax: HydroPmax,
         matrix_service: ISimpleMatrixService,
-        progress_callback: Optional[Callable[[int], None]] = None,
     ) -> None:
         raise NotImplementedError()

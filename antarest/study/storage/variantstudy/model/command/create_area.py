@@ -18,6 +18,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.area_properties_model import AdequacyPatchMode, AreaProperties
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
 from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
@@ -94,7 +95,7 @@ class CreateArea(ICommand):
             # Read hydro-pmax from generaldata.ini
             compatibility_parameters = study_data.get_compatibility_parameters()
             hydro_pmax = compatibility_parameters.hydro_pmax
-            if hydro_pmax == "hourly":
+            if hydro_pmax == HydroPmax.HOURLY:
                 study_data.save_hydro_max_hourly_gen_power(area_id, constants.get_hydro_max_hourly_gen_power())
                 study_data.save_hydro_max_hourly_pump_power(area_id, constants.get_hydro_max_hourly_pump_power())
                 study_data.save_hydro_max_daily_gen_energy(area_id, constants.get_hydro_max_daily_gen_energy())

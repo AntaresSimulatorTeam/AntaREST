@@ -10,10 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParametersUpdate
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.hydro_pmax_converter import HydroPmaxConverter
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -34,10 +34,10 @@ def test_hydro_pmax_converter_creates_and_cleans_matrices(
     hourly_gen = study_path / "input" / "hydro" / "series" / "fr" / "maxHourlyGenPower.txt.link"
     hourly_pump = study_path / "input" / "hydro" / "series" / "fr" / "maxHourlyPumpPower.txt.link"
 
-    output = HydroPmaxConverter(
+    output = ConvertHydroPmax(
         command_context=command_context,
         study_version=study_version,
-        parameters=CompatibilityParametersUpdate(hydro_pmax="hourly"),
+        hydro_pmax=HydroPmax.HOURLY,
     ).apply(study_data=study)
     assert output.status, output.message
 
@@ -46,10 +46,10 @@ def test_hydro_pmax_converter_creates_and_cleans_matrices(
     assert hourly_gen.exists()
     assert hourly_pump.exists()
 
-    output = HydroPmaxConverter(
+    output = ConvertHydroPmax(
         command_context=command_context,
         study_version=study_version,
-        parameters=CompatibilityParametersUpdate(hydro_pmax="daily"),
+        hydro_pmax=HydroPmax.DAILY,
     ).apply(study_data=study)
     assert output.status, output.message
 

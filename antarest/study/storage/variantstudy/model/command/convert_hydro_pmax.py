@@ -14,7 +14,7 @@ from typing import Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParametersUpdate
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -26,29 +26,29 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class HydroPmaxConverter(ICommand):
+class ConvertHydroPmax(ICommand):
     """
     Command used to convert hydro-pmax value from daily to hourly and vice versa
     """
 
     command_name: CommandName = CommandName.CONVERT_HYDRO_PMAX
 
-    parameters: CompatibilityParametersUpdate
+    hydro_pmax: HydroPmax
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        if self.parameters.hydro_pmax is None:
+        if self.hydro_pmax is None:
             return CommandOutput(
                 status=False,
                 message="hydro_pmax parameter is required but was not provided.",
             )
-        study_data.convert_hydro_pmax(self.parameters.hydro_pmax, self.command_context.matrix_service)
+        study_data.convert_hydro_pmax(self.hydro_pmax, self.command_context.matrix_service)
         return command_succeeded(message="Hydro pmax converted successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"parameters": self.parameters.model_dump(mode="json", exclude_none=True)},
+            args={"hydro_pmax": self.hydro_pmax.value},
             study_version=self.study_version,
         )

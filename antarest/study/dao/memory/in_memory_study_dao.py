@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Callable, Dict, Iterator, List, Optional, Sequence
+from typing import Dict, Iterator, List, Optional, Sequence
 
 import numpy as np
 import polars as pl
@@ -27,7 +27,7 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -424,38 +424,36 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_correlation[area_id] = correlation
 
     @override
-    def save_hydro_max_hourly_gen_power(self, area_id: str, matrix_id: str) -> None:
-        self._hydro_max_hourly_gen_power[area_id] = matrix_id
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_hourly_gen_power[area_id] = series_id
 
     @override
-    def save_hydro_max_hourly_pump_power(self, area_id: str, matrix_id: str) -> None:
-        self._hydro_max_hourly_pump_power[area_id] = matrix_id
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_hourly_pump_power[area_id] = series_id
 
     @override
-    def save_hydro_max_daily_gen_energy(self, area_id: str, matrix_id: str) -> None:
-        self._hydro_max_daily_gen_energy[area_id] = matrix_id
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_daily_gen_energy[area_id] = series_id
 
     @override
-    def save_hydro_max_daily_pump_energy(self, area_id: str, matrix_id: str) -> None:
-        self._hydro_max_daily_pump_energy[area_id] = matrix_id
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_daily_pump_energy[area_id] = series_id
 
     @override
     def convert_hydro_pmax(
         self,
-        hydro_pmax: str,
+        hydro_pmax: HydroPmax,
         matrix_service: ISimpleMatrixService,
-        progress_callback: Optional[Callable[[int], None]] = None,
     ) -> None:
         # Update compatibility parameters
         self._compatibility_parameters.hydro_pmax = hydro_pmax
 
         # Get all areas
         areas = self._area_names
-        total_areas = len(areas)
 
-        if hydro_pmax == "hourly":
+        if hydro_pmax == HydroPmax.HOURLY:
             # When converting to hourly, create and save the matrices
-            for index, area_id in enumerate(areas):
+            for area_id in areas:
                 # Create matrices using the matrix service
                 hourly_gen_matrix = create_polars_dataframe(np.zeros((8760, 1)))
                 hourly_pump_matrix = create_polars_dataframe(np.zeros((8760, 1)))
@@ -475,9 +473,6 @@ class InMemoryStudyDao(StudyDao):
                 self.save_hydro_max_daily_pump_energy(
                     area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily_pump_matrix)
                 )
-
-                if progress_callback:
-                    progress_callback(int(((index + 1) / total_areas) * 100))
         else:
             # When converting away from hourly, remove the matrices from in-memory storage
             for area_id in areas:

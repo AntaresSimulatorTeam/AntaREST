@@ -21,8 +21,6 @@ from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
     fixed_4_columns,
     fixed_8_columns,
-    fixed_daily_gen,
-    fixed_hourly_power,
     null_matrix,
     null_scenario_matrix,
 )
@@ -114,13 +112,11 @@ class GeneratorMatrixConstants:
         self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(null_scenario_matrix)
         self.hashes[RESERVES_TS] = self.matrix_service.add_predefined_matrix(fixed_4_columns)
         self.hashes[MISCGEN_TS] = self.matrix_service.add_predefined_matrix(fixed_8_columns)
-        self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER] = self.matrix_service.add_predefined_matrix(fixed_hourly_power)
-        self.hashes[HYDRO_SERIES_MAX_HOURLY_PUMP_POWER] = self.matrix_service.add_predefined_matrix(fixed_hourly_power)
-        self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY] = self.matrix_service.add_predefined_matrix(
-            fixed_daily_gen
-        )
+        self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER] = self.matrix_service.add_predefined_matrix(null_matrix)
+        self.hashes[HYDRO_SERIES_MAX_HOURLY_PUMP_POWER] = self.matrix_service.add_predefined_matrix(null_matrix)
+        self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY] = self.matrix_service.add_predefined_matrix(null_matrix)
         self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY] = self.matrix_service.add_predefined_matrix(
-            fixed_daily_gen
+            null_matrix
         )
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87
@@ -233,17 +229,13 @@ class GeneratorMatrixConstants:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
 
     def get_hydro_max_hourly_gen_power(self) -> str:
-        """2D-matrix of shape (8760, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER]
 
     def get_hydro_max_hourly_pump_power(self) -> str:
-        """2D-matrix of shape (8760, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_SERIES_MAX_HOURLY_PUMP_POWER]
 
     def get_hydro_max_daily_gen_energy(self) -> str:
-        """2D-matrix of shape (365, 1), filled-in with 24"""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY]
 
     def get_hydro_max_daily_pump_energy(self) -> str:
-        """2D-matrix of shape (365, 1), filled-in with 24"""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY]

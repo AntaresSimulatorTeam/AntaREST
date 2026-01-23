@@ -16,7 +16,7 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
     CompatibilityParametersUpdate,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.hydro_pmax_converter import HydroPmaxConverter
+from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -31,13 +31,13 @@ class CompatibilityParamsManager:
         return study.get_study_dao().get_compatibility_parameters()
 
     def update_compatibility_parameters(
-        self, study: StudyInterface, parameters: CompatibilityParametersUpdate
+        self, study: StudyInterface, field_values: CompatibilityParametersUpdate
     ) -> CompatibilityParameters:
         """
         Update Compatibility parameters values from the webapp form
         """
-        command = HydroPmaxConverter(
-            parameters=parameters, command_context=self._command_context, study_version=study.version
+        command = ConvertHydroPmax(
+            hydro_pmax=field_values.hydro_pmax, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
         return self.get_compatibility_parameters(study)

@@ -28,11 +28,3 @@ def fixed_4_columns() -> pl.DataFrame:
 
 def fixed_8_columns() -> pl.DataFrame:
     return create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
-
-
-def fixed_daily_gen() -> pl.DataFrame:
-    return create_polars_dataframe([[24]] * 365)
-
-
-def fixed_hourly_power() -> pl.DataFrame:
-    return create_polars_dataframe([[0.0]] * 8760)

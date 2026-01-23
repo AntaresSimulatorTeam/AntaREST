@@ -26,12 +26,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
-from typing import Callable, Optional
-
 from typing_extensions import override
 
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
@@ -317,42 +316,40 @@ class FileStudyHydroDao(HydroDao):
         return self.get_impl().get_matrix(url)
 
     @override
-    def save_hydro_max_hourly_gen_power(self, area_id: str, matrix_id: str) -> None:
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.save(matrix_id, ["input", "hydro", "series", area_id, "maxHourlyGenPower"])
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyGenPower"])
 
     @override
-    def save_hydro_max_hourly_pump_power(self, area_id: str, matrix_id: str) -> None:
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.save(matrix_id, ["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
 
     @override
-    def save_hydro_max_daily_gen_energy(self, area_id: str, matrix_id: str) -> None:
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.save(matrix_id, ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
 
     @override
-    def save_hydro_max_daily_pump_energy(self, area_id: str, matrix_id: str) -> None:
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.save(matrix_id, ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
 
     @override
     def convert_hydro_pmax(
         self,
-        hydro_pmax: str,
+        hydro_pmax: HydroPmax,
         matrix_service: ISimpleMatrixService,
-        progress_callback: Optional[Callable[[int], None]] = None,
     ) -> None:
         hourly_matrix_mapping: dict[str, dict[str, str]] = {}
         daily_matrix_mapping: dict[str, dict[str, str]] = {}
 
         file_study = self.get_file_study()
         areas = file_study.config.areas.keys()
-        total_areas = len(file_study.config.areas)
 
-        for index, area_id in enumerate(areas):
+        for area_id in areas:
             # when we go to hourly, we need to create matrices
-            if hydro_pmax == "hourly":
+            if hydro_pmax == HydroPmax.HOURLY:
                 matrix_id_gen = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
                     create_polars_dataframe(np.zeros((8760, 1)))
                 )
@@ -378,10 +375,7 @@ class FileStudyHydroDao(HydroDao):
                 except ChildNotFoundError:
                     pass
 
-            if progress_callback:
-                progress_callback(int(((index + 1) / total_areas) * 100))
-
-        if hydro_pmax == "hourly":
+        if hydro_pmax == HydroPmax.HOURLY:
             for area_id, matrices in hourly_matrix_mapping.items():
                 try:
                     self.save_hydro_max_hourly_gen_power(area_id, matrices["gen"])
