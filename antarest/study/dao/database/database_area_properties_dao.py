@@ -32,7 +32,7 @@ from antarest.study.dao.database.common import (
     serialize_frequency_filters,
     validate_area_exists,
 )
-from antarest.study.dao.database.models import AREA_PROPERTIES_TABLE
+from antarest.study.dao.database.models import AREA_TABLE
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -79,9 +79,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
 
         validate_area_exists(session, study_id, area_id)
 
-        stmt = select(AREA_PROPERTIES_TABLE).where(
-            (AREA_PROPERTIES_TABLE.c.study_id == study_id) & (AREA_PROPERTIES_TABLE.c.area_id == area_id)
-        )
+        stmt = select(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
 
         row = session.execute(stmt).fetchone()
         if not row:
@@ -94,7 +92,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
         session = self.get_session()
 
         # Single query to get all areas and their properties
-        stmt = select(AREA_PROPERTIES_TABLE).where(AREA_PROPERTIES_TABLE.c.study_id == study_id)
+        stmt = select(AREA_TABLE).where(AREA_TABLE.c.study_id == study_id)
         rows = session.execute(stmt)
         return {row.area_id: _convert_db_properties_to_model(row) for row in rows}
 
@@ -105,7 +103,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
 
         try:
             # Insert new area
-            stmt_area = insert(AREA_PROPERTIES_TABLE).values(
+            stmt_area = insert(AREA_TABLE).values(
                 study_id=study_id,
                 area_id=area_id,
                 energy_cost_unsupplied=area_properties.energy_cost_unsupplied,

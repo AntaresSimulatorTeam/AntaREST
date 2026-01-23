@@ -28,7 +28,7 @@ from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.database.common import area_exists, validate_area_exists
+from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
 from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
@@ -196,11 +196,25 @@ class DatabaseAreaDao(AreaDao):
             raise ValueError(f"Area '{area_name}' already exists and could not be created")
 
         # Insert new area
-        stmt_area = insert(AREA_TABLE).values(study_id=study_id, area_id=area_id, area_name=area_name)
+        area_properties = AreaProperties()
+        stmt_area = insert(AREA_TABLE).values(
+            study_id=study_id,
+            area_id=area_id,
+            area_name=area_name,
+            energy_cost_unsupplied=area_properties.energy_cost_unsupplied,
+            energy_cost_spilled=area_properties.energy_cost_spilled,
+            non_dispatch_power=area_properties.non_dispatch_power,
+            dispatch_hydro_power=area_properties.dispatch_hydro_power,
+            other_dispatch_power=area_properties.other_dispatch_power,
+            spread_unsupplied_energy_cost=area_properties.spread_unsupplied_energy_cost,
+            spread_spilled_energy_cost=area_properties.spread_spilled_energy_cost,
+            filter_synthesis=serialize_frequency_filters(area_properties.filter_synthesis),
+            filter_by_year=serialize_frequency_filters(area_properties.filter_by_year),
+            adequacy_patch_mode=area_properties.adequacy_patch_mode,
+        )
         session.execute(stmt_area)
 
-        self.save_area_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
-        self.get_impl().save_area_properties(area_id, AreaProperties())
+        self._create_new_ui(area_id, DEFAULT_LAYER_ID)
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -263,18 +277,7 @@ class DatabaseAreaDao(AreaDao):
             )
             session.execute(stmt_update)
         else:
-            # Insert new UI
-            stmt_insert = insert(AREA_UI_TABLE).values(
-                study_id=study_id,
-                area_id=area_id,
-                layer_id=layer,
-                x=area_ui_data.x,
-                y=area_ui_data.y,
-                color_r=r,
-                color_g=g,
-                color_b=b,
-            )
-            session.execute(stmt_insert)
+            self._create_new_ui(area_id, layer)
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
@@ -364,6 +367,21 @@ class DatabaseAreaDao(AreaDao):
             # Execute batch insert
             if insert_values:
                 session.execute(insert(AREA_UI_TABLE), insert_values)
+
+    def _create_new_ui(self, area_id: str, layer: str) -> None:
+        area_ui = AreaUI()
+        r, g, b = area_ui.color_rgb
+        stmt_insert = insert(AREA_UI_TABLE).values(
+            study_id=self.get_study_id(),
+            area_id=area_id,
+            layer_id=layer,
+            x=area_ui.x,
+            y=area_ui.y,
+            color_r=r,
+            color_g=g,
+            color_b=b,
+        )
+        self.get_session().execute(stmt_insert)
 
     # Time series methods - not yet implemented for database storage mode
     @override
