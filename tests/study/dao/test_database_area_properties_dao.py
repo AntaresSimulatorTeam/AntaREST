@@ -74,7 +74,7 @@ def test_multiple_areas(db_session: Session, dao: DatabaseStudyDao) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
-def test_error_cases(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_error_cases(dao: DatabaseStudyDao) -> None:
     # Try to get properties for a fake area
     with pytest.raises(AreaNotFound, match="Area is not found: 'fake_area'"):
         dao.get_area_properties("fake_area")
@@ -84,10 +84,16 @@ def test_error_cases(db_session: Session, dao: DatabaseStudyDao) -> None:
         dao.save_area_properties("fake_area", AreaProperties())
 
 
-"""
-Other tests to add:
-- Create 2 areas and ensures get_all returns the 2 areas + ensure only 1 DB call is made
-- Try to get for unexisting area
-- Try to save for unexisting area
-- Save for existing area and ensure it works
-"""
+def test_modify_properties(db_session: Session, dao: DatabaseStudyDao) -> None:
+    area_id = "paris"
+    with db_session:
+        dao.save_area(area_id)
+        db_session.commit()
+
+    assert dao.get_area_properties(area_id) == AreaProperties()
+
+    new_properties = AreaProperties(energy_cost_unsupplied=4.5, non_dispatch_power=False, filter_synthesis={"daily"})
+    dao.save_area_properties(area_id, new_properties)
+
+    # Ensures we modified the properties accordingly
+    assert dao.get_area_properties(area_id) == new_properties
