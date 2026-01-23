@@ -214,7 +214,7 @@ class DatabaseAreaDao(AreaDao):
         )
         session.execute(stmt_area)
 
-        self._create_new_ui(area_id, DEFAULT_LAYER_ID)
+        self._create_new_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -277,7 +277,7 @@ class DatabaseAreaDao(AreaDao):
             )
             session.execute(stmt_update)
         else:
-            self._create_new_ui(area_id, layer)
+            self._create_new_ui(area_id, layer, area_ui_data)
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
@@ -368,8 +368,7 @@ class DatabaseAreaDao(AreaDao):
             if insert_values:
                 session.execute(insert(AREA_UI_TABLE), insert_values)
 
-    def _create_new_ui(self, area_id: str, layer: str) -> None:
-        area_ui = AreaUI()
+    def _create_new_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
         r, g, b = area_ui.color_rgb
         stmt_insert = insert(AREA_UI_TABLE).values(
             study_id=self.get_study_id(),
