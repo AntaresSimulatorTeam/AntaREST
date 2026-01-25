@@ -176,25 +176,18 @@ function Parameters() {
               name="efficiency"
               control={control}
               rules={{
-                ...(semver.gte(studyVersion, "9.2.0") && { deps: ["efficiencyWithdrawal"] }),
-                validate: (value, formValues) => {
-                  const numValidation = validateNumber({
+                deps: semver.gte(study.version, "9.2.0") ? ["efficiencyWithdrawal"] : undefined,
+                validate: {
+                  checkMinMax: validateNumber({
                     min: 0,
-                    max: semver.gte(studyVersion, "9.2.0") ? undefined : 100,
-                  })(value);
-
-                  if (numValidation !== true) {
-                    return numValidation;
-                  }
-
-                  if (
-                    semver.gte(studyVersion, "9.2.0") &&
-                    value > formValues.efficiencyWithdrawal
-                  ) {
-                    return t("study.modelization.storages.error.efficiencyTooHigh");
-                  }
-
-                  return true;
+                    max: semver.gte(study.version, "9.2.0") ? undefined : 100,
+                  }),
+                  compareWithEfficiencyWithdrawal: (value, { efficiencyWithdrawal }) => {
+                    if (semver.gte(study.version, "9.2.0") && value > efficiencyWithdrawal) {
+                      return t("study.modeling.storages.efficiency.error.tooHigh");
+                    }
+                    return true;
+                  },
                 },
               }}
             />
@@ -237,9 +230,7 @@ function Parameters() {
                       control={control}
                       rules={{
                         deps: ["efficiency"],
-                        validate: validateNumber({
-                          min: 0,
-                        }),
+                        validate: validateNumber({ min: 0 }),
                       }}
                     />
                   </Box>

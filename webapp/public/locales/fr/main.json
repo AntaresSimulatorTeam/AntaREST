@@ -600,6 +600,7 @@
   "study.modeling.storages.reservoirCapacity.info": "Stock (MWh)",
   "study.modeling.storages.efficiency": "Efficacité de stockage (%)",
   "study.modeling.storages.efficiency.info": "Efficacité du réseau vers le stock (MW)",
+  "study.modeling.storages.efficiency.error.tooHigh": "Efficiency must not be greater than withdrawal efficiency",
   "study.modeling.storages.efficiencyWithdrawal": "Efficacité de déstockage (%)",
   "study.modeling.storages.efficiencyWithdrawal.info": "Efficacité du stock vers le réseau (MW)",
   "study.modeling.storages.penalizeVariationInjection": "Pénalité sur la variation d'injection",
