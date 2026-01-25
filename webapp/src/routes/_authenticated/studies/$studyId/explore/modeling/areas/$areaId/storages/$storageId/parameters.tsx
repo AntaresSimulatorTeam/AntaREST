@@ -166,12 +166,36 @@ function Parameters() {
                 />
               </Box>
             </Tooltip>
+            {/*
+              Efficiency cross-validation (v9.2.0+):
+              Injection ≤ withdrawal efficiency (prevents energy creation).
+              Bidirectional validation. Pre-9.2.0: single efficiency field capped at 100%.
+            */}
             <NumberFE
               label={t("study.modeling.storages.efficiency")}
               name="efficiency"
               control={control}
               rules={{
-                validate: validateNumber({ min: 0, max: 100 }),
+                ...(semver.gte(studyVersion, "9.2.0") && { deps: ["efficiencyWithdrawal"] }),
+                validate: (value, formValues) => {
+                  const numValidation = validateNumber({
+                    min: 0,
+                    max: semver.gte(studyVersion, "9.2.0") ? undefined : 100,
+                  })(value);
+
+                  if (numValidation !== true) {
+                    return numValidation;
+                  }
+
+                  if (
+                    semver.gte(studyVersion, "9.2.0") &&
+                    value > formValues.efficiencyWithdrawal
+                  ) {
+                    return t("study.modelization.storages.error.efficiencyTooHigh");
+                  }
+
+                  return true;
+                },
               }}
             />
             {semver.gte(study.version, "9.2.0") && (
@@ -212,7 +236,10 @@ function Parameters() {
                       name="efficiencyWithdrawal"
                       control={control}
                       rules={{
-                        validate: validateNumber({ min: 0, max: 100 }),
+                        deps: ["efficiency"],
+                        validate: validateNumber({
+                          min: 0,
+                        }),
                       }}
                     />
                   </Box>

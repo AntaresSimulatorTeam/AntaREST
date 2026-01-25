@@ -220,6 +220,10 @@ class InMemoryStudyDao(StudyDao):
         self._comments = comments
 
     @override
+    def update_antares_file(self, editor: str, last_save: float) -> None:
+        pass
+
+    @override
     def get_version(self) -> StudyVersion:
         return self._version
 

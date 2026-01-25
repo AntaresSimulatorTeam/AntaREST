@@ -40,7 +40,6 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
-from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -773,7 +772,7 @@ class OutputService:
             # Convert it to pandas and use np.NaN as null values for backward compatibility
             if not all(dtype.is_numeric() for dtype in polars_df.dtypes):
                 polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
-            df = convert_polars_dataframe_to_pandas(polars_df)
+            df = polars_df.to_pandas()
             if with_index:
                 add_time_index_to_dataframe(df, self.get_output_time_index(study_id, output_id, frequency))
             return df

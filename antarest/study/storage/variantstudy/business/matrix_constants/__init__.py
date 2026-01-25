@@ -10,6 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from . import binding_constraint, hydro, link, prepro, st_storage, thermals
+from . import binding_constraint, hydro, link, prepro, thermals
 
-__all__ = ("binding_constraint", "hydro", "link", "prepro", "st_storage", "thermals")
+__all__ = ("binding_constraint", "hydro", "link", "prepro", "thermals")

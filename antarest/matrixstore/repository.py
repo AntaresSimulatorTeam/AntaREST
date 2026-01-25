@@ -28,7 +28,6 @@ from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
 from antarest.matrixstore.model import Matrix, MatrixDataSet
 from antarest.matrixstore.parsing import load_matrix, save_matrix
 
@@ -211,7 +210,7 @@ def compute_hash(df: pl.DataFrame) -> str:
         return hashlib.sha256(content.data).hexdigest()
 
     # Convert polars dataframe to pandas one for backward compatibility of the hashing value.
-    pandas_df = convert_polars_dataframe_to_pandas(df)
+    pandas_df = df.to_pandas()
     pandas_df.replace({None: np.nan}, inplace=True)
     if df.columns == [str(i) for i in range(len(df.columns))]:
         pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])  # type: ignore
