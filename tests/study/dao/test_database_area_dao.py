@@ -22,7 +22,15 @@ from sqlalchemy.orm import Session
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE, LOAD_TABLE
+from antarest.study.dao.database.models import (
+    AREA_TABLE,
+    AREA_UI_TABLE,
+    LOAD_TABLE,
+    MISC_GEN_TABLE,
+    RESERVES_TABLE,
+    SOLAR_TABLE,
+    WIND_TABLE,
+)
 
 
 def test_save_area_creates_area_with_default_ui(db_session: Session, dao: DatabaseStudyDao) -> None:
@@ -377,3 +385,119 @@ def test_load_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
 
         load_rows = db_session.execute(select(LOAD_TABLE)).fetchall()
         assert load_rows == []
+
+
+def test_solar_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+    matrix_service = dao._matrix_service
+    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+    series_id = matrix_service.create(dataframe)
+    area_id = "paris"
+
+    with db_session:
+        dao.save_area(area_id)
+        dao.save_solar(area_id, series_id)
+        db_session.commit()
+
+    # Ensures we retrieve the solar matrix we created
+    with db_session:
+        load = dao.get_solar(area_id)
+        pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+
+    # Ensures we cannot set a solar matrix for a fake area
+    with db_session:
+        with pytest.raises(AreaNotFound):
+            dao.save_solar("fake_area_id", series_id)
+
+    # Ensures deleting the area deletes the row from `Solar` table
+    with db_session:
+        dao.delete_area(area_id)
+
+        solar_rows = db_session.execute(select(SOLAR_TABLE)).fetchall()
+        assert solar_rows == []
+
+
+def test_wind_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+    matrix_service = dao._matrix_service
+    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+    series_id = matrix_service.create(dataframe)
+    area_id = "paris"
+
+    with db_session:
+        dao.save_area(area_id)
+        dao.save_wind(area_id, series_id)
+        db_session.commit()
+
+    # Ensures we retrieve the wind matrix we created
+    with db_session:
+        load = dao.get_wind(area_id)
+        pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+
+    # Ensures we cannot set a wind matrix for a fake area
+    with db_session:
+        with pytest.raises(AreaNotFound):
+            dao.save_wind("fake_area_id", series_id)
+
+    # Ensures deleting the area deletes the row from `Wind` table
+    with db_session:
+        dao.delete_area(area_id)
+
+        wind_rows = db_session.execute(select(WIND_TABLE)).fetchall()
+        assert wind_rows == []
+
+
+def test_reserves_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+    matrix_service = dao._matrix_service
+    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+    series_id = matrix_service.create(dataframe)
+    area_id = "paris"
+
+    with db_session:
+        dao.save_area(area_id)
+        dao.save_reserves(area_id, series_id)
+        db_session.commit()
+
+    # Ensures we retrieve the reserves matrix we created
+    with db_session:
+        load = dao.get_reserves(area_id)
+        pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+
+    # Ensures we cannot set a reserves matrix for a fake area
+    with db_session:
+        with pytest.raises(AreaNotFound):
+            dao.save_reserves("fake_area_id", series_id)
+
+    # Ensures deleting the area deletes the row from `Reserves` table
+    with db_session:
+        dao.delete_area(area_id)
+
+        reserves_rows = db_session.execute(select(RESERVES_TABLE)).fetchall()
+        assert reserves_rows == []
+
+
+def test_misc_gen_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+    matrix_service = dao._matrix_service
+    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+    series_id = matrix_service.create(dataframe)
+    area_id = "paris"
+
+    with db_session:
+        dao.save_area(area_id)
+        dao.save_misc_gen(area_id, series_id)
+        db_session.commit()
+
+    # Ensures we retrieve the misc-gen matrix we created
+    with db_session:
+        load = dao.get_misc_gen(area_id)
+        pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+
+    # Ensures we cannot set a misc-gen matrix for a fake area
+    with db_session:
+        with pytest.raises(AreaNotFound):
+            dao.save_misc_gen("fake_area_id", series_id)
+
+    # Ensures deleting the area deletes the row from `misc-gen` table
+    with db_session:
+        dao.delete_area(area_id)
+
+        misc_gen_rows = db_session.execute(select(MISC_GEN_TABLE)).fetchall()
+        assert misc_gen_rows == []
