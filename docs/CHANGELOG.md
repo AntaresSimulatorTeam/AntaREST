@@ -1,6 +1,13 @@
 Antares Web Changelog
 =====================
 
+v2.27.1 (2026-01-21)
+--------------------
+
+### Bug Fixes
+
+* **study**: make matrix default values consistent with antares-solver [`#2939`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2939)
+
 v2.27.0 (2025-12-09)
 --------------------
 

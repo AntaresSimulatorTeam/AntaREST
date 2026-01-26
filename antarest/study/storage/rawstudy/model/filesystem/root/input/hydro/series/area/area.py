@@ -17,12 +17,12 @@ from typing_extensions import override
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6, STUDY_VERSION_9_2, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_scenario_daily,
     default_scenario_hourly,
     default_scenario_monthly,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
 class InputHydroSeriesArea(FolderNode):

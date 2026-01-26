@@ -50,6 +50,7 @@ from antarest.study.model import (
     STUDY_VERSION_7_2,
     OwnerInfo,
     RawStudy,
+    StorageMode,
     Study,
     StudyContentStatus,
     StudyFolder,
@@ -577,12 +578,12 @@ def test_create_study() -> None:
     jwt_user.groups = []
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(jwt_user):
-            service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
+            service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
     study_service.create.assert_not_called()
 
     jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
     with current_user_context(jwt_user):
-        service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
+        service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
 
     study_service.create.assert_called_once()
     repository.save.assert_called_once()

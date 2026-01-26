@@ -23,12 +23,16 @@ from antarest.study.storage.variantstudy.business.matrix_constants.common import
     fixed_8_columns,
     null_matrix,
     null_scenario_matrix,
+    ones_scenario_matrix,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
 )
 
-# TODO: put index into variable
+"""
+This file references all the default matrices used by the application when creating objects.
+These matrices may differ from the Simulator default ones as we want to be able to create objects with specific matrices by default.
+"""
 
 HYDRO_COMMON_CAPACITY_MAX_POWER_V7 = "hydro/common/capacity/max_power/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V7 = "hydro/common/capacity/reservoir/v7"
@@ -133,9 +137,7 @@ class GeneratorMatrixConstants:
         )
 
         # Some short-term storage matrices use np.ones((8760, 1))
-        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(
-            lambda: pl.DataFrame(matrix_constants.st_storage.series.pmax_injection())
-        )
+        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(ones_scenario_matrix)
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:
         if version > STUDY_VERSION_6_5:
@@ -179,9 +181,6 @@ class GeneratorMatrixConstants:
 
     def get_null_matrix(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
-
-    def get_null_scenario_matrix(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[EMPTY_SCENARIO_MATRIX]
 
     def get_default_reserves(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[RESERVES_TS]

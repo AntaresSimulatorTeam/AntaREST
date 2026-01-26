@@ -30,12 +30,7 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         LazyNode.__init__(self, config=config)
 
     @override
-    def get_lazy_content(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> str:
+    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
         return f"file://{self.config.path.name}"
 
     @override

@@ -157,6 +157,20 @@ class StudyDao(
     def save_comments(self, comments: str) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
+    def update_antares_file(self, editor: str, last_save: float) -> None:
+        """
+        Update the study.antares file with editor and last save timestamp.
+
+        For file-based storage, this updates the actual file.
+        For database storage, this is a no-op (metadata is stored in DB).
+
+        Args:
+            editor: The name of the user who made the last edit.
+            last_save: Unix timestamp of the last save.
+        """
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """

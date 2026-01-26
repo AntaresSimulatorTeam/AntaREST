@@ -20,8 +20,14 @@ from typing_extensions import override
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_9_2, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_daily_ones
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_credit_modulation,
+    default_maxpower,
+    default_reservoir,
+    default_scenario_daily,
+    default_water_values,
+)
 
 
 class MatrixInfo(TypedDict, total=False):
@@ -30,28 +36,6 @@ class MatrixInfo(TypedDict, total=False):
     start_version: StudyVersion
     default_empty: Callable[[], npt.NDArray[np.float64]]
     should_exist: bool
-
-
-def default_maxpower() -> npt.NDArray[np.float64]:
-    maxpower = np.zeros((365, 4), dtype=np.float64)
-    maxpower[:, 1] = 24
-    maxpower[:, 3] = 24
-    return maxpower
-
-
-def default_reservoir() -> npt.NDArray[np.float64]:
-    reservoir = np.zeros((365, 3), dtype=np.float64)
-    reservoir[:, 1] = 0.5
-    reservoir[:, 2] = 1
-    return reservoir
-
-
-def default_credit_modulation() -> npt.NDArray[np.float64]:
-    return np.ones((2, 100), dtype=np.float64)
-
-
-def default_water_values() -> npt.NDArray[np.float64]:
-    return np.zeros((365, 101), dtype=np.float64)
 
 
 def default_max_daily() -> npt.NDArray[np.float64]:
@@ -77,7 +61,7 @@ MATRICES_INFO: List[MatrixInfo] = [
         "name": "inflowPattern",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_6_5,
-        "default_empty": default_scenario_daily_ones,
+        "default_empty": default_scenario_daily,
     },
     {
         "name": "creditmodulations",

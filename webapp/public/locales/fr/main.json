@@ -594,6 +594,7 @@
   "study.modelization.storages.reservoirCapacity": "Stock (MWh)",
   "study.modelization.storages.reservoirCapacity.info": "Stock (MWh)",
   "study.modelization.storages.efficiency": "Efficacité de stockage (%)",
+  "study.modelization.storages.error.efficiencyTooHigh": "L'efficacité de stockage ne doit pas être supérieure à l'efficacité de déstockage",
   "study.modelization.storages.efficiency.info": "Efficacité du réseau vers le stock (MW)",
   "study.modelization.storages.efficiencyWithdrawal": "Efficacité de déstockage (%)",
   "study.modelization.storages.efficiencyWithdrawal.info": "Efficacité du stock vers le réseau (MW)",
