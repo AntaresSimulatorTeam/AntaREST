@@ -36,8 +36,14 @@ class CompatibilityParamsManager:
         """
         Update Compatibility parameters values from the webapp form
         """
-        command = ConvertHydroPmax(
-            hydro_pmax=field_values.hydro_pmax, command_context=self._command_context, study_version=study.version
-        )
-        study.add_commands([command])
+        if field_values.hydro_pmax is not None:
+            study.add_commands(
+                [
+                    ConvertHydroPmax(
+                        hydro_pmax=field_values.hydro_pmax,
+                        command_context=self._command_context,
+                        study_version=study.version,
+                    )
+                ]
+            )
         return self.get_compatibility_parameters(study)

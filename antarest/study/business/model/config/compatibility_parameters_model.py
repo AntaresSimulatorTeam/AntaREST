@@ -30,7 +30,7 @@ class HydroPmax(StrEnum):
 class CompatibilityParameters(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    hydro_pmax: HydroPmax | None = None
+    hydro_pmax: HydroPmax | None = HydroPmax.DAILY
 
 
 class CompatibilityParametersUpdate(AntaresBaseModel):
@@ -48,8 +48,6 @@ def update_compatibility_parameters(
     return CompatibilityParameters.model_validate(current_properties)
 
 
-def validate_compatibility_parameters_against_version(
-    version: StudyVersion, parameters_data: CompatibilityParameters | CompatibilityParametersUpdate
-) -> None:
-    if version < STUDY_VERSION_9_2 and parameters_data.hydro_pmax is not None:
+def validate_compatibility_parameters_against_version(version: StudyVersion) -> None:
+    if version < STUDY_VERSION_9_2:
         raise InvalidFieldForVersionError("Hydro pmax cannot be set to hourly before study version 9.2")

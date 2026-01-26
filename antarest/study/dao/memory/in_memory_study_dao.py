@@ -443,36 +443,24 @@ class InMemoryStudyDao(StudyDao):
     def convert_hydro_pmax(
         self,
         hydro_pmax: HydroPmax,
-        matrix_service: ISimpleMatrixService,
     ) -> None:
-        # Update compatibility parameters
-        self._compatibility_parameters.hydro_pmax = hydro_pmax
+        compatibility_data = self.get_file_study().tree.get(["settings", "generaldata", "compatibility"])
+        if compatibility_data.get("hydro-pmax") == hydro_pmax:
+            return
 
-        # Get all areas
         areas = self._area_names
+        matrix_service = self._matrix_service
+
+        hourly = create_polars_dataframe(np.zeros((8760, 1)))
+        daily = create_polars_dataframe(np.full((365, 1), 24))
 
         if hydro_pmax == HydroPmax.HOURLY:
             # When converting to hourly, create and save the matrices
             for area_id in areas:
-                # Create matrices using the matrix service
-                hourly_gen_matrix = create_polars_dataframe(np.zeros((8760, 1)))
-                hourly_pump_matrix = create_polars_dataframe(np.zeros((8760, 1)))
-                daily_gen_matrix = create_polars_dataframe(np.full((365, 1), 24))
-                daily_pump_matrix = create_polars_dataframe(np.full((365, 1), 24))
-
-                # Save matrix IDs
-                self.save_hydro_max_hourly_gen_power(
-                    area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly_gen_matrix)
-                )
-                self.save_hydro_max_hourly_pump_power(
-                    area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly_pump_matrix)
-                )
-                self.save_hydro_max_daily_gen_energy(
-                    area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily_gen_matrix)
-                )
-                self.save_hydro_max_daily_pump_energy(
-                    area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily_pump_matrix)
-                )
+                self.save_hydro_max_hourly_gen_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
+                self.save_hydro_max_hourly_pump_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
+                self.save_hydro_max_daily_gen_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
+                self.save_hydro_max_daily_pump_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
         else:
             # When converting away from hourly, remove the matrices from in-memory storage
             for area_id in areas:

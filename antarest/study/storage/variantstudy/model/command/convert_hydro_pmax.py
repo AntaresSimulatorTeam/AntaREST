@@ -37,12 +37,7 @@ class ConvertHydroPmax(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        if self.hydro_pmax is None:
-            return CommandOutput(
-                status=False,
-                message="hydro_pmax parameter is required but was not provided.",
-            )
-        study_data.convert_hydro_pmax(self.hydro_pmax, self.command_context.matrix_service)
+        study_data.convert_hydro_pmax(self.hydro_pmax)
         return command_succeeded(message="Hydro pmax converted successfully.")
 
     @override

@@ -339,32 +339,38 @@ class FileStudyHydroDao(HydroDao):
     def convert_hydro_pmax(
         self,
         hydro_pmax: HydroPmax,
-        matrix_service: ISimpleMatrixService,
     ) -> None:
+        compatibility_data = self.get_file_study().tree.get(["settings", "generaldata", "compatibility"])
+        if compatibility_data.get("hydro-pmax") == hydro_pmax:
+            return
+
+        matrix_service = self.get_impl()._generator_matrix_constants.matrix_service
         hourly_matrix_mapping: dict[str, dict[str, str]] = {}
         daily_matrix_mapping: dict[str, dict[str, str]] = {}
 
         file_study = self.get_file_study()
         areas = file_study.config.areas.keys()
 
+
+        hourly_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
+                    create_polars_dataframe(np.zeros((8760, 1)))
+                )
+                
+        daily_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
+                    create_polars_dataframe(np.full((365, 1), 24))
+                )
+
         for area_id in areas:
             # when we go to hourly, we need to create matrices
             if hydro_pmax == HydroPmax.HOURLY:
-                matrix_id_gen = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    create_polars_dataframe(np.zeros((8760, 1)))
-                )
-                matrix_id_pump = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    create_polars_dataframe(np.zeros((8760, 1)))
-                )
-                hourly_matrix_mapping[area_id] = {"gen": matrix_id_gen, "pump": matrix_id_pump}
-
-                matrix_id_gen = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    create_polars_dataframe(np.full((365, 1), 24))
-                )
-                matrix_id_pump = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    create_polars_dataframe(np.full((365, 1), 24))
-                )
-                daily_matrix_mapping[area_id] = {"gen": matrix_id_gen, "pump": matrix_id_pump}
+                hourly_matrix_mapping[area_id] = {
+                    "gen": hourly_matrix_id,
+                    "pump": hourly_matrix_id 
+                }
+                daily_matrix_mapping[area_id] = {
+                    "gen": daily_matrix_id,
+                    "pump": daily_matrix_id 
+                }
             else:
                 # in other case, we will delete this files because they will be pulled from maxpower file
                 try:
@@ -385,10 +391,10 @@ class FileStudyHydroDao(HydroDao):
                 except ChildNotFoundError:
                     pass
         try:
-            compatibility_data = file_study.tree.get(["settings", "generaldata", "compatibility"])
+            compatibility_data = self.get_file_study().tree.get(["settings", "generaldata", "compatibility"])
         except KeyError:
             compatibility_data = {}
 
         # Update hydro-pmax field
         compatibility_data["hydro-pmax"] = hydro_pmax
-        file_study.tree.save(compatibility_data, ["settings", "generaldata", "compatibility"])
+        self.get_file_study().tree.save(compatibility_data, ["settings", "generaldata", "compatibility"])

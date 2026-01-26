@@ -14,7 +14,6 @@ from typing import Dict
 
 import polars as pl
 
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
@@ -180,6 +179,5 @@ class HydroDao(ReadOnlyHydroDao):
     def convert_hydro_pmax(
         self,
         hydro_pmax: HydroPmax,
-        matrix_service: ISimpleMatrixService,
     ) -> None:
         raise NotImplementedError()

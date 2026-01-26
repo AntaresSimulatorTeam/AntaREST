@@ -12,7 +12,7 @@
 from typing import Any
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, field_validator
+from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
@@ -28,19 +28,6 @@ class CompatibilityParametersFileData(AntaresBaseModel):
 
     hydro_pmax: HydroPmax | None = None
 
-    @field_validator("hydro_pmax", mode="before")
-    @classmethod
-    def validate_hydro_pmax(cls, v: Any) -> Any:
-        """Convert old format 'HydroPmax.HOURLY' or 'HydroPmax.DAILY' to enum values."""
-        if isinstance(v, str):
-            if v == "HydroPmax.HOURLY":
-                return "hourly"
-            elif v == "HydroPmax.DAILY":
-                return "daily"
-            elif v in ("hourly", "daily"):
-                return v
-        return v
-
     def to_model(self) -> CompatibilityParameters:
         return CompatibilityParameters.model_validate(self.model_dump(exclude_none=True))
 
@@ -53,5 +40,5 @@ def parse_compatibility_parameters(version: StudyVersion, data: dict[str, Any]) 
     # Extract the compatibility section if it exists, otherwise use empty dict
     compatibility_data = data.get("compatibility", {})
     parameters = CompatibilityParametersFileData.model_validate(compatibility_data).to_model()
-    validate_compatibility_parameters_against_version(version, parameters)
+    validate_compatibility_parameters_against_version(version)
     return parameters
