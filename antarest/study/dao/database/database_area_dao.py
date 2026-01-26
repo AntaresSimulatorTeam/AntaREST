@@ -318,6 +318,16 @@ class DatabaseAreaDao(AreaDao):
             session.execute(stmt_insert)
 
     @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study.
+        """
+        areas_set = set(areas)
+        all_areas = set(self.get_all_area_ids())
+        invalid_areas = areas_set - all_areas
+        return list(invalid_areas)
+
+    @override
     def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
         """
         Update the areas associated with a specific layer.

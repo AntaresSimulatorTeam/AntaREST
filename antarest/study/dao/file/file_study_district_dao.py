@@ -83,7 +83,7 @@ class FileStudyDistrictDao(DistrictDao):
         If the district already exists, it will be overwritten.
         """
         study_data = self.get_file_study()
-        invalid_areas = self.get_invalid_areas_in_district(district.add_areas + district.subtract_areas)
+        invalid_areas = self.get_invalid_areas_in_district(district.add_areas + district.subtract_areas)  # type: ignore[attr-defined]
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
@@ -107,14 +107,3 @@ class FileStudyDistrictDao(DistrictDao):
         study_data = self.get_file_study()
         study_data.tree.delete(["input", "areas", "sets", district_id])
         del study_data.config.districts[district_id]
-
-    @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
-        """
-        Check all areas exists in the study.
-        """
-        areas_set = set(areas)
-        study_data = self.get_file_study()
-        all_areas = set(study_data.config.areas)
-        invalid_areas = areas_set - all_areas
-        return list(invalid_areas)

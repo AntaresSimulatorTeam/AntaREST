@@ -42,13 +42,6 @@ class ReadOnlyDistrictDao(ABC):
     def district_exists(self, district_id: str) -> bool:
         raise NotImplementedError()
 
-    @abstractmethod
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
-        """
-        Check all areas exists in the study
-        """
-        raise NotImplementedError()
-
 
 class DistrictDao(ReadOnlyDistrictDao):
     @abstractmethod

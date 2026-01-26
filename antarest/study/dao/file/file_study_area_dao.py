@@ -154,6 +154,17 @@ class FileStudyAreaDao(AreaDao):
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
 
     @override
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study.
+        """
+        areas_set = set(areas)
+        study_data = self.get_file_study()
+        all_areas = set(study_data.config.areas)
+        invalid_areas = areas_set - all_areas
+        return list(invalid_areas)
+
+    @override
     def get_load(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "load", "series", f"load_{area_id}"])
 
