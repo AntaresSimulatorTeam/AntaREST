@@ -14,6 +14,7 @@
 Unit tests for DatabaseAreaDao.
 """
 
+import polars as pl
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -21,7 +22,7 @@ from sqlalchemy.orm import Session
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
+from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE, LOAD_TABLE
 
 
 def test_save_area_creates_area_with_default_ui(db_session: Session, dao: DatabaseStudyDao) -> None:
@@ -347,3 +348,32 @@ def test_save_layer_areas_copies_default_ui(db_session: Session, dao: DatabaseSt
         assert layer1_ui.x == 50
         assert layer1_ui.y == 75
         assert layer1_ui.color_rgb == (100, 150, 200)
+
+
+def test_load_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+    matrix_service = dao._matrix_service
+    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+    series_id = matrix_service.create(dataframe)
+    area_id = "paris"
+
+    with db_session:
+        dao.save_area(area_id)
+        dao.save_load(area_id, series_id)
+        db_session.commit()
+
+    # Ensures we retrieve the load we created
+    with db_session:
+        load = dao.get_load(area_id)
+        pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+
+    # Ensures we cannot set a load for a fake area
+    with db_session:
+        with pytest.raises(AreaNotFound):
+            dao.save_load("fake_area_id", series_id)
+
+    # Ensures deleting the area deletes the row from `Load` table
+    with db_session:
+        dao.delete_area(area_id)
+
+    load_rows = db_session.execute(select(LOAD_TABLE)).fetchall()
+    assert load_rows == []
