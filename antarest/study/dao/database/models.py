@@ -18,6 +18,7 @@ These tables store study data (areas, UI positions, etc.) in the database instea
 """
 
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Table, Text
+from sqlalchemy.sql.schema import SchemaItem
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.area_properties_model import AdequacyPatchMode
@@ -61,16 +62,19 @@ AREA_UI_TABLE = Table(
     ),
 )
 
-area_matrices_args = [
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("area_id", String(255), nullable=False, primary_key=True),
-    Column("matrix_id", String(64), nullable=False),
-    ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
-]
+
+def _get_args() -> list[SchemaItem]:
+    return [
+        Column("study_id", String(36), nullable=False, primary_key=True),
+        Column("area_id", String(255), nullable=False, primary_key=True),
+        Column("matrix_id", String(64), nullable=False),
+        ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+    ]
+
 
 # Relation: One to one with `AREA_TABLE`
-LOAD_TABLE = Table("load", metadata, *area_matrices_args)
-SOLAR_TABLE = Table("solar", metadata, *area_matrices_args)
-WIND_TABLE = Table("wind", metadata, *area_matrices_args)
-RESERVES_TABLE = Table("reserves", metadata, *area_matrices_args)
-MISC_GEN_TABLE = Table("misc_gen", metadata, *area_matrices_args)
+LOAD_TABLE = Table("load", metadata, *_get_args())
+SOLAR_TABLE = Table("solar", metadata, *_get_args())
+WIND_TABLE = Table("wind", metadata, *_get_args())
+RESERVES_TABLE = Table("reserves", metadata, *_get_args())
+MISC_GEN_TABLE = Table("misc_gen", metadata, *_get_args())
