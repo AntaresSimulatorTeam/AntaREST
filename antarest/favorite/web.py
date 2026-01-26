@@ -13,28 +13,28 @@ from fastapi import APIRouter
 
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
-from antarest.favorite.model import FavoriteDTO
-from antarest.favorite.service import FavoriteService
+from antarest.favorite.model import FavoriteStudyDTO
+from antarest.favorite.service import FavoriteStudyService
 from antarest.login.auth import Auth, logger
 
 
-def create_favorite_routes(favorite_service: FavoriteService, config: Config) -> APIRouter:
+def create_favorite_routes(favorite_service: FavoriteStudyService, config: Config) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[auth.required()])
 
-    @bp.get("/favorite", summary="Listing favorites for current user")
-    def list_favorites() -> list[FavoriteDTO]:
+    @bp.get("/favorite_study", summary="Listing favorites for current user")
+    def list_favorites() -> list[FavoriteStudyDTO]:
         logger.info("Listing favorites for current user")
         return favorite_service.list_favorites()
 
-    @bp.post("/favorite/{uuid}", summary="Create new favorite")
-    def add_favorite(uuid: str) -> FavoriteDTO:
-        logger.info("Creating new favorite for current user")
+    @bp.post("/favorite_study/{uuid}", summary="Create new favorite_study")
+    def add_favorite(uuid: str) -> FavoriteStudyDTO:
+        logger.info("Creating new favorite_study for current user")
         return favorite_service.add_favorite(uuid)
 
-    @bp.delete("/favorite/{uuid}", summary="Delete a favorite")
+    @bp.delete("/favorite_study/{uuid}", summary="Delete a favorite_study")
     def delete_favorite(uuid: str) -> None:
-        logger.info("Deleting favorite for current user")
+        logger.info("Deleting favorite_study for current user")
         favorite_service.delete_favorite(uuid)
 
     return bp

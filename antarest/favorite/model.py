@@ -21,12 +21,12 @@ from antarest.study.model import Study
 logger = logging.getLogger(__name__)
 
 
-class FavoriteDTO(AntaresBaseModel, extra="forbid"):
+class FavoriteStudyDTO(AntaresBaseModel, extra="forbid"):
     id_study: str
     study_name: str
 
 
-class Favorite(Base):
+class FavoriteStudy(Base):
     """
 
 
@@ -35,7 +35,7 @@ class Favorite(Base):
         study_id: the study's id that was put in favorites
     """
 
-    __tablename__ = "favorite"
+    __tablename__ = "favorite_study"
 
     user_id: Mapped[str] = mapped_column(
         String(255),
@@ -50,5 +50,5 @@ class Favorite(Base):
     )
     study: Mapped["Study"] = relationship(Study)
 
-    def to_dto(self) -> FavoriteDTO:
-        return FavoriteDTO(id_study=self.study_id, study_name=self.study.name)
+    def to_dto(self) -> FavoriteStudyDTO:
+        return FavoriteStudyDTO(id_study=self.study_id, study_name=self.study.name)

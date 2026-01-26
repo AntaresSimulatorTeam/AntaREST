@@ -15,13 +15,13 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, joinedload
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.favorite.model import Favorite
+from antarest.favorite.model import FavoriteStudy
 from antarest.login.model import User
 from antarest.login.utils import get_user_id
 from antarest.study.model import Study
 
 
-class FavoriteRepository:
+class FavoriteStudyRepository:
     def __init__(self, session: Optional[Session] = None) -> None:
         self._session = session
 
@@ -31,24 +31,24 @@ class FavoriteRepository:
             return db.session
         return self._session
 
-    def save(self, favorite: Favorite) -> Favorite:
+    def save(self, favorite_study: FavoriteStudy) -> FavoriteStudy:
         session = self.session
-        fav = session.merge(favorite)
+        fav = session.merge(favorite_study)
         session.add(fav)
         session.commit()
         return fav
 
-    def get_all(self) -> list[Favorite]:
+    def get_all(self) -> list[FavoriteStudy]:
         stmt = (
-            select(Favorite)
-            .options(joinedload(Favorite.study))
-            .where((Study.id == Favorite.study_id) & (User.id == get_user_id()))
+            select(FavoriteStudy)
+            .options(joinedload(FavoriteStudy.study))
+            .where((Study.id == FavoriteStudy.study_id) & (User.id == get_user_id()))
         )
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
     def delete(self, user_id: str, study_id: str) -> None:
         session = self.session
-        stmt = delete(Favorite).where(Favorite.user_id == user_id).where(Favorite.study_id == study_id)
+        stmt = delete(FavoriteStudy).where(FavoriteStudy.user_id == user_id).where(FavoriteStudy.study_id == study_id)
         session.execute(stmt)
         session.commit()

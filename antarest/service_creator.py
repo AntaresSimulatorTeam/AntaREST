@@ -39,8 +39,8 @@ from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
-from antarest.favorite.repository import FavoriteRepository
-from antarest.favorite.service import FavoriteService
+from antarest.favorite.repository import FavoriteStudyRepository
+from antarest.favorite.service import FavoriteStudyService
 from antarest.favorite.web import create_favorite_routes
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
@@ -153,15 +153,15 @@ class CoreServices:
     study_service: StudyService
     output_service: OutputService
     blob_service: BlobService
-    favorite_service: FavoriteService
+    favorite_service: FavoriteStudyService
 
 
-def build_favorite_service(
-    config: Config, app_ctxt: Optional[AppBuildContext] = None, service: Optional[FavoriteService] = None
-) -> FavoriteService:
+def build_favorite_study_service(
+    config: Config, app_ctxt: Optional[AppBuildContext] = None, service: Optional[FavoriteStudyService] = None
+) -> FavoriteStudyService:
     if service is None:
-        favorite_repository = FavoriteRepository()
-        service = FavoriteService(favorite_repository=favorite_repository)
+        favorite_repository = FavoriteStudyRepository()
+        service = FavoriteStudyService(favorite_study_repository=favorite_repository)
 
     if app_ctxt:
         app_ctxt.api_root.include_router(create_favorite_routes(service, config=config))
@@ -240,7 +240,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         matrix_service=matrix_service,
     )
 
-    favorite_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
+    favorite_service = build_favorite_study_service(config=config, app_ctxt=app_ctxt)
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
@@ -326,7 +326,7 @@ class Services:
     event_bus: IEventBus
     study: StudyService
     matrix: MatrixService
-    favorite: FavoriteService
+    favorite: FavoriteStudyService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
