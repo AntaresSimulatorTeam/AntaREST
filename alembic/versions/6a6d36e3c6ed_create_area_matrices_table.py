@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
     study_id_col = sa.Column("study_id", sa.String(length=36), nullable=False)
     area_id_col = sa.Column("area_id", sa.String(length=255), nullable=False)
-    matrix_id_col = sa.Column("matrix_id", sa.String(), nullable=False)
+    matrix_id_col = sa.Column("matrix_id", sa.String(length=64), nullable=False)
     foreign_key_constraint = sa.ForeignKeyConstraint(
             ["study_id", "area_id"],
             ["area.study_id", "area.area_id"],
