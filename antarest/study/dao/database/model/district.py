@@ -19,7 +19,6 @@ This module defines the database tables for districts when a study has storage_m
 from sqlalchemy import Boolean, Column, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
-from antarest.study.business.model.district_model import DistrictApplyFilter
 
 metadata = Base.metadata
 
