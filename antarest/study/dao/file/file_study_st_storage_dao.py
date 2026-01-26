@@ -224,7 +224,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             ["input", "st-storage", "series", area_id, storage_id],
         ]
         if study_data.config.version >= STUDY_VERSION_9_2:
-            paths.append(["input", "st-storage", "constraints", area_id, storage_id])
+            if study_data.config.areas[area_id].st_storages_additional_constraints.get(storage_id):
+                paths.append(["input", "st-storage", "constraints", area_id, storage_id])
 
         if len(study_data.config.areas[area_id].st_storages) == 1:
             paths.append(["input", "st-storage", "series", area_id])
@@ -237,7 +238,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].st_storages.remove(storage)
         if study_data.config.version >= STUDY_VERSION_9_2:
-            study_data.config.areas[area_id].st_storages_additional_constraints.pop(storage.id)
+            if storage_id in study_data.config.areas[area_id].st_storages_additional_constraints:
+                study_data.config.areas[area_id].st_storages_additional_constraints.pop(storage_id)
 
     @override
     def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
