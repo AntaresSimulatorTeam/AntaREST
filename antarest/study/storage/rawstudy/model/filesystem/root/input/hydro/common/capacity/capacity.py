@@ -23,6 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_credit_modulation,
+    default_max_daily,
     default_maxpower,
     default_reservoir,
     default_scenario_daily,
@@ -36,10 +37,6 @@ class MatrixInfo(TypedDict, total=False):
     start_version: StudyVersion
     default_empty: Callable[[], npt.NDArray[np.float64]]
     should_exist: bool
-
-
-def default_max_daily() -> npt.NDArray[np.float64]:
-    return np.zeros((365, 1), dtype=np.float64)
 
 
 INITIAL_VERSION = StudyVersion.parse(0)
