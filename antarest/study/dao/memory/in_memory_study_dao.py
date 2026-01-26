@@ -472,6 +472,9 @@ class InMemoryStudyDao(StudyDao):
                 self._hydro_max_hourly_pump_power.pop(area_id, None)
                 self._hydro_max_daily_gen_energy.pop(area_id, None)
                 self._hydro_max_daily_pump_energy.pop(area_id, None)
+        compatibility_data = self.get_file_study().tree.get(["settings", "generaldata", "compatibility"])
+        compatibility_data["hydro-pmax"] = hydro_pmax
+        self.get_file_study().tree.save(compatibility_data, ["settings", "generaldata", "compatibility"])
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:

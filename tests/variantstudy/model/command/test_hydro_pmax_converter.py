@@ -34,6 +34,11 @@ def test_hydro_pmax_converter_creates_and_cleans_matrices(
     hourly_gen = study_path / "input" / "hydro" / "series" / "fr" / "maxHourlyGenPower.txt.link"
     hourly_pump = study_path / "input" / "hydro" / "series" / "fr" / "maxHourlyPumpPower.txt.link"
 
+    assert not daily_gen.exists()
+    assert not daily_pump.exists()
+    assert not hourly_gen.exists()
+    assert not hourly_pump.exists()
+
     output = ConvertHydroPmax(
         command_context=command_context,
         study_version=study_version,

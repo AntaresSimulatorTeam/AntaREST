@@ -209,15 +209,7 @@ class TestCreateArea:
         hourly_gen = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
         hourly_pump = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
 
-        assert daily_gen.exists() == should_exist, (
-            f"maxDailyGenEnergy should {'exist' if should_exist else 'not exist'} when hydro_pmax={hydro_pmax}"
-        )
-        assert daily_pump.exists() == should_exist, (
-            f"maxDailyPumpEnergy should {'exist' if should_exist else 'not exist'} when hydro_pmax={hydro_pmax}"
-        )
-        assert hourly_gen.exists() == should_exist, (
-            f"maxHourlyGenPower should {'exist' if should_exist else 'not exist'} when hydro_pmax={hydro_pmax}"
-        )
-        assert hourly_pump.exists() == should_exist, (
-            f"maxHourlyPumpPower should {'exist' if should_exist else 'not exist'} when hydro_pmax={hydro_pmax}"
-        )
+        assert daily_gen.exists() == should_exist
+        assert daily_pump.exists() == should_exist
+        assert hourly_gen.exists() == should_exist
+        assert hourly_pump.exists() == should_exist
