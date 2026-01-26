@@ -209,10 +209,8 @@ class TestRemoveSTStorage:
         cmd.apply(study_data=study)
 
         assert "sts" in study.config.get_st_storage_ids("fr")
-        # Storage has no constraints
         assert study.config.get_sts_constraint_ids("fr", "sts") == []
 
-        # Removing the storage should work even without constraints
         cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts", study_version=version)
         output = cmd.apply(study)
         assert output.status
