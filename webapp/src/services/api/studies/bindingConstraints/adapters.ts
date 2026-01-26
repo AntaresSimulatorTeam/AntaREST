@@ -20,8 +20,12 @@ import type {
 } from "./type";
 
 export function adaptBindingConstraintOutputFilterStringToArray(
-  value: string,
+  value: BindingConstraintDTO["filterYearByYear"] | BindingConstraintDTO["filterSynthesis"],
 ): BindingConstraintOutputFilter[] {
+  if (!value?.trim()) {
+    return [];
+  }
+
   return value
     .split(",")
     .map((item) => item.trim())

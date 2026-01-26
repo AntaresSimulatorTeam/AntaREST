@@ -56,8 +56,8 @@ export interface BindingConstraintDTO {
   comments: string;
   terms: BindingConstraintTerm[];
   // Since v8.3
-  filterYearByYear?: string;
-  filterSynthesis?: string;
+  filterYearByYear?: string | null; // For versions < v8.3, this field may be null instead of undefined
+  filterSynthesis?: string | null; // For versions < v8.3, this field may be null instead of undefined
   // Since v8.7
   group?: string;
 }
