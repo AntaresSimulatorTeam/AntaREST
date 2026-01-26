@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 from typing_extensions import override
 
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
@@ -351,26 +351,15 @@ class FileStudyHydroDao(HydroDao):
         file_study = self.get_file_study()
         areas = file_study.config.areas.keys()
 
+        hourly_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(np.zeros((8760, 1))))
 
-        hourly_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    create_polars_dataframe(np.zeros((8760, 1)))
-                )
-                
-        daily_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(
-                    create_polars_dataframe(np.full((365, 1), 24))
-                )
+        daily_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
 
         for area_id in areas:
             # when we go to hourly, we need to create matrices
             if hydro_pmax == HydroPmax.HOURLY:
-                hourly_matrix_mapping[area_id] = {
-                    "gen": hourly_matrix_id,
-                    "pump": hourly_matrix_id 
-                }
-                daily_matrix_mapping[area_id] = {
-                    "gen": daily_matrix_id,
-                    "pump": daily_matrix_id 
-                }
+                hourly_matrix_mapping[area_id] = {"gen": hourly_matrix_id, "pump": hourly_matrix_id}
+                daily_matrix_mapping[area_id] = {"gen": daily_matrix_id, "pump": daily_matrix_id}
             else:
                 # in other case, we will delete this files because they will be pulled from maxpower file
                 try:
