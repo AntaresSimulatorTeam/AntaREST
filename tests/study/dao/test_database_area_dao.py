@@ -375,5 +375,5 @@ def test_load_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
     with db_session:
         dao.delete_area(area_id)
 
-    load_rows = db_session.execute(select(LOAD_TABLE)).fetchall()
-    assert load_rows == []
+        load_rows = db_session.execute(select(LOAD_TABLE)).fetchall()
+        assert load_rows == []
