@@ -20,7 +20,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List
 
 import polars as pl
-from sqlalchemy import Table, case, delete, insert, select, update
+from sqlalchemy import Row, Table, case, delete, insert, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -391,14 +391,34 @@ class DatabaseAreaDao(AreaDao):
         self.get_session().execute(stmt_insert)
 
     def _get_matrix(self, area_id: str, table: Table) -> pl.DataFrame:
+        row = self._get_matrix_row(area_id, table)
+        if not row:
+            raise AreaNotFound(area_id)
+        return self.get_impl().get_matrix(row.matrix_id)
+
+    def _get_matrix_row(self, area_id: str, table: Table) -> Row[Any] | None:
         study_id = self.get_study_id()
         session = self.get_session()
         stmt = select(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id))
 
-        row = session.execute(stmt).fetchone()
+        return session.execute(stmt).fetchone()
+
+    def _save_matrix(self, area_id: str, table: Table, matrix_id: str) -> None:
+        row = self._get_matrix_row(area_id, table)
+        session = self.get_session()
+        study_id = self.get_study_id()
         if not row:
-            raise AreaNotFound(area_id)
-        return self.get_impl().get_matrix(row.matrix_id)
+            # We must check if the area exist or not
+            validate_area_exists(session, study_id, area_id)
+            stmt_insert = insert(table).values(study_id=self.get_study_id(), area_id=area_id, matrix_id=matrix_id)
+            session.execute(stmt_insert)
+        else:
+            stmt_update = (
+                update(table)
+                .where((table.c.study_id == study_id) & (table.c.area_id == area_id))
+                .values(matrix_id=matrix_id)
+            )
+            session.execute(stmt_update)
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
@@ -422,20 +442,20 @@ class DatabaseAreaDao(AreaDao):
 
     @override
     def save_load(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, LOAD_TABLE, series_id)
 
     @override
     def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, MISC_GEN_TABLE, series_id)
 
     @override
     def save_reserves(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, RESERVES_TABLE, series_id)
 
     @override
     def save_solar(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, SOLAR_TABLE, series_id)
 
     @override
     def save_wind(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, WIND_TABLE, series_id)
