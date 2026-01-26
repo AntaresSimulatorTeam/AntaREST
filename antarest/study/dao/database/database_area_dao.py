@@ -20,7 +20,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List
 
 import polars as pl
-from sqlalchemy import case, delete, insert, select, update
+from sqlalchemy import Table, case, delete, insert, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -29,7 +29,15 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo,
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
+from antarest.study.dao.database.models import (
+    AREA_TABLE,
+    AREA_UI_TABLE,
+    LOAD_TABLE,
+    MISC_GEN_TABLE,
+    RESERVES_TABLE,
+    SOLAR_TABLE,
+    WIND_TABLE,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -382,26 +390,35 @@ class DatabaseAreaDao(AreaDao):
         )
         self.get_session().execute(stmt_insert)
 
-    # Time series methods - not yet implemented for database storage mode
+    def _get_matrix(self, area_id: str, table: Table) -> pl.DataFrame:
+        study_id = self.get_study_id()
+        session = self.get_session()
+        stmt = select(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id))
+
+        row = session.execute(stmt).fetchone()
+        if not row:
+            raise AreaNotFound(area_id)
+        return self.get_impl().get_matrix(row.matrix_id)
+
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, LOAD_TABLE)
 
     @override
     def get_misc_gen(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, MISC_GEN_TABLE)
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, RESERVES_TABLE)
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, SOLAR_TABLE)
 
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, WIND_TABLE)
 
     @override
     def save_load(self, area_id: str, series_id: str) -> None:

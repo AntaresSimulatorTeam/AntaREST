@@ -26,6 +26,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -72,7 +73,7 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
     This allows combining multiple DAO operations into a single atomic transaction.
     """
 
-    def __init__(self, study_id: str, db_session: Session) -> None:
+    def __init__(self, study_id: str, db_session: Session, matrix_service: ISimpleMatrixService) -> None:
         """
         Initialize DatabaseStudyDao.
 
@@ -82,6 +83,7 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
         DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
+        self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
     @override
@@ -125,6 +127,9 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
         raise NotImplementedError(
             "get_file_study() is not supported in database storage mode. Use database-specific methods instead."
         )
+
+    def get_matrix(self, matrix_id: str) -> pl.DataFrame:
+        return self._matrix_service.get(matrix_id)
 
     @override
     def save_link(self, link: Link) -> None:

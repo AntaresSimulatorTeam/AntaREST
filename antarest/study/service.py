@@ -391,6 +391,7 @@ class RawStudyInterface(StudyInterface):
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
+        self._matrix_service = self._raw_study_service._matrix_service
 
     @override
     @property
@@ -411,7 +412,7 @@ class RawStudyInterface(StudyInterface):
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, db.session).read_only()
+            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service).read_only()
         command_context = self._variant_study_service.command_factory.command_context
         return FileStudyTreeDao(
             self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
@@ -424,7 +425,7 @@ class RawStudyInterface(StudyInterface):
 
         # Build DAO based on storage mode
         if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(study.id, db.session)
+            dao: StudyDao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
         else:
             file_study = self.get_files()
             command_context = self._variant_study_service.command_factory.command_context
