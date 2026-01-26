@@ -49,6 +49,14 @@ class FileStudyAreaDao(AreaDao):
         pass
 
     @override
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+        """
+        study_data = self.get_file_study()
+        return list(study_data.config.areas)
+
+    @override
     def get_all_areas_info(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.

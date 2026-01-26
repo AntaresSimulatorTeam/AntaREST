@@ -2,7 +2,6 @@
 #
 # See AUTHORS.txt
 #
-# This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
@@ -810,7 +809,7 @@ class InMemoryStudyDao(StudyDao):
         return list(set(areas) - set(self._area_names))
 
     @override
-    def tmp_get_all_areas(self) -> list[str]:
+    def get_all_area_ids(self) -> list[str]:
         return self._area_names
 
     @override

@@ -112,16 +112,9 @@ class FileStudyDistrictDao(DistrictDao):
     def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
         """
         Check all areas exists in the study.
-
-        TODO this method should be moved to the area DAO when we'll implement it
         """
         areas_set = set(areas)
         study_data = self.get_file_study()
         all_areas = set(study_data.config.areas)
         invalid_areas = areas_set - all_areas
         return list(invalid_areas)
-
-    @override
-    def tmp_get_all_areas(self) -> list[str]:
-        study_data = self.get_file_study()
-        return list(study_data.config.areas)

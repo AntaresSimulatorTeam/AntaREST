@@ -69,6 +69,19 @@ class DatabaseAreaDao(AreaDao):
         return self._db_session
 
     @override
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+        """
+        study_id = self.get_study_id()
+        session = self.get_session()
+
+        stmt = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_id == study_id)
+        result = session.execute(stmt)
+
+        return [row.area_id for row in result]
+
+    @override
     def get_all_areas_info(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.

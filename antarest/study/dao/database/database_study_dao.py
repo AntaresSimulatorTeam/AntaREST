@@ -635,10 +635,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def tmp_get_all_areas(self) -> list[str]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
     def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
