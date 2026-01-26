@@ -1,4 +1,4 @@
-"""add_area_properties_table
+"""add_area_properties_inside_area_table
 
 Revision ID: f3a153a9a048
 Revises: 2572145aff71
