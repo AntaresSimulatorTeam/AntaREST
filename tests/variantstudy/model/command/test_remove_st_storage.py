@@ -188,3 +188,33 @@ class TestRemoveSTStorage:
         assert "sts" not in study.config.get_st_storage_ids("fr")
         with pytest.raises(KeyError):
             study.config.get_sts_constraint_ids("fr", "sts")
+
+    def test_apply__storage_without_constraints(
+        self, empty_study_920: FileStudy, command_context: CommandContext
+    ) -> None:
+        """Test removing a storage that has no additional constraints."""
+        study = empty_study_920
+        version = study.config.version
+
+        # Create an area and a short-term storage WITHOUT constraints
+        cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
+        cmd.apply(study_data=study)
+
+        cmd = CreateSTStorage(
+            area_id="fr",
+            parameters=STStorageCreation(name="STS"),
+            command_context=command_context,
+            study_version=version,
+        )
+        cmd.apply(study_data=study)
+
+        assert "sts" in study.config.get_st_storage_ids("fr")
+        # Storage has no constraints
+        assert study.config.get_sts_constraint_ids("fr", "sts") == []
+
+        # Removing the storage should work even without constraints
+        cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts", study_version=version)
+        output = cmd.apply(study)
+        assert output.status
+
+        assert "sts" not in study.config.get_st_storage_ids("fr")

@@ -238,8 +238,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].st_storages.remove(storage)
         if study_data.config.version >= STUDY_VERSION_9_2:
-            if storage_id in study_data.config.areas[area_id].st_storages_additional_constraints:
-                study_data.config.areas[area_id].st_storages_additional_constraints.pop(storage_id)
+            study_data.config.areas[area_id].st_storages_additional_constraints.pop(storage_id, None)
 
     @override
     def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
