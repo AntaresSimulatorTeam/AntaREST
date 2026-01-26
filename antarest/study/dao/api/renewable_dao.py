@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 
@@ -36,7 +36,7 @@ class ReadOnlyRenewableDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
 

@@ -9,15 +9,19 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import numpy as np
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_hourly
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_conversion,
+    default_data,
+    default_k,
+    default_scenario_hourly,
+)
 
 
 class PreproCorrelation(IniFileNode):
@@ -28,17 +32,6 @@ class PreproCorrelation(IniFileNode):
 class PreproAreaSettings(IniFileNode):
     def __init__(self, config: FileStudyTreeConfig):
         IniFileNode.__init__(self, config)
-
-
-default_k = np.zeros((24, 12), dtype=np.float64)
-default_k.flags.writeable = False
-
-default_conversion = np.array([[-9999999980506447872, 0, -9999999980506447872], [0, 0, 0]], dtype=np.float64)
-default_conversion.flags.writeable = False
-
-default_data = np.ones((12, 6), dtype=np.float64)
-default_data[:, 2] = 0
-default_data.flags.writeable = False
 
 
 class PreproArea(FolderNode):

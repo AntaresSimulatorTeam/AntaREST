@@ -14,10 +14,7 @@ import warnings
 from pathlib import Path
 from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence
 
-import numpy as np
 import pandas as pd
-import polars as pl
-from polars.exceptions import ComputeError
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.study.model import MatrixFrequency
@@ -31,7 +28,7 @@ from antarest.study.output.utils import (
     concatenate_dataframe_multi_indexed_columns,
     get_start_column,
     normalize_df_column_names,
-    parse_headers,
+    parse_output_file,
 )
 
 # We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
@@ -122,34 +119,12 @@ class AggregatorManager:
         self.transform_columns_headers = transform_columns_headers
 
     def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
-        content = file_path.read_text(encoding="utf-8")
-        output_headers = parse_headers(content, self._output_first_column)
-        try:
-            polars_df = pl.read_csv(
-                file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1
-            )
-        except ComputeError:
-            # Happens if polars wrongly inferred the schema. If so, we specify that he shouldn't try.
-            # This way the parsing does not fail, but it is significantly slower.
-            # This case does not seem to happen very often.
-            polars_df = pl.read_csv(
-                file_path,
-                skip_lines=7,
-                separator="\t",
-                has_header=False,
-                null_values="N/A",
-                infer_schema=False,
-                n_threads=1,
-            )
-
-        df = polars_df[polars_df.columns[self._output_first_column :]].to_pandas().astype(np.float64)
-
-        df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
+        output_data = parse_output_file(file_path, self._output_first_column)
 
         if normalize_column_names:
-            df.columns = pd.Index(normalize_df_column_names(self.mc_root, output_headers))
+            output_data.data.columns = pd.Index(normalize_df_column_names(self.mc_root, output_data.headers))
 
-        return df
+        return output_data.data
 
     def _filter_ids(self, folder_path: Path) -> List[str]:
         if self.output_type == "areas":

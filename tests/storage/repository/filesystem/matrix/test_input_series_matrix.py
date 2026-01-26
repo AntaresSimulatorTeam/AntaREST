@@ -16,10 +16,12 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -39,7 +41,7 @@ class TestInputSeriesMatrix:
             version=STUDY_VERSION_8,
         )
 
-    def test_load(self, my_study_config: FileStudyTreeConfig) -> None:
+    def test_parse(self, my_study_config: FileStudyTreeConfig) -> None:
         file = my_study_config.path
         content = textwrap.dedent(
             """\
@@ -55,21 +57,23 @@ class TestInputSeriesMatrix:
         node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config, nb_columns=8)
 
         # checks formatted response
-        actual = node.load(formatted=True)
-        expected = {
-            "columns": [0, 1, 2, 3, 4, 5, 6, 7],
-            "data": [
+        actual = node.parse_as_dataframe()
+        expected = create_polars_dataframe(
+            [
                 [100000, 100000, 0.01, 0.01, 0, 0, 0, 3.14],
                 [100000, 100000, 0.01, 0.01, 0, 0, 0, 6.28],
-            ],
-            "index": [0, 1],
-        }
-        assert actual == expected
+            ]
+        )
+
+        assert_frame_equal(actual, expected, check_dtypes=False)
 
     @pytest.mark.parametrize("link", [True, False])
-    def test_load_empty_file(self, my_study_config: FileStudyTreeConfig, link: bool) -> None:
+    def test_parse_empty_file(self, my_study_config: FileStudyTreeConfig, link: bool) -> None:
         file_path = my_study_config.path
-        default_matrix = np.array([[1, 2], [3, 4]])
+
+        def default_matrix():
+            return np.array([[1, 2], [3, 4]])
+
         if not link:
             file_path.touch()
             node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
@@ -77,42 +81,39 @@ class TestInputSeriesMatrix:
             link_path = file_path.parent / f"{file_path.name}.link"
             link_path.touch()
             resolver = Mock(spec=MatrixUriMapper)
-            resolver.get_matrix.return_value = pd.DataFrame()
+            resolver.get_matrix.return_value = pl.DataFrame()
             matrix_service = Mock()
             matrix_service.create.return_value = "matrix://my-id"
             resolver.matrix_service = matrix_service
             node = InputSeriesMatrix(matrix_mapper=resolver, config=my_study_config, default_empty=default_matrix)
 
         # checks formatted response
-        actual = node.load(formatted=True)
-        expected = {"index": [0, 1], "columns": [0, 1], "data": node.default_empty.tolist()}
-        assert actual == expected
+        actual = node.parse_as_dataframe()
+        expected = create_polars_dataframe(node.default_empty())
+        assert_frame_equal(actual, expected, check_dtypes=False)
 
-    def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
+    def test_parse_file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         mapper = Mock(spec=MatrixUriMapper)
         mapper.get_link_content.return_value = None
 
         node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config, nb_columns=8)
         with pytest.raises(ChildNotFoundError) as ctx:
-            node.load()
+            node.parse_as_dataframe()
         err_msg = str(ctx.value)
         assert "input.txt" in err_msg
         assert my_study_config.study_id in err_msg
         assert "not found" in err_msg.lower()
 
-    def test_load__link_to_matrix(self, my_study_config: FileStudyTreeConfig) -> None:
+    def test_parse_link_to_matrix(self, my_study_config: FileStudyTreeConfig) -> None:
         link = my_study_config.path.with_suffix(".txt.link")
         matrix_uri = "matrix://54e252eb14c0440055c82520c338376ff436e1d7ed6cb7283084c89e2e472c42"
-        matrix_obj = {
-            "data": [[1, 2], [3, 4]],
-            "index": [0, 1],
-            "columns": [0, 1],
-        }
         link.write_text(matrix_uri)
 
-        def get_matrix(uri: str) -> pd.DataFrame:
+        matrix = pl.DataFrame(np.array([[1, 2], [3, 4]]))
+
+        def get_matrix(uri: str) -> pl.DataFrame:
             assert uri == matrix_uri
-            return pd.DataFrame(data=matrix_obj["data"])
+            return matrix
 
         mapper = Mock(spec=MatrixUriMapper)
         mapper.get_matrix = get_matrix
@@ -120,8 +121,8 @@ class TestInputSeriesMatrix:
         mapper.has_link.return_value = True
 
         node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config)
-        actual = node.load()
-        assert actual == matrix_obj
+        actual = node.parse_as_dataframe()
+        assert_frame_equal(actual, matrix, check_dtypes=False)
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
         node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config)
@@ -137,11 +138,14 @@ class TestInputSeriesMatrix:
 
     def test_reset_to_default(self, my_study_config: FileStudyTreeConfig) -> None:
         """Test reseting the matrix to default values."""
-        default_matrix = np.array([[1.0, 2.0], [3.0, 4.0]])
+
+        def default_matrix():
+            return np.array([[1.0, 2.0], [3.0, 4.0]])
+
         node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
 
         # Save different data than default
-        node.dump({"columns": [0, 1], "data": [[5.0, 6.0], [7.0, 8.0]], "index": [0, 1]})
+        node.dump({"columns": ["0", "1"], "data": [[5.0, 6.0], [7.0, 8.0]], "index": [0, 1]})
 
         # The file should contain saved data
         actual = my_study_config.path.read_text()
@@ -154,15 +158,33 @@ class TestInputSeriesMatrix:
         assert actual == expected
 
         # Now reset to default
-        node.dump({"columns": [0, 1], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]})
+        node.dump({"columns": ["0", "1"], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]})
 
         # The file should be empty now
         actual_text = my_study_config.path.read_text()
         assert actual_text == ""
 
         # Loading the matrix should return the default values
-        actual = node.load()
-        assert actual == {"columns": [0, 1], "data": [[1.0, 2.0], [3.0, 4.0]], "index": [0, 1]}
+        actual = node.parse_as_dataframe()
+        expected = pl.DataFrame(data=np.array([[1.0, 2.0], [3.0, 4.0]]), schema=["0", "1"])
+        assert_frame_equal(actual, expected, check_dtypes=False)
+
+    def test_default_empty(self, my_study_config: FileStudyTreeConfig) -> None:
+        file_path = my_study_config.path
+
+        def default_matrix():
+            return np.array([[1, 2], [3, 4]])
+
+        file_path.touch()
+        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
+
+        # Ensures `parse_as_dataframe` returns the default matrix
+        result = node.parse_as_dataframe()
+        assert_frame_equal(result, create_polars_dataframe(default_matrix()), check_dtypes=False)
+
+        # Ensures `parse_content` returns an empty matrix
+        result = node.parse_content()
+        assert result.is_empty()
 
 
 class TestCopyAndRenameFile:

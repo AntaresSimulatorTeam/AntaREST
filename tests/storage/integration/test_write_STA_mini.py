@@ -12,9 +12,13 @@
 
 from typing import Optional
 
+import numpy as np
+import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from antarest.core.model import SUB_JSON
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.service import StudyService
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
@@ -31,9 +35,12 @@ def assert_with_errors(
     res = storage_service.edit_study(uuid=uuid, url=url, new=new)
     assert res == new
 
-    res = storage_service.get(uuid=uuid, url=url, depth=-1, formatted=True)
+    res = storage_service.get_raw_content(uuid=uuid, path=url, depth=-1, formatted=True)
     if expected is not None:
-        assert res == expected
+        if isinstance(expected, pl.DataFrame):
+            assert_frame_equal(expected, res, check_dtypes=False)
+        else:
+            assert res == expected
     else:
         assert res == new
 
@@ -49,11 +56,7 @@ def assert_with_errors(
     ],
 )
 def test_sta_mini_settings(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
 
 
 @with_admin_user
@@ -67,11 +70,7 @@ def test_sta_mini_settings(storage_service: StudyService, url: str, new: SUB_JSO
     ],
 )
 def test_sta_mini_layers_layers(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
 
 
 @with_admin_user
@@ -93,11 +92,7 @@ def test_sta_mini_layers_layers(storage_service: StudyService, url: str, new: SU
     ],
 )
 def test_sta_mini_desktop(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
 
 
 @with_admin_user
@@ -115,11 +110,7 @@ def test_sta_mini_desktop(storage_service: StudyService, url: str, new: SUB_JSON
     ],
 )
 def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)
 
 
 @with_admin_user
@@ -147,221 +138,11 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
             42,
             None,
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k",
-            [[0]],
-            {"data": [[0.0]], "index": [0], "columns": [0]},
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", [[0]], create_polars_dataframe(data=np.array([[0.0]]))),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
             [[i] for i in range(100)],
-            {
-                "data": [
-                    [0.0],
-                    [1.0],
-                    [2.0],
-                    [3.0],
-                    [4.0],
-                    [5.0],
-                    [6.0],
-                    [7.0],
-                    [8.0],
-                    [9.0],
-                    [10.0],
-                    [11.0],
-                    [12.0],
-                    [13.0],
-                    [14.0],
-                    [15.0],
-                    [16.0],
-                    [17.0],
-                    [18.0],
-                    [19.0],
-                    [20.0],
-                    [21.0],
-                    [22.0],
-                    [23.0],
-                    [24.0],
-                    [25.0],
-                    [26.0],
-                    [27.0],
-                    [28.0],
-                    [29.0],
-                    [30.0],
-                    [31.0],
-                    [32.0],
-                    [33.0],
-                    [34.0],
-                    [35.0],
-                    [36.0],
-                    [37.0],
-                    [38.0],
-                    [39.0],
-                    [40.0],
-                    [41.0],
-                    [42.0],
-                    [43.0],
-                    [44.0],
-                    [45.0],
-                    [46.0],
-                    [47.0],
-                    [48.0],
-                    [49.0],
-                    [50.0],
-                    [51.0],
-                    [52.0],
-                    [53.0],
-                    [54.0],
-                    [55.0],
-                    [56.0],
-                    [57.0],
-                    [58.0],
-                    [59.0],
-                    [60.0],
-                    [61.0],
-                    [62.0],
-                    [63.0],
-                    [64.0],
-                    [65.0],
-                    [66.0],
-                    [67.0],
-                    [68.0],
-                    [69.0],
-                    [70.0],
-                    [71.0],
-                    [72.0],
-                    [73.0],
-                    [74.0],
-                    [75.0],
-                    [76.0],
-                    [77.0],
-                    [78.0],
-                    [79.0],
-                    [80.0],
-                    [81.0],
-                    [82.0],
-                    [83.0],
-                    [84.0],
-                    [85.0],
-                    [86.0],
-                    [87.0],
-                    [88.0],
-                    [89.0],
-                    [90.0],
-                    [91.0],
-                    [92.0],
-                    [93.0],
-                    [94.0],
-                    [95.0],
-                    [96.0],
-                    [97.0],
-                    [98.0],
-                    [99.0],
-                ],
-                "index": [
-                    0,
-                    1,
-                    2,
-                    3,
-                    4,
-                    5,
-                    6,
-                    7,
-                    8,
-                    9,
-                    10,
-                    11,
-                    12,
-                    13,
-                    14,
-                    15,
-                    16,
-                    17,
-                    18,
-                    19,
-                    20,
-                    21,
-                    22,
-                    23,
-                    24,
-                    25,
-                    26,
-                    27,
-                    28,
-                    29,
-                    30,
-                    31,
-                    32,
-                    33,
-                    34,
-                    35,
-                    36,
-                    37,
-                    38,
-                    39,
-                    40,
-                    41,
-                    42,
-                    43,
-                    44,
-                    45,
-                    46,
-                    47,
-                    48,
-                    49,
-                    50,
-                    51,
-                    52,
-                    53,
-                    54,
-                    55,
-                    56,
-                    57,
-                    58,
-                    59,
-                    60,
-                    61,
-                    62,
-                    63,
-                    64,
-                    65,
-                    66,
-                    67,
-                    68,
-                    69,
-                    70,
-                    71,
-                    72,
-                    73,
-                    74,
-                    75,
-                    76,
-                    77,
-                    78,
-                    79,
-                    80,
-                    81,
-                    82,
-                    83,
-                    84,
-                    85,
-                    86,
-                    87,
-                    88,
-                    89,
-                    90,
-                    91,
-                    92,
-                    93,
-                    94,
-                    95,
-                    96,
-                    97,
-                    98,
-                    99,
-                ],
-                "columns": [0],
-            },
+            create_polars_dataframe(data=np.array([[i] for i in range(100)])),
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode",
@@ -391,12 +172,7 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
     ],
 )
 def test_sta_mini_input(storage_service: StudyService, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-        expected=expected,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new, expected=expected)
 
 
 @with_admin_user
@@ -418,8 +194,4 @@ def test_sta_mini_input(storage_service: StudyService, url: str, new: SUB_JSON, 
     ],
 )
 def test_sta_mini_output(storage_service: StudyService, url: str, new: SUB_JSON) -> None:
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
+    assert_with_errors(storage_service=storage_service, url=url, new=new)

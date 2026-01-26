@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 
-import pandas as pd
+import polars as pl
 
-reservoir = pd.DataFrame([[0.0, 0.5, 1.0]] * 12)
+
+def reservoir() -> pl.DataFrame:
+    return pl.DataFrame([[0.0, 0.5, 1.0]] * 12, schema=["0", "1", "2"])

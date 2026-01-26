@@ -20,22 +20,22 @@ import pytest
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_scenario_daily,
     default_scenario_hourly,
     default_scenario_monthly,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.area import area
 
 BEFORE_650 = {
     "mod": {
-        "default_empty": default_scenario_monthly.tolist(),
+        "default_empty": default_scenario_monthly().tolist(),
         "freq": MatrixFrequency.MONTHLY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly().tolist(),
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
@@ -43,12 +43,12 @@ BEFORE_650 = {
 
 AFTER_650 = {
     "mod": {
-        "default_empty": default_scenario_daily.tolist(),
+        "default_empty": default_scenario_daily().tolist(),
         "freq": MatrixFrequency.DAILY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly().tolist(),
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
@@ -56,17 +56,17 @@ AFTER_650 = {
 
 AFTER_860 = {
     "mod": {
-        "default_empty": default_scenario_daily.tolist(),
+        "default_empty": default_scenario_daily().tolist(),
         "freq": MatrixFrequency.DAILY,
         "nb_columns": None,
     },
     "ror": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly().tolist(),
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
     "mingen": {
-        "default_empty": default_scenario_hourly.tolist(),
+        "default_empty": default_scenario_hourly().tolist(),
         "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
@@ -110,7 +110,7 @@ class TestInputHydroSeriesArea:
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
             actual_obj[key] = {
-                "default_empty": value.default_empty.tolist(),
+                "default_empty": value.default_empty().tolist(),
                 "freq": value.freq,
                 "nb_columns": value.nb_columns,
             }

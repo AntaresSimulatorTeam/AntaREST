@@ -104,7 +104,8 @@ from antarest.study.business.timeseries_config_management import TimeSeriesConfi
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
-from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
@@ -115,6 +116,7 @@ from antarest.study.model import (
     MatrixFrequency,
     MatrixIndex,
     RawStudy,
+    StorageMode,
     Study,
     StudyContentStatus,
     StudyFolder,
@@ -408,6 +410,8 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(self._study.id, db.session).read_only()
         command_context = self._variant_study_service.command_factory.command_context
         return FileStudyTreeDao(
             self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
@@ -416,38 +420,55 @@ class RawStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
-        should_invalidate_cache = False
-        file_study = self.get_files()
+        file_study: Optional[FileStudy] = None
 
-        for command in commands:
-            context = command.command_context
-            result = command.apply(
-                FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service),
-                listener,
+        # Build DAO based on storage mode
+        if study.storage_mode == StorageMode.DATABASE:
+            dao: StudyDao = DatabaseStudyDao(study.id, db.session)
+        else:
+            file_study = self.get_files()
+            command_context = self._variant_study_service.command_factory.command_context
+            dao = FileStudyTreeDao(
+                file_study,
+                command_context.generator_matrix_constants,
+                command_context.blob_service,
             )
+
+        # Apply all commands
+        should_invalidate_cache = False
+        for command in commands:
+            result = command.apply(dao, listener)
             if result.should_invalidate_cache:
                 should_invalidate_cache = True
             if not result.status:
                 raise CommandApplicationError(result.message)
 
-        # if commands that can't update the cache are applied, we need to invalidate it.
-        # Otherwise, we can update it.
+        # Commit database changes for database storage mode
+        if study.storage_mode == StorageMode.DATABASE:
+            db.session.commit()
+
+        # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
-        else:
+        elif study.storage_mode == StorageMode.FILESYSTEM:
+            assert file_study is not None
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
-        self._variant_study_service.on_parent_change(study.id)
-        self._update_editor_and_lastsave(file_study)
 
-    def _update_editor_and_lastsave(self, file_study: FileStudy) -> None:
+        # Update editor metadata
+        self._update_editor_and_lastsave(dao)
+
+        # Notify changes to child variants
+        self._variant_study_service.on_parent_change(study.id)
+
+    def _update_editor_and_lastsave(self, dao: StudyDao) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
         if user:
             user_name = user.name or ""
-            study_antares = file_study.tree.get(["study", "antares"])
-            study_antares["editor"] = user_name
-            study_antares["lastsave"] = current_time()
-            file_study.tree.save(study_antares, ["study", "antares"])
+            last_save = current_time().timestamp()
+            # Update file (no-op for database storage mode)
+            dao.update_antares_file(user_name, last_save)
+            # Update DB metadata
             self._study.editor = user_name
             self._repository.save(self._study)
 
@@ -883,16 +904,22 @@ class StudyService:
         return self.storage_service.get_storage(study).get_study_path(study)
 
     def create_study(
-        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], directory: str = ""
+        self,
+        study_name: str,
+        version: Optional[StudyVersion],
+        group_ids: List[str],
+        storage_mode: StorageMode = StorageMode.FILESYSTEM,
+        directory: str = "",
     ) -> str:
         """
-        Creates a study with the specified study name, version, group IDs, and user parameters.
+        Creates a study with the specified study name, version, group IDs, and storage mode.
 
         Args:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
             directory: Optional directory path where the study will be created (e.g., 'project/subfolder').
+            storage_mode: The storage mode for the study (FILESYSTEM or DATABASE).
 
         Returns:
             str: The ID of the newly created study.
@@ -920,6 +947,7 @@ class StudyService:
             created_at=now_utc,
             updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
+            storage_mode=storage_mode,
             directory_id=directory_id,
             owner=owner,
             groups=groups,
@@ -937,7 +965,7 @@ class StudyService:
             )
         )
 
-        logger.info("study %s created by user %s", raw.id, get_user_id())
+        logger.info("study %s created by user %s with storage_mode=%s", raw.id, get_user_id(), storage_mode)
         return str(raw.id)
 
     def get_user_name(self) -> str:
@@ -2305,28 +2333,31 @@ class StudyService:
         # Checks that the provided path refers to a matrix
         node = self.get_file_study(study).tree.get_node(list(url))
         if isinstance(node, MatrixNode):
-            df_matrix = node.parse_as_dataframe()
-        elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
-            df_matrix = pd.DataFrame(**node.load())  # type: ignore
+            pandas_df = node.parse_as_dataframe().to_pandas()
+        elif isinstance(node, OutputSeriesMatrix):
+            pandas_df = node.parse_dataframe()
+            pandas_df.columns = pd.Index(pandas_df.columns)
+        elif isinstance(node, OutputSynthesis):
+            pandas_df = pd.DataFrame(**node.load())
         else:
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
             time_column = pd.date_range(
-                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+                start=matrix_index.start_date, periods=len(pandas_df), freq=matrix_index.level.value[0]
             )
-            df_matrix.index = time_column
+            pandas_df.index = time_column
 
         adjust_matrix_columns_index(
-            df_matrix,
+            pandas_df,
             path,
             with_index=with_index,
             with_header=with_header,
             study_version=study_interface.version,
         )
 
-        return df_matrix
+        return pandas_df
 
     def asserts_no_thermal_in_binding_constraints(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
@@ -2442,6 +2473,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
+        self.assert_study_unarchived(study)
         file_study = self.get_file_study(study)
         url = [item for item in path.split("/") if item]
         node, relative_url = file_study.tree.get_node_and_remainder(url)
