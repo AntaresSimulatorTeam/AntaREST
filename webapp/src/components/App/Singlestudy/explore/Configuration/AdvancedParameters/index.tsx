@@ -21,9 +21,7 @@ import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
   getAdvancedParamsFormFields,
-  getCompatibilityParamsFormFields,
   setAdvancedParamsFormFields,
-  setCompatibilityParamsFormFields,
   type AdvancedParamsFormFields,
 } from "./utils";
 
@@ -36,21 +34,7 @@ function AdvancedParameters() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
-    const { hydroPmax, ...advancedParams } = dirtyValues;
-
-    const promises: Array<Promise<unknown>> = [];
-
-    // Update advanced parameters if there are any changes
-    if (Object.keys(advancedParams).length > 0) {
-      promises.push(setAdvancedParamsFormFields(study.id, advancedParams));
-    }
-
-    // Update compatibility parameters if hydroPmax changed
-    if (hydroPmax !== undefined) {
-      promises.push(setCompatibilityParamsFormFields(study.id, { hydroPmax }));
-    }
-
-    return Promise.all(promises);
+    return setAdvancedParamsFormFields(study.id, dirtyValues);
   };
 
   const handleSubmitSuccessful = ({
@@ -74,17 +58,7 @@ function AdvancedParameters() {
     <Form
       key={study.id}
       config={{
-        defaultValues: async () => {
-          const [advancedParams, compatibilityParams] = await Promise.all([
-            getAdvancedParamsFormFields(study.id),
-            getCompatibilityParamsFormFields(study.id),
-          ]);
-
-          return {
-            ...advancedParams,
-            ...compatibilityParams,
-          };
-        },
+        defaultValues: () => getAdvancedParamsFormFields(study.id),
       }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}

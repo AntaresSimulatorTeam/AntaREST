@@ -24,7 +24,6 @@ import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import {
   HYDRO_HEURISTIC_POLICY_OPTIONS,
-  HYDRO_PMAX_OPTIONS,
   HYDRO_PRICING_MODE_OPTIONS,
   INITIAL_RESERVOIR_OPTIONS,
   POWER_FLUCTUATIONS_OPTIONS,
@@ -192,16 +191,6 @@ function Fields() {
           />
         )}
       </Fieldset>
-      {semver.gte(study.version, "9.2.0") && (
-        <Fieldset legend={t("study.configuration.advancedParameters.compatibility")}>
-          <SelectFE
-            label={t("study.configuration.advancedParameters.compatibility.hydro-pmax")}
-            options={HYDRO_PMAX_OPTIONS}
-            name="hydroPmax"
-            control={control}
-          />
-        </Fieldset>
-      )}
     </Box>
   );
 }
