@@ -30,9 +30,9 @@ DISTRICT_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("district_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
-    Column("output", Boolean, nullable=False, default=True),
-    Column("comments", String(500), nullable=False, default=""),
-    Column("apply_filter", String(50), nullable=False, default=DistrictApplyFilter.remove_all.value),
+    Column("output", Boolean, nullable=False),
+    Column("comments", String(500), nullable=False),
+    Column("apply_filter", String(50), nullable=False),
     ForeignKeyConstraint(
         ["study_id"],
         ["study.id"],
@@ -47,7 +47,6 @@ DISTRICT_AREA_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("district_id", String(255), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
-    # "add" ou "subtract" pour distinguer add_areas vs subtract_areas
     Column("mode", String(10), nullable=False, primary_key=True),
     ForeignKeyConstraint(
         ["study_id", "district_id"],

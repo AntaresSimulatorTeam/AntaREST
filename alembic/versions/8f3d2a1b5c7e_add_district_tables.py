@@ -24,9 +24,9 @@ def upgrade() -> None:
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("district_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("output", sa.Boolean(), nullable=False, server_default=sa.text("1")),
-        sa.Column("comments", sa.String(length=500), nullable=False, server_default=""),
-        sa.Column("apply_filter", sa.String(length=50), nullable=False, server_default="remove-all"),
+        sa.Column("output", sa.Boolean(), nullable=False),
+        sa.Column("comments", sa.String(length=500), nullable=False),
+        sa.Column("apply_filter", sa.String(length=50), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id"],
             ["study.id"],
