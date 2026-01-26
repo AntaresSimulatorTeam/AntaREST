@@ -692,47 +692,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
-    # AreaDao abstract methods for load/misc_gen/reserves/solar/wind
-    @override
-    def get_load(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_reserves(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_solar(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_wind(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_load(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_reserves(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_solar(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_wind(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
     # Hydro series methods
     @override
     def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:

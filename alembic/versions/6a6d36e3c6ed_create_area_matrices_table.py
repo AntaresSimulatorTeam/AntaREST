@@ -1,0 +1,89 @@
+"""create_area_matrices_table
+
+Revision ID: 6a6d36e3c6ed
+Revises: f3a153a9a048
+Create Date: 2026-01-26 10:45:36.111886
+
+"""
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision = '6a6d36e3c6ed'
+down_revision = 'f3a153a9a048'
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    study_id_col = sa.Column("study_id", sa.String(length=36), nullable=False)
+    area_id_col = sa.Column("area_id", sa.String(length=255), nullable=False)
+    matrix_id_col = sa.Column("matrix_id", sa.String(), nullable=False)
+
+    op.create_table(
+        "load",
+        study_id_col,  area_id_col, matrix_id_col,
+        sa.ForeignKeyConstraint(
+            ["study_id", "area_id"],
+            ["area.study_id", "area.area_id"],
+            name=op.f("fk_load_study_id_area_id_area"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("study_id", "area_id", name=op.f("pk_load")),
+    )
+
+    op.create_table(
+        "solar",
+        study_id_col,  area_id_col, matrix_id_col,
+        sa.ForeignKeyConstraint(
+            ["study_id", "area_id"],
+            ["area.study_id", "area.area_id"],
+            name=op.f("fk_solar_study_id_area_id_area"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("study_id", "area_id", name=op.f("pk_solar")),
+    )
+
+    op.create_table(
+        "wind",
+        study_id_col,  area_id_col, matrix_id_col,
+        sa.ForeignKeyConstraint(
+            ["study_id", "area_id"],
+            ["area.study_id", "area.area_id"],
+            name=op.f("fk_wind_study_id_area_id_area"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("study_id", "area_id", name=op.f("pk_wind")),
+    )
+
+    op.create_table(
+        "reserves",
+        study_id_col,  area_id_col, matrix_id_col,
+        sa.ForeignKeyConstraint(
+            ["study_id", "area_id"],
+            ["area.study_id", "area.area_id"],
+            name=op.f("fk_reserves_study_id_area_id_area"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("study_id", "area_id", name=op.f("pk_reserves")),
+    )
+
+    op.create_table(
+        "misc_gen",
+        study_id_col,  area_id_col, matrix_id_col,
+        sa.ForeignKeyConstraint(
+            ["study_id", "area_id"],
+            ["area.study_id", "area.area_id"],
+            name=op.f("fk_misc_gen_study_id_area_id_area"),
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("study_id", "area_id", name=op.f("pk_misc_gen")),
+    )
+
+def downgrade():
+    op.drop_table("load")
+    op.drop_table("solar")
+    op.drop_table("wind")
+    op.drop_table("reserves")
+    op.drop_table("misc_gen")
