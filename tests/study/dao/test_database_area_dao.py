@@ -28,13 +28,11 @@ def test_save_area_creates_area_with_default_ui(db_session: Session, dao: Databa
     """
     Test that save_area creates a new area with default UI for layer '0'.
     """
-    with db_session:
-        dao.save_area("Paris")
-        db_session.commit()
+    dao.save_area("Paris")
+
+    study_id = dao.get_study_id()
 
     with db_session:
-        study_id = dao.get_study_id()
-
         # Check area was created with both ID and original name
         stmt_area = select(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == "paris"))
         area_row = db_session.execute(stmt_area).fetchone()
@@ -57,30 +55,22 @@ def test_save_area_creates_area_with_default_ui(db_session: Session, dao: Databa
         assert ui_row.color_b == 44
 
 
-def test_save_area_raises_error_if_exists(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_save_area_raises_error_if_exists(dao: DatabaseStudyDao) -> None:
     """
     Test that save_area raises ValueError if area already exists.
     """
-    with db_session:
-        dao.save_area("Paris")
-        db_session.commit()
+    dao.save_area("Paris")
 
-    with db_session:
-        with pytest.raises(ValueError, match="already exists"):
-            dao.save_area("Paris")
+    with pytest.raises(ValueError, match="already exists"):
+        dao.save_area("Paris")
 
 
 def test_delete_area_removes_area_and_ui(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that delete_area removes the area and cascades to area_ui.
     """
-    with db_session:
-        dao.save_area("Paris")
-        db_session.commit()
-
-    with db_session:
-        dao.delete_area("paris")
-        db_session.commit()
+    dao.save_area("Paris")
+    dao.delete_area("paris")
 
     with db_session:
         # Check area was deleted
@@ -91,193 +81,162 @@ def test_delete_area_removes_area_and_ui(db_session: Session, dao: DatabaseStudy
         assert area_row is None
 
 
-def test_delete_area_raises_error_if_not_exists(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_delete_area_raises_error_if_not_exists(dao: DatabaseStudyDao) -> None:
     """
     Test that delete_area raises AreaNotFound if area doesn't exist.
     """
-    with db_session:
-        with pytest.raises(AreaNotFound):
-            dao.delete_area("nonexistent")
+    with pytest.raises(AreaNotFound):
+        dao.delete_area("nonexistent")
 
 
-def test_get_all_areas_info_returns_areas(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_get_all_areas_info_returns_areas(dao: DatabaseStudyDao) -> None:
     """
     Test that get_all_areas_info returns all areas for a study with original names preserved.
     """
-    with db_session:
-        dao.save_area("Paris")
-        dao.save_area("London")
-        dao.save_area("Berlin")
-        db_session.commit()
+    dao.save_area("Paris")
+    dao.save_area("London")
+    dao.save_area("Berlin")
 
-    with db_session:
-        areas = dao.get_all_areas_info()
-        assert len(areas) == 3
-        # Check IDs (lowercase/normalized)
-        area_ids = {a.id for a in areas}
-        assert area_ids == {"paris", "london", "berlin"}
-        # Check original names are preserved
-        area_names = {a.name for a in areas}
-        assert area_names == {"Paris", "London", "Berlin"}
-        # All areas should have thermals=None for now
-        assert all(a.thermals is None for a in areas)
+    areas = dao.get_all_areas_info()
+    assert len(areas) == 3
+    # Check IDs (lowercase/normalized)
+    area_ids = {a.id for a in areas}
+    assert area_ids == {"paris", "london", "berlin"}
+    # Check original names are preserved
+    area_names = {a.name for a in areas}
+    assert area_names == {"Paris", "London", "Berlin"}
+    # All areas should have thermals=None for now
+    assert all(a.thermals is None for a in areas)
 
 
-def test_get_area_ui_returns_ui_for_layer(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_get_area_ui_returns_ui_for_layer(dao: DatabaseStudyDao) -> None:
     """
     Test that get_area_ui returns UI data for a specific layer.
     """
-    with db_session:
-        dao.save_area("Paris")
-        db_session.commit()
+    dao.save_area("Paris")
 
-    with db_session:
-        # Get default UI
-        ui = dao.get_area_ui("paris", "0")
-        assert ui.x == 0
-        assert ui.y == 0
-        assert ui.color_rgb == (230, 108, 44)
+    # Get default UI
+    ui = dao.get_area_ui("paris", "0")
+    assert ui.x == 0
+    assert ui.y == 0
+    assert ui.color_rgb == (230, 108, 44)
 
 
-def test_get_area_ui_falls_back_to_layer_zero(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_get_area_ui_falls_back_to_layer_zero(dao: DatabaseStudyDao) -> None:
     """
     Test that get_area_ui falls back to layer '0' if requested layer doesn't exist.
     """
-    with db_session:
-        dao.save_area("Paris")
-        db_session.commit()
+    dao.save_area("Paris")
 
-    with db_session:
-        # Request non-existent layer, should fall back to layer "0"
-        ui = dao.get_area_ui("paris", "99")
-        assert ui.x == 0
-        assert ui.y == 0
-        assert ui.color_rgb == (230, 108, 44)
+    # Request non-existent layer, should fall back to layer "0"
+    ui = dao.get_area_ui("paris", "99")
+    assert ui.x == 0
+    assert ui.y == 0
+    assert ui.color_rgb == (230, 108, 44)
 
 
-def test_get_area_ui_raises_error_if_area_not_exists(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_get_area_ui_raises_error_if_area_not_exists(dao: DatabaseStudyDao) -> None:
     """
     Test that get_area_ui raises AreaNotFound if area doesn't exist.
     """
-    with db_session:
-        with pytest.raises(AreaNotFound):
-            dao.get_area_ui("nonexistent")
+    with pytest.raises(AreaNotFound):
+        dao.get_area_ui("nonexistent")
 
 
-def test_save_area_ui_updates_existing(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_save_area_ui_updates_existing(dao: DatabaseStudyDao) -> None:
     """
     Test that save_area_ui updates existing UI data.
     """
-    with db_session:
-        dao.save_area("Paris")
-        db_session.commit()
+    dao.save_area("Paris")
 
-    with db_session:
-        # Update UI
-        new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
-        dao.save_area_ui("paris", "0", new_ui)
-        db_session.commit()
+    # Update UI
+    new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
+    dao.save_area_ui("paris", "0", new_ui)
 
-    with db_session:
-        # Verify update
-        ui = dao.get_area_ui("paris", "0")
-        assert ui.x == 100
-        assert ui.y == 200
-        assert ui.color_rgb == (255, 0, 0)
+    # Verify update
+    ui = dao.get_area_ui("paris", "0")
+    assert ui.x == 100
+    assert ui.y == 200
+    assert ui.color_rgb == (255, 0, 0)
 
 
-def test_save_area_ui_creates_new_layer(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_save_area_ui_creates_new_layer(dao: DatabaseStudyDao) -> None:
     """
     Test that save_area_ui creates UI for a new layer.
     """
-    with db_session:
-        dao.save_area("Paris")
-        db_session.commit()
+    dao.save_area("Paris")
 
-    with db_session:
-        # Create UI for layer "1"
-        layer1_ui = AreaUI(x=300, y=400, color_rgb=(0, 255, 0))
-        dao.save_area_ui("paris", "1", layer1_ui)
-        db_session.commit()
+    # Create UI for layer "1"
+    layer1_ui = AreaUI(x=300, y=400, color_rgb=(0, 255, 0))
+    dao.save_area_ui("paris", "1", layer1_ui)
 
-    with db_session:
-        # Verify layer "0" is unchanged
-        ui_layer0 = dao.get_area_ui("paris", "0")
-        assert ui_layer0.x == 0
-        assert ui_layer0.y == 0
+    # Verify layer "0" is unchanged
+    ui_layer0 = dao.get_area_ui("paris", "0")
+    assert ui_layer0.x == 0
+    assert ui_layer0.y == 0
 
-        # Verify layer "1" was created
-        ui_layer1 = dao.get_area_ui("paris", "1")
-        assert ui_layer1.x == 300
-        assert ui_layer1.y == 400
-        assert ui_layer1.color_rgb == (0, 255, 0)
+    # Verify layer "1" was created
+    ui_layer1 = dao.get_area_ui("paris", "1")
+    assert ui_layer1.x == 300
+    assert ui_layer1.y == 400
+    assert ui_layer1.color_rgb == (0, 255, 0)
 
 
-def test_save_area_ui_raises_error_if_area_not_exists(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_save_area_ui_raises_error_if_area_not_exists(dao: DatabaseStudyDao) -> None:
     """
     Test that save_area_ui raises AreaNotFound if area doesn't exist.
     """
-    with db_session:
-        new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
-        with pytest.raises(AreaNotFound):
-            dao.save_area_ui("nonexistent", "0", new_ui)
+    new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
+    with pytest.raises(AreaNotFound):
+        dao.save_area_ui("nonexistent", "0", new_ui)
 
 
-def test_get_all_areas_ui_info_returns_all_layers(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_get_all_areas_ui_info_returns_all_layers(dao: DatabaseStudyDao) -> None:
     """
     Test that get_all_areas_ui_info returns UI data for all areas and layers.
     """
-    with db_session:
-        dao.save_area("Paris")
-        dao.save_area("London")
-        db_session.commit()
+    dao.save_area("Paris")
+    dao.save_area("London")
 
-    with db_session:
-        # Add UI for different layers
-        dao.save_area_ui("paris", "1", AreaUI(x=100, y=100, color_rgb=(255, 0, 0)))
-        dao.save_area_ui("paris", "2", AreaUI(x=200, y=200, color_rgb=(0, 255, 0)))
-        dao.save_area_ui("london", "1", AreaUI(x=150, y=150, color_rgb=(0, 0, 255)))
-        db_session.commit()
+    # Add UI for different layers
+    dao.save_area_ui("paris", "1", AreaUI(x=100, y=100, color_rgb=(255, 0, 0)))
+    dao.save_area_ui("paris", "2", AreaUI(x=200, y=200, color_rgb=(0, 255, 0)))
+    dao.save_area_ui("london", "1", AreaUI(x=150, y=150, color_rgb=(0, 0, 255)))
 
-    with db_session:
-        all_ui = dao.get_all_areas_ui_info()
-        assert len(all_ui) == 2
-        assert "paris" in all_ui
-        assert "london" in all_ui
+    all_ui = dao.get_all_areas_ui_info()
+    assert len(all_ui) == 2
+    assert "paris" in all_ui
+    assert "london" in all_ui
 
-        # Check Paris UI data
-        paris_ui = all_ui["paris"]
-        assert paris_ui.ui["x"] == 0
-        assert paris_ui.ui["y"] == 0
-        assert paris_ui.ui["layers"] == "1 2"
-        assert paris_ui.layer_x == {"0": 0, "1": 100, "2": 200}
-        assert paris_ui.layer_y == {"0": 0, "1": 100, "2": 200}
-        assert paris_ui.layer_color == {"0": "230, 108, 44", "1": "255, 0, 0", "2": "0, 255, 0"}
+    # Check Paris UI data
+    paris_ui = all_ui["paris"]
+    assert paris_ui.ui["x"] == 0
+    assert paris_ui.ui["y"] == 0
+    assert paris_ui.ui["layers"] == "1 2"
+    assert paris_ui.layer_x == {"0": 0, "1": 100, "2": 200}
+    assert paris_ui.layer_y == {"0": 0, "1": 100, "2": 200}
+    assert paris_ui.layer_color == {"0": "230, 108, 44", "1": "255, 0, 0", "2": "0, 255, 0"}
 
-        # Check London UI data
-        london_ui = all_ui["london"]
-        assert london_ui.ui["x"] == 0
-        assert london_ui.ui["y"] == 0
-        assert london_ui.ui["layers"] == "1"
-        assert london_ui.layer_x == {"0": 0, "1": 150}
-        assert london_ui.layer_y == {"0": 0, "1": 150}
-        assert london_ui.layer_color == {"0": "230, 108, 44", "1": "0, 0, 255"}
+    # Check London UI data
+    london_ui = all_ui["london"]
+    assert london_ui.ui["x"] == 0
+    assert london_ui.ui["y"] == 0
+    assert london_ui.ui["layers"] == "1"
+    assert london_ui.layer_x == {"0": 0, "1": 150}
+    assert london_ui.layer_y == {"0": 0, "1": 150}
+    assert london_ui.layer_color == {"0": "230, 108, 44", "1": "0, 0, 255"}
 
 
 def test_save_layer_areas_adds_and_removes(db_session: Session, dao: DatabaseStudyDao) -> None:
     """
     Test that save_layer_areas adds and removes areas from a layer.
     """
-    with db_session:
-        dao.save_area("Paris")
-        dao.save_area("London")
-        dao.save_area("Berlin")
-        db_session.commit()
+    dao.save_area("Paris")
+    dao.save_area("London")
+    dao.save_area("Berlin")
 
-    with db_session:
-        # Associate Paris and London with layer "1"
-        dao.save_layer_areas("1", ["paris", "london"])
-        db_session.commit()
+    # Associate Paris and London with layer "1"
+    dao.save_layer_areas("1", ["paris", "london"])
 
     with db_session:
         # Verify Paris and London have layer "1"
@@ -297,10 +256,8 @@ def test_save_layer_areas_adds_and_removes(db_session: Session, dao: DatabaseStu
         berlin_layer1 = db_session.execute(stmt_ui).fetchone()
         assert berlin_layer1 is None
 
-    with db_session:
-        # Update layer "1" to only have Berlin
-        dao.save_layer_areas("1", ["berlin"])
-        db_session.commit()
+    # Update layer "1" to only have Berlin
+    dao.save_layer_areas("1", ["berlin"])
 
     with db_session:
         # Verify Paris and London no longer have layer "1"
@@ -330,20 +287,15 @@ def test_save_layer_areas_copies_default_ui(db_session: Session, dao: DatabaseSt
     """
     Test that save_layer_areas copies default UI from layer '0' when adding areas to a new layer.
     """
-    with db_session:
-        dao.save_area("Paris")
-        # Update layer "0" UI to non-default values
-        dao.save_area_ui("paris", "0", AreaUI(x=50, y=75, color_rgb=(100, 150, 200)))
-        db_session.commit()
+    dao.save_area("Paris")
+    # Update layer "0" UI to non-default values
+    dao.save_area_ui("paris", "0", AreaUI(x=50, y=75, color_rgb=(100, 150, 200)))
 
-    with db_session:
-        # Add Paris to layer "1"
-        dao.save_layer_areas("1", ["paris"])
-        db_session.commit()
+    # Add Paris to layer "1"
+    dao.save_layer_areas("1", ["paris"])
 
-    with db_session:
-        # Verify layer "1" copied UI from layer "0"
-        layer1_ui = dao.get_area_ui("paris", "1")
-        assert layer1_ui.x == 50
-        assert layer1_ui.y == 75
-        assert layer1_ui.color_rgb == (100, 150, 200)
+    # Verify layer "1" copied UI from layer "0"
+    layer1_ui = dao.get_area_ui("paris", "1")
+    assert layer1_ui.x == 50
+    assert layer1_ui.y == 75
+    assert layer1_ui.color_rgb == (100, 150, 200)
