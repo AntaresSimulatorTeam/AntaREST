@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -201,6 +201,18 @@ class ThermalCluster(AntaresBaseModel):
     variable_o_m_cost: Optional[Cost] = None
 
 
+def _creation_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+    schema["example"] = ThermalClusterCreation(
+        group="Gas",
+        name="Gas Cluster XY",
+        enabled=False,
+        unit_count=100,
+        nominal_capacity=1000.0,
+        gen_ts="use global",
+        co2=7.0,
+    ).model_dump(mode="json")
+
+
 class ThermalClusterCreation(AntaresBaseModel):
     """
     Represents a creation request for a thermal cluster.
@@ -209,22 +221,9 @@ class ThermalClusterCreation(AntaresBaseModel):
     model will be used.
     """
 
-    class Config:
-        alias_generator = to_camel
-        extra = "forbid"
-        populate_by_name = True
-
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = ThermalClusterCreation(
-                group="Gas",
-                name="Gas Cluster XY",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                gen_ts="use global",
-                co2=7.0,
-            ).model_dump(mode="json")
+    model_config = ConfigDict(
+        alias_generator=to_camel, extra="forbid", populate_by_name=True, json_schema_extra=_creation_json_schema_extra
+    )
 
     name: ItemName
     unit_count: Optional[UnitCount] = None
@@ -271,6 +270,17 @@ class ThermalClusterCreation(AntaresBaseModel):
         return ThermalClusterCreation.model_validate(cluster.model_dump(mode="json", exclude={"id"}, exclude_none=True))
 
 
+def _update_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+    schema["example"] = ThermalClusterUpdate(
+        group="Gas",
+        enabled=False,
+        unit_count=100,
+        nominal_capacity=1000.0,
+        gen_ts="use global",
+        co2=7.0,
+    ).model_dump(mode="json")
+
+
 class ThermalClusterUpdate(AntaresBaseModel):
     """
     Represents an update of a thermal cluster.
@@ -278,21 +288,9 @@ class ThermalClusterUpdate(AntaresBaseModel):
     Only not-None fields will be used to update the thermal cluster.
     """
 
-    class Config:
-        alias_generator = to_camel
-        extra = "forbid"
-        populate_by_name = True
-
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = ThermalClusterUpdate(
-                group="Gas",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                gen_ts="use global",
-                co2=7.0,
-            ).model_dump(mode="json")
+    model_config = ConfigDict(
+        alias_generator=to_camel, extra="forbid", populate_by_name=True, json_schema_extra=_update_json_schema_extra
+    )
 
     @model_validator(mode="before")
     @classmethod

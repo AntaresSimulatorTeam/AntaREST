@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,22 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import MagicMock, call
+from unittest.mock import AsyncMock, call
 
 from starlette.websockets import WebSocket
-from typing_extensions import override
 
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo
 from antarest.eventbus.web import ConnectionManager, WebsocketMessage, WebsocketMessageAction
-
-
-class AsyncMock(MagicMock):
-    @override
-    async def __call__(self, *args: Any, **kwargs: Any) -> None:
-        return super(AsyncMock, self).__call__(*args, **kwargs)
 
 
 class ConnectionManagerTest(IsolatedAsyncioTestCase):

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, RenewableClusterConfigNotFound, RenewableClusterNotFound
@@ -92,7 +92,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
             return False
 
     @override
-    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "renewables", "series", area_id, renewable_id, "series"])
 
     @override

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,11 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import { useDebouncedField } from "@/hooks/useDebouncedField";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { Box, IconButton, Tooltip } from "@mui/material";
@@ -24,10 +19,24 @@ import startCase from "lodash/startCase";
 import * as R from "ramda";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import { useDebouncedField } from "@/hooks/useDebouncedField";
+import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
 import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatrixButton";
-import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import { DataType, matchesSearchTerm, Timestep } from "../utils";
+import {
+  type DataType,
+  type Frequency,
+  type MonteCarloMode,
+  matchesSearchTerm,
+  type OutputItemType,
+} from "../utils";
+import ClusterSelector from "./ClusterSelector";
+import MonteCarloModeSelector from "./MonteCarloModeSelector";
+import VariableSelector from "./VariableSelector";
 
 interface ColumnHeader {
   variable: string;
@@ -55,33 +64,51 @@ const defaultFilters = {
 } as const;
 
 interface Props {
+  mcMode: MonteCarloMode;
+  setMcMode: (mode: MonteCarloMode) => void;
   year: number;
   setYear: (year: number) => void;
   dataType: DataType;
   setDataType: (dataType: DataType) => void;
-  timestep: Timestep;
-  setTimestep: (timestep: Timestep) => void;
+  frequency: Frequency;
+  setFrequency: (frequency: Frequency) => void;
   maxYear: number;
   studyId: string;
   path: string;
   colHeaders: string[][];
   onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
   onToggleFilter: () => void;
+  variablesMetadata: VariablesListDTO | null;
+  itemType: OutputItemType;
+  selectedItemId: string;
+  selectedVariable: string;
+  onVariableSelect: (variable: string) => void;
+  selectedClusterId: string;
+  onClusterSelect: (clusterId: string) => void;
 }
 
 function ResultFilters({
+  mcMode,
+  setMcMode,
   year,
   setYear,
   dataType,
   setDataType,
-  timestep,
-  setTimestep,
+  frequency,
+  setFrequency,
   maxYear,
   studyId,
   path,
   colHeaders,
   onColHeadersChange,
   onToggleFilter,
+  variablesMetadata,
+  itemType,
+  selectedItemId,
+  selectedVariable,
+  onVariableSelect,
+  selectedClusterId,
+  onClusterSelect,
 }: Props) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -231,40 +258,16 @@ function ResultFilters({
     },
   ] as const;
 
+  const isVariablePerVariable = mcMode === "variable-per-variable";
+  const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
+  const shouldShowClusterSelector =
+    isVariablePerVariable && isClusterDataType && itemType === "areas";
+
   // Data filters (requiring API calls, refetch new result)
   const RESULT_FILTERS = [
     {
-      id: "mc",
-      field: (
-        <>
-          <BooleanFE
-            label={t("study.results.mc")}
-            value={year <= 0}
-            trueText="Synthesis"
-            falseText="Year by year"
-            size="extra-small"
-            margin="dense"
-            onChange={(event) => setYear(event.target.value ? -1 : 1)}
-            sx={{ minWidth: 94 }}
-          />
-          {localYear > 0 && (
-            <NumberFE
-              label={t("global.year")}
-              size="extra-small"
-              value={localYear}
-              slotProps={{
-                htmlInput: {
-                  min: 1,
-                  max: maxYear,
-                },
-              }}
-              onChange={handleYearChange}
-              margin="dense"
-              sx={{ minWidth: 65 }}
-            />
-          )}
-        </>
-      ),
+      id: "mcMode",
+      field: <MonteCarloModeSelector value={mcMode} onChange={setMcMode} />,
     },
     {
       id: "display",
@@ -273,33 +276,80 @@ function ResultFilters({
           label={t("study.results.display")}
           value={dataType}
           options={[
-            { value: DataType.General, label: "General values" },
-            { value: DataType.Thermal, label: "Thermal plants" },
-            { value: DataType.Renewable, label: "Ren. clusters" },
-            { value: DataType.Record, label: "RecordYears" },
-            { value: DataType.STStorage, label: "ST Storages" },
+            { value: "values", label: "General values" },
+            { value: "details", label: "Thermal plants" },
+            { value: "details-res", label: "Ren. clusters" },
+            { value: "id", label: "RecordYears" },
+            { value: "details-STstorage", label: "ST Storages" },
           ]}
           size="extra-small"
-          onChange={(event) => setDataType(event?.target.value as DataType)}
+          onChange={(event) => setDataType(event.target.value)}
           margin="dense"
         />
       ),
     },
     {
+      id: "cluster",
+      field: shouldShowClusterSelector ? (
+        <ClusterSelector
+          variablesMetadata={variablesMetadata}
+          dataType={dataType}
+          selectedItemId={selectedItemId}
+          selectedClusterId={selectedClusterId}
+          onClusterSelect={onClusterSelect}
+        />
+      ) : null,
+    },
+    {
+      id: "variable",
+      field: isVariablePerVariable ? (
+        <VariableSelector
+          variablesMetadata={variablesMetadata}
+          dataType={dataType}
+          itemType={itemType}
+          selectedItemId={selectedItemId}
+          selectedVariable={selectedVariable}
+          onVariableSelect={onVariableSelect}
+          selectedClusterId={selectedClusterId}
+        />
+      ) : null,
+    },
+    {
+      id: "year",
+      field:
+        mcMode === "mc-ind" ? (
+          <NumberFE
+            label={t("global.year")}
+            size="extra-small"
+            value={localYear}
+            slotProps={{
+              htmlInput: {
+                min: 1,
+                max: maxYear,
+              },
+            }}
+            onChange={handleYearChange}
+            margin="dense"
+            sx={{ minWidth: 65 }}
+          />
+        ) : null,
+    },
+
+    {
       id: "temporality",
       field: (
         <SelectFE
           label={t("study.results.temporality")}
-          value={timestep}
+          value={frequency}
           options={[
-            { value: Timestep.Hourly, label: "Hourly" },
-            { value: Timestep.Daily, label: "Daily" },
-            { value: Timestep.Weekly, label: "Weekly" },
-            { value: Timestep.Monthly, label: "Monthly" },
-            { value: Timestep.Annual, label: "Annual" },
+            { value: "hourly", label: "Hourly" },
+            { value: "daily", label: "Daily" },
+            { value: "weekly", label: "Weekly" },
+            { value: "monthly", label: "Monthly" },
+            { value: "annual", label: "Annual" },
           ]}
           size="extra-small"
-          onChange={(event) => setTimestep(event?.target.value as Timestep)}
+          onChange={(event) => setFrequency(event.target.value)}
           margin="dense"
           sx={{ minWidth: 94 }}
         />
@@ -337,9 +387,8 @@ function ResultFilters({
               flex: 1,
             }}
           >
-            {COLUMN_FILTERS.map(({ id, field }) => (
-              <Fragment key={id}>{field}</Fragment>
-            ))}
+            {!isVariablePerVariable &&
+              COLUMN_FILTERS.map(({ id, field }) => <Fragment key={id}>{field}</Fragment>)}
             {RESULT_FILTERS.map(({ id, field }) => (
               <Fragment key={id}>{field}</Fragment>
             ))}
@@ -350,7 +399,8 @@ function ResultFilters({
                 <FilterListIcon />
               </IconButton>
             </Tooltip>
-            <DownloadMatrixButton studyId={studyId} path={path} />
+            {/* TODO: Export functionality for variable per variable mode will be implemented later */}
+            {!isVariablePerVariable && <DownloadMatrixButton studyId={studyId} path={path} />}
           </Box>
         </Box>
       </CustomScrollbar>

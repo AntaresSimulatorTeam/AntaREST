@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -25,19 +25,20 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
-from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
+from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.study.main import build_study_service
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.main import add_study_routes
+from antarest.study.output.output_model import OutputVariablesInformation
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
-from antarest.study.storage.output_model import OutputVariablesInformation
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -55,7 +56,9 @@ ADMIN = JWTUser(
 
 
 @pytest.fixture
-def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
+def client(
+    storage_service: StudyService, output_service: OutputService, db_engine: Engine, config: Config
+) -> TestClient:
     app = FastAPI(title=__name__)
     app.add_middleware(
         DBSessionMiddleware,
@@ -63,17 +66,11 @@ def client(storage_service: StudyService, db_engine: Engine) -> TestClient:
         session_args={"autocommit": False, "autoflush": False},
     )
     build_ctxt = create_app_ctxt(app)
-    build_study_service(
-        build_ctxt,
-        cache=Mock(),
-        user_service=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        matrix_service=Mock(spec=MatrixService),
-        blob_service=Mock(spec=BlobService),
-        config=storage_service.storage_service.raw_study_service.config,
+    add_study_routes(build_ctxt, storage_service, Mock(), config)
+    build_ctxt.api_root.include_router(
+        create_output_routes(output_service, storage_service.file_transfer_manager, config)
     )
+
     return TestClient(build_ctxt.build())
 
 
@@ -186,7 +183,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/series/de/mod",
             {
-                "columns": [0, 1, 2],
+                "columns": ["0", "1", "2"],
                 "index": list(range(365)),
                 "data": [[0.0]] * 365,
             },
@@ -199,7 +196,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/common/capacity/reservoir_fr",
             {
-                "columns": [0, 1, 2],
+                "columns": ["0", "1", "2"],
                 "index": list(range(365)),
                 "data": [[0, 0.5, 1]] * 365,
             },
@@ -207,7 +204,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/thermal/series/fr/05_nuclear/series",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[2000]] * 8760,
             },
@@ -222,7 +219,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/links/fr/it",
             {
-                "columns": list(range(8)),
+                "columns": ["0", "1", "2", "3", "4", "5", "6", "7"],
                 "index": list(range(8760)),
                 "data": [[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760,
             },
@@ -240,7 +237,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[i % 168 * 100] for i in range(8760)],
             },
@@ -248,7 +245,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
             {
-                "columns": [0, 1, 2, 3, 4, 5, 6, 7],
+                "columns": ["0", "1", "2", "3", "4", "5", "6", "7"],
                 "index": list(range(8760)),
                 "data": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760,
             },
@@ -256,7 +253,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/reserves/fr",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
@@ -265,7 +262,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/solar/series/solar_fr",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
@@ -274,7 +271,7 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/wind/series/wind_fr",
             {
-                "columns": [0],
+                "columns": ["0"],
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
@@ -419,10 +416,6 @@ def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_out
             f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/info/general/version",
             700,
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=output/20201014-1430adq-2/about-the-study/areas",
-            b"DE\r\nES\r\nFR\r\nIT\r\n",
-        ),
     ],
 )
 def test_sta_mini_output(storage_service: StudyService, url: str, expected_output: Any) -> None:
@@ -440,18 +433,17 @@ def test_sta_mini_output(storage_service: StudyService, url: str, expected_outpu
         (
             f"/v1/studies/{UUID}/raw?path=user/expansion/settings",
             {
-                "optimality_gap": 1,
-                "max_iteration": "+Inf",
-                "uc_type": '"expansion_fast"',
-                "master": '"integer"',
-                "yearly-weights": "None",
-                "additional-constraints": "None",
-                "relaxed_optimality_gap": 0.00001,
-                # legacy attributes from version < 800
-                "cut-type": '"average"',
-                "ampl.solver": '"cbc"',
-                "ampl.presolve": 0,
-                "ampl.solve_bounds_frequency": 1000000,
+                "master": "relaxed",
+                "uc_type": "expansion_fast",
+                "optimality_gap": 1000000,
+                "relative_gap": 1e-06,
+                "relaxed_optimality_gap": 1e-05,
+                "max_iteration": 200,
+                "solver": "Xpress",
+                "log_level": 1,
+                "separation_parameter": 0.5,
+                "batch_size": 96,
+                "timelimit": 10000,
             },
         ),
         (
@@ -494,7 +486,7 @@ def test_sta_mini_copy(
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
     # The study is copied; therefore, it was normalized
-    assert "matrix://ef73d0226d966d7c085e03bf37f26986fb7bfaba0977f8f60acfa9109ded8c1f" == link_url_destination
+    assert "ef73d0226d966d7c085e03bf37f26986fb7bfaba0977f8f60acfa9109ded8c1f" == link_url_destination
 
     # We should first denormalize the copied study to ensure it's the same exact study.
     denormalized_path = tmp_path / "denormalized_study"
@@ -618,18 +610,18 @@ def test_sta_mini_filter(storage_service: StudyService, url: str, expected_outpu
     )
 
 
-def _add_study_in_db(output_service: OutputService) -> None:
+def _add_study_in_db(study_service: StudyService) -> None:
     """Adds the study UUID inside the DB to avoid ForeginKey issues"""
     with db():
-        study = output_service._study_service.get_study(UUID)
+        study = study_service.get_study(UUID)
         db.session.add(study)
         db.session.commit()
 
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_nominal_case(output_service: OutputService) -> None:
-    _add_study_in_db(output_service)
+def test_sta_mini_output_variables_nominal_case(storage_service: StudyService, output_service: OutputService) -> None:
+    _add_study_in_db(storage_service)
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
     assert variables.model_dump() == {
         "area": [
@@ -686,17 +678,17 @@ def test_sta_mini_output_variables_nominal_case(output_service: OutputService) -
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_mc_ind(output_service: OutputService) -> None:
-    _add_study_in_db(output_service)
+def test_sta_mini_output_variables_no_mc_ind(storage_service: StudyService, output_service: OutputService) -> None:
+    _add_study_in_db(storage_service)
     res = output_service.get_output_variables_information(UUID, "20201014-1427eco")
     assert res == OutputVariablesInformation(area=[], link=[])
 
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_links(output_service: OutputService) -> None:
-    _add_study_in_db(output_service)
-    study_path = Path(output_service._study_service.get_study(UUID).path)
+def test_sta_mini_output_variables_no_links(storage_service: StudyService, output_service: OutputService) -> None:
+    _add_study_in_db(storage_service)
+    study_path = Path(storage_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")
@@ -706,9 +698,9 @@ def test_sta_mini_output_variables_no_links(output_service: OutputService) -> No
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables_no_areas(output_service: OutputService) -> None:
-    _add_study_in_db(output_service)
-    study_path = Path(output_service._study_service.get_study(UUID).path)
+def test_sta_mini_output_variables_no_areas(storage_service: StudyService, output_service: OutputService) -> None:
+    _add_study_in_db(storage_service)
+    study_path = Path(storage_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)

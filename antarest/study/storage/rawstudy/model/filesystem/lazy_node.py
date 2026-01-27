@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,24 +10,11 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, Tuple
-from zipfile import ZipFile
+from typing import Generic, List, Optional
 
 from typing_extensions import override
 
-from antarest.core.utils.utils import current_time
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
-
-
-@dataclass
-class SimpleCache:
-    value: Any
-    expiration_date: datetime
 
 
 class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
@@ -35,41 +22,6 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     A "lazy" node does not return its full content but a summarized, short representation
     when in the context of a tree expansion (typically getting children of a folder node).
     """
-
-    ZIP_FILELIST_CACHE: Dict[str, SimpleCache] = {}
-
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-    ) -> None:
-        self.matrix_mapper = matrix_mapper
-        super().__init__(config)
-
-    def _get_real_file_path(
-        self,
-    ) -> Tuple[Path, Any]:
-        tmp_dir = None
-        if self.config.archive_path:
-            path, tmp_dir = self._extract_file_to_tmp_dir(self.config.archive_path)
-        else:
-            path = self.config.path
-        return path, tmp_dir
-
-    def file_exists(self) -> bool:
-        if self.config.archive_path:
-            str_zipped_path = str(self.config.archive_path)
-            inside_zip_path = str(self.config.path)[len(str_zipped_path[:-4]) + 1 :]
-            str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
-            if str_zipped_path not in LazyNode.ZIP_FILELIST_CACHE:
-                with ZipFile(file=self.config.archive_path) as zip_file:
-                    LazyNode.ZIP_FILELIST_CACHE[str_zipped_path] = SimpleCache(
-                        value=zip_file.namelist(),
-                        expiration_date=current_time() + timedelta(hours=2),
-                    )
-            return str_inside_zip_path in LazyNode.ZIP_FILELIST_CACHE[str_zipped_path].value
-        else:
-            return self.config.path.exists()
 
     @override
     def get(

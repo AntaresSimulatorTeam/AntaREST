@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,8 +12,7 @@
 
 from typing import Any, Dict, List, Optional, Sequence
 
-import pandas as pd
-
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_8_2
@@ -45,7 +44,7 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
 
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
-        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=pd.DataFrame(matrix))
+        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(matrix))
     elif isinstance(matrix, str):
         if not matrix:
             raise ValueError("The matrix ID cannot be empty")

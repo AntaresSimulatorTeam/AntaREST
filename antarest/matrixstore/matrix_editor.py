@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,7 +14,7 @@ import functools
 import operator
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel
@@ -37,16 +37,17 @@ class MatrixSlice(AntaresBaseModel):
     column_from: int
     column_to: int
 
-    class Config:
-        extra = "forbid"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "example": {
                 "column_from": 5,
                 "column_to": 8,
                 "row_from": 0,
                 "row_to": 8760,
             }
-        }
+        },
+    )
 
     @model_validator(mode="before")
     def check_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -113,21 +114,21 @@ class Operation(AntaresBaseModel):
     operation: str = Field(pattern=r"[=/*+-]|ABS")
     value: float
 
-    class Config:
-        extra = "forbid"
-        json_schema_extra = {"example": {"operation": "=", "value": 120.0}}
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"example": {"operation": "=", "value": 120.0}},
+    )
 
     # noinspection SpellCheckingInspection
     def compute(self, x: Any, use_coords: bool = False) -> Any:
         """
         Computes the operation on the given value or matrix.
         """
-        if use_coords:
+        if use_coords or self.operation != "=":
             return OPERATIONS[self.operation](x, self.value)  # type: ignore
-        if self.operation == "=":
-            x.loc[~x.isnull()] = self.value
-            return x
-        return OPERATIONS[self.operation](x, self.value)  # type: ignore
+
+        x.loc[~x.isnull()] = self.value
+        return x
 
     @override
     def __str__(self) -> str:
@@ -160,16 +161,17 @@ class MatrixEditInstruction(AntaresBaseModel):
     coordinates: Optional[List[Tuple[int, int]]] = None
     operation: Operation
 
-    class Config:
-        extra = "forbid"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "example": {
                 "column_from": 5,
                 "column_to": 8,
                 "row_from": 0,
                 "row_to": 8760,
             }
-        }
+        },
+    )
 
     @model_validator(mode="before")
     def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:

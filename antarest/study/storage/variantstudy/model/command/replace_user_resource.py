@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -77,10 +77,6 @@ class ReplaceUserResource(ICommand):
             args={"data": self.data.model_dump(mode="json", exclude_none=True)},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []
 
     @override
     def get_inner_blobs(self) -> List[str]:

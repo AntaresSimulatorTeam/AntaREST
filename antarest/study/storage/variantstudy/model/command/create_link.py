@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -26,6 +26,7 @@ from antarest.study.storage.variantstudy.business.utils import strip_matrix_prot
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    InnerMatrices,
     command_failed,
     command_succeeded,
 )
@@ -85,13 +86,13 @@ class AbstractLinkCommand(AntaresBaseModel, extra="forbid"):
             study_version=self.study_version,
         )
 
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> InnerMatrices:
         list_matrices = []
         for attr in MATRIX_ATTRIBUTES:
             if value := getattr(self, attr, None):
                 assert_this(isinstance(value, str))
                 list_matrices.append(strip_matrix_protocol(value))
-        return list_matrices
+        return InnerMatrices(matrices=list_matrices)
 
 
 class CreateLink(AbstractLinkCommand, ICommand):

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import PurePosixPath
-from typing import List, Optional
+from typing import Optional
 
 from typing_extensions import override
 
@@ -54,7 +54,3 @@ class RemoveUserResource(ICommand):
             args={"data": self.data.model_dump(mode="json")},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

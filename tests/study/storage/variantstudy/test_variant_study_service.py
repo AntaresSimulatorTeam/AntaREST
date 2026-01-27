@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -303,7 +303,7 @@ class TestVariantStudyService:
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():
-                    variant = db.session.query(Study).get(variant_study.id)
+                    variant = db.session.get(Study, variant_study.id)
                     variant.last_access = datetime.datetime(2023, 12, 31)
                     variant.updated_at = datetime.datetime(2023, 12, 31)
                     db.session.merge(variant)

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,10 +20,10 @@ import type {
 
 export type TimeSeriesConfigValues = Record<
   TimeSeriesTypeValue,
-  TimeSeriesTypeConfig & { enabled: boolean }
+  TimeSeriesTypeConfig & { enabled: boolean; outageDetails?: boolean }
 >;
 
 export const defaultValues = Object.values(TimeSeriesType).reduce((acc, type) => {
-  acc[type] = { number: 1, enabled: false };
+  acc[type] = { number: 1, enabled: false, outageDetails: false };
   return acc;
 }, {} as TimeSeriesConfigValues);

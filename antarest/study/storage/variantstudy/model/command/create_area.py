@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final, List, Optional
+from typing import Any, Dict, Final, Optional
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -107,7 +107,3 @@ class CreateArea(ICommand):
             study_version=self.study_version,
             version=self._SERIALIZATION_VERSION,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

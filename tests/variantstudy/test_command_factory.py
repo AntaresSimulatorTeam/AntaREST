@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -794,8 +794,9 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
-            args=[{}],
+            args=[{"thermal_outage_details": False}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="generate_thermal_cluster_timeseries_list",
@@ -1248,6 +1249,21 @@ def test_parse_create_link_dto_v1(command_factory: CommandFactory) -> None:
             assert dto.args["parameters"] == {}
         else:
             assert dto.args["parameters"]["linkWidth"] == 0.56
+
+
+def test_parse_generate_thermal_cluster_timeseries_dto_v1(command_factory: CommandFactory) -> None:
+    dto = CommandDTO(
+        action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
+        args={},
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 2
+    assert dto.args == {"thermal_outage_details": False}
 
 
 def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory) -> None:

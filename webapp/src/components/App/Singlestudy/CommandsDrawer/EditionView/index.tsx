@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -351,14 +351,7 @@ function EditionView(props: Props) {
     init();
 
     return () => unsubscribe();
-  }, [
-    commands.length,
-    enqueueSnackbar,
-    enqueueErrorSnackbar,
-    studyId,
-    t,
-    debouncedFailureNotification,
-  ]);
+  }, [enqueueSnackbar, enqueueErrorSnackbar, studyId, t, debouncedFailureNotification]);
 
   useEffect(() => {
     return addWsEventListener(listen);

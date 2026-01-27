@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,21 +10,26 @@
 #
 # This file is part of the Antares project.
 
+import io
 import logging
-from typing import List, Optional
+from pathlib import PurePosixPath
+from typing import Any, Dict, Final, Optional
 
 import numpy as np
-import pandas as pd
+import polars as pl
 from antares.tsgen.duration_generator import ProbabilityLaw
 from antares.tsgen.random_generator import MersenneTwisterRNG
 from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluster, TimeseriesGenerator
+from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.thermal_cluster_model import LocalTSGenerationBehavior
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    InnerMatrices,
     command_failed,
     command_succeeded,
 )
@@ -35,7 +40,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 logger = logging.getLogger(__name__)
 
 
-MODULATION_CAPACITY_COLUMN = 2
+MODULATION_CAPACITY_COLUMN = "2"
 
 
 class GenerateThermalClusterTimeSeries(ICommand):
@@ -44,6 +49,20 @@ class GenerateThermalClusterTimeSeries(ICommand):
     """
 
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
+
+    # version 2: add thermal_outage_details field
+    _SERIALIZATION_VERSION: Final[int] = 2
+
+    thermal_outage_details: bool
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version < 2 and "thermal_outage_details" not in values:
+                values["thermal_outage_details"] = False
+        return values
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -76,12 +95,12 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     modulation_matrix = study_data.get_thermal_modulation(area_id, thermal_id)
                     modulation_capacity = modulation_matrix[MODULATION_CAPACITY_COLUMN].to_numpy()
                     prepro_matrix = study_data.get_thermal_prepro(area_id, thermal_id)
-                    fo_duration = np.array(prepro_matrix[0], dtype=int)
-                    po_duration = np.array(prepro_matrix[1], dtype=int)
-                    fo_rate = np.array(prepro_matrix[2], dtype=float)
-                    po_rate = np.array(prepro_matrix[3], dtype=float)
-                    npo_min = np.array(prepro_matrix[4], dtype=int)
-                    npo_max = np.array(prepro_matrix[5], dtype=int)
+                    fo_duration = np.array(prepro_matrix["0"], dtype=int)
+                    po_duration = np.array(prepro_matrix["1"], dtype=int)
+                    fo_rate = np.array(prepro_matrix["2"], dtype=float)
+                    po_rate = np.array(prepro_matrix["3"], dtype=float)
+                    npo_min = np.array(prepro_matrix["4"], dtype=int)
+                    npo_max = np.array(prepro_matrix["5"], dtype=int)
                     generation_params = OutageGenerationParameters(
                         unit_count=thermal.unit_count,
                         fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
@@ -102,13 +121,45 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     )
                     # 8- Generate the time-series
                     results = generator.generate_time_series_for_clusters(cluster, nb_years)
+
+                    # 9- Save information about outages if needed
+                    # Convert numpy arrays to bytes and save to blobstore, then use DAO to persist
+                    if self.thermal_outage_details:
+                        # Save each outage detail numpy array to blobstore and then via DAO
+                        outage_dataframes = {
+                            "num_units_forced_outages": results.outage_output.forced_outages,
+                            "num_units_planned_outages": results.outage_output.planned_outages,
+                            "num_units_mixed_outages": results.outage_output.mixed_outages,
+                            "forced_outages_durations": results.outage_output.forced_outage_durations,
+                            "planned_outages_durations": results.outage_output.planned_outage_durations,
+                            "available_units": results.outage_output.available_units,
+                        }
+
+                        for detail_type, data in outage_dataframes.items():
+                            # Convert numpy array to TSV bytes using polars
+                            buffer = io.BytesIO()
+                            pl.DataFrame(data).write_csv(buffer, separator="\t", include_header=False)
+                            tsv_bytes = buffer.getvalue()
+
+                            blob_id = self.command_context.blob_service.save(tsv_bytes)
+
+                            resource_path = PurePosixPath(
+                                f"ts-generator-output/thermal/{area_id}/{thermal_id}/{detail_type}.tsv"
+                            )
+                            resource_data = UserResourceDataCreation(
+                                path=resource_path,
+                                resource_type=ResourceType.FILE,
+                                blob_id=blob_id,
+                            )
+                            study_data.save_user_resource(resource_data)
+
                     generated_matrix = results.available_power
-                    # 9- Write the matrix inside the matrix-store and store the id in memory
-                    df = pd.DataFrame(data=generated_matrix)
-                    df = df[list(df.columns)].astype(int)
+                    # 10- Write the matrix inside the matrix-store and store the id in memory
+                    df = pl.DataFrame(data=generated_matrix)
+                    df = df[list(df.columns)].cast(pl.Int64)
                     matrix_id = self.command_context.matrix_service.create(df)
                     series_mapping.setdefault(area_id, {})[thermal_id] = matrix_id
-                    # 10- Notify the progress to the notifier
+                    # 11- Notify the progress to the notifier
                     generation_performed += 1
                     if listener:
                         progress = int(100 * generation_performed / total_generations)
@@ -117,7 +168,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 except Exception as e:
                     return command_failed(f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0])
 
-        # 11- Once we've written all matrices inside the matrix-store, modify the input folder.
+        # 12- Once we've written all matrices inside the matrix-store, modify the input folder.
         for area_id, values in series_mapping.items():
             for thermal_id, series in values.items():
                 study_data.save_thermal_series(area_id, thermal_id, series)
@@ -126,9 +177,13 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     @override
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={}, study_version=self.study_version)
+        return CommandDTO(
+            version=self._SERIALIZATION_VERSION,
+            action=self.command_name.value,
+            args={"thermal_outage_details": self.thermal_outage_details},
+            study_version=self.study_version,
+        )
 
     @override
-    def get_inner_matrices(self) -> List[str]:
-        # This is used to get used matrices and not remove them inside the garbage collector loop.
-        return []
+    def get_inner_matrices(self) -> InnerMatrices:
+        return InnerMatrices(generates_matrices_at_run_time=True)

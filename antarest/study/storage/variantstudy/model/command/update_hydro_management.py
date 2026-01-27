@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import model_validator
 from typing_extensions import override
@@ -64,7 +64,3 @@ class UpdateHydroManagement(ICommand):
             args={"area_id": self.area_id, "properties": self.properties.model_dump(mode="json", exclude_none=True)},
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -31,6 +31,7 @@ from antarest.study.storage.variantstudy.business.utils import strip_matrix_prot
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    InnerMatrices,
     command_failed,
     command_succeeded,
 )
@@ -242,7 +243,7 @@ class CreateSTStorage(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> InnerMatrices:
         """
         Retrieves the list of matrix IDs.
         """
@@ -250,7 +251,7 @@ class CreateSTStorage(ICommand):
         for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
                 matrices.append(strip_matrix_protocol(matrix_data))
-        return matrices
+        return InnerMatrices(matrices=matrices)
 
     def _fill_none_matrices(self) -> dict[str, str]:
         constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants

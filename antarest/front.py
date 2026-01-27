@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 from fastapi import FastAPI
+from pydantic import ConfigDict
 from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import FileResponse
@@ -98,9 +99,7 @@ class BackEndConfig(AntaresBaseModel):
     rest_endpoint: str
     ws_endpoint: str
 
-    class Config:
-        populate_by_name = True
-        alias_generator = to_camel_case
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel_case)
 
 
 def create_backend_config(api_prefix: str) -> BackEndConfig:

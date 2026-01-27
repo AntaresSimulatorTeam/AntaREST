@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -44,11 +44,11 @@ function TimeSeriesManagement() {
     return setTimeSeriesConfig({ studyId: study.id, values });
   };
 
-  const handleSubmitSuccessful = async () => {
+  const handleSubmitSuccessful = async ({ values }: SubmitHandlerPlus<TimeSeriesConfigValues>) => {
     setIsLaunchTaskInProgress(true);
 
     // The WebSocket will trigger an event after the fulfillment of the promise (see `FreezeStudy`)
-    await handleGenerateTs({ studyId: study.id });
+    await handleGenerateTs({ studyId: study.id, outageDetails: values.thermal.outageDetails });
 
     setIsLaunchTaskInProgress(false);
 

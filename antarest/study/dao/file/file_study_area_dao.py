@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,7 +16,7 @@ import typing as t
 from abc import abstractmethod
 from typing import Any, Dict, List
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
@@ -146,23 +146,23 @@ class FileStudyAreaDao(AreaDao):
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
 
     @override
-    def get_load(self, area_id: str) -> pd.DataFrame:
+    def get_load(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "load", "series", f"load_{area_id}"])
 
     @override
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "misc-gen", f"miscgen-{area_id}"])
 
     @override
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
+    def get_reserves(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "reserves", area_id])
 
     @override
-    def get_solar(self, area_id: str) -> pd.DataFrame:
+    def get_solar(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "solar", "series", f"solar_{area_id}"])
 
     @override
-    def get_wind(self, area_id: str) -> pd.DataFrame:
+    def get_wind(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "wind", "series", f"wind_{area_id}"])
 
     @override
@@ -196,8 +196,6 @@ class FileStudyAreaDao(AreaDao):
 
     def _build_area_data_structure(self, area_id: str, config: FileStudyTreeConfig) -> JSON:
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
-        if generator_matrix_constants is None:
-            raise ValueError("Generator matrix constants not available in DAO")
         null_matrix = generator_matrix_constants.get_null_matrix()
         prepro_data = {
             area_id: {
@@ -329,6 +327,9 @@ class FileStudyAreaDao(AreaDao):
         if study_version > STUDY_VERSION_9_2:
             study_data.tree.delete(["input", "hydro", "hydro", "overflow spilled cost difference", area_id])
 
+        if (study_data.tree.config.path / "user" / "ts-generator-output" / "thermal" / area_id).exists():
+            study_data.tree.delete(["user", "ts-generator-output", "thermal", area_id])
+
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
 
@@ -392,7 +393,7 @@ class FileStudyAreaDao(AreaDao):
         """Remove the area from scenario builder configuration."""
         rulesets = study_data.tree.get(["settings", "scenariobuilder"])
 
-        area_keys = {"l", "h", "w", "s", "t", "r", "hl", "hfl", "hgp"}
+        area_keys = {"l", "h", "w", "s", "t", "r", "hl", "hfl", "hgp", "sts", "sta"}
         link_keys = {"ntc"}
         for ruleset in rulesets.values():
             for key in list(ruleset):

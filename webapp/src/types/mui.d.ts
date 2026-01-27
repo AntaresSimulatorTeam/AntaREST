@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -23,6 +23,10 @@ declare module "@mui/material" {
   }
 
   interface TextFieldPropsSizeOverrides {
+    "extra-small": true;
+  }
+
+  interface AutocompletePropsSizeOverrides {
     "extra-small": true;
   }
 

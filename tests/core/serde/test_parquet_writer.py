@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -44,20 +44,20 @@ def test_different_columns(tmp_path: Path) -> None:
 
     # Ensures we kept the order we had in the iterator
     expected_first_df = pd.DataFrame(
-        data=[(1, 2, np.NaN, np.NaN), (3, 4, np.NaN, np.NaN)], columns=["A", "B", "C", "D"]
+        data=[(1, 2, np.nan, np.nan), (3, 4, np.nan, np.nan)], columns=["A", "B", "C", "D"]
     )
     pd.testing.assert_frame_equal(next(dfs), expected_first_df, check_dtype=False)
 
-    expected_second_df = pd.DataFrame(data=[(5, 6, 7, np.NaN), (8, 9, 10, np.NaN)], columns=["A", "B", "C", "D"])
+    expected_second_df = pd.DataFrame(data=[(5, 6, 7, np.nan), (8, 9, 10, np.nan)], columns=["A", "B", "C", "D"])
     pd.testing.assert_frame_equal(next(dfs), expected_second_df, check_dtype=False)
 
     expected_third_df = pd.DataFrame(
-        data=[(11, 12, np.NaN, np.NaN), (13, 14, np.NaN, np.NaN)], columns=["A", "B", "C", "D"]
+        data=[(11, 12, np.nan, np.nan), (13, 14, np.nan, np.nan)], columns=["A", "B", "C", "D"]
     )
     pd.testing.assert_frame_equal(next(dfs), expected_third_df, check_dtype=False)
 
     # values of A and B are correctly "inverted"
-    expected_fourth_df = pd.DataFrame(data=[(16, 15, np.NaN, 17), (19, 18, np.NaN, 20)], columns=["A", "B", "C", "D"])
+    expected_fourth_df = pd.DataFrame(data=[(16, 15, np.nan, 17), (19, 18, np.nan, 20)], columns=["A", "B", "C", "D"])
     pd.testing.assert_frame_equal(next(dfs), expected_fourth_df, check_dtype=False)
 
 

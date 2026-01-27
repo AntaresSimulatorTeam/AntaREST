@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -29,6 +29,7 @@ import FavoriteStudyToggle from "../../shared/studies/FavoriteStudyToggle";
 import StudyActionsMenu from "../../shared/studies/StudyActionsMenu";
 import CommandsDrawer from "../CommandsDrawer";
 import Breadcrumb from "./Breadcrumb";
+import Details from "./Details";
 
 export type DialogType = "commands";
 
@@ -95,8 +96,11 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
           gap: 1,
         }}
       >
-        <Box sx={{ flex: 1 }}>
+        <Box
+          sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}
+        >
           <Breadcrumb study={study} />
+          <Details study={study} parentStudy={parentStudy} variantNb={variantNb} />
         </Box>
         <Box sx={{ overflow: "auto" }}>
           <CustomScrollbar>

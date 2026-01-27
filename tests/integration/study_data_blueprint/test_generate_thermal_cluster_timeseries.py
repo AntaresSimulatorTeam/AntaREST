@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
+import io
 
 import numpy as np
 import pytest
@@ -24,8 +26,10 @@ TIMESERIES_ASSETS_DIR = ASSETS_DIR.joinpath("timeseries_generation")
 
 class TestGenerateThermalClusterTimeseries:
     @staticmethod
-    def _generate_timeseries(client: TestClient, user_access_token: str, study_id: str) -> TaskDTO:
-        res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
+    def _generate_timeseries(
+        client: TestClient, user_access_token: str, study_id: str, outage_details: bool = False
+    ) -> TaskDTO:
+        res = client.put(f"/v1/studies/{study_id}/timeseries/generate", params={"outage_details": outage_details})
         assert res.status_code == 200
         task_id = res.json()
         assert task_id
@@ -70,7 +74,7 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 200
 
         # Timeseries generation should succeed
-        task = self._generate_timeseries(client, user_access_token, study_id)
+        task = self._generate_timeseries(client, user_access_token, study_id, outage_details=False)
         assert task.status == TaskStatus.COMPLETED
 
         # Check matrices
@@ -82,6 +86,14 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 200
         data = res.json()["data"]
         assert data[1] == nb_years * [nominal_capacity_cluster_1]
+        # Timeseries generation with outage details shouldn't be available
+
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "user/ts-generator-output"},
+        )
+        assert res.status_code == 404
+
         # Second one
         res = client.get(
             f"/v1/studies/{study_id}/raw",
@@ -90,6 +102,13 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 200
         data = res.json()["data"]
         assert data[1] == nb_years * [0]  # should be zeros as the modulation matrix is only zeros
+        # Timeseries generation with outage details shouldn't be available
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "user/ts-generator-output"},
+        )
+        assert res.status_code == 404
+
         # Third one
         res = client.get(
             f"/v1/studies/{study_id}/raw",
@@ -98,6 +117,41 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 200
         data = res.json()["data"]
         assert data == 8760 * [[0]]  # no generation c.f. gen-ts parameter -> empty file -> default simulator value
+
+        # Timeseries generation with outage details shouldn't be available
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": "user/ts-generator-output"},
+        )
+        assert res.status_code == 404
+
+        # Timeseries generation should succeed
+        task = self._generate_timeseries(client, user_access_token, study_id, outage_details=True)
+        assert task.status == TaskStatus.COMPLETED
+
+        # Timeseries generation with outage details should be available for all clusters excluding area2 cluster 3 because it has no generation
+        outage_files = [
+            "num_units_forced_outages.tsv",
+            "num_units_planned_outages.tsv",
+            "num_units_mixed_outages.tsv",
+            "forced_outages_durations.tsv",
+            "planned_outages_durations.tsv",
+            "available_units.tsv",
+        ]
+
+        for area_id, cluster_name in [
+            (area1_id, cluster_1),
+            (area2_id, cluster_2),
+        ]:
+            for outage_file in outage_files:
+                res = client.get(
+                    f"/v1/studies/{study_id}/raw",
+                    params={"path": f"user/ts-generator-output/thermal/{area_id}/{cluster_name.lower()}/{outage_file}"},
+                )
+                assert res.status_code == 200
+                tsv_content = res.text
+                tsv_content = np.loadtxt(io.StringIO(tsv_content), delimiter="\t")
+                assert tsv_content.shape[0] == 365
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str, study_type: str) -> None:
@@ -116,7 +170,7 @@ class TestGenerateThermalClusterTimeseries:
         res = client.patch(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal/{cluster_name}", json=body)
         assert res.status_code in {200, 201}
         # Timeseries generation should succeed and produce results as int.
-        task = self._generate_timeseries(client, user_access_token, study_id)
+        task = self._generate_timeseries(client, user_access_token, study_id, outage_details=False)
         assert task.status == TaskStatus.COMPLETED
         # Check matrix contains 4 instead of 4.4
         res = client.get(
@@ -136,7 +190,7 @@ class TestGenerateThermalClusterTimeseries:
         )
         assert res.status_code == 200
         # Timeseries generation should succeed
-        task = self._generate_timeseries(client, user_access_token, study_id)
+        task = self._generate_timeseries(client, user_access_token, study_id, outage_details=False)
         assert task.status == TaskStatus.COMPLETED
 
         # Puts 2 as PO rate and 2 as FO rate
@@ -148,7 +202,7 @@ class TestGenerateThermalClusterTimeseries:
         )
         assert res.status_code == 200
         # Timeseries generation fails because these values are unacceptable
-        task = self._generate_timeseries(client, user_access_token, study_id)
+        task = self._generate_timeseries(client, user_access_token, study_id, outage_details=False)
         assert task.status == TaskStatus.FAILED
         assert (
             f"Area {area1_id}, cluster {cluster_name.lower()}: Forced failure rate is greater than 1 on following days"
@@ -237,7 +291,7 @@ class TestGenerateThermalClusterTimeseries:
             expected_matrix = np.loadtxt(TIMESERIES_ASSETS_DIR.joinpath(f"{test_case}.txt"), delimiter="\t").tolist()
 
             # Generate timeseries
-            task = self._generate_timeseries(client, user_access_token, study_id)
+            task = self._generate_timeseries(client, user_access_token, study_id, outage_details=False)
             assert task.status == TaskStatus.COMPLETED
 
             # Compare results

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,10 +14,8 @@ import http
 import io
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
-import numpy as np
-import pandas as pd
 import polars as pl
 from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
@@ -81,32 +79,32 @@ class MatrixFormat(EnumIgnoreCase):
     ARROW_UNCOMPRESSED = "arrow uncompressed"
     PLAIN = "plain"
 
-    def serialize_dataframe(self, dataframe: pd.DataFrame) -> Response:
-        np_type: type[np.int32] | type[np.int64] = np.int64
+    def serialize_dataframe(self, dataframe: pl.DataFrame) -> Response:
+        polars_type: type[pl.Int32] | type[pl.Int64] = pl.Int64
         # For textual formats, int64 and int32 are represented in the same way, so we use int64 to catch bigger numbers.
         # For the arrow format, on the other hand, the size of an int32 is half the size of an int64 so we prefer int32.
         if self in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
-            np_type = np.int32
-        dataframe = simplify_dataframe(dataframe, np_type)
+            polars_type = pl.Int32
+        dataframe = simplify_dataframe(dataframe, polars_type)
 
         if self == MatrixFormat.PLAIN:
-            if dataframe.empty:
+            if dataframe.is_empty():
                 return Response(content=b"", media_type="application/octet-stream")
             string_buffer = io.StringIO()
-            pl.from_pandas(dataframe).write_csv(string_buffer, separator="\t", include_header=False)
+            dataframe.write_csv(string_buffer, separator="\t", include_header=False)
             return Response(content=string_buffer.getvalue(), media_type="text/csv")
 
         buffer = io.BytesIO()
         if self == MatrixFormat.JSON:
-            dataframe.to_json(buffer, orient="split")
+            dataframe.to_pandas().to_json(buffer, orient="split")
             return Response(content=buffer.getvalue(), media_type="application/json")
 
         else:
-            compression_mapping = {
-                MatrixFormat.ARROW_COMPRESSED: None,
+            compression_mapping: dict[MatrixFormat, Literal["zstd", "uncompressed"]] = {
+                MatrixFormat.ARROW_COMPRESSED: "zstd",
                 MatrixFormat.ARROW_UNCOMPRESSED: "uncompressed",
             }
-            dataframe.to_feather(buffer, compression=compression_mapping[self])
+            dataframe.write_ipc(buffer, compression=compression_mapping[self])
             return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
 
@@ -155,7 +153,7 @@ def create_raw_study_routes(
 
         output = study_service.get_raw_content(uuid, path, depth, formatted)
 
-        if isinstance(output, pd.DataFrame):
+        if isinstance(output, pl.DataFrame):
             if matrix_format is None:
                 matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
             return matrix_format.serialize_dataframe(output)

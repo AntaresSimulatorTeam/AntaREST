@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,9 +14,10 @@ import dataclasses
 import enum
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
+from enum import StrEnum
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -28,6 +29,7 @@ from pydantic import (
     alias_generators,
     computed_field,
     field_validator,
+    model_validator,
 )
 from pydantic.alias_generators import to_camel
 from sqlalchemy import (
@@ -42,7 +44,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from typing_extensions import override
 
-from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
@@ -563,90 +564,47 @@ class StudyDownloadType(enum.StrEnum):
     AREA = "AREA"
 
 
-class StudyDownloadLevelDTO(enum.StrEnum):
+class MatrixFrequency(StrEnum):
+    """
+    An enumeration of matrix frequencies.
+
+    Each frequency corresponds to a specific time interval for a matrix's data.
+    """
+
     ANNUAL = "annual"
     MONTHLY = "monthly"
     WEEKLY = "weekly"
     DAILY = "daily"
     HOURLY = "hourly"
 
-    def inc_date(self, date: datetime) -> datetime:
-        if self.value == StudyDownloadLevelDTO.ANNUAL:
-            return date.replace(year=date.year + 1)
-        elif self.value == StudyDownloadLevelDTO.MONTHLY:
-            if date.month == 12:
-                return date.replace(year=date.year + 1, month=1)
-            else:
-                return date.replace(month=date.month + 1)
-        elif self.value == StudyDownloadLevelDTO.WEEKLY:
-            return date + timedelta(days=7)
-        elif self.value == StudyDownloadLevelDTO.DAILY:
-            return date + timedelta(days=1)
-        elif self.value == StudyDownloadLevelDTO.HOURLY:
-            return date + timedelta(hours=1)
-        else:
-            raise ShouldNotHappenException()
 
-
-class ExportFormat(enum.StrEnum):
-    ZIP = "application/zip"
-    TAR_GZ = "application/tar+gz"
-    JSON = "application/json"
-
-    @classmethod
-    def from_dto(cls, accept_header: str) -> "ExportFormat":
-        """
-        Convert the "Accept" header to the corresponding content type.
-
-        Args:
-            accept_header: Value of the "Accept" header.
-
-        Returns:
-            The corresponding content type: ZIP, TAR_GZ or JSON.
-            By default, JSON is returned if the format is not recognized.
-            For instance, if the "Accept" header is "*/*", JSON is returned.
-        """
-        mapping = {
-            "application/zip": ExportFormat.ZIP,
-            "application/tar+gz": ExportFormat.TAR_GZ,
-            "application/json": ExportFormat.JSON,
-        }
-        return mapping.get(accept_header, ExportFormat.JSON)
-
-    @property
-    def suffix(self) -> str:
-        """
-        Returns the file suffix associated with the format: ".zip", ".tar.gz" or ".json".
-        """
-        mapping = {
-            ExportFormat.ZIP: ".zip",
-            ExportFormat.TAR_GZ: ".tar.gz",
-            ExportFormat.JSON: ".json",
-        }
-        return mapping[self]
-
-
-class StudyDownloadDTO(AntaresBaseModel):
+class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
     """
     DTO used to download outputs
     """
 
     type: StudyDownloadType
-    years: Optional[List[int]]
-    level: StudyDownloadLevelDTO
-    filterIn: Optional[str]
-    filterOut: Optional[str]
-    filter: Optional[List[str]]
-    columns: Optional[List[str]]
-    synthesis: bool = False
-    includeClusters: bool = False
+    years: list[int] = []
+    level: MatrixFrequency
+    filter_in: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
+    filter_out: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
+    filter: list[str] = []
+    columns: list[str] = []
+    synthesis: Annotated[bool, Field(deprecated=True, default=False)]  # We always consider it's False
+    include_clusters: bool = False
+
+    @model_validator(mode="after")
+    def check_coherence(self) -> "StudyDownloadDTO":
+        if self.include_clusters and self.type == StudyDownloadType.LINK:
+            raise ValueError("Cannot ask for cluster values for type link")
+        return self
 
 
 class MatrixIndex(AntaresBaseModel):
     start_date: str = ""
     steps: int = 8760
     first_week_size: int = 7
-    level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
+    level: MatrixFrequency = MatrixFrequency.HOURLY
 
 
 class TimeSerie(AntaresBaseModel):
@@ -660,33 +618,12 @@ class TimeSerie(AntaresBaseModel):
 class TimeSeriesData(AntaresBaseModel):
     type: StudyDownloadType
     name: str
-    data: Dict[str, List[TimeSerie]] = {}
+    data: dict[str, list[TimeSerie]] = {}
 
 
 class MatrixAggregationResultDTO(AntaresBaseModel):
     index: MatrixIndex
-    data: List[TimeSeriesData]
-    warnings: List[str]
-
-
-class MatrixAggregationResult(AntaresBaseModel):
-    index: MatrixIndex
-    data: Dict[Tuple[StudyDownloadType, str], Dict[str, List[TimeSerie]]]
-    warnings: List[str]
-
-    def to_dto(self) -> MatrixAggregationResultDTO:
-        return MatrixAggregationResultDTO.model_construct(
-            index=self.index,
-            data=[
-                TimeSeriesData.model_construct(
-                    type=key_type,
-                    name=key_name,
-                    data=self.data[(key_type, key_name)],
-                )
-                for key_type, key_name in self.data
-            ],
-            warnings=self.warnings,
-        )
+    data: list[TimeSeriesData]
 
 
 class DirectoryMetadata(AntaresBaseModel):

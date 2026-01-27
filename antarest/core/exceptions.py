@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -783,4 +783,4 @@ class NotAMatrixError(ValueError):
 class OutputVariablesViewError(HTTPException):
     def __init__(self, output_id: str, message: str) -> None:
         msg = f"Could not retrieve variables view for output '{output_id}' : {message}."
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, msg)
+        super().__init__(HTTPStatus.NOT_FOUND, msg)

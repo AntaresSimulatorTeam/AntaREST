@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,9 +19,11 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from filelock import FileLock
 from pandas import util
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
@@ -126,11 +128,24 @@ class MatrixRepository:
         self.session.commit()
         return merged_matrix
 
+    def save_batch(self, matrices: list[Matrix]) -> None:
+        try:
+            self.session.add_all(matrices)
+            self.session.commit()
+        except IntegrityError:
+            # Can happen if one the matrices is already inside DB.
+            self.session.rollback()
+            for matrix in matrices:
+                self.save(matrix)
+
     def get(self, matrix_hash: str) -> Optional[Matrix]:
         return self.session.get(Matrix, matrix_hash)
 
     def get_matrices(self) -> list[Matrix]:
         return list(self.session.scalars(select(Matrix)))
+
+    def get_batch(self, matrix_hashes: list[str]) -> list[Matrix]:
+        return list(self.session.scalars(select(Matrix).filter(Matrix.id.in_(matrix_hashes))))
 
     def exists(self, matrix_hash: str) -> bool:
         result = self.session.get(Matrix, matrix_hash)
@@ -152,7 +167,7 @@ class MatrixCreationResult:
     new: bool
 
 
-def compute_hash(df: pd.DataFrame) -> str:
+def compute_hash(df: pl.DataFrame) -> str:
     """
     Computes a hash of the dataframe, with the goal of obtaining a stable
     and unique identifier for its content, including the headers.
@@ -180,22 +195,32 @@ def compute_hash(df: pd.DataFrame) -> str:
 
     # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
     legacy_format = False
-    if all(np.issubdtype(dtype.type, np.number) for dtype in df.dtypes):
+    if all(dtype.is_numeric() for dtype in df.dtypes):
         # We also need to check the headers to see if they correspond to the default ones
-        if df.columns.equals(pd.RangeIndex(0, df.shape[1])):
+        if df.columns == [str(i) for i in range(len(df.columns))]:
             legacy_format = True
 
-    if not legacy_format:
-        # We're computing the hash with the dataframe content and its headers
-        column_names_hashes = util.hash_pandas_object(df.columns, index=False)
-        row_hashes = util.hash_pandas_object(df, index=False)
-        df_hash = hashlib.sha256(column_names_hashes.to_numpy(dtype=np.int64).data)
-        df_hash.update(row_hashes.to_numpy(dtype=np.int64).data)
-        return df_hash.hexdigest()
+    if legacy_format:
+        # Polars `to_numpy()` method fails with empty DataFrames so we have to handle it separately.
+        if df.is_empty():
+            content = np.array([])
+        else:
+            # We're using `order=c` as hashlib requires C contiguous arrays.
+            content = df.with_columns(pl.all().cast(pl.Float64)).to_numpy(order="c")
+        return hashlib.sha256(content.data).hexdigest()
 
-    # We're using `np.ascontiguousarray` as hashlib requires C contiguous arrays,
-    # while this is not the general behaviour of pandas to store its data this way
-    return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=np.float64)).data).hexdigest()
+    # Convert polars dataframe to pandas one for backward compatibility of the hashing value.
+    pandas_df = df.to_pandas()
+    pandas_df.replace({None: np.nan}, inplace=True)
+    if df.columns == [str(i) for i in range(len(df.columns))]:
+        pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])  # type: ignore
+
+    # We're computing the hash with the dataframe content and its headers
+    column_names_hashes = util.hash_pandas_object(pandas_df.columns, index=False)
+    row_hashes = util.hash_pandas_object(pandas_df, index=False)
+    df_hash = hashlib.sha256(column_names_hashes.to_numpy(dtype=np.int64).data)
+    df_hash.update(row_hashes.to_numpy(dtype=np.int64).data)
+    return df_hash.hexdigest()
 
 
 class MatrixContentRepository:
@@ -216,7 +241,7 @@ class MatrixContentRepository:
         self.bucket_dir.mkdir(parents=True, exist_ok=True)
         self.format = format
 
-    def get(self, matrix_hash: str, matrix_version: int) -> pd.DataFrame:
+    def get(self, matrix_hash: str, matrix_version: int) -> pl.DataFrame:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
 
@@ -247,7 +272,7 @@ class MatrixContentRepository:
             return True
         return False
 
-    def save(self, content: pd.DataFrame) -> MatrixCreationResult:
+    def save(self, content: pl.DataFrame) -> MatrixCreationResult:
         """
         The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
@@ -307,7 +332,7 @@ class MatrixContentRepository:
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
             # However, this deletion is possible when the matrix is no longer in use.
-            # This is done in `MatrixGarbageCollector` when matrix files are deleted.
+            # This is done by the matrix garbage collection Celery task when matrix files are deleted.
 
             return MatrixCreationResult(hash=matrix_hash, new=True)
 

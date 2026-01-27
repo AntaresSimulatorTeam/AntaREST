@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Generator, List, Optional, Tuple
+from typing import Any, Generator, Optional, Tuple
 
 import typing_extensions as te
 from typing_extensions import override
@@ -89,7 +89,3 @@ class UpdateConfig(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

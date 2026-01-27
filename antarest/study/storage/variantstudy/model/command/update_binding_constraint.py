@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -31,7 +31,12 @@ from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint_for_update,
 )
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    InnerMatrices,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     AbstractBindingConstraintCommand,
     TermMatrices,
@@ -160,5 +165,5 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         return dto
 
     @override
-    def get_inner_matrices(self) -> list[str]:
+    def get_inner_matrices(self) -> InnerMatrices:
         return super().command_get_inner_matrices(self.matrices)

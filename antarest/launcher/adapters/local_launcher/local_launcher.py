@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,6 +16,7 @@ import shlex
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -122,11 +123,15 @@ class LocalLauncher(AbstractLauncher):
                 std_err_file = logs_path / f"{job_id}-err.log"
                 std_out_file = logs_path / f"{job_id}-out.log"
                 with open(std_err_file, "w") as err_file, open(std_out_file, "w") as out_file:
+                    creationflags = 0
+                    if sys.platform == "win32":
+                        creationflags = subprocess.CREATE_NO_WINDOW
                     process = subprocess.Popen(
                         new_args,
                         env=environment_variables,
                         stdout=out_file,
                         stderr=err_file,
+                        creationflags=creationflags,
                     )
                 self.job_id_to_study_id[job_id] = (study_uuid, export_path, process)
                 self.callbacks.update_status(job_id, JobStatus.RUNNING, None, None)

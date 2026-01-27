@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,6 +16,7 @@ import { Children, useState } from "react";
 import Split, { type SplitProps } from "react-split";
 import { useUpdateEffect } from "react-use";
 import storage from "../../../services/utils/localStorage";
+import { getChildKey, isValidSizes } from "./utils";
 import "./style.css";
 
 export interface SplitViewProps {
@@ -25,14 +26,6 @@ export interface SplitViewProps {
   sizes?: SplitProps["sizes"];
   minSize?: SplitProps["minSize"];
   gutterSize?: SplitProps["gutterSize"];
-}
-
-function isValidSizes(sizes: unknown): sizes is number[] {
-  return (
-    Array.isArray(sizes) &&
-    sizes.every((size) => typeof size === "number") &&
-    sizes.reduce((sum, size) => sum + size, 0) === 100
-  );
 }
 
 /**
@@ -76,13 +69,20 @@ function SplitView({
     storage.setItem(localStorageKey, activeSizes?.map(Math.round));
   }, [activeSizes, localStorageKey]);
 
+  // Generate a composite key based on direction and children identities
+  // This ensures Split remounts when children change (e.g., SynthesisViewer <-> ResultMatrixViewer)
+  // preventing react-split's DOM refs from getting confused
+  const childrenKeys = Children.map(children, (child, index) => getChildKey(child, index))?.join(
+    "-",
+  );
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
     <Split
-      key={direction} // Force re-render when direction changes.
+      key={`${direction}-${childrenKeys}`} // Force re-render when direction or children identities change
       className="SplitView"
       direction={direction}
       sizes={activeSizes ?? defaultSizes}

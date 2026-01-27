@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,9 +17,9 @@ import pandas as pd
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 
 MATRIX_DAILY_DATA = """\
@@ -72,7 +72,6 @@ class TestOutputSeriesMatrix:
         )
 
         node = OutputSeriesMatrix(
-            matrix_mapper=Mock(),
             config=my_study_config,
             freq=MatrixFrequency.DAILY,
             date_serializer=serializer,
@@ -82,7 +81,6 @@ class TestOutputSeriesMatrix:
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = OutputSeriesMatrix(
-            matrix_mapper=Mock(),
             config=my_study_config,
             freq=MatrixFrequency.DAILY,
             date_serializer=Mock(),
@@ -97,7 +95,6 @@ class TestOutputSeriesMatrix:
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
         node = OutputSeriesMatrix(
-            matrix_mapper=Mock(),
             config=my_study_config,
             freq=MatrixFrequency.DAILY,
             date_serializer=Mock(),

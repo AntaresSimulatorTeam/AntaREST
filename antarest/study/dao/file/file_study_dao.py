@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 import typing as t
 from typing import Self
 
-import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
@@ -76,8 +76,8 @@ class FileStudyTreeDao(
     def __init__(
         self,
         study: FileStudy,
-        generator_matrix_constants: t.Optional["GeneratorMatrixConstants"] = None,
-        blob_service: t.Optional["IBlobService"] = None,
+        generator_matrix_constants: "GeneratorMatrixConstants",
+        blob_service: "IBlobService",
     ) -> None:
         self._file_study = study
         self._generator_matrix_constants = generator_matrix_constants
@@ -105,7 +105,7 @@ class FileStudyTreeDao(
     def save_comments(self, comments: str) -> None:
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
 
-    def get_matrix(self, url: list[str]) -> pd.DataFrame:
+    def get_matrix(self, url: list[str]) -> pl.DataFrame:
         """
         Given a url pointing towards an input matrix, parses it and returns it as a pandas dataframe.
         If it is not a matrix url, it raises a NotAMatrixError exception.

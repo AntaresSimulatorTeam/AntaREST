@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,13 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List
+from typing import Callable, Dict, Iterator, List, Sequence
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
-from antarest.matrixstore.model import MatrixMetadataDTO, MatrixReferencesDTO
+from antarest.matrixstore.model import MatrixContent, MatrixMetadataDTO, MatrixReferencesDTO
 from antarest.matrixstore.repository import compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
@@ -27,22 +27,35 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     """
 
     def __init__(self) -> None:
-        self._content: Dict[str, pd.DataFrame] = {}
+        self._content: Dict[str, pl.DataFrame] = {}
         self.usage_providers: List[IMatrixUsageProvider] = []
+        self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
-    def create(self, data: pd.DataFrame) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
+        matrix_id = compute_hash(matrix_factory())
+        self._predefined_matrices[matrix_id] = matrix_factory
+        return matrix_id
+
+    @override
+    def create(self, data: pl.DataFrame) -> str:
         matrix_hash = compute_hash(data)
         self._content[matrix_hash] = data
         return matrix_hash
 
     @override
-    def get(self, matrix_id: str) -> pd.DataFrame:
+    def create_batch(self, data: Iterator[pl.DataFrame]) -> list[str]:
+        return [self.create(df) for df in data]
+
+    @override
+    def get(self, matrix_id: str) -> pl.DataFrame:
+        if matrix_id in self._predefined_matrices:
+            return self._predefined_matrices[matrix_id]()
         return self._content[matrix_id]
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return matrix_id in self._content
+        return matrix_id in self._predefined_matrices or matrix_id in self._content
 
     @override
     def delete(self, matrix_id: str) -> None:
@@ -55,6 +68,11 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     @override
     def get_matrices(self) -> list[MatrixMetadataDTO]:
         raise NotImplementedError()
+
+    @override
+    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[MatrixContent]:
+        for matrix_id in matrix_ids:
+            yield MatrixContent(id=matrix_id, data=self.get(matrix_id))
 
     @override
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:

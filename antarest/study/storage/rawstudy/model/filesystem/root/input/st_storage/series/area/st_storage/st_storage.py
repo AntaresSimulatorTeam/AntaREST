@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,7 +15,11 @@ from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.variantstudy.business.matrix_constants.st_storage import series
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_cost_level,
+    default_scenario_hourly,
+    default_scenario_hourly_ones,
+)
 
 
 class InputSTStorageAreaStorage(FolderNode):
@@ -25,27 +29,27 @@ class InputSTStorageAreaStorage(FolderNode):
             "pmax_injection": InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("PMAX-injection.txt"),
-                default_empty=series.pmax_injection,
+                default_empty=default_scenario_hourly_ones,
             ),
             "pmax_withdrawal": InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("PMAX-withdrawal.txt"),
-                default_empty=series.pmax_withdrawal,
+                default_empty=default_scenario_hourly_ones,
             ),
             "inflows": InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("inflows.txt"),
-                default_empty=series.inflows,
+                default_empty=default_scenario_hourly,
             ),
             "lower_rule_curve": InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("lower-rule-curve.txt"),
-                default_empty=series.lower_rule_curve,
+                default_empty=default_scenario_hourly,
             ),
             "upper_rule_curve": InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("upper-rule-curve.txt"),
-                default_empty=series.upper_rule_curve,
+                default_empty=default_scenario_hourly_ones,
             ),
         }
 
@@ -53,31 +57,31 @@ class InputSTStorageAreaStorage(FolderNode):
             children["cost_injection"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("cost-injection.txt"),
-                default_empty=series.costs,
+                default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             children["cost_withdrawal"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("cost-withdrawal.txt"),
-                default_empty=series.costs,
+                default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             children["cost_level"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("cost-level.txt"),
-                default_empty=series.costs_level,
+                default_empty=default_cost_level,
                 should_exist=False,
             )
             children["cost_variation_injection"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("cost-variation-injection.txt"),
-                default_empty=series.costs,
+                default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             children["cost_variation_withdrawal"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("cost-variation-withdrawal.txt"),
-                default_empty=series.costs,
+                default_empty=default_scenario_hourly,
                 should_exist=False,
             )
 

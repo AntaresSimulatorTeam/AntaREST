@@ -1,16 +1,17 @@
 -r requirements-test.txt
 -r requirements-desktop.txt
+celery-types~=0.23.0
 ruff~=0.9.6
 mypy~=1.15.0
 pre-commit~=4.1.0
-pyinstaller==6.10.0
-pyinstaller-hooks-contrib==2024.8
+pyinstaller==6.17.0
+pyinstaller-hooks-contrib==2025.10
 
 # Extra requirements installed by `mypy --install-types`.
 # IMPORTANT: Make sure the versions of these typing libraries match the versions
 # of the corresponding implementation libraries used in production (in `requirements.txt`).
 
-pandas-stubs~=2.2.3
+pandas-stubs~=2.3.3
 pyarrow-stubs~=20.0.0
 types-openpyxl~=3.1.5
 types-paramiko~=3.4.0

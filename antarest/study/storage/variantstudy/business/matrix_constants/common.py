@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,11 +9,26 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import polars as pl
+
+from antarest.core.utils.polars import create_polars_dataframe
 
 
-import pandas as pd
+def null_matrix() -> pl.DataFrame:
+    return pl.DataFrame()
 
-NULL_MATRIX = pd.DataFrame()
-NULL_SCENARIO_MATRIX = pd.DataFrame([[0.0]] * 8760)
-FIXED_4_COLUMNS = pd.DataFrame([[0.0, 0.0, 0.0, 0.0]] * 8760)
-FIXED_8_COLUMNS = pd.DataFrame([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+
+def null_scenario_matrix() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0]] * 8760)
+
+
+def ones_scenario_matrix() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0]] * 8760)
+
+
+def fixed_4_columns() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0, 0.0, 0.0, 0.0]] * 8760)
+
+
+def fixed_8_columns() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)

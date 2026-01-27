@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@
 import logging
 from typing import List
 
-import pandas as pd
+import polars as pl
 from fastapi import UploadFile
 
 from antarest.core.exceptions import (
@@ -201,7 +201,7 @@ class XpansionManager:
 
     def get_resource_content(
         self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str
-    ) -> bytes | pd.DataFrame:
+    ) -> bytes | pl.DataFrame:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
         return study.get_study_dao().get_xpansion_resource(resource_type, filename)
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -32,14 +32,18 @@ class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in raw studies")
 
-        study_filter = StudyFilter(managed=True, variant=False, access_permissions=AccessPermissions(is_admin=True))
+        study_filter = StudyFilter(
+            managed=True, variant=False, archived=False, access_permissions=AccessPermissions(is_admin=True)
+        )
 
         for study in self.study_metadata_repo.get_all(study_filter):
             study_id = study.id
             study_path = Path(study.path)
-            for f in study_path.rglob("*.link"):
-                matrix_id = extract_matrix_id(f.read_text())
-                matrix_reference = MatrixReference(
-                    matrix_id=f"{matrix_id}", use_description=f"Used by raw study {study_id}"
-                )
-                yield matrix_reference
+            # Only check `input` and `user/expansion` path as they are the only folders capable of having `.link` files.
+            for path in [study_path / "input", study_path / "user" / "expansion"]:
+                for f in path.rglob("*.link"):
+                    matrix_id = extract_matrix_id(f.read_text())
+                    matrix_reference = MatrixReference(
+                        matrix_id=f"{matrix_id}", use_description=f"Used by raw study {study_id}"
+                    )
+                    yield matrix_reference

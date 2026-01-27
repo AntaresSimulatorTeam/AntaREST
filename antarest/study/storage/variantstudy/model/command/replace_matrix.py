@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -25,6 +25,7 @@ from antarest.study.storage.variantstudy.business.utils import AliasDecoder, str
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    InnerMatrices,
     command_failed,
     command_succeeded,
 )
@@ -90,6 +91,6 @@ class ReplaceMatrix(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> List[str]:
+    def get_inner_matrices(self) -> InnerMatrices:
         assert_this(isinstance(self.matrix, str))
-        return [strip_matrix_protocol(self.matrix)]
+        return InnerMatrices(matrices=[strip_matrix_protocol(self.matrix)])

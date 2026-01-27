@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -21,4 +21,4 @@ def get_model_field_values(model: BaseModel) -> dict[str, Any]:
 
     Allows to get fields without performing a full, recursive, model_dump.
     """
-    return {f: getattr(model, f) for f in model.model_fields.keys()}
+    return {f: getattr(model, f) for f in model.__class__.model_fields.keys()}

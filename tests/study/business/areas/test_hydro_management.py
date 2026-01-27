@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -22,11 +22,11 @@ from antarest.study.business.model.hydro_model import (
     InflowStructure,
     InflowStructureUpdate,
 )
-from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import file_study_interface
 
 hydro_ini_content = {
     "input": {
@@ -58,7 +58,7 @@ class TestHydroManagement:
         Test:
             Check if `get_hydro_management_options` returns the right values
         """
-        study = FileStudyInterface(empty_study_880)
+        study = file_study_interface(empty_study_880)
         study.file_study.tree.save(hydro_ini_content)
         # add som areas
         areas = ["AreaTest1", "AREATEST2", "area_test_3"]
@@ -89,7 +89,7 @@ class TestHydroManagement:
             Simulate a regular change
             Check if the field was successfully edited for each area without duplicates
         """
-        study = FileStudyInterface(empty_study_880)
+        study = file_study_interface(empty_study_880)
         study.file_study.tree.save(hydro_ini_content)
         # store the area ids
         areas = ["AreaTest1", "AREATEST2", "area_test_3"]
@@ -144,7 +144,7 @@ class TestHydroManagement:
         command_context: CommandContext,
     ) -> None:
         for file_study in [empty_study_880, empty_study_920]:
-            study = FileStudyInterface(file_study)
+            study = file_study_interface(file_study)
             study_version = file_study.config.version
             assert hydro_manager.get_all_hydro_properties(study) == {}  # no areas
 

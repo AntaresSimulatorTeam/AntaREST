@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -27,14 +27,14 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
-from tests.storage.repository.filesystem.utils import CheckSubNode, TestMiddleNode
+from tests.storage.repository.filesystem.utils import CheckSubNode, MiddleNode
 
 
 def build_tree() -> INode[t.Any, t.Any, t.Any]:
     config = Mock()
     config.path.exist.return_value = True
     config.archive_path = None
-    return TestMiddleNode(
+    return MiddleNode(
         matrix_mapper=Mock(),
         config=config,
         children={
@@ -156,7 +156,7 @@ def test_get_user_expansion_sensitivity_sensitivity_in(tmp_path: Path) -> None:
 def test_get_depth() -> None:
     config = Mock()
     config.path.exist.return_value = True
-    tree = TestMiddleNode(
+    tree = MiddleNode(
         matrix_mapper=Mock(),
         config=config,
         children={"childA": build_tree(), "childB": build_tree()},
@@ -217,11 +217,11 @@ def test_delete(tmp_path: Path) -> None:
     assert sub_folder.exists()
 
     config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id="-1", version=-1)
-    tree_node = TestMiddleNode(
+    tree_node = MiddleNode(
         matrix_mapper=Mock(),
         config=config,
         children={
-            "sub_folder": TestMiddleNode(
+            "sub_folder": MiddleNode(
                 matrix_mapper=Mock(),
                 config=config.next_file("sub_folder"),
                 children={
@@ -235,14 +235,8 @@ def test_delete(tmp_path: Path) -> None:
                         matrix_mapper=Mock(),
                         config=config.next_file("sub_folder").next_file("area_list.ini"),
                     ),
-                    "data_node": RawFileNode(
-                        matrix_mapper=Mock(),
-                        config=config.next_file("sub_folder").next_file("data.txt"),
-                    ),
-                    "data_link_node": RawFileNode(
-                        matrix_mapper=Mock(),
-                        config=config.next_file("sub_folder").next_file("data_link.txt"),
-                    ),
+                    "data_node": RawFileNode(config=config.next_file("sub_folder").next_file("data.txt")),
+                    "data_link_node": RawFileNode(config=config.next_file("sub_folder").next_file("data_link.txt")),
                 },
             ),
         },
@@ -269,11 +263,11 @@ def test_get_node_and_remainder(tmp_path: Path) -> None:
     ini_node1.touch()
 
     config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id="-1", version=STUDY_VERSION_8)
-    tree_node = TestMiddleNode(
+    tree_node = MiddleNode(
         matrix_mapper=Mock(),
         config=config,
         children={
-            "sub_folder": TestMiddleNode(
+            "sub_folder": MiddleNode(
                 matrix_mapper=Mock(),
                 config=config.next_file("sub_folder"),
                 children={

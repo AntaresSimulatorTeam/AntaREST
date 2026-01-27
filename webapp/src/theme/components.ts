@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -59,6 +59,19 @@ export default {
         },
       },
     },
+    variants: [
+      {
+        props: { size: "extra-small" },
+        style: {
+          ".MuiInputBase-root": {
+            padding: "0 9px",
+            ".MuiAutocomplete-input": {
+              padding: "4px 0",
+            },
+          },
+        },
+      },
+    ],
   },
   MuiButton: {
     defaultProps: {

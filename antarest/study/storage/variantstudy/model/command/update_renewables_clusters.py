@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from typing_extensions import override
 
@@ -85,7 +85,3 @@ class UpdateRenewablesClusters(ICommand):
         return CommandDTO(
             action=self.command_name.value, args={"cluster_properties": args}, study_version=self.study_version
         )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return []

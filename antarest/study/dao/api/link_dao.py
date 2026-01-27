@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.business.model.link_model import Link
 
@@ -32,15 +32,15 @@ class ReadOnlyLinkDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         raise NotImplementedError()
 
 
