@@ -57,7 +57,10 @@ from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao
 from antarest.study.dao.api.area_dao import AreaDao, ReadOnlyAreaDao
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao, ReadOnlyAreaPropertiesDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
-from antarest.study.dao.api.compatibility_parameters_dao import ReadOnlyCompatibilityParametersDao
+from antarest.study.dao.api.compatibility_parameters_dao import (
+    CompatibilityParametersDao,
+    ReadOnlyCompatibilityParametersDao,
+)
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
@@ -122,6 +125,7 @@ class StudyDao(
     GeneralConfigDao,
     OptimizationPreferencesDao,
     AdvancedParametersDao,
+    CompatibilityParametersDao,
     XpansionDao,
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,

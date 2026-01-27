@@ -23,7 +23,6 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_credit_modulation,
-    default_max_daily,
     default_maxpower,
     default_reservoir,
     default_scenario_daily,
@@ -76,14 +75,14 @@ MATRICES_INFO: List[MatrixInfo] = [
         "name": "maxDailyGenEnergy",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
-        "default_empty": default_max_daily,
+        "default_empty": default_scenario_daily,
         "should_exist": False,
     },
     {
         "name": "maxDailyPumpEnergy",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
-        "default_empty": default_max_daily,
+        "default_empty": default_scenario_daily,
         "should_exist": False,
     },
 ]

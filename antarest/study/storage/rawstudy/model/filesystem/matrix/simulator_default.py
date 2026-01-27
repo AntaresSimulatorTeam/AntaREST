@@ -80,7 +80,3 @@ def default_energy() -> np.ndarray:
 
 def default_cost_level() -> np.ndarray:
     return np.full((8760, 1), -1e-6)
-
-
-def default_max_daily() -> np.ndarray:
-    return np.zeros((365, 1), dtype=np.float64)

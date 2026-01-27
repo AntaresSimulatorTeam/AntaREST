@@ -449,6 +449,7 @@ class InMemoryStudyDao(StudyDao):
         hydro_pmax: HydroPmax,
     ) -> None:
         compatibility_data = self.get_compatibility_parameters()
+        # If hydro-pmax isn't changed, we don't need to do anything
         if compatibility_data.hydro_pmax == hydro_pmax:
             return
 
@@ -472,8 +473,9 @@ class InMemoryStudyDao(StudyDao):
                 self._hydro_max_hourly_pump_power.pop(area_id, None)
                 self._hydro_max_daily_gen_energy.pop(area_id, None)
                 self._hydro_max_daily_pump_energy.pop(area_id, None)
+        # Update compatibility_data object and save it
         compatibility_data.hydro_pmax = hydro_pmax
-        self._compatibility_parameters = compatibility_data
+        self.save_compatibility_parameters(compatibility_data)
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
@@ -715,6 +717,10 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_compatibility_parameters(self) -> CompatibilityParameters:
         return self._compatibility_parameters
+
+    @override
+    def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
+        self._compatibility_parameters = parameters
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:

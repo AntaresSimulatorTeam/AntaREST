@@ -204,11 +204,13 @@ class TestCreateArea:
         should_exist = hydro_pmax == "hourly"
 
         # Check hydro_pmax related files
+        max_power = study_path / "input" / "hydro" / "common" / "capacity" / f"maxpower_{area_id}.txt.link"
         daily_gen = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyGenEnergy_{area_id}.txt.link"
         daily_pump = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyPumpEnergy_{area_id}.txt.link"
         hourly_gen = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
         hourly_pump = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
 
+        assert max_power.exists()
         assert daily_gen.exists() == should_exist
         assert daily_pump.exists() == should_exist
         assert hourly_gen.exists() == should_exist

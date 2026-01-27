@@ -516,6 +516,10 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao):
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
+    def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 

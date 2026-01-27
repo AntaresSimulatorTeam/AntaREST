@@ -18,3 +18,9 @@ class ReadOnlyCompatibilityParametersDao(ABC):
     @abstractmethod
     def get_compatibility_parameters(self) -> CompatibilityParameters:
         raise NotImplementedError()
+
+
+class CompatibilityParametersDao(ReadOnlyCompatibilityParametersDao):
+    @abstractmethod
+    def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
+        raise NotImplementedError()
