@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import BinaryIO, Iterator, List, Optional, Sequence
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO
 from antarest.study.output.output_model import OutputVariablesList
@@ -114,7 +114,7 @@ class IOutputStorage(ABC):
         columns_names: Sequence[str],
         transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[pl.DataFrame]:
         """
         Aggregates output data based on several filtering conditions, as a stream of dataframes.
         """
