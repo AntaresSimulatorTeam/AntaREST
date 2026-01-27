@@ -19,16 +19,22 @@ depends_on = None
 
 def upgrade() -> None:
     # 1. Add storage_mode column to study table
-    with op.batch_alter_table("study") as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "storage_mode",
-                sa.Enum("filesystem", "database", name="storagemode"),
-                nullable=False,
-                server_default="filesystem",
-            )
-        )
-        batch_op.create_index(batch_op.f("ix_study_storage_mode"), ["storage_mode"], unique=False)
+    storagemode_enum = sa.Enum("FILESYSTEM", "DATABASE", name="storagemode")
+
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        storagemode_enum.create(bind, checkfirst=True)
+
+    op.add_column(
+        "study",
+        sa.Column(
+            "storage_mode",
+            storagemode_enum,
+            nullable=False,
+            server_default="FILESYSTEM",
+        ),
+    )
+    op.create_index(op.f("ix_study_storage_mode"), "study", ["storage_mode"])
 
     # 2. Create area table
     op.create_table(
