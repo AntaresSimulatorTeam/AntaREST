@@ -26,6 +26,7 @@ import { getNames } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import useCreateBindingConstraint from "../-hooks/useCreateBindingConstraint";
@@ -34,6 +35,11 @@ import { DEFAULT_CONSTRAINT_VALUES, OPERATOR_OPTIONS, TIME_STEPS_OPTIONS } from 
 interface Props {
   onCancel: VoidFunction;
 }
+
+const defaultValues = R.pick(
+  ["enabled", "name", "group", "comments", "timeStep", "operator"],
+  DEFAULT_CONSTRAINT_VALUES,
+);
 
 function AddConstraintDialog({ onCancel }: Props) {
   const study = useStudy();
@@ -65,7 +71,7 @@ function AddConstraintDialog({ onCancel }: Props) {
       open
       title={t("study.modeling.bindingConst.newBindingConst")}
       titleIcon={AddCircleIcon}
-      config={{ defaultValues: DEFAULT_CONSTRAINT_VALUES }}
+      config={{ defaultValues }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={onCancel}
       onCancel={onCancel}
