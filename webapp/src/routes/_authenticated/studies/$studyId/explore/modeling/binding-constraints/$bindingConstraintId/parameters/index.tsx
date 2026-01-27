@@ -50,8 +50,8 @@ function Parameters() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraint>) => {
-    const { id, name, ...updatedConstraint } = values;
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<BindingConstraint>) => {
+    const { id, name, ...updatedConstraint } = dirtyValues;
 
     return updateBindingConstraint({
       studyId: study.id,

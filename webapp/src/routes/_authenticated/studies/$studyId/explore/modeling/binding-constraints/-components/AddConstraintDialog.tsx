@@ -20,6 +20,7 @@ import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { adaptBindingConstraintOperationDtoToStudyVersion } from "@/services/api/studies/bindingConstraints/adapters";
 import type { BindingConstraintCreationDTO } from "@/services/api/studies/bindingConstraints/type";
 import { getNames } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
@@ -44,17 +45,15 @@ function AddConstraintDialog({ onCancel }: Props) {
     select: getNames,
   });
 
-  const defaultValues: BindingConstraintCreationDTO = {
-    ...DEFAULT_CONSTRAINT_VALUES,
-    group: semver.gte(study.version, "8.7.0") ? "default" : "",
-  };
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraintCreationDTO>) => {
-    createConstraint.mutate({ studyId: study.id, values });
+    createConstraint.mutate({
+      studyId: study.id,
+      values: adaptBindingConstraintOperationDtoToStudyVersion(values, study.version),
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -66,7 +65,7 @@ function AddConstraintDialog({ onCancel }: Props) {
       open
       title={t("study.modeling.bindingConst.newBindingConst")}
       titleIcon={AddCircleIcon}
-      config={{ defaultValues }}
+      config={{ defaultValues: DEFAULT_CONSTRAINT_VALUES }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={onCancel}
       onCancel={onCancel}

@@ -67,43 +67,12 @@ export const DEFAULT_CONSTRAINT_VALUES = {
   terms: [],
   filterYearByYear: [],
   filterSynthesis: [],
-  group: "",
+  group: "default",
 } satisfies BindingConstraintCreationDTO;
 
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
-
-// ID of a LinkTerm, expecting the "%" separator
-// export type LinkTermId = `${string}%${string}`;
-// ID of a ClusterTerm, expecting the "." separator
-// export type ClusterTermId = `${string}.${string}`;
-
-// export function isLinkTerm(
-//   termData: BindingConstraintLinkTerm | BindingConstraintClusterTerm,
-// ): termData is BindingConstraintLinkTerm {
-//   if (!termData) {
-//     return false;
-//   }
-
-//   if (!("area1" in termData && "area2" in termData)) {
-//     return false;
-//   }
-
-//   return termData.area1 !== "" && termData.area2 !== "";
-// }
-
-// export function generateTermId(
-//   termData: BindingConstraintLinkTerm | BindingConstraintClusterTerm,
-// ): LinkTermId | ClusterTermId {
-//   if (isLinkTerm(termData)) {
-//     return `${termData.area1}%${termData.area2}`;
-//   }
-//   return `${termData.area}.${termData.cluster}`;
-// }
-
-// export const isTermExist = (terms: BindingConstraintTerm[], termId: string): boolean =>
-//   terms.some(({ id }) => id === termId);
 
 export function bindingConstraintsToList(
   constraints: QueryList<BindingConstraint>,
