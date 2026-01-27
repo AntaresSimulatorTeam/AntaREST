@@ -212,6 +212,22 @@ function SettingsForm(props: PropType) {
             inputProps={{ min: 0, max: 3, step: 1 }}
             sx={{ mb: 1 }}
           />
+          <TextField
+            type="number"
+            label={t("xpansion.cutCoefficientTolerance")}
+            value={currentSettings.cutCoefficientTolerance}
+            onChange={(e) => handleChange("cutCoefficientTolerance", parseFloat(e.target.value))}
+            inputProps={{ min: 0 }}
+            sx={{ mb: 1 }}
+          />
+          <TextField
+            type="number"
+            label={t("xpansion.masterSolutionTolerance")}
+            value={currentSettings.masterSolutionTolerance}
+            onChange={(e) => handleChange("masterSolutionTolerance", parseFloat(e.target.value))}
+            inputProps={{ min: 0 }}
+            sx={{ mb: 1 }}
+          />
         </Fields>
       </Box>
       <Box>

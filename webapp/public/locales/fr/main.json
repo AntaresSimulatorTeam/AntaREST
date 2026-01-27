@@ -890,6 +890,8 @@
   "xpansion.relaxedOptimalityGap": "Écart d’optimalité relaxé",
   "xpansion.relativeGap": "Écart d’optimalité relatif",
   "xpansion.batchSize": "Taille de batch",
+  "xpansion.cutCoefficientTolerance": "Tolérance pour le coefficient de coupe",
+  "xpansion.masterSolutionTolerance": "Tolérance pour la solution du problème maître",
   "xpansion.solver": "Solveur",
   "xpansion.timeLimit": "Limite de temps (heures)",
   "xpansion.logLevel": "Niveau de log",
