@@ -15,7 +15,6 @@
 import BackButton from "@/components/buttons/BackButton";
 import PropertiesView from "@/components/PropertiesView";
 import { Box, Tab, Tabs } from "@mui/material";
-import { linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import type { PartialStudyOutput } from "../-hooks/useStudyOutput";
 import type { OutputItemType } from "../-utils";
@@ -53,7 +52,7 @@ function ResultItemSelector({
       <PropertiesView
         topContent={
           <Box sx={{ width: 1, px: 1 }}>
-            <BackButton linkOptions={linkOptions({ to: ".." })} />
+            <BackButton linkOptions={{ to: ".." }} />
           </Box>
         }
         mainContent={
