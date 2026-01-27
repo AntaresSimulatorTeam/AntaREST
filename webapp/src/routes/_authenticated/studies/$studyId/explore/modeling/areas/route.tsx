@@ -32,6 +32,7 @@ function AreasLayout() {
   const response = useStudySynthesis({ studyId, selector: getAreas });
 
   // Redirect to first area if none is selected
+  // TODO: Refactor to use `redirect()` in `beforeLoad` (index.tsx) after replacing Redux with Tanstack Query
   useEffect(() => {
     const { data } = response;
 
