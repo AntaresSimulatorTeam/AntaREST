@@ -214,6 +214,7 @@ class DatabaseAreaDao(AreaDao):
         )
         session.execute(stmt_area)
 
+        # The commit is handled inside the next method.
         self._create_new_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
 
     @override
@@ -235,6 +236,7 @@ class DatabaseAreaDao(AreaDao):
         # Delete area (cascade will delete area_ui automatically)
         stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
         session.execute(stmt)
+        session.commit()
 
     @override
     def save_area_ui(self, area_id: str, layer: str, area_ui_data: AreaUI) -> None:
@@ -276,6 +278,7 @@ class DatabaseAreaDao(AreaDao):
                 .values(x=area_ui_data.x, y=area_ui_data.y, color_r=r, color_g=g, color_b=b)
             )
             session.execute(stmt_update)
+            session.commit()
         else:
             self._create_new_ui(area_id, layer, area_ui_data)
 
@@ -367,6 +370,7 @@ class DatabaseAreaDao(AreaDao):
             # Execute batch insert
             if insert_values:
                 session.execute(insert(AREA_UI_TABLE), insert_values)
+        session.commit()
 
     def _create_new_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
         r, g, b = area_ui.color_rgb
@@ -381,6 +385,7 @@ class DatabaseAreaDao(AreaDao):
             color_b=b,
         )
         self.get_session().execute(stmt_insert)
+        self.get_session().commit()
 
     # Time series methods - not yet implemented for database storage mode
     @override

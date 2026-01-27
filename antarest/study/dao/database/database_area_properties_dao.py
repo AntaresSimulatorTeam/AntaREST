@@ -119,3 +119,4 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
             )
         )
         session.execute(stmt_update)
+        session.commit()

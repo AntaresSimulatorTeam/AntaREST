@@ -66,10 +66,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
     """
     Database implementation of StudyDao.
-
-    Note: Write operations do NOT commit transactions. The caller (service layer)
-    is responsible for transaction management (commit/rollback).
-    This allows combining multiple DAO operations into a single atomic transaction.
     """
 
     def __init__(self, study_id: str, db_session: Session) -> None:
