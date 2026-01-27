@@ -36,7 +36,18 @@ function TimeSeries() {
   const constraint = useBindingConstraint();
   const { t } = useTranslation();
   const baseUrl = `input/bindingconstraints/${constraint.id}`;
-  const isLegacy = semver.lt(study.version, "8.7.0");
+
+  /**
+   * Determines whether the binding constraint uses deterministic or scenarized time-series:
+   *
+   * - Deterministic (< v8.7.0): Single matrix with fixed bound values for all Monte Carlo years.
+   *   The matrix contains columns for "<", ">", and "=" operators in one combined view.
+   *
+   * - Scenarized (>= v8.7.0): Supports multiple time-series for Monte Carlo scenario building.
+   *   Separate matrices (`_lt`, `_eq`, `_gt`) allow different bound values per scenario,
+   *   enabling stochastic modeling of constraint bounds.
+   */
+  const isDeterministic = semver.lt(study.version, "8.7.0");
 
   const response = usePromise(
     () => {
@@ -47,7 +58,7 @@ function TimeSeries() {
     },
     {
       deps: [study.id, constraint.id],
-      disabled: isLegacy,
+      disabled: isDeterministic,
     },
   );
 
@@ -59,7 +70,7 @@ function TimeSeries() {
     return <DataGridSkeleton />;
   }
 
-  if (isLegacy) {
+  if (isDeterministic) {
     return (
       <Matrix
         key={constraint.id}
