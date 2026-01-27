@@ -27,7 +27,7 @@ import { useTranslation } from "react-i18next";
 
 interface MatrixContentProps {
   matrixInfo: MatrixInfoDTO;
-  onBack: () => void;
+  onBack?: VoidFunction;
 }
 
 function MatrixContent({ matrixInfo, onBack }: MatrixContentProps) {
@@ -59,7 +59,7 @@ function MatrixContent({ matrixInfo, onBack }: MatrixContentProps) {
   return (
     <>
       <Box sx={{ display: "flex" }}>
-        <BackButton onClick={onBack} />
+        {onBack && <BackButton onClick={onBack} />}
         <Typography>{matrixInfo.name}</Typography>
       </Box>
       <Divider sx={{ mt: 1, mb: 2 }} />

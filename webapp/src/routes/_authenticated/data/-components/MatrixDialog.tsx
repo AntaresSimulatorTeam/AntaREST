@@ -39,7 +39,7 @@ function MatrixDialog({ matrix, open, onClose }: PropTypes) {
         sx: { p: 1, height: "95vh", width: 1 },
       }}
     >
-      <MatrixContent matrixInfo={matrix} onBack={onClose} />
+      <MatrixContent matrixInfo={matrix} />
     </BasicDialog>
   );
 }
