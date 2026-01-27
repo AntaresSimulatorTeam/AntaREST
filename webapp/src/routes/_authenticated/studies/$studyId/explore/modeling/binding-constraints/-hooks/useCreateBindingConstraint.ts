@@ -14,7 +14,8 @@
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useSafeMemo from "@/hooks/useSafeMemo";
-import { bindingConstraintMutations, bindingConstraintQueries } from "@/queries/bindingConstraints";
+import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutations";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import { adaptBindingConstraintOutputFilterStringToArray } from "@/services/api/studies/bindingConstraints/adapters";
 import { useMutation } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
@@ -43,7 +44,7 @@ function useCreateBindingConstraint() {
   };
 
   const mutation = useMutation({
-    ...bindingConstraintMutations.create(),
+    ...bindingConstraintMutations.create(studyId),
     meta: { tempConstraintId },
     onMutate: async (variables, context) => {
       const { values } = variables;
@@ -117,9 +118,7 @@ function useCreateBindingConstraint() {
       }
     },
     onSettled: (data, error, variables, onMutateResult, context) => {
-      const mutationNb = context.client.isMutating({
-        mutationKey: bindingConstraintMutations.all(),
-      });
+      const mutationNb = context.client.isMutating({ mutationKey: queryListKey });
 
       if (mutationNb === 1) {
         context.client.invalidateQueries({ queryKey: queryListKey });

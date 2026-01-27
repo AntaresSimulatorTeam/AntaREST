@@ -13,7 +13,8 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { bindingConstraintMutations, bindingConstraintQueries } from "@/queries/bindingConstraints";
+import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutations";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import { getNextItemAfterDeletion } from "@/utils/arrayUtils";
 import { useMutation } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
@@ -32,7 +33,7 @@ function useDeleteBindingConstraint() {
   const { queryKey: queryListKey } = bindingConstraintQueries.list(studyId);
 
   const mutation = useMutation({
-    ...bindingConstraintMutations.delete(),
+    ...bindingConstraintMutations.delete(studyId),
     onMutate: async (variables, context) => {
       const { constraintId } = variables;
 
@@ -82,9 +83,7 @@ function useDeleteBindingConstraint() {
       );
     },
     onSettled: (data, error, variables, onMutateResult, context) => {
-      const mutationNb = context.client.isMutating({
-        mutationKey: bindingConstraintMutations.all(),
-      });
+      const mutationNb = context.client.isMutating({ mutationKey: queryListKey });
 
       if (mutationNb === 1) {
         context.client.invalidateQueries({ queryKey: queryListKey });

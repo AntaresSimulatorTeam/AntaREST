@@ -15,7 +15,7 @@
 import EmptyView from "@/components/page/EmptyView";
 import ListView from "@/components/page/ListView";
 import useDialog from "@/hooks/useDialog";
-import { bindingConstraintQueries } from "@/queries/bindingConstraints";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";

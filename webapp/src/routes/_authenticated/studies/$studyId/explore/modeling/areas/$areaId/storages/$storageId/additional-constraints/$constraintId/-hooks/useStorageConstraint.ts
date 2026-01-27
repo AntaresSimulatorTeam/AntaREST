@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { storageQueries } from "@/queries/storages";
+import { storageQueries } from "@/queries/storages/queries";
 import type { QueryList } from "@/queries/types";
 import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
 import { useSuspenseQuery } from "@tanstack/react-query";

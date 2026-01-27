@@ -13,7 +13,8 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { storageMutations, storageQueries } from "@/queries/storages";
+import { storageMutations } from "@/queries/storages/mutations";
+import { storageQueries } from "@/queries/storages/queries";
 import { getNextItemAfterDeletion } from "@/utils/arrayUtils";
 import { useMutation } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
@@ -82,9 +83,7 @@ function useDeleteStorageConstraint() {
       );
     },
     onSettled: (data, error, variables, onMutateResult, context) => {
-      const mutationNb = context.client.isMutating({
-        mutationKey: storageMutations.constraintList(studyId, areaId, storageId),
-      });
+      const mutationNb = context.client.isMutating({ mutationKey: queryListKey });
 
       if (mutationNb === 1) {
         context.client.invalidateQueries({ queryKey: queryListKey });

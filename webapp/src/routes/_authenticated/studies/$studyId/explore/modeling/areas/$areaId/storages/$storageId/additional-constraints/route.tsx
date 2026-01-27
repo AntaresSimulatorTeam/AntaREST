@@ -15,7 +15,7 @@
 import EmptyView from "@/components/page/EmptyView";
 import ListView from "@/components/page/ListView";
 import useDialog from "@/hooks/useDialog";
-import { storageQueries } from "@/queries/storages";
+import { storageQueries } from "@/queries/storages/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { useSuspenseQuery } from "@tanstack/react-query";

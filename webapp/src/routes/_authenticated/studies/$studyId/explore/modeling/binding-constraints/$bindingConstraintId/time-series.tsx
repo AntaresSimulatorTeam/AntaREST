@@ -35,7 +35,7 @@ function TimeSeries() {
   const study = useStudy();
   const constraint = useBindingConstraint();
   const { t } = useTranslation();
-  const urlBase = `input/bindingconstraints/${constraint.id}`;
+  const baseUrl = `input/bindingconstraints/${constraint.id}`;
   const isLegacy = semver.lt(study.version, "8.7.0");
 
   const response = usePromise(
@@ -65,7 +65,7 @@ function TimeSeries() {
         key={constraint.id}
         studyId={study.id}
         title={t("global.matrix")}
-        url={urlBase}
+        url={baseUrl}
         customColumns={["<", ">", "="]}
       />
     );
@@ -82,7 +82,7 @@ function TimeSeries() {
               key={constraint.id}
               studyId={study.id}
               title={t("study.modeling.bindingConst.timeSeries.less")}
-              url={`${urlBase}_lt`}
+              url={`${baseUrl}_lt`}
             />
           )}
           {operator === "equal" && (
@@ -90,7 +90,7 @@ function TimeSeries() {
               key={constraint.id}
               studyId={study.id}
               title={t("study.modeling.bindingConst.timeSeries.equal")}
-              url={`${urlBase}_eq`}
+              url={`${baseUrl}_eq`}
             />
           )}
           {operator === "greater" && (
@@ -98,7 +98,7 @@ function TimeSeries() {
               key={constraint.id}
               studyId={study.id}
               title={t("study.modeling.bindingConst.timeSeries.greater")}
-              url={`${urlBase}_gt`}
+              url={`${baseUrl}_gt`}
             />
           )}
           {operator === "both" && (
@@ -108,7 +108,7 @@ function TimeSeries() {
                   key={constraint.id}
                   studyId={study.id}
                   title={t("study.modeling.bindingConst.timeSeries.less")}
-                  url={`${urlBase}_lt`}
+                  url={`${baseUrl}_lt`}
                 />
               </Box>
               <Box sx={{ p: 2 }}>
@@ -116,7 +116,7 @@ function TimeSeries() {
                   key={constraint.id}
                   studyId={study.id}
                   title={t("study.modeling.bindingConst.timeSeries.greater")}
-                  url={`${urlBase}_gt`}
+                  url={`${baseUrl}_gt`}
                 />
               </Box>
             </SplitView>

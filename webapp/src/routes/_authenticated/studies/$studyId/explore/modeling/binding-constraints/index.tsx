@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { bindingConstraintQueries } from "@/queries/bindingConstraints";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import { sortByName } from "@/services/utils";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 

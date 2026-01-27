@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { bindingConstraintQueries } from "@/queries/bindingConstraints";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import type { QueryList } from "@/queries/types";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { useSuspenseQuery } from "@tanstack/react-query";

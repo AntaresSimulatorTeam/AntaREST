@@ -18,7 +18,7 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { storageQueries } from "@/queries/storages";
+import { storageQueries } from "@/queries/storages/queries";
 import type { StorageConstraintCreation } from "@/services/api/studies/areas/storages/types";
 import { getNames } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";

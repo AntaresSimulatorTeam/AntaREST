@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
-export const studyQueries = {
-  all: () => ["studies"] as const,
+import { studyKeys } from "../studies/keys";
+
+export const areaKeys = {
+  all: () => [...studyKeys.all(), "areas"],
 };
