@@ -65,9 +65,6 @@ v2.28.0 (2026-01-27)
 * **db**: initialize DB only once for all integration tests [`#2891`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2891)
 * **app**: bump some backend dependencies [`#2889`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2889)
 
-### New Contributors
-* @dusanparipovic made their first contribution in https://github.com/AntaresSimulatorTeam/AntaREST/pull/2892
-
 v2.27.1 (2026-01-21)
 --------------------
 
