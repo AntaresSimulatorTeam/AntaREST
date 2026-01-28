@@ -15,6 +15,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
+from antarest.maintenance.tasks.common import BackGroundTaskStatus
+from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models import (
     LOAD_TABLE,
@@ -60,8 +62,8 @@ def test_solar_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
     dao.save_solar(area_id, series_id)
 
     # Ensures we retrieve the solar matrix we created
-    load = dao.get_solar(area_id)
-    pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+    solar = dao.get_solar(area_id)
+    pl.testing.assert_frame_equal(solar, dataframe, check_dtypes=False)
 
     # Ensures we cannot set a solar matrix for a fake area
     with pytest.raises(AreaNotFound):
@@ -85,8 +87,8 @@ def test_wind_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
     dao.save_wind(area_id, series_id)
 
     # Ensures we retrieve the wind matrix we created
-    load = dao.get_wind(area_id)
-    pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+    wind = dao.get_wind(area_id)
+    pl.testing.assert_frame_equal(wind, dataframe, check_dtypes=False)
 
     # Ensures we cannot set a wind matrix for a fake area
     with pytest.raises(AreaNotFound):
@@ -110,8 +112,8 @@ def test_reserves_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
     dao.save_reserves(area_id, series_id)
 
     # Ensures we retrieve the reserves matrix we created
-    load = dao.get_reserves(area_id)
-    pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+    reserves = dao.get_reserves(area_id)
+    pl.testing.assert_frame_equal(reserves, dataframe, check_dtypes=False)
 
     # Ensures we cannot set a reserves matrix for a fake area
     with pytest.raises(AreaNotFound):
@@ -135,8 +137,8 @@ def test_misc_gen_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
     dao.save_misc_gen(area_id, series_id)
 
     # Ensures we retrieve the misc-gen matrix we created
-    load = dao.get_misc_gen(area_id)
-    pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+    misc_gen = dao.get_misc_gen(area_id)
+    pl.testing.assert_frame_equal(misc_gen, dataframe, check_dtypes=False)
 
     # Ensures we cannot set a misc-gen matrix for a fake area
     with pytest.raises(AreaNotFound):
@@ -148,3 +150,40 @@ def test_misc_gen_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
 
         misc_gen_rows = db_session.execute(select(MISC_GEN_TABLE)).fetchall()
         assert misc_gen_rows == []
+
+
+def test_garbage_collection(dao: DatabaseStudyDao) -> None:
+    matrix_service = dao._matrix_service
+    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+    series_id = matrix_service.create(dataframe)
+    area_id = "paris"
+
+    dao.save_area(area_id)
+
+    # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
+    dao.save_load(area_id, series_id)
+    dao.save_solar(area_id, series_id)
+    dao.save_wind(area_id, series_id)
+    dao.save_reserves(area_id, series_id)
+    dao.save_misc_gen(area_id, series_id)
+
+    # Launch the Garbage collection
+    task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
+    assert task.status == BackGroundTaskStatus.SUCCESS
+    assert task.deleted_count == 0
+
+    # Ensures the matrices were not removed from their tables
+    load = dao.get_load(area_id)
+    pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+
+    solar = dao.get_solar(area_id)
+    pl.testing.assert_frame_equal(solar, dataframe, check_dtypes=False)
+
+    wind = dao.get_wind(area_id)
+    pl.testing.assert_frame_equal(wind, dataframe, check_dtypes=False)
+
+    misc_gen = dao.get_misc_gen(area_id)
+    pl.testing.assert_frame_equal(misc_gen, dataframe, check_dtypes=False)
+
+    reserves = dao.get_reserves(area_id)
+    pl.testing.assert_frame_equal(reserves, dataframe, check_dtypes=False)
