@@ -13,7 +13,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from sqlalchemy import Row, delete, select
+from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -68,21 +68,38 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def save_link(self, link: Link) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        if self.link_exists(link.area1, link.area2):
+            self._delete_link(link)
+        stmt_insert = insert(LINK_TABLE).values(
+            area1=link.area1,
+            area2=link.area2,
+            hurdles_cost=link.hurdles_cost,
+            loop_flow=link.loop_flow,
+            use_phase_shifter=link.use_phase_shifter,
+            transmission_capacities=link.transmission_capacities,
+            asset_type=link.asset_type,
+            display_comments=link.display_comments,
+            comments=link.comments,
+            colorr=link.colorr,
+            colorb=link.colorb,
+            colorg=link.colorg,
+            link_width=link.link_width,
+            link_style=link.link_style,
+            filter_synthesis=link.filter_synthesis,
+            filter_year_by_year=link.filter_year_by_year,
+        )
+        # todo: probably parse and serialize
+        session = self.get_session()
+        session.execute(stmt_insert)
+        session.commit()
 
     @override
     def delete_link(self, link: Link) -> None:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        area1_id, area2_id = link.area1, link.area2
-        if not self.link_exists(area1_id, area2_id):
-            raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
+        if not self.link_exists(link.area1, link.area2):
+            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
 
-        stmt = delete(LINK_TABLE).where(
-            (LINK_TABLE.c.study_id == study_id) & (LINK_TABLE.c.area1 == area1_id) & (LINK_TABLE.c.area2 == area2_id)
-        )
-        session.execute(stmt)
-        session.commit()
+        self._delete_link(link)
+        self.get_session().commit()
 
     @override
     def get_links(self) -> Sequence[Link]:
@@ -113,6 +130,17 @@ class DatabaseLinkDao(LinkDao):
         )
 
         return session.execute(stmt).fetchone()
+
+    def _delete_link(self, link: Link) -> None:
+        """Deletes the link from database but does not commit the transaction"""
+        study_id = self.get_study_id()
+        session = self.get_session()
+        stmt = delete(LINK_TABLE).where(
+            (LINK_TABLE.c.study_id == study_id)
+            & (LINK_TABLE.c.area1 == link.area1)
+            & (LINK_TABLE.c.area2 == link.area2)
+        )
+        session.execute(stmt)
 
     @override
     def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
