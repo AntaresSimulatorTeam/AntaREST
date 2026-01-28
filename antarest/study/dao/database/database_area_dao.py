@@ -424,6 +424,7 @@ class DatabaseAreaDao(AreaDao):
                 .values(matrix_id=matrix_id)
             )
             session.execute(stmt_update)
+        session.commit()
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
