@@ -17,7 +17,7 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 from antarest.study.dao.api.compatibility_parameters_dao import CompatibilityParametersDao
 from antarest.study.storage.rawstudy.model.filesystem.config.compatibility_parameters import (
     parse_compatibility_parameters,
-    save_compatibility_parameters,
+    serialize_compatibility_parameters,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -40,6 +40,6 @@ class FileStudyCompatibilityParametersDao(CompatibilityParametersDao, ABC):
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
         file_study = self.get_file_study()
         file_study.tree.save(
-            save_compatibility_parameters(parameters),
+            serialize_compatibility_parameters(file_study.config.version, parameters),
             ["settings", "generaldata", "compatibility"],
         )
