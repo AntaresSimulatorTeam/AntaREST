@@ -154,10 +154,10 @@ class TestDatabaseDistrictDao:
             assert result.apply_filter == DistrictApplyFilter.add_all
             assert result.subtract_areas == ["paris"]
 
-    def test_delete_area_removes_districts_referencing_it(
+    def test_delete_area_removes_area_from_districts(
         self, db_session: Session, dao: DatabaseDistrictDao, study_dao: DatabaseStudyDao
     ) -> None:
-        """When an area is deleted, districts that reference it should be deleted too."""
+        """When an area is deleted, it should be removed from districts that reference it."""
         with db_session:
             study_dao.save_area("Paris")
             study_dao.save_area("London")
@@ -172,23 +172,30 @@ class TestDatabaseDistrictDao:
             db_session.commit()
 
         with db_session:
+            # Delete Paris - should remove paris from d1 and d2, but keep the districts
+            study_dao.delete_area("paris")
+
+        with db_session:
+            # All districts should still exist
             assert dao.district_exists("d1")
             assert dao.district_exists("d2")
             assert dao.district_exists("d3")
 
-        with db_session:
-            # Delete Paris - should remove d1 and d2 but not d3
-            study_dao.delete_area("paris")
+            # Paris should be removed from add_areas
+            d1 = dao.get_district("d1")
+            assert "paris" not in d1.add_areas
 
-        with db_session:
-            assert not dao.district_exists("d1")
-            assert not dao.district_exists("d2")
-            assert dao.district_exists("d3")
+            d2 = dao.get_district("d2")
+            assert "paris" not in d2.add_areas
+            assert "london" in d2.add_areas
 
-    def test_delete_area_removes_districts_with_subtract_areas(
+            d3 = dao.get_district("d3")
+            assert d3.add_areas == ["london"]
+
+    def test_delete_area_removes_area_from_subtract_areas(
         self, db_session: Session, dao: DatabaseDistrictDao, study_dao: DatabaseStudyDao
     ) -> None:
-        """When an area is deleted, districts that reference it in subtract_areas should be deleted too."""
+        """When an area is deleted, it should be removed from subtract_areas of districts."""
         with db_session:
             study_dao.save_area("Paris")
             db_session.commit()
@@ -211,4 +218,8 @@ class TestDatabaseDistrictDao:
             study_dao.delete_area("paris")
 
         with db_session:
-            assert not dao.district_exists("d1")
+            # District should still exist
+            assert dao.district_exists("d1")
+            # Paris should be removed from subtract_areas
+            d1 = dao.get_district("d1")
+            assert "paris" not in d1.subtract_areas
