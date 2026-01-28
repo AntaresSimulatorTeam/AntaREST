@@ -262,10 +262,7 @@ class DatabaseAreaDao(AreaDao):
 
                 session.execute(
                     update(DISTRICT_TABLE)
-                    .where(
-                        (DISTRICT_TABLE.c.study_id == study_id)
-                        & (DISTRICT_TABLE.c.district_id == row.district_id)
-                    )
+                    .where((DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == row.district_id))
                     .values(
                         add_areas=json.dumps(add_areas),
                         subtract_areas=json.dumps(subtract_areas),

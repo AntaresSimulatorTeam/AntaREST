@@ -16,7 +16,7 @@ SQLAlchemy Core table definitions for district storage.
 This module defines the database tables for districts when a study has storage_mode=DATABASE.
 """
 
-from sqlalchemy import Boolean, Column, Enum, ForeignKeyConstraint, String, Table, Text
+from sqlalchemy import Boolean, Column, Enum, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.district_model import DistrictApplyFilter
