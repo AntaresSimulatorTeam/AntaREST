@@ -66,6 +66,11 @@ def _apply_celery_config(app: Celery, celery_config: CeleryConfig) -> None:
 
 celery_app = Celery("antarest-maintenance")
 
+# Load broker config immediately
+_startup_config = _load_config()
+if _startup_config and _startup_config.celery:
+    _apply_celery_config(celery_app, _startup_config.celery)
+
 celery_app.conf.update(
     task_serializer="json",
     result_serializer="json",
