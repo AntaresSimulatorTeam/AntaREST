@@ -63,7 +63,7 @@ AREA_UI_TABLE = Table(
 )
 
 
-def _get_args() -> list[SchemaItem]:
+def _get_area_matrices_args() -> list[SchemaItem]:
     return [
         Column("study_id", String(36), nullable=False, primary_key=True),
         Column("area_id", String(255), nullable=False, primary_key=True),
@@ -73,8 +73,8 @@ def _get_args() -> list[SchemaItem]:
 
 
 # Relation: One to one with `AREA_TABLE`
-LOAD_TABLE = Table("load", metadata, *_get_args())
-SOLAR_TABLE = Table("solar", metadata, *_get_args())
-WIND_TABLE = Table("wind", metadata, *_get_args())
-RESERVES_TABLE = Table("reserves", metadata, *_get_args())
-MISC_GEN_TABLE = Table("misc_gen", metadata, *_get_args())
+LOAD_TABLE = Table("load", metadata, *_get_area_matrices_args())
+SOLAR_TABLE = Table("solar", metadata, *_get_area_matrices_args())
+WIND_TABLE = Table("wind", metadata, *_get_area_matrices_args())
+RESERVES_TABLE = Table("reserves", metadata, *_get_area_matrices_args())
+MISC_GEN_TABLE = Table("misc_gen", metadata, *_get_area_matrices_args())
