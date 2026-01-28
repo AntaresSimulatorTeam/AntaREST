@@ -23,23 +23,23 @@ def test_favorite(client: TestClient, admin_access_token: str) -> None:
 
     # adding favorites and checking the API returns the good number
 
-    resp = client.post(f"/v1/favorite_study/{study_test_1}")
+    resp = client.post(f"/v1/favorites/studies/{study_test_1}")
     assert resp.status_code == 200
-    resp = client.post(f"/v1/favorite_study/{study_test_2}")
+    resp = client.post(f"/v1/favorites/studies/{study_test_2}")
     assert resp.status_code == 200
-    fav_study_dto_1 = {"id_study": study_test_1, "study_name": "study_1"}
-    fav_study_dto_2 = {"id_study": study_test_2, "study_name": "study_2"}
+    fav_study_dto_1 = {"study_id": study_test_1, "study_name": "study_1"}
+    fav_study_dto_2 = {"study_id": study_test_2, "study_name": "study_2"}
     expected_favorite_list = [fav_study_dto_1, fav_study_dto_2]
 
-    favorite_list = client.get("/v1/favorite_study").json()
+    favorite_list = client.get("/v1/favorites/studies").json()
     assert favorite_list == expected_favorite_list
 
     # deleting studies from favorites
 
-    client.delete(f"/v1/favorite_study/{study_test_1}")
-    favorite_list = client.get("/v1/favorite_study").json()
+    client.delete(f"/v1/favorites/studies/{study_test_1}")
+    favorite_list = client.get("/v1/favorites/studies").json()
     assert favorite_list == [fav_study_dto_2]
 
-    client.delete(f"/v1/favorite_study/{study_test_2}")
-    favorite_list = client.get("/v1/favorite_study").json()
+    client.delete(f"/v1/favorites/studies/{study_test_2}")
+    favorite_list = client.get("/v1/favorites/studies").json()
     assert favorite_list == []

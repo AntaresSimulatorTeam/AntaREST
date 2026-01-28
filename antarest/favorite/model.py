@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class FavoriteStudyDTO(AntaresBaseModel, extra="forbid"):
-    id_study: str
+    study_id: str
     study_name: str
 
 
@@ -51,4 +51,4 @@ class FavoriteStudy(Base):
     study: Mapped["Study"] = relationship(Study)
 
     def to_dto(self) -> FavoriteStudyDTO:
-        return FavoriteStudyDTO(id_study=self.study_id, study_name=self.study.name)
+        return FavoriteStudyDTO(study_id=self.study_id, study_name=self.study.name)

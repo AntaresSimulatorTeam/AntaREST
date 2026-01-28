@@ -21,7 +21,7 @@ from antarest.login.utils import get_user_id
 from antarest.study.model import Study
 
 
-class FavoriteStudyRepository:
+class FavoriteRepository:
     def __init__(self, session: Optional[Session] = None) -> None:
         self._session = session
 
