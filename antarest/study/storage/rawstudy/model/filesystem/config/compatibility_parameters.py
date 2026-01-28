@@ -45,4 +45,6 @@ def parse_compatibility_parameters(version: StudyVersion, data: dict[str, Any]) 
 
 
 def save_compatibility_parameters(parameters: CompatibilityParameters) -> dict[str, Any]:
-    return CompatibilityParametersFileData.from_model(parameters).model_dump(mode="json", by_alias=True, exclude_none=True)
+    return CompatibilityParametersFileData.from_model(parameters).model_dump(
+        mode="json", by_alias=True, exclude_none=True
+    )
