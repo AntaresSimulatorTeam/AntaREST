@@ -87,7 +87,13 @@ celery_app.conf.update(
     task_time_limit=7200,  # 2h hard limit
     worker_send_task_events=True,
     task_send_sent_event=True,
-    task_routes={"antarest.maintenance.tasks.*": {"queue": "maintenance"}},
+    task_routes={
+        "matrices_cleaner": {"queue": "maintenance"},
+        "blobs_cleaner": {"queue": "maintenance"},
+        "auto_archiver": {"queue": "maintenance"},
+        "watcher_scan": {"queue": "maintenance"},
+        "variable_view_cleaner": {"queue": "maintenance"},
+    },
     # Define beat_schedule directly (more reliable than on_after_configure signal)
     beat_schedule={
         "matrices_cleaner": {
@@ -151,11 +157,15 @@ def _setup_periodic_tasks(sender: Celery, **_: object) -> None:
     from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
+    from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
+    from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
     # Stagger first execution to avoid hitting everything at once
     clean_matrices_task.apply_async(countdown=60)
     clean_blobs_task.apply_async(countdown=90)
     auto_archive_task.apply_async(countdown=120)
+    clean_variable_views_task.apply_async(countdown=150)
+    watcher_scan_task.apply_async(countdown=30)
 
     logger.info("Periodic tasks configured via beat_schedule")
 
