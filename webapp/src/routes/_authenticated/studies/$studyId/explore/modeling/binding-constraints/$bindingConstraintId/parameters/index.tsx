@@ -24,6 +24,7 @@ import {
   getBindingConstraint,
   updateBindingConstraint,
 } from "@/services/api/studies/bindingConstraints";
+import { adaptBindingConstraintOperationDtoToStudyVersion } from "@/services/api/studies/bindingConstraints/adapters";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { unresolvedPromise } from "@/utils/promiseUtils";
 import { validateString } from "@/utils/validation/string";
@@ -56,7 +57,7 @@ function Parameters() {
     return updateBindingConstraint({
       studyId: study.id,
       constraintId: constraint.id,
-      values: updatedConstraint,
+      values: adaptBindingConstraintOperationDtoToStudyVersion(updatedConstraint, study.version),
     });
   };
 
