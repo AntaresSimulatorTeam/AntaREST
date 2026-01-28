@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import LinkNotFound
+from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import DEFAULT_COLOR, AssetType, Link, LinkStyle, TransmissionCapacity
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models import LINK_TABLE
@@ -94,3 +95,33 @@ def test_get_all_links(dao: DatabaseStudyDao, db_session: Session) -> None:
         assert len(all_links) == 2
 
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+
+
+def test_delete_link(dao: DatabaseStudyDao, db_session: Session) -> None:
+    link = Link(area1="paris", area2="london")
+    with pytest.raises(LinkNotFound):
+        dao.delete_link(link)
+
+    _create_default_link(dao)
+
+    # Delete the existing link
+    dao.delete_link(link)
+
+    # Asserts there are no links left in DB
+    stmt = select(LINK_TABLE)
+    rows = db_session.execute(stmt).fetchall()
+    assert rows == []
+
+
+def test_save_link(dao: DatabaseStudyDao) -> None:
+    _create_default_link(dao)
+
+    # Save the link with new properties
+    new_link = Link(
+        area1="paris", area2="london", hurdles_cost=True, comments="My link", filter_synthesis=[FilterOption.DAILY]
+    )
+    dao.save_link(new_link)
+
+    # Asserts the properties were well modified
+    link = dao.get_link("london", "paris")
+    assert link == new_link
