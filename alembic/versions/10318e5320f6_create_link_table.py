@@ -1,4 +1,4 @@
-"""create_link_tables
+"""create_link_table
 
 Revision ID: 10318e5320f6
 Revises: 4bbe4f165a05
