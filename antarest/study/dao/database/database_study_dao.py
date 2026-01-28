@@ -18,7 +18,7 @@ Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
 from pathlib import PurePosixPath
-from typing import Dict, Iterator, Optional, Sequence
+from typing import Dict, Iterator, Optional, Self, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -26,7 +26,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -58,24 +57,18 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
+from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseDistrictDao):
+class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao):
     """
     Database implementation of StudyDao.
-
-    Note: Write operations do NOT commit transactions. The caller (service layer)
-    is responsible for transaction management (commit/rollback).
     """
 
-    def __init__(
-        self,
-        study_id: str,
-        db_session: Session,
-    ) -> None:
+    def __init__(self, study_id: str, db_session: Session) -> None:
         """
         Initialize DatabaseStudyDao.
 
@@ -84,6 +77,8 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseDistrictDao):
             db_session: SQLAlchemy session for database operations
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
+        DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
+        DatabaseDistrictDao.__init__(self, study_id, db_session)
 
     # Implementation of abstract methods required by StudyDao
     @override
@@ -97,6 +92,10 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseDistrictDao):
         stmt = select(Study.version).where(Study.id == self._study_id)
         version_str = self._db_session.execute(stmt).scalar_one()
         return StudyVersion.parse(version_str)
+
+    @override
+    def get_impl(self) -> Self:
+        return self
 
     @override
     def get_comments(self) -> str:
@@ -648,18 +647,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseDistrictDao):
 
     @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_area_properties(self, area_id: str) -> AreaProperties:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_area_properties(self) -> dict[str, AreaProperties]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
