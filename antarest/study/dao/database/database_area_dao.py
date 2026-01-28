@@ -270,8 +270,8 @@ class DatabaseAreaDao(AreaDao):
                 )
 
         # Delete area (cascade will delete area_ui automatically)
-        stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
-        session.execute(stmt)
+        delete_stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+        session.execute(delete_stmt)
         session.commit()
 
     @override
