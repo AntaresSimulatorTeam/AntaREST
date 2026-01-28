@@ -13,7 +13,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from sqlalchemy import Row, select
+from sqlalchemy import Row, delete, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -72,7 +72,17 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def delete_link(self, link: Link) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self.get_study_id()
+        session = self.get_session()
+        area1_id, area2_id = link.area1, link.area2
+        if not self.link_exists(area1_id, area2_id):
+            raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
+
+        stmt = delete(LINK_TABLE).where(
+            (LINK_TABLE.c.study_id == study_id) & (LINK_TABLE.c.area1 == area1_id) & (LINK_TABLE.c.area2 == area2_id)
+        )
+        session.execute(stmt)
+        session.commit()
 
     @override
     def get_links(self) -> Sequence[Link]:
