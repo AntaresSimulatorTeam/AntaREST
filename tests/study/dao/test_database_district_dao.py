@@ -21,8 +21,8 @@ from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District, DistrictApplyFilter
-from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import StorageMode
 from tests.helpers import create_study
 
@@ -43,8 +43,8 @@ class TestDatabaseDistrictDao:
         return DatabaseDistrictDao(study_id, db_session)
 
     @pytest.fixture
-    def area_dao(self, db_session: Session, study_id: str) -> DatabaseAreaDao:
-        return DatabaseAreaDao(study_id, db_session)
+    def study_dao(self, db_session: Session, study_id: str) -> DatabaseStudyDao:
+        return DatabaseStudyDao(study_id, db_session)
 
     def test_save_district_creates_district(self, db_session: Session, dao: DatabaseDistrictDao) -> None:
         with db_session:
@@ -60,11 +60,11 @@ class TestDatabaseDistrictDao:
             assert result.comments == "test"
 
     def test_save_district_with_areas(
-        self, db_session: Session, dao: DatabaseDistrictDao, area_dao: DatabaseAreaDao
+        self, db_session: Session, dao: DatabaseDistrictDao, study_dao: DatabaseStudyDao
     ) -> None:
         with db_session:
-            area_dao.save_area("Paris")
-            area_dao.save_area("London")
+            study_dao.save_area("Paris")
+            study_dao.save_area("London")
             db_session.commit()
 
         with db_session:
@@ -133,10 +133,10 @@ class TestDatabaseDistrictDao:
             assert dao.district_exists("d1")
 
     def test_save_district_with_apply_filter(
-        self, db_session: Session, dao: DatabaseDistrictDao, area_dao: DatabaseAreaDao
+        self, db_session: Session, dao: DatabaseDistrictDao, study_dao: DatabaseStudyDao
     ) -> None:
         with db_session:
-            area_dao.save_area("Paris")
+            study_dao.save_area("Paris")
             db_session.commit()
 
         with db_session:
@@ -153,3 +153,62 @@ class TestDatabaseDistrictDao:
             result = dao.get_district("d1")
             assert result.apply_filter == DistrictApplyFilter.add_all
             assert result.subtract_areas == ["paris"]
+
+    def test_delete_area_removes_districts_referencing_it(
+        self, db_session: Session, dao: DatabaseDistrictDao, study_dao: DatabaseStudyDao
+    ) -> None:
+        """When an area is deleted, districts that reference it should be deleted too."""
+        with db_session:
+            study_dao.save_area("Paris")
+            study_dao.save_area("London")
+            db_session.commit()
+
+        with db_session:
+            # Create districts that reference Paris
+            dao.save_district(District(id="d1", name="District 1", add_areas=["paris"]))
+            dao.save_district(District(id="d2", name="District 2", add_areas=["paris", "london"]))
+            # Create a district that doesn't reference Paris
+            dao.save_district(District(id="d3", name="District 3", add_areas=["london"]))
+            db_session.commit()
+
+        with db_session:
+            assert dao.district_exists("d1")
+            assert dao.district_exists("d2")
+            assert dao.district_exists("d3")
+
+        with db_session:
+            # Delete Paris - should remove d1 and d2 but not d3
+            study_dao.delete_area("paris")
+
+        with db_session:
+            assert not dao.district_exists("d1")
+            assert not dao.district_exists("d2")
+            assert dao.district_exists("d3")
+
+    def test_delete_area_removes_districts_with_subtract_areas(
+        self, db_session: Session, dao: DatabaseDistrictDao, study_dao: DatabaseStudyDao
+    ) -> None:
+        """When an area is deleted, districts that reference it in subtract_areas should be deleted too."""
+        with db_session:
+            study_dao.save_area("Paris")
+            db_session.commit()
+
+        with db_session:
+            dao.save_district(
+                District(
+                    id="d1",
+                    name="District 1",
+                    apply_filter=DistrictApplyFilter.add_all,
+                    subtract_areas=["paris"],
+                )
+            )
+            db_session.commit()
+
+        with db_session:
+            assert dao.district_exists("d1")
+
+        with db_session:
+            study_dao.delete_area("paris")
+
+        with db_session:
+            assert not dao.district_exists("d1")

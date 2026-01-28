@@ -16,6 +16,7 @@ Database implementation of DistrictDao.
 This module provides database-backed storage for districts when storage_mode=DATABASE.
 """
 
+import json
 from typing import Sequence
 
 from sqlalchemy import delete, insert, select
@@ -25,7 +26,7 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
-from antarest.study.dao.database.model.district import DISTRICT_AREA_TABLE, DISTRICT_TABLE
+from antarest.study.dao.database.model.district import DISTRICT_TABLE
 from antarest.study.dao.database.models import AREA_TABLE
 
 
@@ -78,7 +79,7 @@ class DatabaseDistrictDao(DistrictDao):
             )
         )
 
-        # Insert district
+        # Insert district with areas as JSON
         session.execute(
             insert(DISTRICT_TABLE).values(
                 study_id=study_id,
@@ -87,19 +88,10 @@ class DatabaseDistrictDao(DistrictDao):
                 output=district.output,
                 comments=district.comments,
                 apply_filter=district.apply_filter,
+                add_areas=json.dumps(district.add_areas),
+                subtract_areas=json.dumps(district.subtract_areas),
             )
         )
-
-        # Insert area associations
-        area_values = [
-            {"study_id": study_id, "district_id": district.id, "area_id": area_id, "mode": "add"}
-            for area_id in district.add_areas
-        ] + [
-            {"study_id": study_id, "district_id": district.id, "area_id": area_id, "mode": "subtract"}
-            for area_id in district.subtract_areas
-        ]
-        if area_values:
-            session.execute(insert(DISTRICT_AREA_TABLE), area_values)
         session.commit()
 
     def _get_invalid_areas(self, areas: list[str]) -> list[str]:
@@ -122,7 +114,6 @@ class DatabaseDistrictDao(DistrictDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # CASCADE will delete area associations automatically
         session.execute(
             delete(DISTRICT_TABLE).where(
                 (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
@@ -138,21 +129,9 @@ class DatabaseDistrictDao(DistrictDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Get all districts
         stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
         district_rows = session.execute(stmt).fetchall()
 
-        # Get all area associations
-        stmt_areas = select(DISTRICT_AREA_TABLE).where(DISTRICT_AREA_TABLE.c.study_id == study_id)
-        area_rows = session.execute(stmt_areas).fetchall()
-
-        # Group areas by district_id
-        areas_by_district: dict[str, dict[str, list[str]]] = {}
-        for row in area_rows:
-            areas_by_district.setdefault(row.district_id, {"add": [], "subtract": []})
-            areas_by_district[row.district_id][row.mode].append(row.area_id)
-
-        # Build District objects
         return [
             District(
                 id=row.district_id,
@@ -160,8 +139,8 @@ class DatabaseDistrictDao(DistrictDao):
                 output=row.output,
                 comments=row.comments,
                 apply_filter=row.apply_filter,
-                add_areas=areas_by_district.get(row.district_id, {}).get("add", []),
-                subtract_areas=areas_by_district.get(row.district_id, {}).get("subtract", []),
+                add_areas=json.loads(row.add_areas),
+                subtract_areas=json.loads(row.subtract_areas),
             )
             for row in district_rows
         ]
@@ -174,7 +153,6 @@ class DatabaseDistrictDao(DistrictDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Get district
         stmt = select(DISTRICT_TABLE).where(
             (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
         )
@@ -182,26 +160,14 @@ class DatabaseDistrictDao(DistrictDao):
         if not row:
             raise DistrictConfigNotFound(district_id)
 
-        # Get area associations
-        stmt_areas = select(DISTRICT_AREA_TABLE).where(
-            (DISTRICT_AREA_TABLE.c.study_id == study_id) & (DISTRICT_AREA_TABLE.c.district_id == district_id)
-        )
-        add_areas = []
-        subtract_areas = []
-        for area_row in session.execute(stmt_areas):
-            if area_row.mode == "add":
-                add_areas.append(area_row.area_id)
-            else:
-                subtract_areas.append(area_row.area_id)
-
         return District(
             id=row.district_id,
             name=row.name,
             output=row.output,
             comments=row.comments,
             apply_filter=row.apply_filter,
-            add_areas=add_areas,
-            subtract_areas=subtract_areas,
+            add_areas=json.loads(row.add_areas),
+            subtract_areas=json.loads(row.subtract_areas),
         )
 
     @override

@@ -16,6 +16,7 @@ Database implementation of AreaDao using SQLAlchemy Core.
 This module provides database-backed storage for areas when storage_mode=DATABASE.
 """
 
+import json
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List
 
@@ -29,6 +30,7 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo,
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.database.model.district import DISTRICT_TABLE
 from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
@@ -246,9 +248,27 @@ class DatabaseAreaDao(AreaDao):
 
         validate_area_exists(session, study_id, area_id)
 
+        # Delete districts that reference this area
+        stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
+        district_rows = session.execute(stmt).fetchall()
+
+        districts_to_delete = []
+        for row in district_rows:
+            add_areas = json.loads(row.add_areas)
+            subtract_areas = json.loads(row.subtract_areas)
+            if area_id in add_areas or area_id in subtract_areas:
+                districts_to_delete.append(row.district_id)
+
+        if districts_to_delete:
+            session.execute(
+                delete(DISTRICT_TABLE).where(
+                    (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id.in_(districts_to_delete))
+                )
+            )
+
         # Delete area (cascade will delete area_ui automatically)
-        stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
-        session.execute(stmt)
+        delete_stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+        session.execute(delete_stmt)
         session.commit()
 
     @override
