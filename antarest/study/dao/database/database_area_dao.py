@@ -248,27 +248,33 @@ class DatabaseAreaDao(AreaDao):
 
         validate_area_exists(session, study_id, area_id)
 
-        # Delete districts that reference this area
+        # Remove area from districts that reference it
         stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
         district_rows = session.execute(stmt).fetchall()
 
-        districts_to_delete = []
         for row in district_rows:
-            add_areas = json.loads(row.add_areas)
-            subtract_areas = json.loads(row.subtract_areas)
-            if area_id in add_areas or area_id in subtract_areas:
-                districts_to_delete.append(row.district_id)
+            add_areas: list[str] = json.loads(row.add_areas)
+            subtract_areas: list[str] = json.loads(row.subtract_areas)
 
-        if districts_to_delete:
-            session.execute(
-                delete(DISTRICT_TABLE).where(
-                    (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id.in_(districts_to_delete))
+            if area_id in add_areas or area_id in subtract_areas:
+                add_areas = [a for a in add_areas if a != area_id]
+                subtract_areas = [a for a in subtract_areas if a != area_id]
+
+                session.execute(
+                    update(DISTRICT_TABLE)
+                    .where(
+                        (DISTRICT_TABLE.c.study_id == study_id)
+                        & (DISTRICT_TABLE.c.district_id == row.district_id)
+                    )
+                    .values(
+                        add_areas=json.dumps(add_areas),
+                        subtract_areas=json.dumps(subtract_areas),
+                    )
                 )
-            )
 
         # Delete area (cascade will delete area_ui automatically)
-        delete_stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
-        session.execute(delete_stmt)
+        stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+        session.execute(stmt)
         session.commit()
 
     @override
