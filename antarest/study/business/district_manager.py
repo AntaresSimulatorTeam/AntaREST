@@ -77,7 +77,7 @@ class DistrictManager:
         if study_dao.district_exists(district_id):
             raise DistrictAlreadyExist(district_id)
 
-        invalid_areas = study_dao.get_invalid_areas_in_district(district_creation.areas or [])
+        invalid_areas = study_dao.get_invalid_area_ids(district_creation.areas or [])
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
@@ -115,7 +115,7 @@ class DistrictManager:
         if not study_dao.district_exists(district_id):
             raise DistrictNotFound(district_id)
 
-        invalid_areas = study_dao.get_invalid_areas_in_district(district_update.areas or [])
+        invalid_areas = study_dao.get_invalid_area_ids(district_update.areas or [])
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 

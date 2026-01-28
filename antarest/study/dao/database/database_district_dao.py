@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
-from antarest.study.business.model.district_model import District, DistrictApplyFilter
+from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.dao.database.model.district import DISTRICT_AREA_TABLE, DISTRICT_TABLE
 from antarest.study.dao.database.models import AREA_TABLE
@@ -71,7 +71,7 @@ class DatabaseDistrictDao(DistrictDao):
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
-        # Delete existing district if any (cascade deletes area associations)
+        # Delete existing district if any
         session.execute(
             delete(DISTRICT_TABLE).where(
                 (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district.id)
@@ -86,7 +86,7 @@ class DatabaseDistrictDao(DistrictDao):
                 name=district.name,
                 output=district.output,
                 comments=district.comments,
-                apply_filter=district.apply_filter.value,
+                apply_filter=district.apply_filter,
             )
         )
 
@@ -100,6 +100,7 @@ class DatabaseDistrictDao(DistrictDao):
         ]
         if area_values:
             session.execute(insert(DISTRICT_AREA_TABLE), area_values)
+        session.commit()
 
     def _get_invalid_areas(self, areas: list[str]) -> list[str]:
         """Check which areas don't exist in the study."""
@@ -127,6 +128,7 @@ class DatabaseDistrictDao(DistrictDao):
                 (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
             )
         )
+        session.commit()
 
     @override
     def get_districts(self) -> Sequence[District]:
@@ -157,7 +159,7 @@ class DatabaseDistrictDao(DistrictDao):
                 name=row.name,
                 output=row.output,
                 comments=row.comments,
-                apply_filter=DistrictApplyFilter(row.apply_filter),
+                apply_filter=row.apply_filter,
                 add_areas=areas_by_district.get(row.district_id, {}).get("add", []),
                 subtract_areas=areas_by_district.get(row.district_id, {}).get("subtract", []),
             )
@@ -197,7 +199,7 @@ class DatabaseDistrictDao(DistrictDao):
             name=row.name,
             output=row.output,
             comments=row.comments,
-            apply_filter=DistrictApplyFilter(row.apply_filter),
+            apply_filter=row.apply_filter,
             add_areas=add_areas,
             subtract_areas=subtract_areas,
         )

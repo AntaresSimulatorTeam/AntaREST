@@ -69,7 +69,7 @@ class ReadOnlyAreaDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
         """
         Check all areas exists in the study
         """

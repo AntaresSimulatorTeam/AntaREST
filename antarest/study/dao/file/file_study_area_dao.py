@@ -154,7 +154,7 @@ class FileStudyAreaDao(AreaDao):
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
 
     @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
         """
         Check all areas exists in the study.
         """

@@ -10,13 +10,16 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
+
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     parse_district,
     serialize_district,
@@ -29,6 +32,10 @@ DISTRICTS_PATH = ["input", "areas", "sets"]
 class FileStudyDistrictDao(DistrictDao):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override
@@ -83,7 +90,7 @@ class FileStudyDistrictDao(DistrictDao):
         If the district already exists, it will be overwritten.
         """
         study_data = self.get_file_study()
-        invalid_areas = self.get_invalid_areas_in_district(district.add_areas + district.subtract_areas)  # type: ignore[attr-defined]
+        invalid_areas = self.get_impl().get_invalid_area_ids(district.add_areas + district.subtract_areas)
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 

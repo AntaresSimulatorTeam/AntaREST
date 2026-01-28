@@ -16,9 +16,10 @@ SQLAlchemy Core table definitions for district storage.
 This module defines the database tables for districts when a study has storage_mode=DATABASE.
 """
 
-from sqlalchemy import Boolean, Column, ForeignKeyConstraint, String, Table
+from sqlalchemy import Boolean, Column, Enum, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
+from antarest.study.business.model.district_model import DistrictApplyFilter
 
 metadata = Base.metadata
 
@@ -31,7 +32,7 @@ DISTRICT_TABLE = Table(
     Column("name", String(255), nullable=False),
     Column("output", Boolean, nullable=False),
     Column("comments", String(500), nullable=False),
-    Column("apply_filter", String(50), nullable=False),
+    Column("apply_filter", Enum(DistrictApplyFilter), nullable=False),
     ForeignKeyConstraint(
         ["study_id"],
         ["study.id"],

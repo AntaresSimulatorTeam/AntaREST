@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("output", sa.Boolean(), nullable=False),
         sa.Column("comments", sa.String(length=500), nullable=False),
-        sa.Column("apply_filter", sa.String(length=50), nullable=False),
+        sa.Column("apply_filter", sa.Enum("add-all", "remove-all", name="districtapplyfilter"), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id"],
             ["study.id"],
@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("district_id", sa.String(length=255), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
-        sa.Column("mode", sa.String(length=10), nullable=False),  # "add" or "subtract"
+        sa.Column("mode", sa.String(length=10), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id", "district_id"],
             ["district.study_id", "district.district_id"],
@@ -63,3 +63,5 @@ def downgrade() -> None:
     # Drop tables in reverse order
     op.drop_table("district_area")
     op.drop_table("district")
+    # Drop enum type (required for PostgreSQL)
+    sa.Enum(name="districtapplyfilter").drop(op.get_bind(), checkfirst=True)

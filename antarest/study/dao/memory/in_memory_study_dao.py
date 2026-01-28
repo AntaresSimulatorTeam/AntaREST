@@ -805,7 +805,7 @@ class InMemoryStudyDao(StudyDao):
         del self._districts[district_id]
 
     @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
         # TODO make this actually work once we implement area DAO
         return list(set(areas) - set(self._area_names))
 
