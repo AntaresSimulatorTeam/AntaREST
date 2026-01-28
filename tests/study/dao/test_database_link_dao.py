@@ -13,7 +13,8 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.common import FILTER_VALUES
+from antarest.study.business.model.link_model import DEFAULT_COLOR, AssetType, Link, LinkStyle, TransmissionCapacity
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models import LINK_TABLE
 
@@ -33,13 +34,17 @@ def test_create_link_with_default_properties(db_session: Session, dao: DatabaseS
     assert row.study_id == study_id
     assert row.area1 == "london"
     assert row.area2 == "paris"
-    assert row.energy_cost_unsupplied == 0
-    assert row.energy_cost_spilled == 0
-    assert row.non_dispatch_power is True
-    assert row.dispatch_hydro_power is True
-    assert row.other_dispatch_power is True
-    assert row.spread_unsupplied_energy_cost == 0
-    assert row.spread_spilled_energy_cost == 0
-    assert row.filter_synthesis == "hourly, daily, weekly, monthly, annual"
-    assert row.filter_by_year == "hourly, daily, weekly, monthly, annual"
-    assert row.adequacy_patch_mode is None
+    assert row.hurdles_cost is False
+    assert row.loop_flow is False
+    assert row.use_phase_shifter is False
+    assert row.transmission_capacities == TransmissionCapacity.ENABLED
+    assert row.asset_type == AssetType.AC
+    assert row.display_comments is True
+    assert row.comments == ""
+    assert row.colorr == DEFAULT_COLOR
+    assert row.colorb == DEFAULT_COLOR
+    assert row.colorg == DEFAULT_COLOR
+    assert row.link_width == 1.0
+    assert row.link_style == LinkStyle.PLAIN
+    assert row.filter_synthesis == FILTER_VALUES
+    assert row.filter_year_by_year == FILTER_VALUES
