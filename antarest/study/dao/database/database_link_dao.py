@@ -18,12 +18,18 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
+from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.database.models import LINK_TABLE
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+
+
+def _join_with_comma(values: list[FilterOption]) -> str:
+    """Serialize filtering values for DB format"""
+    return ", ".join(value.name.lower() for value in values)
 
 
 def _convert_db_rows_to_model(db_row: Any) -> Link:
@@ -85,10 +91,9 @@ class DatabaseLinkDao(LinkDao):
             colorg=link.colorg,
             link_width=link.link_width,
             link_style=link.link_style,
-            filter_synthesis=link.filter_synthesis,
-            filter_year_by_year=link.filter_year_by_year,
+            filter_synthesis=_join_with_comma(link.filter_synthesis),
+            filter_year_by_year=_join_with_comma(link.filter_year_by_year),
         )
-        # todo: probably parse and serialize
         session = self.get_session()
         session.execute(stmt_insert)
         session.commit()
