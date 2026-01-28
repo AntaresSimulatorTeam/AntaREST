@@ -125,3 +125,17 @@ def test_save_link(dao: DatabaseStudyDao) -> None:
     # Asserts the properties were well modified
     link = dao.get_link("london", "paris")
     assert link == new_link
+
+
+def test_delete_area(dao: DatabaseStudyDao, db_session: Session) -> None:
+    _create_default_link(dao)
+    dao.save_area("Toulouse")
+    dao.save_link(Link(area1="paris", area2="toulouse"))
+
+    # Removing the area `Paris` should remove the 2 links as they both reference it.
+    # For one link, it's `area2` and for the other `area1`
+    dao.delete_area("paris")
+
+    stmt = select(LINK_TABLE)
+    rows = db_session.execute(stmt).fetchall()
+    assert rows == []
