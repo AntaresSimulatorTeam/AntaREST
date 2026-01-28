@@ -76,7 +76,11 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def get_links(self) -> Sequence[Link]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self.get_study_id()
+        session = self.get_session()
+        stmt = select(LINK_TABLE).where((LINK_TABLE.c.study_id == study_id))
+        rows = session.execute(stmt).fetchall()
+        return [_convert_db_rows_to_model(row) for row in rows]
 
     @override
     def get_link(self, area1_id: str, area2_id: str) -> Link:
