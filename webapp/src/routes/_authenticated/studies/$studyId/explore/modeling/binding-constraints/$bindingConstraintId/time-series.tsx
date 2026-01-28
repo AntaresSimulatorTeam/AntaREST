@@ -15,10 +15,8 @@
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
-import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import usePromise from "@/hooks/usePromise";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import { getBindingConstraint } from "@/services/api/studies/bindingConstraints";
 import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -36,6 +34,7 @@ function TimeSeries() {
   const constraint = useBindingConstraint();
   const { t } = useTranslation();
   const baseUrl = `input/bindingconstraints/${constraint.id}`;
+  const { operator } = constraint;
 
   /**
    * Determines whether the binding constraint uses deterministic or scenarized time-series:
@@ -49,24 +48,11 @@ function TimeSeries() {
    */
   const isDeterministic = semver.lt(study.version, "8.7.0");
 
-  const response = usePromise(
-    () => {
-      return getBindingConstraint({
-        studyId: study.id,
-        constraintId: constraint.id,
-      });
-    },
-    {
-      deps: [study.id, constraint.id],
-      disabled: isDeterministic,
-    },
-  );
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (constraint.isOptimistic) {
+  if (isQueryListItemOptimistic(constraint)) {
     return <DataGridSkeleton />;
   }
 
@@ -82,58 +68,61 @@ function TimeSeries() {
     );
   }
 
-  return (
-    <UsePromiseCond
-      response={response}
-      ifPending={() => <DataGridSkeleton />}
-      ifFulfilled={({ operator }) => (
-        <>
-          {operator === "less" && (
-            <Matrix
-              key={constraint.id}
-              studyId={study.id}
-              title={t("study.modeling.bindingConst.timeSeries.less")}
-              url={`${baseUrl}_lt`}
-            />
-          )}
-          {operator === "equal" && (
-            <Matrix
-              key={constraint.id}
-              studyId={study.id}
-              title={t("study.modeling.bindingConst.timeSeries.equal")}
-              url={`${baseUrl}_eq`}
-            />
-          )}
-          {operator === "greater" && (
-            <Matrix
-              key={constraint.id}
-              studyId={study.id}
-              title={t("study.modeling.bindingConst.timeSeries.greater")}
-              url={`${baseUrl}_gt`}
-            />
-          )}
-          {operator === "both" && (
-            <SplitView splitId="binding-constraints-matrix" sizes={[50, 50]}>
-              <Box sx={{ p: 2 }}>
-                <Matrix
-                  key={constraint.id}
-                  studyId={study.id}
-                  title={t("study.modeling.bindingConst.timeSeries.less")}
-                  url={`${baseUrl}_lt`}
-                />
-              </Box>
-              <Box sx={{ p: 2 }}>
-                <Matrix
-                  key={constraint.id}
-                  studyId={study.id}
-                  title={t("study.modeling.bindingConst.timeSeries.greater")}
-                  url={`${baseUrl}_gt`}
-                />
-              </Box>
-            </SplitView>
-          )}
-        </>
-      )}
-    />
-  );
+  if (operator === "less") {
+    return (
+      <Matrix
+        key={constraint.id}
+        studyId={study.id}
+        title={t("study.modeling.bindingConst.timeSeries.less")}
+        url={`${baseUrl}_lt`}
+      />
+    );
+  }
+
+  if (operator === "equal") {
+    return (
+      <Matrix
+        key={constraint.id}
+        studyId={study.id}
+        title={t("study.modeling.bindingConst.timeSeries.equal")}
+        url={`${baseUrl}_eq`}
+      />
+    );
+  }
+
+  if (operator === "greater") {
+    return (
+      <Matrix
+        key={constraint.id}
+        studyId={study.id}
+        title={t("study.modeling.bindingConst.timeSeries.greater")}
+        url={`${baseUrl}_gt`}
+      />
+    );
+  }
+
+  if (operator === "both") {
+    return (
+      <SplitView splitId="binding-constraints-matrix" sizes={[50, 50]}>
+        <Box sx={{ p: 2 }}>
+          <Matrix
+            key={constraint.id}
+            studyId={study.id}
+            title={t("study.modeling.bindingConst.timeSeries.less")}
+            url={`${baseUrl}_lt`}
+          />
+        </Box>
+        <Box sx={{ p: 2 }}>
+          <Matrix
+            key={constraint.id}
+            studyId={study.id}
+            title={t("study.modeling.bindingConst.timeSeries.greater")}
+            url={`${baseUrl}_gt`}
+          />
+        </Box>
+      </SplitView>
+    );
+  }
+
+  return null;
 }

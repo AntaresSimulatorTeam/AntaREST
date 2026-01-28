@@ -16,7 +16,8 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useSafeMemo from "@/hooks/useSafeMemo";
 import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutations";
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
-import { adaptBindingConstraintOutputFilterStringToArray } from "@/services/api/studies/bindingConstraints/adapters";
+import type { QueryListItem } from "@/queries/types";
+import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { useMutation } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -34,12 +35,12 @@ function useCreateBindingConstraint() {
   const { studyId } = params;
   const { queryKey: queryListKey } = bindingConstraintQueries.list(studyId);
 
-  const isRouterMatchConstraint = (constraintId: string) => {
+  const isRouterMatchTempConstraint = () => {
     return router.state.matches.some(
       (m) =>
         m.routeId ===
           "/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId" &&
-        m.params.bindingConstraintId === constraintId,
+        m.params.bindingConstraintId === tempConstraintId,
     );
   };
 
@@ -61,21 +62,13 @@ function useCreateBindingConstraint() {
             ...values,
             id: tempConstraintId,
             name: values.name,
-            filterYearByYear:
-              typeof values.filterYearByYear === "string"
-                ? adaptBindingConstraintOutputFilterStringToArray(values.filterYearByYear)
-                : values.filterYearByYear,
-            filterSynthesis:
-              typeof values.filterSynthesis === "string"
-                ? adaptBindingConstraintOutputFilterStringToArray(values.filterSynthesis)
-                : values.filterSynthesis,
-            isOptimistic: true,
-          },
+            _metadata: { isOptimistic: true },
+          } satisfies QueryListItem<BindingConstraint>,
         ];
       });
 
       // Await navigation prevents `onError`/`onSuccess` to be called before navigation is done,
-      // causing `isRouterMatchConstraint(tempConstraintId)` to not work as expected
+      // causing `isRouterMatchTempConstraint()` to not work as expected
       await router.navigate({
         to: "/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId",
         params: { ...params, bindingConstraintId: tempConstraintId },
@@ -94,7 +87,7 @@ function useCreateBindingConstraint() {
         error,
       );
 
-      if (isRouterMatchConstraint(tempConstraintId)) {
+      if (isRouterMatchTempConstraint()) {
         router.navigate({
           to: "/studies/$studyId/explore/modeling/binding-constraints",
           params,
@@ -109,7 +102,7 @@ function useCreateBindingConstraint() {
         );
       });
 
-      if (isRouterMatchConstraint(tempConstraintId)) {
+      if (isRouterMatchTempConstraint()) {
         router.navigate({
           to: ".",
           params: { ...params, bindingConstraintId: newConstraint.id },

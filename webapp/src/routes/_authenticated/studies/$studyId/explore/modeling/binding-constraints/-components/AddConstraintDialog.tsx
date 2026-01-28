@@ -20,7 +20,6 @@ import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import { adaptBindingConstraintOperationDtoToStudyVersion } from "@/services/api/studies/bindingConstraints/adapters";
 import type { BindingConstraintCreationDTO } from "@/services/api/studies/bindingConstraints/type";
 import { getNames } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
@@ -56,10 +55,7 @@ function AddConstraintDialog({ onCancel }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraintCreationDTO>) => {
-    createConstraint.mutate({
-      studyId: study.id,
-      values: adaptBindingConstraintOperationDtoToStudyVersion(values, study.version),
-    });
+    createConstraint.mutate({ studyId: study.id, values });
   };
 
   ////////////////////////////////////////////////////////////////

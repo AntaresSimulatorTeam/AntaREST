@@ -16,6 +16,7 @@ import {
   createBindingConstraint,
   deleteBindingConstraint,
   duplicateBindingConstraint,
+  updateBindingConstraint,
 } from "@/services/api/studies/bindingConstraints";
 import type { StudyMetadata } from "@/types/types";
 import { mutationOptions } from "@tanstack/react-query";
@@ -26,6 +27,12 @@ export const bindingConstraintMutations = {
     return mutationOptions({
       mutationKey: bindingConstraintKeys.create(studyId),
       mutationFn: createBindingConstraint,
+    });
+  },
+  update: (studyId: StudyMetadata["id"]) => {
+    return mutationOptions({
+      mutationKey: bindingConstraintKeys.update(studyId),
+      mutationFn: updateBindingConstraint,
     });
   },
   duplicate: (studyId: StudyMetadata["id"]) => {

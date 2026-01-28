@@ -18,6 +18,7 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import Matrix from "@/components/Matrix";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import useDialog from "@/hooks/useDialog";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
   getStorageConstraint,
@@ -50,6 +51,7 @@ function Constraint() {
   const { confirm } = useDialog();
   const deleteConstraint = useDeleteStorageConstraint();
   const constraint = useStorageConstraint();
+  const isOptimistic = isQueryListItemOptimistic(constraint);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -97,7 +99,7 @@ function Constraint() {
         onSubmit={handleSubmit}
         config={{
           defaultValues: () =>
-            constraint.isOptimistic
+            isOptimistic
               ? unresolvedPromise<StorageConstraint>()
               : getStorageConstraint({
                   studyId: study.id,
@@ -114,7 +116,7 @@ function Constraint() {
               color="secondary"
               startIcon={<DatasetIcon />}
               onClick={toggleMatrixDialogOpen}
-              disabled={constraint.isOptimistic}
+              disabled={isOptimistic}
             >
               {t("global.timeSeries")}
             </Button>
@@ -123,7 +125,7 @@ function Constraint() {
               color="error"
               startIcon={<DeleteIcon />}
               onClick={handleDelete}
-              disabled={constraint.isOptimistic}
+              disabled={isOptimistic}
             >
               {t("global.delete")}
             </Button>

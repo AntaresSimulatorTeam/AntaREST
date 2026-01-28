@@ -82,12 +82,15 @@ function TermsFE() {
   });
 
   const {
-    formState: { isLoading, disabled },
+    formState: { isLoading, isSubmitting, disabled },
     fieldState: { invalid, error },
   } = useController({
     name: "terms",
     control,
   });
+
+  const isDisabled = isSubmitting || disabled;
+  const textColor = isDisabled ? "textDisabled" : "textSecondary";
 
   ////////////////////////////////////////////////////////////////
   // Validation
@@ -138,13 +141,13 @@ function TermsFE() {
             <Fragment key={term.id}>
               <ListItem
                 secondaryAction={
-                  <IconButton edge="end" disabled={disabled} onClick={() => remove(index)}>
+                  <IconButton edge="end" disabled={isDisabled} onClick={() => remove(index)}>
                     <RemoveCircleIcon />
                   </IconButton>
                 }
               >
                 <ListItemIcon sx={{ minWidth: 40 }}>
-                  <TermIcon />
+                  <TermIcon color={isDisabled ? "disabled" : "inherit"} />
                 </ListItemIcon>
                 <CustomScrollbar>
                   <Stack spacing={1} sx={{ width: "min-content", py: 1 }}>
@@ -155,11 +158,11 @@ function TermsFE() {
                       size="extra-small"
                       sx={{ minWidth: 80 }}
                     />
-                    <Typography>×</Typography>
+                    <Typography color={textColor}>×</Typography>
                     <TermDataFE index={index} />
                     {typeof term.offset === "number" ? (
                       <>
-                        <Typography noWrap sx={{ letterSpacing: 4, width: 1 }}>
+                        <Typography noWrap sx={{ letterSpacing: 4, width: 1 }} color={textColor}>
                           × t +
                         </Typography>
                         <NumberFE
@@ -182,7 +185,7 @@ function TermsFE() {
                                       const { offset, ...newTerm } = term;
                                       update(index, newTerm);
                                     }}
-                                    disabled={disabled}
+                                    disabled={isDisabled}
                                   >
                                     <RemoveCircleOutlineIcon />
                                   </IconButton>
@@ -198,7 +201,7 @@ function TermsFE() {
                         color="secondary"
                         startIcon={<AddCircleOutlineRoundedIcon />}
                         onClick={() => update(index, { ...term, offset: 0 })}
-                        disabled={disabled}
+                        disabled={isDisabled}
                       >
                         {t("study.modeling.bindingConst.offset")}
                       </Button>
@@ -208,7 +211,7 @@ function TermsFE() {
               </ListItem>
               {index < fields.length - 1 && (
                 <Divider variant="inset" textAlign="left" component="li">
-                  +
+                  <Typography color={textColor}>+</Typography>
                 </Divider>
               )}
             </Fragment>
@@ -228,7 +231,7 @@ function TermsFE() {
           }}
           startIcon={<AddCircleIcon />}
           color="inherit"
-          disabled={disabled}
+          disabled={isDisabled}
         >
           {t("global.add")}
         </Button>
@@ -240,7 +243,7 @@ function TermsFE() {
           size="extra-small"
           sx={{ minWidth: 100 }}
           inputRef={(ref) => (newTermTypeRef.current = ref?.value)}
-          disabled={disabled}
+          disabled={isDisabled}
         />
       </Stack>
       {invalid && (

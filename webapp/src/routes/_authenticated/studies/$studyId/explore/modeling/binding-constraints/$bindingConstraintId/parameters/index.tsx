@@ -19,12 +19,8 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import {
-  getBindingConstraint,
-  updateBindingConstraint,
-} from "@/services/api/studies/bindingConstraints";
-import { adaptBindingConstraintOperationDtoToStudyVersion } from "@/services/api/studies/bindingConstraints/adapters";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { unresolvedPromise } from "@/utils/promiseUtils";
 import { validateString } from "@/utils/validation/string";
@@ -33,6 +29,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import useBindingConstraint from "../-hooks/useBindingConstraint";
+import useUpdateBindingConstraint from "../../-hooks/useUpdateBindingConstraint";
 import { OPERATOR_OPTIONS, OUTPUT_FILTERS_OPTIONS, TIME_STEPS_OPTIONS } from "../../-utils";
 import TermsFE from "./-components/TermsFE";
 
@@ -46,6 +43,8 @@ function Parameters() {
   const study = useStudy();
   const constraint = useBindingConstraint();
   const { t } = useTranslation();
+  const updateConstraint = useUpdateBindingConstraint();
+  const isOptimistic = isQueryListItemOptimistic(constraint);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -54,10 +53,10 @@ function Parameters() {
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<BindingConstraint>) => {
     const { id, name, ...updatedConstraint } = dirtyValues;
 
-    return updateBindingConstraint({
+    return updateConstraint.mutateAsync({
       studyId: study.id,
       constraintId: constraint.id,
-      values: adaptBindingConstraintOperationDtoToStudyVersion(updatedConstraint, study.version),
+      values: updatedConstraint,
     });
   };
 
@@ -70,10 +69,7 @@ function Parameters() {
       <Form
         key={constraint.id}
         config={{
-          defaultValues: () =>
-            constraint.isOptimistic
-              ? unresolvedPromise<BindingConstraint>()
-              : getBindingConstraint({ studyId: study.id, constraintId: constraint.id }),
+          defaultValues: isOptimistic ? unresolvedPromise<BindingConstraint> : constraint,
         }}
         onSubmit={handleSubmit}
         enableUndoRedo

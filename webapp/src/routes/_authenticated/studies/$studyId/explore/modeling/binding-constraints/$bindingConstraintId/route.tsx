@@ -15,6 +15,7 @@
 import TabsView from "@/components/page/TabsView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import useDialog from "@/hooks/useDialog";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { Delete } from "@mui/icons-material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -39,6 +40,7 @@ function BindingConstraintLayout() {
   const { openDialog, confirm } = useDialog();
   const constraint = useBindingConstraint();
   const deleteConstraint = useDeleteBindingConstraint();
+  const isOptimistic = isQueryListItemOptimistic(constraint);
   const { bindingConstraintId } = params;
 
   ////////////////////////////////////////////////////////////////
@@ -99,7 +101,7 @@ function BindingConstraintLayout() {
               variant="outlined"
               startIcon={<ContentCopyIcon />}
               onClick={handleDuplicate}
-              disabled={constraint.isOptimistic}
+              disabled={isOptimistic}
             >
               {t("global.duplicate")}
             </Button>
@@ -108,7 +110,7 @@ function BindingConstraintLayout() {
               startIcon={<Delete />}
               color="error"
               onClick={handleDelete}
-              disabled={constraint.isOptimistic}
+              disabled={isOptimistic}
             >
               {t("global.delete")}
             </Button>

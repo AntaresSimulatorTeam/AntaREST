@@ -16,6 +16,8 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useSafeMemo from "@/hooks/useSafeMemo";
 import { storageMutations } from "@/queries/storages/mutations";
 import { storageQueries } from "@/queries/storages/queries";
+import type { QueryListItem } from "@/queries/types";
+import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
 import { useMutation } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -33,12 +35,12 @@ function useCreateStorageConstraint() {
   const { studyId, areaId, storageId } = params;
   const { queryKey: queryListKey } = storageQueries.constraintList(studyId, areaId, storageId);
 
-  const isRouterMatchConstraint = (constraintId: string) => {
+  const isRouterMatchTempConstraint = () => {
     return router.state.matches.some(
       (m) =>
         m.routeId ===
           "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId/" &&
-        m.params.constraintId === constraintId,
+        m.params.constraintId === tempConstraintId,
     );
   };
 
@@ -60,13 +62,13 @@ function useCreateStorageConstraint() {
             ...values,
             id: tempConstraintId,
             name: values.name,
-            isOptimistic: true,
-          },
+            _metadata: { isOptimistic: true },
+          } satisfies QueryListItem<StorageConstraint>,
         ];
       });
 
       // Await navigation prevents `onError`/`onSuccess` to be called before navigation is done,
-      // causing `isRouterMatchConstraint(tempConstraintId)` to not work as expected
+      // causing `isRouterMatchTempConstraint()` to not work as expected
       await router.navigate({
         to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId",
         params: { ...params, constraintId: tempConstraintId },
@@ -85,7 +87,7 @@ function useCreateStorageConstraint() {
         error,
       );
 
-      if (isRouterMatchConstraint(tempConstraintId)) {
+      if (isRouterMatchTempConstraint()) {
         router.navigate({ to: "..", replace: true });
       }
     },
@@ -96,7 +98,7 @@ function useCreateStorageConstraint() {
         );
       });
 
-      if (isRouterMatchConstraint(tempConstraintId)) {
+      if (isRouterMatchTempConstraint()) {
         router.navigate({
           to: ".",
           params: { ...params, constraintId: newConstraint.id },

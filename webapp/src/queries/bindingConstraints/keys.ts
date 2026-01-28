@@ -18,6 +18,7 @@ export const bindingConstraintKeys = {
   all: () => [...studyKeys.all(), "bindingConstraints"],
   list: (studyId: string) => [...bindingConstraintKeys.all(), { studyId }],
   create: (studyId: string) => [...bindingConstraintKeys.list(studyId), "createBindingConstraint"],
+  update: (studyId: string) => [...bindingConstraintKeys.list(studyId), "updateBindingConstraint"],
   duplicate: (studyId: string) => [
     ...bindingConstraintKeys.list(studyId),
     "duplicateBindingConstraint",

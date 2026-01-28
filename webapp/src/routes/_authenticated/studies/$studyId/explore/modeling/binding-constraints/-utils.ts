@@ -15,6 +15,7 @@
 import type { Options } from "@/components/fieldEditors/SelectFE";
 import type { RouteListItem } from "@/components/page/ListView";
 import type { QueryList } from "@/queries/types";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import type {
   BindingConstraint,
   BindingConstraintCreationDTO,
@@ -77,14 +78,14 @@ export const DEFAULT_CONSTRAINT_VALUES = {
 export function bindingConstraintsToList(
   constraints: QueryList<BindingConstraint>,
 ): RouteListItem[] {
-  const list = constraints.map(({ id, name, isOptimistic }) => ({
-    id,
-    label: name,
+  const list = constraints.map((constraint) => ({
+    id: constraint.id,
+    label: constraint.name,
     linkOptions: linkOptions({
       to: ".",
-      params: { bindingConstraintId: id },
+      params: { bindingConstraintId: constraint.id },
     }),
-    loading: isOptimistic,
+    loading: isQueryListItemOptimistic(constraint),
   }));
 
   return sortByProp("label", list);

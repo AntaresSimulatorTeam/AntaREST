@@ -16,6 +16,8 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useSafeMemo from "@/hooks/useSafeMemo";
 import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutations";
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
+import type { QueryListItem } from "@/queries/types";
+import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { useMutation } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -33,12 +35,12 @@ function useDuplicateBindingConstraint() {
   const { studyId } = params;
   const { queryKey: queryListKey } = bindingConstraintQueries.list(studyId);
 
-  const isRouterMatchConstraint = (constraintId: string) => {
+  const isRouterMatchTempConstraint = () => {
     return router.state.matches.some(
       (m) =>
         m.routeId ===
           "/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId" &&
-        m.params.bindingConstraintId === constraintId,
+        m.params.bindingConstraintId === tempConstraintId,
     );
   };
 
@@ -62,13 +64,13 @@ function useDuplicateBindingConstraint() {
             ...constraintToDuplicate,
             id: tempConstraintId,
             name: newConstraintName,
-            isOptimistic: true,
-          },
+            _metadata: { isOptimistic: true },
+          } satisfies QueryListItem<BindingConstraint>,
         ];
       });
 
       // Await navigation prevents `onError`/`onSuccess` to be called before navigation is done,
-      // causing `isRouterMatchConstraint(tempConstraintId)` to not work as expected
+      // causing `isRouterMatchTempConstraint()` to not work as expected
       await router.navigate({
         to: "/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId",
         params: { ...params, bindingConstraintId: tempConstraintId },
@@ -87,7 +89,7 @@ function useDuplicateBindingConstraint() {
         error,
       );
 
-      if (isRouterMatchConstraint(tempConstraintId)) {
+      if (isRouterMatchTempConstraint()) {
         router.navigate({
           to: "/studies/$studyId/explore/modeling/binding-constraints",
           params,
@@ -102,7 +104,7 @@ function useDuplicateBindingConstraint() {
         );
       });
 
-      if (isRouterMatchConstraint(tempConstraintId)) {
+      if (isRouterMatchTempConstraint()) {
         router.navigate({
           to: ".",
           params: { ...params, bindingConstraintId: newConstraint.id },

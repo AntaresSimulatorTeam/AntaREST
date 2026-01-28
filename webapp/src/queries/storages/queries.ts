@@ -16,7 +16,7 @@ import { getStorageConstraints } from "@/services/api/studies/areas/storages";
 import type { StorageParams } from "@/services/api/studies/areas/storages/types";
 import type { AreaWithId, StudyMetadata } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
-import { queryList } from "../utils";
+import { isQueryListMutating, queryList } from "../utils";
 import { storageKeys } from "./keys";
 
 export const storageQueries = {
@@ -28,9 +28,9 @@ export const storageQueries = {
     return queryOptions({
       queryKey: storageKeys.constraintList(studyId, areaId, storageId),
       queryFn: async () => queryList(await getStorageConstraints({ studyId, areaId, storageId })),
-      refetchOnWindowFocus: (query) => !query.state.data?.some((c) => c.isOptimistic),
-      refetchOnReconnect: (query) => !query.state.data?.some((c) => c.isOptimistic),
-      refetchOnMount: (query) => !query.state.data?.some((c) => c.isOptimistic),
+      refetchOnWindowFocus: (query) => !query.state.data || !isQueryListMutating(query.state.data),
+      refetchOnReconnect: (query) => !query.state.data || !isQueryListMutating(query.state.data),
+      refetchOnMount: (query) => !query.state.data || !isQueryListMutating(query.state.data),
     });
   },
 };

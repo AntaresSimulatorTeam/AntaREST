@@ -22,7 +22,7 @@ import type {
   BindingConstraintUpdateDTO,
 } from "./type";
 
-export function adaptBindingConstraintOutputFilterStringToArray(
+function adaptBindingConstraintOutputFilterStringToArray(
   value: BindingConstraintDTO["filterYearByYear"] | BindingConstraintDTO["filterSynthesis"],
 ): BindingConstraintOutputFilter[] {
   if (!value?.trim()) {

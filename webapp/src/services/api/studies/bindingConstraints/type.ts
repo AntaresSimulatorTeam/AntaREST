@@ -87,8 +87,8 @@ export interface BindingConstraintCreationDTO
     >,
     BindingConstraintMatrices {
   // Since v8.3
-  filterYearByYear?: BindingConstraintOutputFilter[] | string;
-  filterSynthesis?: BindingConstraintOutputFilter[] | string;
+  filterYearByYear?: BindingConstraintOutputFilter[]; // String type not included for convenience
+  filterSynthesis?: BindingConstraintOutputFilter[]; // String type not included for convenience
 }
 
 export type BindingConstraintUpdateDTO = Omit<BindingConstraintCreationDTO, "name">;
