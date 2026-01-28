@@ -16,8 +16,8 @@ from typing_extensions import override
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.dao.api.compatibility_parameters_dao import CompatibilityParametersDao
 from antarest.study.storage.rawstudy.model.filesystem.config.compatibility_parameters import (
-    CompatibilityParametersFileData,
     parse_compatibility_parameters,
+    save_compatibility_parameters,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -39,7 +39,7 @@ class FileStudyCompatibilityParametersDao(CompatibilityParametersDao, ABC):
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
         file_study = self.get_file_study()
-        file_data = CompatibilityParametersFileData.from_model(parameters)
         file_study.tree.save(
-            file_data.model_dump(mode="json", by_alias=True), ["settings", "generaldata", "compatibility"]
+            save_compatibility_parameters(parameters),
+            ["settings", "generaldata", "compatibility"],
         )
