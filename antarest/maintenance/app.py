@@ -66,10 +66,13 @@ def _apply_celery_config(app: Celery, celery_config: CeleryConfig) -> None:
 
 celery_app = Celery("antarest-maintenance")
 
-# Load broker config immediately
+# Load broker config immediately (needed for Beat, not just workers)
 _startup_config = _load_config()
 if _startup_config and _startup_config.celery:
     _apply_celery_config(celery_app, _startup_config.celery)
+
+# Get storage config for beat_schedule
+_storage_config = _startup_config.storage if _startup_config else None
 
 celery_app.conf.update(
     task_serializer="json",
@@ -85,7 +88,34 @@ celery_app.conf.update(
     worker_send_task_events=True,
     task_send_sent_event=True,
     task_routes={"antarest.maintenance.tasks.*": {"queue": "maintenance"}},
+    # Define beat_schedule directly (more reliable than on_after_configure signal)
+    beat_schedule={
+        "matrices_cleaner": {
+            "task": "matrices_cleaner",
+            "schedule": _storage_config.matrix_gc_sleeping_time if _storage_config else 3600,
+        },
+        "blobs_cleaner": {
+            "task": "blobs_cleaner",
+            "schedule": _storage_config.blob_gc_sleeping_time if _storage_config else 86400,
+        },
+        "auto_archiver": {
+            "task": "auto_archiver",
+            "schedule": _storage_config.auto_archive_sleeping_time if _storage_config else 3600,
+        },
+        "watcher_scan": {
+            "task": "watcher_scan",
+            "schedule": _storage_config.watcher_scan_sleeping_time if _storage_config else 60,
+        },
+        "variable_view_cleaner": {
+            "task": "variable_view_cleaner",
+            "schedule": _storage_config.variable_view_gc_sleeping_time if _storage_config else 3600,
+        },
+    },
 )
+
+# Store config for later use
+if _startup_config:
+    celery_app.conf.antarest_config = _startup_config
 
 celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
 
@@ -117,35 +147,17 @@ def _configure_from_environment(sender: str, conf: Any, **_: object) -> None:
 
 @celery_app.on_after_configure.connect
 def _setup_periodic_tasks(sender: Celery, **_: object) -> None:
-    """Register periodic maintenance tasks (called by Beat on startup)."""
-    from antarest.core.config import StorageConfig
+    """Trigger initial tasks on startup (schedule is defined in beat_schedule config)."""
     from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
-    from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
-    from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
-
-    config: Optional[Config] = getattr(celery_app.conf, "antarest_config", None)
-    storage = config.storage if config else StorageConfig()
-
-    sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name="matrices_cleaner")
-    sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name="blobs_cleaner")
-    sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
-    sender.add_periodic_task(storage.watcher_scan_sleeping_time, watcher_scan_task.s(), name="watcher_scan")
-    sender.add_periodic_task(
-        storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name="variable_view_cleaner"
-    )
 
     # Stagger first execution to avoid hitting everything at once
     clean_matrices_task.apply_async(countdown=60)
     clean_blobs_task.apply_async(countdown=90)
     auto_archive_task.apply_async(countdown=120)
 
-    logger.info(
-        f"Periodic tasks: matrix_gc={storage.matrix_gc_sleeping_time}s, "
-        f"blob_gc={storage.blob_gc_sleeping_time}s, auto_archive={storage.auto_archive_sleeping_time}s, "
-        f"watcher_scan={storage.watcher_scan_sleeping_time}s, variable_view_gc={storage.variable_view_gc_sleeping_time}s"
-    )
+    logger.info("Periodic tasks configured via beat_schedule")
 
 
 @worker_init.connect
