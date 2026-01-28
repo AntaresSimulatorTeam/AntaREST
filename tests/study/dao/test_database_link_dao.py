@@ -13,7 +13,6 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from antarest.study.business.model.common import FILTER_VALUES
 from antarest.study.business.model.link_model import DEFAULT_COLOR, AssetType, Link, LinkStyle, TransmissionCapacity
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models import LINK_TABLE
@@ -46,5 +45,9 @@ def test_create_link_with_default_properties(db_session: Session, dao: DatabaseS
     assert row.colorg == DEFAULT_COLOR
     assert row.link_width == 1.0
     assert row.link_style == LinkStyle.PLAIN
-    assert row.filter_synthesis == FILTER_VALUES
-    assert row.filter_year_by_year == FILTER_VALUES
+    assert row.filter_synthesis == "hourly, daily, weekly, monthly, annual"
+    assert row.filter_year_by_year == "hourly, daily, weekly, monthly, annual"
+
+    # Check the return method
+    created_link = dao.get_link("london", "paris")
+    assert created_link == link
