@@ -123,8 +123,20 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   const { getValues, setError, handleSubmit, formState, reset } = formApi;
 
-  // * /!\ `formState` is a Proxy
-  const { isSubmitting, isSubmitSuccessful, isDirty, disabled: isDisabled, errors } = formState;
+  // ⚠️ `formState` is a Proxy
+  const {
+    isSubmitting,
+    isSubmitSuccessful,
+    isDirty,
+    disabled: isDisabled,
+    errors,
+    // WORKAROUND (bug): we must access `dirtyFields` so `useFieldArray` removals are tracked.
+    // Without this, remove-only operations are ignored and
+    // `getValues(undefined, { dirtyFields: true })` misses the dirty fields.
+    // @ts-expect-error Accessing dirtyFields workaround
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    dirtyFields,
+  } = formState;
 
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
@@ -212,7 +224,9 @@ function Form<TFieldValues extends FieldValues, TContext>({
     const callback = handleSubmit(async function onValid(data, event) {
       lastSubmittedData.current = data;
 
+      // Note: https://github.com/react-hook-form/react-hook-form/issues/11402
       const dirtyValues: Partial<TFieldValues> = getValues(undefined, { dirtyFields: true });
+
       const dataArg = { values: data, dirtyValues };
 
       try {
