@@ -29,7 +29,6 @@ from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao
 from antarest.study.dao.database.common import (
     parse_frequency_filters,
     serialize_frequency_filters,
-    validate_area_exists,
 )
 from antarest.study.dao.database.models import AREA_TABLE
 
@@ -75,8 +74,6 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
     def get_area_properties(self, area_id: str) -> AreaProperties:
         study_id = self.get_study_id()
         session = self.get_session()
-
-        validate_area_exists(session, study_id, area_id)
 
         stmt = select(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
 
