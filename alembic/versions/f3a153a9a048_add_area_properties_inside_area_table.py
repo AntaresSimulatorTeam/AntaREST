@@ -26,8 +26,8 @@ def upgrade() -> None:
         batch_op.add_column(sa.Column("other_dispatch_power", sa.Boolean(), nullable=False))
         batch_op.add_column(sa.Column("spread_unsupplied_energy_cost", sa.Float(), nullable=False))
         batch_op.add_column(sa.Column("spread_spilled_energy_cost", sa.Float(), nullable=False))
-        batch_op.add_column(sa.Column("filter_synthesis", sa.Text(), nullable=False))
-        batch_op.add_column(sa.Column("filter_by_year", sa.Text(), nullable=False))
+        batch_op.add_column(sa.Column("filter_synthesis", sa.String(), nullable=False))
+        batch_op.add_column(sa.Column("filter_by_year", sa.String(), nullable=False))
         batch_op.add_column(sa.Column("adequacy_patch_mode", sa.Enum('outside', 'inside', 'virtual', name='adequacypatchmode'), nullable=True))
 
 
@@ -43,3 +43,7 @@ def downgrade() -> None:
         batch_op.drop_column('filter_synthesis')
         batch_op.drop_column('filter_by_year')
         batch_op.drop_column('adequacy_patch_mode')
+
+        # Drop enum type (PostgreSQL only)
+        if op.get_context().dialect.name == "postgresql":
+            sa.Enum(name="adequacypatchmode").drop(op.get_bind(), checkfirst=True)
