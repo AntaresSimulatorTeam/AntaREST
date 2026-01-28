@@ -159,5 +159,5 @@ def _init_worker(sender: Celery, **_: object) -> None:
         return
 
     ctx = MaintenanceContext.create(config, Path(config_path_str))
-    sender.conf.maintenance_ctx = ctx
+    celery_app.conf.maintenance_ctx = ctx
     logger.info("Worker ready")
