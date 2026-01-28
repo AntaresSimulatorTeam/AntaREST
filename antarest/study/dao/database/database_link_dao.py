@@ -77,6 +77,7 @@ class DatabaseLinkDao(LinkDao):
         if self.link_exists(link.area1, link.area2):
             self._delete_link(link)
         stmt_insert = insert(LINK_TABLE).values(
+            study_id=self.get_study_id(),
             area1=link.area1,
             area2=link.area2,
             hurdles_cost=link.hurdles_cost,
