@@ -18,6 +18,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
+from antarest.favorite.service import FavoriteService
 from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
@@ -30,6 +31,7 @@ def build_launcher(
     app_ctxt: Optional[AppBuildContext],
     config: Config,
     study_service: StudyService,
+    favorite_service: FavoriteService,
     output_service: OutputService,
     login_service: LoginService,
     file_transfer_manager: FileTransferManager,
@@ -46,6 +48,7 @@ def build_launcher(
         service_launcher = LauncherService(
             config=config,
             study_service=study_service,
+            favorite_service=favorite_service,
             output_service=output_service,
             login_service=login_service,
             job_result_repository=job_repository,

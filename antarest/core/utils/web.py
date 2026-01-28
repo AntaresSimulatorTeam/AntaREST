@@ -12,6 +12,7 @@
 
 
 class APITag:
+    favorite = "Manage favorites"
     users = "Users"
     launcher = "Launch Studies"
     study_permissions = "Manage Study Permissions"
@@ -67,6 +68,7 @@ tags_metadata = [
     {
         "name": APITag.users,
     },
+    {"name": APITag.favorite},
     {
         "name": APITag.misc,
     },
