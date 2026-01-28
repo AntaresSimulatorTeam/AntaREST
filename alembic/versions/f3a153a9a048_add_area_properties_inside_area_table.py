@@ -19,7 +19,7 @@ depends_on = None
 
 def upgrade() -> None:
     # 1. Create Enum type (PostgreSQL only)
-    adequacy_patch_mode_enum = sa.Enum("FILESYSTEM", "DATABASE", name="adequacypatchmode")
+    adequacy_patch_mode_enum = sa.Enum('outside', 'inside', 'virtual', name="adequacypatchmode")
 
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
