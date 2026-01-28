@@ -21,37 +21,31 @@ from tests.db_statement_recorder import DBStatementRecorder
 
 
 def test_save_area_creates_area_with_default_properties(db_session: Session, dao: DatabaseStudyDao) -> None:
-    with db_session:
-        dao.save_area("Paris")
-        db_session.commit()
+    dao.save_area("Paris")
+    study_id = dao.get_study_id()
 
-    with db_session:
-        study_id = dao.get_study_id()
-
-        # Check default AreaProperties were created
-        stmt_properties = select(AREA_TABLE).where(AREA_TABLE.c.study_id == study_id)
-        row = db_session.execute(stmt_properties).fetchone()
-        assert row.study_id == study_id
-        assert row.area_id == "paris"
-        assert row.energy_cost_unsupplied == 0
-        assert row.energy_cost_spilled == 0
-        assert row.non_dispatch_power is True
-        assert row.dispatch_hydro_power is True
-        assert row.other_dispatch_power is True
-        assert row.spread_unsupplied_energy_cost == 0
-        assert row.spread_spilled_energy_cost == 0
-        assert row.filter_synthesis == "hourly, daily, weekly, monthly, annual"
-        assert row.filter_by_year == "hourly, daily, weekly, monthly, annual"
-        assert row.adequacy_patch_mode is None
+    # Check default AreaProperties were created
+    stmt_properties = select(AREA_TABLE).where(AREA_TABLE.c.study_id == study_id)
+    row = db_session.execute(stmt_properties).fetchone()
+    assert row.study_id == study_id
+    assert row.area_id == "paris"
+    assert row.energy_cost_unsupplied == 0
+    assert row.energy_cost_spilled == 0
+    assert row.non_dispatch_power is True
+    assert row.dispatch_hydro_power is True
+    assert row.other_dispatch_power is True
+    assert row.spread_unsupplied_energy_cost == 0
+    assert row.spread_spilled_energy_cost == 0
+    assert row.filter_synthesis == "hourly, daily, weekly, monthly, annual"
+    assert row.filter_by_year == "hourly, daily, weekly, monthly, annual"
+    assert row.adequacy_patch_mode is None
 
     # Ensures we're able to read the data
     properties = dao.get_area_properties(area_id="paris")
     assert properties == AreaProperties()
 
     # Delete the area to ensure it cascades to properties
-    with db_session:
-        dao.delete_area("paris")
-        db_session.commit()
+    dao.delete_area("paris")
 
     assert dao.get_all_area_properties() == {}
 
@@ -60,10 +54,8 @@ def test_save_area_creates_area_with_default_properties(db_session: Session, dao
 
 
 def test_multiple_areas(db_session: Session, dao: DatabaseStudyDao) -> None:
-    with db_session:
-        dao.save_area("Paris")
-        dao.save_area("London")
-        db_session.commit()
+    dao.save_area("Paris")
+    dao.save_area("London")
 
     # Ensures we do not perform N+1 requests
     with DBStatementRecorder(db_session.bind) as db_recorder:
@@ -84,11 +76,9 @@ def test_error_cases(dao: DatabaseStudyDao) -> None:
         dao.save_area_properties("fake_area", AreaProperties())
 
 
-def test_modify_properties(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_modify_properties(dao: DatabaseStudyDao) -> None:
     area_id = "paris"
-    with db_session:
-        dao.save_area(area_id)
-        db_session.commit()
+    dao.save_area(area_id)
 
     assert dao.get_area_properties(area_id) == AreaProperties()
 
