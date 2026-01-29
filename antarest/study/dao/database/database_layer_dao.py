@@ -187,15 +187,8 @@ class DatabaseLayerDao(LayerDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Check if layer exists in LAYER_TABLE or has any area associations
-        stmt = (
-            select(LAYER_TABLE.c.layer_id)
-            .where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer_id))
-            .union_all(
-                select(AREA_UI_TABLE.c.layer_id).where(
-                    (AREA_UI_TABLE.c.study_id == study_id) & (AREA_UI_TABLE.c.layer_id == layer_id)
-                )
-            )
-            .limit(1)
+        # Check if layer exists in LAYER_TABLE
+        stmt = select(LAYER_TABLE.c.layer_id).where(
+            (LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer_id)
         )
         return session.execute(stmt).fetchone() is not None

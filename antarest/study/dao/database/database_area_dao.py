@@ -25,7 +25,7 @@ from sqlalchemy import Row, Table, case, delete, insert, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound
+from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
@@ -294,11 +294,14 @@ class DatabaseAreaDao(AreaDao):
 
         Raises:
             AreaNotFound: If the area does not exist.
+            LayerNotFound: If the layer does not exist.
         """
         study_id = self.get_study_id()
         session = self.get_session()
 
         validate_area_exists(session, study_id, area_id)
+        if not self.get_impl().layer_exists(layer):
+            raise LayerNotFound
 
         r, g, b = area_ui_data.color_rgb
 
@@ -348,7 +351,11 @@ class DatabaseAreaDao(AreaDao):
 
         Raises:
             AreaNotFound: If any area_id does not exist.
+            LayerNotFound: If the layer does not exist.
         """
+        if not self.get_impl().layer_exists(layer_id):
+            raise LayerNotFound
+
         study_id = self.get_study_id()
         session = self.get_session()
 
