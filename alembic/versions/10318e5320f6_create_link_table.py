@@ -22,12 +22,6 @@ def upgrade():
     asset_type_enum = sa.Enum('ac', 'dc', 'gaz', 'virt', 'other', name="assettype")
     link_style_enum = sa.Enum('dot', 'plain', 'dash', 'dotdash', 'other', name="linkstyle")
 
-    bind = op.get_bind()
-    if bind.dialect.name == "postgresql":
-        transmission_capacity_enum.create(bind, checkfirst=True)
-        asset_type_enum.create(bind, checkfirst=True)
-        link_style_enum.create(bind, checkfirst=True)
-
     # 2- Create the table
     op.create_table("link",
     sa.Column("study_id", sa.String(length=36), nullable=False),
