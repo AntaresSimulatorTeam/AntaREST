@@ -10,13 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""
-SQLAlchemy Core table definitions for database-based study storage.
-
-This module defines the database tables used when a study has storage_mode=DATABASE.
-These tables store study data (areas, UI positions, etc.) in the database instead of the filesystem.
-"""
-
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
