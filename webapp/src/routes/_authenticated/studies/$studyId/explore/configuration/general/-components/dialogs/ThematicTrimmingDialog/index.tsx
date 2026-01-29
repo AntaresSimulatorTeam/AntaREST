@@ -28,8 +28,9 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Box,
   Button,
-  Divider,
+  ButtonGroup,
   Grid2 as Grid,
   Stack,
 } from "@mui/material";
@@ -118,10 +119,15 @@ function ThematicTrimmingDialog(props: Props) {
       fullWidth
     >
       {(api) => (
-        <>
-          <Stack direction="row" justifyContent="space-between" sx={{ pb: 2 }}>
-            <SearchFE sx={{ m: 0 }} value={search} onSearchValueChange={setSearch} />
-            <Stack direction="row" spacing={1}>
+        <Stack direction="column" sx={{ height: 1 }}>
+          <Stack justifyContent="space-between" sx={{ pb: 2 }}>
+            <SearchFE
+              sx={{ m: 0 }}
+              value={search}
+              onSearchValueChange={setSearch}
+              size="extra-small"
+            />
+            <ButtonGroup color="secondary">
               <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.T)}>
                 {t("study.configuration.general.thematicTrimming.action.enableAll")}
               </Button>
@@ -131,42 +137,43 @@ function ThematicTrimmingDialog(props: Props) {
               <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.not)}>
                 {t("global.reverse")}
               </Button>
-              <Divider orientation="vertical" flexItem />
               <Button {...commonBtnProps} onClick={() => setExpanded({})}>
                 {t("study.configuration.general.thematicTrimming.action.collapseAll")}
               </Button>
-            </Stack>
+            </ButtonGroup>
           </Stack>
-          {THEMATIC_TRIMMING_GROUPS.map((group) => {
-            const fields = getFieldLabelsForGroup(api.getValues(), group)
-              .filter(([, label]) => isSearchMatching(search, label))
-              .map(([name, label]) => (
-                <Grid key={name} size={{ xs: 4 }}>
-                  <SwitchFE name={name} label={label} control={api.control} />
-                </Grid>
-              ));
-
-            return fields.length > 0 ? (
-              <Accordion
-                key={group}
-                expanded={expanded[group] || !!search}
-                onChange={(event, isExpanded) => {
-                  setExpanded((prev) => ({ ...prev, [group]: isExpanded }));
-                }}
-                disableGutters
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  {t(`study.configuration.general.thematicTrimming.group.${group}`)}
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Grid container spacing={1} sx={{ overflow: "auto", p: 1 }}>
-                    {fields}
+          <Box sx={{ overflow: "auto" }}>
+            {THEMATIC_TRIMMING_GROUPS.map((group) => {
+              const fields = getFieldLabelsForGroup(api.getValues(), group)
+                .filter(([, label]) => isSearchMatching(search, label))
+                .map(([name, label]) => (
+                  <Grid key={name} size={{ xs: 4 }}>
+                    <SwitchFE name={name} label={label} control={api.control} />
                   </Grid>
-                </AccordionDetails>
-              </Accordion>
-            ) : null;
-          })}
-        </>
+                ));
+
+              return fields.length > 0 ? (
+                <Accordion
+                  key={group}
+                  expanded={expanded[group] || !!search}
+                  onChange={(event, isExpanded) => {
+                    setExpanded((prev) => ({ ...prev, [group]: isExpanded }));
+                  }}
+                  disableGutters
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    {t(`study.configuration.general.thematicTrimming.group.${group}`)}
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={1} sx={{ overflow: "auto", p: 1 }}>
+                      {fields}
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              ) : null;
+            })}
+          </Box>
+        </Stack>
       )}
     </FormDialog>
   );
