@@ -25,8 +25,12 @@ import {
   getCompatibilityParamsFormFields,
   setAdvancedParamsFormFields,
   setCompatibilityParamsFormFields,
-  type AdvancedParamsFormFieldsWithCompatibility,
+  type AdvancedParamsFormFields,
+  type CompatibilityParamsFormFields,
 } from "./utils";
+
+/** Form holds both advanced and compatibility params at runtime (merged in defaultValues). */
+type FormValues = AdvancedParamsFormFields & Partial<CompatibilityParamsFormFields>;
 
 function AdvancedParameters() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -36,9 +40,7 @@ function AdvancedParameters() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
-    dirtyValues,
-  }: SubmitHandlerPlus<AdvancedParamsFormFieldsWithCompatibility>) => {
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<FormValues>) => {
     const { hydroPmax, ...advancedRest } = dirtyValues;
     const promises = [setAdvancedParamsFormFields(study.id, advancedRest)];
     if (hydroPmax !== undefined) {
@@ -49,7 +51,7 @@ function AdvancedParameters() {
 
   const handleSubmitSuccessful = ({
     dirtyValues: { renewableGenerationModelling },
-  }: SubmitHandlerPlus<AdvancedParamsFormFieldsWithCompatibility>) => {
+  }: SubmitHandlerPlus<FormValues>) => {
     if (renewableGenerationModelling) {
       dispatch(
         updateStudySynthesis({

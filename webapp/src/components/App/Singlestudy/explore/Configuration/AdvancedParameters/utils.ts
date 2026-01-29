@@ -132,10 +132,6 @@ export interface CompatibilityParamsFormFields {
   hydroPmax: `${HydroPmax}`;
 }
 
-/** Form type when Advanced and Compatibility params are merged (e.g. Configuration form). */
-export type AdvancedParamsFormFieldsWithCompatibility = AdvancedParamsFormFields &
-  Partial<CompatibilityParamsFormFields>;
-
 type AdvancedParamsFormFields_RAW = Omit<AdvancedParamsFormFields, "accuracyOnCorrelation"> & {
   accuracyOnCorrelation: string;
 };
