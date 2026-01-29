@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from antarest.core.persistence import Base
@@ -37,8 +37,9 @@ class FavoriteStudy(Base):
 
     __tablename__ = "favorite_study"
 
-    user_id: Mapped[str] = mapped_column(
-        String(255),
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("identities.id", name="fk_", ondelete="CASCADE"),
         nullable=False,
         primary_key=True,
     )

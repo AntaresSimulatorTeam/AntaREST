@@ -16,8 +16,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.favorite.model import FavoriteStudy
-from antarest.login.model import User
-from antarest.login.utils import get_user_id
+from antarest.login.utils import get_user_impersonator
 from antarest.study.model import Study
 
 
@@ -42,13 +41,17 @@ class FavoriteRepository:
         stmt = (
             select(FavoriteStudy)
             .options(joinedload(FavoriteStudy.study))
-            .where((Study.id == FavoriteStudy.study_id) & (User.id == get_user_id()))
+            .where((Study.id == FavoriteStudy.study_id) & (FavoriteStudy.user_id == get_user_impersonator()))
         )
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
-    def delete(self, user_id: str, study_id: str) -> None:
+    def delete(self, study_id: str) -> None:
         session = self.session
-        stmt = delete(FavoriteStudy).where(FavoriteStudy.user_id == user_id).where(FavoriteStudy.study_id == study_id)
+        stmt = (
+            delete(FavoriteStudy)
+            .where(FavoriteStudy.user_id == get_user_impersonator())
+            .where(FavoriteStudy.study_id == study_id)
+        )
         session.execute(stmt)
         session.commit()
