@@ -17,7 +17,8 @@ This module provides database-backed storage for districts when storage_mode=DAT
 """
 
 import json
-from typing import Sequence
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Sequence
 
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
@@ -26,16 +27,27 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
-from antarest.study.dao.database.model.district import DISTRICT_TABLE
-from antarest.study.dao.database.models import AREA_TABLE
+from antarest.study.dao.database.models import DISTRICT_TABLE
+
+if TYPE_CHECKING:
+    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+
+
+def _convert_db_row_to_district(db_row: Any) -> District:
+    return District(
+        id=db_row.district_id,
+        name=db_row.name,
+        output=db_row.output,
+        comments=db_row.comments,
+        apply_filter=db_row.apply_filter,
+        add_areas=json.loads(db_row.add_areas),
+        subtract_areas=json.loads(db_row.subtract_areas),
+    )
 
 
 class DatabaseDistrictDao(DistrictDao):
     """
     Database implementation of DistrictDao.
-
-    Note: Write operations do NOT commit transactions. The caller (service layer)
-    is responsible for transaction management (commit/rollback).
     """
 
     def __init__(self, study_id: str, db_session: Session) -> None:
@@ -57,6 +69,10 @@ class DatabaseDistrictDao(DistrictDao):
         """Get the SQLAlchemy session for database operations."""
         return self._db_session
 
+    @abstractmethod
+    def get_impl(self) -> "DatabaseStudyDao":
+        pass
+
     @override
     def save_district(self, district: District) -> None:
         """
@@ -68,7 +84,7 @@ class DatabaseDistrictDao(DistrictDao):
         session = self.get_session()
 
         # Validate that all areas exist
-        invalid_areas = self._get_invalid_areas(district.add_areas + district.subtract_areas)
+        invalid_areas = self.get_impl().get_invalid_area_ids(district.add_areas + district.subtract_areas)
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
@@ -94,18 +110,6 @@ class DatabaseDistrictDao(DistrictDao):
         )
         session.commit()
 
-    def _get_invalid_areas(self, areas: list[str]) -> list[str]:
-        """Check which areas don't exist in the study."""
-        if not areas:
-            return []
-        study_id = self.get_study_id()
-        session = self.get_session()
-        stmt = select(AREA_TABLE.c.area_id).where(
-            (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id.in_(areas))
-        )
-        existing = {row.area_id for row in session.execute(stmt)}
-        return list(set(areas) - existing)
-
     @override
     def remove_district(self, district_id: str) -> None:
         """
@@ -113,6 +117,9 @@ class DatabaseDistrictDao(DistrictDao):
         """
         study_id = self.get_study_id()
         session = self.get_session()
+
+        if not self.district_exists(district_id):
+            raise DistrictConfigNotFound(f"District '{district_id}' does not exist in study '{study_id}'")
 
         session.execute(
             delete(DISTRICT_TABLE).where(
@@ -132,18 +139,7 @@ class DatabaseDistrictDao(DistrictDao):
         stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
         district_rows = session.execute(stmt).fetchall()
 
-        return [
-            District(
-                id=row.district_id,
-                name=row.name,
-                output=row.output,
-                comments=row.comments,
-                apply_filter=row.apply_filter,
-                add_areas=json.loads(row.add_areas),
-                subtract_areas=json.loads(row.subtract_areas),
-            )
-            for row in district_rows
-        ]
+        return [_convert_db_row_to_district(row) for row in district_rows]
 
     @override
     def get_district(self, district_id: str) -> District:
@@ -160,15 +156,7 @@ class DatabaseDistrictDao(DistrictDao):
         if not row:
             raise DistrictConfigNotFound(district_id)
 
-        return District(
-            id=row.district_id,
-            name=row.name,
-            output=row.output,
-            comments=row.comments,
-            apply_filter=row.apply_filter,
-            add_areas=json.loads(row.add_areas),
-            subtract_areas=json.loads(row.subtract_areas),
-        )
+        return _convert_db_row_to_district(row)
 
     @override
     def district_exists(self, district_id: str) -> bool:

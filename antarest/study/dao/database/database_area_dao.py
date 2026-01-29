@@ -30,8 +30,7 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo,
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
-from antarest.study.dao.database.model.district import DISTRICT_TABLE
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
+from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE, DISTRICT_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -253,23 +252,23 @@ class DatabaseAreaDao(AreaDao):
         district_rows = session.execute(stmt).fetchall()
 
         for row in district_rows:
-            add_areas: list[str] = json.loads(row.add_areas)
-            subtract_areas: list[str] = json.loads(row.subtract_areas)
+            add_areas = set(json.loads(row.add_areas))
+            subtract_areas = set(json.loads(row.subtract_areas))
 
             if area_id in add_areas or area_id in subtract_areas:
-                add_areas = [a for a in add_areas if a != area_id]
-                subtract_areas = [a for a in subtract_areas if a != area_id]
+                add_areas.discard(area_id)
+                subtract_areas.discard(area_id)
 
                 session.execute(
                     update(DISTRICT_TABLE)
                     .where((DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == row.district_id))
                     .values(
-                        add_areas=json.dumps(add_areas),
-                        subtract_areas=json.dumps(subtract_areas),
+                        add_areas=json.dumps(list(add_areas)),
+                        subtract_areas=json.dumps(list(subtract_areas)),
                     )
                 )
 
-        # Delete area (cascade will delete area_ui automatically)
+        # Delete area
         delete_stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
         session.execute(delete_stmt)
         session.commit()

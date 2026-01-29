@@ -13,7 +13,7 @@ from sqlalchemy import String
 
 # revision identifiers, used by Alembic.
 revision = "8f3d2a1b5c7e"
-down_revision = "2572145aff71"
+down_revision = "4bbe4f165a05"
 branch_labels = None
 depends_on = None
 
@@ -41,4 +41,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("district")
-    sa.Enum(name="districtapplyfilter").drop(op.get_bind(), checkfirst=True)
+    if op.get_context().dialect.name == "postgresql":
+        sa.Enum(name="districtapplyfilter").drop(op.get_bind(), checkfirst=True)

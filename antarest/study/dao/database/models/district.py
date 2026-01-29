@@ -12,8 +12,6 @@
 
 """
 SQLAlchemy Core table definitions for district storage.
-
-This module defines the database tables for districts when a study has storage_mode=DATABASE.
 """
 
 from sqlalchemy import Boolean, Column, Enum, ForeignKeyConstraint, String, Table
@@ -34,9 +32,5 @@ DISTRICT_TABLE = Table(
     Column("apply_filter", Enum(DistrictApplyFilter), nullable=False),
     Column("add_areas", String, nullable=False),
     Column("subtract_areas", String, nullable=False),
-    ForeignKeyConstraint(
-        ["study_id"],
-        ["study.id"],
-        ondelete="CASCADE",
-    ),
+    ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
 )
