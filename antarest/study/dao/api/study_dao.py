@@ -21,6 +21,7 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -56,6 +57,10 @@ from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao
 from antarest.study.dao.api.area_dao import AreaDao, ReadOnlyAreaDao
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao, ReadOnlyAreaPropertiesDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.compatibility_parameters_dao import (
+    CompatibilityParametersDao,
+    ReadOnlyCompatibilityParametersDao,
+)
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
@@ -87,6 +92,7 @@ class ReadOnlyStudyDao(
     ReadOnlyGeneralConfigDao,
     ReadOnlyOptimizationPreferencesDao,
     ReadOnlyAdvancedParametersDao,
+    ReadOnlyCompatibilityParametersDao,
     ReadOnlyXpansionDao,
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
@@ -119,6 +125,7 @@ class StudyDao(
     GeneralConfigDao,
     OptimizationPreferencesDao,
     AdvancedParametersDao,
+    CompatibilityParametersDao,
     XpansionDao,
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
@@ -422,6 +429,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_advanced_parameters()
 
     @override
+    def get_compatibility_parameters(self) -> CompatibilityParameters:
+        return self._adaptee.get_compatibility_parameters()
+
+    @override
     def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
         return self._adaptee.get_all_st_storage_additional_constraints()
 
@@ -496,12 +507,12 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.district_exists(district_id)
 
     @override
-    def tmp_get_all_areas(self) -> list[str]:
-        return self._adaptee.tmp_get_all_areas()
+    def get_all_area_ids(self) -> list[str]:
+        return self._adaptee.get_all_area_ids()
 
     @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
-        return self._adaptee.get_invalid_areas_in_district(areas)
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        return self._adaptee.get_invalid_area_ids(areas)
 
     @override
     def get_layers(self) -> Sequence[Layer]:
@@ -570,3 +581,19 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_wind(area_id)
+
+    @override
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_hourly_gen_power(area_id)
+
+    @override
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_hourly_pump_power(area_id)
+
+    @override
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_daily_gen_energy(area_id)
+
+    @override
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_daily_pump_energy(area_id)
