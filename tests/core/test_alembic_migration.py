@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
 from pathlib import Path
 
 import yaml
@@ -17,7 +18,7 @@ from sqlalchemy import create_engine, text
 from antarest.core.persistence import upgrade_db
 
 
-def test_alembic_migration(tmp_path: Path, project_path: Path) -> None:
+def test_alembic_migration(tmp_path: Path) -> None:
     # Create a fake config file pointing towards the DB in memory
 
     db_file = tmp_path / "db.sqlite"
