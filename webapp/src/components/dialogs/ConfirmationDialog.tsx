@@ -1,0 +1,71 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import { Button } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
+
+export interface ConfirmationDialogProps extends Omit<BasicDialogProps, "actions"> {
+  cancelButtonText?: string;
+  confirmButtonText?: string;
+  onConfirm: VoidFunction;
+  onCancel: VoidFunction;
+  disableConfirm?: boolean;
+}
+
+function ConfirmationDialog({
+  cancelButtonText,
+  confirmButtonText,
+  onConfirm,
+  onCancel,
+  onClose,
+  disableConfirm,
+  ...basicDialogProps
+}: ConfirmationDialogProps) {
+  const { t } = useTranslation();
+  const { alert } = basicDialogProps;
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleClose = (...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>) => {
+    onCancel();
+    onClose?.(...args);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <BasicDialog
+      title={t("dialog.title.confirmation")}
+      onClose={handleClose}
+      {...basicDialogProps}
+      actions={
+        <>
+          <Button onClick={onCancel} color={alert ? "inherit" : "primary"}>
+            {cancelButtonText || t("global.cancel")}
+          </Button>
+          <Button onClick={onConfirm} variant="contained" disabled={disableConfirm} color={alert}>
+            {confirmButtonText || t("global.confirm")}
+          </Button>
+        </>
+      }
+    />
+  );
+}
+
+export default ConfirmationDialog;

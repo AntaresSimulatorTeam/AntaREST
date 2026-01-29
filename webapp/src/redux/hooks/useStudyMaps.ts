@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
+import type { Response } from "@/components/utils/UsePromiseCond";
+import usePromise, { PromiseStatus, type TPromiseStatus } from "@/hooks/usePromise";
+import type { StudyMetadata } from "@/types/types";
 import { useState } from "react";
-import type { StudyMetadata } from "../../types/types";
 import type { AppState } from "../ducks";
+import { createStudyMap, fetchStudyMapDistricts, fetchStudyMapLayers } from "../ducks/studyMaps";
+import { getStudyMap } from "../selectors";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
-import { getStudyMap } from "../selectors";
-import { createStudyMap, fetchStudyMapLayers, fetchStudyMapDistricts } from "../ducks/studyMaps";
 import useStudySynthesis from "./useStudySynthesis";
-import type { Response } from "../../components/common/utils/UsePromiseCond";
-import usePromise, { PromiseStatus, type TPromiseStatus } from "../../hooks/usePromise";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];
