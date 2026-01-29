@@ -78,6 +78,10 @@ enum RenewableGenerationModeling {
   Clusters = "clusters",
 }
 
+export enum HydroPmax {
+  Daily = "daily",
+  Hourly = "hourly",
+}
 ////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////
@@ -92,7 +96,7 @@ export const RESERVE_MANAGEMENT_OPTIONS = Object.values(ReserveManagement);
 export const UNIT_COMMITMENT_MODE_OPTIONS = Object.values(UnitCommitmentMode);
 export const SIMULATION_CORES_OPTIONS = Object.values(SimulationCore);
 export const RENEWABLE_GENERATION_OPTIONS = Object.values(RenewableGenerationModeling);
-
+export const HYDRO_PMAX_OPTIONS = Object.values(HydroPmax);
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
@@ -123,20 +127,39 @@ export interface AdvancedParamsFormFields {
   accurateShavePeaksIncludeShortTermStorage?: boolean;
 }
 
+export interface CompatibilityParamsFormFields {
+  // Since v9.2
+  hydroPmax: `${HydroPmax}`;
+}
+
+/** Form type when Advanced and Compatibility params are merged (e.g. Configuration form). */
+export type AdvancedParamsFormFieldsWithCompatibility = AdvancedParamsFormFields &
+  Partial<CompatibilityParamsFormFields>;
+
 type AdvancedParamsFormFields_RAW = Omit<AdvancedParamsFormFields, "accuracyOnCorrelation"> & {
   accuracyOnCorrelation: string;
+};
+
+type CompatibilityParamsFormFields_RAW = Omit<CompatibilityParamsFormFields, "hydroPmax"> & {
+  hydroPmax: `${HydroPmax}`;
 };
 
 ////////////////////////////////////////////////////////////////
 // API
 ////////////////////////////////////////////////////////////////
 
-function makeRequestURL(studyId: StudyMetadata["id"]): string {
+function makeAdvancedParamsRequestURL(studyId: StudyMetadata["id"]): string {
   return `v1/studies/${studyId}/config/advancedparameters/form`;
 }
 
+function makeCompatibilityRequestURL(studyId: StudyMetadata["id"]): string {
+  return `v1/studies/${studyId}/config/compatibility/form`;
+}
+
 export async function getAdvancedParamsFormFields(studyId: StudyMetadata["id"]) {
-  const { data } = await client.get<AdvancedParamsFormFields_RAW>(makeRequestURL(studyId));
+  const { data } = await client.get<AdvancedParamsFormFields_RAW>(
+    makeAdvancedParamsRequestURL(studyId),
+  );
 
   return {
     ...data,
@@ -158,5 +181,21 @@ export async function setAdvancedParamsFormFields(
     newValues.accuracyOnCorrelation = accuracyOnCorrelation.join(", ");
   }
 
-  await client.put(makeRequestURL(studyId), newValues);
+  await client.put(makeAdvancedParamsRequestURL(studyId), newValues);
+}
+
+export async function getCompatibilityParamsFormFields(
+  studyId: StudyMetadata["id"],
+): Promise<CompatibilityParamsFormFields> {
+  const { data } = await client.get<CompatibilityParamsFormFields_RAW>(
+    makeCompatibilityRequestURL(studyId),
+  );
+  return data as CompatibilityParamsFormFields;
+}
+
+export async function setCompatibilityParamsFormFields(
+  studyId: StudyMetadata["id"],
+  values: DeepPartial<CompatibilityParamsFormFields>,
+) {
+  await client.put(makeCompatibilityRequestURL(studyId), values);
 }

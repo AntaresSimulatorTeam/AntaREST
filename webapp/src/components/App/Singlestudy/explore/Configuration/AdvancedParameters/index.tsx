@@ -13,6 +13,7 @@
  */
 
 import { useOutletContext } from "react-router";
+import semver from "semver";
 import type { StudyMetadata } from "../../../../../../types/types";
 import { updateStudySynthesis } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
@@ -21,8 +22,10 @@ import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
   getAdvancedParamsFormFields,
+  getCompatibilityParamsFormFields,
   setAdvancedParamsFormFields,
-  type AdvancedParamsFormFields,
+  setCompatibilityParamsFormFields,
+  type AdvancedParamsFormFieldsWithCompatibility,
 } from "./utils";
 
 function AdvancedParameters() {
@@ -33,13 +36,20 @@ function AdvancedParameters() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
-    return setAdvancedParamsFormFields(study.id, dirtyValues);
+  const handleSubmit = ({
+    dirtyValues,
+  }: SubmitHandlerPlus<AdvancedParamsFormFieldsWithCompatibility>) => {
+    const { hydroPmax, ...advancedRest } = dirtyValues;
+    const promises = [setAdvancedParamsFormFields(study.id, advancedRest)];
+    if (hydroPmax !== undefined) {
+      promises.push(setCompatibilityParamsFormFields(study.id, { hydroPmax }));
+    }
+    return Promise.all(promises);
   };
 
   const handleSubmitSuccessful = ({
     dirtyValues: { renewableGenerationModelling },
-  }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
+  }: SubmitHandlerPlus<AdvancedParamsFormFieldsWithCompatibility>) => {
     if (renewableGenerationModelling) {
       dispatch(
         updateStudySynthesis({
@@ -58,7 +68,15 @@ function AdvancedParameters() {
     <Form
       key={study.id}
       config={{
-        defaultValues: () => getAdvancedParamsFormFields(study.id),
+        defaultValues: async () => {
+          const [advanced, compatibility] = await Promise.all([
+            getAdvancedParamsFormFields(study.id),
+            semver.gte(study.version, "9.2.0")
+              ? getCompatibilityParamsFormFields(study.id)
+              : Promise.resolve({}),
+          ]);
+          return { ...advanced, ...compatibility };
+        },
       }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}

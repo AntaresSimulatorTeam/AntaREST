@@ -35,12 +35,13 @@ import {
   SPATIAL_CORRELATIONS_OPTIONS,
   UNIT_COMMITMENT_MODE_OPTIONS,
   UnitCommitmentMode,
-  type AdvancedParamsFormFields,
+  HYDRO_PMAX_OPTIONS,
+  type AdvancedParamsFormFieldsWithCompatibility,
 } from "./utils";
 
 function Fields() {
   const [t] = useTranslation();
-  const { control } = useFormContextPlus<AdvancedParamsFormFields>();
+  const { control } = useFormContextPlus<AdvancedParamsFormFieldsWithCompatibility>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
   ////////////////////////////////////////////////////////////////
@@ -191,6 +192,16 @@ function Fields() {
           />
         )}
       </Fieldset>
+      {semver.gte(study.version, "9.2.0") && (
+        <Fieldset legend={t("study.configuration.advancedParameters.compatibility")}>
+          <SelectFE
+            label={t("study.configuration.advancedParameters.compatibility.hydro-pmax")}
+            options={HYDRO_PMAX_OPTIONS}
+            name="hydroPmax"
+            control={control}
+          />
+        </Fieldset>
+      )}
     </Box>
   );
 }
