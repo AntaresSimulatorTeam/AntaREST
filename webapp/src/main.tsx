@@ -50,6 +50,7 @@ const router = createRouter({
     store,
     queryClient,
   },
+  defaultStaleTime: 60 * 1000, // 1 minute
   defaultPendingComponent: SimpleLoader,
   defaultErrorComponent: ErrorView,
   defaultNotFoundComponent: PageNotFound,
