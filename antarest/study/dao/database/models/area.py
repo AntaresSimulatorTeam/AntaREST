@@ -60,3 +60,22 @@ AREA_UI_TABLE = Table(
         ondelete="CASCADE",
     ),
 )
+
+
+def _create_matrix_table(name: str) -> Table:
+    return Table(
+        name,
+        metadata,
+        Column("study_id", String(36), nullable=False, primary_key=True),
+        Column("area_id", String(255), nullable=False, primary_key=True),
+        Column("matrix_id", String(64), nullable=False),
+        ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+    )
+
+
+# Relation: One to one with `AREA_TABLE`
+LOAD_TABLE = _create_matrix_table("load")
+SOLAR_TABLE = _create_matrix_table("solar")
+WIND_TABLE = _create_matrix_table("wind")
+RESERVES_TABLE = _create_matrix_table("reserves")
+MISC_GEN_TABLE = _create_matrix_table("misc_gen")
