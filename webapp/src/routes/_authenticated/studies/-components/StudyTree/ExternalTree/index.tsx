@@ -14,7 +14,7 @@
 
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import * as R from "ramda";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
 import { getParentPaths } from "@/utils/pathUtils";
@@ -29,7 +29,8 @@ function ExternalTree({ studies, onNodeClick }: ExternalTreeProps) {
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
 
   // Fetch workspaces (only in desktop mode)
-  const { data: workspaces = [] } = useWorkspaces();
+  const { data: workspaces } = useWorkspaces();
+  const workspacesStable = useMemo(() => workspaces ?? [], [workspaces]);
 
   // Manage folder exploration
   const { explorePath, exploredFolders, itemsLoading } = useFolderExplorer();
@@ -37,7 +38,7 @@ function ExternalTree({ studies, onNodeClick }: ExternalTreeProps) {
   // Manage study tree state
   const { studiesTree, updateTreeWithFolders } = useStudyTree({
     studies,
-    workspaces,
+    workspaces: workspacesStable,
   });
 
   ////////////////////////////////////////////////////////////////

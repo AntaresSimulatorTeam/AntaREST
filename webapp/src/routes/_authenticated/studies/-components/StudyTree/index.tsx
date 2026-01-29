@@ -15,7 +15,7 @@
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import StorageIcon from "@mui/icons-material/Storage";
 import { Box, Divider } from "@mui/material";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -32,8 +32,8 @@ function StudyTree() {
 
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
-  const managedStudies = studies.filter((s) => s.managed);
-  const externalStudies = studies.filter((s) => !s.managed);
+  const managedStudies = useMemo(() => studies.filter((s) => s.managed), [studies]);
+  const externalStudies = useMemo(() => studies.filter((s) => !s.managed), [studies]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
