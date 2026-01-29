@@ -36,12 +36,14 @@ import {
   UNIT_COMMITMENT_MODE_OPTIONS,
   UnitCommitmentMode,
   HYDRO_PMAX_OPTIONS,
-  type AdvancedParamsFormFieldsWithCompatibility,
+  type AdvancedParamsFormFields,
+  type CompatibilityParamsFormFields,
 } from "./utils";
 
 function Fields() {
   const [t] = useTranslation();
-  const { control } = useFormContextPlus<AdvancedParamsFormFieldsWithCompatibility>();
+  const { control } = useFormContextPlus<AdvancedParamsFormFields>();
+  const { control: compatibilityControl } = useFormContextPlus<CompatibilityParamsFormFields>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
 
   ////////////////////////////////////////////////////////////////
@@ -198,7 +200,7 @@ function Fields() {
             label={t("study.configuration.advancedParameters.compatibility.hydro-pmax")}
             options={HYDRO_PMAX_OPTIONS}
             name="hydroPmax"
-            control={control}
+            control={compatibilityControl}
           />
         </Fieldset>
       )}
