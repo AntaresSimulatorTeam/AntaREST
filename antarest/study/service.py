@@ -106,6 +106,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
@@ -392,6 +393,7 @@ class RawStudyInterface(StudyInterface):
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
+        self._matrix_service = self._raw_study_service._matrix_service
 
     @override
     @property
@@ -412,7 +414,7 @@ class RawStudyInterface(StudyInterface):
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, db.session).read_only()
+            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service).read_only()
         command_context = self._variant_study_service.command_factory.command_context
         return FileStudyTreeDao(
             self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
@@ -425,7 +427,7 @@ class RawStudyInterface(StudyInterface):
 
         # Build DAO based on storage mode
         if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(study.id, db.session)
+            dao: StudyDao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
         else:
             file_study = self.get_files()
             command_context = self._variant_study_service.command_factory.command_context
@@ -571,6 +573,7 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
+        StudyDatabaseMatrixUsageProvider(command_context.matrix_service)
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
