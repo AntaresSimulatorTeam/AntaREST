@@ -18,11 +18,12 @@ from typing_extensions import override
 
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.area_properties_model import AdequacyPatchMode, AreaProperties
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
 from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_3, STUDY_VERSION_8_6
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_3, STUDY_VERSION_8_6, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -90,6 +91,15 @@ class CreateArea(ICommand):
             study_data.save_hydro_water_values(area_id, null_matrix)
         if self.study_version >= STUDY_VERSION_8_6:
             study_data.save_hydro_mingen(area_id, null_matrix)
+        if self.study_version >= STUDY_VERSION_9_2:
+            # Read hydro-pmax from generaldata.ini
+            compatibility_parameters = study_data.get_compatibility_parameters()
+            hydro_pmax = compatibility_parameters.hydro_pmax
+            if hydro_pmax == HydroPmax.HOURLY:
+                study_data.save_hydro_max_hourly_gen_power(area_id, constants.get_hydro_max_hourly_gen_power())
+                study_data.save_hydro_max_hourly_pump_power(area_id, constants.get_hydro_max_hourly_pump_power())
+                study_data.save_hydro_max_daily_gen_energy(area_id, constants.get_hydro_max_daily_gen_energy())
+                study_data.save_hydro_max_daily_pump_energy(area_id, constants.get_hydro_max_daily_pump_energy())
         # Matrices
         study_data.save_load(area_id, null_matrix)
         study_data.save_solar(area_id, null_matrix)

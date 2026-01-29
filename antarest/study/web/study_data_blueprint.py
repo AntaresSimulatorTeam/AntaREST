@@ -48,6 +48,10 @@ from antarest.study.business.model.config.adequacy_patch_model import (
     AdequacyPatchParametersUpdate,
 )
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters, AdvancedParametersUpdate
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    CompatibilityParametersUpdate,
+)
 from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
@@ -1200,6 +1204,31 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.advanced_parameters_manager.update_advanced_parameters(study_interface, field_values)
+
+    # Compatibility parameters
+    @bp.get(
+        path="/studies/{uuid}/config/compatibility/form",
+        summary="Get Compatibility parameters form values",
+        response_model_exclude_none=True,
+    )
+    def get_compatibility_parameters(uuid: str) -> CompatibilityParameters:
+        logger.info(msg=f"Getting Compatibility Parameters for study {uuid}")
+
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.compatibility_parameters_manager.get_compatibility_parameters(study_interface)
+
+    @bp.put(
+        path="/studies/{uuid}/config/compatibility/form",
+        summary="Set Compatibility parameters new values",
+    )
+    def set_compatibility_parameters(uuid: str, field_values: CompatibilityParametersUpdate) -> CompatibilityParameters:
+        logger.info(f"Updating Compatibility parameters values for study {uuid}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.compatibility_parameters_manager.update_compatibility_parameters(
+            study_interface, field_values
+        )
 
     @bp.put(
         "/studies/{uuid}/timeseries/generate",
