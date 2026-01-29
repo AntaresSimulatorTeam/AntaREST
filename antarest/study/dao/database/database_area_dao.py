@@ -16,7 +16,9 @@ Database implementation of AreaDao using SQLAlchemy Core.
 This module provides database-backed storage for areas when storage_mode=DATABASE.
 """
 
-from typing import Any, Dict, List
+import json
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, List
 
 import polars as pl
 from sqlalchemy import case, delete, insert, select, update
@@ -25,29 +27,19 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
+from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.database.models.area import AREA_TABLE, AREA_UI_TABLE
+from antarest.study.dao.database.models.district import DISTRICT_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
-
-def area_exists(session: Session, study_id: str, area_id: str) -> bool:
-    stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
-    return session.execute(stmt).fetchone() is not None
-
-
-def validate_area_exists(session: Session, study_id: str, area_id: str) -> None:
-    if not area_exists(session, study_id, area_id):
-        raise AreaNotFound(area_id)
+if TYPE_CHECKING:
+    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
 class DatabaseAreaDao(AreaDao):
-    """
-    Database implementation of AreaDao.
-
-    Note: Write operations do NOT commit transactions. The caller (service layer)
-    is responsible for transaction management (commit/rollback). This allows
-    combining multiple DAO operations into a single atomic transaction.
-    """
+    """Database implementation of AreaDao"""
 
     def __init__(self, study_id: str, db_session: Session) -> None:
         """
@@ -67,6 +59,23 @@ class DatabaseAreaDao(AreaDao):
     def get_session(self) -> Session:
         """Get the SQLAlchemy session for database operations."""
         return self._db_session
+
+    @abstractmethod
+    def get_impl(self) -> "DatabaseStudyDao":
+        pass
+
+    @override
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+        """
+        study_id = self.get_study_id()
+        session = self.get_session()
+
+        stmt = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_id == study_id)
+        result = session.execute(stmt)
+
+        return [row.area_id for row in result]
 
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:
@@ -100,18 +109,8 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Single query with JOIN to get all areas and their UI info
-        stmt = (
-            select(AREA_TABLE.c.area_id, AREA_UI_TABLE)
-            .select_from(
-                AREA_TABLE.join(
-                    AREA_UI_TABLE,
-                    (AREA_TABLE.c.study_id == AREA_UI_TABLE.c.study_id)
-                    & (AREA_TABLE.c.area_id == AREA_UI_TABLE.c.area_id),
-                )
-            )
-            .where(AREA_TABLE.c.study_id == study_id)
-        )
+        # Single query to get all areas and their UI info
+        stmt = select(AREA_UI_TABLE).where(AREA_UI_TABLE.c.study_id == study_id)
         rows = session.execute(stmt)
 
         # Group UI rows by area_id
@@ -212,23 +211,26 @@ class DatabaseAreaDao(AreaDao):
             raise ValueError(f"Area '{area_name}' already exists and could not be created")
 
         # Insert new area
-        stmt_area = insert(AREA_TABLE).values(study_id=study_id, area_id=area_id, area_name=area_name)
-        session.execute(stmt_area)
-
-        # Create default UI for default layer using model defaults
-        default_ui = AreaUI()
-        r, g, b = default_ui.color_rgb
-        stmt_ui = insert(AREA_UI_TABLE).values(
+        area_properties = AreaProperties()
+        stmt_area = insert(AREA_TABLE).values(
             study_id=study_id,
             area_id=area_id,
-            layer_id=DEFAULT_LAYER_ID,
-            x=default_ui.x,
-            y=default_ui.y,
-            color_r=r,
-            color_g=g,
-            color_b=b,
+            area_name=area_name,
+            energy_cost_unsupplied=area_properties.energy_cost_unsupplied,
+            energy_cost_spilled=area_properties.energy_cost_spilled,
+            non_dispatch_power=area_properties.non_dispatch_power,
+            dispatch_hydro_power=area_properties.dispatch_hydro_power,
+            other_dispatch_power=area_properties.other_dispatch_power,
+            spread_unsupplied_energy_cost=area_properties.spread_unsupplied_energy_cost,
+            spread_spilled_energy_cost=area_properties.spread_spilled_energy_cost,
+            filter_synthesis=serialize_frequency_filters(area_properties.filter_synthesis),
+            filter_by_year=serialize_frequency_filters(area_properties.filter_by_year),
+            adequacy_patch_mode=area_properties.adequacy_patch_mode,
         )
-        session.execute(stmt_ui)
+        session.execute(stmt_area)
+
+        # The commit is handled inside the next method.
+        self._create_new_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -246,9 +248,31 @@ class DatabaseAreaDao(AreaDao):
 
         validate_area_exists(session, study_id, area_id)
 
-        # Delete area (cascade will delete area_ui automatically)
-        stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
-        session.execute(stmt)
+        # Remove area from districts that reference it
+        stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
+        district_rows = session.execute(stmt).fetchall()
+
+        for row in district_rows:
+            add_areas = set(json.loads(row.add_areas))
+            subtract_areas = set(json.loads(row.subtract_areas))
+
+            if area_id in add_areas or area_id in subtract_areas:
+                add_areas.discard(area_id)
+                subtract_areas.discard(area_id)
+
+                session.execute(
+                    update(DISTRICT_TABLE)
+                    .where((DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == row.district_id))
+                    .values(
+                        add_areas=json.dumps(list(add_areas)),
+                        subtract_areas=json.dumps(list(subtract_areas)),
+                    )
+                )
+
+        # Delete area
+        delete_stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+        session.execute(delete_stmt)
+        session.commit()
 
     @override
     def save_area_ui(self, area_id: str, layer: str, area_ui_data: AreaUI) -> None:
@@ -290,19 +314,19 @@ class DatabaseAreaDao(AreaDao):
                 .values(x=area_ui_data.x, y=area_ui_data.y, color_r=r, color_g=g, color_b=b)
             )
             session.execute(stmt_update)
+            session.commit()
         else:
-            # Insert new UI
-            stmt_insert = insert(AREA_UI_TABLE).values(
-                study_id=study_id,
-                area_id=area_id,
-                layer_id=layer,
-                x=area_ui_data.x,
-                y=area_ui_data.y,
-                color_r=r,
-                color_g=g,
-                color_b=b,
-            )
-            session.execute(stmt_insert)
+            self._create_new_ui(area_id, layer, area_ui_data)
+
+    @override
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study.
+        """
+        areas_set = set(areas)
+        all_areas = set(self.get_all_area_ids())
+        invalid_areas = areas_set - all_areas
+        return list(invalid_areas)
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
@@ -392,6 +416,22 @@ class DatabaseAreaDao(AreaDao):
             # Execute batch insert
             if insert_values:
                 session.execute(insert(AREA_UI_TABLE), insert_values)
+        session.commit()
+
+    def _create_new_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
+        r, g, b = area_ui.color_rgb
+        stmt_insert = insert(AREA_UI_TABLE).values(
+            study_id=self.get_study_id(),
+            area_id=area_id,
+            layer_id=layer,
+            x=area_ui.x,
+            y=area_ui.y,
+            color_r=r,
+            color_g=g,
+            color_b=b,
+        )
+        self.get_session().execute(stmt_insert)
+        self.get_session().commit()
 
     # Time series methods - not yet implemented for database storage mode
     @override

@@ -13,6 +13,7 @@
 import logging
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 from typing_extensions import override
 
@@ -45,7 +46,10 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         output_first_column = get_start_column(self.freq)
         file_path = self.config.path
         try:
-            return parse_output_file(file_path, output_first_column).data
+            output = parse_output_file(file_path, output_first_column)
+            df = output.data.to_pandas().astype(np.float64)
+            df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
+            return df
         except FileNotFoundError as e:
             # Raise 404 'Not Found' if the TSV file is not found
             logger.warning(f"Matrix file'{file_path}' not found")

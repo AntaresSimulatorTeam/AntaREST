@@ -444,10 +444,6 @@ class RawStudyInterface(StudyInterface):
             if not result.status:
                 raise CommandApplicationError(result.message)
 
-        # Commit database changes for database storage mode
-        if study.storage_mode == StorageMode.DATABASE:
-            db.session.commit()
-
         # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)

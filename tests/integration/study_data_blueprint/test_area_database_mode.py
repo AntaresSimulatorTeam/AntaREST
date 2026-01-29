@@ -186,7 +186,6 @@ class TestAreaDatabaseMode:
         res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "UniqueArea", "type": "AREA"}, headers=headers)
         assert res.status_code != 200  # Should return an error
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_multiple_areas_with_layers_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test creating multiple areas and updating their UI for different layers in DATABASE mode.

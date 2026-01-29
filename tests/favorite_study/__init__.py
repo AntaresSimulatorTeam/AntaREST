@@ -9,10 +9,3 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
-import polars as pl
-
-
-def reservoir() -> pl.DataFrame:
-    return pl.DataFrame([[0.0, 0.5, 1.0]] * 12, schema=["0", "1", "2"], orient="row")
