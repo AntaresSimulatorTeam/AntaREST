@@ -66,90 +66,88 @@ function Parameters() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <Form
-        key={constraint.id}
-        config={{
-          defaultValues: isOptimistic ? unresolvedPromise<BindingConstraint> : constraint,
-        }}
-        onSubmit={handleSubmit}
-        enableUndoRedo
-      >
-        {({ control }) => (
-          <Stack direction="column" sx={{ height: 1 }}>
-            <Fieldset>
-              <SwitchFE
-                name="enabled"
-                label={t("study.modeling.bindingConst.enabled")}
+    <Form
+      key={constraint.id}
+      config={{
+        defaultValues: isOptimistic ? unresolvedPromise<BindingConstraint> : constraint,
+      }}
+      onSubmit={handleSubmit}
+      enableUndoRedo
+    >
+      {({ control }) => (
+        <Stack direction="column" sx={{ height: 1 }}>
+          <Fieldset>
+            <SwitchFE
+              name="enabled"
+              label={t("study.modeling.bindingConst.enabled")}
+              control={control}
+            />
+            <StringFE disabled name="name" label={t("global.name")} control={control} />
+            {semver.gte(study.version, "8.7.0") && (
+              <StringFE
+                name="group"
+                label={t("global.group")}
                 control={control}
+                rules={{
+                  validate: (v) => {
+                    if (typeof v === "string") {
+                      return validateString(v, {
+                        maxLength: 20,
+                        specialChars: "-",
+                      });
+                    }
+                  },
+                }}
               />
-              <StringFE disabled name="name" label={t("global.name")} control={control} />
-              {semver.gte(study.version, "8.7.0") && (
-                <StringFE
-                  name="group"
-                  label={t("global.group")}
+            )}
+            <SelectFE
+              name="timeStep"
+              label={t("study.modeling.bindingConst.type")}
+              options={TIME_STEPS_OPTIONS}
+              control={control}
+            />
+            <SelectFE
+              name="operator"
+              label={t("study.modeling.bindingConst.operator")}
+              options={OPERATOR_OPTIONS}
+              control={control}
+            />
+            <Fieldset.Break />
+            {semver.gte(study.version, "8.3.0") && (
+              <>
+                <SelectFE
+                  name="filterYearByYear"
+                  label={t("study.outputFilters.filterByYear")}
+                  options={OUTPUT_FILTERS_OPTIONS}
+                  multiple
                   control={control}
-                  rules={{
-                    validate: (v) => {
-                      if (typeof v === "string") {
-                        return validateString(v, {
-                          maxLength: 20,
-                          specialChars: "-",
-                        });
-                      }
-                    },
+                  sx={{
+                    width: "auto !important",
+                    minWidth: 200,
                   }}
                 />
-              )}
-              <SelectFE
-                name="timeStep"
-                label={t("study.modeling.bindingConst.type")}
-                options={TIME_STEPS_OPTIONS}
-                control={control}
-              />
-              <SelectFE
-                name="operator"
-                label={t("study.modeling.bindingConst.operator")}
-                options={OPERATOR_OPTIONS}
-                control={control}
-              />
-              <Fieldset.Break />
-              {semver.gte(study.version, "8.3.0") && (
-                <>
-                  <SelectFE
-                    name="filterYearByYear"
-                    label={t("study.outputFilters.filterByYear")}
-                    options={OUTPUT_FILTERS_OPTIONS}
-                    multiple
-                    control={control}
-                    sx={{
-                      width: "auto !important",
-                      minWidth: 200,
-                    }}
-                  />
-                  <SelectFE
-                    name="filterSynthesis"
-                    label={t("study.outputFilters.filterSynthesis")}
-                    options={OUTPUT_FILTERS_OPTIONS}
-                    multiple
-                    control={control}
-                    sx={{
-                      width: "auto !important",
-                      minWidth: 200,
-                    }}
-                  />
-                </>
-              )}
-              <StringFE
-                name="comments"
-                label={t("study.modeling.bindingConst.comments")}
-                control={control}
-              />
-            </Fieldset>
-            <TermsFE />
-          </Stack>
-        )}
-      </Form>
-    </>
+                <SelectFE
+                  name="filterSynthesis"
+                  label={t("study.outputFilters.filterSynthesis")}
+                  options={OUTPUT_FILTERS_OPTIONS}
+                  multiple
+                  control={control}
+                  sx={{
+                    width: "auto !important",
+                    minWidth: 200,
+                  }}
+                />
+              </>
+            )}
+            <StringFE
+              name="comments"
+              label={t("study.modeling.bindingConst.comments")}
+              control={control}
+            />
+          </Fieldset>
+          <TermsFE />
+        </Stack>
+      )}
+    </Form>
   );
 }
