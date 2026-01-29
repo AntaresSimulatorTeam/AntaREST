@@ -37,7 +37,6 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
-from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
@@ -60,11 +59,12 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
+from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao):
+class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao, DatabaseLayerDao):
     """
     Database implementation of StudyDao.
     """
@@ -80,6 +80,7 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
         DatabaseAreaDao.__init__(self, study_id, db_session)
         DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
         DatabaseDistrictDao.__init__(self, study_id, db_session)
+        DatabaseLayerDao.__init__(self, study_id, db_session)
 
     # Implementation of abstract methods required by StudyDao
     @override
@@ -620,22 +621,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
 
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_layer(self, layer: Layer) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_layer(self, layer: Layer) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_layers(self) -> Sequence[Layer]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def layer_exists(self, layer_id: str) -> bool:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
