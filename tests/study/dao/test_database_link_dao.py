@@ -13,7 +13,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from antarest.core.exceptions import LinkNotFound
+from antarest.core.exceptions import AreaNotFound, LinkNotFound
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import DEFAULT_COLOR, AssetType, Link, LinkStyle, TransmissionCapacity
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -125,6 +125,10 @@ def test_save_link(dao: DatabaseStudyDao) -> None:
     # Asserts the properties were well modified
     link = dao.get_link("london", "paris")
     assert link == new_link
+
+    # Create a link with wrong area and ensure we raise a clear exception
+    with pytest.raises(AreaNotFound):
+        dao.save_link(Link(area1="paris", area2="fake_area"))
 
 
 def test_delete_area(dao: DatabaseStudyDao, db_session: Session) -> None:

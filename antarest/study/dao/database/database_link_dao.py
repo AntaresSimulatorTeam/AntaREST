@@ -14,10 +14,11 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
 from sqlalchemy import Row, delete, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound
+from antarest.core.exceptions import AreaNotFound, LinkNotFound
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
@@ -111,7 +112,12 @@ class DatabaseLinkDao(LinkDao):
             values["area2"] = link.area2
             stmt_insert = insert(LINK_TABLE).values(values)
 
-            session.execute(stmt_insert)
+            try:
+                session.execute(stmt_insert)
+            except IntegrityError:
+                # Happens if the link's areas did not existed -> ForeignKey constraint fails
+                session.rollback()
+                raise AreaNotFound(*[link.area1, link.area2])
 
         session.commit()
 
