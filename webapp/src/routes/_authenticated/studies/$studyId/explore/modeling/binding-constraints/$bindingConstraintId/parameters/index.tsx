@@ -55,6 +55,7 @@ function Parameters() {
 
     return updateConstraint.mutateAsync({
       studyId: study.id,
+      studyVersion: study.version,
       constraintId: constraint.id,
       values: updatedConstraint,
     });

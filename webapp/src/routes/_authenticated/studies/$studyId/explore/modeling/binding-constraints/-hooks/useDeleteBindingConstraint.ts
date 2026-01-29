@@ -16,7 +16,7 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutations";
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import { getNextItemAfterDeletion } from "@/utils/arrayUtils";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { bindingConstraintsToList } from "../-utils";
@@ -26,6 +26,7 @@ function useDeleteBindingConstraint() {
     from: "/_authenticated/studies/$studyId/explore/modeling/binding-constraints",
   });
   const router = useRouter();
+  const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
@@ -34,23 +35,26 @@ function useDeleteBindingConstraint() {
 
   const mutation = useMutation({
     ...bindingConstraintMutations.delete(studyId),
-    onMutate: async (variables, context) => {
-      const { constraintId } = variables;
+    onMutate: async (variables) => {
+      const { constraintId: constraintToDeleteId } = variables;
 
-      await context.client.cancelQueries({ queryKey: queryListKey });
+      await queryClient.cancelQueries({ queryKey: queryListKey });
 
-      const prevConstraints = context.client.getQueryData(queryListKey);
+      const prevConstraints = queryClient.getQueryData(queryListKey);
+      const constraintToDelete = prevConstraints?.find((c) => c.id === constraintToDeleteId);
 
-      context.client.setQueryData(queryListKey, (old) => {
-        return old?.filter((constraint) => constraint.id !== constraintId);
-      });
+      if (constraintToDelete) {
+        queryClient.setQueryData(queryListKey, (old) => {
+          return old?.filter((constraint) => constraint.id !== constraintToDeleteId);
+        });
+      }
 
       const prevList = prevConstraints && bindingConstraintsToList(prevConstraints);
 
       const nextConstraint = prevList
         ? getNextItemAfterDeletion(
             prevList,
-            prevList.findIndex((c) => c.id === constraintId),
+            prevList.findIndex((c) => c.id === constraintToDeleteId),
           )
         : undefined;
 
@@ -65,29 +69,24 @@ function useDeleteBindingConstraint() {
         replace: true,
       });
 
-      return { prevConstraints };
+      return { constraintToDelete };
     },
-    onError: (error, variables, onMutateResult, context) => {
-      const { prevConstraints } = onMutateResult || {};
+    onError: (error, variables, onMutateResult) => {
       const { constraintId } = variables;
+      const { constraintToDelete } = onMutateResult || {};
 
-      context.client.setQueryData(queryListKey, prevConstraints);
+      if (constraintToDelete) {
+        queryClient.setQueryData(queryListKey, (old = []) => [...old, constraintToDelete]);
+      }
 
       enqueueErrorSnackbar(
         t("study.modeling.bindingConst.deleteBindingConstraint.error", {
           name:
-            context.client.getQueryData(queryListKey)?.find((c) => c.id === constraintId)?.name ||
+            queryClient.getQueryData(queryListKey)?.find((c) => c.id === constraintId)?.name ||
             constraintId,
         }),
         error,
       );
-    },
-    onSettled: (data, error, variables, onMutateResult, context) => {
-      const mutationNb = context.client.isMutating({ mutationKey: queryListKey });
-
-      if (mutationNb === 1) {
-        context.client.invalidateQueries({ queryKey: queryListKey });
-      }
     },
   });
 

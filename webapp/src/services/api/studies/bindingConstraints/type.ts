@@ -115,11 +115,13 @@ export interface GetBindingConstraintsParams {
 
 export interface CreateBindingConstraintsParams {
   studyId: StudyMetadata["id"];
+  studyVersion: StudyMetadata["version"];
   values: BindingConstraintCreationDTO;
 }
 
 export interface UpdateBindingConstraintsParams {
   studyId: StudyMetadata["id"];
+  studyVersion: StudyMetadata["version"];
   constraintId: BindingConstraintDTO["id"];
   values: BindingConstraintUpdateDTO;
 }

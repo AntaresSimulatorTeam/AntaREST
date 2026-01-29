@@ -18,7 +18,7 @@ import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutatio
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import type { QueryListItem } from "@/queries/types";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_CONSTRAINT_VALUES } from "../-utils";
@@ -28,6 +28,7 @@ function useDuplicateBindingConstraint() {
     from: "/_authenticated/studies/$studyId/explore/modeling/binding-constraints",
   });
   const router = useRouter();
+  const queryClient = useQueryClient();
   const tempConstraintId = useSafeMemo(() => crypto.randomUUID(), []);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
@@ -46,17 +47,15 @@ function useDuplicateBindingConstraint() {
 
   const mutation = useMutation({
     ...bindingConstraintMutations.duplicate(studyId),
-    meta: { tempConstraintId },
-    onMutate: async (variables, context) => {
+    onMutate: async (variables) => {
       const { constraintId: constraintToDuplicateId, newConstraintName } = variables;
 
-      await context.client.cancelQueries({ queryKey: queryListKey });
+      await queryClient.cancelQueries({ queryKey: queryListKey });
 
-      const prevConstraints = context.client.getQueryData(queryListKey);
-
+      const prevConstraints = queryClient.getQueryData(queryListKey);
       const constraintToDuplicate = prevConstraints?.find((c) => c.id === constraintToDuplicateId);
 
-      context.client.setQueryData(queryListKey, (old = []) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
         return [
           ...old,
           {
@@ -75,14 +74,13 @@ function useDuplicateBindingConstraint() {
         to: "/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId",
         params: { ...params, bindingConstraintId: tempConstraintId },
       });
-
-      return { prevConstraints };
     },
-    onError: (error, variables, onMutateResult, context) => {
+    onError: (error, variables) => {
       const { newConstraintName } = variables;
-      const { prevConstraints } = onMutateResult || {};
 
-      context.client.setQueryData(queryListKey, prevConstraints);
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.filter((constraint) => constraint.id !== tempConstraintId);
+      });
 
       enqueueErrorSnackbar(
         t("study.modeling.bindingConst.duplicate.error", { name: newConstraintName }),
@@ -97,8 +95,8 @@ function useDuplicateBindingConstraint() {
         });
       }
     },
-    onSuccess: (newConstraint, variables, onMutateResult, context) => {
-      context.client.setQueryData(queryListKey, (old = []) => {
+    onSuccess: (newConstraint) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((constraint) =>
           constraint.id === tempConstraintId ? newConstraint : constraint,
         );
@@ -110,13 +108,6 @@ function useDuplicateBindingConstraint() {
           params: { ...params, bindingConstraintId: newConstraint.id },
           replace: true,
         });
-      }
-    },
-    onSettled: (data, error, variables, onMutateResult, context) => {
-      const mutationNb = context.client.isMutating({ mutationKey: queryListKey });
-
-      if (mutationNb === 1) {
-        context.client.invalidateQueries({ queryKey: queryListKey });
       }
     },
   });

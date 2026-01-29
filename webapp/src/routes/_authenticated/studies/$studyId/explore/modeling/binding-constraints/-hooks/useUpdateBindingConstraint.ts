@@ -33,13 +33,6 @@ function useUpdateBindingConstraint() {
         );
       });
     },
-    onSettled: (data, error, variables, onMutateResult, context) => {
-      const mutationNb = context.client.isMutating({ mutationKey: queryListKey });
-
-      if (mutationNb === 1) {
-        context.client.invalidateQueries({ queryKey: queryListKey });
-      }
-    },
   });
 
   return mutation;

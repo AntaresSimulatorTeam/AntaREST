@@ -55,7 +55,7 @@ function AddConstraintDialog({ onCancel }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraintCreationDTO>) => {
-    createConstraint.mutate({ studyId: study.id, values });
+    createConstraint.mutate({ studyId: study.id, studyVersion: study.version, values });
   };
 
   ////////////////////////////////////////////////////////////////
