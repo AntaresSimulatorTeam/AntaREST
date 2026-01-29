@@ -21,9 +21,9 @@ metadata = Base.metadata
 LINK_TABLE = Table(
     "link",
     metadata,
-    Column("study_id", String(length=36), nullable=False),
-    Column("area1", String(length=255), nullable=False),
-    Column("area2", String(length=255), nullable=False),
+    Column("study_id", String(length=36), nullable=False, primary_key=True),
+    Column("area1", String(length=255), nullable=False, primary_key=True),
+    Column("area2", String(length=255), nullable=False, primary_key=True),
     Column("hurdles_cost", Boolean(), nullable=False),
     Column("loop_flow", Boolean(), nullable=False),
     Column("use_phase_shifter", Boolean(), nullable=False),
