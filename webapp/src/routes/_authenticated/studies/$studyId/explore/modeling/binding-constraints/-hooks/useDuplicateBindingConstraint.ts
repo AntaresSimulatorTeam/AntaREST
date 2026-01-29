@@ -76,14 +76,12 @@ function useDuplicateBindingConstraint() {
       });
     },
     onError: (error, variables) => {
-      const { newConstraintName } = variables;
-
       queryClient.setQueryData(queryListKey, (old = []) => {
         return old.filter((constraint) => constraint.id !== tempConstraintId);
       });
 
       enqueueErrorSnackbar(
-        t("study.modeling.bindingConst.duplicate.error", { name: newConstraintName }),
+        t("study.modeling.bindingConst.duplicate.error", { name: variables.newConstraintName }),
         error,
       );
 

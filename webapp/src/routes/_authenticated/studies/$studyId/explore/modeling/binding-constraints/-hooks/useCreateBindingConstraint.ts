@@ -47,12 +47,12 @@ function useCreateBindingConstraint() {
 
   const mutation = useMutation({
     ...bindingConstraintMutations.create(studyId),
-    onMutate: async (variables, context) => {
+    onMutate: async (variables) => {
       const { values } = variables;
 
-      await context.client.cancelQueries({ queryKey: queryListKey });
+      await queryClient.cancelQueries({ queryKey: queryListKey });
 
-      context.client.setQueryData(queryListKey, (old = []) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
         return [
           ...old,
           {
@@ -73,14 +73,12 @@ function useCreateBindingConstraint() {
       });
     },
     onError: (error, variables) => {
-      const { values } = variables;
-
       queryClient.setQueryData(queryListKey, (old = []) => {
         return old.filter((constraint) => constraint.id !== tempConstraintId);
       });
 
       enqueueErrorSnackbar(
-        t("study.modeling.bindingConst.create.error", { name: values.name }),
+        t("study.modeling.bindingConst.create.error", { name: variables.values.name }),
         error,
       );
 

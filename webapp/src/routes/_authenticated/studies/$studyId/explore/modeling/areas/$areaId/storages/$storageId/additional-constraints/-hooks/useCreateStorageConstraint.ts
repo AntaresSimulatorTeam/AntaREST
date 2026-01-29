@@ -18,7 +18,7 @@ import { storageMutations } from "@/queries/storages/mutations";
 import { storageQueries } from "@/queries/storages/queries";
 import type { QueryListItem } from "@/queries/types";
 import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_CONSTRAINT_VALUES } from "../-constants";
@@ -28,6 +28,7 @@ function useCreateStorageConstraint() {
     from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
   });
   const router = useRouter();
+  const queryClient = useQueryClient();
   const tempConstraintId = useSafeMemo(() => crypto.randomUUID(), []);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
@@ -46,15 +47,12 @@ function useCreateStorageConstraint() {
 
   const mutation = useMutation({
     ...storageMutations.createConstraint(studyId, areaId, storageId),
-    meta: { tempConstraintId },
-    onMutate: async (variables, context) => {
+    onMutate: async (variables) => {
       const { values } = variables;
 
-      await context.client.cancelQueries({ queryKey: queryListKey });
+      await queryClient.cancelQueries({ queryKey: queryListKey });
 
-      const prevConstraints = context.client.getQueryData(queryListKey);
-
-      context.client.setQueryData(queryListKey, (old = []) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
         return [
           ...old,
           {
@@ -73,17 +71,16 @@ function useCreateStorageConstraint() {
         to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId",
         params: { ...params, constraintId: tempConstraintId },
       });
-
-      return { prevConstraints };
     },
-    onError: (error, variables, onMutateResult, context) => {
-      const { values } = variables;
-      const { prevConstraints } = onMutateResult || {};
-
-      context.client.setQueryData(queryListKey, prevConstraints);
+    onError: (error, variables) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.filter((constraint) => constraint.id !== tempConstraintId);
+      });
 
       enqueueErrorSnackbar(
-        t("study.modeling.storages.additionalConstraints.create.error", { name: values.name }),
+        t("study.modeling.storages.additionalConstraints.create.error", {
+          name: variables.values.name,
+        }),
         error,
       );
 
@@ -91,8 +88,8 @@ function useCreateStorageConstraint() {
         router.navigate({ to: "..", replace: true });
       }
     },
-    onSuccess: (newConstraint, variables, onMutateResult, context) => {
-      context.client.setQueryData(queryListKey, (old = []) => {
+    onSuccess: (newConstraint) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((constraint) =>
           constraint.id === tempConstraintId ? newConstraint : constraint,
         );
@@ -104,13 +101,6 @@ function useCreateStorageConstraint() {
           params: { ...params, constraintId: newConstraint.id },
           replace: true,
         });
-      }
-    },
-    onSettled: (data, error, variables, onMutateResult, context) => {
-      const mutationNb = context.client.isMutating({ mutationKey: queryListKey });
-
-      if (mutationNb === 1) {
-        context.client.invalidateQueries({ queryKey: queryListKey });
       }
     },
   });

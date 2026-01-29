@@ -36,6 +36,13 @@ export const storageKeys = {
   ) => {
     return [...storageKeys.constraintList(studyId, areaId, storageId), "createStorageConstraint"];
   },
+  updateConstraint: (
+    studyId: StudyMetadata["id"],
+    areaId: AreaWithId["id"],
+    storageId: StorageParams["storageId"],
+  ) => {
+    return [...storageKeys.constraintList(studyId, areaId, storageId), "updateStorageConstraint"];
+  },
   deleteConstraint: (
     studyId: StudyMetadata["id"],
     areaId: AreaWithId["id"],

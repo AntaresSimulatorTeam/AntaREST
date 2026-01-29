@@ -14,7 +14,6 @@
 
 import { format } from "@/utils/stringUtils";
 import client from "../../client";
-import { getStudyMetadata } from "../../study";
 import {
   adaptBindingConstraintDtoToBindingConstraint,
   adaptBindingConstraintOperationDtoToStudyVersion,
@@ -44,10 +43,20 @@ export async function getBindingConstraints({ studyId, filters }: GetBindingCons
   return data.map(adaptBindingConstraintDtoToBindingConstraint);
 }
 
-export async function createBindingConstraint({ studyId, values }: CreateBindingConstraintsParams) {
+export async function createBindingConstraint({
+  studyId,
+  studyVersion,
+  values,
+}: CreateBindingConstraintsParams) {
+  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
+  await new Promise((res) => setTimeout(() => res(1), 10000));
+
+  if (values.name === "samir") {
+    throw new Error("Constraint name 'samir' is not allowed for demonstration purpose.");
+  }
+
   const url = format(BASE_URL, { studyId });
-  const study = await getStudyMetadata(studyId);
-  const adaptedValues = adaptBindingConstraintOperationDtoToStudyVersion(values, study.version);
+  const adaptedValues = adaptBindingConstraintOperationDtoToStudyVersion(values, studyVersion);
 
   const { data } = await client.post<BindingConstraintDTO>(url, adaptedValues);
 
@@ -56,12 +65,12 @@ export async function createBindingConstraint({ studyId, values }: CreateBinding
 
 export async function updateBindingConstraint({
   studyId,
+  studyVersion,
   constraintId,
   values,
 }: UpdateBindingConstraintsParams) {
   const url = format(BINDING_CONSTRAINT_URL, { studyId, constraintId });
-  const study = await getStudyMetadata(studyId);
-  const adaptedValues = adaptBindingConstraintOperationDtoToStudyVersion(values, study.version);
+  const adaptedValues = adaptBindingConstraintOperationDtoToStudyVersion(values, studyVersion);
 
   const { data } = await client.put<BindingConstraintDTO>(url, adaptedValues);
 
@@ -86,6 +95,11 @@ export async function deleteBindingConstraint({
   studyId,
   constraintId,
 }: DeleteBindingConstraintParams) {
+  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
+  await new Promise((res) => setTimeout(() => res(1), 5000));
+
+  throw new Error("Deletion error for demonstration purpose.");
+
   const url = format(BINDING_CONSTRAINT_URL, { studyId, constraintId });
   const { data } = await client.delete<string>(url);
   return data;

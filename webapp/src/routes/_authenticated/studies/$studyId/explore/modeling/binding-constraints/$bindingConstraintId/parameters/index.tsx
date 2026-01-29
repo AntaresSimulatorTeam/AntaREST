@@ -42,9 +42,9 @@ export const Route = createFileRoute(
 function Parameters() {
   const study = useStudy();
   const constraint = useBindingConstraint();
-  const { t } = useTranslation();
   const updateConstraint = useUpdateBindingConstraint();
   const isOptimistic = isQueryListItemOptimistic(constraint);
+  const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

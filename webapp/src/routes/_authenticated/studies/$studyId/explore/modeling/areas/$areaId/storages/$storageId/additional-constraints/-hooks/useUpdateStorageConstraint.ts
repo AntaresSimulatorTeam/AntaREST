@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutations";
-import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
+import { storageMutations } from "@/queries/storages/mutations";
+import { storageQueries } from "@/queries/storages/queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 
-function useUpdateBindingConstraint() {
-  const { studyId } = useParams({
-    from: "/_authenticated/studies/$studyId/explore/modeling/binding-constraints",
+function useUpdateStorageConstraint() {
+  const { studyId, areaId, storageId } = useParams({
+    from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
   });
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    ...bindingConstraintMutations.update(studyId),
+    ...storageMutations.updateConstraint(studyId, areaId, storageId),
     onSuccess: (updatedConstraint) => {
-      const { queryKey: queryListKey } = bindingConstraintQueries.list(studyId);
+      const { queryKey: queryListKey } = storageQueries.constraintList(studyId, areaId, storageId);
 
       queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((constraint) =>
@@ -39,4 +39,4 @@ function useUpdateBindingConstraint() {
   return mutation;
 }
 
-export default useUpdateBindingConstraint;
+export default useUpdateStorageConstraint;

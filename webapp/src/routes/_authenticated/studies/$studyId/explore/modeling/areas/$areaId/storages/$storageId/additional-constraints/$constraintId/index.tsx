@@ -20,10 +20,6 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import useDialog from "@/hooks/useDialog";
 import { isQueryListItemOptimistic } from "@/queries/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import {
-  getStorageConstraint,
-  updateStorageConstraint,
-} from "@/services/api/studies/areas/storages";
 import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
 import { unresolvedPromise } from "@/utils/promiseUtils";
 import DatasetIcon from "@mui/icons-material/Dataset";
@@ -34,6 +30,7 @@ import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
 import semver from "semver";
 import useDeleteStorageConstraint from "../-hooks/useDeleteStorageConstraint";
+import useUpdateStorageConstraint from "../-hooks/useUpdateStorageConstraint";
 import Fields from "./-components/Fields";
 import useStorageConstraint from "./-hooks/useStorageConstraint";
 
@@ -49,6 +46,7 @@ function Constraint() {
   const { t } = useTranslation();
   const [matrixDialogOpen, toggleMatrixDialogOpen] = useToggle(false);
   const { confirm } = useDialog();
+  const updateConstraint = useUpdateStorageConstraint();
   const deleteConstraint = useDeleteStorageConstraint();
   const constraint = useStorageConstraint();
   const isOptimistic = isQueryListItemOptimistic(constraint);
@@ -60,7 +58,7 @@ function Constraint() {
   const handleSubmit = ({ dirtyValues, values }: SubmitHandlerPlus<StorageConstraint>) => {
     const { id, name, occurrences, ...rest } = dirtyValues;
 
-    return updateStorageConstraint({
+    return updateConstraint.mutateAsync({
       studyId: study.id,
       areaId,
       storageId,
@@ -98,15 +96,7 @@ function Constraint() {
         key={constraintId}
         onSubmit={handleSubmit}
         config={{
-          defaultValues: () =>
-            isOptimistic
-              ? unresolvedPromise<StorageConstraint>()
-              : getStorageConstraint({
-                  studyId: study.id,
-                  areaId,
-                  storageId,
-                  constraintId,
-                }),
+          defaultValues: isOptimistic ? unresolvedPromise<StorageConstraint> : constraint,
         }}
         enableUndoRedo
         extraActions={

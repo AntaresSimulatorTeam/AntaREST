@@ -15,6 +15,7 @@
 import {
   createStorageConstraint,
   deleteStorageConstraint,
+  updateStorageConstraint,
 } from "@/services/api/studies/areas/storages";
 import type { StorageParams } from "@/services/api/studies/areas/storages/types";
 import type { AreaWithId, StudyMetadata } from "@/types/types";
@@ -30,6 +31,16 @@ export const storageMutations = {
     return mutationOptions({
       mutationKey: storageKeys.createConstraint(studyId, areaId, storageId),
       mutationFn: createStorageConstraint,
+    });
+  },
+  updateConstraint: (
+    studyId: StudyMetadata["id"],
+    areaId: AreaWithId["id"],
+    storageId: StorageParams["storageId"],
+  ) => {
+    return mutationOptions({
+      mutationKey: storageKeys.updateConstraint(studyId, areaId, storageId),
+      mutationFn: updateStorageConstraint,
     });
   },
   deleteConstraint: (
