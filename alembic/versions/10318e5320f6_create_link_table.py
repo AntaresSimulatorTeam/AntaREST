@@ -1,7 +1,7 @@
 """create_link_table
 
 Revision ID: 10318e5320f6
-Revises: 4bbe4f165a05
+Revises: 8f3d2a1b5c7e
 Create Date: 2026-01-28 17:32:28.795223
 
 """
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '10318e5320f6'
+revision = '8f3d2a1b5c7e'
 down_revision = '4bbe4f165a05'
 branch_labels = None
 depends_on = None
