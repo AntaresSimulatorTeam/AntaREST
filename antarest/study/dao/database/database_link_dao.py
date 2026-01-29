@@ -75,6 +75,24 @@ class DatabaseLinkDao(LinkDao):
     @override
     def save_link(self, link: Link) -> None:
         session = self.get_session()
+
+        values = {
+            "hurdles_cost": link.hurdles_cost,
+            "loop_flow": link.loop_flow,
+            "use_phase_shifter": link.use_phase_shifter,
+            "transmission_capacities": link.transmission_capacities,
+            "asset_type": link.asset_type,
+            "display_comments": link.display_comments,
+            "comments": link.comments,
+            "colorr": link.colorr,
+            "colorb": link.colorb,
+            "colorg": link.colorg,
+            "link_width": link.link_width,
+            "link_style": link.link_style,
+            "filter_synthesis": _join_with_comma(link.filter_synthesis),
+            "filter_year_by_year": _join_with_comma(link.filter_year_by_year),
+        }
+
         if self.link_exists(link.area1, link.area2):
             stmt_update = (
                 update(LINK_TABLE)
@@ -83,45 +101,15 @@ class DatabaseLinkDao(LinkDao):
                     & (LINK_TABLE.c.area1 == link.area1)
                     & (LINK_TABLE.c.area2 == link.area2)
                 )
-                .values(
-                    hurdles_cost=link.hurdles_cost,
-                    loop_flow=link.loop_flow,
-                    use_phase_shifter=link.use_phase_shifter,
-                    transmission_capacities=link.transmission_capacities,
-                    asset_type=link.asset_type,
-                    display_comments=link.display_comments,
-                    comments=link.comments,
-                    colorr=link.colorr,
-                    colorb=link.colorb,
-                    colorg=link.colorg,
-                    link_width=link.link_width,
-                    link_style=link.link_style,
-                    filter_synthesis=_join_with_comma(link.filter_synthesis),
-                    filter_year_by_year=_join_with_comma(link.filter_year_by_year),
-                )
+                .values(values)
             )
 
             session.execute(stmt_update)
         else:
-            stmt_insert = insert(LINK_TABLE).values(
-                study_id=self.get_study_id(),
-                area1=link.area1,
-                area2=link.area2,
-                hurdles_cost=link.hurdles_cost,
-                loop_flow=link.loop_flow,
-                use_phase_shifter=link.use_phase_shifter,
-                transmission_capacities=link.transmission_capacities,
-                asset_type=link.asset_type,
-                display_comments=link.display_comments,
-                comments=link.comments,
-                colorr=link.colorr,
-                colorb=link.colorb,
-                colorg=link.colorg,
-                link_width=link.link_width,
-                link_style=link.link_style,
-                filter_synthesis=_join_with_comma(link.filter_synthesis),
-                filter_year_by_year=_join_with_comma(link.filter_year_by_year),
-            )
+            values["study_id"] = self.get_study_id()
+            values["area1"] = link.area1
+            values["area2"] = link.area2
+            stmt_insert = insert(LINK_TABLE).values(values)
 
             session.execute(stmt_insert)
 
