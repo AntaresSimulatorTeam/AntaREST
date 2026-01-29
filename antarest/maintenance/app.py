@@ -93,7 +93,6 @@ celery_app.conf.update(
         TaskName.WATCHER_SCAN: {"queue": "maintenance"},
         TaskName.VARIABLE_VIEW_CLEANER: {"queue": "maintenance"},
     },
-    # Define beat_schedule directly (more reliable than on_after_configure signal)
     beat_schedule={
         TaskName.MATRICES_CLEANER: {
             "task": TaskName.MATRICES_CLEANER,
