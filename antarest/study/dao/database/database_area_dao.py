@@ -30,7 +30,8 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo,
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE, DISTRICT_TABLE
+from antarest.study.dao.database.models.area import AREA_TABLE, AREA_UI_TABLE
+from antarest.study.dao.database.models.district import DISTRICT_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:

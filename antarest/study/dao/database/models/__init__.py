@@ -9,6 +9,3 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from antarest.study.dao.database.models.area import AREA_TABLE, AREA_UI_TABLE
-from antarest.study.dao.database.models.district import DISTRICT_TABLE
