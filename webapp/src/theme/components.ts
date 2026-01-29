@@ -263,4 +263,18 @@ export default {
       }),
     },
   },
+  MuiStack: {
+    defaultProps: {
+      direction: "row",
+      useFlexGap: true,
+    },
+    variants: [
+      {
+        props: { direction: "row" },
+        style: {
+          alignItems: "center",
+        },
+      },
+    ],
+  },
 } satisfies CssVarsThemeOptions["components"];

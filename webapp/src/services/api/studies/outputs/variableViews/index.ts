@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { DateTimeMetadataDTO } from "@/components/Matrix/shared/types";
 import client from "@/services/api/client";
 import { adaptVariableViewParamsToDto, sanitizeNaNResponse } from "./adapters";
 import type {
@@ -22,7 +23,6 @@ import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "./types";
-import type { DateTimeMetadataDTO } from "@/components/common/Matrix/shared/types";
 
 ////////////////////////////////////////////////////////////////
 // Variables List

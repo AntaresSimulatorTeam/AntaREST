@@ -1,0 +1,411 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import DownloadMatrixButton from "@/components/buttons/DownloadMatrixButton";
+import CustomScrollbar from "@/components/CustomScrollbar";
+import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import SearchFE from "@/components/fieldEditors/SearchFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import { useDebouncedField } from "@/hooks/useDebouncedField";
+import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import FilterListOffIcon from "@mui/icons-material/FilterListOff";
+import { Box, IconButton, Tooltip } from "@mui/material";
+import startCase from "lodash/startCase";
+import * as R from "ramda";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  matchesSearchTerm,
+  type DataType,
+  type Frequency,
+  type MonteCarloMode,
+  type OutputItemType,
+} from "../../-utils";
+import ClusterSelector from "./ClusterSelector";
+import MonteCarloModeSelector from "./MonteCarloModeSelector";
+import VariableSelector from "./VariableSelector";
+
+interface ColumnHeader {
+  variable: string;
+  unit: string;
+  stat: string;
+  original: string[];
+}
+
+interface Filters {
+  search: string;
+  exp: boolean;
+  min: boolean;
+  max: boolean;
+  std: boolean;
+  values: boolean;
+}
+
+const defaultFilters = {
+  search: "",
+  exp: true,
+  min: true,
+  max: true,
+  std: true,
+  values: true,
+} as const;
+
+interface Props {
+  mcMode: MonteCarloMode;
+  setMcMode: (mode: MonteCarloMode) => void;
+  year: number;
+  setYear: (year: number) => void;
+  dataType: DataType;
+  setDataType: (dataType: DataType) => void;
+  frequency: Frequency;
+  setFrequency: (frequency: Frequency) => void;
+  maxYear: number;
+  studyId: string;
+  path: string;
+  colHeaders: string[][];
+  onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
+  onToggleFilter: () => void;
+  variablesMetadata: VariablesListDTO | null;
+  itemType: OutputItemType;
+  selectedItemId: string;
+  selectedVariable: string;
+  onVariableSelect: (variable: string) => void;
+  selectedClusterId: string;
+  onClusterSelect: (clusterId: string) => void;
+}
+
+function ResultFilters({
+  mcMode,
+  setMcMode,
+  year,
+  setYear,
+  dataType,
+  setDataType,
+  frequency,
+  setFrequency,
+  maxYear,
+  studyId,
+  path,
+  colHeaders,
+  onColHeadersChange,
+  onToggleFilter,
+  variablesMetadata,
+  itemType,
+  selectedItemId,
+  selectedVariable,
+  onVariableSelect,
+  selectedClusterId,
+  onClusterSelect,
+}: Props) {
+  const { t } = useTranslation();
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
+
+  const { localValue: localYear, handleChange: debouncedYearChange } = useDebouncedField({
+    value: year,
+    onChange: setYear,
+    delay: 500,
+    transformValue: (value: number) => R.clamp(1, maxYear, value),
+  });
+
+  const filtersApplied = useMemo(() => {
+    return !R.equals(filters, defaultFilters);
+  }, [filters]);
+
+  const parsedHeaders = useMemo(() => {
+    return colHeaders.map(
+      (header): ColumnHeader => ({
+        variable: String(header[0]).trim(),
+        unit: String(header[1]).trim(),
+        stat: String(header[2]).trim(),
+        original: header,
+      }),
+    );
+  }, [colHeaders]);
+
+  // Process headers while keeping track of their original positions
+  // This ensures we can properly filter the data matrix later
+  // Example: if we filter out column 1, we need to know that column 2
+  // becomes column 1 in the filtered view but maps to index 2 in the data
+  const filteredHeaders = useMemo(() => {
+    return parsedHeaders
+      .map((header, index) => ({ ...header, index }))
+      .filter((header) => {
+        // Apply search filter
+        if (filters.search) {
+          const matchesVariable = matchesSearchTerm(header.variable, filters.search);
+
+          const matchesUnit = matchesSearchTerm(header.unit, filters.search);
+
+          if (!matchesVariable && !matchesUnit) {
+            return false;
+          }
+        }
+
+        // Apply statistical filters
+        if (header.stat) {
+          const stat = header.stat.toLowerCase();
+
+          if (!filters.exp && stat.includes("exp")) {
+            return false;
+          }
+          if (!filters.min && stat.includes("min")) {
+            return false;
+          }
+          if (!filters.max && stat.includes("max")) {
+            return false;
+          }
+          if (!filters.std && stat.includes("std")) {
+            return false;
+          }
+          if (!filters.values && stat.includes("values")) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+  }, [filters, parsedHeaders]);
+
+  // Track previous header indices to prevent unnecessary updates
+  const prevIndicesKeyRef = useRef("");
+
+  // Notify parent of both filtered headers and their original indices
+  // This allows the parent to correctly map the filtered view back to the original data
+  useEffect(() => {
+    // Create a stable key from indices to detect actual changes
+    const indicesKey = filteredHeaders.map((h) => h.index).join(",");
+
+    if (indicesKey !== prevIndicesKeyRef.current) {
+      prevIndicesKeyRef.current = indicesKey;
+
+      onColHeadersChange(
+        filteredHeaders.map((h) => h.original),
+        filteredHeaders.map((h) => h.index),
+      );
+    }
+  }, [filteredHeaders, onColHeadersChange]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleYearChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(event.target.value);
+    debouncedYearChange(value);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setFilters((prev) => ({ ...prev, search: value }));
+  };
+
+  const handleStatFilterChange = (stat: keyof Omit<Filters, "search">) => {
+    setFilters((prev) => ({ ...prev, [stat]: !prev[stat] }));
+  };
+
+  const handleReset = () => {
+    setFilters(defaultFilters);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  // Local filters (immediately applied on columns headers)
+  const COLUMN_FILTERS = [
+    {
+      id: "search",
+      field: (
+        <SearchFE
+          value={filters.search}
+          size="extra-small"
+          onSearchValueChange={handleSearchChange}
+          sx={{ maxWidth: 150 }}
+        />
+      ),
+    },
+    ...(["exp", "min", "max", "std", "values"] as const).map((col) => ({
+      id: col,
+      field: (
+        <CheckBoxFE
+          key={col}
+          label={startCase(col)}
+          labelPlacement="start"
+          value={filters[col]}
+          onChange={() => handleStatFilterChange(col)}
+        />
+      ),
+    })),
+    {
+      id: "reset",
+      field: (
+        <IconButton sx={{ ml: 1 }} onClick={handleReset} disabled={!filtersApplied}>
+          <FilterListOffIcon />
+        </IconButton>
+      ),
+    },
+  ] as const;
+
+  const isVariablePerVariable = mcMode === "variable-per-variable";
+  const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
+  const shouldShowClusterSelector =
+    isVariablePerVariable && isClusterDataType && itemType === "areas";
+
+  // Data filters (requiring API calls, refetch new result)
+  const RESULT_FILTERS = [
+    {
+      id: "mcMode",
+      field: <MonteCarloModeSelector value={mcMode} onChange={setMcMode} />,
+    },
+    {
+      id: "display",
+      field: (
+        <SelectFE
+          label={t("study.outputs.display")}
+          value={dataType}
+          options={[
+            { value: "values", label: "General values" },
+            { value: "details", label: "Thermal plants" },
+            { value: "details-res", label: "Ren. clusters" },
+            { value: "id", label: "RecordYears" },
+            { value: "details-STstorage", label: "ST Storages" },
+          ]}
+          size="extra-small"
+          onChange={(event) => setDataType(event.target.value)}
+          margin="dense"
+        />
+      ),
+    },
+    {
+      id: "cluster",
+      field: shouldShowClusterSelector ? (
+        <ClusterSelector
+          variablesMetadata={variablesMetadata}
+          dataType={dataType}
+          selectedItemId={selectedItemId}
+          selectedClusterId={selectedClusterId}
+          onClusterSelect={onClusterSelect}
+        />
+      ) : null,
+    },
+    {
+      id: "variable",
+      field: isVariablePerVariable ? (
+        <VariableSelector
+          variablesMetadata={variablesMetadata}
+          dataType={dataType}
+          itemType={itemType}
+          selectedItemId={selectedItemId}
+          selectedVariable={selectedVariable}
+          onVariableSelect={onVariableSelect}
+          selectedClusterId={selectedClusterId}
+        />
+      ) : null,
+    },
+    {
+      id: "year",
+      field:
+        mcMode === "mc-ind" ? (
+          <NumberFE
+            label={t("global.year")}
+            size="extra-small"
+            value={localYear}
+            slotProps={{
+              htmlInput: {
+                min: 1,
+                max: maxYear,
+              },
+            }}
+            onChange={handleYearChange}
+            margin="dense"
+            sx={{ minWidth: 65 }}
+          />
+        ) : null,
+    },
+
+    {
+      id: "temporality",
+      field: (
+        <SelectFE
+          label={t("study.outputs.temporality")}
+          value={frequency}
+          options={[
+            { value: "hourly", label: "Hourly" },
+            { value: "daily", label: "Daily" },
+            { value: "weekly", label: "Weekly" },
+            { value: "monthly", label: "Monthly" },
+            { value: "annual", label: "Annual" },
+          ]}
+          size="extra-small"
+          onChange={(event) => setFrequency(event.target.value)}
+          margin="dense"
+          sx={{ minWidth: 94 }}
+        />
+      ),
+    },
+  ] as const;
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
+        pb: 1,
+      }}
+    >
+      <CustomScrollbar>
+        <Box
+          sx={{
+            width: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flex: 1,
+            }}
+          >
+            {!isVariablePerVariable &&
+              COLUMN_FILTERS.map(({ id, field }) => <Fragment key={id}>{field}</Fragment>)}
+            {RESULT_FILTERS.map(({ id, field }) => (
+              <Fragment key={id}>{field}</Fragment>
+            ))}
+          </Box>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Tooltip title={t("matrix.filter.filterData")}>
+              <IconButton onClick={onToggleFilter}>
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+            {/* TODO: Export functionality for variable per variable mode will be implemented later */}
+            {!isVariablePerVariable && <DownloadMatrixButton studyId={studyId} path={path} />}
+          </Box>
+        </Box>
+      </CustomScrollbar>
+    </Box>
+  );
+}
+
+export default ResultFilters;

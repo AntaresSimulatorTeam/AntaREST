@@ -6,6 +6,7 @@ npm-debug.log*
 node_modules
 dist
 dist-ssr
+.tanstack
 *.local
 
 # Editor directories and files

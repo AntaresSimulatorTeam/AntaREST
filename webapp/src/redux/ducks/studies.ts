@@ -12,8 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { getStudyVersions } from "@/services/api/studies";
+import * as api from "@/services/api/study";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyEventPayload } from "@/services/webSocket/types";
+import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
@@ -21,9 +24,6 @@ import {
   createReducer,
 } from "@reduxjs/toolkit";
 import type { O } from "ts-toolbelt";
-import { getStudyVersions as getStudyVersionsApi } from "../../services/api/studies";
-import * as api from "../../services/api/study";
-import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../types/types";
 import { getFavoriteStudyIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
@@ -182,10 +182,11 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
   },
 );
 
-export const setStudy = createAsyncThunk<StudyMetadata, StudyEventPayload, AppAsyncThunkConfig>(
-  n("SET_STUDY"),
-  ({ id }) => api.getStudyMetadata(id),
-);
+export const setStudy = createAsyncThunk<
+  StudyMetadata,
+  StudyEventPayload | StudyMetadata["id"],
+  AppAsyncThunkConfig
+>(n("SET_STUDY"), (arg) => api.getStudyMetadata(typeof arg === "string" ? arg : arg.id));
 
 interface StudyDeleteInfo {
   id: StudyMetadata["id"];
@@ -222,7 +223,7 @@ export const deleteStudy = createAsyncThunk<
 export const fetchStudyVersions = createAsyncThunk(
   n("FETCH_VERSIONS"),
   (_, { rejectWithValue }) => {
-    return getStudyVersionsApi().catch(rejectWithValue);
+    return getStudyVersions().catch(rejectWithValue);
   },
 );
 
