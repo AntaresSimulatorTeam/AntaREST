@@ -48,13 +48,6 @@ export async function createBindingConstraint({
   studyVersion,
   values,
 }: CreateBindingConstraintsParams) {
-  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
-  await new Promise((res) => setTimeout(() => res(1), 10000));
-
-  if (values.name === "samir") {
-    throw new Error("Constraint name 'samir' is not allowed for demonstration purpose.");
-  }
-
   const url = format(BASE_URL, { studyId });
   const adaptedValues = adaptBindingConstraintOperationDtoToStudyVersion(values, studyVersion);
 
@@ -95,11 +88,6 @@ export async function deleteBindingConstraint({
   studyId,
   constraintId,
 }: DeleteBindingConstraintParams) {
-  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
-  await new Promise((res) => setTimeout(() => res(1), 5000));
-
-  throw new Error("Deletion error for demonstration purpose.");
-
   const url = format(BINDING_CONSTRAINT_URL, { studyId, constraintId });
   const { data } = await client.delete<string>(url);
   return data;

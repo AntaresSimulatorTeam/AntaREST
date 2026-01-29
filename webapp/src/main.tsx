@@ -37,7 +37,13 @@ if (import.meta.env.DEV) {
   };
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 10 * 1000, // 1 minute
+    },
+  },
+});
 
 const router = createRouter({
   routeTree,
@@ -50,7 +56,6 @@ const router = createRouter({
     store,
     queryClient,
   },
-  defaultStaleTime: 60 * 1000, // 1 minute
   defaultPendingComponent: SimpleLoader,
   defaultErrorComponent: ErrorView,
   defaultNotFoundComponent: PageNotFound,
