@@ -26,7 +26,7 @@ class MaintenanceContextNotFoundError(RuntimeError):
 
 
 class TaskName(StrEnum):
-    """Celery task names - single source of truth for task identification."""
+    """Celery task names"""
 
     MATRICES_CLEANER = "matrices_cleaner"
     BLOBS_CLEANER = "blobs_cleaner"
