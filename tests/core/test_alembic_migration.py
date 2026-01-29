@@ -13,10 +13,10 @@ from io import StringIO
 from pathlib import Path
 
 import yaml
-from alembic import command
-from alembic.config import Config
 from sqlalchemy import create_engine, text
 
+from alembic import command
+from alembic.config import Config
 from antarest.core.persistence import upgrade_db
 
 
@@ -44,6 +44,6 @@ def test_alembic_migration(tmp_path: Path, project_path: Path) -> None:
     alembic_cfg.stdout = StringIO()
     command.heads(alembic_cfg)
     head_output = alembic_cfg.stdout.getvalue()
-    heads = head_output.replace(' (head)', '').splitlines()
+    heads = head_output.replace(" (head)", "").splitlines()
     if len(heads) > 1:
         raise AssertionError(f"We should have only one head, currently: {heads}")
