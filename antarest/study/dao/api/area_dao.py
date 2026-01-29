@@ -19,6 +19,16 @@ from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIDat
 
 class ReadOnlyAreaDao(ABC):
     @abstractmethod
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+
+        Returns:
+            The list of areas with their basic information.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_all_areas_info(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.
@@ -55,6 +65,13 @@ class ReadOnlyAreaDao(ABC):
 
         Raises:
             AreaNotFound: If the area does not exist.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study
         """
         raise NotImplementedError()
 

@@ -74,6 +74,7 @@ from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
+from antarest.study.business.compatibility_parameters_management import CompatibilityParamsManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
@@ -548,6 +549,7 @@ class StudyService:
         self.optimization_manager = OptimizationManager(command_context)
         self.adequacy_patch_manager = AdequacyPatchManager(command_context)
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
+        self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)

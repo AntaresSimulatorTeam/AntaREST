@@ -25,7 +25,7 @@ from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataS
 from antarest.matrixstore.service import MatrixService
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models import (
+from antarest.study.dao.database.models.area import (
     LOAD_TABLE,
     MISC_GEN_TABLE,
     RESERVES_TABLE,

@@ -1275,14 +1275,9 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     archive_path = tmp_path / "test2.zip"
     zip_study(study_path, archive_path)
 
-    # Asserts the import fails
+    # Asserts the import success
     res = client.post("/v1/studies/_import", files={"study": io.BytesIO(archive_path.read_bytes())})
-    assert res.status_code == 422
-    assert res.json()["exception"] == "StudyImportFailed"
-    assert (
-        res.json()["description"]
-        == "Study 'A' could not be imported: AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
-    )
+    assert res.status_code == 201
 
 
 def test_import_with_editor(

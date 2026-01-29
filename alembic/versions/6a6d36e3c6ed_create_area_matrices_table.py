@@ -1,7 +1,7 @@
 """create_area_matrices_table
 
 Revision ID: 6a6d36e3c6ed
-Revises: f3a153a9a048
+Revises: 8f3d2a1b5c7e
 Create Date: 2026-01-26 10:45:36.111886
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '6a6d36e3c6ed'
-down_revision = '4bbe4f165a05'
+down_revision = "8f3d2a1b5c7e"
 branch_labels = None
 depends_on = None
 

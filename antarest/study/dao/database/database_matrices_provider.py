@@ -18,7 +18,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.dao.database.models import LOAD_TABLE, MISC_GEN_TABLE, RESERVES_TABLE, SOLAR_TABLE, WIND_TABLE
+from antarest.study.dao.database.models.area import LOAD_TABLE, MISC_GEN_TABLE, RESERVES_TABLE, SOLAR_TABLE, WIND_TABLE
 
 
 class StudyDatabaseMatrixUsageProvider(IMatrixUsageProvider):
