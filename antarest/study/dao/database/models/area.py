@@ -18,7 +18,6 @@ These tables store study data (areas, UI positions, etc.) in the database instea
 """
 
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Table
-from sqlalchemy.sql.schema import SchemaItem
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.area_properties_model import AdequacyPatchMode
@@ -63,18 +62,20 @@ AREA_UI_TABLE = Table(
 )
 
 
-def _get_area_matrices_args() -> list[SchemaItem]:
-    return [
+def _create_matrix_table(name: str) -> Table:
+    return Table(
+        name,
+        metadata,
         Column("study_id", String(36), nullable=False, primary_key=True),
         Column("area_id", String(255), nullable=False, primary_key=True),
         Column("matrix_id", String(64), nullable=False),
         ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
-    ]
+    )
 
 
 # Relation: One to one with `AREA_TABLE`
-LOAD_TABLE = Table("load", metadata, *_get_area_matrices_args())
-SOLAR_TABLE = Table("solar", metadata, *_get_area_matrices_args())
-WIND_TABLE = Table("wind", metadata, *_get_area_matrices_args())
-RESERVES_TABLE = Table("reserves", metadata, *_get_area_matrices_args())
-MISC_GEN_TABLE = Table("misc_gen", metadata, *_get_area_matrices_args())
+LOAD_TABLE = _create_matrix_table("load")
+SOLAR_TABLE = _create_matrix_table("solar")
+WIND_TABLE = _create_matrix_table("wind")
+RESERVES_TABLE = _create_matrix_table("reserves")
+MISC_GEN_TABLE = _create_matrix_table("misc_gen")
