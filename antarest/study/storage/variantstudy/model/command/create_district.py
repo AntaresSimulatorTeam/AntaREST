@@ -81,7 +81,7 @@ class CreateDistrict(ICommand):
         if study_data.district_exists(district_id):
             return command_failed(message=f"District '{self.parameters.name}' already exists and could not be created")
 
-        invalid_areas = study_data.get_invalid_areas_in_district(self.parameters.areas or [])
+        invalid_areas = study_data.get_invalid_area_ids(self.parameters.areas or [])
         if invalid_areas:
             return command_failed(message=f"District '{self.parameters.name}' has invalid areas: {invalid_areas}")
 
