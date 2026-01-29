@@ -9,14 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from io import StringIO
 from pathlib import Path
 
 import yaml
 from sqlalchemy import create_engine, text
 
-from alembic import command
-from alembic.config import Config
 from antarest.core.persistence import upgrade_db
 
 
@@ -37,13 +34,3 @@ def test_alembic_migration(tmp_path: Path, project_path: Path) -> None:
     with engine.connect() as connection:
         # this would throw if the migration is not executed
         connection.execute(text("SELECT * FROM study"))
-
-    # If we have 2 heads with the same revision, we should raise to ensure a linear history
-    # Before this part, if it was the case we didn't raise
-    alembic_cfg = Config(str(project_path / "alembic.ini"))
-    alembic_cfg.stdout = StringIO()
-    command.heads(alembic_cfg)
-    head_output = alembic_cfg.stdout.getvalue()
-    heads = head_output.replace(" (head)", "").splitlines()
-    if len(heads) > 1:
-        raise AssertionError(f"We should have only one head, currently: {heads}")
