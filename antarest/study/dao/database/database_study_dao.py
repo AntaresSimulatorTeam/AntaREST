@@ -33,7 +33,6 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
-from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -59,11 +58,12 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
+from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
+class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao):
     """
     Database implementation of StudyDao.
     """
@@ -78,6 +78,7 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
         DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
+        DatabaseDistrictDao.__init__(self, study_id, db_session)
 
     # Implementation of abstract methods required by StudyDao
     @override
@@ -610,34 +611,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao):
 
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_district(self, district: District) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def remove_district(self, district_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_districts(self) -> Sequence[District]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_district(self, district_id: str) -> District:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def district_exists(self, district_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def tmp_get_all_areas(self) -> list[str]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override

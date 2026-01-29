@@ -49,6 +49,14 @@ class FileStudyAreaDao(AreaDao):
         pass
 
     @override
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+        """
+        study_data = self.get_file_study()
+        return list(study_data.config.areas)
+
+    @override
     def get_all_areas_info(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.
@@ -144,6 +152,17 @@ class FileStudyAreaDao(AreaDao):
             color_rgb = (area_ui_data.style.color_r, area_ui_data.style.color_g, area_ui_data.style.color_b)
 
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
+
+    @override
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study.
+        """
+        areas_set = set(areas)
+        study_data = self.get_file_study()
+        all_areas = set(study_data.config.areas)
+        invalid_areas = areas_set - all_areas
+        return list(invalid_areas)
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
