@@ -39,7 +39,7 @@ class FavoriteStudy(Base):
 
     user_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("identities.id", name="fk_", ondelete="CASCADE"),
+        ForeignKey("identities.id", name="fk_user_id_favorite_study", ondelete="CASCADE"),
         nullable=False,
         primary_key=True,
     )
