@@ -100,8 +100,7 @@ class DatabaseLayerDao(LayerDao):
         layers.append(Layer(id=DEFAULT_LAYER_ID, name=default_name, areas=sorted(all_areas)))
 
         # Other layers
-        all_layer_ids = set(layer_names.keys()) | set(areas_by_layer.keys())
-        for layer_id in sorted(all_layer_ids):
+        for layer_id in sorted(layer_names.keys()):
             if layer_id == DEFAULT_LAYER_ID:
                 continue
             name = layer_names.get(layer_id)
