@@ -25,6 +25,16 @@ class MaintenanceContextNotFoundError(RuntimeError):
         super().__init__("MaintenanceContext not in app.conf - worker not initialized?")
 
 
+class TaskName(StrEnum):
+    """Celery task names - single source of truth for task identification."""
+
+    MATRICES_CLEANER = "matrices_cleaner"
+    BLOBS_CLEANER = "blobs_cleaner"
+    AUTO_ARCHIVER = "auto_archiver"
+    WATCHER_SCAN = "watcher_scan"
+    VARIABLE_VIEW_CLEANER = "variable_view_cleaner"
+
+
 class BackGroundTaskStatus(StrEnum):
     SUCCESS = "success"
     PARTIAL_SUCCESS = "partial_success"

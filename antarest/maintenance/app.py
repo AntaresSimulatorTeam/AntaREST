@@ -30,6 +30,7 @@ from antarest.core.config import CeleryConfig, Config
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.utils import get_local_path
 from antarest.maintenance.context import MaintenanceContext
+from antarest.maintenance.tasks.common import TaskName
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +67,10 @@ def _apply_celery_config(app: Celery, celery_config: CeleryConfig) -> None:
 
 celery_app = Celery("antarest-maintenance")
 
-# Load broker config immediately (needed for Beat, not just workers)
 _startup_config = _load_config()
 if _startup_config and _startup_config.celery:
     _apply_celery_config(celery_app, _startup_config.celery)
 
-# Get storage config for beat_schedule
 _storage_config = _startup_config.storage if _startup_config else None
 
 celery_app.conf.update(
@@ -88,32 +87,32 @@ celery_app.conf.update(
     worker_send_task_events=True,
     task_send_sent_event=True,
     task_routes={
-        "matrices_cleaner": {"queue": "maintenance"},
-        "blobs_cleaner": {"queue": "maintenance"},
-        "auto_archiver": {"queue": "maintenance"},
-        "watcher_scan": {"queue": "maintenance"},
-        "variable_view_cleaner": {"queue": "maintenance"},
+        TaskName.MATRICES_CLEANER: {"queue": "maintenance"},
+        TaskName.BLOBS_CLEANER: {"queue": "maintenance"},
+        TaskName.AUTO_ARCHIVER: {"queue": "maintenance"},
+        TaskName.WATCHER_SCAN: {"queue": "maintenance"},
+        TaskName.VARIABLE_VIEW_CLEANER: {"queue": "maintenance"},
     },
     # Define beat_schedule directly (more reliable than on_after_configure signal)
     beat_schedule={
-        "matrices_cleaner": {
-            "task": "matrices_cleaner",
+        TaskName.MATRICES_CLEANER: {
+            "task": TaskName.MATRICES_CLEANER,
             "schedule": _storage_config.matrix_gc_sleeping_time if _storage_config else 3600,
         },
-        "blobs_cleaner": {
-            "task": "blobs_cleaner",
+        TaskName.BLOBS_CLEANER: {
+            "task": TaskName.BLOBS_CLEANER,
             "schedule": _storage_config.blob_gc_sleeping_time if _storage_config else 86400,
         },
-        "auto_archiver": {
-            "task": "auto_archiver",
+        TaskName.AUTO_ARCHIVER: {
+            "task": TaskName.AUTO_ARCHIVER,
             "schedule": _storage_config.auto_archive_sleeping_time if _storage_config else 3600,
         },
-        "watcher_scan": {
-            "task": "watcher_scan",
+        TaskName.WATCHER_SCAN: {
+            "task": TaskName.WATCHER_SCAN,
             "schedule": _storage_config.watcher_scan_sleeping_time if _storage_config else 60,
         },
-        "variable_view_cleaner": {
-            "task": "variable_view_cleaner",
+        TaskName.VARIABLE_VIEW_CLEANER: {
+            "task": TaskName.VARIABLE_VIEW_CLEANER,
             "schedule": _storage_config.variable_view_gc_sleeping_time if _storage_config else 3600,
         },
     },

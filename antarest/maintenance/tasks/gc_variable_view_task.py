@@ -19,11 +19,11 @@ from celery import Task
 
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, MaintenanceContextNotFoundError
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, MaintenanceContextNotFoundError, TaskName
 from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
 
 
-@celery_app.task(bind=True, name="variable_view_cleaner", pydantic=True)
+@celery_app.task(bind=True, name=TaskName.VARIABLE_VIEW_CLEANER, pydantic=True)
 def clean_variable_views_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
     """
     Celery task wrapper for clean_variable_views.

@@ -23,6 +23,7 @@ from antarest.maintenance.app import (
     _setup_periodic_tasks,
     celery_app,
 )
+from antarest.maintenance.tasks.common import TaskName
 
 
 class TestMaskUrlCredentials:
@@ -46,7 +47,12 @@ class TestCeleryAppConfig:
         assert "json" in celery_app.conf.accept_content
 
     def test_task_routing(self):
-        assert celery_app.conf.task_routes["antarest.maintenance.tasks.*"]["queue"] == "maintenance"
+        routes = celery_app.conf.task_routes
+        assert routes[TaskName.MATRICES_CLEANER]["queue"] == "maintenance"
+        assert routes[TaskName.BLOBS_CLEANER]["queue"] == "maintenance"
+        assert routes[TaskName.AUTO_ARCHIVER]["queue"] == "maintenance"
+        assert routes[TaskName.WATCHER_SCAN]["queue"] == "maintenance"
+        assert routes[TaskName.VARIABLE_VIEW_CLEANER]["queue"] == "maintenance"
 
     def test_timeouts(self):
         assert celery_app.conf.task_soft_time_limit == 7000
@@ -114,46 +120,52 @@ class TestInitWorker:
         monkeypatch.setenv("ANTAREST_CONF", "/path/to/config.yaml")
 
         _init_worker(sender=mock_sender)
-        assert mock_sender.conf.maintenance_ctx is mock_ctx
+        # Context is attached to celery_app.conf, not sender.conf
+        assert celery_app.conf.maintenance_ctx is mock_ctx
+
+
+class TestBeatScheduleConfig:
+    """Tests for beat_schedule configuration (defined at module level)."""
+
+    def test_beat_schedule_has_all_tasks(self):
+        schedule = celery_app.conf.beat_schedule
+        expected_tasks = set(TaskName)
+        assert set(schedule.keys()) == expected_tasks
+
+    def test_beat_schedule_task_names_match_keys(self):
+        schedule = celery_app.conf.beat_schedule
+        for name, config in schedule.items():
+            assert config["task"] == name
+
+    def test_beat_schedule_has_schedules(self):
+        schedule = celery_app.conf.beat_schedule
+        for name, config in schedule.items():
+            assert "schedule" in config
+            assert isinstance(config["schedule"], (int, float))
+            assert config["schedule"] > 0
 
 
 class TestSetupPeriodicTasks:
-    def test_uses_defaults_without_config(self, celery_app_config_backup):
-        sender = Mock()
-        celery_app.conf.antarest_config = None
+    """Tests for initial task triggering on startup."""
 
-        _setup_periodic_tasks(sender=sender)
+    def test_triggers_initial_tasks_with_stagger(self, celery_app_config_backup, monkeypatch):
+        mock_matrices = Mock()
+        mock_blobs = Mock()
+        mock_archive = Mock()
+        mock_variable = Mock()
+        mock_watcher = Mock()
 
-        assert sender.add_periodic_task.call_count == 5
-        calls = sender.add_periodic_task.call_args_list
-        assert calls[0][0][0] == 3600  # matrix GC default
-        assert calls[1][0][0] == 86400  # blob GC default
-        assert calls[2][0][0] == 3600  # auto-archive default
-        assert calls[3][0][0] == 60  # watcher scan default
-        assert calls[4][0][0] == 3600  # variable view GC default
+        # Patch at the source module where the tasks are defined
+        monkeypatch.setattr("antarest.maintenance.tasks.gc_matrix_task.clean_matrices_task", mock_matrices)
+        monkeypatch.setattr("antarest.maintenance.tasks.gc_blob_task.clean_blobs_task", mock_blobs)
+        monkeypatch.setattr("antarest.maintenance.tasks.auto_archive_task.auto_archive_task", mock_archive)
+        monkeypatch.setattr("antarest.maintenance.tasks.gc_variable_view_task.clean_variable_views_task", mock_variable)
+        monkeypatch.setattr("antarest.maintenance.tasks.watcher_scan_task.watcher_scan_task", mock_watcher)
 
-    def test_uses_config_intervals(self, celery_app_config_backup):
-        sender = Mock()
-        config = Mock()
-        config.storage.matrix_gc_sleeping_time = 7200
-        config.storage.blob_gc_sleeping_time = 43200
-        config.storage.auto_archive_sleeping_time = 1800
-        config.storage.watcher_scan_sleeping_time = 120
-        celery_app.conf.antarest_config = config
+        _setup_periodic_tasks(sender=Mock())
 
-        _setup_periodic_tasks(sender=sender)
-
-        calls = sender.add_periodic_task.call_args_list
-        assert calls[0][0][0] == 7200
-        assert calls[1][0][0] == 43200
-        assert calls[2][0][0] == 1800
-        assert calls[3][0][0] == 120
-
-    def test_task_names(self, celery_app_config_backup):
-        sender = Mock()
-        celery_app.conf.antarest_config = None
-
-        _setup_periodic_tasks(sender=sender)
-
-        names = [c[1]["name"] for c in sender.add_periodic_task.call_args_list]
-        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan", "variable_view_cleaner"]
+        mock_matrices.apply_async.assert_called_once_with(countdown=60)
+        mock_blobs.apply_async.assert_called_once_with(countdown=90)
+        mock_archive.apply_async.assert_called_once_with(countdown=120)
+        mock_variable.apply_async.assert_called_once_with(countdown=150)
+        mock_watcher.apply_async.assert_called_once_with(countdown=30)
