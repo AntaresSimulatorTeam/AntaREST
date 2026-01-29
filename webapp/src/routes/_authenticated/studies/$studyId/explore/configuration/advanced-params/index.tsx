@@ -18,12 +18,20 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import { updateStudySynthesis } from "@/redux/ducks/studySyntheses";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { createFileRoute } from "@tanstack/react-router";
+import semver from "semver";
 import Fields from "./-components/Fields";
 import {
   getAdvancedParamsFormFields,
+  getCompatibilityParamsFormFields,
   setAdvancedParamsFormFields,
+  setCompatibilityParamsFormFields,
   type AdvancedParamsFormFields,
+  type CompatibilityParamsFormFields,
 } from "./-utils";
+import useStudy from "../../../-hooks/useStudy";
+
+/** Form holds advanced params + compatibility (hydroPmax) at runtime. */
+type FormValues = AdvancedParamsFormFields & Partial<CompatibilityParamsFormFields>;
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/advanced-params/",
@@ -33,19 +41,25 @@ export const Route = createFileRoute(
 
 function AdvancedParameters() {
   const { studyId } = Route.useParams();
+  const study = useStudy();
   const dispatch = useAppDispatch();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
-    return setAdvancedParamsFormFields(studyId, dirtyValues);
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<FormValues>) => {
+    const { hydroPmax, ...advancedRest } = dirtyValues;
+    const promises: Array<Promise<unknown>> = [setAdvancedParamsFormFields(studyId, advancedRest)];
+    if (hydroPmax !== undefined) {
+      promises.push(setCompatibilityParamsFormFields(studyId, { hydroPmax }));
+    }
+    return Promise.all(promises);
   };
 
   const handleSubmitSuccessful = ({
     dirtyValues: { renewableGenerationModelling },
-  }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
+  }: SubmitHandlerPlus<FormValues>) => {
     if (renewableGenerationModelling) {
       dispatch(
         updateStudySynthesis({
@@ -64,7 +78,15 @@ function AdvancedParameters() {
     <ViewWrapper>
       <Form
         config={{
-          defaultValues: () => getAdvancedParamsFormFields(studyId),
+          defaultValues: async () => {
+            const [advanced, compatibility] = await Promise.all([
+              getAdvancedParamsFormFields(studyId),
+              semver.gte(study.version, "9.2.0")
+                ? getCompatibilityParamsFormFields(studyId).catch(() => ({ hydroPmax: undefined }))
+                : Promise.resolve({ hydroPmax: undefined }),
+            ]);
+            return { ...advanced, ...compatibility };
+          },
         }}
         onSubmit={handleSubmit}
         onSubmitSuccessful={handleSubmitSuccessful}

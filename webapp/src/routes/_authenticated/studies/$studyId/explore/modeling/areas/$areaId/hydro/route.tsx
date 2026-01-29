@@ -13,7 +13,9 @@
  */
 
 import TabsView from "@/components/page/TabsView";
+import usePromise from "@/hooks/usePromise";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { getCompatibilityParamsFormFields } from "@/routes/_authenticated/studies/$studyId/explore/configuration/advanced-params/-utils";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import semver from "semver";
 
@@ -26,6 +28,14 @@ export const Route = createFileRoute(
 function HydroLayout() {
   const params = Route.useParams();
   const study = useStudy();
+
+  const { data: hydroPmax = "" } = usePromise(
+    () =>
+      getCompatibilityParamsFormFields(study.id)
+        .then((values) => values.hydroPmax)
+        .catch(() => undefined),
+    [study.id],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -114,6 +124,42 @@ function HydroLayout() {
             params,
           }),
         },
+        ...(semver.gte(study.version, "9.2.0") && hydroPmax === "hourly"
+          ? [
+              {
+                id: "maxHourlyGenPower",
+                label: "Max Hourly Gen Power",
+                linkOptions: linkOptions({
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-gen-power",
+                  params,
+                }),
+              },
+              {
+                id: "maxHourlyPumpPower",
+                label: "Max Hourly Pump Power",
+                linkOptions: linkOptions({
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power",
+                  params,
+                }),
+              },
+              {
+                id: "maxDailyGenEnergy",
+                label: "Max Daily Gen Energy",
+                linkOptions: linkOptions({
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-gen-energy",
+                  params,
+                }),
+              },
+              {
+                id: "maxDailyPumpEnergy",
+                label: "Max Daily Pump Energy",
+                linkOptions: linkOptions({
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy",
+                  params,
+                }),
+              },
+            ]
+          : []),
       ].filter(Boolean)}
     />
   );
