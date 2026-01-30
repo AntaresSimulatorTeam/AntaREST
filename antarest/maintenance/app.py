@@ -15,7 +15,7 @@ Celery app for maintenance tasks.
 
 Architecture:
 - Import time: Create Celery app + apply broker config (required for Beat/Worker to connect)
-- celeryd_init signal: Full config loading + logging setup
+- celeryd_init signal: Full config loading
 - on_after_configure signal: Register periodic tasks (Beat only)
 - worker_init signal: Create MaintenanceContext (Worker only)
 """
