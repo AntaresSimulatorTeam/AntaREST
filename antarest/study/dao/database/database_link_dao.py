@@ -13,7 +13,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from sqlalchemy import Row, delete, insert, select, update
+from sqlalchemy import Row, Table, delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -22,7 +22,12 @@ from antarest.core.exceptions import AreaNotFound, LinkNotFound
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
-from antarest.study.dao.database.models.link import LINK_TABLE
+from antarest.study.dao.database.models.link import (
+    LINK_DIRECT_CAPACITY_TABLE,
+    LINK_INDIRECT_CAPACITY_TABLE,
+    LINK_SERIES_TABLE,
+    LINK_TABLE,
+)
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -166,6 +171,22 @@ class DatabaseLinkDao(LinkDao):
 
         return session.execute(stmt).fetchone()
 
+    def _get_link_matrix(self, area_from_id: str, area_to_id: str, table: Table) -> pl.DataFrame:
+        row = self._get_link_matrix_row(area_from_id, area_to_id, table)
+        if not row:
+            raise LinkNotFound(f"The link {area_from_id} -> {area_to_id} is not present in the study")
+        return self.get_impl().get_matrix(row.matrix_id)
+
+    def _get_link_matrix_row(self, area_from_id: str, area_to_id: str, table: Table) -> Row[Any] | None:
+        area1, area2 = sorted((area_from_id, area_to_id))
+        study_id = self.get_study_id()
+        session = self.get_session()
+        stmt = select(table).where(
+            (table.c.study_id == study_id) & (table.c.area1_id == area1) & (table.c.area2_id == area2)
+        )
+
+        return session.execute(stmt).fetchone()
+
     @override
     def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
@@ -180,12 +201,12 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_link_matrix(area_from, area_to, LINK_DIRECT_CAPACITY_TABLE)
 
     @override
     def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_link_matrix(area_from, area_to, LINK_INDIRECT_CAPACITY_TABLE)
 
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_link_matrix(area_from, area_to, LINK_SERIES_TABLE)
