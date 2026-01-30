@@ -77,7 +77,7 @@ class DatabaseLayerDao(LayerDao):
         # Get all layer names from LAYER_TABLE
         stmt_layers = select(LAYER_TABLE).where(LAYER_TABLE.c.study_id == study_id)
         layer_rows = session.execute(stmt_layers).fetchall()
-        layer_names = {row.layer_id: row.name for row in layer_rows}
+        layer_id_to_name = {row.layer_id: row.name for row in layer_rows}
 
         # Get all area-layer associations from AREA_UI_TABLE
         stmt_area_ui = select(AREA_UI_TABLE.c.layer_id, AREA_UI_TABLE.c.area_id).where(
@@ -86,24 +86,21 @@ class DatabaseLayerDao(LayerDao):
         area_ui_rows = session.execute(stmt_area_ui).fetchall()
 
         # Build areas per layer
-        areas_by_layer: dict[str, list[str]] = defaultdict(list)
+        areas_by_layer: defaultdict[str, list[str]] = defaultdict(list)
         all_areas: set[str] = set()
         for row in area_ui_rows:
             all_areas.add(row.area_id)
             areas_by_layer[row.layer_id].append(row.area_id)
 
-        # Build result - ensure default layer is first and contains all areas
-        layers: list[Layer] = []
-
         # Default layer (always exists, always contains all areas)
-        default_name = layer_names.get(DEFAULT_LAYER_ID, "All")
-        layers.append(Layer(id=DEFAULT_LAYER_ID, name=default_name, areas=sorted(all_areas)))
+        default_name = layer_id_to_name.get(DEFAULT_LAYER_ID, "All")
+        layers = [Layer(id=DEFAULT_LAYER_ID, name=default_name, areas=sorted(all_areas))]
 
         # Other layers
-        for layer_id in sorted(layer_names.keys()):
+        for layer_id in layer_id_to_name:
             if layer_id == DEFAULT_LAYER_ID:
                 continue
-            name = layer_names.get(layer_id)
+            name = layer_id_to_name[layer_id]
             areas = areas_by_layer.get(layer_id, [])
             layers.append(Layer(id=layer_id, name=name, areas=sorted(areas)))
 
@@ -145,8 +142,8 @@ class DatabaseLayerDao(LayerDao):
         # Update area associations if areas are provided
         if layer.areas is not None:
             self.get_impl().save_layer_areas(layer.id, layer.areas)
-
-        session.commit()
+        else:
+            session.commit()
 
     @override
     def delete_layer(self, layer: Layer) -> None:
@@ -156,7 +153,7 @@ class DatabaseLayerDao(LayerDao):
         This removes the layer name and all area-layer associations for this layer.
         """
         if not self.layer_exists(layer.id):
-            raise LayerNotFound()
+            raise LayerNotFound
 
         study_id = self.get_study_id()
         session = self.get_session()
