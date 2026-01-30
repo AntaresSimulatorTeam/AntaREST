@@ -19,6 +19,8 @@ import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { directoryQueries } from "@/queries/directories/queries";
+import { updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
 import EditableTreeItem from "./EditableTreeItem";
@@ -27,17 +29,18 @@ import ManagedTreeNode from "./ManagedTreeNode";
 import type { ManagedTreeProps } from "./types";
 import { buildDirectoryTree, getDirectoryPath } from "./utils";
 
-function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
+function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
   const { t } = useTranslation();
-  const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
+  const dispatch = useAppDispatch();
+  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId, R.T);
 
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const directoryTree = useMemo(() => buildDirectoryTree(directories), [directories]);
 
   const initialExpandedItems = useMemo(
-    () => (folder ? getDirectoryPath(directoryTree, folder) : []),
-    [directoryTree, folder],
+    () => (directoryId ? getDirectoryPath(directoryTree, directoryId) : []),
+    [directoryTree, directoryId],
   );
 
   const [expandedItems, setExpandedItems] = useState<string[]>(() => initialExpandedItems);
@@ -70,6 +73,15 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
+
+  const handleNodeClick = (itemId: string) => {
+    dispatch(
+      updateStudyFilters({
+        activeTree: "managed",
+        managed: { directoryId: itemId },
+      }),
+    );
+  };
 
   const handleSaveFolder = (parentId: string | null) => (name: string) => {
     createDirectory(name, parentId);
@@ -126,7 +138,7 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
     <SimpleTreeView
       expandedItems={expandedItems}
       onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-      defaultSelectedItems={folder}
+      defaultSelectedItems={directoryId || ""}
     >
       {/* Root level folder creation */}
       {isCreating(null) && (
@@ -140,8 +152,8 @@ function ManagedTree({ onNodeClick, isCreatingFolder, onFolderCreated }: Managed
 
       <ManagedTreeNode
         node={directoryTree}
-        onNodeClick={onNodeClick}
-        selectedPath={folder}
+        onNodeClick={handleNodeClick}
+        selectedPath={directoryId || ""}
         onAddSubFolder={handleAddSubFolder}
         onSaveSubFolder={handleSaveFolder}
         onCancelSubFolder={handleCancelFolder}

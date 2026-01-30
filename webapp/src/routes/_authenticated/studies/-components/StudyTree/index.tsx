@@ -39,8 +39,22 @@ function StudyTree() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleNodeClick = (itemId: string) => {
-    dispatch(updateStudyFilters({ folder: itemId }));
+  const handleManagedHomeClick = () => {
+    dispatch(
+      updateStudyFilters({
+        activeTree: "managed",
+        managed: { directoryId: null },
+      }),
+    );
+  };
+
+  const handleExternalHomeClick = () => {
+    dispatch(
+      updateStudyFilters({
+        activeTree: "external",
+        external: { path: "", strictPath: false },
+      }),
+    );
   };
 
   const handleAddFolderClick = () => {
@@ -59,15 +73,16 @@ function StudyTree() {
     <Box>
       <TreeSection
         variant="managed"
-        title={t("studies.tree.managed", { defaultValue: "Managed Studies" })}
+        title={t("studies.tree.managed", { defaultValue: "Managed Studies" })} // TODO: add key
         icon={<AccountTreeIcon />}
+        onHomeClick={handleManagedHomeClick}
         onAddFolder={handleAddFolderClick}
       >
         <ManagedTree
           studies={managedStudies}
-          onNodeClick={handleNodeClick}
           isCreatingFolder={isCreatingFolder}
           onFolderCreated={handleFolderCreated}
+          onHomeClick={handleManagedHomeClick}
         />
       </TreeSection>
 
@@ -75,11 +90,12 @@ function StudyTree() {
 
       <TreeSection
         variant="external"
-        title={t("studies.tree.external", { defaultValue: "External Storage" })}
+        title={t("studies.tree.external", { defaultValue: "Disk Studies" })} // TODO: add key
         //subtitle={t("studies.tree.readOnly", { defaultValue: "(read-only)" })}
         icon={<StorageIcon />}
+        onHomeClick={handleExternalHomeClick}
       >
-        <ExternalTree studies={externalStudies} onNodeClick={handleNodeClick} />
+        <ExternalTree studies={externalStudies} onHomeClick={handleExternalHomeClick} />
       </TreeSection>
     </Box>
   );

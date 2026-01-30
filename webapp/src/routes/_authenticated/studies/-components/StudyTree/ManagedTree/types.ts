@@ -59,7 +59,7 @@ export interface ManagedTreeNodeProps {
  */
 export interface ManagedTreeProps {
   studies: StudyMetadata[];
-  onNodeClick: (id: string) => void;
   isCreatingFolder: boolean;
   onFolderCreated: () => void;
+  onHomeClick: () => void;
 }

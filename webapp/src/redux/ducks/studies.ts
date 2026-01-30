@@ -33,8 +33,14 @@ const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
 export interface StudyFilters {
   search: string;
-  folder: string;
-  strictFolder: boolean;
+  activeTree: "managed" | "external";
+  managed: {
+    directoryId: string | null;
+  };
+  external: {
+    path: string;
+    strictPath: boolean;
+  };
   type: "all" | "references" | "variants";
   management: "all" | "managed" | "unmanaged";
   archive: "all" | "archived" | "unarchived";
@@ -84,8 +90,14 @@ const initialState = studiesAdapter.getInitialState({
   favorites: [],
   filters: {
     search: "",
-    folder: "",
-    strictFolder: false,
+    activeTree: "managed",
+    managed: {
+      directoryId: null,
+    },
+    external: {
+      path: "",
+      strictPath: false,
+    },
     type: "references",
     management: "all",
     archive: "all",

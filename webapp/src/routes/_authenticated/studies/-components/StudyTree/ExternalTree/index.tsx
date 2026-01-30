@@ -15,7 +15,9 @@
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import * as R from "ramda";
 import { useCallback, useMemo } from "react";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
+import { updateStudyFilters } from "@/redux/ducks/studies";
 import { getStudyFilters } from "@/redux/selectors";
 import { getParentPaths } from "@/utils/pathUtils";
 import ExternalTreeNode from "./ExternalTreeNode";
@@ -24,9 +26,11 @@ import { useStudyTree } from "./hooks/useStudyTree";
 import { useWorkspaces } from "./hooks/useWorkspaces";
 import type { ExternalTreeProps } from "./types";
 
-function ExternalTree({ studies, onNodeClick }: ExternalTreeProps) {
+function ExternalTree({ studies }: ExternalTreeProps) {
+  const dispatch = useAppDispatch();
   // Get current folder filter - allows to display studies in the current folder
-  const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
+  const filters = useAppSelector((state) => getStudyFilters(state), R.T);
+  const path = filters.external.path;
 
   // Fetch workspaces (only in desktop mode)
   const { data: workspaces } = useWorkspaces();
@@ -71,9 +75,14 @@ function ExternalTree({ studies, onNodeClick }: ExternalTreeProps) {
 
   const handleTreeItemClick = useCallback(
     (itemId: string) => {
-      onNodeClick(itemId);
+      dispatch(
+        updateStudyFilters({
+          activeTree: "external",
+          external: { path: itemId, strictPath: filters.external.strictPath },
+        }),
+      );
     },
-    [onNodeClick],
+    [dispatch, filters.external.strictPath],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -82,8 +91,8 @@ function ExternalTree({ studies, onNodeClick }: ExternalTreeProps) {
 
   return (
     <SimpleTreeView
-      defaultExpandedItems={[...getParentPaths(folder), folder]}
-      defaultSelectedItems={folder}
+      defaultExpandedItems={[...getParentPaths(path), path]}
+      defaultSelectedItems={path}
       onItemExpansionToggle={handleItemExpansionToggle}
     >
       <ExternalTreeNode

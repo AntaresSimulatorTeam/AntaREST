@@ -13,6 +13,7 @@
  */
 
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import HomeIcon from "@mui/icons-material/Home";
 import {
   Box,
   IconButton,
@@ -33,6 +34,7 @@ interface TreeSectionProps {
   icon: React.ReactNode;
   children: React.ReactNode;
   onAddFolder?: () => void;
+  onHomeClick?: () => void;
 }
 
 const variantStyles: Record<
@@ -86,17 +88,23 @@ const variantStyles: Record<
 
 const addFolderButtonStyles: Record<TreeSectionVariant, SxProps<Theme>> = {
   managed: {
-    ml: "auto !important",
     p: 0.5,
   },
   external: {
-    ml: "auto !important",
     p: 0.5,
     color: "text.secondary",
   },
 };
 
-function TreeSection({ variant, title, subtitle, icon, children, onAddFolder }: TreeSectionProps) {
+function TreeSection({
+  variant,
+  title,
+  subtitle,
+  icon,
+  children,
+  onAddFolder,
+  onHomeClick,
+}: TreeSectionProps) {
   const styles = variantStyles[variant];
   const { t } = useTranslation();
 
@@ -106,32 +114,48 @@ function TreeSection({ variant, title, subtitle, icon, children, onAddFolder }: 
 
   return (
     <Box sx={styles.container}>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-        <Box sx={styles.icon}>{icon}</Box>
-        <Typography variant="subtitle2" sx={styles.title}>
-          {title}
-        </Typography>
-        {subtitle && (
-          <Typography variant="caption" sx={styles.subtitle}>
-            {subtitle}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Box sx={styles.icon}>{icon}</Box>
+          <Typography variant="subtitle2" sx={styles.title}>
+            {title}
           </Typography>
-        )}
-        {onAddFolder && (
-          <Tooltip
-            title={t("studies.tree.addRootDirectory", { defaultValue: "Add root directory" })}
-            placement="top"
-            arrow
-          >
-            <IconButton
-              size="small"
-              onClick={onAddFolder}
-              sx={addFolderButtonStyles[variant]}
-              aria-label="Create new folder"
+          {subtitle && (
+            <Typography variant="caption" sx={styles.subtitle}>
+              {subtitle}
+            </Typography>
+          )}
+        </Stack>
+        <Stack direction="row">
+          {onHomeClick && (
+            <Tooltip
+              title={t("studies.tree.allStudies", { defaultValue: "All studies" })} // TODO: update label and add key
+              placement="top"
+              arrow
             >
-              <CreateNewFolderIcon sx={{ fontSize: 18 }} />
-            </IconButton>
-          </Tooltip>
-        )}
+              <IconButton
+                size="small"
+                onClick={onHomeClick}
+                sx={addFolderButtonStyles[variant]}
+                aria-label="All studies"
+              >
+                <HomeIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+          {onAddFolder && (
+            <Tooltip title={t("studies.tree.addRootDirectory")} placement="top" arrow>
+              <IconButton
+                size="small"
+                onClick={onAddFolder}
+                sx={addFolderButtonStyles[variant]}
+                aria-label="Create new folder"
+              >
+                <CreateNewFolderIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
       </Stack>
       {children}
     </Box>
