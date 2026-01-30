@@ -92,6 +92,7 @@ export const RESERVE_MANAGEMENT_OPTIONS = Object.values(ReserveManagement);
 export const UNIT_COMMITMENT_MODE_OPTIONS = Object.values(UnitCommitmentMode);
 export const SIMULATION_CORES_OPTIONS = Object.values(SimulationCore);
 export const RENEWABLE_GENERATION_OPTIONS = Object.values(RenewableGenerationModeling);
+
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
@@ -130,14 +131,12 @@ type AdvancedParamsFormFields_RAW = Omit<AdvancedParamsFormFields, "accuracyOnCo
 // API
 ////////////////////////////////////////////////////////////////
 
-function makeAdvancedParamsRequestURL(studyId: StudyMetadata["id"]): string {
+function makeRequestURL(studyId: StudyMetadata["id"]): string {
   return `v1/studies/${studyId}/config/advancedparameters/form`;
 }
 
 export async function getAdvancedParamsFormFields(studyId: StudyMetadata["id"]) {
-  const { data } = await client.get<AdvancedParamsFormFields_RAW>(
-    makeAdvancedParamsRequestURL(studyId),
-  );
+  const { data } = await client.get<AdvancedParamsFormFields_RAW>(makeRequestURL(studyId));
 
   return {
     ...data,
@@ -159,5 +158,5 @@ export async function setAdvancedParamsFormFields(
     newValues.accuracyOnCorrelation = accuracyOnCorrelation.join(", ");
   }
 
-  await client.put(makeAdvancedParamsRequestURL(studyId), newValues);
+  await client.put(makeRequestURL(studyId), newValues);
 }
