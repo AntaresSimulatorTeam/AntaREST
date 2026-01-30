@@ -46,7 +46,6 @@ class FavoriteRepository:
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
-
     def delete(self, study_id: str) -> None:
         session = self.session
         stmt = (
