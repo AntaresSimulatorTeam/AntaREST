@@ -187,17 +187,37 @@ class DatabaseLinkDao(LinkDao):
 
         return session.execute(stmt).fetchone()
 
+    def _save_link_matrix(self, area_from_id: str, area_to_id: str, table: Table, matrix_id: str) -> None:
+        area1, area2 = sorted((area_from_id, area_to_id))
+        row = self._get_link_matrix_row(area1, area2, table)
+        session = self.get_session()
+        study_id = self.get_study_id()
+        if not row:
+            # We must check if the link exist or not
+            if not self.link_exists(area1, area2):
+                raise LinkNotFound(f"The link {area1} -> {area2} is not present in the study")
+            stmt_insert = insert(table).values(study_id=study_id, area1_id=area1, area2_id=area2, matrix_id=matrix_id)
+            session.execute(stmt_insert)
+        else:
+            stmt_update = (
+                update(table)
+                .where((table.c.study_id == study_id) & (table.c.area1_id == area1) & (table.c.area2_id == area2))
+                .values(matrix_id=matrix_id)
+            )
+            session.execute(stmt_update)
+        session.commit()
+
     @override
     def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_link_matrix(area_from, area_to, LINK_INDIRECT_CAPACITY_TABLE, series_id)
 
     @override
     def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_link_matrix(area_from, area_to, LINK_DIRECT_CAPACITY_TABLE, series_id)
 
     @override
     def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_link_matrix(area_from, area_to, LINK_SERIES_TABLE, series_id)
 
     @override
     def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
