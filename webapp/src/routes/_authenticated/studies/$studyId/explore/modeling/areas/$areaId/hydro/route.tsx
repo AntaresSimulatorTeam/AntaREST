@@ -15,7 +15,7 @@
 import TabsView from "@/components/page/TabsView";
 import usePromise from "@/hooks/usePromise";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import { getCompatibilityParamsFormFields } from "@/routes/_authenticated/studies/$studyId/explore/configuration/advanced-params/-utils";
+import { getCompatibilityParamsFormFields } from "@/routes/_authenticated/studies/$studyId/explore/configuration/compatibility/-utils";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import semver from "semver";
 

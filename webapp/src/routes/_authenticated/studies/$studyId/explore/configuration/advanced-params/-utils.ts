@@ -78,11 +78,6 @@ enum RenewableGenerationModeling {
   Clusters = "clusters",
 }
 
-enum HydroPmax {
-  Daily = "daily",
-  Hourly = "hourly",
-}
-
 ////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////
@@ -97,7 +92,6 @@ export const RESERVE_MANAGEMENT_OPTIONS = Object.values(ReserveManagement);
 export const UNIT_COMMITMENT_MODE_OPTIONS = Object.values(UnitCommitmentMode);
 export const SIMULATION_CORES_OPTIONS = Object.values(SimulationCore);
 export const RENEWABLE_GENERATION_OPTIONS = Object.values(RenewableGenerationModeling);
-export const HYDRO_PMAX_OPTIONS = Object.values(HydroPmax);
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
@@ -128,15 +122,6 @@ export interface AdvancedParamsFormFields {
   accurateShavePeaksIncludeShortTermStorage?: boolean;
 }
 
-export interface CompatibilityParamsFormFields {
-  // Since v9.2
-  hydroPmax?: string;
-}
-
-/** Form values type (advanced params + compatibility params when v9.2+). */
-export type AdvancedParamsFormValues = AdvancedParamsFormFields &
-  Partial<CompatibilityParamsFormFields>;
-
 type AdvancedParamsFormFields_RAW = Omit<AdvancedParamsFormFields, "accuracyOnCorrelation"> & {
   accuracyOnCorrelation: string;
 };
@@ -147,10 +132,6 @@ type AdvancedParamsFormFields_RAW = Omit<AdvancedParamsFormFields, "accuracyOnCo
 
 function makeAdvancedParamsRequestURL(studyId: StudyMetadata["id"]): string {
   return `v1/studies/${studyId}/config/advancedparameters/form`;
-}
-
-function makeCompatibilityRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/config/compatibility/form`;
 }
 
 export async function getAdvancedParamsFormFields(studyId: StudyMetadata["id"]) {
@@ -165,22 +146,6 @@ export async function getAdvancedParamsFormFields(studyId: StudyMetadata["id"]) 
       .map((v) => v.trim())
       .filter(Boolean),
   } as AdvancedParamsFormFields;
-}
-
-export async function getCompatibilityParamsFormFields(
-  studyId: StudyMetadata["id"],
-): Promise<CompatibilityParamsFormFields> {
-  const { data } = await client.get<CompatibilityParamsFormFields>(
-    makeCompatibilityRequestURL(studyId),
-  );
-  return data;
-}
-
-export async function setCompatibilityParamsFormFields(
-  studyId: StudyMetadata["id"],
-  values: DeepPartial<CompatibilityParamsFormFields>,
-) {
-  await client.put(makeCompatibilityRequestURL(studyId), values);
 }
 
 export async function setAdvancedParamsFormFields(

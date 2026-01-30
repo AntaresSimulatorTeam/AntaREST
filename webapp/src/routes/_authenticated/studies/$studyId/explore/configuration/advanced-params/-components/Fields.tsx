@@ -28,19 +28,18 @@ import {
   RENEWABLE_GENERATION_OPTIONS,
   RESERVE_MANAGEMENT_OPTIONS,
   SHEDDING_POLICY_OPTIONS,
-  HYDRO_PMAX_OPTIONS,
   SheddingPolicy,
   SIMULATION_CORES_OPTIONS,
   SPATIAL_CORRELATIONS_OPTIONS,
   UNIT_COMMITMENT_MODE_OPTIONS,
   UnitCommitmentMode,
-  type AdvancedParamsFormValues,
+  type AdvancedParamsFormFields,
 } from "../-utils";
 import useStudy from "../../../../-hooks/useStudy";
 
 function Fields() {
   const [t] = useTranslation();
-  const { control } = useFormContextPlus<AdvancedParamsFormValues>();
+  const { control } = useFormContextPlus<AdvancedParamsFormFields>();
   const study = useStudy();
 
   ////////////////////////////////////////////////////////////////
@@ -191,16 +190,6 @@ function Fields() {
           />
         )}
       </Fieldset>
-      {semver.gte(study.version, "9.2.0") && (
-        <Fieldset legend={t("study.configuration.advancedParameters.compatibility")}>
-          <SelectFE
-            label={t("study.configuration.advancedParameters.compatibility.hydro-pmax")}
-            options={HYDRO_PMAX_OPTIONS}
-            name="hydroPmax"
-            control={control}
-          />
-        </Fieldset>
-      )}
     </Box>
   );
 }
