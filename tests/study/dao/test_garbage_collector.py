@@ -20,6 +20,7 @@ from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.link_model import Link
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
@@ -55,6 +56,14 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     dao.save_reserves(area_id, series_id)
     dao.save_misc_gen(area_id, series_id)
 
+    # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
+    area2 = "london"
+    dao.save_area(area2)
+    dao.save_link(Link(area1=area_id, area2=area2))
+    dao.save_link_series(area_id, area2, series_id)
+    dao.save_link_direct_capacities(area_id, area2, series_id)
+    dao.save_link_indirect_capacities(area_id, area2, series_id)
+
     # Launch the Garbage collection
     task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
     assert task.status == BackGroundTaskStatus.SUCCESS
@@ -75,3 +84,12 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
 
     reserves = dao.get_reserves(area_id)
     pl.testing.assert_frame_equal(reserves, dataframe, check_dtypes=False)
+
+    link_series = dao.get_link_series(area_id, area2)
+    pl.testing.assert_frame_equal(link_series, dataframe, check_dtypes=False)
+
+    link_direct_capacity = dao.get_link_direct_capacities(area_id, area2)
+    pl.testing.assert_frame_equal(link_direct_capacity, dataframe, check_dtypes=False)
+
+    link_indirect_capacity = dao.get_link_indirect_capacities(area_id, area2)
+    pl.testing.assert_frame_equal(link_indirect_capacity, dataframe, check_dtypes=False)
