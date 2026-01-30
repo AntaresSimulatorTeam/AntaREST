@@ -30,7 +30,7 @@ from antarest.study.dao.database.common import (
     parse_frequency_filters,
     serialize_frequency_filters,
 )
-from antarest.study.dao.database.models import AREA_TABLE
+from antarest.study.dao.database.models.area import AREA_TABLE
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao

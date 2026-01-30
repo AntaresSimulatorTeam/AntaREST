@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models import AREA_TABLE
+from antarest.study.dao.database.models.area import AREA_TABLE
 from tests.db_statement_recorder import DBStatementRecorder
 
 

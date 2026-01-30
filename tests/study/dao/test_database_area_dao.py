@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
+from antarest.study.dao.database.models.area import AREA_TABLE, AREA_UI_TABLE
 
 
 def test_save_area_creates_area_with_default_ui(db_session: Session, dao: DatabaseStudyDao) -> None:

@@ -16,11 +16,12 @@ Database implementation of AreaDao using SQLAlchemy Core.
 This module provides database-backed storage for areas when storage_mode=DATABASE.
 """
 
+import json
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List
 
 import polars as pl
-from sqlalchemy import case, delete, insert, select, update
+from sqlalchemy import Row, Table, case, delete, insert, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -29,7 +30,16 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo,
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
-from antarest.study.dao.database.models import AREA_TABLE, AREA_UI_TABLE
+from antarest.study.dao.database.models.area import (
+    AREA_TABLE,
+    AREA_UI_TABLE,
+    LOAD_TABLE,
+    MISC_GEN_TABLE,
+    RESERVES_TABLE,
+    SOLAR_TABLE,
+    WIND_TABLE,
+)
+from antarest.study.dao.database.models.district import DISTRICT_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -61,6 +71,19 @@ class DatabaseAreaDao(AreaDao):
     @abstractmethod
     def get_impl(self) -> "DatabaseStudyDao":
         pass
+
+    @override
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+        """
+        study_id = self.get_study_id()
+        session = self.get_session()
+
+        stmt = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_id == study_id)
+        result = session.execute(stmt)
+
+        return [row.area_id for row in result]
 
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:
@@ -233,9 +256,30 @@ class DatabaseAreaDao(AreaDao):
 
         validate_area_exists(session, study_id, area_id)
 
-        # Delete area (cascade will delete area_ui automatically)
-        stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
-        session.execute(stmt)
+        # Remove area from districts that reference it
+        stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
+        district_rows = session.execute(stmt).fetchall()
+
+        for row in district_rows:
+            add_areas = set(json.loads(row.add_areas))
+            subtract_areas = set(json.loads(row.subtract_areas))
+
+            if area_id in add_areas or area_id in subtract_areas:
+                add_areas.discard(area_id)
+                subtract_areas.discard(area_id)
+
+                session.execute(
+                    update(DISTRICT_TABLE)
+                    .where((DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == row.district_id))
+                    .values(
+                        add_areas=json.dumps(list(add_areas)),
+                        subtract_areas=json.dumps(list(subtract_areas)),
+                    )
+                )
+
+        # Delete area
+        delete_stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+        session.execute(delete_stmt)
         session.commit()
 
     @override
@@ -281,6 +325,16 @@ class DatabaseAreaDao(AreaDao):
             session.commit()
         else:
             self._create_new_ui(area_id, layer, area_ui_data)
+
+    @override
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study.
+        """
+        areas_set = set(areas)
+        all_areas = set(self.get_all_area_ids())
+        invalid_areas = areas_set - all_areas
+        return list(invalid_areas)
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
@@ -387,43 +441,73 @@ class DatabaseAreaDao(AreaDao):
         self.get_session().execute(stmt_insert)
         self.get_session().commit()
 
-    # Time series methods - not yet implemented for database storage mode
+    def _get_matrix(self, area_id: str, table: Table) -> pl.DataFrame:
+        row = self._get_matrix_row(area_id, table)
+        if not row:
+            raise AreaNotFound(area_id)
+        return self.get_impl().get_matrix(row.matrix_id)
+
+    def _get_matrix_row(self, area_id: str, table: Table) -> Row[Any] | None:
+        study_id = self.get_study_id()
+        session = self.get_session()
+        stmt = select(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id))
+
+        return session.execute(stmt).fetchone()
+
+    def _save_matrix(self, area_id: str, table: Table, matrix_id: str) -> None:
+        row = self._get_matrix_row(area_id, table)
+        session = self.get_session()
+        study_id = self.get_study_id()
+        if not row:
+            # We must check if the area exist or not
+            validate_area_exists(session, study_id, area_id)
+            stmt_insert = insert(table).values(study_id=self.get_study_id(), area_id=area_id, matrix_id=matrix_id)
+            session.execute(stmt_insert)
+        else:
+            stmt_update = (
+                update(table)
+                .where((table.c.study_id == study_id) & (table.c.area_id == area_id))
+                .values(matrix_id=matrix_id)
+            )
+            session.execute(stmt_update)
+        session.commit()
+
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, LOAD_TABLE)
 
     @override
     def get_misc_gen(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, MISC_GEN_TABLE)
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, RESERVES_TABLE)
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, SOLAR_TABLE)
 
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return self._get_matrix(area_id, WIND_TABLE)
 
     @override
     def save_load(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, LOAD_TABLE, series_id)
 
     @override
     def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, MISC_GEN_TABLE, series_id)
 
     @override
     def save_reserves(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, RESERVES_TABLE, series_id)
 
     @override
     def save_solar(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, SOLAR_TABLE, series_id)
 
     @override
     def save_wind(self, area_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        self._save_matrix(area_id, WIND_TABLE, series_id)

@@ -18,6 +18,14 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # 1. Create Enum type (PostgreSQL only)
+    adequacy_patch_mode_enum = sa.Enum('outside', 'inside', 'virtual', name="adequacypatchmode")
+
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        adequacy_patch_mode_enum.create(bind, checkfirst=True)
+
+    # 2. Modify the `area` table
     with op.batch_alter_table("area", schema=None) as batch_op:
         batch_op.add_column(sa.Column("energy_cost_unsupplied", sa.Float(), nullable=False))
         batch_op.add_column(sa.Column("energy_cost_spilled", sa.Float(), nullable=False))
@@ -28,7 +36,7 @@ def upgrade() -> None:
         batch_op.add_column(sa.Column("spread_spilled_energy_cost", sa.Float(), nullable=False))
         batch_op.add_column(sa.Column("filter_synthesis", sa.String(), nullable=False))
         batch_op.add_column(sa.Column("filter_by_year", sa.String(), nullable=False))
-        batch_op.add_column(sa.Column("adequacy_patch_mode", sa.Enum('outside', 'inside', 'virtual', name='adequacypatchmode'), nullable=True))
+        batch_op.add_column(sa.Column("adequacy_patch_mode", adequacy_patch_mode_enum, nullable=True))
 
 
 def downgrade() -> None:

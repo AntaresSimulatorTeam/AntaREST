@@ -13,6 +13,8 @@
  */
 
 import eslint from "@eslint/js";
+import queryPlugin from "@tanstack/eslint-plugin-query";
+import routerPlugin from "@tanstack/eslint-plugin-router";
 import vitestPlugin from "@vitest/eslint-plugin";
 import jsdocPlugin from "eslint-plugin-jsdoc";
 import licenseHeaderPlugin from "eslint-plugin-license-header";
@@ -27,7 +29,7 @@ export default [
   // Must be defined here to be applied to all configurations.
   // cf. https://github.com/eslint/eslint/discussions/18304
   {
-    ignores: ["dist/*", "license-header.js"],
+    ignores: ["dist/*", "license-header.js", "**/routeTree.gen.ts"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -42,6 +44,8 @@ export default [
   },
   reactPlugin.configs.flat["jsx-runtime"],
   jsdocPlugin.configs["flat/recommended-typescript"],
+  ...queryPlugin.configs["flat/recommended"],
+  ...routerPlugin.configs["flat/recommended"],
   vitestPlugin.configs.recommended,
   prettierPluginRecommended, // Must be the last one
   {
