@@ -22,6 +22,7 @@ class FavoriteService:
     def list_favorites(self) -> list[FavoriteStudyDTO]:
         favorites = self.favorite_repository.get_all()
         dto_favorites = [fav.to_dto() for fav in favorites]
+        dto_favorites = sorted(dto_favorites, key=lambda fav: fav.study_name)
         return dto_favorites
 
     def add_favorite(self, study_uuid: str) -> FavoriteStudyDTO:
