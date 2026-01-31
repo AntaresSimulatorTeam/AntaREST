@@ -13,7 +13,7 @@
 """Celery task for auto-archiving old studies."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from celery import Celery, Task
 from celery.schedules import crontab
@@ -23,7 +23,7 @@ from antarest.login.utils import current_user_context
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, archive_old_studies
-from antarest.maintenance.tasks.common import MaintenanceContextNotFoundError, TRANSIENT_ERRORS
+from antarest.maintenance.tasks.common import TRANSIENT_ERRORS, MaintenanceContextNotFoundError
 
 if TYPE_CHECKING:
     from antarest.core.config import StorageConfig

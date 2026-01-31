@@ -18,7 +18,11 @@ from celery import Task
 
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, MaintenanceContextNotFoundError, TRANSIENT_ERRORS
+from antarest.maintenance.tasks.common import (
+    TRANSIENT_ERRORS,
+    GarbageCollectorTaskResult,
+    MaintenanceContextNotFoundError,
+)
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 
 logger = logging.getLogger(__name__)
