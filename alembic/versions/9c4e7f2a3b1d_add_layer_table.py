@@ -1,7 +1,7 @@
 """add_layer_table
 
 Revision ID: 9c4e7f2a3b1d
-Revises: 8f3d2a1b5c7e
+Revises: 6a6d36e3c6ed
 Create Date: 2026-01-29 00:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "9c4e7f2a3b1d"
-down_revision = "8f3d2a1b5c7e"
+down_revision = "6a6d36e3c6ed"
 branch_labels = None
 depends_on = None
 

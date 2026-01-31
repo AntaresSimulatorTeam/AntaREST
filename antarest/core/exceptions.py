@@ -541,11 +541,15 @@ class InvalidConstraintTerm(HTTPException):
 
 
 class LayerNotFound(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(
-            HTTPStatus.NOT_FOUND,
-            "Layer not found",
-        )
+    def __init__(self, *layer_ids: str) -> None:
+        count = len(layer_ids)
+        ids = ", ".join(f"'{a}'" for a in layer_ids)
+        msg = {
+            0: "All layers are found",
+            1: f"Layer is not found: {ids}",
+            2: f"Layers are not found: {ids}",
+        }[min(count, 2)]
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
 class LayerNotAllowedToBeDeleted(HTTPException):

@@ -301,7 +301,7 @@ class DatabaseAreaDao(AreaDao):
 
         validate_area_exists(session, study_id, area_id)
         if not self.get_impl().layer_exists(layer):
-            raise LayerNotFound
+            raise LayerNotFound(layer)
 
         r, g, b = area_ui_data.color_rgb
 
@@ -354,7 +354,7 @@ class DatabaseAreaDao(AreaDao):
             LayerNotFound: If the layer does not exist.
         """
         if not self.get_impl().layer_exists(layer_id):
-            raise LayerNotFound
+            raise LayerNotFound(layer_id)
 
         study_id = self.get_study_id()
         session = self.get_session()

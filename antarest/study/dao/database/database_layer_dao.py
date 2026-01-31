@@ -153,20 +153,21 @@ class DatabaseLayerDao(LayerDao):
         This removes the layer name and all area-layer associations for this layer.
         """
         if not self.layer_exists(layer.id):
-            raise LayerNotFound
+            raise LayerNotFound(layer.id)
 
         study_id = self.get_study_id()
         session = self.get_session()
-
-        # Delete layer name
-        session.execute(
-            delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer.id))
-        )
 
         # Delete all area-layer associations for this layer
         session.execute(
             delete(AREA_UI_TABLE).where((AREA_UI_TABLE.c.study_id == study_id) & (AREA_UI_TABLE.c.layer_id == layer.id))
         )
+
+        # Delete layer
+        session.execute(
+            delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer.id))
+        )
+
         session.commit()
 
     @override
