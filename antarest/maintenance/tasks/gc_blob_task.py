@@ -53,7 +53,6 @@ def clean_blobs_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[
 
     ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
     if not ctx:
-        logger.error("MaintenanceContext not found - worker not initialized?")
         raise MaintenanceContextNotFoundError()
 
     return clean_blobs(ctx.blob_service, ctx.config.storage.blob_gc_dry_run)
