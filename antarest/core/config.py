@@ -179,7 +179,8 @@ class StorageConfig:
     matrix_gc_retention_time: int = 3600
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
-    auto_archive_sleeping_time: int = 3600
+    auto_archive_sleeping_time: int = 3600  # Used in desktop mode or when auto_archive_cron is empty
+    auto_archive_cron: str = "0 0 * * 6"  # Saturday at midnight (minute hour day_of_month month day_of_week). Set to empty string to use sleeping_time.
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
     blobstore: Path = Path("./blobstore")
@@ -223,6 +224,7 @@ class StorageConfig:
             auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
             auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
+            auto_archive_cron=data.get("auto_archive_cron", defaults.auto_archive_cron),
             snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
             matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
             blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,

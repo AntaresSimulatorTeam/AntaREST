@@ -15,7 +15,19 @@
 from enum import IntEnum, StrEnum
 from typing import Optional
 
+from redis.exceptions import ConnectionError as RedisConnectionError
+from sqlalchemy.exc import OperationalError
+
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.lock import LockNotAcquired
+
+# Transient errors that should trigger a retry
+TRANSIENT_ERRORS = (
+    RedisConnectionError,  # Redis connection issues
+    OperationalError,  # Database connection issues
+    LockNotAcquired,  # Lock already held by another task
+    ConnectionError,  # Generic network errors
+)
 
 
 class MaintenanceContextNotFoundError(RuntimeError):

@@ -126,6 +126,8 @@ class TestInitWorker:
 
 class TestSetupPeriodicTasks:
     def test_uses_defaults_without_config(self, celery_app_config_backup):
+        from celery.schedules import crontab
+
         sender = Mock()
         celery_app.conf.antarest_config = None
 
@@ -135,7 +137,9 @@ class TestSetupPeriodicTasks:
         calls = sender.add_periodic_task.call_args_list
         assert calls[0][0][0] == 3600  # matrix GC default
         assert calls[1][0][0] == 86400  # blob GC default
-        assert calls[2][0][0] == 3600  # auto-archive default
+        # auto-archive default is now a cron (Saturday at midnight)
+        assert isinstance(calls[2][0][0], crontab)
+        assert str(calls[2][0][0]) == "<crontab: 0 0 * * 6 (m/h/dM/MY/d)>"
         assert calls[3][0][0] == 900  # watcher scan default
         assert calls[4][0][0] == 3600  # variable view GC default
 

@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from celery import Celery
-from celery.signals import celeryd_init, worker_init
+from celery.signals import celeryd_init, task_failure, worker_init
 
 from antarest.core.config import CeleryConfig, Config
 from antarest.core.logging.utils import configure_logger
@@ -122,7 +122,7 @@ def _configure_celery(sender: str, **_: Any) -> None:
 def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     """Register periodic maintenance tasks (called by Beat on startup)."""
     from antarest.core.config import StorageConfig
-    from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
+    from antarest.maintenance.tasks.auto_archive_task import setup_auto_archive_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
     from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
@@ -130,10 +130,11 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
 
     config: Config | None = getattr(celery_app.conf, "antarest_config", None)
     storage = config.storage if config else StorageConfig()
+    desktop_mode = config.desktop_mode if config else False
 
     sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name="matrices_cleaner")
     sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name="blobs_cleaner")
-    sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
+    setup_auto_archive_task(sender, storage, desktop_mode)
     sender.add_periodic_task(storage.watcher_scan_sleeping_time, watcher_scan_task.s(), name="watcher_scan")
     sender.add_periodic_task(
         storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name="variable_view_cleaner"
@@ -141,7 +142,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
 
     logger.info(
         f"Periodic tasks registered: matrix_gc={storage.matrix_gc_sleeping_time}s, "
-        f"blob_gc={storage.blob_gc_sleeping_time}s, auto_archive={storage.auto_archive_sleeping_time}s, "
+        f"blob_gc={storage.blob_gc_sleeping_time}s, "
         f"watcher_scan={storage.watcher_scan_sleeping_time}s, variable_view_gc={storage.variable_view_gc_sleeping_time}s"
     )
 
@@ -159,3 +160,16 @@ def _init_worker(**_: Any) -> None:
     ctx = MaintenanceContext.create(config, Path(config_path_str))
     celery_app.conf.maintenance_ctx = ctx
     logger.info("Worker ready")
+
+
+@task_failure.connect
+def _log_critical_task_failure(sender: Any, task_id: str, exception: Exception, **kwargs: Any) -> None:
+    """Log critical failures for tasks that run infrequently (like weekly auto-archive)."""
+    # Only log for critical tasks that run infrequently
+    if sender and sender.name == "auto_archiver":
+        logger.critical(
+            f"CRITICAL: Auto-archive task [{task_id}] failed permanently after all retries. "
+            f"Exception: {exception}. "
+            f"Next scheduled run may be in a week. Manual intervention may be required.",
+            exc_info=exception,
+        )

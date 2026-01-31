@@ -23,7 +23,7 @@ from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, Mainte
 from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
 
 
-@celery_app.task(bind=True, name="variable_view_cleaner", pydantic=True)
+@celery_app.task(bind=True, name="variable_view_cleaner")
 def clean_variable_views_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
     """
     Celery task wrapper for clean_variable_views.

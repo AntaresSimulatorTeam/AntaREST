@@ -20,7 +20,7 @@ from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, Mainte
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 
 
-@celery_app.task(bind=True, name="matrices_cleaner", pydantic=True)
+@celery_app.task(bind=True, name="matrices_cleaner")
 def clean_matrices_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
     """Celery wrapper that delegates to clean_matrices()."""
     ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
