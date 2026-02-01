@@ -16,14 +16,18 @@ import logging
 from typing import TYPE_CHECKING
 
 from celery import Celery, Task
-from celery.schedules import crontab
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.login.utils import current_user_context
 from antarest.maintenance.app import celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, archive_old_studies
-from antarest.maintenance.tasks.common import TRANSIENT_ERRORS, MaintenanceContextNotFoundError
+from antarest.maintenance.tasks.common import (
+    TRANSIENT_ERRORS,
+    CronParseError,
+    MaintenanceContextNotFoundError,
+    parse_cron_string,
+)
 
 if TYPE_CHECKING:
     from antarest.core.config import StorageConfig
@@ -44,7 +48,7 @@ def auto_archive_task(self: Task) -> AutoArchiveTaskResult:  # type: ignore[type
     """
     Celery wrapper that delegates to archive_old_studies() with admin context.
 
-    This task runs once a week (by default: Saturday at midnight) and archives old studies.
+    This task runs every day at night and archives old studies.
     If it fails, it will retry up to 5 times with exponential backoff:
     - Retry 1: ~5 minutes
     - Retry 2: ~10 minutes
@@ -70,45 +74,24 @@ def auto_archive_task(self: Task) -> AutoArchiveTaskResult:  # type: ignore[type
         )
 
 
-def setup_auto_archive_task(sender: Celery, storage: "StorageConfig", desktop_mode: bool) -> None:
+def setup_auto_archive_task(sender: Celery, storage: "StorageConfig") -> None:
     """
     Setup auto-archive task with either cron schedule or sleeping time.
 
-    In desktop mode, always uses sleeping_time regardless of cron configuration.
-    In web mode, uses cron if configured, otherwise falls back to sleeping_time.
+    Uses cron if configured, otherwise falls back to sleeping_time.
 
     Args:
         sender: Celery app instance
         storage: StorageConfig instance
-        desktop_mode: Whether running in desktop mode
     """
-    # Desktop mode: always use sleeping_time
-    if desktop_mode:
-        sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
-        logger.info(f"Auto-archive registered (desktop mode) with sleeping_time: {storage.auto_archive_sleeping_time}s")
-        return
-
-    # Web mode: use cron if configured (non-empty string), otherwise sleeping_time
-    if storage.auto_archive_cron and storage.auto_archive_cron.strip():
-        # Parse cron string (format: "minute hour day_of_month month day_of_week")
-        cron_parts = storage.auto_archive_cron.split()
-        if len(cron_parts) == 5:
-            schedule = crontab(
-                minute=cron_parts[0],
-                hour=cron_parts[1],
-                day_of_month=cron_parts[2],
-                month_of_year=cron_parts[3],
-                day_of_week=cron_parts[4],
-            )
+    if storage.auto_archive_cron:
+        try:
+            schedule = parse_cron_string(storage.auto_archive_cron)
             sender.add_periodic_task(schedule, auto_archive_task.s(), name="auto_archiver")
-            logger.info(f"Auto-archive registered (web mode) with cron schedule: {storage.auto_archive_cron}")
-        else:
-            logger.error(
-                f"Invalid cron format: '{storage.auto_archive_cron}'. "
-                f"Expected 5 fields (minute hour day_of_month month day_of_week), got {len(cron_parts)}. "
-                f"Falling back to sleeping_time={storage.auto_archive_sleeping_time}s"
-            )
+        except CronParseError as e:
+            logger.error(e)
             sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
+            logger.info(f"Auto-archive registered with sleeping_time: {storage.auto_archive_sleeping_time}s")
     else:
         sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
-        logger.info(f"Auto-archive registered (web mode) with sleeping_time: {storage.auto_archive_sleeping_time}s")
+        logger.info(f"Auto-archive registered with sleeping_time: {storage.auto_archive_sleeping_time}s")

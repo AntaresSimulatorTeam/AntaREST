@@ -57,7 +57,7 @@ class TestCeleryAppConfig:
             assert celery_app.conf.task_routes[task_name]["queue"] == "maintenance"
 
     def test_timeouts(self):
-        assert celery_app.conf.task_soft_time_limit == 7000
+        assert celery_app.conf.task_soft_time_limit == 6600
         assert celery_app.conf.task_time_limit == 7200
 
     def test_worker_settings(self):
@@ -139,7 +139,7 @@ class TestSetupPeriodicTasks:
         assert calls[1][0][0] == 86400  # blob GC default
         # auto-archive default is now a cron (Saturday at midnight)
         assert isinstance(calls[2][0][0], crontab)
-        assert str(calls[2][0][0]) == "<crontab: 0 0 * * 6 (m/h/dM/MY/d)>"
+        assert str(calls[2][0][0]) == "<crontab: 0 20-23,0-7 * * * (m/h/dM/MY/d)>"
         assert calls[3][0][0] == 900  # watcher scan default
         assert calls[4][0][0] == 3600  # variable view GC default
 
@@ -149,6 +149,7 @@ class TestSetupPeriodicTasks:
         config.storage.matrix_gc_sleeping_time = 7200
         config.storage.blob_gc_sleeping_time = 43200
         config.storage.auto_archive_sleeping_time = 1800
+        config.storage.auto_archive_cron = None
         config.storage.watcher_scan_sleeping_time = 120
         celery_app.conf.antarest_config = config
 

@@ -87,7 +87,7 @@ celery_app.conf.update(
     worker_max_tasks_per_child=100,
     task_acks_late=True,
     task_reject_on_worker_lost=True,
-    task_soft_time_limit=7000,
+    task_soft_time_limit=6600,
     task_time_limit=7200,
     worker_send_task_events=True,
     task_send_sent_event=True,
@@ -130,11 +130,10 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
 
     config: Config | None = getattr(celery_app.conf, "antarest_config", None)
     storage = config.storage if config else StorageConfig()
-    desktop_mode = config.desktop_mode if config else False
 
     sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name="matrices_cleaner")
     sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name="blobs_cleaner")
-    setup_auto_archive_task(sender, storage, desktop_mode)
+    setup_auto_archive_task(sender, storage)
     sender.add_periodic_task(storage.watcher_scan_sleeping_time, watcher_scan_task.s(), name="watcher_scan")
     sender.add_periodic_task(
         storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name="variable_view_cleaner"
@@ -164,12 +163,10 @@ def _init_worker(**_: Any) -> None:
 
 @task_failure.connect
 def _log_critical_task_failure(sender: Any, task_id: str, exception: Exception, **kwargs: Any) -> None:
-    """Log critical failures for tasks that run infrequently (like weekly auto-archive)."""
+    """Log critical failures for tasks that run infrequently."""
     # Only log for critical tasks that run infrequently
     if sender and sender.name == "auto_archiver":
         logger.critical(
-            f"CRITICAL: Auto-archive task [{task_id}] failed permanently after all retries. "
-            f"Exception: {exception}. "
-            f"Next scheduled run may be in a week. Manual intervention may be required.",
+            f"CRITICAL: Auto-archive task [{task_id}] failed permanently after all retries. Exception: {exception}. ",
             exc_info=exception,
         )
