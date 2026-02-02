@@ -14,7 +14,12 @@ from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integ
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.config.adequacy_patch_model import PriceTakingOrder
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.config.general_model import BuildingMode, Mode, Month, WeekDay
+from antarest.study.business.model.config.optimization_config_model import (
+    SimplexOptimizationRange,
+    UnfeasibleProblemBehavior,
+)
 
 metadata = Base.metadata
 
@@ -54,7 +59,7 @@ GENERAL_CONFIG_TABLE = Table(
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_general_config_study_id", ondelete="CASCADE"),
 )
 
-ADVANCED_PARAMETERS = Table(
+ADVANCED_PARAMETERS_TABLE = Table(
     "advanced_parameters",
     metadata,
     Column("study_id", String(length=36), nullable=False),
@@ -69,4 +74,31 @@ ADVANCED_PARAMETERS = Table(
     Column("ntc_between_physical_areas_out_adequacy_patch", Boolean(), nullable=True),
     Column("redispatch", Boolean(), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_adequacy_patch_parameters_study_id", ondelete="CASCADE"),
+)
+
+COMPATIBILITY_PARAMETERS_TABLE = Table(
+    "compatibility_parameters",
+    metadata,
+    Column("study_id", String(length=36), nullable=False),
+    Column("hydro_pmax", Enum(HydroPmax), nullable=True),
+    ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_parameters_study_id", ondelete="CASCADE"),
+)
+
+OPTIMIZATION_PREFERENCES_TABLE = Table(
+    "optimization_preferences",
+    metadata,
+    Column("study_id", String(length=36), nullable=False),
+    Column("binding_constraints", Boolean(), nullable=False),
+    Column("hurdle_costs", Boolean(), nullable=False),
+    Column("transmission_capacities", String(), nullable=False),
+    Column("thermal_clusters_min_stable_power", Boolean(), nullable=False),
+    Column("thermal_clusters_min_ud_time", Boolean(), nullable=False),
+    Column("day_ahead_reserve", Boolean(), nullable=False),
+    Column("primary_reserve", Boolean(), nullable=False),
+    Column("strategic_reserve", Boolean(), nullable=False),
+    Column("spinning_reserve", Boolean(), nullable=False),
+    Column("export_mps", String(), nullable=False),
+    Column("unfeasible_problem_behavior", Enum(UnfeasibleProblemBehavior), nullable=False),
+    Column("simplex_optimization_range", Enum(SimplexOptimizationRange), nullable=False),
+    ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_optimization_preferences_study_id", ondelete="CASCADE"),
 )
