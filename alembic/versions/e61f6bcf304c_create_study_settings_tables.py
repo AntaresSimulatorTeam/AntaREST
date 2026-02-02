@@ -19,9 +19,7 @@ depends_on = None
 def upgrade():
     # 1- Declare the Enums
     simulation_mode_enum = sa.Enum('Economy', 'Adequacy', 'Expansion', name="simulationmode")
-    month_enum = sa.Enum(
-        'january', 'february', 'march', 'april', 'may', 'june', 'july',
-        "august", "september", "october", "november", "december", name="month")
+    month_enum = sa.Enum('january', 'february', 'march', 'april', 'may', 'june', 'july', "august", "september", "october", "november", "december", name="month")
     weekday_enum = sa.Enum('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', "Saturday", "Sunday", name="weekday")
     price_taking_order_enum = sa.Enum("DENS", 'Load', name="pricetakingorder")
     building_mode_enum = sa.Enum("Automatic", 'Custom', "Derated", name="buildingmode")
