@@ -102,3 +102,19 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("simplex_optimization_range", Enum(SimplexOptimizationRange), nullable=False),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_optimization_preferences_study_id", ondelete="CASCADE"),
 )
+
+TIMESERIES_CONFIG_TABLE = Table(
+    "compatibility_parameters",
+    metadata,
+    Column("study_id", String(length=36), nullable=False),
+    Column("thermal_number", Integer(), nullable=False),
+    ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_timeseries_config_study_id", ondelete="CASCADE"),
+)
+
+PLAYLIST_TABLE = Table(
+    "compatibility_parameters",
+    metadata,
+    Column("study_id", String(length=36), nullable=False),
+    Column("years", String(), nullable=False),
+    ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_playlist_study_id", ondelete="CASCADE"),
+)

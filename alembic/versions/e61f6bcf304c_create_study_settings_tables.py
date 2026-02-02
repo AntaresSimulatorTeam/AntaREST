@@ -148,7 +148,7 @@ def upgrade():
     # Playlist
     op.create_table("playlist",
         sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("years", sa.String(), nullable=True),
+        sa.Column("years", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_playlist_study_id", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("study_id", name=op.f("pk_playlist"))
     )
