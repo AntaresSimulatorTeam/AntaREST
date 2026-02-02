@@ -14,6 +14,17 @@ from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integ
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.config.adequacy_patch_model import PriceTakingOrder
+from antarest.study.business.model.config.advanced_parameters_model import (
+    HydroHeuristicPolicy,
+    HydroPricingMode,
+    InitialReservoirLevel,
+    PowerFluctuation,
+    RenewableGenerationModeling,
+    ReserveManagement,
+    SheddingPolicy,
+    SimulationCore,
+    UnitCommitmentMode,
+)
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.config.general_model import BuildingMode, Mode, Month, WeekDay
 from antarest.study.business.model.config.optimization_config_model import (
@@ -24,16 +35,6 @@ from antarest.study.business.model.config.optimization_config_model import (
 metadata = Base.metadata
 
 # Relations: One to one with `Study`
-
-"""
-op.drop_table("general_config")
-op.drop_table("advanced_parameters")
-op.drop_table("adequacy_patch_parameters")
-op.drop_table("compatibility_parameters")
-op.drop_table("optimization_preferences")
-op.drop_table("timeseries_config")
-op.drop_table("playlist")
-"""
 
 study_id_col = Column("study_id", String(length=36), nullable=False, primary_key=True)
 
@@ -65,6 +66,35 @@ ADVANCED_PARAMETERS_TABLE = Table(
     "advanced_parameters",
     metadata,
     study_id_col,
+    Column("accuracy_on_correlation", String(), nullable=False),
+    Column("power_fluctuations", Enum(PowerFluctuation), nullable=False),
+    Column("shedding_policy", Enum(SheddingPolicy), nullable=False),
+    Column("hydro_pricing_mode", Enum(HydroPricingMode), nullable=False),
+    Column("hydro_heuristic_policy", Enum(HydroHeuristicPolicy), nullable=False),
+    Column("unit_commitment_mode", Enum(UnitCommitmentMode), nullable=False),
+    Column("number_of_cores_mode", Enum(SimulationCore), nullable=False),
+    Column("day_ahead_reserve_management", Enum(ReserveManagement), nullable=False),
+    Column("renewable_generation_modelling", Enum(RenewableGenerationModeling), nullable=False),
+    Column("seed_tsgen_wind", Integer(), nullable=False),
+    Column("seed_tsgen_load", Integer(), nullable=False),
+    Column("seed_tsgen_hydro", Integer(), nullable=False),
+    Column("seed_tsgen_thermal", Integer(), nullable=False),
+    Column("seed_tsgen_solar", Integer(), nullable=False),
+    Column("seed_tsnumbers", Integer(), nullable=False),
+    Column("seed_unsupplied_energy_costs", Integer(), nullable=False),
+    Column("seed_spilled_energy_costs", Integer(), nullable=False),
+    Column("seed_thermal_costs", Integer(), nullable=False),
+    Column("seed_hydro_costs", Integer(), nullable=False),
+    Column("seed_initial_reservoir_levels", Integer(), nullable=False),
+    Column("initial_reservoir_levels", Enum(InitialReservoirLevel), nullable=True),
+    Column("accurate_shave_peaks_include_short_term_storage", Boolean(), nullable=True),
+    ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_advanced_parameters_study_id", ondelete="CASCADE"),
+)
+
+ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
+    "adequacy_patch_parameters",
+    metadata,
+    study_id_col,
     Column("enable_adequacy_patch", Boolean(), nullable=False),
     Column("ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch", Boolean(), nullable=False),
     Column("price_taking_order", Enum(PriceTakingOrder), nullable=True),
@@ -77,6 +107,7 @@ ADVANCED_PARAMETERS_TABLE = Table(
     Column("redispatch", Boolean(), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_adequacy_patch_parameters_study_id", ondelete="CASCADE"),
 )
+
 
 COMPATIBILITY_PARAMETERS_TABLE = Table(
     "compatibility_parameters",
