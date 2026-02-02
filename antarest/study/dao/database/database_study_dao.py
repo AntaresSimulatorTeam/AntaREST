@@ -38,8 +38,6 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
-from antarest.study.business.model.layer_model import Layer
-from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -67,7 +65,9 @@ from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao, DatabaseLinkDao, DatabaseLayerDao):
+class DatabaseStudyDao(
+    StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao, DatabaseLinkDao, DatabaseLayerDao
+):
     """
     Database implementation of StudyDao.
     """
