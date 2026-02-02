@@ -19,13 +19,13 @@ from antarest.study.business.model.config.general_model import (
     BuildingMode,
     DayNumberType,
     GeneralConfig,
+    Mode,
     Month,
     WeekDay,
     initialize_default_values,
     validate_general_config_version,
 )
 from antarest.study.model import STUDY_VERSION_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
 class GeneralFileData(AntaresBaseModel):

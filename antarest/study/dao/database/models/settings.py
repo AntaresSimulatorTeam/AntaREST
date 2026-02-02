@@ -13,8 +13,7 @@
 from sqlalchemy import Boolean, Column, Enum, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
-from antarest.study.business.model.config.general_model import BuildingMode, Month, WeekDay
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
+from antarest.study.business.model.config.general_model import BuildingMode, Mode, Month, WeekDay
 
 metadata = Base.metadata
 

@@ -19,7 +19,6 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_7_1
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
 class Month(EnumIgnoreCase):
@@ -51,6 +50,37 @@ class BuildingMode(EnumIgnoreCase):
     AUTOMATIC = "Automatic"
     CUSTOM = "Custom"
     DERATED = "Derated"
+
+
+class Mode(EnumIgnoreCase):
+    """
+    Simulation mode of an Antares study.
+    """
+
+    ECONOMY = "Economy"
+    ADEQUACY = "Adequacy"
+    EXPANSION = "Expansion"
+
+    def get_output_suffix(self) -> str:
+        if self == Mode.ECONOMY:
+            return "eco"
+        elif self == Mode.ADEQUACY:
+            return "adq"
+        elif self == Mode.EXPANSION:
+            return "exp"
+        else:
+            raise ValueError(f"Unknown mode: {self}")
+
+    @staticmethod
+    def from_output_suffix(suffix: str) -> "Mode":
+        if suffix == "eco":
+            return Mode.ECONOMY
+        elif suffix == "adq":
+            return Mode.ADEQUACY
+        elif suffix == "exp":
+            return Mode.EXPANSION
+        else:
+            raise ValueError(f"Unknown suffix: {suffix}")
 
 
 DayNumberType: TypeAlias = Annotated[int, Field(ge=1, le=366)]
