@@ -5,19 +5,20 @@ Revises: f3a153a9a048
 Create Date: 2026-01-26 10:45:36.111886
 
 """
-from alembic import op
+
 import sqlalchemy as sa
-from sqlalchemy import ForeignKey
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = 'y7x41d4a8yc'
-down_revision = '6a6d36e3c6ed'
+revision = "y7x41d4a8yc"
+down_revision = "10318e5320f6"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.drop_table('favorite_study')
+    op.drop_table("favorite_study")
     op.create_table(
         "favorite_study",
         sa.Column("user_id", sa.Integer(), nullable=False),
@@ -29,4 +30,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table('favorite_study')
+    op.drop_table("favorite_study")
