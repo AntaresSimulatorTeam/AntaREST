@@ -73,9 +73,9 @@ class GeneralConfig(AntaresBaseModel):
     year_by_year: bool = False
     simulation_synthesis: bool = True
     mc_scenario: bool = False
-    filtering: bool | None = None
-    geographic_trimming: bool | None = None
-    thematic_trimming: bool | None = None
+    filtering: bool = False
+    geographic_trimming: bool = False
+    thematic_trimming: bool = False
 
     @model_validator(mode="before")
     def day_fields_validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
