@@ -195,6 +195,8 @@ class StorageConfig:
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
+        if data.get("auto_archive_sleeping_time") and data.get("auto_archive_cron"):
+            raise ValueError("auto_archive_sleeping_time and auto_archive_cron cannot be used together")
         defaults = cls()
         workspaces = (
             {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}

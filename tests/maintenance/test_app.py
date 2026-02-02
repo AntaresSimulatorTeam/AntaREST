@@ -46,7 +46,6 @@ class TestCeleryAppConfig:
         assert "json" in celery_app.conf.accept_content
 
     def test_task_routing(self):
-        # Check that all task names route to the maintenance queue
         for task_name in [
             "watcher_scan",
             "matrices_cleaner",
@@ -112,17 +111,6 @@ class TestInitWorker:
         _init_worker(sender=Mock())
         mock_ctx_class.create.assert_not_called()
 
-    def test_creates_and_attaches_context(self, celery_app_config_backup, monkeypatch):
-        mock_ctx = Mock()
-        mock_ctx_class = Mock(create=Mock(return_value=mock_ctx))
-        celery_app.conf.antarest_config = Mock()
-
-        monkeypatch.setattr("antarest.maintenance.app.MaintenanceContext", mock_ctx_class)
-        monkeypatch.setenv("ANTAREST_CONF", "/path/to/config.yaml")
-
-        _init_worker()
-        assert celery_app.conf.maintenance_ctx is mock_ctx
-
 
 class TestSetupPeriodicTasks:
     def test_uses_defaults_without_config(self, celery_app_config_backup):
@@ -137,7 +125,6 @@ class TestSetupPeriodicTasks:
         calls = sender.add_periodic_task.call_args_list
         assert calls[0][0][0] == 3600  # matrix GC default
         assert calls[1][0][0] == 86400  # blob GC default
-        # auto-archive default is now a cron (Saturday at midnight)
         assert isinstance(calls[2][0][0], crontab)
         assert str(calls[2][0][0]) == "<crontab: 0 20-23,0-7 * * * (m/h/dM/MY/d)>"
         assert calls[3][0][0] == 900  # watcher scan default

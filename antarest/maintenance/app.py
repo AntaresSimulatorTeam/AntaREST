@@ -23,6 +23,7 @@ Architecture:
 import logging
 import os
 import re
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -38,13 +39,13 @@ logger = logging.getLogger(__name__)
 
 MAINTENANCE_QUEUE = "maintenance"
 
-TASK_NAMES = [
-    "watcher_scan",
-    "matrices_cleaner",
-    "blobs_cleaner",
-    "auto_archiver",
-    "variable_view_cleaner",
-]
+
+class TaskName(StrEnum):
+    WATCHER_SCAN = "watcher_scan"
+    MATRICES_CLEANER = "matrices_cleaner"
+    BLOBS_CLEANER = "blobs_cleaner"
+    AUTO_ARCHIVER = "auto_archiver"
+    VARIABLE_VIEW_CLEANER = "variable_view_cleaner"
 
 
 def _mask_url_credentials(url: str) -> str:
@@ -91,7 +92,7 @@ celery_app.conf.update(
     task_time_limit=7200,
     worker_send_task_events=True,
     task_send_sent_event=True,
-    task_routes={name: {"queue": MAINTENANCE_QUEUE} for name in TASK_NAMES},
+    task_routes={name: {"queue": MAINTENANCE_QUEUE} for name in TaskName},
 )
 
 celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
@@ -131,12 +132,12 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     config: Config | None = getattr(celery_app.conf, "antarest_config", None)
     storage = config.storage if config else StorageConfig()
 
-    sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name="matrices_cleaner")
-    sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name="blobs_cleaner")
+    sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name=TaskName.MATRICES_CLEANER)
+    sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name=TaskName.BLOBS_CLEANER)
     setup_auto_archive_task(sender, storage)
-    sender.add_periodic_task(storage.watcher_scan_sleeping_time, watcher_scan_task.s(), name="watcher_scan")
+    sender.add_periodic_task(storage.watcher_scan_sleeping_time, watcher_scan_task.s(), name=TaskName.WATCHER_SCAN)
     sender.add_periodic_task(
-        storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name="variable_view_cleaner"
+        storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name=TaskName.VARIABLE_VIEW_CLEANER
     )
 
     logger.info(
@@ -164,8 +165,7 @@ def _init_worker(**_: Any) -> None:
 @task_failure.connect
 def _log_critical_task_failure(sender: Any, task_id: str, exception: Exception, **kwargs: Any) -> None:
     """Log critical failures for tasks that run infrequently."""
-    # Only log for critical tasks that run infrequently
-    if sender and sender.name == "auto_archiver":
+    if sender and sender.name == TaskName.AUTO_ARCHIVER:
         logger.critical(
             f"CRITICAL: Auto-archive task [{task_id}] failed permanently after all retries. Exception: {exception}. ",
             exc_info=exception,

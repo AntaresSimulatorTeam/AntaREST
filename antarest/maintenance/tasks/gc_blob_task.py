@@ -16,7 +16,7 @@ import logging
 
 from celery import Task
 
-from antarest.maintenance.app import celery_app
+from antarest.maintenance.app import TaskName, celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.common import (
     TRANSIENT_ERRORS,
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task(
     bind=True,
-    name="blobs_cleaner",
+    name=TaskName.BLOBS_CLEANER,
     pydantic=True,
     autoretry_for=TRANSIENT_ERRORS,
     retry_kwargs={"max_retries": 3},

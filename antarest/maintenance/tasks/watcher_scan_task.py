@@ -14,7 +14,7 @@
 
 from celery import Task
 
-from antarest.maintenance.app import celery_app
+from antarest.maintenance.app import TaskName, celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.common import MaintenanceContextNotFoundError, WatcherScanTaskResult
 from antarest.maintenance.tasks.watcher_scan import scan_workspaces
@@ -22,10 +22,8 @@ from antarest.maintenance.tasks.watcher_scan import scan_workspaces
 
 @celery_app.task(
     bind=True,
-    name="watcher_scan",
+    name=TaskName.WATCHER_SCAN,
     pydantic=True,
-    soft_time_limit=1500,
-    time_limit=1800,
 )
 def watcher_scan_task(self: Task) -> WatcherScanTaskResult:  # type: ignore[type-arg]
     """

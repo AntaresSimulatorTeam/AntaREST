@@ -19,7 +19,7 @@ from celery import Celery, Task
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.login.utils import current_user_context
-from antarest.maintenance.app import celery_app
+from antarest.maintenance.app import TaskName, celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, archive_old_studies
 from antarest.maintenance.tasks.common import (
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task(
     bind=True,
-    name="auto_archiver",
+    name=TaskName.AUTO_ARCHIVER,
     pydantic=True,
     autoretry_for=TRANSIENT_ERRORS,
     retry_kwargs={"max_retries": 5},
@@ -88,11 +88,13 @@ def setup_auto_archive_task(sender: Celery, storage: "StorageConfig") -> None:
     if storage.auto_archive_cron:
         try:
             schedule = parse_cron_string(storage.auto_archive_cron)
-            sender.add_periodic_task(schedule, auto_archive_task.s(), name="auto_archiver")
+            sender.add_periodic_task(schedule, auto_archive_task.s(), name=TaskName.AUTO_ARCHIVER)
         except CronParseError as e:
             logger.error(e)
-            sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
+            sender.add_periodic_task(
+                storage.auto_archive_sleeping_time, auto_archive_task.s(), name=TaskName.AUTO_ARCHIVER
+            )
             logger.info(f"Auto-archive registered with sleeping_time: {storage.auto_archive_sleeping_time}s")
     else:
-        sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name="auto_archiver")
+        sender.add_periodic_task(storage.auto_archive_sleeping_time, auto_archive_task.s(), name=TaskName.AUTO_ARCHIVER)
         logger.info(f"Auto-archive registered with sleeping_time: {storage.auto_archive_sleeping_time}s")
