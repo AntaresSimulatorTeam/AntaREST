@@ -1,7 +1,7 @@
 """create_study_settings_tables
 
 Revision ID: e61f6bcf304c
-Revises: 6a6d36e3c6ed
+Revises: y7x41d4a8yc
 Create Date: 2026-02-02 14:49:58.622967
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'e61f6bcf304c'
-down_revision = '6a6d36e3c6ed'
+down_revision = 'y7x41d4a8yc'
 branch_labels = None
 depends_on = None
 
