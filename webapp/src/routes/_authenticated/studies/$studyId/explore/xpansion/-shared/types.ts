@@ -32,6 +32,8 @@ export interface XpansionSettings {
   timelimit: number;
   separation_parameter: number;
   batch_size: number;
+  cutCoefficientTolerance: number;
+  masterSolutionTolerance: number;
   sensitivity_config?: XpansionSensitivitySettings;
 }
 
