@@ -95,12 +95,15 @@ function ExternalTree({ studies }: ExternalTreeProps) {
       defaultSelectedItems={path}
       onItemExpansionToggle={handleItemExpansionToggle}
     >
-      <ExternalTreeNode
-        node={studiesTree}
-        itemsLoading={itemsLoading}
-        exploredFolders={exploredFolders}
-        onNodeClick={handleTreeItemClick}
-      />
+      {studiesTree.children.map((child) => (
+        <ExternalTreeNode
+          key={child.path}
+          node={child}
+          itemsLoading={itemsLoading}
+          exploredFolders={exploredFolders}
+          onNodeClick={handleTreeItemClick}
+        />
+      ))}
     </SimpleTreeView>
   );
 }

@@ -18,20 +18,6 @@ import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
 import type { StudyMetadata } from "@/types/types";
 import type { ExternalTreeNodeMetadata } from "./types";
 
-// Creates the initial tree root with default workspace
-const createInitialTree = (): ExternalTreeNodeMetadata => ({
-  name: ROOT_NODE_NAME,
-  children: [
-    {
-      name: DEFAULT_WORKSPACE_NAME,
-      children: [],
-      path: `/${DEFAULT_WORKSPACE_NAME}`,
-      isStudyFolder: false,
-    },
-  ],
-  path: "",
-});
-
 // Builds the full path from a parent path and folder name
 const buildPath = (parentPath: string, folderName: string): string =>
   parentPath ? `${parentPath}/${folderName}` : `/${folderName}`;
@@ -64,11 +50,17 @@ const findChildByName = (name: string) => R.find<ExternalTreeNodeMetadata>(R.pro
 /**
  * Builds a tree structure from a list of study metadata.
  *
+ * Note: Excludes the "default" workspace - managed studies are shown in ManagedTree.
+ *
  * @param studies - Array of study metadata objects.
  * @returns A tree structure representing the studies.
  */
 export const buildExternalTree = (studies: StudyMetadata[]): ExternalTreeNodeMetadata => {
-  const initialTree = createInitialTree();
+  const initialTree: ExternalTreeNodeMetadata = {
+    name: ROOT_NODE_NAME,
+    children: [],
+    path: "",
+  };
 
   // Use reduce to build tree iteratively
   return R.reduce(
@@ -200,7 +192,7 @@ export const insertFoldersIfNotExist = (
   folders: FolderDTO[],
 ): ExternalTreeNodeMetadata => {
   const sortedFolders = sortByPath(folders);
-  return R.reduce(insertFolderIfNotExist, tree, sortedFolders);
+  return R.reduce((acc, folder) => insertFolderIfNotExist(acc, folder), tree, sortedFolders);
 };
 
 // Creates an empty workspace node
@@ -225,6 +217,7 @@ const addWorkspaceAlias = (workspace: WorkspaceDTO) =>
 
 /**
  * Insert a workspace into the external tree if it doesn't exist already.
+ * Filters out "default" workspace - managed studies are shown in ManagedTree.
  *
  * @param tree - external tree to insert the workspace into
  * @param workspace - workspace to insert
@@ -234,6 +227,10 @@ const insertWorkspaceIfNotExist = (
   tree: ExternalTreeNodeMetadata,
   workspace: WorkspaceDTO,
 ): ExternalTreeNodeMetadata => {
+  if (workspace.name === DEFAULT_WORKSPACE_NAME) {
+    return tree;
+  }
+
   const hasWorkspace = R.any((child) => isNodeMatchWorkspace(child, workspace), tree.children);
 
   if (hasWorkspace) {
@@ -259,7 +256,8 @@ const insertWorkspaceIfNotExist = (
 export const insertWorkspacesIfNotExist = (
   tree: ExternalTreeNodeMetadata,
   workspaces: WorkspaceDTO[],
-): ExternalTreeNodeMetadata => R.reduce(insertWorkspaceIfNotExist, tree, workspaces);
+): ExternalTreeNodeMetadata =>
+  R.reduce((acc, workspace) => insertWorkspaceIfNotExist(acc, workspace), tree, workspaces);
 
 /**
  * Insert workspaces and folders into the external tree if they don't exist already.
