@@ -18,7 +18,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from antarest.core.exceptions import LayerNotFound
+from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
@@ -112,6 +112,10 @@ class TestDatabaseLayerDao:
     def test_delete_layer_raises_if_not_found(self, dao: DatabaseStudyDao) -> None:
         with pytest.raises(LayerNotFound):
             dao.delete_layer(Layer(id="999"))
+
+    def test_delete_default_layer_raises(self, dao: DatabaseStudyDao) -> None:
+        with pytest.raises(LayerNotAllowedToBeDeleted):
+            dao.delete_layer(Layer(id="0"))
 
     def test_layer_exists_default_layer(self, dao: DatabaseStudyDao) -> None:
         assert dao.layer_exists("0")

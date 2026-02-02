@@ -150,7 +150,7 @@ class StudyStorageConfig:
     Sub config object dedicated to study storage configuration (from study.storage in YAML)
     """
 
-    database_mode_enabled: bool = False
+    database_mode_enabled: bool = True
 
     @classmethod
     def from_dict(cls, data: JSON) -> "StudyStorageConfig":

@@ -12,10 +12,13 @@
 import uuid
 
 import pytest
+from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import DEFAULT_LAYER_ID
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.models.layer import LAYER_TABLE
 from antarest.study.model import StorageMode
 from tests.helpers import create_study
 
@@ -28,6 +31,14 @@ def study_id(db_session: Session) -> str:
         study = create_study(id=study_id, name="Test Study")
         study.storage_mode = StorageMode.DATABASE
         db_session.add(study)
+        db_session.commit()
+        db_session.execute(
+            insert(LAYER_TABLE).values(
+                study_id=study_id,
+                layer_id=DEFAULT_LAYER_ID,
+                name="All",
+            )
+        )
         db_session.commit()
     return study_id
 

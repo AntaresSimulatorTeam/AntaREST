@@ -24,7 +24,7 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import LayerNotFound
+from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
@@ -150,20 +150,18 @@ class DatabaseLayerDao(LayerDao):
         """
         Delete a layer from a study.
 
-        This removes the layer name and all area-layer associations for this layer.
+        The default layer (id="0") cannot be deleted.
+        Area-layer associations are automatically deleted via FK CASCADE.
         """
+        if layer.id == DEFAULT_LAYER_ID:
+            raise LayerNotAllowedToBeDeleted()
+
         if not self.layer_exists(layer.id):
             raise LayerNotFound(layer.id)
 
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Delete all area-layer associations for this layer
-        session.execute(
-            delete(AREA_UI_TABLE).where((AREA_UI_TABLE.c.study_id == study_id) & (AREA_UI_TABLE.c.layer_id == layer.id))
-        )
-
-        # Delete layer
         session.execute(
             delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer.id))
         )

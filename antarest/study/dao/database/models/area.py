@@ -59,6 +59,11 @@ AREA_UI_TABLE = Table(
         ["area.study_id", "area.area_id"],
         ondelete="CASCADE",
     ),
+    ForeignKeyConstraint(
+        ["study_id", "layer_id"],
+        ["layer.study_id", "layer.layer_id"],
+        ondelete="CASCADE",
+    ),
 )
 
 
