@@ -23,7 +23,9 @@ import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
+import DeleteFolderDialog from "./DeleteFolderDialog";
 import EditableTreeItem from "./EditableTreeItem";
+import { useDeleteFolderDialog } from "./hooks/useDeleteFolderDialog";
 import { useDirectoryOperations } from "./hooks/useDirectoryOperations";
 import ManagedTreeNode from "./ManagedTreeNode";
 import type { ManagedTreeProps } from "./types";
@@ -44,6 +46,8 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
   );
 
   const [expandedItems, setExpandedItems] = useState<string[]>(() => initialExpandedItems);
+
+  const deleteDialog = useDeleteFolderDialog(directoryTree);
 
   const {
     startCreating,
@@ -106,7 +110,20 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
   };
 
   const handleDelete = (directoryId: string) => {
-    deleteDirectory(directoryId);
+    deleteDialog.openDialog(directoryId);
+  };
+
+  const handleDeleteConfirm = (cascade: boolean) => {
+    if (!deleteDialog.state.directoryId) {
+      return;
+    }
+
+    deleteDirectory(deleteDialog.state.directoryId, cascade, directories);
+    deleteDialog.closeDialog();
+  };
+
+  const handleDeleteCancel = () => {
+    deleteDialog.closeDialog();
   };
 
   const handleAddSubFolder = (parentId: string | null) => {
@@ -135,37 +152,47 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
   }
 
   return (
-    <SimpleTreeView
-      expandedItems={expandedItems}
-      onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-      defaultSelectedItems={directoryId || ""}
-    >
-      {/* Root level folder creation */}
-      {isCreating(null) && (
-        <EditableTreeItem
-          itemId={`temp-root-${Date.now()}`}
-          isEditing
-          onSave={handleSaveFolder(null)} // null = save as root level folder
-          onCancel={handleCancelFolder}
-        />
-      )}
+    <>
+      <SimpleTreeView
+        expandedItems={expandedItems}
+        onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+        defaultSelectedItems={directoryId || ""}
+      >
+        {/* Root level folder creation */}
+        {isCreating(null) && (
+          <EditableTreeItem
+            itemId={`temp-root-${Date.now()}`}
+            isEditing
+            onSave={handleSaveFolder(null)} // null = save as root level folder
+            onCancel={handleCancelFolder}
+          />
+        )}
 
-      <ManagedTreeNode
-        node={directoryTree}
-        onNodeClick={handleNodeClick}
-        selectedPath={directoryId || ""}
-        onAddSubFolder={handleAddSubFolder}
-        onSaveSubFolder={handleSaveFolder}
-        onCancelSubFolder={handleCancelFolder}
-        isCreatingSubFolder={isCreating}
-        onStartUpdate={handleStartUpdate}
-        onSaveUpdate={handleSaveUpdate}
-        onCancelUpdate={handleCancelUpdate}
-        isUpdating={isUpdating}
-        onDelete={handleDelete}
-        isDeleting={isDeleting}
+        <ManagedTreeNode
+          node={directoryTree}
+          onNodeClick={handleNodeClick}
+          selectedPath={directoryId || ""}
+          onAddSubFolder={handleAddSubFolder}
+          onSaveSubFolder={handleSaveFolder}
+          onCancelSubFolder={handleCancelFolder}
+          isCreatingSubFolder={isCreating}
+          onStartUpdate={handleStartUpdate}
+          onSaveUpdate={handleSaveUpdate}
+          onCancelUpdate={handleCancelUpdate}
+          isUpdating={isUpdating}
+          onDelete={handleDelete}
+          isDeleting={isDeleting}
+        />
+      </SimpleTreeView>
+
+      <DeleteFolderDialog
+        open={deleteDialog.state.open}
+        folderName={deleteDialog.state.folderName}
+        hasChildren={deleteDialog.state.hasChildren}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
       />
-    </SimpleTreeView>
+    </>
   );
 }
 

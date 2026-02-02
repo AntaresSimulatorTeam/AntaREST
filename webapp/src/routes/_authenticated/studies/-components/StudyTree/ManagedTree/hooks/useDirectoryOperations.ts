@@ -90,8 +90,8 @@ export function useDirectoryOperations(options?: UseDirectoryOperationsOptions) 
     setCurrentOperation({ type: "delete", directoryId });
   };
 
-  const deleteDirectory = (directoryId: string) => {
-    deleteMutation.mutate(directoryId);
+  const deleteDirectory = (directoryId: string, cascade: boolean, allDirectories: Directory[]) => {
+    deleteMutation.mutate({ directoryId, cascade, allDirectories });
   };
 
   const isDeleting = (directoryId: string) => {
