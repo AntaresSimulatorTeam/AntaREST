@@ -180,6 +180,7 @@ class StorageConfig:
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
+    auto_archive_cron: str = "0 20-23,0-7 * * * "
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
     blobstore: Path = Path("./blobstore")
@@ -188,12 +189,14 @@ class StorageConfig:
     variable_view_gc_sleeping_time: int = 3600
     variable_view_gc_dry_run: bool = False
     variable_view_gc_retention_days: int = 30
-    watcher_scan_sleeping_time: int = 60
+    watcher_scan_sleeping_time: int = 900
     watcher_scan_dry_run: bool = False
     study_storage: StudyStorageConfig = StudyStorageConfig()
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
+        if data.get("auto_archive_sleeping_time") and data.get("auto_archive_cron"):
+            raise ValueError("auto_archive_sleeping_time and auto_archive_cron cannot be used together")
         defaults = cls()
         workspaces = (
             {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}
@@ -223,6 +226,7 @@ class StorageConfig:
             auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
             auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
+            auto_archive_cron=data.get("auto_archive_cron", defaults.auto_archive_cron),
             snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
             matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
             blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
