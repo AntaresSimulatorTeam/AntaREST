@@ -17,14 +17,14 @@ depends_on = None
 
 
 def upgrade():
-
     op.drop_table('favorite_study')
     op.create_table(
         "favorite_study",
         sa.Column("user_id", sa.Integer(), nullable=False),
-        sa.Column("study_id", sa.String(36), sa.ForeignKey("study.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("study_id", sa.String(36), nullable=False),
         sa.PrimaryKeyConstraint("user_id", "study_id", name="pk_favorite_study"),
         sa.ForeignKeyConstraint(["user_id"], ["identities.id"], name="fk_user_id_favorite_study", ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_study_id_favorite_study", ondelete="CASCADE"),
     )
 
 

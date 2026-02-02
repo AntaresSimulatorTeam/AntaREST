@@ -30,8 +30,6 @@ def test_add_favorite(favorite_service: FavoriteService, admin_user: JWTUser) ->
         actual_favorite_list = favorite_service.list_favorites()
 
     expected_favorite_list = [favorite_dto_1, favorite_dto_2]
-    print("Liste : ", actual_favorite_list)
-    print("Liste attendue : ", expected_favorite_list)
     assert actual_favorite_list == expected_favorite_list
 
 
