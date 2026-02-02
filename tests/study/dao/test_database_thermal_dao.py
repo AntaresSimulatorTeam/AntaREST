@@ -1,0 +1,135 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+"""
+Unit tests for DatabaseThermalDao.
+"""
+
+import polars as pl
+import pytest
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from antarest.core.exceptions import ThermalClusterNotFound
+from antarest.study.business.model.thermal_cluster_model import (
+    LawOption,
+    LocalTSGenerationBehavior,
+    ThermalCluster,
+    ThermalClusterGroup,
+    ThermalCostGeneration,
+)
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.models.thermal import (
+    THERMAL_CLUSTER_TABLE,
+    THERMAL_CO2_COST_TABLE,
+    THERMAL_FUEL_COST_TABLE,
+    THERMAL_MODULATION_TABLE,
+    THERMAL_PREPRO_TABLE,
+    THERMAL_SERIES_TABLE,
+)
+
+
+def test_save_thermal_creates_cluster(dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+
+    thermal = ThermalCluster(
+        id="gas_cluster",
+        name="Gas Cluster",
+        unit_count=2,
+        nominal_capacity=1000.0,
+        enabled=False,
+        group=ThermalClusterGroup.GAS.value,
+        gen_ts=LocalTSGenerationBehavior.FORCE_NO_GENERATION,
+        law_forced=LawOption.GEOMETRIC,
+        law_planned=LawOption.UNIFORM,
+        cost_generation=ThermalCostGeneration.SET_MANUALLY,
+        efficiency=90.0,
+        variable_o_m_cost=1.5,
+        nh3=1.0,
+    )
+
+    dao.save_thermal("paris", thermal)
+
+    result = dao.get_thermal("paris", "gas_cluster")
+    assert result.id == "gas_cluster"
+    assert result.name == "Gas Cluster"
+    assert result.nominal_capacity == 1000.0
+    assert result.enabled is False
+    assert result.group == ThermalClusterGroup.GAS.value
+    assert result.cost_generation == ThermalCostGeneration.SET_MANUALLY
+
+
+def test_save_thermal_overwrites_existing(dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+
+    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas", nominal_capacity=100.0))
+    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas", nominal_capacity=200.0))
+
+    result = dao.get_thermal("paris", "gas")
+    assert result.nominal_capacity == 200.0
+
+
+def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+    dao.save_area("London")
+
+    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermal("london", ThermalCluster(id="coal", name="Coal"))
+
+    all_thermals = dao.get_all_thermals()
+    assert set(all_thermals.keys()) == {"paris", "london"}
+    assert set(all_thermals["paris"].keys()) == {"gas"}
+    assert set(all_thermals["london"].keys()) == {"coal"}
+
+
+def test_delete_thermal(dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+    thermal = ThermalCluster(id="gas", name="Gas")
+    dao.save_thermal("paris", thermal)
+
+    assert dao.thermal_exists("paris", "gas")
+    dao.delete_thermal("paris", thermal)
+    assert not dao.thermal_exists("paris", "gas")
+
+    with pytest.raises(ThermalClusterNotFound):
+        dao.get_thermal("paris", "gas")
+
+
+def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+
+    matrix_service = dao._matrix_service
+    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+    series_id = matrix_service.create(dataframe)
+
+    dao.save_thermal_prepro("paris", "gas", series_id)
+    dao.save_thermal_modulation("paris", "gas", series_id)
+    dao.save_thermal_series("paris", "gas", series_id)
+    dao.save_thermal_fuel_cost("paris", "gas", series_id)
+    dao.save_thermal_co2_cost("paris", "gas", series_id)
+
+    pl.testing.assert_frame_equal(dao.get_thermal_prepro("paris", "gas"), dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(dao.get_thermal_modulation("paris", "gas"), dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(dao.get_thermal_series("paris", "gas"), dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(dao.get_thermal_fuel_cost("paris", "gas"), dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(dao.get_thermal_co2_cost("paris", "gas"), dataframe, check_dtypes=False)
+
+    dao.delete_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+
+    with db_session:
+        assert db_session.execute(select(THERMAL_CLUSTER_TABLE)).fetchall() == []
+        assert db_session.execute(select(THERMAL_PREPRO_TABLE)).fetchall() == []
+        assert db_session.execute(select(THERMAL_MODULATION_TABLE)).fetchall() == []
+        assert db_session.execute(select(THERMAL_SERIES_TABLE)).fetchall() == []
+        assert db_session.execute(select(THERMAL_FUEL_COST_TABLE)).fetchall() == []
+        assert db_session.execute(select(THERMAL_CO2_COST_TABLE)).fetchall() == []

@@ -105,8 +105,8 @@ def test_get_all_areas_info_returns_areas(dao: DatabaseStudyDao) -> None:
     # Check original names are preserved
     area_names = {a.name for a in areas}
     assert area_names == {"Paris", "London", "Berlin"}
-    # All areas should have thermals=None for now
-    assert all(a.thermals is None for a in areas)
+    # All areas should have empty thermals by default
+    assert all(a.thermals == [] for a in areas)
 
 
 def test_get_area_ui_returns_ui_for_layer(dao: DatabaseStudyDao) -> None:
