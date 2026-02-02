@@ -1834,7 +1834,9 @@
                 "solver": "Xpress",
                 "timelimit": 1000000000000,
                 "uc_type": "expansion_fast",
-                "yearly-weights": ""
+                "yearly-weights": "",
+                "cutCoefficientTolerance": 0.005,
+                "masterSolutionTolerance": 0.0001
             }
         }
     }

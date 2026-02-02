@@ -906,6 +906,8 @@
   "xpansion.relaxedOptimalityGap": "Relaxed Optimality Gap",
   "xpansion.relativeGap": "Relative Optimality Gap",
   "xpansion.batchSize": "Batch Size",
+  "xpansion.cutCoefficientTolerance": "Cut coefficient tolerance",
+  "xpansion.masterSolutionTolerance": "Master solution tolerance",
   "xpansion.solver": "Solver",
   "xpansion.timeLimit": "Time Limit (hours)",
   "xpansion.logLevel": "Log Level",
