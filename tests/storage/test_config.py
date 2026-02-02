@@ -158,3 +158,13 @@ def test_storage_config_from_dict_desktop_mode_true(storage_config_default: dict
     config = StorageConfig.from_dict(data, desktop_mode=True)
 
     assert "local" in config.workspaces or "C:\\" in config.workspaces
+
+
+def test_storage_config_from_dict_auto_archive() -> None:
+    data = {
+        "auto_archive_sleeping_time": 3600,
+        "auto_archive_cron": "* * * * *",
+    }
+
+    with pytest.raises(ValueError):
+        StorageConfig.from_dict(data)
