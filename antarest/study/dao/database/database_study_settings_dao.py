@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
@@ -36,13 +35,13 @@ if TYPE_CHECKING:
 
 
 class DatabaseStudySettingsDao(
-    CompatibilityParametersDao,
     GeneralConfigDao,
-    AdvancedParametersDao,
-    AdequacyPatchParametersDao,
     OptimizationPreferencesDao,
-    PlaylistConfigDao,
+    AdvancedParametersDao,
+    CompatibilityParametersDao,
+    AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
+    PlaylistConfigDao,
 ):
     """Database implementation of all study settings DAOs"""
 
