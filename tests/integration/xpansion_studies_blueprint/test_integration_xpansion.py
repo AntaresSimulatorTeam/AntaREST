@@ -140,6 +140,8 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "additional-constraints": "",
         "timelimit": 172800,
         "sensitivity_config": {"epsilon": 0.0, "projection": [], "capex": False},
+        "cutCoefficientTolerance": 0.005,
+        "masterSolutionTolerance": 0.0001,
     }
 
     res = xp_client.put("settings", json={"optimality_gap": 42})
@@ -159,6 +161,8 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "additional-constraints": "",
         "timelimit": 172800,
         "sensitivity_config": {"epsilon": 0.0, "projection": [], "capex": False},
+        "cutCoefficientTolerance": 0.005,
+        "masterSolutionTolerance": 0.0001,
     }
 
     res = xp_client.put("settings", json={"additional-constraints": "missing.txt"})

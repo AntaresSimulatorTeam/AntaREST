@@ -91,6 +91,8 @@ def test_create_configuration(
             "separation_parameter": 0.5,
             "batch_size": 96,
             "timelimit": 172800,  # 48 hours
+            "master_solution_tolerance": 0.0001,
+            "cut_coefficient_tolerance": 0.005,
         },
         "weights": {},
         "adequacy_criterion": {"adequacy_criterion": {}},
@@ -149,6 +151,8 @@ def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_81
         "additional-constraints": "",
         "timelimit": 172800,  # 48 hours
         "sensitivity_config": {"epsilon": 0, "projection": [], "capex": False},
+        "masterSolutionTolerance": 0.0001,
+        "cutCoefficientTolerance": 0.005,
     }
 
 
@@ -172,6 +176,7 @@ def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study
         "timelimit": 172800,  # 48 hours
         "log_level": 0,
         "sensitivity_config": {"epsilon": 10500.0, "projection": ["foo"], "capex": False},
+        "masterSolutionTolerance": 15.6,
     }
 
     new_settings = XpansionSettingsUpdate(**new_settings_obj)
@@ -193,6 +198,8 @@ def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study
         "additional-constraints": "",
         "timelimit": 172800,  # 48 hours
         "sensitivity_config": {"epsilon": 10500.0, "projection": ["foo"], "capex": False},
+        "masterSolutionTolerance": 15.6,
+        "cutCoefficientTolerance": 0.005,
     }
     assert actual.model_dump(by_alias=True) == expected
 
