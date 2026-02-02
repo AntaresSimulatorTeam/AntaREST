@@ -14,28 +14,45 @@ from fastapi import APIRouter
 
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
-from antarest.favorite.model import FavoriteStudyDTO
-from antarest.favorite.service import FavoriteService
+from antarest.favorite.model import FavoriteDirectoryDTO, FavoriteStudyDTO
+from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.login.auth import Auth, logger
 
 
-def create_favorite_routes(favorite_service: FavoriteService, config: Config) -> APIRouter:
+def create_favorite_routes(
+    favorite_service: FavoriteStudyService, favorite_directory_service: FavoriteDirectoryService, config: Config
+) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[auth.required()])
 
     @bp.get("/favorites/studies/", summary="Listing favorites for current user")
-    def list_favorites() -> list[FavoriteStudyDTO]:
+    def list_favorite_studies() -> list[FavoriteStudyDTO]:
         logger.info("Listing favorites for current user")
         return favorite_service.list_favorites()
 
     @bp.post("/favorites/studies/{uuid}", summary="Create new favorite study")
-    def add_favorite(uuid: str) -> FavoriteStudyDTO:
+    def add_favorite_study(uuid: str) -> FavoriteStudyDTO:
         logger.info("Creating new favorite study for current user")
         return favorite_service.add_favorite(uuid)
 
     @bp.delete("/favorites/studies/{uuid}", summary="Delete a favorite study")
-    def delete_favorite(uuid: str) -> None:
+    def delete_favorite_study(uuid: str) -> None:
         logger.info("Deleting favorite study for current user")
         favorite_service.delete_favorite(uuid)
+
+    @bp.get("/favorite/directories", summary="Listing favorite directories for current user")
+    def list_favorite_directories() -> list[FavoriteDirectoryDTO]:
+        logger.info("Listing favorite directories for current user")
+        return favorite_directory_service.list_favorites()
+
+    @bp.post("/favorite/directories/{uuid}", summary="Create new favorite_directory")
+    def add_favorite_directory(uuid: str) -> FavoriteDirectoryDTO:
+        logger.info("Creating new favorite directory for current user")
+        return favorite_directory_service.add_favorite(uuid)
+
+    @bp.delete("/favorite/directories/{uuid}", summary="Delete a favorite_study")
+    def delete_favorite_directory(uuid: str) -> None:
+        logger.info("Deleting a favorite directory for current user")
+        favorite_directory_service.delete_favorite(uuid)
 
     return bp

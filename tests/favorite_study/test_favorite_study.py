@@ -11,13 +11,13 @@
 # This file is part of the Antares project.
 from antarest.core.jwt import JWTUser
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.favorite.service import FavoriteService
+from antarest.favorite.service import FavoriteStudyService
 from antarest.login.utils import current_user_context
 from tests.helpers import create_study, with_db_context
 
 
 @with_db_context
-def test_add_favorite(favorite_service: FavoriteService, admin_user: JWTUser) -> None:
+def test_add_favorite(favorite_service: FavoriteStudyService, admin_user: JWTUser) -> None:
     study_1 = create_study(name="study_A")
     study_2 = create_study(name="study_B")
 
@@ -30,13 +30,11 @@ def test_add_favorite(favorite_service: FavoriteService, admin_user: JWTUser) ->
         actual_favorite_list = favorite_service.list_favorites()
 
     expected_favorite_list = [favorite_dto_1, favorite_dto_2]
-    print("Liste : ", actual_favorite_list)
-    print("Liste attendue : ", expected_favorite_list)
     assert actual_favorite_list == expected_favorite_list
 
 
 @with_db_context
-def test_delete_favorite(favorite_service: FavoriteService, admin_user: JWTUser) -> None:
+def test_delete_favorite(favorite_service: FavoriteStudyService, admin_user: JWTUser) -> None:
     study_1 = create_study("study_A")
     study_2 = create_study("study_B")
 
