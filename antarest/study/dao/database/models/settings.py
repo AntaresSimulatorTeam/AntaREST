@@ -35,10 +35,12 @@ op.drop_table("timeseries_config")
 op.drop_table("playlist")
 """
 
+study_id_col = Column("study_id", String(length=36), nullable=False, primary_key=True)
+
 GENERAL_CONFIG_TABLE = Table(
     "general_config",
     metadata,
-    Column("study_id", String(length=36), nullable=False, primary_key=True),
+    study_id_col,
     Column("mode", Enum(Mode), nullable=False),
     Column("first_day", Integer(), nullable=False),
     Column("last_day", Integer(), nullable=False),
@@ -62,7 +64,7 @@ GENERAL_CONFIG_TABLE = Table(
 ADVANCED_PARAMETERS_TABLE = Table(
     "advanced_parameters",
     metadata,
-    Column("study_id", String(length=36), nullable=False),
+    study_id_col,
     Column("enable_adequacy_patch", Boolean(), nullable=False),
     Column("ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch", Boolean(), nullable=False),
     Column("price_taking_order", Enum(PriceTakingOrder), nullable=True),
@@ -79,7 +81,7 @@ ADVANCED_PARAMETERS_TABLE = Table(
 COMPATIBILITY_PARAMETERS_TABLE = Table(
     "compatibility_parameters",
     metadata,
-    Column("study_id", String(length=36), nullable=False),
+    study_id_col,
     Column("hydro_pmax", Enum(HydroPmax), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_parameters_study_id", ondelete="CASCADE"),
 )
@@ -87,7 +89,7 @@ COMPATIBILITY_PARAMETERS_TABLE = Table(
 OPTIMIZATION_PREFERENCES_TABLE = Table(
     "optimization_preferences",
     metadata,
-    Column("study_id", String(length=36), nullable=False),
+    study_id_col,
     Column("binding_constraints", Boolean(), nullable=False),
     Column("hurdle_costs", Boolean(), nullable=False),
     Column("transmission_capacities", String(), nullable=False),
@@ -106,7 +108,7 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
 TIMESERIES_CONFIG_TABLE = Table(
     "compatibility_parameters",
     metadata,
-    Column("study_id", String(length=36), nullable=False),
+    study_id_col,
     Column("thermal_number", Integer(), nullable=False),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_timeseries_config_study_id", ondelete="CASCADE"),
 )
@@ -114,7 +116,7 @@ TIMESERIES_CONFIG_TABLE = Table(
 PLAYLIST_TABLE = Table(
     "compatibility_parameters",
     metadata,
-    Column("study_id", String(length=36), nullable=False),
+    study_id_col,
     Column("years", String(), nullable=False),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_playlist_study_id", ondelete="CASCADE"),
 )
