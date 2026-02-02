@@ -23,6 +23,7 @@ from antarest.maintenance.tasks.watcher_scan import scan_workspaces
 @celery_app.task(
     bind=True,
     name="watcher_scan",
+    pydantic=True,
     soft_time_limit=1500,
     time_limit=1800,
 )

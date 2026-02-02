@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 @celery_app.task(
     bind=True,
     name="auto_archiver",
+    pydantic=True,
     autoretry_for=TRANSIENT_ERRORS,
     retry_kwargs={"max_retries": 5},
     retry_backoff=True,
