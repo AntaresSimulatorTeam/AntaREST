@@ -36,8 +36,5 @@ def upgrade():
     hydro_heuristic_policy_enum = sa.Enum("accommodate rule curves", "maximize generation", name="hydroheuristicpolicy")
     hydro_pricing_mode_enum = sa.Enum("fast", "accurate", name="hydropricingmode")
 
-
-    # transmission_capacities: bool | LegacyTransmissionCapacities | TransmissionCapacities = True
-
 def downgrade():
     pass
