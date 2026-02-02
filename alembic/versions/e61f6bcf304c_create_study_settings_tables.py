@@ -40,83 +40,145 @@ def upgrade():
     # 2 - Create the tables
     ##########################
 
-    # GeneralConfig table
+    # GeneralConfig
     op.create_table("general_settings",
-                    sa.Column("study_id", sa.String(length=36), nullable=False),
-                    sa.Column("mode", simulation_mode_enum, nullable=False),
-                    sa.Column("first_day", sa.Integer(), nullable=False),
-                    sa.Column("last_day", sa.Integer(), nullable=False),
-                    sa.Column("horizon", sa.String(), nullable=False),
-                    sa.Column("first_month", month_enum, nullable=False),
-                    sa.Column("first_week_day", weekday_enum, nullable=False),
-                    sa.Column("first_january", weekday_enum, nullable=False),
-                    sa.Column("leap_year", sa.Boolean(), nullable=False),
-                    sa.Column("nb_years", sa.Integer(), nullable=False),
-                    sa.Column("building_mode", building_mode_enum, nullable=False),
-                    sa.Column("selection_mode", sa.Boolean(), nullable=False),
-                    sa.Column("year_by_year", sa.Boolean(), nullable=False),
-                    sa.Column("simulation_synthesis", sa.Boolean(), nullable=False),
-                    sa.Column("mc_scenario", sa.Boolean(), nullable=False),
-                    sa.Column("filtering", sa.Boolean(), nullable=True),
-                    sa.Column("geographic_trimming", sa.Boolean(), nullable=True),
-                    sa.Column("thematic_trimming", sa.Boolean(), nullable=True),
-                    sa.ForeignKeyConstraint(["study_id"],["study.id"], name="fk_general_settings_study_id", ondelete="CASCADE"),
-                    sa.PrimaryKeyConstraint("study_id", name=op.f("pk_general_settings"))
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("mode", simulation_mode_enum, nullable=False),
+        sa.Column("first_day", sa.Integer(), nullable=False),
+        sa.Column("last_day", sa.Integer(), nullable=False),
+        sa.Column("horizon", sa.String(), nullable=False),
+        sa.Column("first_month", month_enum, nullable=False),
+        sa.Column("first_week_day", weekday_enum, nullable=False),
+        sa.Column("first_january", weekday_enum, nullable=False),
+        sa.Column("leap_year", sa.Boolean(), nullable=False),
+        sa.Column("nb_years", sa.Integer(), nullable=False),
+        sa.Column("building_mode", building_mode_enum, nullable=False),
+        sa.Column("selection_mode", sa.Boolean(), nullable=False),
+        sa.Column("year_by_year", sa.Boolean(), nullable=False),
+        sa.Column("simulation_synthesis", sa.Boolean(), nullable=False),
+        sa.Column("mc_scenario", sa.Boolean(), nullable=False),
+        sa.Column("filtering", sa.Boolean(), nullable=True),
+        sa.Column("geographic_trimming", sa.Boolean(), nullable=True),
+        sa.Column("thematic_trimming", sa.Boolean(), nullable=True),
+        sa.ForeignKeyConstraint(["study_id"],["study.id"], name="fk_general_settings_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_general_settings"))
     )
 
-    # AdvancedParameters table
+    # AdvancedParameters
     op.create_table("advanced_parameters_settings",
-                    sa.Column("study_id", sa.String(length=36), nullable=False),
-                    sa.Column("accuracy_on_correlation", sa.String(), nullable=False),
-                    sa.Column("power_fluctuations", power_fluctuation_enum, nullable=False),
-                    sa.Column("shedding_policy", shedding_policy_enum, nullable=False),
-                    sa.Column("hydro_pricing_mode", hydro_pricing_mode_enum, nullable=False),
-                    sa.Column("hydro_heuristic_policy", hydro_heuristic_policy_enum, nullable=False),
-                    sa.Column("unit_commitment_mode", unit_commitment_mode_enum, nullable=False),
-                    sa.Column("number_of_cores_mode", simulation_core_enum, nullable=False),
-                    sa.Column("day_ahead_reserve_management", reserve_management_enum, nullable=False),
-                    sa.Column("renewable_generation_modelling", renewable_generation_modeling_enum, nullable=False),
-                    sa.Column("seed_tsgen_wind", sa.Integer(), nullable=False),
-                    sa.Column("seed_tsgen_load", sa.Integer(), nullable=False),
-                    sa.Column("seed_tsgen_hydro", sa.Integer(), nullable=False),
-                    sa.Column("seed_tsgen_thermal", sa.Integer(), nullable=False),
-                    sa.Column("seed_tsgen_solar", sa.Integer(), nullable=False),
-                    sa.Column("seed_tsnumbers", sa.Integer(), nullable=False),
-                    sa.Column("seed_unsupplied_energy_costs", sa.Integer(), nullable=False),
-                    sa.Column("seed_spilled_energy_costs", sa.Integer(), nullable=False),
-                    sa.Column("seed_thermal_costs", sa.Integer(), nullable=False),
-                    sa.Column("seed_hydro_costs", sa.Integer(), nullable=False),
-                    sa.Column("seed_initial_reservoir_levels", sa.Integer(), nullable=False),
-
-                    sa.Column("initial_reservoir_levels", initial_reservoir_level_enum, nullable=True),
-                    sa.Column("accurate_shave_peaks_include_short_term_storage", sa.Boolean(), nullable=True),
-                    sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_advanced_parameters_settings_study_id",
-                                            ondelete="CASCADE"),
-                    sa.PrimaryKeyConstraint("study_id", name=op.f("pk_advanced_parameters_settings"))
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("accuracy_on_correlation", sa.String(), nullable=False),
+        sa.Column("power_fluctuations", power_fluctuation_enum, nullable=False),
+        sa.Column("shedding_policy", shedding_policy_enum, nullable=False),
+        sa.Column("hydro_pricing_mode", hydro_pricing_mode_enum, nullable=False),
+        sa.Column("hydro_heuristic_policy", hydro_heuristic_policy_enum, nullable=False),
+        sa.Column("unit_commitment_mode", unit_commitment_mode_enum, nullable=False),
+        sa.Column("number_of_cores_mode", simulation_core_enum, nullable=False),
+        sa.Column("day_ahead_reserve_management", reserve_management_enum, nullable=False),
+        sa.Column("renewable_generation_modelling", renewable_generation_modeling_enum, nullable=False),
+        sa.Column("seed_tsgen_wind", sa.Integer(), nullable=False),
+        sa.Column("seed_tsgen_load", sa.Integer(), nullable=False),
+        sa.Column("seed_tsgen_hydro", sa.Integer(), nullable=False),
+        sa.Column("seed_tsgen_thermal", sa.Integer(), nullable=False),
+        sa.Column("seed_tsgen_solar", sa.Integer(), nullable=False),
+        sa.Column("seed_tsnumbers", sa.Integer(), nullable=False),
+        sa.Column("seed_unsupplied_energy_costs", sa.Integer(), nullable=False),
+        sa.Column("seed_spilled_energy_costs", sa.Integer(), nullable=False),
+        sa.Column("seed_thermal_costs", sa.Integer(), nullable=False),
+        sa.Column("seed_hydro_costs", sa.Integer(), nullable=False),
+        sa.Column("seed_initial_reservoir_levels", sa.Integer(), nullable=False),
+        sa.Column("initial_reservoir_levels", initial_reservoir_level_enum, nullable=True),
+        sa.Column("accurate_shave_peaks_include_short_term_storage", sa.Boolean(), nullable=True),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_advanced_parameters_settings_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_advanced_parameters_settings"))
     )
 
-    # AdequacyPatchParameters table
+    # AdequacyPatchParameters
     op.create_table("adequacy_patch_parameters_settings",
-                    sa.Column("study_id", sa.String(length=36), nullable=False),
-                    sa.Column("enable_adequacy_patch", sa.Boolean(), nullable=False),
-                    sa.Column("ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch", sa.Boolean(), nullable=False),
-                    sa.Column("price_taking_order", price_taking_order_enum, nullable=True),
-                    sa.Column("include_hurdle_cost_csr", sa.Boolean(), nullable=True),
-                    sa.Column("check_csr_cost_function", sa.Boolean(), nullable=True),
-                    sa.Column("threshold_initiate_curtailment_sharing_rule", sa.Float(), nullable=True),
-                    sa.Column("threshold_display_local_matching_rule_violations", sa.Float(), nullable=True),
-                    sa.Column("threshold_csr_variable_bounds_relaxation", sa.Integer(), nullable=True),
-                    sa.Column("ntc_between_physical_areas_out_adequacy_patch", sa.Boolean(), nullable=True),
-                    sa.Column("redispatch", sa.Boolean(), nullable=True),
-                    sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_adequacy_patch_parameters_settings_study_id", ondelete="CASCADE"),
-                    sa.PrimaryKeyConstraint("study_id", name=op.f("pk_adequacy_patch_parameters_settings"))
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("enable_adequacy_patch", sa.Boolean(), nullable=False),
+        sa.Column("ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch", sa.Boolean(), nullable=False),
+        sa.Column("price_taking_order", price_taking_order_enum, nullable=True),
+        sa.Column("include_hurdle_cost_csr", sa.Boolean(), nullable=True),
+        sa.Column("check_csr_cost_function", sa.Boolean(), nullable=True),
+        sa.Column("threshold_initiate_curtailment_sharing_rule", sa.Float(), nullable=True),
+        sa.Column("threshold_display_local_matching_rule_violations", sa.Float(), nullable=True),
+        sa.Column("threshold_csr_variable_bounds_relaxation", sa.Integer(), nullable=True),
+        sa.Column("ntc_between_physical_areas_out_adequacy_patch", sa.Boolean(), nullable=True),
+        sa.Column("redispatch", sa.Boolean(), nullable=True),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_adequacy_patch_parameters_settings_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_adequacy_patch_parameters_settings"))
     )
 
-    # CompatibilityParameters table
+    # CompatibilityParameters
+    op.create_table("compatibility_settings",
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("hydro_pmax", hydro_pmax_enum, nullable=True),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_settings_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_compatibility_settings"))
+    )
 
-    # OptimizationParameters table
+    # OptimizationPreferences
+    op.create_table("optimization_preferences_settings",
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("binding_constraints", sa.Boolean(), nullable=False),
+        sa.Column("hurdle_costs", sa.Boolean(), nullable=False),
+        sa.Column("transmission_capacities", sa.String(), nullable=False),
+        sa.Column("thermal_clusters_min_stable_power", sa.Boolean(), nullable=False),
+        sa.Column("thermal_clusters_min_ud_time", sa.Boolean(), nullable=False),
+        sa.Column("day_ahead_reserve", sa.Boolean(), nullable=False),
+        sa.Column("primary_reserve", sa.Boolean(), nullable=False),
+        sa.Column("strategic_reserve", sa.Boolean(), nullable=False),
+        sa.Column("spinning_reserve", sa.Boolean(), nullable=False),
+        sa.Column("export_mps", sa.String(), nullable=False),
+        sa.Column("unfeasible_problem_behavior", unfeasible_problem_behavior_enum, nullable=False),
+        sa.Column("simplex_optimization_range", simplex_optimization_range_enum, nullable=False),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_optimization_preferences_settings_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_optimization_preferences_settings"))
+    )
 
+    # TimeSeries
+    op.create_table("timeseries_settings",
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("thermal_number", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_timeseries_settings_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_timeseries_settings"))
+    )
 
+    # Playlist
+    op.create_table("playlist_settings",
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("years", sa.String(), nullable=True),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_playlist_settings_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_playlist_settings"))
+    )
 
 def downgrade():
-    pass
+    # Drop table
+    op.drop_table("general_settings")
+    op.drop_table("advanced_parameters_settings")
+    op.drop_table("adequacy_patch_parameters_settings")
+    op.drop_table("compatibility_settings")
+    op.drop_table("optimization_preferences_settings")
+    op.drop_table("timeseries_settings")
+    op.drop_table("playlist_settings")
+
+    # Drop enum type (PostgreSQL only)
+    if op.get_context().dialect.name == "postgresql":
+        sa.Enum(name="simulationmode").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="month").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="weekday").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="pricetakingorder").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="buildingmode").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="unfeasibleproblembehavior").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="simplexoptimizationrange").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="hydropmax").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="powerfluctuation").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="sheddingpolicy").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="reservemanagement").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="unitcommitmentmode").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="simulationcore").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="renewablegenerationmodeling").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="initialreservoirlevel").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="hydroheuristicpolicy").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="hydropricingmode").drop(op.get_bind(), checkfirst=True)
