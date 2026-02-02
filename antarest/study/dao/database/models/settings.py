@@ -42,3 +42,27 @@ GENERAL_SETTINGS_TABLE = Table(
     Column("thematic_trimming", Boolean(), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_general_settings_study_id", ondelete="CASCADE"),
 )
+
+ADVANCED_PARAMETERS_TABLE = Table(
+    "link",
+    metadata,
+    Column("study_id", String(length=36), nullable=False, primary_key=True),
+    Column("mode", Enum(Mode), nullable=False),
+    Column("first_day", Integer(), nullable=False),
+    Column("last_day", Integer(), nullable=False),
+    Column("horizon", String(), nullable=False),
+    Column("first_month", Enum(Month), nullable=False),
+    Column("first_week_day", Enum(WeekDay), nullable=False),
+    Column("first_january", Enum(WeekDay), nullable=False),
+    Column("leap_year", Boolean(), nullable=False),
+    Column("nb_years", Integer(), nullable=False),
+    Column("building_mode", Enum(BuildingMode), nullable=False),
+    Column("selection_mode", Boolean(), nullable=False),
+    Column("year_by_year", Boolean(), nullable=False),
+    Column("simulation_synthesis", Boolean(), nullable=False),
+    Column("mc_scenario", Boolean(), nullable=False),
+    Column("filtering", Boolean(), nullable=True),
+    Column("geographic_trimming", Boolean(), nullable=True),
+    Column("thematic_trimming", Boolean(), nullable=True),
+    ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_general_settings_study_id", ondelete="CASCADE"),
+)

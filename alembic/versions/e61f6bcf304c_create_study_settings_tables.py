@@ -41,7 +41,7 @@ def upgrade():
     ##########################
 
     # GeneralConfig
-    op.create_table("general_settings",
+    op.create_table("general_config",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("mode", simulation_mode_enum, nullable=False),
         sa.Column("first_day", sa.Integer(), nullable=False),
@@ -60,12 +60,12 @@ def upgrade():
         sa.Column("filtering", sa.Boolean(), nullable=True),
         sa.Column("geographic_trimming", sa.Boolean(), nullable=True),
         sa.Column("thematic_trimming", sa.Boolean(), nullable=True),
-        sa.ForeignKeyConstraint(["study_id"],["study.id"], name="fk_general_settings_study_id", ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_general_settings"))
+        sa.ForeignKeyConstraint(["study_id"],["study.id"], name="fk_general_config_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_general_config"))
     )
 
     # AdvancedParameters
-    op.create_table("advanced_parameters_settings",
+    op.create_table("advanced_parameters",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("accuracy_on_correlation", sa.String(), nullable=False),
         sa.Column("power_fluctuations", power_fluctuation_enum, nullable=False),
@@ -89,12 +89,12 @@ def upgrade():
         sa.Column("seed_initial_reservoir_levels", sa.Integer(), nullable=False),
         sa.Column("initial_reservoir_levels", initial_reservoir_level_enum, nullable=True),
         sa.Column("accurate_shave_peaks_include_short_term_storage", sa.Boolean(), nullable=True),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_advanced_parameters_settings_study_id", ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_advanced_parameters_settings"))
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_advanced_parameters_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_advanced_parameters"))
     )
 
     # AdequacyPatchParameters
-    op.create_table("adequacy_patch_parameters_settings",
+    op.create_table("adequacy_patch_parameters",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("enable_adequacy_patch", sa.Boolean(), nullable=False),
         sa.Column("ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch", sa.Boolean(), nullable=False),
@@ -106,20 +106,20 @@ def upgrade():
         sa.Column("threshold_csr_variable_bounds_relaxation", sa.Integer(), nullable=True),
         sa.Column("ntc_between_physical_areas_out_adequacy_patch", sa.Boolean(), nullable=True),
         sa.Column("redispatch", sa.Boolean(), nullable=True),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_adequacy_patch_parameters_settings_study_id", ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_adequacy_patch_parameters_settings"))
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_adequacy_patch_parameters_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_adequacy_patch_parameters"))
     )
 
     # CompatibilityParameters
-    op.create_table("compatibility_settings",
+    op.create_table("compatibility_parameters",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("hydro_pmax", hydro_pmax_enum, nullable=True),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_settings_study_id", ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_compatibility_settings"))
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_parameters_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_compatibility_parameters"))
     )
 
     # OptimizationPreferences
-    op.create_table("optimization_preferences_settings",
+    op.create_table("optimization_preferences",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("binding_constraints", sa.Boolean(), nullable=False),
         sa.Column("hurdle_costs", sa.Boolean(), nullable=False),
@@ -133,35 +133,35 @@ def upgrade():
         sa.Column("export_mps", sa.String(), nullable=False),
         sa.Column("unfeasible_problem_behavior", unfeasible_problem_behavior_enum, nullable=False),
         sa.Column("simplex_optimization_range", simplex_optimization_range_enum, nullable=False),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_optimization_preferences_settings_study_id", ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_optimization_preferences_settings"))
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_optimization_preferences_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_optimization_preferences"))
     )
 
     # TimeSeries
-    op.create_table("timeseries_settings",
+    op.create_table("timeseries_config",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("thermal_number", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_timeseries_settings_study_id", ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_timeseries_settings"))
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_timeseries_config_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_timeseries_config"))
     )
 
     # Playlist
-    op.create_table("playlist_settings",
+    op.create_table("playlist",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("years", sa.String(), nullable=True),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_playlist_settings_study_id", ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_playlist_settings"))
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_playlist_study_id", ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_playlist"))
     )
 
 def downgrade():
     # Drop table
-    op.drop_table("general_settings")
-    op.drop_table("advanced_parameters_settings")
-    op.drop_table("adequacy_patch_parameters_settings")
-    op.drop_table("compatibility_settings")
-    op.drop_table("optimization_preferences_settings")
-    op.drop_table("timeseries_settings")
-    op.drop_table("playlist_settings")
+    op.drop_table("general_config")
+    op.drop_table("advanced_parameters")
+    op.drop_table("adequacy_patch_parameters")
+    op.drop_table("compatibility_parameters")
+    op.drop_table("optimization_preferences")
+    op.drop_table("timeseries_config")
+    op.drop_table("playlist")
 
     # Drop enum type (PostgreSQL only)
     if op.get_context().dialect.name == "postgresql":
