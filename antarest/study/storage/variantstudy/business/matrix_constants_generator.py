@@ -39,6 +39,8 @@ HYDRO_COMMON_CAPACITY_RESERVOIR_V7 = "hydro/common/capacity/reservoir/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V6 = "hydro/common/capacity/reservoir/v6"
 HYDRO_COMMON_CAPACITY_INFLOW_PATTERN = "hydro/common/capacity/inflow_pattern"
 HYDRO_COMMON_CAPACITY_CREDIT_MODULATION = "hydro/common/capacity/credit_modulations"
+
+
 RESERVES_TS = "reserves"
 MISCGEN_TS = "miscgen"
 PREPRO_CONVERSION = "prepro/conversion"
@@ -52,6 +54,11 @@ LINK_INDIRECT = "link_indirect"
 NULL_MATRIX_NAME = "null_matrix"
 EMPTY_SCENARIO_MATRIX = "empty_scenario_matrix"
 ONES_SCENARIO_MATRIX = "ones_scenario_matrix"
+
+HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY = NULL_MATRIX_NAME
+HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY = NULL_MATRIX_NAME
+HYDRO_SERIES_MAX_HOURLY_GEN_POWER = NULL_MATRIX_NAME
+HYDRO_SERIES_MAX_HOURLY_PUMP_POWER = NULL_MATRIX_NAME
 
 # Binding constraint aliases
 BINDING_CONSTRAINT_HOURLY_v86 = "empty_2nd_member_hourly_v86"
@@ -216,3 +223,15 @@ class GeneratorMatrixConstants:
     def get_st_storage_inflows(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
+
+    def get_hydro_max_hourly_gen_power(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER]
+
+    def get_hydro_max_hourly_pump_power(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_SERIES_MAX_HOURLY_PUMP_POWER]
+
+    def get_hydro_max_daily_gen_energy(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY]
+
+    def get_hydro_max_daily_pump_energy(self) -> str:
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY]

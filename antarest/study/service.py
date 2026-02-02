@@ -74,6 +74,7 @@ from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
+from antarest.study.business.compatibility_parameters_management import CompatibilityParamsManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
@@ -105,6 +106,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
@@ -391,6 +393,7 @@ class RawStudyInterface(StudyInterface):
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
+        self._matrix_service = self._raw_study_service._matrix_service
 
     @override
     @property
@@ -411,7 +414,7 @@ class RawStudyInterface(StudyInterface):
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, db.session).read_only()
+            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service).read_only()
         command_context = self._variant_study_service.command_factory.command_context
         return FileStudyTreeDao(
             self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
@@ -424,7 +427,7 @@ class RawStudyInterface(StudyInterface):
 
         # Build DAO based on storage mode
         if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(study.id, db.session)
+            dao: StudyDao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
         else:
             file_study = self.get_files()
             command_context = self._variant_study_service.command_factory.command_context
@@ -442,10 +445,6 @@ class RawStudyInterface(StudyInterface):
                 should_invalidate_cache = True
             if not result.status:
                 raise CommandApplicationError(result.message)
-
-        # Commit database changes for database storage mode
-        if study.storage_mode == StorageMode.DATABASE:
-            db.session.commit()
 
         # Handle cache invalidation
         if should_invalidate_cache:
@@ -550,6 +549,7 @@ class StudyService:
         self.optimization_manager = OptimizationManager(command_context)
         self.adequacy_patch_manager = AdequacyPatchManager(command_context)
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
+        self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
@@ -573,6 +573,7 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
+        StudyDatabaseMatrixUsageProvider(command_context.matrix_service)
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)

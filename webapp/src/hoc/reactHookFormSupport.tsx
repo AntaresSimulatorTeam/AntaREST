@@ -13,7 +13,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
+import FieldSkeleton from "@/components/fieldEditors/FieldSkeleton";
 import useUpdatedRef from "@/hooks/useUpdatedRef";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as R from "ramda";
