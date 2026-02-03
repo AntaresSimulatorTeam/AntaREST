@@ -15,6 +15,7 @@ from typing import Any, Sequence
 
 from typing_extensions import override
 
+from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUIFileData
@@ -33,7 +34,7 @@ class FileStudyLayerDao(LayerDao, ABC):
         ui_info_map = self._get_ui_info_map(file_study, area_ids)
         layers = file_study.tree.get(["layers", "layers", "layers"])
         if not layers:
-            layers["0"] = "All"
+            layers[DEFAULT_LAYER_ID] = DEFAULT_LAYER_NAME
         return [
             Layer(
                 id=str(layer),

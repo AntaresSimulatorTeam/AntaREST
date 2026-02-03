@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -39,7 +40,6 @@ from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
-from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -61,11 +61,15 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
+from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
+from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao):
+class DatabaseStudyDao(
+    StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao, DatabaseLinkDao, DatabaseLayerDao
+):
     """
     Database implementation of StudyDao.
     """
@@ -81,6 +85,8 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
         DatabaseAreaDao.__init__(self, study_id, db_session)
         DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
         DatabaseDistrictDao.__init__(self, study_id, db_session)
+        DatabaseLinkDao.__init__(self, study_id, db_session)
+        DatabaseLayerDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
@@ -113,6 +119,10 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
         pass
 
     @override
+    def initialize_study(self) -> None:
+        self.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
+
+    @override
     def get_file_study(self) -> FileStudy:
         """
         Get the FileStudy instance.
@@ -128,38 +138,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
 
     def get_matrix(self, matrix_id: str) -> pl.DataFrame:
         return self._matrix_service.get(matrix_id)
-
-    @override
-    def save_link(self, link: Link) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_link(self, link: Link) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_links(self) -> Sequence[Link]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_link(self, area1_id: str, area2_id: str) -> Link:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def link_exists(self, area1_id: str, area2_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
@@ -628,22 +606,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def save_layer(self, layer: Layer) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_layer(self, layer: Layer) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_layers(self) -> Sequence[Layer]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def layer_exists(self, layer_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
     def save_playlist_config(self, playlist: Playlist) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
@@ -781,23 +743,7 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def convert_hydro_pmax(
-        self,
-        hydro_pmax: HydroPmax,
-    ) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    # Link series methods
-    @override
-    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
+    def convert_hydro_pmax(self, hydro_pmax: HydroPmax) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     # User resources

@@ -175,6 +175,13 @@ class StudyDao(
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def initialize_study(self) -> None:
+        """
+        Initialize data inside a new study
+        """
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """

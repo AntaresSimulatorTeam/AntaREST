@@ -958,6 +958,10 @@ class StudyService:
 
         self._save_study(raw)
 
+        dao = self._create_study_dao(raw)
+
+        dao.initialize_study()
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -968,6 +972,12 @@ class StudyService:
 
         logger.info("study %s created by user %s with storage_mode=%s", raw.id, get_user_id(), storage_mode)
         return str(raw.id)
+
+    def _create_study_dao(self, raw: RawStudy) -> StudyDao:
+        if raw.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(raw.id, db.session, self.storage_service.raw_study_service.matrix_service)
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        return FileStudyTreeDao(self.get_file_study(raw), context.generator_matrix_constants, context.blob_service)
 
     def get_user_name(self) -> str:
         """
