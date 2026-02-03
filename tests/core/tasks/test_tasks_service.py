@@ -48,6 +48,7 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -399,6 +400,7 @@ def test_ts_generation_task(
     tmp_path: Path,
     core_config: Config,
     raw_study_service: RawStudyService,
+    study_factory: StudyFactory,
     command_factory: CommandFactory,
 ) -> None:
     # =======================
@@ -496,6 +498,7 @@ nominalcapacity = 14.0
         event_bus=event_bus,
         variant_study_service=variant_study_service,
     )
+    raw_study_service.study_factory = study_factory
 
     # =======================
     #  TEST CASE
