@@ -26,13 +26,15 @@ from tests.helpers import create_raw_study
 
 
 @pytest.fixture
-def study_id(
+def dao(
     db_session: Session,
     matrix_service: ISimpleMatrixService,
     command_context: CommandContext,
     study_factory: StudyFactory,
-) -> str:
-    """Create a test study in database mode and return its ID."""
+) -> DatabaseStudyDao:
+    """
+    Create a test study in database mode and create a DatabaseStudyDao instance for testing.
+    """
     study_id = str(uuid.uuid4())
     with db_session:
         study = create_raw_study(id=study_id, name="Test Study")
@@ -40,11 +42,5 @@ def study_id(
         factory = DaoFactory(
             command_context, matrix_service, StudyMetadataRepository(Mock(), db_session), study_factory
         )
-        factory.create_study_dao(study)
-    return study_id
-
-
-@pytest.fixture
-def dao(db_session: Session, study_id: str, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    """Create a DatabaseStudyDao instance for testing."""
-    return DatabaseStudyDao(study_id, db_session, matrix_service)
+        dao, _ = factory.create_study_dao(study)
+    return dao
