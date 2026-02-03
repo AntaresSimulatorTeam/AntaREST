@@ -42,6 +42,7 @@ class DaoFactory:
         self._storage_service = storage_service
 
     def create_study_dao(self, study: Study) -> tuple[StudyDao, Study]:
+        dao: StudyDao
         if study.storage_mode == StorageMode.DATABASE:
             dao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
             dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
