@@ -27,10 +27,10 @@ export const Route = createFileRoute(
 function MaxDailyGenEnergy() {
   const study = useStudy();
 
-    checkRouteAvailability({
-      studyVersion: study.version,
-      minVersion: "9.2.0",
-      routePath: Route.path,
-    });
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "9.2.0",
+    routePath: Route.path,
+  });
   return <HydroMatrix type={HydroMatrixType.MaxDailyGenEnergy} />;
 }
