@@ -27,15 +27,16 @@ import type {
   StudyMetadata,
   UserDetailsDTO,
 } from "../types/types";
-import { filterStudies, sortStudies } from "../utils/studiesUtils";
+import { filterStudies } from "../utils/studiesUtils";
 import type { AppState } from "./ducks";
 import type { AuthState } from "./ducks/auth";
 import type { GroupsState } from "./ducks/groups";
-import type { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
+import type { StudiesState, StudyFilters } from "./ducks/studies";
 import type { StudyMap, StudyMapLink, StudyMapNode, StudyMapsState } from "./ducks/studyMaps";
 import type { StudySynthesesState } from "./ducks/studySyntheses";
 import type { UIState } from "./ducks/ui";
 import type { UsersState } from "./ducks/users";
+import { sortStudies, type StudySortConfig } from "@/utils/sorting/studySortUtils";
 
 ////////////////////////////////////////////////////////////////
 // Auth
@@ -95,16 +96,16 @@ export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
 };
 
-export const getStudiesSortConf = (state: AppState): StudiesSortConf => {
+export const getStudySortConfig = (state: AppState): StudySortConfig => {
   return getStudiesState(state).sort;
 };
 
 export const getStudiesFilteredAndSorted = createSelector(
   getStudies,
   getStudyFilters,
-  getStudiesSortConf,
-  (studies, filters, sortConf) => {
-    const sorted = sortStudies(sortConf, studies);
+  getStudySortConfig,
+  (studies, filters, sortConfig) => {
+    const sorted = sortStudies(sortConfig, studies);
     return filterStudies(filters, sorted);
   },
 );

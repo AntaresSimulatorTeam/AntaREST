@@ -28,6 +28,7 @@ import { getFavoriteStudyIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
+import { DEFAULT_STUDY_SORT_CONFIG, type StudySortConfig } from "@/utils/sorting/studySortUtils";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -50,11 +51,6 @@ export interface StudyFilters {
   tags: string[];
 }
 
-export interface StudiesSortConf {
-  property: keyof StudyMetadata;
-  order: "ascend" | "descend";
-}
-
 export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   current: string;
   prevStudyId: string;
@@ -62,7 +58,7 @@ export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   versionList: string[];
   favorites: Array<StudyMetadata["id"]>;
   filters: StudyFilters;
-  sort: StudiesSortConf;
+  sort: StudySortConfig;
 }
 
 interface StudyCreator {
@@ -107,10 +103,7 @@ const initialState = studiesAdapter.getInitialState({
     tags: [],
     ...(storage.getItem(StorageKey.StudiesFilters) || {}),
   } satisfies StudyFilters,
-  sort: {
-    property: "name",
-    order: "ascend",
-  },
+  sort: DEFAULT_STUDY_SORT_CONFIG,
 }) as StudiesState;
 
 const n = makeActionName("study");
@@ -137,14 +130,14 @@ export const updateStudyFilters = createAction<Partial<StudiesState["filters"]>>
   n("UPDATE_FILTERS"),
 );
 
-export const updateStudiesSortConf = createAction<Partial<StudiesState["sort"]>>(
-  n("UPDATE_SORT_CONF"),
+export const updateStudySortConfig = createAction<Partial<StudySortConfig>>(
+  n("UPDATE_SORT_CONFIG"),
 );
 
 export const updateStudiesFromLocalStorage = createAction<
   O.Nullable<{
     favorites: StudiesState["favorites"];
-    sort: Partial<StudiesSortConf>;
+    sort: Partial<StudySortConfig>;
   }>
 >(n("UPDATE_FROM_LOCAL_STORAGE"));
 
@@ -301,7 +294,7 @@ export default createReducer(initialState, (builder) => {
       Object.assign(draftState.filters, action.payload);
       draftState.scrollPosition = 0;
     })
-    .addCase(updateStudiesSortConf, (draftState, action) => {
+    .addCase(updateStudySortConfig, (draftState, action) => {
       Object.assign(draftState.sort, action.payload);
       draftState.scrollPosition = 0;
     })

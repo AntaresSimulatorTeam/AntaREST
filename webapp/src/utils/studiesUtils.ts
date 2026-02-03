@@ -12,28 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import moment from "moment";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { StudiesSortConf, StudyFilters } from "../redux/ducks/studies";
-import { StudyType, type StudyMetadata } from "../types/types";
+import type { StudyFilters } from "../redux/ducks/studies";
+import { type StudyMetadata, StudyType } from "../types/types";
 import { isSearchMatching } from "./stringUtils";
 import { validateString } from "./validation/string";
-
-////////////////////////////////////////////////////////////////
-// Sort
-////////////////////////////////////////////////////////////////
-
-export function sortStudies(sortConf: StudiesSortConf, studies: StudyMetadata[]): StudyMetadata[] {
-  return R.sort((studyA, studyB) => {
-    const first = sortConf.order === "ascend" ? studyA : studyB;
-    const second = sortConf.order === "ascend" ? studyB : studyA;
-    if (sortConf.property === "name") {
-      return first.name.localeCompare(second.name);
-    }
-    return moment(first.modificationDate).isAfter(moment(second.modificationDate)) ? 1 : -1;
-  }, studies);
-}
 
 ////////////////////////////////////////////////////////////////
 // Predicates

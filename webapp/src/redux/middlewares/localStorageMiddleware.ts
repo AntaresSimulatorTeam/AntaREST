@@ -20,7 +20,7 @@ import { login, logout, refresh } from "../ducks/auth";
 import {
   setFavoriteStudies,
   updateStudiesFromLocalStorage,
-  updateStudiesSortConf,
+  updateStudySortConfig,
   updateStudyFilters,
 } from "../ducks/studies";
 import { setMenuOpen } from "../ducks/ui";
@@ -70,7 +70,7 @@ localStorageMiddleware.startListening({
 });
 
 localStorageMiddleware.startListening({
-  actionCreator: updateStudiesSortConf,
+  actionCreator: updateStudySortConfig,
   effect: (action) => {
     storage.setItem(StorageKey.StudiesSort, (prev) => ({
       ...prev,

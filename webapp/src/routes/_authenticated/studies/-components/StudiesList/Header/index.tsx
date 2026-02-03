@@ -17,20 +17,17 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomScrollbar from "@/components/CustomScrollbar";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import {
-  type StudiesSortConf,
-  updateStudiesSortConf,
-  updateStudyFilters,
-} from "@/redux/ducks/studies";
+import { updateStudyFilters, updateStudySortConfig } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudiesSortConf, getStudyFilters } from "@/redux/selectors";
+import { getStudyFilters, getStudySortConfig } from "@/redux/selectors";
 import { scanFolder } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";
 import BatchActions from "./BatchActions";
 import FilterControls from "./FilterControls";
 import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
 import ScanFolderDialog from "./ScanFolderDialog";
+import type { StudySortConfig } from "@/utils/sorting/studySortUtils";
 import type { BreadcrumbItem, HeaderProps } from "./types";
 import { useBreadcrumbs } from "./useBreadcrumbs";
 
@@ -47,7 +44,7 @@ function Header({
   // Redux state
   const filters = useAppSelector(getStudyFilters);
   const { activeTree, managed, external } = filters;
-  const sortConf = useAppSelector(getStudiesSortConf);
+  const sortConfig = useAppSelector(getStudySortConfig);
 
   // Local state
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
@@ -101,8 +98,8 @@ function Header({
     dispatch(updateStudyFilters({ type: filters.type !== "references" ? "references" : "all" }));
   };
 
-  const handleSortChange = (newSortConf: StudiesSortConf) => {
-    dispatch(updateStudiesSortConf(newSortConf));
+  const handleSortChange = (config: StudySortConfig) => {
+    dispatch(updateStudySortConfig(config));
   };
 
   const handleLaunchStudies = () => {
@@ -174,7 +171,7 @@ function Header({
             strictPath={external.strictPath}
             isReferenceTypeActive={isReferenceStudyTypeActive}
             canScan={canScan}
-            sortConf={sortConf}
+            sortConfig={sortConfig}
             onToggleStrictPath={handleToggleStrictPath}
             onToggleStudyType={handleToggleStudyType}
             onScanFolder={handleOpenScanDialog}
