@@ -47,10 +47,6 @@ def _normalize_thermal_id(thermal_id: str) -> str:
     return thermal_id.lower()
 
 
-def _normalize_group(group: Any) -> Any:
-    return group.value if hasattr(group, "value") else group
-
-
 class DatabaseThermalDao(ThermalDao):
     """
     Database implementation of ThermalDao.
@@ -173,9 +169,6 @@ class DatabaseThermalDao(ThermalDao):
         validate_area_exists(session, study_id, area_id)
 
         cluster = thermal.model_copy()
-        version = self.get_impl().get_version()
-        validate_thermal_cluster_against_version(version, cluster)
-        initialize_thermal_cluster(cluster, version)
 
         thermal_id = _normalize_thermal_id(cluster.id)
         stmt = select(THERMAL_CLUSTER_TABLE).where(
@@ -193,7 +186,7 @@ class DatabaseThermalDao(ThermalDao):
             unit_count=cluster.unit_count,
             nominal_capacity=cluster.nominal_capacity,
             enabled=cluster.enabled,
-            group=_normalize_group(cluster.group),
+            group=cluster.group,
             gen_ts=cluster.gen_ts,
             min_stable_power=cluster.min_stable_power,
             min_up_time=cluster.min_up_time,
