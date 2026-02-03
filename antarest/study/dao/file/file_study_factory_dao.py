@@ -12,59 +12,34 @@
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from sqlalchemy.orm import Session
+from typing_extensions import override
 
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
-from antarest.study.business.model.layer_model import Layer
-from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import RawStudy, StorageMode, StudyContentStatus
+from antarest.study.model import RawStudy, StudyContentStatus
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.utils import create_new_empty_study, is_managed, update_antares_info
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-class DaoFactory:
+class FileStudyDaoFactory(StudyFactoryDao):
     """
-    Used to initialize a study according to the DAO type
+    Used to initialize a study in the filesystem
     """
 
     def __init__(
-        self,
-        command_context: CommandContext,
-        matrix_service: ISimpleMatrixService,
-        study_repository: StudyMetadataRepository,
-        study_factory: StudyFactory,
-        session: Session | None = None,
+        self, command_context: CommandContext, study_repository: StudyMetadataRepository, study_factory: StudyFactory
     ) -> None:
         self._command_context = command_context
-        self._matrix_service = matrix_service
         self._study_repository = study_repository
         self._study_factory = study_factory
-        self._session = session
 
-    @property
-    def session(self) -> Session:
-        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
-        if self._session is None:
-            return db.session
-        return self._session
-
-    def create_study_dao(self, study: RawStudy) -> tuple[StudyDao, RawStudy]:
+    @override
+    def create_study_dao(self, study: RawStudy) -> tuple[FileStudyTreeDao, RawStudy]:
         study.content_status = StudyContentStatus.VALID
         self._study_repository.save(study)
 
-        dao: StudyDao
-        if study.storage_mode == StorageMode.DATABASE:
-            dao = DatabaseStudyDao(study.id, self.session, self._matrix_service)
-            dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
-            return dao, study
-
-        # Create the FileStudy
         path_study = Path(study.path)
 
         create_new_empty_study(version=StudyVersion.parse(study.version), path_study=path_study)

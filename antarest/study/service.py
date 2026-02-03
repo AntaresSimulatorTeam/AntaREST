@@ -106,10 +106,12 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.factory.factory import DaoFactory
+from antarest.study.dao.database.database_study_factory_dao import DataBaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
@@ -574,10 +576,12 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
-        StudyDatabaseMatrixUsageProvider(command_context.matrix_service)
-        self._dao_factory = DaoFactory(
-            command_context, command_context.matrix_service, repository, raw_study_service.study_factory
-        )
+        matrix_service = command_context.matrix_service
+        StudyDatabaseMatrixUsageProvider(matrix_service)
+        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
+            StorageMode.DATABASE: DataBaseStudyDaoFactory(matrix_service, repository),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, repository, raw_study_service.study_factory),
+        }
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -958,7 +962,7 @@ class StudyService:
             groups=groups,
         )
 
-        _, raw = self._dao_factory.create_study_dao(raw)
+        _, raw = self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
 
         self.event_bus.push(
             Event(

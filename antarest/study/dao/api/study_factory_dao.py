@@ -10,3 +10,13 @@
 #
 # This file is part of the Antares project.
 
+from abc import ABC, abstractmethod
+
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import RawStudy
+
+
+class StudyFactoryDao(ABC):
+    @abstractmethod
+    def create_study_dao(self, study: RawStudy) -> tuple[StudyDao, RawStudy]:
+        raise NotImplementedError()
