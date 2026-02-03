@@ -16,7 +16,6 @@ import CustomScrollbar from "@/components/CustomScrollbar";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
-import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { updateStudiesSortConf, updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -31,7 +30,6 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import FolderIcon from "@mui/icons-material/Folder";
-import HomeIcon from "@mui/icons-material/Home";
 import LayersIcon from "@mui/icons-material/Layers";
 import LayersClearIcon from "@mui/icons-material/LayersClear";
 import RadarIcon from "@mui/icons-material/Radar";
@@ -46,9 +44,13 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { getRouteApi } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { buildDirectoryTree, getDirectoryPath } from "../StudyTree/ManagedTree/utils";
+
+const routeApi = getRouteApi("/_authenticated/studies/");
 
 const sortOptions = [
   {
@@ -79,6 +81,12 @@ const sortOptions = [
   },
 ];
 
+interface BreadcrumbItem {
+  label: string;
+  id: string | null;
+  path: string | null;
+}
+
 export interface Props {
   studyIds: Array<StudyMetadata["id"]>;
   selectedStudyIds: Array<StudyMetadata["id"]>;
@@ -87,10 +95,9 @@ export interface Props {
 }
 
 function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToLaunch }: Props) {
-  const folder = useAppSelector((state) => getStudyFilters(state).folder);
-  const folderList = folder.split("/");
-  const strictFolderFilter = useAppSelector((state) => getStudyFilters(state).strictFolder);
-  const studyTypeFilter = useAppSelector((state) => getStudyFilters(state).type);
+  const filters = useAppSelector(getStudyFilters);
+  const { activeTree, managed, external } = filters;
+  const studyTypeFilter = filters.type;
   const sortConf = useAppSelector(getStudiesSortConf);
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
@@ -98,22 +105,90 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const hasStudiesSelected = selectedStudyIds.length > 0;
-  const isInDefaultWorkspace = folderList.length > 1 && folderList[1] === DEFAULT_WORKSPACE_NAME;
-  const isRootFolder = folderList.length === 1;
-  const canScan = !isRootFolder && !isInDefaultWorkspace;
   const isDesktopMode = import.meta.env.MODE === "desktop";
   const isReferenceStudyTypeActive = studyTypeFilter === "references";
+
+  const directories = routeApi.useLoaderData();
+
+  const breadcrumbItems = useMemo((): BreadcrumbItem[] => {
+    const homeItem: BreadcrumbItem = {
+      label: t("studies.tree.home", { defaultValue: "root" }),
+      id: null,
+      path: null,
+    };
+
+    if (activeTree === "managed") {
+      // For managed tree, use directory utilities to build path
+      if (!managed.directoryId) {
+        return [homeItem];
+      }
+
+      const directoryTree = buildDirectoryTree(directories);
+      const pathIds = getDirectoryPath(directoryTree, managed.directoryId);
+      const directoriesById = Object.fromEntries(directories.map((d) => [d.id, d]));
+
+      return [
+        homeItem,
+        ...pathIds.map(
+          (id): BreadcrumbItem => ({
+            label: directoriesById[id].name,
+            id,
+            path: null,
+          }),
+        ),
+      ];
+    }
+
+    // For external tree, build path from filesystem path string
+    if (!external.path) {
+      return [homeItem];
+    }
+
+    const pathParts = external.path.split("/").filter(Boolean);
+    return [
+      homeItem,
+      ...pathParts.map(
+        (part, index): BreadcrumbItem => ({
+          label: part,
+          id: null,
+          path: `/${pathParts.slice(0, index + 1).join("/")}`,
+        }),
+      ),
+    ];
+  }, [activeTree, managed.directoryId, external.path, directories, t]);
+
+  const canScan = activeTree === "external" && external.path !== "";
 
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const setFolder = (value: string) => {
-    dispatch(updateStudyFilters({ folder: value }));
+  const navigateTo = (item: BreadcrumbItem) => {
+    if (activeTree === "managed") {
+      dispatch(
+        updateStudyFilters({
+          activeTree: "managed",
+          managed: { directoryId: item.id },
+        }),
+      );
+    } else {
+      dispatch(
+        updateStudyFilters({
+          activeTree: "external",
+          external: { path: item.path ?? "", strictPath: external.strictPath },
+        }),
+      );
+    }
   };
 
   const toggleStrictFolderFilter = () => {
-    dispatch(updateStudyFilters({ strictFolder: !strictFolderFilter }));
+    if (activeTree === "external") {
+      dispatch(
+        updateStudyFilters({
+          external: { ...external, strictPath: !external.strictPath },
+        }),
+      );
+    }
   };
 
   const toggleStudyTypeFilter = () => {
@@ -126,7 +201,10 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
 
   const handleFolderScan = async () => {
     try {
-      await scanFolder(folder, isRecursiveScan);
+      // Only scan for external tree
+      if (activeTree === "external" && external.path) {
+        await scanFolder(external.path, isRecursiveScan);
+      }
       setConfirmFolderScan(false);
       setIsRecursiveScan(false);
     } catch (e) {
@@ -164,19 +242,23 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
         >
           <Box sx={{ flexGrow: 1, flexShrink: 0, display: "flex", alignItems: "center", gap: 1.5 }}>
             <Breadcrumbs maxItems={3}>
-              {folderList.map((folder, index) => {
-                const path = folderList.slice(0, index + 1).join("/");
-                const isRoot = index === 0;
+              {breadcrumbItems.map((item, index) => {
+                const isLast = index === breadcrumbItems.length - 1;
 
                 return (
                   <Link
-                    key={path}
-                    underline={isRoot ? "none" : "hover"}
+                    key={activeTree === "managed" ? (item.id ?? "root") : (item.path ?? "root")}
+                    underline="hover"
                     color="inherit"
-                    onClick={() => setFolder(isRoot ? "" : path)}
-                    sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+                    onClick={() => !isLast && navigateTo(item)}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: isLast ? "default" : "pointer",
+                      fontWeight: isLast ? 600 : 400,
+                    }}
                   >
-                    {isRoot ? <HomeIcon fontSize="inherit" /> : folder}
+                    {item.label}
                   </Link>
                 );
               })}
@@ -200,24 +282,26 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               </Tooltip>
             </>
           )}
-          <ToggleButtonGroup
-            value={strictFolderFilter}
-            exclusive
-            onChange={toggleStrictFolderFilter}
-            size="extra-small"
-            color="primary"
-          >
-            <Tooltip title={t("studies.filters.strictfolder")}>
-              <ToggleButton value={true}>
-                <FolderIcon />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title={t("studies.filters.showChildrens")}>
-              <ToggleButton value={false}>
-                <AccountTreeIcon />
-              </ToggleButton>
-            </Tooltip>
-          </ToggleButtonGroup>
+          {activeTree === "external" && (
+            <ToggleButtonGroup
+              value={external.strictPath}
+              exclusive
+              onChange={toggleStrictFolderFilter}
+              size="extra-small"
+              color="primary"
+            >
+              <Tooltip title={t("studies.filters.strictfolder")}>
+                <ToggleButton value={true}>
+                  <FolderIcon />
+                </ToggleButton>
+              </Tooltip>
+              <Tooltip title={t("studies.filters.showChildrens")}>
+                <ToggleButton value={false}>
+                  <AccountTreeIcon />
+                </ToggleButton>
+              </Tooltip>
+            </ToggleButtonGroup>
+          )}
           <Tooltip
             title={
               isReferenceStudyTypeActive
@@ -264,7 +348,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
           alert="warning"
           open
         >
-          {`${t("studies.scanFolder")} ${folder}?`}
+          {`${t("studies.scanFolder")} ${activeTree === "external" ? external.path : ""}?`}
           {!isDesktopMode && (
             <CheckBoxFE
               label={t("studies.recursiveScan")}
