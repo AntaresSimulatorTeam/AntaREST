@@ -116,9 +116,8 @@ class TestDatabaseLayerDao:
         dao.delete_layer(Layer(id="1"))
         assert not dao.layer_exists("1")
 
-    def test_delete_layer_removes_area_associations(
-        self, dao: DatabaseStudyDao, db_session: Session, study_id: str
-    ) -> None:
+    def test_delete_layer_removes_area_associations(self, dao: DatabaseStudyDao, db_session: Session) -> None:
+        study_id = dao.get_study_id()
         dao.save_area("Paris")
         dao.save_area("London")
 
