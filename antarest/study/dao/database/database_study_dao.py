@@ -29,7 +29,13 @@ from typing_extensions import override
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
+from antarest.study.business.model.config.general_model import GeneralConfig
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -58,7 +64,7 @@ from antarest.study.dao.database.database_district_dao import DatabaseDistrictDa
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -123,6 +129,18 @@ class DatabaseStudyDao(
     @override
     def initialize_study(self) -> None:
         self.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
+        # Initialize settings
+        self.save_general_config(GeneralConfig())
+        self.save_playlist_config(Playlist())
+        self.save_timeseries_config(TimeSeriesConfiguration())
+        self.save_advanced_parameters(AdvancedParameters())
+        self.save_optimization_preferences(OptimizationPreferences())
+        self.save_thematic_trimming(ThematicTrimming())
+        study_version = self.get_version()
+        if study_version > STUDY_VERSION_8_3:
+            self.save_adequacy_patch_parameters(AdequacyPatchParameters())
+        if study_version > STUDY_VERSION_9_2:
+            self.save_compatibility_parameters(CompatibilityParameters())
 
     @override
     def get_file_study(self) -> FileStudy:
