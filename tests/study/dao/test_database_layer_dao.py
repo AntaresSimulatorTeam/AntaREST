@@ -14,37 +14,19 @@
 Unit tests for DatabaseLayerDao.
 """
 
-import uuid
-
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
-from antarest.study.model import StorageMode
-from tests.helpers import create_study
 
 
 class TestInitializeStudy:
-    def test_initialize_study_creates_default_layer(
-        self, db_session: Session, matrix_service: ISimpleMatrixService
-    ) -> None:
-        """Test that initialize_study() creates the default 'All' layer in an empty study."""
-        study_id = str(uuid.uuid4())
-        with db_session:
-            study = create_study(id=study_id, name="Empty Study")
-            study.storage_mode = StorageMode.DATABASE
-            db_session.add(study)
-            db_session.commit()
-
-        dao = DatabaseStudyDao(study_id, db_session, matrix_service)
-
-        assert dao.get_layers() == []
-        dao.initialize_study()
+    def test_initialize_study_creates_default_layer(self, dao: DatabaseStudyDao) -> None:
+        """Test that the DAO is initialized with the default 'All' layer in an empty study."""
         assert dao.get_layers() == [Layer(id="0", name="All", areas=[])]
 
 
