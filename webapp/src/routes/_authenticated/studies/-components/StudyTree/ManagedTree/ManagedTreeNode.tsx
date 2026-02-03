@@ -166,6 +166,7 @@ function ManagedTreeNode({
           onCancel={onCancelSubFolder}
         />
       )}
+
       {/* Recursively render child directories */}
       {sortedChildren.map((child) => (
         <ManagedTreeNode

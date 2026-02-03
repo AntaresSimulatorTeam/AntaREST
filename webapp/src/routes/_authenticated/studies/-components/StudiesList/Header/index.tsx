@@ -1,0 +1,199 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import { Box } from "@mui/material";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import CustomScrollbar from "@/components/CustomScrollbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import {
+  type StudiesSortConf,
+  updateStudiesSortConf,
+  updateStudyFilters,
+} from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudiesSortConf, getStudyFilters } from "@/redux/selectors";
+import { scanFolder } from "@/services/api/study";
+import { toError } from "@/utils/fnUtils";
+import BatchActions from "./BatchActions";
+import FilterControls from "./FilterControls";
+import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
+import ScanFolderDialog from "./ScanFolderDialog";
+import type { BreadcrumbItem, HeaderProps } from "./types";
+import { useBreadcrumbs } from "./useBreadcrumbs";
+
+function Header({
+  studyIds,
+  selectedStudyIds,
+  setSelectedStudyIds,
+  setStudiesToLaunch,
+}: HeaderProps) {
+  const dispatch = useAppDispatch();
+  const { t } = useTranslation();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
+  // Redux state
+  const filters = useAppSelector(getStudyFilters);
+  const { activeTree, managed, external } = filters;
+  const sortConf = useAppSelector(getStudiesSortConf);
+
+  // Local state
+  const [confirmFolderScan, setConfirmFolderScan] = useState(false);
+  const [isRecursiveScan, setIsRecursiveScan] = useState(false);
+
+  // Derived state
+  const isDesktopMode = import.meta.env.MODE === "desktop";
+  const isReferenceStudyTypeActive = filters.type === "references";
+  const canScan = activeTree === "external" && external.path !== "";
+
+  // Breadcrumb navigation
+  const breadcrumbItems = useBreadcrumbs({
+    activeTree,
+    managedDirectoryId: managed.directoryId,
+    externalPath: external.path,
+  });
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleNavigate = (item: BreadcrumbItem) => {
+    if (activeTree === "managed") {
+      dispatch(
+        updateStudyFilters({
+          activeTree: "managed",
+          managed: { directoryId: item.id },
+        }),
+      );
+    } else {
+      dispatch(
+        updateStudyFilters({
+          activeTree: "external",
+          external: { path: item.path ?? "", strictPath: external.strictPath },
+        }),
+      );
+    }
+  };
+
+  const handleToggleStrictPath = () => {
+    if (activeTree === "external") {
+      dispatch(
+        updateStudyFilters({
+          external: { ...external, strictPath: !external.strictPath },
+        }),
+      );
+    }
+  };
+
+  const handleToggleStudyType = () => {
+    dispatch(updateStudyFilters({ type: filters.type !== "references" ? "references" : "all" }));
+  };
+
+  const handleSortChange = (newSortConf: StudiesSortConf) => {
+    dispatch(updateStudiesSortConf(newSortConf));
+  };
+
+  const handleLaunchStudies = () => {
+    setStudiesToLaunch(selectedStudyIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedStudyIds([]);
+  };
+
+  const handleOpenScanDialog = () => {
+    setConfirmFolderScan(true);
+  };
+
+  const handleCloseScanDialog = () => {
+    setConfirmFolderScan(false);
+    setIsRecursiveScan(false);
+  };
+
+  const handleConfirmScan = async () => {
+    try {
+      if (activeTree === "external" && external.path) {
+        await scanFolder(external.path, isRecursiveScan);
+      }
+
+      handleCloseScanDialog();
+    } catch (err) {
+      enqueueErrorSnackbar(t("studies.error.scanFolder"), toError(err));
+    }
+  };
+
+  const handleToggleRecursiveScan = () => {
+    setIsRecursiveScan(!isRecursiveScan);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <>
+      <CustomScrollbar>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            px: 2,
+            py: 0.5,
+          }}
+        >
+          <Box sx={{ flexGrow: 1, flexShrink: 0, display: "flex", alignItems: "center", gap: 1 }}>
+            <NavigationBreadcrumbs
+              items={breadcrumbItems}
+              studyCount={studyIds.length}
+              onNavigate={handleNavigate}
+              activeTree={activeTree}
+            />
+          </Box>
+
+          <BatchActions
+            selectedCount={selectedStudyIds.length}
+            onLaunch={handleLaunchStudies}
+            onDeselectAll={handleDeselectAll}
+          />
+
+          <FilterControls
+            activeTree={activeTree}
+            strictPath={external.strictPath}
+            isReferenceTypeActive={isReferenceStudyTypeActive}
+            canScan={canScan}
+            sortConf={sortConf}
+            onToggleStrictPath={handleToggleStrictPath}
+            onToggleStudyType={handleToggleStudyType}
+            onScanFolder={handleOpenScanDialog}
+            onSortChange={handleSortChange}
+          />
+        </Box>
+      </CustomScrollbar>
+
+      <ScanFolderDialog
+        open={confirmFolderScan}
+        folderPath={external.path}
+        isRecursive={isRecursiveScan}
+        showRecursiveOption={!isDesktopMode}
+        onConfirm={handleConfirmScan}
+        onCancel={handleCloseScanDialog}
+        onToggleRecursive={handleToggleRecursiveScan}
+      />
+    </>
+  );
+}
+
+export default Header;
