@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import uuid
+from unittest.mock import Mock
 
 import pytest
 from sqlalchemy.orm import Session
@@ -36,7 +37,9 @@ def study_id(
     with db_session:
         study = create_raw_study(id=study_id, name="Test Study")
         study.storage_mode = StorageMode.DATABASE
-        factory = DaoFactory(command_context, matrix_service, StudyMetadataRepository(), study_factory)
+        factory = DaoFactory(
+            command_context, matrix_service, StudyMetadataRepository(Mock(), db_session), study_factory
+        )
         factory.create_study_dao(study)
     return study_id
 
