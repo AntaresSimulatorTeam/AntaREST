@@ -1,7 +1,7 @@
 """create_link_matrices
 
 Revision ID: 124274d80f2e
-Revises: 10318e5320f6
+Revises: 9c4e7f2a3b1d
 Create Date: 2026-01-30 13:37:09.850694
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '124274d80f2e'
-down_revision = '10318e5320f6'
+down_revision = '9c4e7f2a3b1d'
 branch_labels = None
 depends_on = None
 
