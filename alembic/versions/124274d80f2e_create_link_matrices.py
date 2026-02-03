@@ -18,8 +18,8 @@ depends_on = None
 
 def upgrade():
     study_id_col = sa.Column("study_id", sa.String(length=36), nullable=False)
-    area1_col = sa.Column("area1_id", sa.String(length=255), nullable=False)
-    area2_col = sa.Column("area2_id", sa.String(length=255), nullable=False)
+    area1_col = sa.Column("area1", sa.String(length=255), nullable=False)
+    area2_col = sa.Column("area2", sa.String(length=255), nullable=False)
     matrix_id_col = sa.Column("matrix_id", sa.String(length=64), nullable=False)
     foreign_key_constraint = sa.ForeignKeyConstraint(
         ["study_id", "area1_id", "area2_id"],
@@ -32,7 +32,7 @@ def upgrade():
     op.create_table(
         "link_series",
         study_id_col, area1_col, area2_col, matrix_id_col, foreign_key_constraint,
-        sa.PrimaryKeyConstraint("study_id", "area1_id", "area2_id", name=op.f("pk_link_series")),
+        sa.PrimaryKeyConstraint("study_id", "area1", "area2", name=op.f("pk_link_series")),
     )
 
     # Direct capacity
@@ -40,7 +40,7 @@ def upgrade():
     op.create_table(
         "link_direct_capacity",
         study_id_col, area1_col, area2_col, matrix_id_col, foreign_key_constraint,
-        sa.PrimaryKeyConstraint("study_id", "area1_id", "area2_id", name=op.f("pk_link_direct_capacity")),
+        sa.PrimaryKeyConstraint("study_id", "area1", "area2", name=op.f("pk_link_direct_capacity")),
     )
 
     # Indirect capacity
@@ -48,7 +48,7 @@ def upgrade():
     op.create_table(
         "link_indirect_capacity",
         study_id_col, area1_col, area2_col, matrix_id_col, foreign_key_constraint,
-        sa.PrimaryKeyConstraint("study_id", "area1_id", "area2_id", name=op.f("pk_link_indirect_capacity")),
+        sa.PrimaryKeyConstraint("study_id", "area1", "area2", name=op.f("pk_link_indirect_capacity")),
     )
 
 def downgrade():

@@ -58,11 +58,11 @@ def _create_matrix_table(name: str) -> Table:
         name,
         metadata,
         Column("study_id", String(36), nullable=False, primary_key=True),
-        Column("area1_id", String(255), nullable=False, primary_key=True),
-        Column("area2_id", String(255), nullable=False, primary_key=True),
+        Column("area1", String(255), nullable=False, primary_key=True),
+        Column("area2", String(255), nullable=False, primary_key=True),
         Column("matrix_id", String(64), nullable=False),
         ForeignKeyConstraint(
-            ["study_id", "area1_id", "area2_id"], ["link.study_id", "link.area1", "link.area2"], ondelete="CASCADE"
+            ["study_id", "area1", "area2"], ["link.study_id", "link.area1", "link.area2"], ondelete="CASCADE"
         ),
     )
 

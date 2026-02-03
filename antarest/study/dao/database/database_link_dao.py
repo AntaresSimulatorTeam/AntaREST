@@ -151,57 +151,44 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def get_link(self, area1_id: str, area2_id: str) -> Link:
-        row = self._get_link_row(area1_id, area2_id)
+        row = self._get_row(area1_id, area2_id, LINK_TABLE)
         if not row:
             raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
         return _convert_db_rows_to_model(row)
 
     @override
     def link_exists(self, area1_id: str, area2_id: str) -> bool:
-        row = self._get_link_row(area1_id, area2_id)
+        row = self._get_row(area1_id, area2_id, LINK_TABLE)
         return row is not None
 
-    def _get_link_row(self, area1_id: str, area2_id: str) -> Row[Any] | None:
+    def _get_row(self, area1_id: str, area2_id: str, table: Table) -> Row[Any] | None:
+        area1, area2 = sorted((area1_id, area2_id))
         study_id = self.get_study_id()
         session = self.get_session()
-
-        stmt = select(LINK_TABLE).where(
-            (LINK_TABLE.c.study_id == study_id) & (LINK_TABLE.c.area1 == area1_id) & (LINK_TABLE.c.area2 == area2_id)
-        )
-
+        stmt = select(table).where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
         return session.execute(stmt).fetchone()
 
     def _get_link_matrix(self, area_from_id: str, area_to_id: str, table: Table) -> pl.DataFrame:
-        row = self._get_link_matrix_row(area_from_id, area_to_id, table)
+        row = self._get_row(area_from_id, area_to_id, table)
         if not row:
             raise LinkNotFound(f"The link {area_from_id} -> {area_to_id} is not present in the study")
         return self.get_impl().get_matrix(row.matrix_id)
 
-    def _get_link_matrix_row(self, area_from_id: str, area_to_id: str, table: Table) -> Row[Any] | None:
-        area1, area2 = sorted((area_from_id, area_to_id))
-        study_id = self.get_study_id()
-        session = self.get_session()
-        stmt = select(table).where(
-            (table.c.study_id == study_id) & (table.c.area1_id == area1) & (table.c.area2_id == area2)
-        )
-
-        return session.execute(stmt).fetchone()
-
     def _save_link_matrix(self, area_from_id: str, area_to_id: str, table: Table, matrix_id: str) -> None:
         area1, area2 = sorted((area_from_id, area_to_id))
-        row = self._get_link_matrix_row(area1, area2, table)
+        row = self._get_row(area1, area2, table)
         session = self.get_session()
         study_id = self.get_study_id()
         if not row:
             # We must check if the link exist or not
             if not self.link_exists(area1, area2):
                 raise LinkNotFound(f"The link {area1} -> {area2} is not present in the study")
-            stmt_insert = insert(table).values(study_id=study_id, area1_id=area1, area2_id=area2, matrix_id=matrix_id)
+            stmt_insert = insert(table).values(study_id=study_id, area1=area1, area2=area2, matrix_id=matrix_id)
             session.execute(stmt_insert)
         else:
             stmt_update = (
                 update(table)
-                .where((table.c.study_id == study_id) & (table.c.area1_id == area1) & (table.c.area2_id == area2))
+                .where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
                 .values(matrix_id=matrix_id)
             )
             session.execute(stmt_update)
