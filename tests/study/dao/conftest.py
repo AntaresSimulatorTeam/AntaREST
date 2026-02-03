@@ -43,4 +43,5 @@ def dao(
             command_context, matrix_service, StudyMetadataRepository(Mock(), db_session), study_factory
         )
         dao, _ = factory.create_study_dao(study)
+    assert isinstance(dao, DatabaseStudyDao)
     return dao
