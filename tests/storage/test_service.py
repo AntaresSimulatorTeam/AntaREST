@@ -128,6 +128,7 @@ def build_study_service(
     task_service: ITaskService = Mock(spec=ITaskService),
     event_bus: IEventBus = Mock(spec=IEventBus),
 ) -> StudyService:
+    raw_study_service.study_factory = Mock()
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
