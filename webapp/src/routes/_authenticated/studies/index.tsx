@@ -17,6 +17,7 @@ import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import CustomScrollbar from "@/components/CustomScrollbar";
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import RootPage from "@/components/page/RootPage";
 import SplitView from "@/components/page/SplitView";
@@ -30,12 +31,10 @@ import HeaderActions from "./-components/HeaderActions";
 import RefreshButton from "./-components/RefreshButton";
 import StudiesList from "./-components/StudiesList";
 import StudyTree from "./-components/StudyTree";
-import CustomScrollbar from "@/components/CustomScrollbar";
 
 export const Route = createFileRoute("/_authenticated/studies/")({
   component: Studies,
   loader: ({ context }) => {
-    // Prefetch directories for ManagedTree
     return context.queryClient.ensureQueryData(directoryQueries.list());
   },
 });
@@ -56,7 +55,7 @@ function Studies() {
       titleIcon={FolderIcon}
       headerActions={<HeaderActions onOpenFilterClick={() => setOpenFilter(true)} />}
     >
-      <SplitView splitId="studies" minSize={[200, 400]}>
+      <SplitView splitId="studies" minSize={[300, 800]}>
         {/* Left - Studies tree explorer */}
         <CustomScrollbar>
           <Box sx={{ overflow: "auto" }}>

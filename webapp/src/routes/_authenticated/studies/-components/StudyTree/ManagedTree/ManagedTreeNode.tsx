@@ -15,7 +15,7 @@
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { Box, IconButton } from "@mui/material";
+import { Box, IconButton, Tooltip } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
@@ -129,7 +129,14 @@ function ManagedTreeNode({
       itemId={path}
       label={
         <Box sx={nodeLabelContainerStyles}>
-          <Box component="span">{name}</Box>
+          <Tooltip title={name}>
+            <Box
+              component="span"
+              sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+            >
+              {name}
+            </Box>
+          </Tooltip>
           <Box sx={nodeActionsContainerStyles}>
             <IconButton size="small" onClick={handleAddSubFolder} sx={actionButtonStyles}>
               <CreateNewFolderIcon sx={addSubFolderIconStyles} />

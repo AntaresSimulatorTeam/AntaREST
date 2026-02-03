@@ -104,6 +104,7 @@ export const nodeLabelContainerStyles: SxProps<Theme> = {
 export const nodeActionsContainerStyles: SxProps<Theme> = {
   display: "flex",
   gap: 0.25,
+  ml: 1,
 };
 
 export const actionButtonStyles: SxProps<Theme> = {

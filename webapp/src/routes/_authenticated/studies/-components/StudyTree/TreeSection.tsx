@@ -86,16 +86,6 @@ const variantStyles: Record<
   },
 };
 
-const addFolderButtonStyles: Record<TreeSectionVariant, SxProps<Theme>> = {
-  managed: {
-    p: 0.5,
-  },
-  external: {
-    p: 0.5,
-    color: "text.secondary",
-  },
-};
-
 function TreeSection({
   variant,
   title,
@@ -127,6 +117,18 @@ function TreeSection({
           )}
         </Stack>
         <Stack direction="row">
+          {onAddFolder && (
+            <Tooltip title={t("studies.tree.addRootDirectory")} placement="top" arrow>
+              <IconButton
+                size="small"
+                onClick={onAddFolder}
+                sx={{ p: 0.5 }}
+                aria-label="Create new folder"
+              >
+                <CreateNewFolderIcon sx={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+          )}
           {onHomeClick && (
             <Tooltip
               title={t("studies.tree.allStudies", { defaultValue: "All studies" })} // TODO: update label and add key
@@ -136,22 +138,10 @@ function TreeSection({
               <IconButton
                 size="small"
                 onClick={onHomeClick}
-                sx={addFolderButtonStyles[variant]}
+                sx={{ p: 0.5 }}
                 aria-label="All studies"
               >
                 <HomeIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-          )}
-          {onAddFolder && (
-            <Tooltip title={t("studies.tree.addRootDirectory")} placement="top" arrow>
-              <IconButton
-                size="small"
-                onClick={onAddFolder}
-                sx={addFolderButtonStyles[variant]}
-                aria-label="Create new folder"
-              >
-                <CreateNewFolderIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Tooltip>
           )}
