@@ -22,6 +22,7 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import RawStudy, StorageMode, Study, StudyContentStatus
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.utils import create_new_empty_study, is_managed, update_antares_info
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -36,10 +37,12 @@ class DaoFactory:
         command_context: CommandContext,
         matrix_service: ISimpleMatrixService,
         study_repository: StudyMetadataRepository,
+        study_factory: StudyFactory,
     ) -> None:
         self._command_context = command_context
         self._matrix_service = matrix_service
         self._study_repository = study_repository
+        self._study_factory = study_factory
 
     def create_study_dao(self, study: Study) -> tuple[StudyDao, Study]:
         if isinstance(study, RawStudy):
@@ -58,7 +61,7 @@ class DaoFactory:
 
         create_new_empty_study(version=StudyVersion.parse(study.version), path_study=path_study)
 
-        file_study = self.study_factory.create_from_fs(path_study, is_managed(study), study.id)
+        file_study = self._study_factory.create_from_fs(path_study, is_managed(study), study.id)
         update_antares_info(study, file_study.tree, update_author=True)
 
         study.path = str(path_study)
