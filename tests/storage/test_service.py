@@ -573,6 +573,8 @@ def test_create_study() -> None:
     service = build_study_service(
         study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service
     )
+    service.storage_service.variant_study_service.command_factory = Mock()
+    service.storage_service.variant_study_service.command_factory.command_context = Mock()
 
     jwt_user = JWT_USER
     jwt_user.groups = []
