@@ -534,7 +534,7 @@ def test_remove_duplicate(db_session: Session) -> None:
 
 
 # noinspection PyArgumentList
-def test_create_study() -> None:
+def test_create_study(tmp_path: Path) -> None:
     # Mock
     repository = Mock()
 
@@ -559,7 +559,6 @@ def test_create_study() -> None:
     user_service.get_user.return_value = user
 
     study_service = Mock()
-    study_service.get_default_workspace_path.return_value = Path("")
     study_service.get_study_information.return_value = {
         "antares": {
             "caption": "CAPTION",
@@ -570,7 +569,7 @@ def test_create_study() -> None:
         }
     }
     study_service.create.return_value = expected
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)}))
     service = build_study_service(
         study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service
     )
