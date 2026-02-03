@@ -499,7 +499,7 @@ class FileStudyAreaDao(AreaDao):
         # Verify that the layer exists
         layers = study_data.tree.get(["layers", "layers", "layers"])
         if layer_id not in [str(layer) for layer in list(layers.keys())]:
-            raise LayerNotFound
+            raise LayerNotFound(layer_id)
 
         # Get all areas UI configuration
         areas_ui = study_data.tree.get(["input", "areas", ",".join(study_data.config.areas), "ui"])

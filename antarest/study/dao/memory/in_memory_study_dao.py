@@ -233,6 +233,10 @@ class InMemoryStudyDao(StudyDao):
         pass
 
     @override
+    def initialize_study(self) -> None:
+        pass
+
+    @override
     def get_version(self) -> StudyVersion:
         return self._version
 

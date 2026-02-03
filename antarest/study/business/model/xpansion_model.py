@@ -187,8 +187,13 @@ XpansionLinkStr: TypeAlias = Annotated[
 ]
 
 
-def _validate_candidate_name(name: str) -> str:
-    # The name is written directly inside the ini file so a specific check is performed here
+def _validate_candidate_name(name: str | int | float) -> str:
+    """The name is written directly inside the ini file so a specific check is performed here"""
+
+    if not isinstance(name, str):
+        # Can happen if someone creates a candidate named `111` or `14.6`
+        name = str(name)
+
     if name.strip() == "":
         raise CandidateNameIsEmpty()
 
