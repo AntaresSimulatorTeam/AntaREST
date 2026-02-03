@@ -81,11 +81,10 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
+from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
-from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.study_data_model import StudyDataDTO
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
@@ -959,9 +958,9 @@ class StudyService:
 
         self._save_study(raw)
 
-        if storage_mode == StorageMode.DATABASE:
-            dao = DatabaseStudyDao(sid, db.session, self.storage_service.raw_study_service._matrix_service)
-            dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name="All"))
+        dao = self._create_study_dao(raw)
+
+        dao.initialize_study()
 
         self.event_bus.push(
             Event(
@@ -973,6 +972,12 @@ class StudyService:
 
         logger.info("study %s created by user %s with storage_mode=%s", raw.id, get_user_id(), storage_mode)
         return str(raw.id)
+
+    def _create_study_dao(self, raw: RawStudy) -> StudyDao:
+        if raw.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(raw.id, db.session, self.storage_service.raw_study_service.matrix_service)
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        return FileStudyTreeDao(self.get_file_study(raw), context.generator_matrix_constants, context.blob_service)
 
     def get_user_name(self) -> str:
         """

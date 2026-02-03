@@ -92,14 +92,10 @@ class DatabaseLayerDao(LayerDao):
             all_areas.add(row.area_id)
             areas_by_layer[row.layer_id].append(row.area_id)
 
-        # Default layer (always exists, always contains all areas)
-        default_name = layer_id_to_name.get(DEFAULT_LAYER_ID, "All")
-        layers = [Layer(id=DEFAULT_LAYER_ID, name=default_name, areas=sorted(all_areas))]
+        areas_by_layer[DEFAULT_LAYER_ID] = list(all_areas)
 
-        # Other layers
+        layers: list[Layer] = []
         for layer_id in layer_id_to_name:
-            if layer_id == DEFAULT_LAYER_ID:
-                continue
             name = layer_id_to_name[layer_id]
             areas = areas_by_layer.get(layer_id, [])
             layers.append(Layer(id=layer_id, name=name, areas=sorted(areas)))

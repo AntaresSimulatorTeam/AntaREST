@@ -114,6 +114,10 @@ class FileStudyTreeDao(
         study_antares["lastsave"] = last_save
         self._file_study.tree.save(study_antares, ["study", "antares"])
 
+    @override
+    def initialize_study(self) -> None:
+        pass
+
     def get_matrix(self, url: list[str]) -> pl.DataFrame:
         """
         Given a url pointing towards an input matrix, parses it and returns it as a pandas dataframe.

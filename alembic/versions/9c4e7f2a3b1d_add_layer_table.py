@@ -43,6 +43,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    with op.batch_alter_table("area_ui") as batch_op:
-        batch_op.drop_constraint(op.f("fk_area_ui_study_id_layer_id_layer"), type_="foreignkey")
+    if op.get_context().dialect.name == "postgresql":
+        with op.batch_alter_table("area_ui") as batch_op:
+            batch_op.drop_constraint(op.f("fk_area_ui_study_id_layer_id_layer"), type_="foreignkey")
     op.drop_table("layer")

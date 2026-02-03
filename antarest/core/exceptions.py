@@ -17,6 +17,8 @@ from typing import Optional, Sequence
 from fastapi.exceptions import HTTPException
 from typing_extensions import override
 
+DEFAULT_LAYER_NAME = "All"
+
 
 class ShouldNotHappenException(Exception):
     pass
@@ -541,19 +543,12 @@ class InvalidConstraintTerm(HTTPException):
 
 
 class LayerNotFound(HTTPException):
-    def __init__(self, *layer_ids: str) -> None:
-        count = len(layer_ids)
-        ids = ", ".join(f"'{a}'" for a in layer_ids)
-        msg = {
-            0: "All layers are found",
-            1: f"Layer is not found: {ids}",
-            2: f"Layers are not found: {ids}",
-        }[min(count, 2)]
-        super().__init__(HTTPStatus.NOT_FOUND, msg)
+    def __init__(self, layer_id: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, f"Layer is not found: '{layer_id}'")
 
 
 class LayerNotAllowedToBeDeleted(HTTPException):
-    def __init__(self, layer_name: str = "All") -> None:
+    def __init__(self, layer_name: str = DEFAULT_LAYER_NAME) -> None:
         super().__init__(
             HTTPStatus.BAD_REQUEST,
             f"You cannot delete the layer: '{layer_name}'",
