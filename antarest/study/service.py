@@ -956,11 +956,7 @@ class StudyService:
             groups=groups,
         )
 
-        raw = self.storage_service.raw_study_service.create(raw)
-
-        self._save_study(raw)
-
-        self._dao_factory.create_study_dao(raw)
+        _, raw = self._dao_factory.create_study_dao(raw)
 
         self.event_bus.push(
             Event(

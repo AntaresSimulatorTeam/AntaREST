@@ -20,7 +20,7 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import StorageMode, Study
+from antarest.study.model import RawStudy, StorageMode, Study, StudyContentStatus
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import create_new_empty_study, is_managed, update_antares_info
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -42,6 +42,11 @@ class DaoFactory:
         self._storage_service = storage_service
 
     def create_study_dao(self, study: Study) -> tuple[StudyDao, Study]:
+        if isinstance(study, RawStudy):
+            study.content_status = StudyContentStatus.VALID
+
+        self.repository.save(study)
+
         dao: StudyDao
         if study.storage_mode == StorageMode.DATABASE:
             dao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
