@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -34,9 +36,11 @@ class DaoFactory:
         self._matrix_service = matrix_service
         self._storage_service = storage_service
 
-    def create_study(self, study: Study) -> StudyDao:
+    def create_study_dao(self, study: Study) -> StudyDao:
         if study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(study.id, db.session, self._matrix_service)
+            dao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
+            dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
+            return dao
 
         return FileStudyTreeDao(
             self._storage_service.get_storage(study).get_raw(study),

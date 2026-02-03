@@ -108,6 +108,7 @@ from antarest.study.business.xpansion_management import (
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.factory.factory import DaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
@@ -574,6 +575,7 @@ class StudyService:
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
         StudyDatabaseMatrixUsageProvider(command_context.matrix_service)
+        self._dao_factory = DaoFactory(command_context, command_context.matrix_service, self.storage_service)
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -958,9 +960,7 @@ class StudyService:
 
         self._save_study(raw)
 
-        dao = self._create_study_dao(raw)
-
-        dao.initialize_study()
+        self._dao_factory.create_study_dao(raw)
 
         self.event_bus.push(
             Event(
