@@ -575,7 +575,7 @@ class StudyService:
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
         StudyDatabaseMatrixUsageProvider(command_context.matrix_service)
-        self._dao_factory = DaoFactory(command_context, command_context.matrix_service, self.storage_service)
+        self._dao_factory = DaoFactory(command_context, command_context.matrix_service, self.repository)
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
