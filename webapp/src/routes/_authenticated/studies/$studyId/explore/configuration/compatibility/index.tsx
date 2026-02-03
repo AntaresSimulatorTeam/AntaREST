@@ -15,7 +15,6 @@
 import Form from "@/components/Form";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -23,8 +22,9 @@ import {
   getCompatibilityParamsFormFields,
   setCompatibilityParamsFormFields,
   HYDRO_PMAX_OPTIONS,
-  type CompatibilityParamsFormFields,
 } from "./-utils";
+import { checkRouteAvailability } from "@/utils/routerUtils";
+import useStudy from "../../../-hooks/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/compatibility/",
@@ -32,24 +32,16 @@ export const Route = createFileRoute(
   component: Compatibility,
 });
 
-function CompatibilityFields() {
-  const [t] = useTranslation();
-  const { control } = useFormContextPlus<CompatibilityParamsFormFields>();
-
-  return (
-    <Fieldset legend={t("study.configuration.compatibility")}>
-      <SelectFE
-        label={t("study.configuration.compatibility.hydroPmax")}
-        options={HYDRO_PMAX_OPTIONS}
-        name="hydroPmax"
-        control={control}
-      />
-    </Fieldset>
-  );
-}
-
 function Compatibility() {
   const { studyId } = Route.useParams();
+  const [t] = useTranslation();
+  const study = useStudy();
+
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "9.2.0",
+    routePath: Route.path,
+  });
 
   return (
     <ViewWrapper>
@@ -60,7 +52,16 @@ function Compatibility() {
         onSubmit={({ dirtyValues }) => setCompatibilityParamsFormFields(studyId, dirtyValues)}
         enableUndoRedo
       >
-        <CompatibilityFields />
+        {({ control }) => (
+          <Fieldset legend={t("study.configuration.compatibility")}>
+            <SelectFE
+              label={t("study.configuration.compatibility.hydroPmax")}
+              options={HYDRO_PMAX_OPTIONS}
+              name="hydroPmax"
+              control={control}
+            />
+          </Fieldset>
+        )}
       </Form>
     </ViewWrapper>
   );

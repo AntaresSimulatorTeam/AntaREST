@@ -72,7 +72,7 @@ function ConfigurationLayout() {
         },
         semver.gte(study.version, "9.2.0") && {
           id: "compatibility",
-          label: "Compatibility",
+          label: t("study.configuration.compatibility"),
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/compatibility",
             params,

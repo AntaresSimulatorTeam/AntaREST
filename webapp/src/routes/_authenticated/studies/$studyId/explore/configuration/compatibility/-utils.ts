@@ -12,24 +12,19 @@
  * This file is part of the Antares project.
  */
 
+import type { Options } from "@/components/fieldEditors/SelectFE";
 import client from "@/services/api/client";
 import type { StudyMetadata } from "@/types/types";
 import type { DeepPartial } from "react-hook-form";
 
 ////////////////////////////////////////////////////////////////
-// Enums
-////////////////////////////////////////////////////////////////
-
-enum HydroPmax {
-  Daily = "daily",
-  Hourly = "hourly",
-}
-
-////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const HYDRO_PMAX_OPTIONS = Object.values(HydroPmax);
+export const HYDRO_PMAX_OPTIONS: Options<string> = ["hourly", "daily"].map((value) => ({
+  label: (t) => t(`global.time.${value}`),
+  value,
+}));
 
 ////////////////////////////////////////////////////////////////
 // Types

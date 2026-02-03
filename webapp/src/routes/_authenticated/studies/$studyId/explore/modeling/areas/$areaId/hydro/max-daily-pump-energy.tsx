@@ -15,6 +15,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import HydroMatrix from "./-components/HydroMatrix";
 import { HydroMatrixType } from "./-utils";
+import { checkRouteAvailability } from "@/utils/routerUtils";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy",
@@ -23,5 +25,12 @@ export const Route = createFileRoute(
 });
 
 function MaxDailyPumpEnergy() {
+  const study = useStudy();
+
+  checkRouteAvailability({
+    studyVersion: study.version,
+    minVersion: "9.2.0",
+    routePath: Route.path,
+  });
   return <HydroMatrix type={HydroMatrixType.MaxDailyPumpEnergy} />;
 }
