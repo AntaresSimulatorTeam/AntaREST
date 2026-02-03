@@ -51,3 +51,23 @@ LINK_TABLE = Table(
         ondelete="CASCADE",
     ),
 )
+
+
+def _create_matrix_table(name: str) -> Table:
+    return Table(
+        name,
+        metadata,
+        Column("study_id", String(36), nullable=False, primary_key=True),
+        Column("area1", String(255), nullable=False, primary_key=True),
+        Column("area2", String(255), nullable=False, primary_key=True),
+        Column("matrix_id", String(64), nullable=False),
+        ForeignKeyConstraint(
+            ["study_id", "area1", "area2"], ["link.study_id", "link.area1", "link.area2"], ondelete="CASCADE"
+        ),
+    )
+
+
+# Relation: One to one with `LINK_TABLE`
+LINK_SERIES_TABLE = _create_matrix_table("link_series")
+LINK_DIRECT_CAPACITY_TABLE = _create_matrix_table("link_direct_capacity")
+LINK_INDIRECT_CAPACITY_TABLE = _create_matrix_table("link_indirect_capacity")
