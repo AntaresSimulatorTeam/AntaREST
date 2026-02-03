@@ -13,7 +13,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from sqlalchemy import Row, Table, delete, insert, select, update
+from sqlalchemy import Insert, Row, Table, Update, delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -179,19 +179,20 @@ class DatabaseLinkDao(LinkDao):
         row = self._get_row(area1, area2, table)
         session = self.get_session()
         study_id = self.get_study_id()
+        stmt: Insert | Update
         if not row:
             # We must check if the link exist or not
             if not self.link_exists(area1, area2):
                 raise LinkNotFound(f"The link {area1} -> {area2} is not present in the study")
-            stmt_insert = insert(table).values(study_id=study_id, area1=area1, area2=area2, matrix_id=matrix_id)
-            session.execute(stmt_insert)
+            stmt = insert(table).values(study_id=study_id, area1=area1, area2=area2, matrix_id=matrix_id)
         else:
-            stmt_update = (
+            stmt = (
                 update(table)
                 .where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
                 .values(matrix_id=matrix_id)
             )
-            session.execute(stmt_update)
+
+        session.execute(stmt)
         session.commit()
 
     @override
