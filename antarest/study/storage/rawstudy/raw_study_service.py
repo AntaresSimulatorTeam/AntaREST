@@ -91,6 +91,10 @@ class RawStudyService(AbstractStorageService):
         self._matrix_service = matrix_service
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
 
+    @property
+    def matrix_service(self) -> ISimpleMatrixService:
+        return self._matrix_service
+
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None
     ) -> None:
