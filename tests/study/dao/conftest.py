@@ -40,7 +40,7 @@ def dao(
         study = create_raw_study(id=study_id, name="Test Study")
         study.storage_mode = StorageMode.DATABASE
         factory = DaoFactory(
-            command_context, matrix_service, StudyMetadataRepository(Mock(), db_session), study_factory
+            command_context, matrix_service, StudyMetadataRepository(Mock(), db_session), study_factory, db_session
         )
         dao, _ = factory.create_study_dao(study)
     assert isinstance(dao, DatabaseStudyDao)

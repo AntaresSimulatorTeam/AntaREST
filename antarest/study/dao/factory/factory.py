@@ -12,6 +12,7 @@
 from pathlib import Path
 
 from antares.study.version import StudyVersion
+from sqlalchemy.orm import Session
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -38,11 +39,20 @@ class DaoFactory:
         matrix_service: ISimpleMatrixService,
         study_repository: StudyMetadataRepository,
         study_factory: StudyFactory,
+        session: Session | None = None,
     ) -> None:
         self._command_context = command_context
         self._matrix_service = matrix_service
         self._study_repository = study_repository
         self._study_factory = study_factory
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
 
     def create_study_dao(self, study: RawStudy) -> tuple[StudyDao, RawStudy]:
         study.content_status = StudyContentStatus.VALID
@@ -50,7 +60,7 @@ class DaoFactory:
 
         dao: StudyDao
         if study.storage_mode == StorageMode.DATABASE:
-            dao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
+            dao = DatabaseStudyDao(study.id, self.session, self._matrix_service)
             dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
             return dao, study
 
