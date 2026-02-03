@@ -38,6 +38,7 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
+from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -45,6 +46,10 @@ if TYPE_CHECKING:
 
 def _normalize_thermal_id(thermal_id: str) -> str:
     return thermal_id.lower()
+
+
+def _normalize_group(group: Any) -> Any:
+    return group.value if hasattr(group, "value") else group
 
 
 class DatabaseThermalDao(ThermalDao):
@@ -120,6 +125,49 @@ class DatabaseThermalDao(ThermalDao):
         initialize_thermal_cluster(cluster, version)
         return cluster
 
+    def _convert_thermal_cluster_to_row(self, area_id: str, cluster: ThermalCluster) -> dict[str, Any]:
+        return dict(
+            study_id=self.get_study_id(),
+            area_id=area_id,
+            thermal_id=_normalize_thermal_id(cluster.id),
+            name=cluster.name,
+            unit_count=cluster.unit_count,
+            nominal_capacity=cluster.nominal_capacity,
+            enabled=cluster.enabled,
+            group=_normalize_group(cluster.group),
+            gen_ts=cluster.gen_ts,
+            min_stable_power=cluster.min_stable_power,
+            min_up_time=cluster.min_up_time,
+            min_down_time=cluster.min_down_time,
+            must_run=cluster.must_run,
+            spinning=cluster.spinning,
+            volatility_forced=cluster.volatility_forced,
+            volatility_planned=cluster.volatility_planned,
+            law_forced=cluster.law_forced,
+            law_planned=cluster.law_planned,
+            marginal_cost=cluster.marginal_cost,
+            spread_cost=cluster.spread_cost,
+            fixed_cost=cluster.fixed_cost,
+            startup_cost=cluster.startup_cost,
+            market_bid_cost=cluster.market_bid_cost,
+            co2=cluster.co2,
+            nh3=cluster.nh3,
+            so2=cluster.so2,
+            nox=cluster.nox,
+            pm2_5=cluster.pm2_5,
+            pm5=cluster.pm5,
+            pm10=cluster.pm10,
+            nmvoc=cluster.nmvoc,
+            op1=cluster.op1,
+            op2=cluster.op2,
+            op3=cluster.op3,
+            op4=cluster.op4,
+            op5=cluster.op5,
+            cost_generation=cluster.cost_generation,
+            efficiency=cluster.efficiency,
+            variable_o_m_cost=cluster.variable_o_m_cost,
+        )
+
     def _get_thermal_matrix_row(self, area_id: str, thermal_id: str, table: Table) -> Row[Any] | None:
         study_id = self.get_study_id()
         session = self.get_session()
@@ -167,78 +215,27 @@ class DatabaseThermalDao(ThermalDao):
         session = self.get_session()
 
         validate_area_exists(session, study_id, area_id)
-
-        cluster = thermal.model_copy()
-
-        thermal_id = _normalize_thermal_id(cluster.id)
-        stmt = select(THERMAL_CLUSTER_TABLE).where(
-            (THERMAL_CLUSTER_TABLE.c.study_id == study_id)
-            & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
-            & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
-        )
-        row = session.execute(stmt).fetchone()
-
-        values = dict(
-            study_id=study_id,
-            area_id=area_id,
-            thermal_id=thermal_id,
-            name=cluster.name,
-            unit_count=cluster.unit_count,
-            nominal_capacity=cluster.nominal_capacity,
-            enabled=cluster.enabled,
-            group=cluster.group,
-            gen_ts=cluster.gen_ts,
-            min_stable_power=cluster.min_stable_power,
-            min_up_time=cluster.min_up_time,
-            min_down_time=cluster.min_down_time,
-            must_run=cluster.must_run,
-            spinning=cluster.spinning,
-            volatility_forced=cluster.volatility_forced,
-            volatility_planned=cluster.volatility_planned,
-            law_forced=cluster.law_forced,
-            law_planned=cluster.law_planned,
-            marginal_cost=cluster.marginal_cost,
-            spread_cost=cluster.spread_cost,
-            fixed_cost=cluster.fixed_cost,
-            startup_cost=cluster.startup_cost,
-            market_bid_cost=cluster.market_bid_cost,
-            co2=cluster.co2,
-            nh3=cluster.nh3,
-            so2=cluster.so2,
-            nox=cluster.nox,
-            pm2_5=cluster.pm2_5,
-            pm5=cluster.pm5,
-            pm10=cluster.pm10,
-            nmvoc=cluster.nmvoc,
-            op1=cluster.op1,
-            op2=cluster.op2,
-            op3=cluster.op3,
-            op4=cluster.op4,
-            op5=cluster.op5,
-            cost_generation=cluster.cost_generation,
-            efficiency=cluster.efficiency,
-            variable_o_m_cost=cluster.variable_o_m_cost,
-        )
-
-        if not row:
-            session.execute(insert(THERMAL_CLUSTER_TABLE).values(**values))
-        else:
-            stmt_update = (
-                update(THERMAL_CLUSTER_TABLE)
-                .where(
-                    (THERMAL_CLUSTER_TABLE.c.study_id == study_id)
-                    & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
-                    & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
-                )
-                .values(**values)
-            )
-            session.execute(stmt_update)
+        values = self._convert_thermal_cluster_to_row(area_id, thermal)
+        upsert_one(session, THERMAL_CLUSTER_TABLE, values)
         session.commit()
 
     @override
     def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
-        for thermal in thermals:
-            self.save_thermal(area_id, thermal)
+        if not thermals:
+            return
+
+        session = self.get_session()
+        study_id = self.get_study_id()
+        validate_area_exists(session, study_id, area_id)
+
+        values = [self._convert_thermal_cluster_to_row(area_id, thermal) for thermal in thermals]
+
+        upsert_multiple(
+            session=session,
+            table=THERMAL_CLUSTER_TABLE,
+            values=values,
+        )
+        session.commit()
 
     @override
     def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:

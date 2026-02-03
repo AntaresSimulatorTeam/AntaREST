@@ -59,13 +59,48 @@ def test_save_thermal_creates_cluster(dao: DatabaseStudyDao) -> None:
 
     dao.save_thermal("paris", thermal)
 
+    expected = ThermalCluster(
+        id="gas_cluster",
+        name="Gas Cluster",
+        unit_count=2,
+        nominal_capacity=1000.0,
+        enabled=False,
+        group="gas",
+        gen_ts=LocalTSGenerationBehavior.FORCE_NO_GENERATION,
+        min_stable_power=0.0,
+        min_up_time=1,
+        min_down_time=1,
+        must_run=False,
+        spinning=0.0,
+        volatility_forced=0.0,
+        volatility_planned=0.0,
+        law_forced=LawOption.GEOMETRIC,
+        law_planned=LawOption.UNIFORM,
+        marginal_cost=0.0,
+        spread_cost=0.0,
+        fixed_cost=0.0,
+        startup_cost=0.0,
+        market_bid_cost=0.0,
+        co2=0.0,
+        nh3=1.0,
+        so2=0,
+        nox=0,
+        pm2_5=0,
+        pm5=0,
+        pm10=0,
+        nmvoc=0,
+        op1=0,
+        op2=0,
+        op3=0,
+        op4=0,
+        op5=0,
+        cost_generation=ThermalCostGeneration.SET_MANUALLY,
+        efficiency=90.0,
+        variable_o_m_cost=1.5,
+    )
+
     result = dao.get_thermal("paris", "gas_cluster")
-    assert result.id == "gas_cluster"
-    assert result.name == "Gas Cluster"
-    assert result.nominal_capacity == 1000.0
-    assert result.enabled is False
-    assert result.group == ThermalClusterGroup.GAS.value
-    assert result.cost_generation == ThermalCostGeneration.SET_MANUALLY
+    assert result == expected
 
 
 def test_save_thermal_overwrites_existing(dao: DatabaseStudyDao) -> None:
@@ -76,6 +111,36 @@ def test_save_thermal_overwrites_existing(dao: DatabaseStudyDao) -> None:
 
     result = dao.get_thermal("paris", "gas")
     assert result.nominal_capacity == 200.0
+
+
+def test_save_multiple_thermal_clusters(dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+
+    dao.save_thermals(
+        "paris",
+        [
+            ThermalCluster(id="gas", name="Gas", nominal_capacity=200.0),
+            ThermalCluster(id="nuclear", name="Nuclear", nominal_capacity=500.0),
+        ],
+    )
+
+    paris_clusters = dao.get_all_thermals_for_area("paris")
+    assert len(paris_clusters) == 2
+    assert [c.name for c in paris_clusters] == ["Gas", "Nuclear"]
+    assert [c.nominal_capacity for c in paris_clusters] == [200.0, 500.0]
+
+    # Updates nuclear and adds a new one, fuel
+    dao.save_thermals(
+        "paris",
+        [
+            ThermalCluster(id="nuclear", name="Nuclear", nominal_capacity=1000.0),
+            ThermalCluster(id="fuel", name="Fuel", nominal_capacity=100.0),
+        ],
+    )
+    paris_clusters = dao.get_all_thermals_for_area("paris")
+    assert len(paris_clusters) == 3
+    assert [c.name for c in paris_clusters] == ["Fuel", "Gas", "Nuclear"]
+    assert [c.nominal_capacity for c in paris_clusters] == [100.0, 200.0, 1000.0]
 
 
 def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
