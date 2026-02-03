@@ -575,21 +575,22 @@ def test_create_study(tmp_path: Path) -> None:
     )
     service.storage_service.variant_study_service.command_factory = Mock()
     service.storage_service.variant_study_service.command_factory.command_context = Mock()
+    factory = Mock()
+    factory.create_study_dao.return_value = Mock(), expected
+    service._dao_factory = factory
 
     jwt_user = JWT_USER
     jwt_user.groups = []
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(jwt_user):
             service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
-    study_service.create.assert_not_called()
+    factory.create_study_dao.assert_not_called()
 
     jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
     with current_user_context(jwt_user):
         service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
 
-    study_service.create.assert_called_once()
-    repository.save.assert_called_once()
-    jwt_user.groups = []
+    factory.create_study_dao.assert_called_once()
 
 
 # noinspection PyArgumentList
