@@ -22,7 +22,7 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import Study
 
 
-class DataBaseStudyDaoFactory(StudyFactoryDao):
+class DatabaseStudyDaoFactory(StudyFactoryDao):
     """
     Used to initialize a study inside DB
     """

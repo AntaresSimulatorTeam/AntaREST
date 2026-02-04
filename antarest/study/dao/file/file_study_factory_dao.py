@@ -33,16 +33,11 @@ class FileStudyDaoFactory(StudyFactoryDao):
 
     @override
     def create_study_dao(self, study: Study) -> FileStudyTreeDao:
-        """The given study object is modified as a side effect"""
         path_study = Path(study.path)
 
         create_new_empty_study(version=StudyVersion.parse(study.version), path_study=path_study)
-
         file_study = self._study_factory.create_from_fs(path_study, is_managed(study), study.id)
         update_antares_info(study, file_study.tree, update_author=True)
 
-        study.path = str(path_study)
-
         context = self._command_context
-        dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
-        return dao
+        return FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)

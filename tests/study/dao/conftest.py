@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.database_study_factory_dao import DataBaseStudyDaoFactory
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.model import StorageMode
 from tests.helpers import create_study
 
@@ -32,6 +32,6 @@ def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseSt
         study.storage_mode = StorageMode.DATABASE
         db_session.add(study)
         db_session.commit()
-        factory = DataBaseStudyDaoFactory(matrix_service, db_session)
+        factory = DatabaseStudyDaoFactory(matrix_service, db_session)
         dao = factory.create_study_dao(study)
     return dao
