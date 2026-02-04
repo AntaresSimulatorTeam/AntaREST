@@ -29,6 +29,29 @@ def area_exists(session: Session, study_id: str, area_id: str) -> bool:
     return session.execute(stmt).fetchone() is not None
 
 
+def validate_areas_exists(session: Session, study_id: str, area_ids: set[str]) -> None:
+    """
+    Validate that all given areas exist in a single query.
+
+    Args:
+        session: The database session.
+        study_id: The study identifier.
+        area_ids: Set of area identifiers to validate.
+
+    Raises:
+        AreaNotFound: If any area does not exist.
+    """
+    if not area_ids:
+        return
+    stmt = select(AREA_TABLE.c.area_id).where(
+        (AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id.in_(area_ids))
+    )
+    existing = {row.area_id for row in session.execute(stmt).fetchall()}
+    missing = area_ids - existing
+    if missing:
+        raise AreaNotFound(next(iter(missing)))
+
+
 """
 Parse and Serialize the `FrequencyFilter` attribute which is stored as Text inside DB.
 """

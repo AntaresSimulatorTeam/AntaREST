@@ -1,0 +1,535 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+"""
+Unit tests for DatabaseHydroDao.
+"""
+
+import pytest
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from antarest.core.exceptions import (
+    AreaNotFound,
+    HydroAllocationNotFound,
+    HydroConfigNotFound,
+    HydroInflowStructureNotFound,
+)
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
+from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.models.hydro import (
+    HYDRO_ALLOCATION_TABLE,
+    HYDRO_CORRELATION_TABLE,
+    HYDRO_INFLOW_STRUCTURE_TABLE,
+    HYDRO_MANAGEMENT_TABLE,
+)
+
+# ==================== Phase 1: Core Config Tests ====================
+
+
+class TestHydroManagement:
+    """Tests for hydro management CRUD operations."""
+
+    def test_get_hydro_management_raises_error_for_area_without_hydro_config(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_hydro_management raises HydroConfigNotFound for an area without hydro config."""
+        dao.save_area("Paris")
+
+        with pytest.raises(HydroConfigNotFound):
+            dao.get_hydro_management("paris")
+
+    def test_get_hydro_management_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_hydro_management raises AreaNotFound if area doesn't exist."""
+        with pytest.raises(AreaNotFound):
+            dao.get_hydro_management("nonexistent")
+
+    def test_save_hydro_management_creates_new_record(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that save_hydro_management creates a new record."""
+        dao.save_area("Paris")
+
+        hydro_mgmt = HydroManagement(
+            inter_daily_breakdown=2.0,
+            intra_daily_modulation=12.0,
+            reservoir=True,
+            reservoir_capacity=500.0,
+            follow_load=False,
+        )
+        dao.save_hydro_management(hydro_mgmt, "paris")
+
+        # Verify in database
+        with db_session:
+            stmt = select(HYDRO_MANAGEMENT_TABLE).where(
+                (HYDRO_MANAGEMENT_TABLE.c.study_id == dao.get_study_id())
+                & (HYDRO_MANAGEMENT_TABLE.c.area_id == "paris")
+            )
+            row = db_session.execute(stmt).fetchone()
+            assert row is not None
+            assert row.inter_daily_breakdown == 2.0
+            assert row.intra_daily_modulation == 12.0
+            assert row.reservoir is True
+            assert row.reservoir_capacity == 500.0
+            assert row.follow_load is False
+
+    def test_save_hydro_management_updates_existing_record(self, dao: DatabaseStudyDao) -> None:
+        """Test that save_hydro_management updates an existing record."""
+        dao.save_area("Paris")
+
+        # Create initial config
+        hydro_mgmt1 = HydroManagement(reservoir=False, reservoir_capacity=100.0)
+        dao.save_hydro_management(hydro_mgmt1, "paris")
+
+        # Update config
+        hydro_mgmt2 = HydroManagement(reservoir=True, reservoir_capacity=999.0)
+        dao.save_hydro_management(hydro_mgmt2, "paris")
+
+        # Verify update
+        result = dao.get_hydro_management("paris")
+        assert result.reservoir is True
+        assert result.reservoir_capacity == 999.0
+
+    def test_save_hydro_management_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
+        """Test that save_hydro_management raises AreaNotFound if area doesn't exist."""
+        hydro_mgmt = HydroManagement()
+        with pytest.raises(AreaNotFound):
+            dao.save_hydro_management(hydro_mgmt, "nonexistent")
+
+    def test_hydro_management_with_version_specific_field(self, dao: DatabaseStudyDao) -> None:
+        """Test that overflow_spilled_cost_difference (v9.2+) is handled correctly."""
+        dao.save_area("Paris")
+
+        hydro_mgmt = HydroManagement(overflow_spilled_cost_difference=5.5)
+        dao.save_hydro_management(hydro_mgmt, "paris")
+
+        result = dao.get_hydro_management("paris")
+        assert result.overflow_spilled_cost_difference == 5.5
+
+
+class TestInflowStructure:
+    """Tests for inflow structure CRUD operations."""
+
+    def test_get_inflow_structure_raises_error_for_area_without_config(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_inflow_structure raises HydroInflowStructureNotFound for an area without config."""
+        dao.save_area("Paris")
+
+        with pytest.raises(HydroInflowStructureNotFound):
+            dao.get_inflow_structure("paris")
+
+    def test_get_inflow_structure_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_inflow_structure raises AreaNotFound if area doesn't exist."""
+        with pytest.raises(AreaNotFound):
+            dao.get_inflow_structure("nonexistent")
+
+    def test_save_inflow_structure_creates_new_record(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that save_inflow_structure creates a new record."""
+        dao.save_area("Paris")
+
+        inflow = InflowStructure(inter_monthly_correlation=0.8)
+        dao.save_inflow_structure(inflow, "paris")
+
+        # Verify in database
+        with db_session:
+            stmt = select(HYDRO_INFLOW_STRUCTURE_TABLE).where(
+                (HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id == dao.get_study_id())
+                & (HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id == "paris")
+            )
+            row = db_session.execute(stmt).fetchone()
+            assert row is not None
+            assert row.inter_monthly_correlation == 0.8
+
+    def test_save_inflow_structure_updates_existing_record(self, dao: DatabaseStudyDao) -> None:
+        """Test that save_inflow_structure updates an existing record."""
+        dao.save_area("Paris")
+
+        # Create initial config
+        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.3), "paris")
+
+        # Update config
+        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.9), "paris")
+
+        # Verify update
+        result = dao.get_inflow_structure("paris")
+        assert result.inter_monthly_correlation == 0.9
+
+    def test_save_inflow_structure_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
+        """Test that save_inflow_structure raises AreaNotFound if area doesn't exist."""
+        inflow = InflowStructure()
+        with pytest.raises(AreaNotFound):
+            dao.save_inflow_structure(inflow, "nonexistent")
+
+
+class TestGetAllHydroProperties:
+    """Tests for get_all_hydro_properties aggregation."""
+
+    def test_get_all_hydro_properties_returns_empty_dict_for_no_areas(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_all_hydro_properties returns empty dict when no areas exist."""
+        result = dao.get_all_hydro_properties()
+        assert result == {}
+
+    def test_get_all_hydro_properties_raises_error_for_area_without_hydro_management(
+        self, dao: DatabaseStudyDao
+    ) -> None:
+        """Test that get_all_hydro_properties raises HydroConfigNotFound if any area is missing hydro management."""
+        dao.save_area("Paris")
+        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.5), "paris")
+        # No hydro management saved
+
+        with pytest.raises(HydroConfigNotFound):
+            dao.get_all_hydro_properties()
+
+    def test_get_all_hydro_properties_raises_error_for_area_without_inflow_structure(
+        self, dao: DatabaseStudyDao
+    ) -> None:
+        """Test that get_all_hydro_properties raises HydroInflowStructureNotFound if any area is missing inflow structure."""
+        dao.save_area("Paris")
+        dao.save_hydro_management(HydroManagement(reservoir=True), "paris")
+        # No inflow structure saved
+
+        with pytest.raises(HydroInflowStructureNotFound):
+            dao.get_all_hydro_properties()
+
+    def test_get_all_hydro_properties_aggregates_data(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_all_hydro_properties correctly aggregates hydro data for all areas."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+
+        # Save complete hydro data for Paris
+        dao.save_hydro_management(HydroManagement(reservoir=True, reservoir_capacity=500.0), "paris")
+        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.6), "paris")
+
+        # Save complete hydro data for London
+        dao.save_hydro_management(HydroManagement(reservoir=False), "london")
+        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.7), "london")
+
+        result = dao.get_all_hydro_properties()
+
+        assert len(result) == 2
+        assert "paris" in result
+        assert "london" in result
+
+        # Check Paris data
+        assert result["paris"].management_options.reservoir is True
+        assert result["paris"].management_options.reservoir_capacity == 500.0
+        assert result["paris"].inflow_structure.inter_monthly_correlation == 0.6
+
+        # Check London data
+        assert result["london"].management_options.reservoir is False
+        assert result["london"].inflow_structure.inter_monthly_correlation == 0.7
+
+
+# ==================== Phase 2: Allocation & Correlation Tests ====================
+
+
+class TestHydroAllocation:
+    """Tests for hydro allocation CRUD operations."""
+
+    def test_get_hydro_allocation_raises_error_for_area_without_allocation(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_hydro_allocation raises HydroAllocationNotFound for an area without allocation."""
+        dao.save_area("Paris")
+
+        with pytest.raises(HydroAllocationNotFound):
+            dao.get_hydro_allocation("paris")
+
+    def test_get_hydro_allocation_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_hydro_allocation raises AreaNotFound if area doesn't exist."""
+        with pytest.raises(AreaNotFound):
+            dao.get_hydro_allocation("nonexistent")
+
+    def test_save_hydro_allocation_creates_records(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that save_hydro_allocation creates allocation records."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+        dao.save_area("Berlin")
+
+        allocation = HydroAllocation(
+            allocation=[
+                HydroAllocationArea(area_id="paris", coefficient=0.5),
+                HydroAllocationArea(area_id="london", coefficient=0.3),
+                HydroAllocationArea(area_id="berlin", coefficient=0.2),
+            ]
+        )
+        dao.save_hydro_allocation("paris", allocation)
+
+        # Verify in database
+        with db_session:
+            stmt = select(HYDRO_ALLOCATION_TABLE).where(
+                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                & (HYDRO_ALLOCATION_TABLE.c.source_area_id == "paris")
+            )
+            rows = db_session.execute(stmt).fetchall()
+            assert len(rows) == 3
+
+            coefficients = {row.target_area_id: row.coefficient for row in rows}
+            assert coefficients["paris"] == 0.5
+            assert coefficients["london"] == 0.3
+            assert coefficients["berlin"] == 0.2
+
+    def test_save_hydro_allocation_replaces_existing_records(self, dao: DatabaseStudyDao) -> None:
+        """Test that save_hydro_allocation replaces existing allocation."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+
+        # Create initial allocation
+        dao.save_hydro_allocation(
+            "paris", HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])
+        )
+
+        # Replace with new allocation
+        dao.save_hydro_allocation(
+            "paris",
+            HydroAllocation(
+                allocation=[
+                    HydroAllocationArea(area_id="paris", coefficient=0.6),
+                    HydroAllocationArea(area_id="london", coefficient=0.4),
+                ]
+            ),
+        )
+
+        result = dao.get_hydro_allocation("paris")
+        assert len(result.allocation) == 2
+
+    def test_save_hydro_allocation_validates_target_areas(self, dao: DatabaseStudyDao) -> None:
+        """Test that save_hydro_allocation validates that target areas exist."""
+        dao.save_area("Paris")
+
+        allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="nonexistent", coefficient=1.0)])
+        with pytest.raises(AreaNotFound):
+            dao.save_hydro_allocation("paris", allocation)
+
+    def test_get_hydro_allocation_matrix(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_hydro_allocation_matrix returns all allocations."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+
+        dao.save_hydro_allocation(
+            "paris",
+            HydroAllocation(
+                allocation=[
+                    HydroAllocationArea(area_id="paris", coefficient=0.7),
+                    HydroAllocationArea(area_id="london", coefficient=0.3),
+                ]
+            ),
+        )
+        dao.save_hydro_allocation(
+            "london", HydroAllocation(allocation=[HydroAllocationArea(area_id="london", coefficient=1.0)])
+        )
+
+        result = dao.get_hydro_allocation_matrix()
+
+        assert len(result) == 2
+        assert "paris" in result
+        assert "london" in result
+        assert len(result["paris"].allocation) == 2
+        assert len(result["london"].allocation) == 1
+
+
+class TestHydroCorrelation:
+    """Tests for hydro correlation CRUD operations."""
+
+    def test_get_hydro_correlation_returns_self_correlation(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_hydro_correlation returns self-correlation for new area."""
+        dao.save_area("Paris")
+
+        correlation = dao.get_hydro_correlation("paris")
+
+        assert len(correlation.correlation) == 1
+        assert correlation.correlation[0].area_id == "paris"
+        assert correlation.correlation[0].coefficient == 100.0  # Diagonal = 100%
+
+    def test_get_hydro_correlation_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_hydro_correlation raises AreaNotFound if area doesn't exist."""
+        with pytest.raises(AreaNotFound):
+            dao.get_hydro_correlation("nonexistent")
+
+    def test_save_hydro_correlation_creates_records(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that save_hydro_correlation creates correlation records."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+
+        correlation = HydroCorrelation(
+            correlation=[
+                HydroCorrelationArea(area_id="paris", coefficient=100.0),  # Self-correlation
+                HydroCorrelationArea(area_id="london", coefficient=50.0),  # 50% correlation with London
+            ]
+        )
+        dao.save_hydro_correlation("paris", correlation)
+
+        # Verify in database (only upper triangle stored)
+        with db_session:
+            stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.study_id == dao.get_study_id())
+            rows = db_session.execute(stmt).fetchall()
+
+            # Only one record (paris-london pair, stored as lower < higher alphabetically)
+            assert len(rows) == 1
+            row = rows[0]
+            assert row.area_from == "london"  # Alphabetically first
+            assert row.area_to == "paris"
+            assert row.coefficient == 0.5  # Stored as -1 to 1
+
+    def test_save_hydro_correlation_stores_symmetric_data(self, dao: DatabaseStudyDao) -> None:
+        """Test that correlation is stored symmetrically (only upper triangle)."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+
+        # Save from Paris perspective
+        dao.save_hydro_correlation(
+            "paris",
+            HydroCorrelation(
+                correlation=[
+                    HydroCorrelationArea(area_id="paris", coefficient=100.0),
+                    HydroCorrelationArea(area_id="london", coefficient=75.0),
+                ]
+            ),
+        )
+
+        # Get from London perspective should show same correlation
+        london_corr = dao.get_hydro_correlation("london")
+
+        # Find paris correlation in london's correlations
+        paris_corr = next((c for c in london_corr.correlation if c.area_id == "paris"), None)
+        assert paris_corr is not None
+        assert paris_corr.coefficient == 75.0
+
+    def test_save_hydro_correlation_validates_areas(self, dao: DatabaseStudyDao) -> None:
+        """Test that save_hydro_correlation validates that correlated areas exist."""
+        dao.save_area("Paris")
+
+        correlation = HydroCorrelation(
+            correlation=[
+                HydroCorrelationArea(area_id="paris", coefficient=100.0),
+                HydroCorrelationArea(area_id="nonexistent", coefficient=50.0),
+            ]
+        )
+        with pytest.raises(AreaNotFound):
+            dao.save_hydro_correlation("paris", correlation)
+
+    def test_get_hydro_correlation_matrix(self, dao: DatabaseStudyDao) -> None:
+        """Test that get_hydro_correlation_matrix returns the full matrix."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+
+        # Save correlation
+        dao.save_hydro_correlation(
+            "paris",
+            HydroCorrelation(
+                correlation=[
+                    HydroCorrelationArea(area_id="paris", coefficient=100.0),
+                    HydroCorrelationArea(area_id="london", coefficient=60.0),
+                ]
+            ),
+        )
+
+        result = dao.get_hydro_correlation_matrix()
+
+        # Check matrix properties
+        assert len(result.index) == 2
+        assert len(result.columns) == 2
+        assert result.index == result.columns  # Square matrix
+
+        # Check diagonal is 1.0
+        for i in range(len(result.index)):
+            assert result.data[i][i] == 1.0
+
+        # Check symmetry
+        for i in range(len(result.index)):
+            for j in range(len(result.columns)):
+                assert result.data[i][j] == result.data[j][i]
+
+
+class TestCascadeDelete:
+    """Tests for cascade delete when area is deleted."""
+
+    def test_cascade_delete_hydro_management(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that hydro management is deleted when area is deleted."""
+        dao.save_area("Paris")
+        dao.save_hydro_management(HydroManagement(reservoir=True), "paris")
+
+        # Delete area
+        dao.delete_area("paris")
+
+        # Verify hydro management is also deleted
+        with db_session:
+            stmt = select(HYDRO_MANAGEMENT_TABLE).where(
+                (HYDRO_MANAGEMENT_TABLE.c.study_id == dao.get_study_id())
+                & (HYDRO_MANAGEMENT_TABLE.c.area_id == "paris")
+            )
+            row = db_session.execute(stmt).fetchone()
+            assert row is None
+
+    def test_cascade_delete_inflow_structure(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that inflow structure is deleted when area is deleted."""
+        dao.save_area("Paris")
+        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.8), "paris")
+
+        # Delete area
+        dao.delete_area("paris")
+
+        # Verify inflow structure is also deleted
+        with db_session:
+            stmt = select(HYDRO_INFLOW_STRUCTURE_TABLE).where(
+                (HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id == dao.get_study_id())
+                & (HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id == "paris")
+            )
+            row = db_session.execute(stmt).fetchone()
+            assert row is None
+
+    def test_cascade_delete_hydro_allocation(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that hydro allocation is deleted when source area is deleted."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+        dao.save_hydro_allocation(
+            "paris",
+            HydroAllocation(
+                allocation=[
+                    HydroAllocationArea(area_id="paris", coefficient=0.6),
+                    HydroAllocationArea(area_id="london", coefficient=0.4),
+                ]
+            ),
+        )
+
+        # Delete source area
+        dao.delete_area("paris")
+
+        # Verify allocation is also deleted
+        with db_session:
+            stmt = select(HYDRO_ALLOCATION_TABLE).where(
+                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                & (HYDRO_ALLOCATION_TABLE.c.source_area_id == "paris")
+            )
+            rows = db_session.execute(stmt).fetchall()
+            assert len(rows) == 0
+
+    def test_cascade_delete_hydro_correlation(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that hydro correlation is deleted when area is deleted."""
+        dao.save_area("Paris")
+        dao.save_area("London")
+        dao.save_hydro_correlation(
+            "paris",
+            HydroCorrelation(
+                correlation=[
+                    HydroCorrelationArea(area_id="paris", coefficient=100.0),
+                    HydroCorrelationArea(area_id="london", coefficient=50.0),
+                ]
+            ),
+        )
+
+        # Delete area
+        dao.delete_area("paris")
+
+        # Verify correlation is also deleted
+        with db_session:
+            stmt = select(HYDRO_CORRELATION_TABLE).where(
+                (HYDRO_CORRELATION_TABLE.c.study_id == dao.get_study_id())
+                & ((HYDRO_CORRELATION_TABLE.c.area_from == "paris") | (HYDRO_CORRELATION_TABLE.c.area_to == "paris"))
+            )
+            rows = db_session.execute(stmt).fetchall()
+            assert len(rows) == 0
