@@ -290,7 +290,8 @@ class TestVariantStudyService:
         db.session.commit()
 
         # Set up the Raw Study
-        raw_study_service.create(raw_study)
+        context = variant_study_service.command_factory.command_context
+        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
 
         # Variant studies
         variant_list = []
