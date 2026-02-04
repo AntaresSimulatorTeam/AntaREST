@@ -30,6 +30,8 @@ def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseSt
     with db_session:
         study = create_study(id=study_id, name="Test Study")
         study.storage_mode = StorageMode.DATABASE
+        db_session.add(study)
+        db_session.commit()
         factory = DataBaseStudyDaoFactory(matrix_service, db_session)
         dao = factory.create_study_dao(study)
     return dao
