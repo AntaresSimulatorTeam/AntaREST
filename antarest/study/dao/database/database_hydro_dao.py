@@ -16,8 +16,10 @@ Database implementation of HydroDao using SQLAlchemy Core.
 This module provides database-backed storage for hydro configuration when storage_mode=DATABASE.
 """
 
+from abc import abstractmethod
 from typing import Any, Dict
 
+import numpy as np
 import polars as pl
 from sqlalchemy import Row, delete, insert, select, update
 from sqlalchemy.orm import Session
@@ -31,12 +33,12 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelation,
-    HydroCorrelationArea,
     HydroCorrelationMatrix,
 )
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.dao.database.common import validate_area_exists, validate_areas_exists
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
@@ -48,6 +50,9 @@ from antarest.study.dao.database.models.hydro import (
 
 class DatabaseHydroDao(HydroDao):
     """Database implementation of HydroDao"""
+
+    _study_id: str
+    _db_session: Session
 
     def __init__(self, study_id: str, db_session: Session) -> None:
         """
@@ -67,6 +72,10 @@ class DatabaseHydroDao(HydroDao):
     def get_session(self) -> Session:
         """Get the SQLAlchemy session for database operations."""
         return self._db_session
+
+    @abstractmethod
+    def get_impl(self) -> "DatabaseStudyDao":
+        pass
 
     # ==================== Conversion Functions ====================
 
@@ -436,40 +445,22 @@ class DatabaseHydroDao(HydroDao):
         session = self.get_session()
 
         # Get all area IDs from the study
-        area_stmt = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_id == study_id)
-        area_ids = sorted(row.area_id for row in session.execute(area_stmt).fetchall())
+        area_ids = self.get_impl().get_all_area_ids()
 
-        if not area_ids:
-            # No areas in study - return empty matrix
-            return HydroCorrelationMatrix(index=[], columns=[], data=[])
+        # Start with identity matrix (diagonal = 1, rest = 0)
+        array = np.identity(len(area_ids))
 
-        # Get stored correlations
+        # Get stored correlations and fill the matrix
         stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
 
-        # Build correlation lookup: (area1, area2) -> coefficient
-        correlation_lookup: dict[tuple[str, str], float] = {}
         for row in rows:
-            # DB stores -1 to 1, convert to -100 to 100
-            coefficient = row.coefficient * 100
-            correlation_lookup[(row.area_from, row.area_to)] = coefficient
-            correlation_lookup[(row.area_to, row.area_from)] = coefficient  # Symmetric
+            i = area_ids.index(row.area_from)
+            j = area_ids.index(row.area_to)
+            array[i][j] = row.coefficient
+            array[j][i] = row.coefficient
 
-        # Build correlations for each area
-        correlations_dict: dict[str, HydroCorrelation] = {}
-        for area_id in area_ids:
-            area_correlations = []
-            for other_area_id in area_ids:
-                if area_id == other_area_id:
-                    # Self-correlation is always 100%
-                    coefficient = 100.0
-                else:
-                    # Use stored value or default to 0%
-                    coefficient = correlation_lookup.get((area_id, other_area_id), 0.0)
-                area_correlations.append(HydroCorrelationArea(area_id=other_area_id, coefficient=coefficient))
-            correlations_dict[area_id] = HydroCorrelation(correlation=area_correlations)
-
-        return HydroCorrelationMatrix.from_hydro_correlations(correlations_dict)
+        return HydroCorrelationMatrix(index=area_ids, columns=area_ids, data=array)
 
     @override
     def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
@@ -482,16 +473,25 @@ class DatabaseHydroDao(HydroDao):
 
         Raises:
             AreaNotFound: If the area or any correlated area does not exist.
+            ValueError: If the correlation matrix is invalid (via set_correlation validation).
         """
         study_id = self.get_study_id()
         session = self.get_session()
 
+        # Validate area exists
         validate_area_exists(session, study_id, area_id)
 
         # Validate all correlated areas exist
         for corr_area in correlation.correlation:
             if corr_area.area_id != area_id:
                 validate_area_exists(session, study_id, corr_area.area_id)
+
+        # Get current matrix and apply changes (validates diagonal = 1, symmetry, etc.)
+        current_correlation_matrix = self.get_hydro_correlation_matrix()
+        current_correlation_matrix.set_correlation(area_id, correlation)
+
+        # Get all area IDs for iterating the matrix
+        area_ids = self.get_impl().get_all_area_ids()
 
         # Delete existing correlations involving this area
         stmt_delete = delete(HYDRO_CORRELATION_TABLE).where(
@@ -501,34 +501,23 @@ class DatabaseHydroDao(HydroDao):
         session.execute(stmt_delete)
 
         # Insert new correlations (only upper triangle: area_from < area_to)
-        # Skip diagonal (coefficient = 100) as it's implicit
+        # Diagonal is implicit, not stored
         insert_values = []
-        for corr_area in correlation.correlation:
-            if corr_area.area_id == area_id:
-                continue  # Skip self-correlation (diagonal)
-            if corr_area.coefficient == 0:
-                continue  # Skip zero correlations
-
-            # Store coefficient as -1 to 1 (model uses -100 to 100)
-            db_coefficient = corr_area.coefficient / 100
-
-            # Ensure consistent ordering: area_from < area_to
-            if area_id < corr_area.area_id:
+        for i in range(len(area_ids)):
+            # not saved: values from the diagonal are always == 1.0
+            for j in range(i + 1, len(area_ids)):
+                coefficient = current_correlation_matrix.data[i][j]
+                if not coefficient:
+                    # null values are not saved
+                    continue
+                area_from = area_ids[i]
+                area_to = area_ids[j]
                 insert_values.append(
                     {
                         "study_id": study_id,
-                        "area_from": area_id,
-                        "area_to": corr_area.area_id,
-                        "coefficient": db_coefficient,
-                    }
-                )
-            else:
-                insert_values.append(
-                    {
-                        "study_id": study_id,
-                        "area_from": corr_area.area_id,
-                        "area_to": area_id,
-                        "coefficient": db_coefficient,
+                        "area_from": area_from,
+                        "area_to": area_to,
+                        "coefficient": coefficient,
                     }
                 )
 

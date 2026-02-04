@@ -592,6 +592,14 @@ class HydroCorrelationNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, f"Hydro correlation not found for area '{area_id}'")
 
 
+class InvalidHydroCorrelation(HTTPException):
+    def __init__(self, area_id: str, coefficient: float) -> None:
+        super().__init__(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            f"Self-correlation for area '{area_id}' must be 100, got {coefficient}",
+        )
+
+
 class DuplicateAreaName(HTTPException):
     """Exception raised when trying to create an area with an already existing name."""
 
