@@ -21,6 +21,7 @@ from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
@@ -43,26 +44,66 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     provider = StudyDatabaseMatrixUsageProvider(matrix_service)
     matrix_service.register_usage_provider(provider)
 
-    # Create a matrix in the matrix-store
-    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
-    series_id = matrix_service.create(dataframe)
+    # Create matrices in the matrix-store
+    # We need to use different contents, otherwise it will be enough that one table correctly prevents garbage
+    # collection
+    base_data = [[1, 2.5], [3, 4.7]]
+    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(13)]
+    (
+        load_df,
+        solar_df,
+        wind_df,
+        reserves_df,
+        misc_gen_df,
+        link_series_df,
+        link_direct_df,
+        link_indirect_df,
+        thermal_prepro_df,
+        thermal_modulation_df,
+        thermal_series_df,
+        thermal_fuel_cost_df,
+        thermal_co2_cost_df,
+    ) = dataframes
+
+    load_id = matrix_service.create(load_df)
+    solar_id = matrix_service.create(solar_df)
+    wind_id = matrix_service.create(wind_df)
+    reserves_id = matrix_service.create(reserves_df)
+    misc_gen_id = matrix_service.create(misc_gen_df)
+    link_series_id = matrix_service.create(link_series_df)
+    link_direct_id = matrix_service.create(link_direct_df)
+    link_indirect_id = matrix_service.create(link_indirect_df)
+    thermal_prepro_id = matrix_service.create(thermal_prepro_df)
+    thermal_modulation_id = matrix_service.create(thermal_modulation_df)
+    thermal_series_id = matrix_service.create(thermal_series_df)
+    thermal_fuel_cost_id = matrix_service.create(thermal_fuel_cost_df)
+    thermal_co2_cost_id = matrix_service.create(thermal_co2_cost_df)
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
     dao.save_area(area_id)
-    dao.save_load(area_id, series_id)
-    dao.save_solar(area_id, series_id)
-    dao.save_wind(area_id, series_id)
-    dao.save_reserves(area_id, series_id)
-    dao.save_misc_gen(area_id, series_id)
+    dao.save_load(area_id, load_id)
+    dao.save_solar(area_id, solar_id)
+    dao.save_wind(area_id, wind_id)
+    dao.save_reserves(area_id, reserves_id)
+    dao.save_misc_gen(area_id, misc_gen_id)
 
     # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
     area2 = "london"
     dao.save_area(area2)
     dao.save_link(Link(area1=area_id, area2=area2))
-    dao.save_link_series(area_id, area2, series_id)
-    dao.save_link_direct_capacities(area_id, area2, series_id)
-    dao.save_link_indirect_capacities(area_id, area2, series_id)
+    dao.save_link_series(area_id, area2, link_series_id)
+    dao.save_link_direct_capacities(area_id, area2, link_direct_id)
+    dao.save_link_indirect_capacities(area_id, area2, link_indirect_id)
+
+    # Create thermal cluster matrices
+    thermal_id = "gas_cluster"
+    dao.save_thermal(area_id, ThermalCluster(id=thermal_id, name="Gas Cluster"))
+    dao.save_thermal_prepro(area_id, thermal_id, thermal_prepro_id)
+    dao.save_thermal_modulation(area_id, thermal_id, thermal_modulation_id)
+    dao.save_thermal_series(area_id, thermal_id, thermal_series_id)
+    dao.save_thermal_fuel_cost(area_id, thermal_id, thermal_fuel_cost_id)
+    dao.save_thermal_co2_cost(area_id, thermal_id, thermal_co2_cost_id)
 
     # Launch the Garbage collection
     task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
@@ -71,25 +112,40 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
 
     # Ensures the matrices were not removed from their tables
     load = dao.get_load(area_id)
-    pl.testing.assert_frame_equal(load, dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(load, load_df, check_dtypes=False)
 
     solar = dao.get_solar(area_id)
-    pl.testing.assert_frame_equal(solar, dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(solar, solar_df, check_dtypes=False)
 
     wind = dao.get_wind(area_id)
-    pl.testing.assert_frame_equal(wind, dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(wind, wind_df, check_dtypes=False)
 
     misc_gen = dao.get_misc_gen(area_id)
-    pl.testing.assert_frame_equal(misc_gen, dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(misc_gen, misc_gen_df, check_dtypes=False)
 
     reserves = dao.get_reserves(area_id)
-    pl.testing.assert_frame_equal(reserves, dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(reserves, reserves_df, check_dtypes=False)
 
     link_series = dao.get_link_series(area_id, area2)
-    pl.testing.assert_frame_equal(link_series, dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(link_series, link_series_df, check_dtypes=False)
 
     link_direct_capacity = dao.get_link_direct_capacities(area_id, area2)
-    pl.testing.assert_frame_equal(link_direct_capacity, dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(link_direct_capacity, link_direct_df, check_dtypes=False)
 
     link_indirect_capacity = dao.get_link_indirect_capacities(area_id, area2)
-    pl.testing.assert_frame_equal(link_indirect_capacity, dataframe, check_dtypes=False)
+    pl.testing.assert_frame_equal(link_indirect_capacity, link_indirect_df, check_dtypes=False)
+
+    thermal_prepro = dao.get_thermal_prepro(area_id, thermal_id)
+    pl.testing.assert_frame_equal(thermal_prepro, thermal_prepro_df, check_dtypes=False)
+
+    thermal_modulation = dao.get_thermal_modulation(area_id, thermal_id)
+    pl.testing.assert_frame_equal(thermal_modulation, thermal_modulation_df, check_dtypes=False)
+
+    thermal_series = dao.get_thermal_series(area_id, thermal_id)
+    pl.testing.assert_frame_equal(thermal_series, thermal_series_df, check_dtypes=False)
+
+    thermal_fuel_cost = dao.get_thermal_fuel_cost(area_id, thermal_id)
+    pl.testing.assert_frame_equal(thermal_fuel_cost, thermal_fuel_cost_df, check_dtypes=False)
+
+    thermal_co2_cost = dao.get_thermal_co2_cost(area_id, thermal_id)
+    pl.testing.assert_frame_equal(thermal_co2_cost, thermal_co2_cost_df, check_dtypes=False)
