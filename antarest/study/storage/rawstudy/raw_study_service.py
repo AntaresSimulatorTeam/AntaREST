@@ -38,7 +38,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, 
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
-    create_new_empty_study,
     fix_study_root,
     is_managed,
     remove_from_cache,
@@ -212,33 +211,6 @@ class RawStudyService(AbstractStorageService):
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
-
-    def create(self, metadata: RawStudy) -> RawStudy:
-        """
-        Create a new empty study based on the given metadata.
-
-        Args:
-            metadata: An instance containing study information, eg.:
-
-                - id: The study UUID.
-                - name: The name of the study.
-                - version: The version of the study template to be used.
-                - path: The full path of the study directory in the "default" workspace.
-                - author: The author's name (if provided) or "Unknown" if missing.
-
-        Returns:
-            An updated `RawStudy` instance with the path to the newly created study.
-        """
-        path_study = Path(metadata.path)
-
-        create_new_empty_study(version=StudyVersion.parse(metadata.version), path_study=path_study)
-
-        study = self.study_factory.create_from_fs(path_study, is_managed(metadata), metadata.id)
-        update_antares_info(metadata, study.tree, update_author=True)
-
-        metadata.path = str(path_study)
-
-        return metadata
 
     @override
     def copy(
