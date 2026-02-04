@@ -576,7 +576,7 @@ def test_create_study(tmp_path: Path) -> None:
     service.storage_service.variant_study_service.command_factory = Mock()
     service.storage_service.variant_study_service.command_factory.command_context = Mock()
     factory = Mock()
-    factory.create_study_dao.return_value = Mock(), expected
+    factory.create_study_dao.return_value = Mock()
     service._study_dao_factories = {StorageMode.FILESYSTEM: factory}
 
     jwt_user = JWT_USER
