@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { TextField } from "@mui/material";
+import { CircularProgress, TextField } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
 import { editableTreeItemStyles, textFieldStyles, treeNodeIcons } from "./styles";
@@ -21,6 +21,7 @@ interface EditableTreeItemProps {
   itemId: string;
   initialValue?: string;
   isEditing: boolean;
+  isPending?: boolean;
   onSave: (name: string) => void;
   onCancel: () => void;
 }
@@ -29,12 +30,14 @@ function EditableTreeItem({
   itemId,
   initialValue = "",
   isEditing,
+  isPending = false,
   onSave,
   onCancel,
 }: EditableTreeItemProps) {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // TODO check if this is still needed
   useEffect(() => {
     if (isEditing && inputRef.current) {
       // Small delay to ensure the tree item is rendered
@@ -51,6 +54,7 @@ function EditableTreeItem({
 
   const handleSave = () => {
     const trimmedValue = value.trim();
+
     if (trimmedValue) {
       onSave(trimmedValue);
     } else {
@@ -100,7 +104,13 @@ function EditableTreeItem({
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
           fullWidth
+          disabled={isPending}
           sx={textFieldStyles}
+          slotProps={{
+            input: {
+              endAdornment: isPending ? <CircularProgress size={16} sx={{ ml: 1 }} /> : null,
+            },
+          }}
         />
       }
       slots={{

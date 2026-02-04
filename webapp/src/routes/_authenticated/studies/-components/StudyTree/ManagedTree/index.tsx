@@ -23,15 +23,15 @@ import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
-import DeleteFolderDialog from "./DeleteFolderDialog";
+import DeleteDirectoryDialog from "./DeleteDirectoryDialog";
 import EditableTreeItem from "./EditableTreeItem";
-import { useDeleteFolderDialog } from "./hooks/useDeleteFolderDialog";
+import { useDeleteDirectoryDialog } from "./hooks/useDeleteDirectoryDialog";
 import { useDirectoryOperations } from "./hooks/useDirectoryOperations";
 import ManagedTreeNode from "./ManagedTreeNode";
 import type { ManagedTreeProps } from "./types";
 import { buildDirectoryTree, getDirectoryPath } from "./utils";
 
-function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
+function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreeProps) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId, R.T);
@@ -47,32 +47,22 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
 
   const [expandedItems, setExpandedItems] = useState<string[]>(() => initialExpandedItems);
 
-  const deleteDialog = useDeleteFolderDialog(directoryTree);
+  const deleteDialog = useDeleteDirectoryDialog(directoryTree);
 
-  const {
-    startCreating,
-    cancelOperation,
-    createDirectory,
-    isCreating,
-    startUpdating,
-    updateDirectory,
-    isUpdating,
-    deleteDirectory,
-    isDeleting,
-  } = useDirectoryOperations({
+  const operations = useDirectoryOperations({
     onDirectoryCreated: (directory) => {
       // Expand the newly created directory
       setExpandedItems((prev) => [...prev, directory.id]);
     },
   });
 
-  // Sync external isCreatingFolder prop with internal state
-  // When parent triggers root folder creation, start with null parentId
+  // Sync external isCreatingDirectory prop with internal state
+  // When parent triggers root directory creation, start with null parentId
   useEffect(() => {
-    if (isCreatingFolder) {
-      startCreating(null); // null = create at root level (no parent)
+    if (isCreatingDirectory) {
+      operations.create.start(null); // null = create at root level (no parent)
     }
-  }, [isCreatingFolder, startCreating]);
+  }, [isCreatingDirectory, operations.create]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -87,26 +77,26 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
     );
   };
 
-  const handleSaveFolder = (parentId: string | null) => (name: string) => {
-    createDirectory(name, parentId);
-    onFolderCreated();
+  const handleSaveDirectory = (parentId: string | null) => (name: string) => {
+    operations.create.execute(name, parentId);
+    onDirectoryCreated();
   };
 
-  const handleCancelFolder = () => {
-    cancelOperation();
-    onFolderCreated();
+  const handleCancelDirectory = () => {
+    operations.cancel();
+    onDirectoryCreated();
   };
 
   const handleStartUpdate = (directoryId: string) => {
-    startUpdating(directoryId);
+    operations.update.start(directoryId);
   };
 
   const handleSaveUpdate = (directoryId: string, name: string, parentId: string | null) => {
-    updateDirectory(directoryId, name, parentId);
+    operations.update.execute(directoryId, name, parentId);
   };
 
   const handleCancelUpdate = () => {
-    cancelOperation();
+    operations.cancel();
   };
 
   const handleDelete = (directoryId: string) => {
@@ -118,7 +108,7 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
       return;
     }
 
-    deleteDirectory(deleteDialog.state.directoryId, cascade, directories);
+    operations.delete.execute(deleteDialog.state.directoryId, cascade, directories);
     deleteDialog.closeDialog();
   };
 
@@ -126,8 +116,9 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
     deleteDialog.closeDialog();
   };
 
-  const handleAddSubFolder = (parentId: string | null) => {
-    startCreating(parentId);
+  const handleAddSubDirectory = (parentId: string | null) => {
+    operations.create.start(parentId);
+
     // Expand the parent node if it's not already expanded
     if (parentId && !expandedItems.includes(parentId)) {
       setExpandedItems((prev) => [...prev, parentId]);
@@ -138,14 +129,12 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  // Empty state - TODO: handle desktop mode
-  if (directories.length === 0 && !isCreatingFolder) {
+  // Empty state - TODO: handle desktop mode -> we can hide the managed tree ?
+  if (directories.length === 0 && !isCreatingDirectory) {
     return (
       <Box sx={{ p: 2 }}>
         <Typography variant="body2" color="text.secondary">
-          {t("studies.tree.noDirectories", {
-            defaultValue: "No directories found",
-          })}
+          {t("studies.tree.noDirectories")}
         </Typography>
       </Box>
     );
@@ -158,13 +147,14 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
         onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
         defaultSelectedItems={directoryId || ""}
       >
-        {/* Root level folder creation */}
-        {isCreating(null) && (
+        {/* Root level directory creation */}
+        {operations.create.isActive(null) && (
           <EditableTreeItem
             itemId={`temp-root-${Date.now()}`}
             isEditing
-            onSave={handleSaveFolder(null)} // null = save as root level folder
-            onCancel={handleCancelFolder}
+            isPending={operations.create.isPending}
+            onSave={handleSaveDirectory(null)} // null = save as root level directory
+            onCancel={handleCancelDirectory}
           />
         )}
 
@@ -172,22 +162,25 @@ function ManagedTree({ isCreatingFolder, onFolderCreated }: ManagedTreeProps) {
           node={directoryTree}
           onNodeClick={handleNodeClick}
           selectedPath={directoryId || ""}
-          onAddSubFolder={handleAddSubFolder}
-          onSaveSubFolder={handleSaveFolder}
-          onCancelSubFolder={handleCancelFolder}
-          isCreatingSubFolder={isCreating}
+          onAddSubDirectory={handleAddSubDirectory}
+          onSaveSubDirectory={handleSaveDirectory}
+          onCancelSubDirectory={handleCancelDirectory}
+          isCreatingSubDirectory={operations.create.isActive}
+          isCreatePending={operations.create.isPending}
           onStartUpdate={handleStartUpdate}
           onSaveUpdate={handleSaveUpdate}
           onCancelUpdate={handleCancelUpdate}
-          isUpdating={isUpdating}
+          isUpdating={operations.update.isActive}
+          isUpdatePending={operations.update.isPending}
           onDelete={handleDelete}
-          isDeleting={isDeleting}
+          isDeleting={operations.delete.isActive}
+          isDeletePending={operations.delete.isPending}
         />
       </SimpleTreeView>
 
-      <DeleteFolderDialog
+      <DeleteDirectoryDialog
         open={deleteDialog.state.open}
-        folderName={deleteDialog.state.folderName}
+        directoryName={deleteDialog.state.directoryName}
         hasChildren={deleteDialog.state.hasChildren}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}

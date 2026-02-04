@@ -119,7 +119,7 @@ export const renameIconStyles: SxProps<Theme> = {
   fontSize: 16,
 };
 
-export const addSubFolderIconStyles: SxProps<Theme> = {
+export const addSubDirectoryIconStyles: SxProps<Theme> = {
   fontSize: 16,
 };
 

@@ -23,7 +23,7 @@ import { ROOT_NODE_NAME } from "@/components/utils/constants";
 import EditableTreeItem from "./EditableTreeItem";
 import {
   actionButtonStyles,
-  addSubFolderIconStyles,
+  addSubDirectoryIconStyles,
   deleteIconStyles,
   nodeActionsContainerStyles,
   nodeLabelContainerStyles,
@@ -37,16 +37,19 @@ function ManagedTreeNode({
   node,
   onNodeClick,
   selectedPath,
-  onAddSubFolder,
-  onSaveSubFolder,
-  onCancelSubFolder,
-  isCreatingSubFolder,
+  onAddSubDirectory,
+  onSaveSubDirectory,
+  onCancelSubDirectory,
+  isCreatingSubDirectory,
+  isCreatePending,
   onStartUpdate,
   onSaveUpdate,
   onCancelUpdate,
   isUpdating,
+  isUpdatePending,
   onDelete,
   isDeleting,
+  isDeletePending,
 }: ManagedTreeNodeProps) {
   const { children, path, name, id } = node;
   const isRootNode = name === ROOT_NODE_NAME;
@@ -61,9 +64,9 @@ function ManagedTreeNode({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleAddSubFolder = (e: React.MouseEvent) => {
+  const handleAddSubDirectory = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onAddSubFolder(id); // id becomes the parentId for the new subfolder
+    onAddSubDirectory(id); // id becomes the parentId for the new subdirectory
   };
 
   const handleStartUpdate = (e: React.MouseEvent) => {
@@ -95,16 +98,19 @@ function ManagedTreeNode({
             node={child}
             onNodeClick={onNodeClick}
             selectedPath={selectedPath}
-            onAddSubFolder={onAddSubFolder}
-            onSaveSubFolder={onSaveSubFolder}
-            onCancelSubFolder={onCancelSubFolder}
-            isCreatingSubFolder={isCreatingSubFolder}
+            onAddSubDirectory={onAddSubDirectory}
+            onSaveSubDirectory={onSaveSubDirectory}
+            onCancelSubDirectory={onCancelSubDirectory}
+            isCreatingSubDirectory={isCreatingSubDirectory}
+            isCreatePending={isCreatePending}
             onStartUpdate={onStartUpdate}
             onSaveUpdate={onSaveUpdate}
             onCancelUpdate={onCancelUpdate}
             isUpdating={isUpdating}
+            isUpdatePending={isUpdatePending}
             onDelete={onDelete}
             isDeleting={isDeleting}
+            isDeletePending={isDeletePending}
           />
         ))}
       </>
@@ -118,6 +124,7 @@ function ManagedTreeNode({
         itemId={path}
         initialValue={name}
         isEditing
+        isPending={isUpdatePending}
         onSave={handleSaveUpdate}
         onCancel={onCancelUpdate}
       />
@@ -138,8 +145,8 @@ function ManagedTreeNode({
             </Box>
           </Tooltip>
           <Box sx={nodeActionsContainerStyles}>
-            <IconButton size="small" onClick={handleAddSubFolder} sx={actionButtonStyles}>
-              <CreateNewFolderIcon sx={addSubFolderIconStyles} />
+            <IconButton size="small" onClick={handleAddSubDirectory} sx={actionButtonStyles}>
+              <CreateNewFolderIcon sx={addSubDirectoryIconStyles} />
             </IconButton>
             <IconButton size="small" onClick={handleStartUpdate} sx={actionButtonStyles}>
               <EditIcon sx={renameIconStyles} />
@@ -157,13 +164,14 @@ function ManagedTreeNode({
       }}
       sx={treeItemStyles}
     >
-      {/* Show editable item when creating a subfolder under this directory */}
-      {isCreatingSubFolder(id) && (
+      {/* Show editable item when creating a subdirectory under this directory */}
+      {isCreatingSubDirectory(id) && (
         <EditableTreeItem
           itemId={`temp-${id}-${Date.now()}`}
           isEditing
-          onSave={onSaveSubFolder(id)} // id is the parentId for the new subfolder
-          onCancel={onCancelSubFolder}
+          isPending={isCreatePending}
+          onSave={onSaveSubDirectory(id)} // id is the parentId for the new subdirectory
+          onCancel={onCancelSubDirectory}
         />
       )}
 
@@ -174,16 +182,19 @@ function ManagedTreeNode({
           node={child}
           onNodeClick={onNodeClick}
           selectedPath={selectedPath}
-          onAddSubFolder={onAddSubFolder}
-          onSaveSubFolder={onSaveSubFolder}
-          onCancelSubFolder={onCancelSubFolder}
-          isCreatingSubFolder={isCreatingSubFolder}
+          onAddSubDirectory={onAddSubDirectory}
+          onSaveSubDirectory={onSaveSubDirectory}
+          onCancelSubDirectory={onCancelSubDirectory}
+          isCreatingSubDirectory={isCreatingSubDirectory}
+          isCreatePending={isCreatePending}
           onStartUpdate={onStartUpdate}
           onSaveUpdate={onSaveUpdate}
           onCancelUpdate={onCancelUpdate}
           isUpdating={isUpdating}
+          isUpdatePending={isUpdatePending}
           onDelete={onDelete}
           isDeleting={isDeleting}
+          isDeletePending={isDeletePending}
         />
       ))}
     </TreeItemEnhanced>

@@ -15,8 +15,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { directoriesApi } from "@/services/api/directories";
 import { directoryKeys } from "@/queries/directories/keys";
+import { directoriesApi } from "@/services/api/directories";
 import type { Directory } from "@/services/api/directories/types";
 
 interface UseDeleteDirectoryOptions {
@@ -29,16 +29,10 @@ interface DeleteDirectoryParams {
   allDirectories: Directory[];
 }
 
-/**
- * Moves children of a directory to its parent level
- * Used when deleting a folder without cascade
- *
- * @param directoryId
- * @param directories
- */
+// For cascade deletion - used to move children to parent level
 async function moveChildrenToParent(directoryId: string, directories: Directory[]) {
-  const directoryToDelete = directories.find((d) => d.id === directoryId);
-  const children = directories.filter((d) => d.parentId === directoryId);
+  const directoryToDelete = directories.find((dir) => dir.id === directoryId);
+  const children = directories.filter((dir) => dir.parentId === directoryId);
   const newParentId = directoryToDelete?.parentId ?? null;
 
   await Promise.all(
@@ -51,12 +45,7 @@ async function moveChildrenToParent(directoryId: string, directories: Directory[
   );
 }
 
-/**
- * Updates the directory list optimistically for non-cascade deletion
- *
- * @param directories
- * @param directoryId
- */
+// For non-cascade deletion - updates the directory list optimistically
 function updateDirectoriesOptimistically(
   directories: Directory[],
   directoryId: string,
@@ -106,22 +95,19 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
 
       return { previousDirectories };
     },
-    onError: (error, _variables, context) => {
+    onError: (_error, _variables, context) => {
       // Rollback optimistic update
       if (context?.previousDirectories) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
       }
 
-      // Show error message
+      // TODO use error snackbar
       enqueueSnackbar(
         t("studies.deleteFolder.error", {
-          defaultValue: "Failed to delete folder. Please try again.",
+          defaultValue: "Failed to delete directory. Please try again.",
         }),
         { variant: "error" },
       );
-
-      // Log error for debugging
-      console.error("Failed to delete directory:", error);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: directoryKeys.all });

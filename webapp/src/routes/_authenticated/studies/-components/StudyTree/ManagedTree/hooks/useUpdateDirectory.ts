@@ -13,6 +13,8 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import { directoryKeys } from "@/queries/directories/keys";
 import { directoryMutations } from "@/queries/directories/mutations";
 import type { Directory } from "@/services/api/directories/types";
@@ -23,6 +25,8 @@ interface UseUpdateDirectoryOptions {
 
 export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
   const queryClient = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
 
   return useMutation({
     ...directoryMutations.update(),
@@ -47,12 +51,18 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
 
       return { previousDirectories };
     },
-    onError: (_err, _variables, context) => {
+    onError: (_error, _variables, context) => {
+      // Rollback optimistic update
       if (context?.previousDirectories) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
       }
+
+      //  TODO use errorSnackbar
+      enqueueSnackbar(t("studies.updateFolder.error"), { variant: "error" });
     },
     onSuccess: () => {
+      // TODO - check if we need to invalidate the query
+      // or we can use the returned data to update the cache
       queryClient.invalidateQueries({ queryKey: directoryKeys.all });
       options?.onSuccess?.();
     },

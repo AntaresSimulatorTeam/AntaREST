@@ -35,23 +35,26 @@ export interface ManagedTreeNodeProps {
   selectedPath?: string;
 
   // Create handlers
-  // Note: parentId represents where the folder will be created
-  // - For root folders: parentId is null (handled in ManagedTree)
-  // - For subfolders: parentId is the directory ID that will contain the new folder
-  onAddSubFolder: (parentId: string) => void;
-  onSaveSubFolder: (parentId: string) => (name: string) => void;
-  onCancelSubFolder: () => void;
-  isCreatingSubFolder: (parentId: string) => boolean;
+  // Note: parentId represents where the directory will be created
+  // - For root directories: parentId is null (handled in ManagedTree)
+  // - For subdirectories: parentId is the directory ID that will contain the new directory
+  onAddSubDirectory: (parentId: string) => void;
+  onSaveSubDirectory: (parentId: string) => (name: string) => void;
+  onCancelSubDirectory: () => void;
+  isCreatingSubDirectory: (parentId: string) => boolean;
+  isCreatePending: boolean;
 
   // Update handlers
   onStartUpdate: (directoryId: string) => void;
   onSaveUpdate: (directoryId: string, name: string, parentId: string | null) => void;
   onCancelUpdate: () => void;
   isUpdating: (directoryId: string) => boolean;
+  isUpdatePending: boolean;
 
   // Delete handlers
   onDelete: (directoryId: string) => void;
   isDeleting: (directoryId: string) => boolean;
+  isDeletePending: boolean;
 }
 
 /**
@@ -59,7 +62,7 @@ export interface ManagedTreeNodeProps {
  */
 export interface ManagedTreeProps {
   studies: StudyMetadata[];
-  isCreatingFolder: boolean;
-  onFolderCreated: () => void;
-  onHomeClick: () => void;
+  isCreatingDirectory: boolean;
+  onDirectoryCreated: () => void;
+  onRootClick: () => void;
 }

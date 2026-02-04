@@ -24,21 +24,21 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { type BasicDialogProps } from "@/components/dialogs/BasicDialog";
 
-export interface DeleteFolderDialogProps extends Omit<BasicDialogProps, "actions"> {
-  folderName: string;
+export interface DeleteDirectoryDialogProps extends Omit<BasicDialogProps, "actions"> {
+  directoryName: string;
   hasChildren: boolean;
   onConfirm: (cascade: boolean) => void;
   onCancel: VoidFunction;
 }
 
-function DeleteFolderDialog({
-  folderName,
+function DeleteDirectoryDialog({
+  directoryName,
   hasChildren,
   onConfirm,
   onCancel,
   onClose,
   ...basicDialogProps
-}: DeleteFolderDialogProps) {
+}: DeleteDirectoryDialogProps) {
   const { t } = useTranslation();
   const [cascade, setCascade] = useState(true);
 
@@ -61,7 +61,7 @@ function DeleteFolderDialog({
 
   return (
     <BasicDialog
-      title={t("studies.deleteFolder.title", { defaultValue: "Delete Folder" })}
+      title={t("studies.deleteFolder.title")}
       onClose={handleClose}
       alert="warning"
       maxWidth="sm"
@@ -81,13 +81,15 @@ function DeleteFolderDialog({
       <Typography variant="body2" sx={{ mb: 2 }}>
         {hasChildren
           ? t("studies.deleteFolder.messageWithChildren", {
+              // TODO add key
               defaultValue:
-                'You are about to delete the folder "{{folderName}}". How would you like to proceed?',
-              folderName,
+                'You are about to delete the directory "{{directoryName}}". How would you like to proceed?',
+              directoryName,
             })
           : t("studies.deleteFolder.messageNoChildren", {
-              defaultValue: 'Are you sure you want to delete the folder "{{folderName}}"?',
-              folderName,
+              // TODO add key
+              defaultValue: 'Are you sure you want to delete the directory "{{directoryName}}"?',
+              directoryName,
             })}
       </Typography>
 
@@ -100,7 +102,8 @@ function DeleteFolderDialog({
               label={
                 <Typography variant="body2">
                   {t("studies.deleteFolder.cascadeOption", {
-                    defaultValue: "Delete folder and all subfolders",
+                    // TODO add key
+                    defaultValue: "Delete directory and all subdirectories",
                   })}
                 </Typography>
               }
@@ -111,7 +114,9 @@ function DeleteFolderDialog({
               label={
                 <Typography variant="body2">
                   {t("studies.deleteFolder.folderOnlyOption", {
-                    defaultValue: "Delete only this folder (subfolders will be moved to parent)",
+                    // TODO add key
+                    defaultValue:
+                      "Delete only this directory (subdirectories will be moved to parent)",
                   })}
                 </Typography>
               }
@@ -123,4 +128,4 @@ function DeleteFolderDialog({
   );
 }
 
-export default DeleteFolderDialog;
+export default DeleteDirectoryDialog;

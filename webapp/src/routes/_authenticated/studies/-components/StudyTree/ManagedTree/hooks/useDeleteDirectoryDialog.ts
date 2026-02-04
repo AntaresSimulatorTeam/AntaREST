@@ -19,22 +19,23 @@ import { findDirectoryById } from "../utils";
 interface DeleteDialogState {
   open: boolean;
   directoryId: string | null;
-  folderName: string;
+  directoryName: string;
   hasChildren: boolean;
 }
 
 const INITIAL_STATE: DeleteDialogState = {
   open: false,
   directoryId: null,
-  folderName: "",
+  directoryName: "",
   hasChildren: false,
 };
 
-export function useDeleteFolderDialog(directoryTree: DirectoryTreeNode) {
+export function useDeleteDirectoryDialog(directoryTree: DirectoryTreeNode) {
   const [state, setState] = useState<DeleteDialogState>(INITIAL_STATE);
 
   const openDialog = (directoryId: string) => {
     const directory = findDirectoryById(directoryTree, directoryId);
+
     if (!directory) {
       return;
     }
@@ -42,7 +43,7 @@ export function useDeleteFolderDialog(directoryTree: DirectoryTreeNode) {
     setState({
       open: true,
       directoryId,
-      folderName: directory.name,
+      directoryName: directory.name,
       hasChildren: directory.children.length > 0,
     });
   };

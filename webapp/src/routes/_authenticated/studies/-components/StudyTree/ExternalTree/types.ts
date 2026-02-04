@@ -33,5 +33,5 @@ export interface ExternalTreeNodeProps {
 
 export interface ExternalTreeProps {
   studies: StudyMetadata[];
-  onHomeClick: () => void;
+  onRootClick: () => void;
 }

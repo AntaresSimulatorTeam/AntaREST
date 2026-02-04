@@ -26,14 +26,13 @@ import type { DirectoryTreeNode } from "./types";
  *
  * @example
  * const directories = [
- *   { id: '1', name: 'Folder 1', parentId: null },
- *   { id: '2', name: 'Subfolder', parentId: '1' }
+ *   { id: '1', name: 'Directory 1', parentId: null },
+ *   { id: '2', name: 'Subdirectory', parentId: '1' }
  * ];
  * const tree = buildDirectoryTree(directories);
- * Returns: { name: 'Root', path: '', children: [{ name: 'Folder 1', ... }] }
+ * Returns: { name: 'Root', path: '', children: [{ name: 'Directory 1', ... }] }
  */
 export function buildDirectoryTree(directories: Directory[]): DirectoryTreeNode {
-  // Create an index of directories by ID for efficient lookups
   // const byId = R.indexBy(R.prop("id"), directories);
 
   // Find all root-level directories (those with parentId === null)

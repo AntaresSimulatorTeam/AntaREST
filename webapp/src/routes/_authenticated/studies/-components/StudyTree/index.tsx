@@ -30,7 +30,7 @@ function StudyTree() {
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
 
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isCreatingDirectory, setIsCreatingDirectory] = useState(false);
 
   const managedStudies = useMemo(() => studies.filter((s) => s.managed), [studies]);
   const externalStudies = useMemo(() => studies.filter((s) => !s.managed), [studies]);
@@ -39,7 +39,7 @@ function StudyTree() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleManagedHomeClick = () => {
+  const handleManagedRootClick = () => {
     dispatch(
       updateStudyFilters({
         activeTree: "managed",
@@ -48,7 +48,7 @@ function StudyTree() {
     );
   };
 
-  const handleExternalHomeClick = () => {
+  const handleExternalRootClick = () => {
     dispatch(
       updateStudyFilters({
         activeTree: "external",
@@ -57,12 +57,12 @@ function StudyTree() {
     );
   };
 
-  const handleAddFolderClick = () => {
-    setIsCreatingFolder(true);
+  const handleAddDirectoryClick = () => {
+    setIsCreatingDirectory(true);
   };
 
-  const handleFolderCreated = () => {
-    setIsCreatingFolder(false);
+  const handleDirectoryCreated = () => {
+    setIsCreatingDirectory(false);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -75,14 +75,14 @@ function StudyTree() {
         variant="managed"
         title={t("studies.tree.managed", { defaultValue: "Managed Studies" })} // TODO: add key
         icon={<AccountTreeIcon />}
-        onHomeClick={handleManagedHomeClick}
-        onAddFolder={handleAddFolderClick}
+        onRootClick={handleManagedRootClick}
+        onAddDirectory={handleAddDirectoryClick}
       >
         <ManagedTree
           studies={managedStudies}
-          isCreatingFolder={isCreatingFolder}
-          onFolderCreated={handleFolderCreated}
-          onHomeClick={handleManagedHomeClick}
+          isCreatingDirectory={isCreatingDirectory}
+          onDirectoryCreated={handleDirectoryCreated}
+          onRootClick={handleManagedRootClick}
         />
       </TreeSection>
 
@@ -93,9 +93,9 @@ function StudyTree() {
         title={t("studies.tree.external", { defaultValue: "Disk Studies" })} // TODO: add key
         //subtitle={t("studies.tree.readOnly", { defaultValue: "(read-only)" })}
         icon={<StorageIcon />}
-        onHomeClick={handleExternalHomeClick}
+        onRootClick={handleExternalRootClick}
       >
-        <ExternalTree studies={externalStudies} onHomeClick={handleExternalHomeClick} />
+        <ExternalTree studies={externalStudies} onRootClick={handleExternalRootClick} />
       </TreeSection>
     </Box>
   );

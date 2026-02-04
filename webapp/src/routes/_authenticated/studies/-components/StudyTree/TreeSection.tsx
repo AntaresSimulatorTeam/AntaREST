@@ -33,8 +33,8 @@ interface TreeSectionProps {
   subtitle?: string;
   icon: React.ReactNode;
   children: React.ReactNode;
-  onAddFolder?: () => void;
-  onHomeClick?: () => void;
+  onAddDirectory?: () => void;
+  onRootClick?: () => void;
 }
 
 const variantStyles: Record<
@@ -92,8 +92,8 @@ function TreeSection({
   subtitle,
   icon,
   children,
-  onAddFolder,
-  onHomeClick,
+  onAddDirectory,
+  onRootClick,
 }: TreeSectionProps) {
   const styles = variantStyles[variant];
   const { t } = useTranslation();
@@ -117,11 +117,11 @@ function TreeSection({
           )}
         </Stack>
         <Stack direction="row">
-          {onAddFolder && (
+          {onAddDirectory && (
             <Tooltip title={t("studies.tree.addRootDirectory")} placement="top" arrow>
               <IconButton
                 size="small"
-                onClick={onAddFolder}
+                onClick={onAddDirectory}
                 sx={{ p: 0.5 }}
                 aria-label="Create new folder"
               >
@@ -129,7 +129,7 @@ function TreeSection({
               </IconButton>
             </Tooltip>
           )}
-          {onHomeClick && (
+          {onRootClick && (
             <Tooltip
               title={t("studies.tree.allStudies", { defaultValue: "All studies" })} // TODO: update label and add key
               placement="top"
@@ -137,7 +137,7 @@ function TreeSection({
             >
               <IconButton
                 size="small"
-                onClick={onHomeClick}
+                onClick={onRootClick}
                 sx={{ p: 0.5 }}
                 aria-label="All studies"
               >
