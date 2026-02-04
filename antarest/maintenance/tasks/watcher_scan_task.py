@@ -14,15 +14,21 @@
 
 from celery import Task
 
-from antarest.maintenance.app import celery_app
+from antarest.maintenance.app import TaskName, celery_app
 from antarest.maintenance.context import MaintenanceContext
 from antarest.maintenance.tasks.common import MaintenanceContextNotFoundError, WatcherScanTaskResult
 from antarest.maintenance.tasks.watcher_scan import scan_workspaces
 
 
-@celery_app.task(bind=True, name="watcher_scan", pydantic=True)
+@celery_app.task(
+    bind=True,
+    name=TaskName.WATCHER_SCAN,
+    pydantic=True,
+)
 def watcher_scan_task(self: Task) -> WatcherScanTaskResult:  # type: ignore[type-arg]
-    """Celery wrapper that delegates to scan_workspaces()."""
+    """
+    Celery wrapper that delegates to scan_workspaces().
+    """
     ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
     if not ctx:
         raise MaintenanceContextNotFoundError()
