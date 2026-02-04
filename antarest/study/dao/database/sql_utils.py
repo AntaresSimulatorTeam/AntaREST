@@ -24,6 +24,20 @@ from sqlalchemy.dialects.sqlite.dml import Insert as SqliteInsert
 from sqlalchemy.orm import Session
 
 
+def _key_columns(table: Table) -> list[Column[Any]]:
+    """
+    Returns columns that are part of the primary key.
+    """
+    return [column for column in table.columns.values() if column.primary_key]
+
+
+def _update_columns(table: Table) -> list[Column[Any]]:
+    """
+    Returns columns that are not part of the primary key, which will all be assumed updated.
+    """
+    return [column for column in table.columns.values() if not column.primary_key]
+
+
 def generic_upsert_multiple(
     session: Session,
     table: Table,
@@ -31,11 +45,14 @@ def generic_upsert_multiple(
 ) -> None:
     """
     Upsert implementation which does not rely on a specific dialect.
+
     Note that it could fail on concurrency issues, since it relies on several sequential
     requests.
 
-    Assumes all columns are updated.
-
+    Notes:
+        Assumes:
+         - all columns are updated
+         - value dictionaries all have the correct columns: we don't check for this
     """
     if not values:
         return
@@ -66,16 +83,8 @@ def generic_upsert_multiple(
     # 1 query per update unfortunately. Might be possible to optimize, but not worth it for us now.
     for row in rows_to_update:
         filters = [column == row[column.name] for column in key_columns]
-        stmt_update = update(table).where(and_(*filters)).values({k: row[k.name] for k in update_columns})
+        stmt_update = update(table).where(and_(*filters)).values({col: row[col.name] for col in update_columns})
         session.execute(stmt_update)
-
-
-def _key_columns(table: Table) -> list[Column[Any]]:
-    return [column for column in table.columns.values() if column.primary_key]
-
-
-def _update_columns(table: Table) -> list[Column[Any]]:
-    return [column for column in table.columns.values() if not column.primary_key]
 
 
 def upsert_one(
@@ -83,7 +92,15 @@ def upsert_one(
     table: Table,
     values: dict[str, Any],
 ) -> None:
-    return upsert_multiple(session, table, [values])
+    """
+    Updates or inserts a single row.
+
+    Notes:
+        Assumes:
+         - all columns are updated
+         - value dictionary has the correct columns: we don't check for this
+    """
+    upsert_multiple(session, table, [values])
 
 
 def upsert_multiple(
@@ -95,7 +112,10 @@ def upsert_multiple(
     Inserts or updates data into a database table. Optimizes for specific postgresql and sqlite dialects,
     and falls back on standard SQL otherwise.
 
-    Assumes all columns are updated.
+    Notes:
+        Assumes:
+         - all columns are updated
+         - value dictionaries all have the correct columns: we don't check for this
     """
     if not values:
         return
@@ -105,8 +125,8 @@ def upsert_multiple(
         key_columns = _key_columns(table)
         update_columns = _update_columns(table)
 
-        # Note for the ignorant: the postgres and sqlite syntax requires to explicitly
-        # state the list of columns that we want to update, hence the set_ clause
+        # Note: the postgres and sqlite syntax requires to explicitly
+        # state the list of columns that we want to update, hence the set_ clause.
         stmt: PgInsert | SqliteInsert
         if dialect == "postgresql":
             stmt = pg_insert(table).values(values)
