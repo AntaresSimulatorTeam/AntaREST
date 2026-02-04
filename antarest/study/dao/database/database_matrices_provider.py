@@ -19,6 +19,11 @@ from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.models.area import LOAD_TABLE, MISC_GEN_TABLE, RESERVES_TABLE, SOLAR_TABLE, WIND_TABLE
+from antarest.study.dao.database.models.link import (
+    LINK_DIRECT_CAPACITY_TABLE,
+    LINK_INDIRECT_CAPACITY_TABLE,
+    LINK_SERIES_TABLE,
+)
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CO2_COST_TABLE,
     THERMAL_FUEL_COST_TABLE,
@@ -26,6 +31,22 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
+
+MATRIX_TABLES = [
+    LOAD_TABLE,
+    SOLAR_TABLE,
+    WIND_TABLE,
+    RESERVES_TABLE,
+    MISC_GEN_TABLE,
+    LINK_SERIES_TABLE,
+    LINK_DIRECT_CAPACITY_TABLE,
+    LINK_INDIRECT_CAPACITY_TABLE,
+    THERMAL_PREPRO_TABLE,
+    THERMAL_MODULATION_TABLE,
+    THERMAL_SERIES_TABLE,
+    THERMAL_FUEL_COST_TABLE,
+    THERMAL_CO2_COST_TABLE,
+]
 
 
 class StudyDatabaseMatrixUsageProvider(IMatrixUsageProvider):
@@ -35,18 +56,7 @@ class StudyDatabaseMatrixUsageProvider(IMatrixUsageProvider):
     @override
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
         with db():
-            for table in [
-                LOAD_TABLE,
-                SOLAR_TABLE,
-                WIND_TABLE,
-                RESERVES_TABLE,
-                MISC_GEN_TABLE,
-                THERMAL_PREPRO_TABLE,
-                THERMAL_MODULATION_TABLE,
-                THERMAL_SERIES_TABLE,
-                THERMAL_FUEL_COST_TABLE,
-                THERMAL_CO2_COST_TABLE,
-            ]:
+            for table in MATRIX_TABLES:
                 stmt = select(table)
                 rows = db.session.execute(stmt).fetchall()
                 for row in rows:

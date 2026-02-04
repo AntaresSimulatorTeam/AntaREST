@@ -258,6 +258,31 @@ def test_add_candidate(
     assert actual == candidates
 
 
+def test_add_candidate_with_weird_names(
+    link_manager: LinkManager, area_manager: AreaManager, xpansion_manager: XpansionManager, empty_study_810: FileStudy
+) -> None:
+    study = file_study_interface(empty_study_810)
+    xpansion_manager.create_xpansion_configuration(study)
+    make_areas(area_manager, study)
+    make_link(link_manager, study)
+
+    # These used to fail
+    cdt_int = XpansionCandidateCreation.model_validate(
+        {"name": 111, "link": "area1 - area2", "annual-cost-per-mw": 1, "max-investment": 1}
+    )
+    cdt_float = XpansionCandidateCreation.model_validate(
+        {"name": 14.5, "link": "area1 - area2", "annual-cost-per-mw": 1, "max-investment": 1}
+    )
+
+    # Ensure we can create these candidates
+    xpansion_manager.add_candidate(study, cdt_int)
+    xpansion_manager.add_candidate(study, cdt_float)
+    created_candidates = xpansion_manager.get_candidates(study)
+    assert len(created_candidates) == 2
+    assert created_candidates[0].name in {"111", "14.5"}
+    assert created_candidates[1].name in {"111", "14.5"}
+
+
 def test_get_candidate(
     link_manager: LinkManager,
     area_manager: AreaManager,
