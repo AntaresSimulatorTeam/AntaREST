@@ -579,8 +579,8 @@ class StudyService:
         matrix_service = command_context.matrix_service
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DataBaseStudyDaoFactory(matrix_service, repository),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, repository, raw_study_service.study_factory),
+            StorageMode.DATABASE: DataBaseStudyDaoFactory(matrix_service),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
         }
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
@@ -962,7 +962,9 @@ class StudyService:
             groups=groups,
         )
 
-        _, raw = self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
+        raw.content_status = StudyContentStatus.VALID
+        self.repository.save(raw)
+        self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
 
         self.event_bus.push(
             Event(

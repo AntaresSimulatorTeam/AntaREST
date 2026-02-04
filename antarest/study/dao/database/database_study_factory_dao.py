@@ -19,8 +19,7 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_L
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import RawStudy, StudyContentStatus
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.model import RawStudy
 
 
 class DataBaseStudyDaoFactory(StudyFactoryDao):
@@ -28,14 +27,8 @@ class DataBaseStudyDaoFactory(StudyFactoryDao):
     Used to initialize a study inside DB
     """
 
-    def __init__(
-        self,
-        matrix_service: ISimpleMatrixService,
-        study_repository: StudyMetadataRepository,
-        session: Session | None = None,
-    ) -> None:
+    def __init__(self, matrix_service: ISimpleMatrixService, session: Session | None = None) -> None:
         self._matrix_service = matrix_service
-        self._study_repository = study_repository
         self._session = session
 
     @property
@@ -46,10 +39,7 @@ class DataBaseStudyDaoFactory(StudyFactoryDao):
         return self._session
 
     @override
-    def create_study_dao(self, study: RawStudy) -> tuple[DatabaseStudyDao, RawStudy]:
-        study.content_status = StudyContentStatus.VALID
-        self._study_repository.save(study)
-
+    def create_study_dao(self, study: RawStudy) -> DatabaseStudyDao:
         dao = DatabaseStudyDao(study.id, self.session, self._matrix_service)
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
-        return dao, study
+        return dao

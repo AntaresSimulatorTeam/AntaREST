@@ -16,8 +16,7 @@ from typing_extensions import override
 
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import RawStudy, StudyContentStatus
-from antarest.study.repository import StudyMetadataRepository
+from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.utils import create_new_empty_study, is_managed, update_antares_info
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -28,18 +27,13 @@ class FileStudyDaoFactory(StudyFactoryDao):
     Used to initialize a study in the filesystem
     """
 
-    def __init__(
-        self, command_context: CommandContext, study_repository: StudyMetadataRepository, study_factory: StudyFactory
-    ) -> None:
+    def __init__(self, command_context: CommandContext, study_factory: StudyFactory) -> None:
         self._command_context = command_context
-        self._study_repository = study_repository
         self._study_factory = study_factory
 
     @override
-    def create_study_dao(self, study: RawStudy) -> tuple[FileStudyTreeDao, RawStudy]:
-        study.content_status = StudyContentStatus.VALID
-        self._study_repository.save(study)
-
+    def create_study_dao(self, study: RawStudy) -> FileStudyTreeDao:
+        """The given study object is modified as a side effect"""
         path_study = Path(study.path)
 
         create_new_empty_study(version=StudyVersion.parse(study.version), path_study=path_study)
@@ -51,4 +45,4 @@ class FileStudyDaoFactory(StudyFactoryDao):
 
         context = self._command_context
         dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
-        return dao, study
+        return dao

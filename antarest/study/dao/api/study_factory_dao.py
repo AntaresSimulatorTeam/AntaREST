@@ -18,5 +18,5 @@ from antarest.study.model import RawStudy
 
 class StudyFactoryDao(ABC):
     @abstractmethod
-    def create_study_dao(self, study: RawStudy) -> tuple[StudyDao, RawStudy]:
+    def create_study_dao(self, study: RawStudy) -> StudyDao:
         raise NotImplementedError()

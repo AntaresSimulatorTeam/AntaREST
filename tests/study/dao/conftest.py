@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import uuid
-from unittest.mock import Mock
 
 import pytest
 from sqlalchemy.orm import Session
@@ -19,19 +18,11 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DataBaseStudyDaoFactory
 from antarest.study.model import StorageMode
-from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import create_raw_study
 
 
 @pytest.fixture
-def dao(
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: CommandContext,
-    study_factory: StudyFactory,
-) -> DatabaseStudyDao:
+def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     """
     Create a test study in database mode and create a DatabaseStudyDao instance for testing.
     """
@@ -39,6 +30,6 @@ def dao(
     with db_session:
         study = create_raw_study(id=study_id, name="Test Study")
         study.storage_mode = StorageMode.DATABASE
-        factory = DataBaseStudyDaoFactory(matrix_service, StudyMetadataRepository(Mock(), db_session), db_session)
-        dao, _ = factory.create_study_dao(study)
+        factory = DataBaseStudyDaoFactory(matrix_service, db_session)
+        dao = factory.create_study_dao(study)
     return dao
