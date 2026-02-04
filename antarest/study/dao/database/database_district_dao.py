@@ -20,7 +20,7 @@ import json
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -28,6 +28,7 @@ from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
+from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -88,26 +89,17 @@ class DatabaseDistrictDao(DistrictDao):
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
-        # Delete existing district if any
-        session.execute(
-            delete(DISTRICT_TABLE).where(
-                (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district.id)
-            )
-        )
-
-        # Insert district with areas as JSON
-        session.execute(
-            insert(DISTRICT_TABLE).values(
-                study_id=study_id,
-                district_id=district.id,
-                name=district.name,
-                output=district.output,
-                comments=district.comments,
-                apply_filter=district.apply_filter,
-                add_areas=json.dumps(district.add_areas),
-                subtract_areas=json.dumps(district.subtract_areas),
-            )
-        )
+        values = {
+            "study_id": study_id,
+            "district_id": district.id,
+            "name": district.name,
+            "output": district.output,
+            "comments": district.comments,
+            "apply_filter": district.apply_filter,
+            "add_areas": json.dumps(district.add_areas),
+            "subtract_areas": json.dumps(district.subtract_areas),
+        }
+        upsert_one(session, DISTRICT_TABLE, values)
         session.commit()
 
     @override

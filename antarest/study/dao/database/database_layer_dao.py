@@ -20,7 +20,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import TYPE_CHECKING, Sequence
 
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -30,6 +30,7 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
 from antarest.study.dao.database.models.layer import LAYER_TABLE
+from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -114,27 +115,8 @@ class DatabaseLayerDao(LayerDao):
         session = self.get_session()
 
         # Check if layer already exists
-        stmt_check = select(LAYER_TABLE.c.layer_id).where(
-            (LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer.id)
-        )
-        existing = session.execute(stmt_check).fetchone()
-
-        if existing:
-            if layer.name is not None:
-                session.execute(
-                    update(LAYER_TABLE)
-                    .where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer.id))
-                    .values(name=layer.name)
-                )
-        else:
-            session.execute(
-                insert(LAYER_TABLE).values(
-                    study_id=study_id,
-                    layer_id=layer.id,
-                    name=layer.name or "",
-                )
-            )
-
+        values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name or ""}
+        upsert_one(session, LAYER_TABLE, values)
         # Update area associations if areas are provided
         if layer.areas is not None:
             self.get_impl().save_layer_areas(layer.id, layer.areas)
