@@ -65,6 +65,7 @@ class FavoriteDirectory(Base):
 
     user_id: Mapped[int] = mapped_column(
         Integer,
+        ForeignKey("identities.id", name="fk_user_id_favorite_directory", ondelete="CASCADE"),
         nullable=False,
         primary_key=True,
     )

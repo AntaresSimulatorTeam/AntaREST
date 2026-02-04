@@ -13,7 +13,7 @@
 from starlette.testclient import TestClient
 
 
-def test_favorite(client: TestClient, admin_access_token: str) -> None:
+def test_favorite_study(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # creating empty studies

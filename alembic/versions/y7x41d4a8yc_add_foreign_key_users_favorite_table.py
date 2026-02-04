@@ -7,7 +7,6 @@ Create Date: 2026-01-26 10:45:36.111886
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import ForeignKey
 
 # revision identifiers, used by Alembic.
 revision = 'y7x41d4a8yc'

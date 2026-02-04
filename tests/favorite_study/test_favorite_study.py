@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
+
 from antarest.core.jwt import JWTUser
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.favorite.service import FavoriteStudyService
@@ -17,7 +19,7 @@ from tests.helpers import create_study, with_db_context
 
 
 @with_db_context
-def test_add_favorite(favorite_service: FavoriteStudyService, admin_user: JWTUser) -> None:
+def test_add_favorite_study(favorite_service: FavoriteStudyService, admin_user: JWTUser) -> None:
     study_1 = create_study(name="study_A")
     study_2 = create_study(name="study_B")
 
@@ -34,7 +36,7 @@ def test_add_favorite(favorite_service: FavoriteStudyService, admin_user: JWTUse
 
 
 @with_db_context
-def test_delete_favorite(favorite_service: FavoriteStudyService, admin_user: JWTUser) -> None:
+def test_delete_favorite_study(favorite_service: FavoriteStudyService, admin_user: JWTUser) -> None:
     study_1 = create_study("study_A")
     study_2 = create_study("study_B")
 

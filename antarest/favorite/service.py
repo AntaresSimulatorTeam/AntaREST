@@ -20,18 +20,33 @@ class FavoriteStudyService:
         self.favorite_repository = favorite_study_repository
 
     def list_favorites(self) -> list[FavoriteStudyDTO]:
+        """
+        List all favorites from the current user
+        Returns: The list of favorite studies DTOs of the current user in ascending order
+        """
         favorites = self.favorite_repository.get_all()
         dto_favorites = [fav.to_dto() for fav in favorites]
         dto_favorites = sorted(dto_favorites, key=lambda fav: fav.study_name)
         return dto_favorites
 
     def add_favorite(self, study_uuid: str) -> FavoriteStudyDTO:
+        """
+        Add a favorite to the current user list of favorites
+        Args:
+            study_uuid: the selected study id
+        Returns: the saved FavoriteStudyDTO, made from the user_impersonator and the study id
+        """
         favorite_study = self.favorite_repository.save(
             FavoriteStudy(user_id=get_user_impersonator(), study_id=study_uuid)
         )
         return favorite_study.to_dto()
 
     def delete_favorite(self, study_uuid: str) -> None:
+        """
+        Delete a favorite from the current user list of favorites
+        Args:
+            study_uuid: the selected study id
+        """
         self.favorite_repository.delete(study_uuid)
 
 
@@ -40,15 +55,31 @@ class FavoriteDirectoryService:
         self.favorite_directory_repository = favorite_directory_repository
 
     def list_favorites(self) -> list[FavoriteDirectoryDTO]:
+        """
+        List all favorite directories from the current user
+        Returns: The list of favorite directories DTOs of the current user in ascending order
+        """
         favorite_directory = self.favorite_directory_repository.get_all()
-        dto_favorites = [fav.to_dto() for fav in favorite_directory]
+        dto_favorites = [directory.to_dto() for directory in favorite_directory]
+        dto_favorites = sorted(dto_favorites, key=lambda directory: directory.directory_name)
         return dto_favorites
 
     def add_favorite(self, directory_uuid: str) -> FavoriteDirectoryDTO:
+        """
+        Add a favorite directory to the current user list of favorites
+        Args:
+            directory_uuid: the selected directory id
+        Returns: the saved FavoriteDirectoryDTO, made from the user_impersonator and the study id
+        """
         favorite_directory = self.favorite_directory_repository.save(
             FavoriteDirectory(user_id=get_user_impersonator(), directory_id=directory_uuid)
         )
         return favorite_directory.to_dto()
 
     def delete_favorite(self, directory_uuid: str) -> None:
-        self.favorite_directory_repository.delete(get_user_impersonator(), directory_uuid)
+        """
+        Delete a favorite directory from the current user list of favorites
+        Args:
+            directory_uuid: the selected directory id
+        """
+        self.favorite_directory_repository.delete(directory_uuid)

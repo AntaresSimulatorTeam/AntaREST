@@ -30,7 +30,7 @@ def create_favorite_routes(
         logger.info("Listing favorites for current user")
         return favorite_service.list_favorites()
 
-    @bp.post("/favorites/studies/{uuid}", summary="Create new favorite study")
+    @bp.post("/favorites/studies/{uuid}", summary="Create a new favorite study")
     def add_favorite_study(uuid: str) -> FavoriteStudyDTO:
         logger.info("Creating new favorite study for current user")
         return favorite_service.add_favorite(uuid)
@@ -45,12 +45,12 @@ def create_favorite_routes(
         logger.info("Listing favorite directories for current user")
         return favorite_directory_service.list_favorites()
 
-    @bp.post("/favorite/directories/{uuid}", summary="Create new favorite_directory")
+    @bp.post("/favorite/directories/{uuid}", summary="Create a new favorite directory")
     def add_favorite_directory(uuid: str) -> FavoriteDirectoryDTO:
         logger.info("Creating new favorite directory for current user")
         return favorite_directory_service.add_favorite(uuid)
 
-    @bp.delete("/favorite/directories/{uuid}", summary="Delete a favorite_study")
+    @bp.delete("/favorite/directories/{uuid}", summary="Delete a favorite directory")
     def delete_favorite_directory(uuid: str) -> None:
         logger.info("Deleting a favorite directory for current user")
         favorite_directory_service.delete_favorite(uuid)
