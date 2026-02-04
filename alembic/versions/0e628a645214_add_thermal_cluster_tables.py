@@ -18,11 +18,18 @@ depends_on = None
 
 
 def upgrade() -> None:
+    study_id_col = sa.Column("study_id", sa.String(length=36), nullable=False)
+    area_id_col = sa.Column("area_id", sa.String(length=255), nullable=False)
+    thermal_id_col = sa.Column("thermal_id", sa.String(length=255), nullable=False)
+    matrix_id_col = sa.Column("matrix_id", sa.String(length=64), nullable=False)
+
+    law_enum = sa.Enum("uniform", "geometric", name="lawoption")
+
     op.create_table(
         "thermal_cluster",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("area_id", sa.String(length=255), nullable=False),
-        sa.Column("thermal_id", sa.String(length=255), nullable=False),
+        study_id_col,
+        area_id_col,
+        thermal_id_col,
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("unit_count", sa.Integer(), nullable=False),
         sa.Column("nominal_capacity", sa.Float(), nullable=False),
@@ -40,8 +47,8 @@ def upgrade() -> None:
         sa.Column("spinning", sa.Float(), nullable=False),
         sa.Column("volatility_forced", sa.Float(), nullable=False),
         sa.Column("volatility_planned", sa.Float(), nullable=False),
-        sa.Column("law_forced", sa.Enum("uniform", "geometric", name="lawoption"), nullable=False),
-        sa.Column("law_planned", sa.Enum("uniform", "geometric", name="lawoption"), nullable=False),
+        sa.Column("law_forced", law_enum, nullable=False),
+        sa.Column("law_planned", law_enum, nullable=False),
         sa.Column("marginal_cost", sa.Float(), nullable=False),
         sa.Column("spread_cost", sa.Float(), nullable=False),
         sa.Column("fixed_cost", sa.Float(), nullable=False),
@@ -78,10 +85,10 @@ def upgrade() -> None:
 
     op.create_table(
         "thermal_prepro",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("area_id", sa.String(length=255), nullable=False),
-        sa.Column("thermal_id", sa.String(length=255), nullable=False),
-        sa.Column("matrix_id", sa.String(length=64), nullable=False),
+        study_id_col,
+        area_id_col,
+        thermal_id_col,
+        matrix_id_col,
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "thermal_id"],
             ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
@@ -93,10 +100,10 @@ def upgrade() -> None:
 
     op.create_table(
         "thermal_modulation",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("area_id", sa.String(length=255), nullable=False),
-        sa.Column("thermal_id", sa.String(length=255), nullable=False),
-        sa.Column("matrix_id", sa.String(length=64), nullable=False),
+        study_id_col,
+        area_id_col,
+        thermal_id_col,
+        matrix_id_col,
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "thermal_id"],
             ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
@@ -108,10 +115,10 @@ def upgrade() -> None:
 
     op.create_table(
         "thermal_series",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("area_id", sa.String(length=255), nullable=False),
-        sa.Column("thermal_id", sa.String(length=255), nullable=False),
-        sa.Column("matrix_id", sa.String(length=64), nullable=False),
+        study_id_col,
+        area_id_col,
+        thermal_id_col,
+        matrix_id_col,
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "thermal_id"],
             ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
@@ -123,10 +130,10 @@ def upgrade() -> None:
 
     op.create_table(
         "thermal_fuel_cost",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("area_id", sa.String(length=255), nullable=False),
-        sa.Column("thermal_id", sa.String(length=255), nullable=False),
-        sa.Column("matrix_id", sa.String(length=64), nullable=False),
+        study_id_col,
+        area_id_col,
+        thermal_id_col,
+        matrix_id_col,
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "thermal_id"],
             ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
@@ -138,10 +145,10 @@ def upgrade() -> None:
 
     op.create_table(
         "thermal_co2_cost",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("area_id", sa.String(length=255), nullable=False),
-        sa.Column("thermal_id", sa.String(length=255), nullable=False),
-        sa.Column("matrix_id", sa.String(length=64), nullable=False),
+        study_id_col,
+        area_id_col,
+        thermal_id_col,
+        matrix_id_col,
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "thermal_id"],
             ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
