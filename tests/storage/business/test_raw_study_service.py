@@ -212,7 +212,8 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
             updated_at=datetime.datetime.now(),
             author="john.doe",
         )
-        return study_service.create(metadata)
+        FileStudyDaoFactory(Mock(), study_service.study_factory).create_study_dao(metadata)
+        return metadata
 
     md700 = create_study("700")
     md710 = create_study("710")
