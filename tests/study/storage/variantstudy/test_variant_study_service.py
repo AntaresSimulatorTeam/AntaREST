@@ -29,6 +29,7 @@ from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import Study
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -166,7 +167,8 @@ class TestVariantStudyService:
         db.session.commit()
 
         ## Prepare the RAW Study
-        raw_study_service.create(raw_study)
+        context = variant_study_service.command_factory.command_context
+        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
         study_version = StudyVersion.parse(raw_study.version)
 
         with current_user_context(jwt_user):
