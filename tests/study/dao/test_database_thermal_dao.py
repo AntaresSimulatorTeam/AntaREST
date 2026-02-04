@@ -162,11 +162,20 @@ def test_delete_thermal(dao: DatabaseStudyDao) -> None:
     dao.save_thermal("paris", thermal)
 
     assert dao.thermal_exists("paris", "gas")
-    dao.delete_thermal("paris", thermal)
+
+    with pytest.raises(ThermalClusterNotFound):
+        dao.delete_thermal("paris", "gas2")
+    with pytest.raises(ThermalClusterNotFound):
+        dao.delete_thermal("paris2", "gas")
+
+    dao.delete_thermal("paris", "gas")
     assert not dao.thermal_exists("paris", "gas")
 
     with pytest.raises(ThermalClusterNotFound):
         dao.get_thermal("paris", "gas")
+
+    with pytest.raises(ThermalClusterNotFound):
+        dao.delete_thermal("paris", "gas")
 
 
 def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:

@@ -364,8 +364,8 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        del self._thermals[cluster_key(area_id, thermal.id)]
+    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
+        del self._thermals[cluster_key(area_id, thermal_id)]
 
     @override
     def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:

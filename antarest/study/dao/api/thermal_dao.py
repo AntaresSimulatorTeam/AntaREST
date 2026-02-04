@@ -86,5 +86,5 @@ class ThermalDao(ReadOnlyThermalDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
         raise NotImplementedError()

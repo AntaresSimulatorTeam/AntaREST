@@ -18,7 +18,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from sqlalchemy import Row, Table, delete, insert, select, update
+from sqlalchemy import Row, Select, Table, delete, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -44,14 +44,6 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def _normalize_thermal_id(thermal_id: str) -> str:
-    return thermal_id.lower()
-
-
-def _normalize_group(group: Any) -> Any:
-    return group.value if hasattr(group, "value") else group
-
-
 class DatabaseThermalDao(ThermalDao):
     """
     Database implementation of ThermalDao.
@@ -67,14 +59,6 @@ class DatabaseThermalDao(ThermalDao):
         """
         self._study_id = study_id
         self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
 
     @abstractmethod
     def get_impl(self) -> "DatabaseStudyDao":
@@ -127,14 +111,14 @@ class DatabaseThermalDao(ThermalDao):
 
     def _convert_thermal_cluster_to_row(self, area_id: str, cluster: ThermalCluster) -> dict[str, Any]:
         return dict(
-            study_id=self.get_study_id(),
+            study_id=self._study_id,
             area_id=area_id,
-            thermal_id=_normalize_thermal_id(cluster.id),
+            thermal_id=cluster.id,
             name=cluster.name,
             unit_count=cluster.unit_count,
             nominal_capacity=cluster.nominal_capacity,
             enabled=cluster.enabled,
-            group=_normalize_group(cluster.group),
+            group=cluster.group,
             gen_ts=cluster.gen_ts,
             min_stable_power=cluster.min_stable_power,
             min_up_time=cluster.min_up_time,
@@ -169,12 +153,10 @@ class DatabaseThermalDao(ThermalDao):
         )
 
     def _get_thermal_matrix_row(self, area_id: str, thermal_id: str, table: Table) -> Row[Any] | None:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
         stmt = select(table).where(
-            (table.c.study_id == study_id)
-            & (table.c.area_id == area_id)
-            & (table.c.thermal_id == _normalize_thermal_id(thermal_id))
+            (table.c.study_id == study_id) & (table.c.area_id == area_id) & (table.c.thermal_id == thermal_id)
         )
         return session.execute(stmt).fetchone()
 
@@ -185,34 +167,21 @@ class DatabaseThermalDao(ThermalDao):
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_thermal_matrix(self, area_id: str, thermal_id: str, table: Table, matrix_id: str) -> None:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        thermal_id = _normalize_thermal_id(thermal_id)
+        study_id = self._study_id
+        session = self._db_session
 
         if not self.thermal_exists(area_id, thermal_id):
             raise ThermalClusterNotFound(area_id, thermal_id)
 
-        row = self._get_thermal_matrix_row(area_id, thermal_id, table)
-        if not row:
-            stmt_insert = insert(table).values(
-                study_id=study_id, area_id=area_id, thermal_id=thermal_id, matrix_id=matrix_id
-            )
-            session.execute(stmt_insert)
-        else:
-            stmt_update = (
-                update(table)
-                .where(
-                    (table.c.study_id == study_id) & (table.c.area_id == area_id) & (table.c.thermal_id == thermal_id)
-                )
-                .values(matrix_id=matrix_id)
-            )
-            session.execute(stmt_update)
+        upsert_one(
+            session, table, {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
+        )
         session.commit()
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         validate_area_exists(session, study_id, area_id)
         values = self._convert_thermal_cluster_to_row(area_id, thermal)
@@ -224,8 +193,8 @@ class DatabaseThermalDao(ThermalDao):
         if not thermals:
             return
 
-        session = self.get_session()
-        study_id = self.get_study_id()
+        session = self._db_session
+        study_id = self._study_id
         validate_area_exists(session, study_id, area_id)
 
         values = [self._convert_thermal_cluster_to_row(area_id, thermal) for thermal in thermals]
@@ -258,10 +227,9 @@ class DatabaseThermalDao(ThermalDao):
         self._save_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE, series_id)
 
     @override
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        thermal_id = _normalize_thermal_id(thermal.id)
+    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
+        study_id = self._study_id
+        session = self._db_session
 
         if not self.thermal_exists(area_id, thermal_id):
             raise ThermalClusterNotFound(area_id, thermal_id)
@@ -277,8 +245,8 @@ class DatabaseThermalDao(ThermalDao):
 
     @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         stmt = select(THERMAL_CLUSTER_TABLE).where(THERMAL_CLUSTER_TABLE.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
@@ -291,8 +259,8 @@ class DatabaseThermalDao(ThermalDao):
 
     @override
     def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
         validate_area_exists(session, study_id, area_id)
 
         stmt = select(THERMAL_CLUSTER_TABLE).where(
@@ -301,17 +269,19 @@ class DatabaseThermalDao(ThermalDao):
         rows = session.execute(stmt).fetchall()
         return [self._convert_db_row_to_thermal(row) for row in rows]
 
-    @override
-    def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        thermal_id = _normalize_thermal_id(thermal_id)
-
-        stmt = select(THERMAL_CLUSTER_TABLE).where(
+    def _select_thermal_cluster(self, area_id: str, thermal_id: str) -> Select[Any]:
+        study_id = self._study_id
+        return select(THERMAL_CLUSTER_TABLE).where(
             (THERMAL_CLUSTER_TABLE.c.study_id == study_id)
             & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
             & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
         )
+
+    @override
+    def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
+        session = self._db_session
+
+        stmt = self._select_thermal_cluster(area_id, thermal_id)
         row = session.execute(stmt).fetchone()
         if not row:
             raise ThermalClusterNotFound(area_id, thermal_id)
@@ -320,15 +290,8 @@ class DatabaseThermalDao(ThermalDao):
 
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        thermal_id = _normalize_thermal_id(thermal_id)
-
-        stmt = select(THERMAL_CLUSTER_TABLE.c.thermal_id).where(
-            (THERMAL_CLUSTER_TABLE.c.study_id == study_id)
-            & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
-            & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
-        )
+        session = self._db_session
+        stmt = self._select_thermal_cluster(area_id, thermal_id)
         return session.execute(stmt).fetchone() is not None
 
     @override
