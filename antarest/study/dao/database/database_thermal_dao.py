@@ -280,7 +280,7 @@ class DatabaseThermalDao(ThermalDao):
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
         session = self._db_session
-
+        validate_area_exists(session, self._study_id, area_id)
         stmt = self._select_thermal_cluster(area_id, thermal_id)
         row = session.execute(stmt).fetchone()
         if not row:

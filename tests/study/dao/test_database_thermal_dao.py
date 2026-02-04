@@ -19,7 +19,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from antarest.core.exceptions import ThermalClusterNotFound
+from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound
 from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
@@ -102,6 +102,9 @@ def test_save_thermal_creates_cluster(dao: DatabaseStudyDao) -> None:
     result = dao.get_thermal("paris", "gas_cluster")
     assert result == expected
 
+    with pytest.raises(AreaNotFound):
+        dao.save_thermal("nonexistent", thermal)
+
 
 def test_save_thermal_overwrites_existing(dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
@@ -142,6 +145,31 @@ def test_save_multiple_thermal_clusters(dao: DatabaseStudyDao) -> None:
     assert [c.name for c in paris_clusters] == ["Fuel", "Gas", "Nuclear"]
     assert [c.nominal_capacity for c in paris_clusters] == [100.0, 200.0, 1000.0]
 
+    # Check are not found raises an error
+    with pytest.raises(AreaNotFound):
+        dao.save_thermals(
+            "nonexistent",
+            [
+                ThermalCluster(id="nuclear", name="Nuclear", nominal_capacity=1000.0),
+                ThermalCluster(id="fuel", name="Fuel", nominal_capacity=100.0),
+            ],
+        )
+
+
+def test_get_one_thermal_cluster(dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+
+    cluster = dao.get_thermal("paris", "gas")
+    assert cluster.id == "gas"
+    assert cluster.name == "Gas"
+
+    with pytest.raises(ThermalClusterNotFound):
+        dao.get_thermal("paris", "nonexistent")
+
+    with pytest.raises(AreaNotFound):
+        dao.get_thermal("nonexistent", "gas")
+
 
 def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
@@ -154,6 +182,9 @@ def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
     assert set(all_thermals.keys()) == {"paris", "london"}
     assert set(all_thermals["paris"].keys()) == {"gas"}
     assert set(all_thermals["london"].keys()) == {"coal"}
+
+    with pytest.raises(AreaNotFound):
+        dao.get_all_thermals_for_area("nonexistent")
 
 
 def test_delete_thermal(dao: DatabaseStudyDao) -> None:
@@ -198,7 +229,7 @@ def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) 
     pl.testing.assert_frame_equal(dao.get_thermal_fuel_cost("paris", "gas"), dataframe, check_dtypes=False)
     pl.testing.assert_frame_equal(dao.get_thermal_co2_cost("paris", "gas"), dataframe, check_dtypes=False)
 
-    dao.delete_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+    dao.delete_thermal("paris", "gas")
 
     with db_session:
         assert db_session.execute(select(THERMAL_CLUSTER_TABLE)).fetchall() == []
