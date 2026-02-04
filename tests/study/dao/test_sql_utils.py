@@ -14,34 +14,42 @@ from typing import Callable
 
 import pytest
 from db_statement_recorder import DBStatementRecorder
-from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, Engine, Integer, MetaData, String, Table, create_engine, select
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session, sessionmaker
 
-from antarest.study.dao.database.sql_utils import generic_upsert_multiple, upsert_multiple
+from antarest.study.dao.database.sql_utils import generic_upsert_multiple, upsert_multiple, upsert_one
 
 METADATA = MetaData()
 
 TEST_TABLE = Table(
     "test",
     METADATA,
-    Column("id", String, primary_key=True),
-    Column("sub_id", String, primary_key=True),
-    Column("str_value", String),
-    Column("int_value", Integer),
+    Column("id", String, primary_key=True, nullable=False),
+    Column("sub_id", String, primary_key=True, nullable=False),
+    Column("str_value", String, nullable=False),
+    Column("int_value", Integer, nullable=False),
 )
+
+
+@pytest.fixture
+def engine(tmp_path: Path) -> Engine:
+    engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}")
+    METADATA.create_all(engine)
+    return engine
+
+
+@pytest.fixture
+def session(engine: Engine) -> Session:
+    return sessionmaker(bind=engine)()
 
 
 @pytest.mark.parametrize(
     "upsert_method, expected_queries_1, expected_queries_2", [(generic_upsert_multiple, 2, 3), (upsert_multiple, 1, 1)]
 )
-def test_upsert_multiple(tmp_path: Path, upsert_method: Callable, expected_queries_1: int, expected_queries_2: int):
-    engine = create_engine(f"sqlite:///{tmp_path / 'test.db'}")
-
-    METADATA.create_all(engine)
-
-    sessionfactory = sessionmaker(bind=engine)
-    session = sessionfactory()
-
+def test_upsert_multiple(
+    engine: Engine, session: Session, upsert_method: Callable, expected_queries_1: int, expected_queries_2: int
+) -> None:
     with DBStatementRecorder(engine) as db_recorder:
         insertions = [
             {"id": "1", "sub_id": "2", "str_value": "val1", "int_value": 12},
@@ -74,3 +82,35 @@ def test_upsert_multiple(tmp_path: Path, upsert_method: Callable, expected_queri
         ("2", "3", "val3", 66),
         ("3", "4", "val4", 0),
     ]
+
+
+def test_upsert_multiple_missing_key_raises(session: Session) -> None:
+    insertions = [
+        {},
+        {"id": "1", "sub_id": "3", "str_value": "val2", "int_value": 52},
+        {"id": "2", "sub_id": "3", "str_value": "val3", "int_value": 66},
+    ]
+    with pytest.raises(OperationalError):
+        upsert_multiple(session, TEST_TABLE, values=insertions)
+
+
+def test_upsert_one(session: Session) -> None:
+    # Inserting one row
+    upsert_one(session, TEST_TABLE, values={"id": "1", "sub_id": "1", "str_value": "val1", "int_value": 1})
+    rows = session.execute(select(TEST_TABLE)).fetchall()
+    assert rows == [("1", "1", "val1", 1)]
+
+    # Inserting one different row
+    upsert_one(session, TEST_TABLE, values={"id": "2", "sub_id": "2", "str_value": "val2", "int_value": 2})
+    rows = session.execute(select(TEST_TABLE)).fetchall()
+    assert rows == [("1", "1", "val1", 1), ("2", "2", "val2", 2)]
+
+    # Updating an existing row
+    upsert_one(session, TEST_TABLE, values={"id": "1", "sub_id": "1", "str_value": "val3", "int_value": 3})
+    rows = session.execute(select(TEST_TABLE)).fetchall()
+    assert rows == [("1", "1", "val3", 3), ("2", "2", "val2", 2)]
+
+
+def test_upsert_one_missing_key_raises(session: Session) -> None:
+    with pytest.raises(OperationalError):
+        upsert_one(session, TEST_TABLE, values={})
