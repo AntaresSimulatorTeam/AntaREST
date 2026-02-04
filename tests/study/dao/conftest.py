@@ -18,7 +18,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DataBaseStudyDaoFactory
 from antarest.study.model import StorageMode
-from tests.helpers import create_raw_study
+from tests.helpers import create_study
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseSt
     """
     study_id = str(uuid.uuid4())
     with db_session:
-        study = create_raw_study(id=study_id, name="Test Study")
+        study = create_study(id=study_id, name="Test Study")
         study.storage_mode = StorageMode.DATABASE
         factory = DataBaseStudyDaoFactory(matrix_service, db_session)
         dao = factory.create_study_dao(study)

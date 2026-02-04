@@ -19,7 +19,7 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_L
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import RawStudy
+from antarest.study.model import Study
 
 
 class DataBaseStudyDaoFactory(StudyFactoryDao):
@@ -39,7 +39,7 @@ class DataBaseStudyDaoFactory(StudyFactoryDao):
         return self._session
 
     @override
-    def create_study_dao(self, study: RawStudy) -> DatabaseStudyDao:
+    def create_study_dao(self, study: Study) -> DatabaseStudyDao:
         dao = DatabaseStudyDao(study.id, self.session, self._matrix_service)
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
         return dao

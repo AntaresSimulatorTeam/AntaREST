@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import RawStudy
+from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.utils import create_new_empty_study, is_managed, update_antares_info
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -32,7 +32,7 @@ class FileStudyDaoFactory(StudyFactoryDao):
         self._study_factory = study_factory
 
     @override
-    def create_study_dao(self, study: RawStudy) -> FileStudyTreeDao:
+    def create_study_dao(self, study: Study) -> FileStudyTreeDao:
         """The given study object is modified as a side effect"""
         path_study = Path(study.path)
 
