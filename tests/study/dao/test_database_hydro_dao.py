@@ -10,22 +10,21 @@
 #
 # This file is part of the Antares project.
 
-"""
-Unit tests for DatabaseHydroDao.
-"""
-
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import (
     AreaNotFound,
-    HydroAllocationNotFound,
     HydroConfigNotFound,
     HydroInflowStructureNotFound,
 )
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
-from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
+from antarest.study.business.model.hydro_correlation_model import (
+    HydroCorrelation,
+    HydroCorrelationArea,
+    HydroCorrelationMatrix,
+)
 from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.hydro import (
@@ -34,8 +33,6 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_INFLOW_STRUCTURE_TABLE,
     HYDRO_MANAGEMENT_TABLE,
 )
-
-# ==================== Phase 1: Core Config Tests ====================
 
 
 class TestHydroManagement:
@@ -53,33 +50,6 @@ class TestHydroManagement:
         with pytest.raises(AreaNotFound):
             dao.get_hydro_management("nonexistent")
 
-    def test_save_hydro_management_creates_new_record(self, db_session: Session, dao: DatabaseStudyDao) -> None:
-        """Test that save_hydro_management creates a new record."""
-        dao.save_area("Paris")
-
-        hydro_mgmt = HydroManagement(
-            inter_daily_breakdown=2.0,
-            intra_daily_modulation=12.0,
-            reservoir=True,
-            reservoir_capacity=500.0,
-            follow_load=False,
-        )
-        dao.save_hydro_management(hydro_mgmt, "paris")
-
-        # Verify in database
-        with db_session:
-            stmt = select(HYDRO_MANAGEMENT_TABLE).where(
-                (HYDRO_MANAGEMENT_TABLE.c.study_id == dao.get_study_id())
-                & (HYDRO_MANAGEMENT_TABLE.c.area_id == "paris")
-            )
-            row = db_session.execute(stmt).fetchone()
-            assert row is not None
-            assert row.inter_daily_breakdown == 2.0
-            assert row.intra_daily_modulation == 12.0
-            assert row.reservoir is True
-            assert row.reservoir_capacity == 500.0
-            assert row.follow_load is False
-
     def test_save_hydro_management_updates_existing_record(self, dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_management updates an existing record."""
         dao.save_area("Paris")
@@ -87,6 +57,10 @@ class TestHydroManagement:
         # Create initial config
         hydro_mgmt1 = HydroManagement(reservoir=False, reservoir_capacity=100.0)
         dao.save_hydro_management(hydro_mgmt1, "paris")
+
+        result = dao.get_hydro_management("paris")
+        assert result.reservoir is False
+        assert result.reservoir_capacity == 100.0
 
         # Update config
         hydro_mgmt2 = HydroManagement(reservoir=True, reservoir_capacity=999.0)
@@ -129,29 +103,16 @@ class TestInflowStructure:
         with pytest.raises(AreaNotFound):
             dao.get_inflow_structure("nonexistent")
 
-    def test_save_inflow_structure_creates_new_record(self, db_session: Session, dao: DatabaseStudyDao) -> None:
-        """Test that save_inflow_structure creates a new record."""
-        dao.save_area("Paris")
-
-        inflow = InflowStructure(inter_monthly_correlation=0.8)
-        dao.save_inflow_structure(inflow, "paris")
-
-        # Verify in database
-        with db_session:
-            stmt = select(HYDRO_INFLOW_STRUCTURE_TABLE).where(
-                (HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id == dao.get_study_id())
-                & (HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id == "paris")
-            )
-            row = db_session.execute(stmt).fetchone()
-            assert row is not None
-            assert row.inter_monthly_correlation == 0.8
-
     def test_save_inflow_structure_updates_existing_record(self, dao: DatabaseStudyDao) -> None:
         """Test that save_inflow_structure updates an existing record."""
         dao.save_area("Paris")
 
         # Create initial config
         dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.3), "paris")
+
+        # Verify create
+        result = dao.get_inflow_structure("paris")
+        assert result.inter_monthly_correlation == 0.3
 
         # Update config
         dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.9), "paris")
@@ -226,52 +187,20 @@ class TestGetAllHydroProperties:
         assert result["london"].inflow_structure.inter_monthly_correlation == 0.7
 
 
-# ==================== Phase 2: Allocation & Correlation Tests ====================
-
-
 class TestHydroAllocation:
     """Tests for hydro allocation CRUD operations."""
 
     def test_get_hydro_allocation_raises_error_for_area_without_allocation(self, dao: DatabaseStudyDao) -> None:
-        """Test that get_hydro_allocation raises HydroAllocationNotFound for an area without allocation."""
+        """Test that get_hydro_allocation raises ValueError for an area without allocation."""
         dao.save_area("Paris")
 
-        with pytest.raises(HydroAllocationNotFound):
+        with pytest.raises(ValueError):
             dao.get_hydro_allocation("paris")
 
     def test_get_hydro_allocation_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_allocation raises AreaNotFound if area doesn't exist."""
         with pytest.raises(AreaNotFound):
             dao.get_hydro_allocation("nonexistent")
-
-    def test_save_hydro_allocation_creates_records(self, db_session: Session, dao: DatabaseStudyDao) -> None:
-        """Test that save_hydro_allocation creates allocation records."""
-        dao.save_area("Paris")
-        dao.save_area("London")
-        dao.save_area("Berlin")
-
-        allocation = HydroAllocation(
-            allocation=[
-                HydroAllocationArea(area_id="paris", coefficient=0.5),
-                HydroAllocationArea(area_id="london", coefficient=0.3),
-                HydroAllocationArea(area_id="berlin", coefficient=0.2),
-            ]
-        )
-        dao.save_hydro_allocation("paris", allocation)
-
-        # Verify in database
-        with db_session:
-            stmt = select(HYDRO_ALLOCATION_TABLE).where(
-                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
-                & (HYDRO_ALLOCATION_TABLE.c.source_area_id == "paris")
-            )
-            rows = db_session.execute(stmt).fetchall()
-            assert len(rows) == 3
-
-            coefficients = {row.target_area_id: row.coefficient for row in rows}
-            assert coefficients["paris"] == 0.5
-            assert coefficients["london"] == 0.3
-            assert coefficients["berlin"] == 0.2
 
     def test_save_hydro_allocation_replaces_existing_records(self, dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_allocation replaces existing allocation."""
@@ -330,6 +259,20 @@ class TestHydroAllocation:
         assert "london" in result
         assert len(result["paris"].allocation) == 2
         assert len(result["london"].allocation) == 1
+        assert result["london"].allocation[0].coefficient == 1.0
+
+        dao.save_hydro_allocation(
+            "paris",
+            HydroAllocation(
+                allocation=[
+                    HydroAllocationArea(area_id="paris", coefficient=0.2),
+                ]
+            ),
+        )
+        result = dao.get_hydro_allocation_matrix()
+        assert len(result["paris"].allocation) == 1
+        assert result["paris"].allocation[0].coefficient == 0.2
+        assert result["london"].allocation[0].coefficient == 1.0
 
 
 class TestHydroCorrelation:
@@ -345,35 +288,19 @@ class TestHydroCorrelation:
         assert correlation.correlation[0].area_id == "paris"
         assert correlation.correlation[0].coefficient == 100.0  # Diagonal = 100%
 
+        dao.save_area("Algiers")
+        correlation = dao.get_hydro_correlation("paris")
+
+        assert len(correlation.correlation) == 2
+        assert correlation.correlation[0].area_id == "algiers"
+        assert correlation.correlation[0].coefficient == 0.0  # Default correlation to other areas is zero
+        assert correlation.correlation[1].area_id == "paris"
+        assert correlation.correlation[1].coefficient == 100.0  # Diagonal = 100%
+
     def test_get_hydro_correlation_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_correlation raises AreaNotFound if area doesn't exist."""
         with pytest.raises(AreaNotFound):
             dao.get_hydro_correlation("nonexistent")
-
-    def test_save_hydro_correlation_creates_records(self, db_session: Session, dao: DatabaseStudyDao) -> None:
-        """Test that save_hydro_correlation creates correlation records."""
-        dao.save_area("Paris")
-        dao.save_area("London")
-
-        correlation = HydroCorrelation(
-            correlation=[
-                HydroCorrelationArea(area_id="paris", coefficient=100.0),  # Self-correlation
-                HydroCorrelationArea(area_id="london", coefficient=50.0),  # 50% correlation with London
-            ]
-        )
-        dao.save_hydro_correlation("paris", correlation)
-
-        # Verify in database (only upper triangle stored)
-        with db_session:
-            stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.study_id == dao.get_study_id())
-            rows = db_session.execute(stmt).fetchall()
-
-            # Only one record (paris-london pair, stored as lower < higher alphabetically)
-            assert len(rows) == 1
-            row = rows[0]
-            assert row.area_from == "london"  # Alphabetically first
-            assert row.area_to == "paris"
-            assert row.coefficient == 0.5  # Stored as -1 to 1
 
     def test_save_hydro_correlation_stores_symmetric_data(self, dao: DatabaseStudyDao) -> None:
         """Test that correlation is stored symmetrically (only upper triangle)."""
@@ -430,19 +357,41 @@ class TestHydroCorrelation:
 
         result = dao.get_hydro_correlation_matrix()
 
-        # Check matrix properties
-        assert len(result.index) == 2
-        assert len(result.columns) == 2
-        assert result.index == result.columns  # Square matrix
+        assert result.data[0][0] == 1.0
+        assert result.data[0][1] == 0.6
+        assert result.data[1][0] == 0.6
+        assert result.data[1][1] == 1.0
 
-        # Check diagonal is 1.0
-        for i in range(len(result.index)):
-            assert result.data[i][i] == 1.0
+        def matrix_sanity_checks(matrix: HydroCorrelationMatrix, expected_size: int) -> None:
+            # Check matrix properties
+            assert len(matrix.index) == expected_size
+            assert len(matrix.columns) == expected_size
+            assert matrix.index == matrix.columns  # Square matrix
 
-        # Check symmetry
-        for i in range(len(result.index)):
-            for j in range(len(result.columns)):
-                assert result.data[i][j] == result.data[j][i]
+            # Check diagonal is 1.0
+            for i in range(len(matrix.index)):
+                assert matrix.data[i][i] == 1.0
+
+            # Check symmetry
+            for i in range(len(matrix.index)):
+                for j in range(len(matrix.columns)):
+                    assert matrix.data[i][j] == matrix.data[j][i]
+
+        matrix_sanity_checks(result, expected_size=2)
+
+        # New area preserves matrix properties
+        dao.save_area("Algiers")
+        result = dao.get_hydro_correlation_matrix()
+        matrix_sanity_checks(result, expected_size=3)
+        assert result.data[0][0] == 1.0
+        assert result.data[0][1] == 0.0
+        assert result.data[0][2] == 0.0
+        assert result.data[1][0] == 0.0
+        assert result.data[1][1] == 1.0
+        assert result.data[1][2] == 0.6
+        assert result.data[2][0] == 0.0
+        assert result.data[2][1] == 0.6
+        assert result.data[2][2] == 1.0
 
 
 class TestCascadeDelete:

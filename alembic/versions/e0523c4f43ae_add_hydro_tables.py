@@ -76,6 +76,12 @@ def upgrade():
             name=op.f("fk_hydro_allocation_study_id_source_area_id_area"),
             ondelete="CASCADE",
         ),
+        sa.ForeignKeyConstraint(
+            ["study_id", "target_area_id"],
+            ["area.study_id", "area.area_id"],
+            name=op.f("fk_hydro_allocation_study_id_target_area_id_area"),
+            ondelete="CASCADE",
+        ),
         sa.PrimaryKeyConstraint("study_id", "source_area_id", "target_area_id", name=op.f("pk_hydro_allocation")),
     )
 

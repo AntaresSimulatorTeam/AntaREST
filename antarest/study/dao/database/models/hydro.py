@@ -49,6 +49,7 @@ HYDRO_MANAGEMENT_TABLE = Table(
     ForeignKeyConstraint(
         ["study_id", "area_id"],
         ["area.study_id", "area.area_id"],
+        name="fk_hydro_management_study_id_area_id",
         ondelete="CASCADE",
     ),
 )
@@ -62,6 +63,7 @@ HYDRO_INFLOW_STRUCTURE_TABLE = Table(
     ForeignKeyConstraint(
         ["study_id", "area_id"],
         ["area.study_id", "area.area_id"],
+        name="fk_hydro_inflow_structure_study_id_area_id",
         ondelete="CASCADE",
     ),
 )
@@ -76,6 +78,13 @@ HYDRO_ALLOCATION_TABLE = Table(
     ForeignKeyConstraint(
         ["study_id", "source_area_id"],
         ["area.study_id", "area.area_id"],
+        name="fk_hydro_allocation_study_id_area_id_1",
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_id", "target_area_id"],
+        ["area.study_id", "area.area_id"],
+        name="fk_hydro_allocation_study_id_area_id_2",
         ondelete="CASCADE",
     ),
 )
@@ -91,11 +100,13 @@ HYDRO_CORRELATION_TABLE = Table(
     ForeignKeyConstraint(
         ["study_id", "area_from"],
         ["area.study_id", "area.area_id"],
+        name="fk_hydro_correlation_study_id_area_id_1",
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
         ["study_id", "area_to"],
         ["area.study_id", "area.area_id"],
+        name="fk_hydro_correlation_study_id_area_id_2",
         ondelete="CASCADE",
     ),
 )
