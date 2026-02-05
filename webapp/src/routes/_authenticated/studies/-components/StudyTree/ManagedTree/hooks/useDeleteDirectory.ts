@@ -29,8 +29,38 @@ interface DeleteDirectoryParams {
   allDirectories: Directory[];
 }
 
-// For cascade deletion - used to move children to parent level
-async function moveChildrenToParent(directoryId: string, directories: Directory[]) {
+interface DeleteDirectoryContext {
+  previousDirectories?: Directory[];
+  affectedDirectoryIds: string[];
+  movedChildren?: Directory[];
+}
+
+/**
+ * Recursively finds all descendant directory IDs
+ *
+ * @param directoryId - The ID of the directory to find descendants for
+ * @param directories - The list of directories to search
+ * @returns An array of descendant directory IDs
+ */
+function findAllDescendants(directoryId: string, directories: Directory[]): string[] {
+  const children = directories.filter((dir) => dir.parentId === directoryId);
+  const childIds = children.map((child) => child.id);
+  const descendantIds = children.flatMap((child) => findAllDescendants(child.id, directories));
+
+  return [...childIds, ...descendantIds];
+}
+
+/**
+ * Moves children to parent level before deletion (non-cascade mode)
+ *
+ * @param directoryId - The ID of the directory to move children from
+ * @param directories - The list of directories to search
+ * @returns The updated list of directories
+ */
+async function moveChildrenToParent(
+  directoryId: string,
+  directories: Directory[],
+): Promise<Directory[]> {
   const directoryToDelete = directories.find((dir) => dir.id === directoryId);
   const children = directories.filter((dir) => dir.parentId === directoryId);
   const newParentId = directoryToDelete?.parentId ?? null;
@@ -43,14 +73,22 @@ async function moveChildrenToParent(directoryId: string, directories: Directory[
       }),
     ),
   );
+
+  return children;
 }
 
-// For non-cascade deletion - updates the directory list optimistically
+/**
+ * Updates the directory list optimistically for non-cascade deletion
+ *
+ * @param directories - The current list of directories
+ * @param directoryId - The ID of the directory to delete
+ * @returns The updated list of directories
+ */
 function updateDirectoriesOptimistically(
   directories: Directory[],
   directoryId: string,
 ): Directory[] {
-  const directoryToDelete = directories.find((d) => d.id === directoryId);
+  const directoryToDelete = directories.find((dir) => dir.id === directoryId);
   const newParentId = directoryToDelete?.parentId ?? null;
 
   return directories
@@ -59,6 +97,7 @@ function updateDirectoriesOptimistically(
       if (dir.parentId === directoryId) {
         return { ...dir, parentId: newParentId };
       }
+
       return dir;
     })
     .filter((dir) => dir.id !== directoryId);
@@ -80,28 +119,66 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
       // Delete the directory
       return directoriesApi.delete(directoryId);
     },
-    onMutate: async ({ directoryId, cascade }) => {
-      await queryClient.cancelQueries({ queryKey: directoryKeys.all });
+    onMutate: async ({ directoryId, cascade, allDirectories }): Promise<DeleteDirectoryContext> => {
+      // Cancel only the queries we're about to update
+      await queryClient.cancelQueries({ queryKey: directoryKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: directoryKeys.details() });
 
+      // Snapshot the previous state for rollback
       const previousDirectories = queryClient.getQueryData<Directory[]>(directoryKeys.list());
 
+      // Track affected directories for cache cleanup
+      const affectedDirectoryIds = cascade
+        ? [directoryId, ...findAllDescendants(directoryId, allDirectories)]
+        : [directoryId];
+
+      // Optimistically update the directory list
       if (previousDirectories) {
         const updatedDirectories = cascade
-          ? previousDirectories.filter((dir) => dir.id !== directoryId)
-          : updateDirectoriesOptimistically(previousDirectories, directoryId);
+          ? // Cascade: Remove directory and all descendants
+            previousDirectories.filter((dir) => !affectedDirectoryIds.includes(dir.id))
+          : // Non-cascade: Move children to parent level and remove directory
+            updateDirectoriesOptimistically(previousDirectories, directoryId);
 
         queryClient.setQueryData<Directory[]>(directoryKeys.list(), updatedDirectories);
+
+        // Update detail cache for moved children (non-cascade only)
+        if (!cascade) {
+          const directoryToDelete = previousDirectories.find((dir) => dir.id === directoryId);
+          const newParentId = directoryToDelete?.parentId ?? null;
+          const children = previousDirectories.filter((dir) => dir.parentId === directoryId);
+
+          children.forEach((child) => {
+            queryClient.setQueryData<Directory>(directoryKeys.detail(child.id), {
+              ...child,
+              parentId: newParentId,
+            });
+          });
+        }
       }
 
-      return { previousDirectories };
+      return {
+        previousDirectories,
+        affectedDirectoryIds,
+        movedChildren: cascade
+          ? undefined
+          : allDirectories.filter((dir) => dir.parentId === directoryId),
+      };
     },
     onError: (_error, _variables, context) => {
-      // Rollback optimistic update
+      // Rollback optimistic updates
       if (context?.previousDirectories) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
       }
 
-      // TODO use error snackbar
+      // Rollback detail cache for moved children
+      if (context?.movedChildren) {
+        context.movedChildren.forEach((child) => {
+          queryClient.setQueryData<Directory>(directoryKeys.detail(child.id), child);
+        });
+      }
+
+      // TODO: Use errorSnackbar
       enqueueSnackbar(
         t("studies.deleteFolder.error", {
           defaultValue: "Failed to delete directory. Please try again.",
@@ -109,8 +186,15 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
         { variant: "error" },
       );
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: directoryKeys.all });
+    onSuccess: (_data, _variables, context) => {
+      // Remove deleted directories from detail cache
+      context.affectedDirectoryIds.forEach((id) => {
+        queryClient.removeQueries({ queryKey: directoryKeys.detail(id) });
+      });
+
+      // Cache is already updated optimistically and doesn't need invalidation
+      // This prevents unnecessary refetches and UI flicker
+
       options?.onSuccess?.();
     },
   });

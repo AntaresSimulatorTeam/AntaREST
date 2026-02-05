@@ -23,6 +23,11 @@ interface UseUpdateDirectoryOptions {
   onSuccess?: () => void;
 }
 
+interface UpdateDirectoryContext {
+  previousDirectories?: Directory[];
+  previousDetail?: Directory;
+}
+
 export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
@@ -30,40 +35,57 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
 
   return useMutation({
     ...directoryMutations.update(),
-    onMutate: async ({ id, data: updateData }) => {
-      await queryClient.cancelQueries({ queryKey: directoryKeys.all });
+    onMutate: async ({ id, data: updateData }): Promise<UpdateDirectoryContext> => {
+      // Cancel only the queries we're about to update
+      await queryClient.cancelQueries({ queryKey: directoryKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: directoryKeys.detail(id) });
 
+      // Snapshot the previous state for rollback
       const previousDirectories = queryClient.getQueryData<Directory[]>(directoryKeys.list());
+      const previousDetail = queryClient.getQueryData<Directory>(directoryKeys.detail(id));
 
-      if (previousDirectories) {
-        const updatedDirectories = previousDirectories.map((dir) =>
-          dir.id === id
-            ? {
-                ...dir,
-                name: updateData.name,
-                parentId: updateData.parentId,
-              }
-            : dir,
-        );
+      // Optimistically update the directory list
+      queryClient.setQueryData<Directory[]>(directoryKeys.list(), (old) =>
+        old?.map((dir) => (dir.id === id ? { ...dir, ...updateData } : dir)),
+      );
 
-        queryClient.setQueryData<Directory[]>(directoryKeys.list(), updatedDirectories);
+      // Optimistically update the directory detail if cached
+      if (previousDetail) {
+        queryClient.setQueryData<Directory>(directoryKeys.detail(id), {
+          ...previousDetail,
+          ...updateData,
+        });
       }
 
-      return { previousDirectories };
+      return { previousDirectories, previousDetail };
     },
-    onError: (_error, _variables, context) => {
-      // Rollback optimistic update
+    onError: (_error, { id }, context) => {
+      // Rollback optimistic updates
       if (context?.previousDirectories) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
       }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(directoryKeys.detail(id), context.previousDetail);
+      }
 
-      //  TODO use errorSnackbar
+      // TODO: Use errorSnackbar
       enqueueSnackbar(t("studies.updateFolder.error"), { variant: "error" });
     },
-    onSuccess: () => {
-      // TODO - check if we need to invalidate the query
-      // or we can use the returned data to update the cache
-      queryClient.invalidateQueries({ queryKey: directoryKeys.all });
+    onSuccess: (data, { id }) => {
+      // Update cache with server response to ensure consistency
+      queryClient.setQueryData<Directory>(directoryKeys.detail(id), {
+        id,
+        ...data,
+      });
+
+      // Update the directory in the list with server response
+      queryClient.setQueryData<Directory[]>(directoryKeys.list(), (old) =>
+        old?.map((dir) => (dir.id === id ? { id, ...data } : dir)),
+      );
+
+      // No need to invalidate since we're updating the cache directly
+      // This prevents unnecessary refetches and UI flicker
+
       options?.onSuccess?.();
     },
   });

@@ -23,6 +23,11 @@ interface UseCreateDirectoryOptions {
   onSuccess?: (directory: Directory) => void;
 }
 
+interface CreateDirectoryContext {
+  previousDirectories?: Directory[];
+  tempId: string;
+}
+
 export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
   const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
@@ -30,14 +35,20 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
 
   return useMutation({
     ...directoryMutations.create(),
-    onMutate: async (newDirectory) => {
-      await queryClient.cancelQueries({ queryKey: directoryKeys.all });
+    onMutate: async (newDirectory): Promise<CreateDirectoryContext> => {
+      // Generate a temporary ID for optimistic update
+      const tempId = `temp-${Date.now()}-${Math.random()}`;
 
+      // Cancel only the list queries we're about to update
+      await queryClient.cancelQueries({ queryKey: directoryKeys.lists() });
+
+      // Snapshot the previous state for rollback
       const previousDirectories = queryClient.getQueryData<Directory[]>(directoryKeys.list());
 
+      // Optimistically add the new directory to the list
       if (previousDirectories) {
         const tempDirectory: Directory = {
-          id: `temp-${Date.now()}`,
+          id: tempId,
           name: newDirectory.name,
           parentId: newDirectory.parentId,
         };
@@ -48,7 +59,7 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
         ]);
       }
 
-      return { previousDirectories };
+      return { previousDirectories, tempId };
     },
     onError: (_error, _newDirectory, context) => {
       // Rollback optimistic update
@@ -56,11 +67,26 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
       }
 
-      // TODO use errorSnackbar
+      // TODO: Use errorSnackbar
       enqueueSnackbar(t("studies.createFolder.error"), { variant: "error" });
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: directoryKeys.all });
+    onSuccess: (data, _variables, context) => {
+      // Add the new directory to the detail cache
+      queryClient.setQueryData<Directory>(directoryKeys.detail(data.id), data);
+
+      // Update the list cache: replace temp directory with the real one
+      queryClient.setQueryData<Directory[]>(directoryKeys.list(), (old) => {
+        if (!old) {
+          return [data];
+        }
+
+        // Replace the temporary directory with the actual one from the server
+        return old.map((dir) => (dir.id === context.tempId ? data : dir));
+      });
+
+      // No need to invalidate since we're updating the cache directly
+      // This prevents unnecessary refetches and UI flicker
+
       options?.onSuccess?.(data);
     },
   });
