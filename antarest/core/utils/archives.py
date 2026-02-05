@@ -17,7 +17,6 @@ import zipfile
 from enum import StrEnum
 from pathlib import Path
 from subprocess import CalledProcessError, run
-from shutil import which
 from typing import Any, BinaryIO, Callable, List, Optional, Tuple
 
 import py7zr
