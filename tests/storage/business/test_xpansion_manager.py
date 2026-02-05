@@ -91,6 +91,8 @@ def test_create_configuration(
             "separation_parameter": 0.5,
             "batch_size": 96,
             "timelimit": 172800,  # 48 hours
+            "master_solution_tolerance": 0.0001,
+            "cut_coefficient_tolerance": 0.005,
         },
         "weights": {},
         "adequacy_criterion": {"adequacy_criterion": {}},
@@ -149,6 +151,8 @@ def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_81
         "additional-constraints": "",
         "timelimit": 172800,  # 48 hours
         "sensitivity_config": {"epsilon": 0, "projection": [], "capex": False},
+        "masterSolutionTolerance": 0.0001,
+        "cutCoefficientTolerance": 0.005,
     }
 
 
@@ -172,6 +176,7 @@ def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study
         "timelimit": 172800,  # 48 hours
         "log_level": 0,
         "sensitivity_config": {"epsilon": 10500.0, "projection": ["foo"], "capex": False},
+        "masterSolutionTolerance": 15.6,
     }
 
     new_settings = XpansionSettingsUpdate(**new_settings_obj)
@@ -193,6 +198,8 @@ def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study
         "additional-constraints": "",
         "timelimit": 172800,  # 48 hours
         "sensitivity_config": {"epsilon": 10500.0, "projection": ["foo"], "capex": False},
+        "masterSolutionTolerance": 15.6,
+        "cutCoefficientTolerance": 0.005,
     }
     assert actual.model_dump(by_alias=True) == expected
 
@@ -249,6 +256,31 @@ def test_add_candidate(
 
     actual = study.get_files().tree.get(["user", "expansion", "candidates"])
     assert actual == candidates
+
+
+def test_add_candidate_with_weird_names(
+    link_manager: LinkManager, area_manager: AreaManager, xpansion_manager: XpansionManager, empty_study_810: FileStudy
+) -> None:
+    study = file_study_interface(empty_study_810)
+    xpansion_manager.create_xpansion_configuration(study)
+    make_areas(area_manager, study)
+    make_link(link_manager, study)
+
+    # These used to fail
+    cdt_int = XpansionCandidateCreation.model_validate(
+        {"name": 111, "link": "area1 - area2", "annual-cost-per-mw": 1, "max-investment": 1}
+    )
+    cdt_float = XpansionCandidateCreation.model_validate(
+        {"name": 14.5, "link": "area1 - area2", "annual-cost-per-mw": 1, "max-investment": 1}
+    )
+
+    # Ensure we can create these candidates
+    xpansion_manager.add_candidate(study, cdt_int)
+    xpansion_manager.add_candidate(study, cdt_float)
+    created_candidates = xpansion_manager.get_candidates(study)
+    assert len(created_candidates) == 2
+    assert created_candidates[0].name in {"111", "14.5"}
+    assert created_candidates[1].name in {"111", "14.5"}
 
 
 def test_get_candidate(

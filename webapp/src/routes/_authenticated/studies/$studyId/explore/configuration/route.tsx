@@ -70,6 +70,14 @@ function ConfigurationLayout() {
             params,
           }),
         },
+        semver.gte(study.version, "9.2.0") && {
+          id: "compatibility",
+          label: t("study.configuration.compatibility"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/configuration/compatibility",
+            params,
+          }),
+        },
         {
           id: "eco-options",
           label: t("study.configuration.economicOpt"),

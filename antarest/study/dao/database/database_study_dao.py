@@ -27,16 +27,16 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
-from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -59,11 +59,21 @@ from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
 from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
+from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
+from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao, DatabaseHydroDao):
+class DatabaseStudyDao(
+    StudyDao,
+    DatabaseAreaDao,
+    DatabaseAreaPropertiesDao,
+    DatabaseDistrictDao,
+    DatabaseLinkDao,
+    DatabaseLayerDao,
+    DatabaseHydroDao,
+):
     """
     Database implementation of StudyDao.
     """
@@ -79,7 +89,10 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
         DatabaseAreaDao.__init__(self, study_id, db_session)
         DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
         DatabaseDistrictDao.__init__(self, study_id, db_session)
+        DatabaseLinkDao.__init__(self, study_id, db_session)
+        DatabaseLayerDao.__init__(self, study_id, db_session)
         DatabaseHydroDao.__init__(self, study_id, db_session)
+
         self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
@@ -112,6 +125,10 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
         pass
 
     @override
+    def initialize_study(self) -> None:
+        self.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
+
+    @override
     def get_file_study(self) -> FileStudy:
         """
         Get the FileStudy instance.
@@ -127,38 +144,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
 
     def get_matrix(self, matrix_id: str) -> pl.DataFrame:
         return self._matrix_service.get(matrix_id)
-
-    @override
-    def save_link(self, link: Link) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_link(self, link: Link) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_links(self) -> Sequence[Link]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_link(self, area1_id: str, area2_id: str) -> Link:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def link_exists(self, area1_id: str, area2_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
@@ -446,11 +431,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
     ) -> list[STStorageAdditionalConstraint]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
-    # NOTE: The following hydro config methods are implemented in DatabaseHydroDao:
-    # - save_hydro_management, save_inflow_structure, save_hydro_allocation, save_hydro_correlation
-    # - get_all_hydro_properties, get_hydro_management, get_inflow_structure
-    # - get_hydro_allocation, get_hydro_allocation_matrix, get_hydro_correlation, get_hydro_correlation_matrix
-
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
@@ -588,22 +568,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def save_layer(self, layer: Layer) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_layer(self, layer: Layer) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_layers(self) -> Sequence[Layer]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def layer_exists(self, layer_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
     def save_playlist_config(self, playlist: Playlist) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
@@ -635,9 +599,6 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
-    # NOTE: Hydro series methods (matrix methods) are implemented in DatabaseHydroDao as NotImplementedError stubs
-    # They will be implemented in Phase 3
-
     # Link series methods
     @override
     def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
@@ -649,6 +610,114 @@ class DatabaseStudyDao(StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, Dat
 
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def convert_hydro_pmax(self, hydro_pmax: HydroPmax) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     # User resources
