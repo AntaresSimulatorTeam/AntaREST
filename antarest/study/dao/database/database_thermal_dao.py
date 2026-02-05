@@ -47,6 +47,9 @@ if TYPE_CHECKING:
 class DatabaseThermalDao(ThermalDao):
     """
     Database implementation of ThermalDao.
+
+    TODO: decide IDs handling, and in particular should we be case insensitive when searching
+          for a cluster (same question for areas etc)
     """
 
     def __init__(self, study_id: str, db_session: Session) -> None:
@@ -242,6 +245,8 @@ class DatabaseThermalDao(ThermalDao):
                 & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
             )
         )
+
+        # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
         session.commit()
 
     @override
