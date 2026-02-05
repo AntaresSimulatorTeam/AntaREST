@@ -17,18 +17,6 @@ import { directoriesApi } from "@/services/api/directories";
 import type { DirectoryFilters } from "@/services/api/directories/types";
 import { directoryKeys } from "./keys";
 
-/**
- * Query options for fetching all directories
- * GET /v1/directories
- *
- * @param filters - Optional filters for directories
- * @returns Query options object
- *
- * @example
- * ```tsx
- * const { data, isLoading } = useQuery(directoryQueries.list());
- * ```
- */
 export const directoryQueries = {
   /**
    * Base key for all directory queries
@@ -47,7 +35,6 @@ export const directoryQueries = {
     return queryOptions({
       queryKey: directoryKeys.list(filters),
       queryFn: () => directoriesApi.getAll(),
-      staleTime: 1000 * 60 * 5, // 5 minutes
     });
   },
 
@@ -63,7 +50,7 @@ export const directoryQueries = {
       queryKey: directoryKeys.detail(directoryId),
       queryFn: async () => {
         const directories = await directoriesApi.getAll();
-        const directory = directories.find((d) => d.id === directoryId);
+        const directory = directories.find((dir) => dir.id === directoryId);
 
         if (!directory) {
           throw new Error(`Directory with id ${directoryId} not found`);

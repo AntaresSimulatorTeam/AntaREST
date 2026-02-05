@@ -73,17 +73,14 @@ function ExternalTree({ studies }: ExternalTreeProps) {
     [explorePath, updateTreeWithFolders],
   );
 
-  const handleTreeItemClick = useCallback(
-    (itemId: string) => {
-      dispatch(
-        updateStudyFilters({
-          activeTree: "external",
-          external: { path: itemId, strictPath: filters.external.strictPath },
-        }),
-      );
-    },
-    [dispatch, filters.external.strictPath],
-  );
+  const handleTreeItemClick = (itemId: string) => {
+    dispatch(
+      updateStudyFilters({
+        activeTree: "external",
+        external: { path: itemId, strictPath: filters.external.strictPath },
+      }),
+    );
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX

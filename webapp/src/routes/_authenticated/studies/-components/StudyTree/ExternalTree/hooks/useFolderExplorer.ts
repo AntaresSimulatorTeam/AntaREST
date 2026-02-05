@@ -13,7 +13,7 @@
  */
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
@@ -41,7 +41,7 @@ export function useFolderExplorer() {
    * @param itemId - The path to parse (e.g., "/workspace/sub/path")
    * @returns Parsed path components or null if invalid
    */
-  const parsePath = useCallback((itemId: string) => {
+  const parsePath = (itemId: string) => {
     const [root, workspace, ...subPath] = itemId.split("/");
 
     const isAbsolutePath = root === ""; // Path must start with a '/'
@@ -52,7 +52,7 @@ export function useFolderExplorer() {
     }
 
     return { workspace, path: subPath.join("/") };
-  }, []);
+  };
 
   /**
    * Fetches and caches folders for a given path.
@@ -65,45 +65,42 @@ export function useFolderExplorer() {
    * @param itemId - The full path of the folder to explore (e.g., "/workspace/sub/path")
    * @returns Promise that resolves when folders are fetched, or null if path is invalid
    */
-  const explorePath = useCallback(
-    async (itemId: string): Promise<FolderDTO[] | null> => {
-      const parsed = parsePath(itemId);
+  const explorePath = async (itemId: string): Promise<FolderDTO[] | null> => {
+    const parsed = parsePath(itemId);
 
-      if (!parsed) {
-        return null;
-      }
+    if (!parsed) {
+      return null;
+    }
 
-      const { workspace, path } = parsed;
+    const { workspace, path } = parsed;
 
-      setItemsLoading((prev) => [...prev, itemId]);
+    setItemsLoading((prev) => [...prev, itemId]);
 
-      try {
-        const folders = await queryClient.fetchQuery(explorerQueries.folders(workspace, path));
+    try {
+      const folders = await queryClient.fetchQuery(explorerQueries.folders(workspace, path));
 
-        // Mark this path as explored
-        setExploredFolders((prev) => {
-          if (prev.includes(itemId)) {
-            return prev;
-          }
-          return [...prev, itemId];
-        });
+      // Mark this path as explored
+      setExploredFolders((prev) => {
+        if (prev.includes(itemId)) {
+          return prev;
+        }
+        return [...prev, itemId];
+      });
 
-        return folders;
-      } catch (err) {
-        enqueueErrorSnackbar(
-          t("studies.tree.error.failToFetchFolder", {
-            path: itemId,
-            interpolation: { escapeValue: false },
-          }),
-          toError(err),
-        );
-        return null;
-      } finally {
-        setItemsLoading((prev) => prev.filter((id) => id !== itemId));
-      }
-    },
-    [parsePath, queryClient, enqueueErrorSnackbar, t],
-  );
+      return folders;
+    } catch (err) {
+      enqueueErrorSnackbar(
+        t("studies.tree.error.failToFetchFolder", {
+          path: itemId,
+          interpolation: { escapeValue: false },
+        }),
+        toError(err),
+      );
+      return null;
+    } finally {
+      setItemsLoading((prev) => prev.filter((id) => id !== itemId));
+    }
+  };
 
   return {
     explorePath,

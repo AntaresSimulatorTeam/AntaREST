@@ -62,7 +62,7 @@ export const buildExternalTree = (studies: StudyMetadata[]): ExternalTreeNodeMet
     path: "",
   };
 
-  // Use reduce to build tree iteratively
+  // Build tree iteratively
   return R.reduce(
     (tree, study) => {
       const pathComponents = parseStudyPath(study);

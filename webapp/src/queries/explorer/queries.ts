@@ -18,17 +18,6 @@ import { explorerKeys } from "./keys";
 import { foldersSchema, workspacesSchema } from "./schemas";
 
 export const explorerQueries = {
-  /**
-   * Query options for fetching workspaces
-   * GET /v1/private/explorer/_list_workspaces
-   *
-   * @returns Query options object
-   *
-   * @example
-   * ```tsx
-   * const { data: workspaces } = useQuery(explorerQueries.workspaces());
-   * ```
-   */
   workspaces: () => {
     return queryOptions({
       queryKey: explorerKeys.workspaces(),
@@ -36,22 +25,9 @@ export const explorerQueries = {
         const data = await api.getWorkspaces();
         return workspacesSchema.parse(data);
       },
-      staleTime: 1000 * 60 * 5, // 5 minutes
     });
   },
 
-  /**
-   * Query options for fetching folders in a workspace path
-   *
-   * @param workspace - Workspace name
-   * @param path - Path relative to workspace root
-   * @returns Query options object
-   *
-   * @example
-   * ```tsx
-   * const { data: folders } = useQuery(explorerQueries.folders("default", "path/to/folder"));
-   * ```
-   */
   folders: (workspace: string, path: string) => {
     return queryOptions({
       queryKey: explorerKeys.foldersByPath(workspace, path),
@@ -59,7 +35,6 @@ export const explorerQueries = {
         const data = await api.getFolders(workspace, path);
         return foldersSchema.parse(data);
       },
-      staleTime: 1000 * 60, // 1 minute
       enabled: !!workspace,
     });
   },

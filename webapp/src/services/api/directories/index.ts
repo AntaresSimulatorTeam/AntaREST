@@ -51,7 +51,7 @@ export const directoriesApi = {
   },
 
   /**
-   * PATCH /v1/directories/{directory_id} - Update directory
+   * PATCH /v1/directories/{directoryId} - Update directory
    *
    * @param directoryId - ID of the directory to update
    * @param directoryData - Partial directory data to update
@@ -67,7 +67,7 @@ export const directoriesApi = {
   },
 
   /**
-   * DELETE /v1/directories/{directory_id} - Delete directory
+   * DELETE /v1/directories/{directoryId} - Delete directory
    *
    * @param directoryId - ID of the directory to delete
    * @returns Promise<void>

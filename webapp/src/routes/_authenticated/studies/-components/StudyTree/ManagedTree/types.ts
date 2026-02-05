@@ -12,11 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/types/types";
-
-/**
- * Represents a node in the directory tree structure
- */
 export interface DirectoryTreeNode {
   id: string;
   name: string;
@@ -25,10 +20,6 @@ export interface DirectoryTreeNode {
   children: DirectoryTreeNode[];
 }
 
-/**
- * Props for the ManagedTreeNode component
- * Handles rendering of individual tree nodes with CRUD operations
- */
 export interface ManagedTreeNodeProps {
   node: DirectoryTreeNode;
   onNodeClick: (id: string) => void;
@@ -57,11 +48,8 @@ export interface ManagedTreeNodeProps {
   isDeletePending: boolean;
 }
 
-/**
- * Props for the main ManagedTree component
- */
 export interface ManagedTreeProps {
-  studies: StudyMetadata[];
+  //studies: StudyMetadata[];
   isCreatingDirectory: boolean;
   onDirectoryCreated: () => void;
   onRootClick: () => void;

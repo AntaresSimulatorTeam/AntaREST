@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import type { SvgIconComponent } from "@mui/icons-material";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import type { SvgIconComponent } from "@mui/icons-material";
 import { compareAsc } from "date-fns";
 import * as R from "ramda";
 import { z } from "zod";
@@ -32,6 +32,16 @@ export const StudySortConfigSchema = z.object({
   order: SortOrderSchema,
 });
 
+export const StudySortOptionSchema = z.object({
+  id: z.string(),
+  labelKey: z.string(),
+  property: SortPropertySchema,
+  order: SortOrderSchema,
+  icon: z.custom<SvgIconComponent>((val) => typeof val === "function"),
+});
+
+export const StudySortOptionIdSchema = z.enum(["name-asc", "name-desc", "date-asc", "date-desc"]);
+
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
@@ -39,14 +49,8 @@ export const StudySortConfigSchema = z.object({
 export type SortProperty = z.infer<typeof SortPropertySchema>;
 export type SortOrder = z.infer<typeof SortOrderSchema>;
 export type StudySortConfig = z.infer<typeof StudySortConfigSchema>;
-
-export interface StudySortOption {
-  readonly id: string;
-  readonly labelKey: string;
-  readonly property: SortProperty;
-  readonly order: SortOrder;
-  readonly icon: SvgIconComponent;
-}
+export type StudySortOption = z.infer<typeof StudySortOptionSchema>;
+export type StudySortOptionId = z.infer<typeof StudySortOptionIdSchema>;
 
 ////////////////////////////////////////////////////////////////
 // Options
@@ -82,8 +86,6 @@ export const STUDY_SORT_OPTIONS = [
     icon: ArrowDownwardIcon,
   },
 ] as const satisfies readonly StudySortOption[];
-
-export type StudySortOptionId = (typeof STUDY_SORT_OPTIONS)[number]["id"];
 
 ////////////////////////////////////////////////////////////////
 // Helpers

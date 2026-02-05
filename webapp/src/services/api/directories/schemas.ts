@@ -20,17 +20,13 @@ import { z } from "zod";
  */
 
 ////////////////////////////////////////////////////////////////
-// Base Schemas
+// Response Schemas
 ////////////////////////////////////////////////////////////////
 
 const baseDirectorySchema = z.object({
   name: z.string(),
   parentId: z.string().nullable(),
 });
-
-////////////////////////////////////////////////////////////////
-// Response Schemas
-////////////////////////////////////////////////////////////////
 
 export const directorySchema = baseDirectorySchema.extend({
   id: z.string(),
@@ -58,6 +54,7 @@ export const updateDirectoryInputSchema = z.object({
 // Filter Schemas
 ////////////////////////////////////////////////////////////////
 
+// TODO: Not implemented yet
 export const directoryFiltersSchema = z.object({
   search: z.string().optional(),
   sortBy: z.enum(["name"]).optional(),

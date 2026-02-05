@@ -32,7 +32,7 @@ function StudyTree() {
 
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false);
 
-  const managedStudies = useMemo(() => studies.filter((s) => s.managed), [studies]);
+  //const managedStudies = useMemo(() => studies.filter((s) => s.managed), [studies]);
   const externalStudies = useMemo(() => studies.filter((s) => !s.managed), [studies]);
 
   ////////////////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ function StudyTree() {
         onAddDirectory={handleAddDirectoryClick}
       >
         <ManagedTree
-          studies={managedStudies}
+          // studies={managedStudies}
           isCreatingDirectory={isCreatingDirectory}
           onDirectoryCreated={handleDirectoryCreated}
           onRootClick={handleManagedRootClick}
