@@ -17,6 +17,7 @@ import zipfile
 from enum import StrEnum
 from pathlib import Path
 from subprocess import CalledProcessError, run
+from shutil import which
 from typing import Any, BinaryIO, Callable, List, Optional, Tuple
 
 import py7zr
@@ -46,12 +47,20 @@ def archive_dir(
             f"Non matching archive format {archive_format} and target archive suffix {target_archive_path.suffix}"
         )
     if target_archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
-        target_archive_path.unlink(missing_ok=True)
-        try:
-            run(["7z", "a", str(target_archive_path.resolve()), "."], cwd=str(src_dir_path), check=True)
-        except CalledProcessError as e:
-            logger.error(f"Error while creating archive: {e}")
-            raise
+        # if 7z is available on the machine, uses it
+        if shutil.which("7z") is not None:
+            logger.info("Using 7z to create archive")
+            target_archive_path.unlink(missing_ok=True)
+            try:
+                run(["7z", "a", str(target_archive_path.resolve()), "."], cwd=str(src_dir_path), check=True)
+            except CalledProcessError as e:
+                logger.error(f"Error while creating archive: {e}")
+                raise
+        # else, fallback to py7zr, less performant
+        else:
+            logger.info("Using py7zr to create archive")
+            with py7zr.SevenZipFile(target_archive_path, mode="w") as szf:
+                szf.writeall(src_dir_path, arcname="")
     elif target_archive_path.suffix == ArchiveFormat.ZIP:
         with zipfile.ZipFile(target_archive_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
             len_dir_path = len(str(src_dir_path))
