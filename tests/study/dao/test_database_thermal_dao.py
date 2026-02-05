@@ -196,7 +196,7 @@ def test_delete_thermal(dao: DatabaseStudyDao) -> None:
 
     with pytest.raises(ThermalClusterNotFound):
         dao.delete_thermal("paris", "gas2")
-    with pytest.raises(ThermalClusterNotFound):
+    with pytest.raises(AreaNotFound):
         dao.delete_thermal("paris2", "gas")
 
     dao.delete_thermal("paris", "gas")
@@ -207,6 +207,11 @@ def test_delete_thermal(dao: DatabaseStudyDao) -> None:
 
     with pytest.raises(ThermalClusterNotFound):
         dao.delete_thermal("paris", "gas")
+
+
+def test_thermal_exists_raises_for_unknown_area(dao: DatabaseStudyDao) -> None:
+    with pytest.raises(AreaNotFound):
+        dao.thermal_exists("nonexistent", "gas")
 
 
 def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
@@ -238,3 +243,39 @@ def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) 
         assert db_session.execute(select(THERMAL_SERIES_TABLE)).fetchall() == []
         assert db_session.execute(select(THERMAL_FUEL_COST_TABLE)).fetchall() == []
         assert db_session.execute(select(THERMAL_CO2_COST_TABLE)).fetchall() == []
+
+
+def test_get_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+
+    getters = [
+        dao.get_thermal_prepro,
+        dao.get_thermal_series,
+        dao.get_thermal_modulation,
+        dao.get_thermal_fuel_cost,
+        dao.get_thermal_co2_cost,
+    ]
+    for getter in getters:
+        with pytest.raises(ThermalClusterNotFound):
+            getter("paris", "gas")
+        with pytest.raises(AreaNotFound):
+            getter("nonexistent", "gas")
+
+
+def test_save_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+    dao.save_area("Paris")
+
+    savers = [
+        dao.save_thermal_prepro,
+        dao.save_thermal_series,
+        dao.save_thermal_modulation,
+        dao.save_thermal_fuel_cost,
+        dao.save_thermal_co2_cost,
+    ]
+
+    for saver in savers:
+        with pytest.raises(ThermalClusterNotFound):
+            saver("paris", "gas", "missing-matrix-id")
+        with pytest.raises(AreaNotFound):
+            saver("nonexistent", "gas", "missing-matrix-id")

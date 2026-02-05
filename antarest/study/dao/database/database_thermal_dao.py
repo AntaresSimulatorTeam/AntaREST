@@ -161,6 +161,7 @@ class DatabaseThermalDao(ThermalDao):
         return session.execute(stmt).fetchone()
 
     def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> pl.DataFrame:
+        validate_area_exists(self._db_session, self._study_id, area_id)
         row = self._get_thermal_matrix_row(area_id, thermal_id, table)
         if not row:
             raise ThermalClusterNotFound(area_id, thermal_id)
@@ -291,6 +292,7 @@ class DatabaseThermalDao(ThermalDao):
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
         session = self._db_session
+        validate_area_exists(session, self._study_id, area_id)
         stmt = self._select_thermal_cluster(area_id, thermal_id)
         return session.execute(stmt).fetchone() is not None
 
