@@ -18,7 +18,6 @@ depends_on = None
 
 
 def upgrade():
-    op.drop_table("favorite_study")
     op.create_table(
         "favorite_study",
         sa.Column("user_id", sa.Integer(), nullable=False),
