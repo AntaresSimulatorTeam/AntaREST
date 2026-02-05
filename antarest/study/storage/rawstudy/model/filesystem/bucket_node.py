@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,6 +19,7 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 
 
@@ -26,7 +27,7 @@ class RegisteredFile:
     def __init__(
         self,
         key: str,
-        node: Optional[Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]]],
+        node: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
         filename: str = "",
     ):
         self.key = key
@@ -44,11 +45,11 @@ class BucketNode(FolderNode):
         matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         registered_files: Optional[List[RegisteredFile]] = None,
-        default_file_node: Callable[..., INode[Any, Any, Any]] = RawFileNode,
+        use_matrix_mapper: bool = False,
     ):
         super().__init__(matrix_mapper, config)
         self.registered_files: List[RegisteredFile] = registered_files or []
-        self.default_file_node: Callable[..., INode[Any, Any, Any]] = default_file_node
+        self.use_matrix_mapper = use_matrix_mapper
 
     def _get_registered_file_by_key(self, key: str) -> Optional[RegisteredFile]:
         return next((rf for rf in self.registered_files if rf.key == key), None)
@@ -75,8 +76,7 @@ class BucketNode(FolderNode):
             if len(url) > 1:
                 registered_file = self._get_registered_file_by_key(key)
                 if registered_file:
-                    node = registered_file.node or self.default_file_node
-                    node(self.matrix_mapper, self.config.next_file(key)).save(data, url[1:])
+                    registered_file.node(self.matrix_mapper, self.config.next_file(key)).save(data, url[1:])
                 else:
                     BucketNode(self.matrix_mapper, self.config.next_file(key)).save(data, url[1:])
             else:
@@ -85,16 +85,17 @@ class BucketNode(FolderNode):
     def _save(self, data: SUB_JSON, key: str) -> None:
         registered_file = self._get_registered_file_by_key(key)
         if registered_file:
-            node, filename = (
-                registered_file.node or self.default_file_node,
-                registered_file.filename,
-            )
-
-            node(self.matrix_mapper, self.config.next_file(filename)).save(data)
-        elif isinstance(data, (str, bytes)):
-            self.default_file_node(self.matrix_mapper, self.config.next_file(key)).save(data)
+            node = registered_file.node(self.matrix_mapper, self.config.next_file(registered_file.filename))
         elif isinstance(data, dict):
-            BucketNode(self.matrix_mapper, self.config.next_file(key)).save(data)
+            node = BucketNode(self.matrix_mapper, self.config.next_file(key))
+        elif isinstance(data, (str, bytes)):
+            if self.use_matrix_mapper:
+                node = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(key))
+            else:
+                node = RawFileNode(self.config.next_file(key))
+        else:
+            raise TypeError(repr(type(data)))
+        node.save(data)
 
     @override
     def build(self) -> TREE:
@@ -105,10 +106,13 @@ class BucketNode(FolderNode):
         for item in sorted(self.config.path.iterdir()):
             registered_file = self._get_registered_file_by_filename(item.name)
             if registered_file:
-                node = registered_file.node or self.default_file_node
+                node = registered_file.node
                 children[registered_file.key] = node(self.matrix_mapper, self.config.next_file(item.name))
             elif item.is_file():
-                children[item.name] = self.default_file_node(self.matrix_mapper, self.config.next_file(item.name))
+                if self.use_matrix_mapper:
+                    children[item.name] = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(item.name))
+                else:
+                    children[item.name] = RawFileNode(self.config.next_file(item.name))
             else:
                 children[item.name] = BucketNode(self.matrix_mapper, self.config.next_file(item.name))
 

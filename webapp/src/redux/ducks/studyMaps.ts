@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,8 +12,24 @@
  * This file is part of the Antares project.
  */
 
+import {
+  getNodeWidth,
+  NODE_COLOR,
+  NODE_HEIGHT,
+} from "@/routes/_authenticated/studies/$studyId/explore/modeling/map/-utils";
+import * as linksApi from "@/services/api/studies/links";
 import type { LinkStyleValue } from "@/services/api/studies/links/types";
 import { createLinkId, parseLinkId } from "@/services/api/studies/links/utils";
+import * as studyApi from "@/services/api/study";
+import * as studyDataApi from "@/services/api/studydata";
+import type {
+  AreaLayerColor,
+  AreaLayerPosition,
+  LinkElement,
+  StudyLayer,
+  StudyMetadata,
+  UpdateAreaUi,
+} from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
@@ -24,22 +40,6 @@ import {
 import * as R from "ramda";
 import tinycolor from "tinycolor2";
 import type { AppState } from ".";
-import {
-  getNodeWidth,
-  NODE_COLOR,
-  NODE_HEIGHT,
-} from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
-import * as linksApi from "../../services/api/studies/links";
-import * as studyApi from "../../services/api/study";
-import * as studyDataApi from "../../services/api/studydata";
-import type {
-  AreaLayerColor,
-  AreaLayerPosition,
-  LinkElement,
-  StudyLayer,
-  StudyMetadata,
-  UpdateAreaUi,
-} from "../../types/types";
 import {
   getArea,
   getCurrentLayer,
@@ -92,7 +92,7 @@ export interface StudyMap {
   currentLayer?: StudyLayer["id"];
 }
 
-export const studyMapsAdapter = createEntityAdapter<StudyMap>({
+const studyMapsAdapter = createEntityAdapter<StudyMap>({
   selectId: (studyMap) => studyMap.studyId,
 });
 
@@ -205,6 +205,32 @@ export const fetchStudyMapLayers = createAsyncThunk<void, StudyMap["studyId"], A
     }
   },
 );
+
+export const fetchStudyMapDistricts = createAsyncThunk<
+  Record<StudyMapDistrict["id"], StudyMapDistrict>,
+  StudyMap["studyId"],
+  AppAsyncThunkConfig
+>(n("FETCH_STUDY_MAP_DISTRICTS"), async (studyId, { rejectWithValue }) => {
+  try {
+    const districts = await studyApi.getStudyDistricts(studyId);
+    const studyMapDistricts = districts.reduce(
+      (acc, { id, name, output, comments, areas }) => {
+        acc[id] = {
+          id,
+          name,
+          output,
+          comments,
+          areas,
+        };
+        return acc;
+      },
+      {} as StudyMapsState["districts"],
+    );
+    return studyMapDistricts;
+  } catch (err) {
+    return rejectWithValue(err);
+  }
+});
 
 async function getLinks(studyId: StudyMap["studyId"]): Promise<StudyMap["links"]> {
   const links = await linksApi.getLinks({ studyId });
@@ -340,8 +366,11 @@ export const deleteStudyMapNode = createAsyncThunk<
 
 export const setStudyMap = createAsyncThunk<StudyMap, StudyMap["studyId"], AppAsyncThunkConfig>(
   n("SET_STUDY_MAP"),
-  async (studyId, { getState, rejectWithValue }) => {
+  async (studyId, { getState, dispatch, rejectWithValue }) => {
     try {
+      // Refetch districts to sync with area changes (districts reference area IDs).
+      dispatch(fetchStudyMapDistricts(studyId));
+
       return {
         studyId,
         nodes: await getNodes(getState(), studyId),
@@ -477,32 +506,6 @@ export const deleteStudyMapLayer = createAsyncThunk<
     return { layerId };
   } catch (error) {
     return rejectWithValue(error);
-  }
-});
-
-export const fetchStudyMapDistricts = createAsyncThunk<
-  Record<StudyMapDistrict["id"], StudyMapDistrict>,
-  StudyMap["studyId"],
-  AppAsyncThunkConfig
->(n("FETCH_STUDY_MAP_DISTRICTS"), async (studyId, { rejectWithValue }) => {
-  try {
-    const districts = await studyApi.getStudyDistricts(studyId);
-    const studyMapDistricts = districts.reduce(
-      (acc, { id, name, output, comments, areas }) => {
-        acc[id] = {
-          id,
-          name,
-          output,
-          comments,
-          areas,
-        };
-        return acc;
-      },
-      {} as StudyMapsState["districts"],
-    );
-    return studyMapDistricts;
-  } catch (err) {
-    return rejectWithValue(err);
   }
 });
 

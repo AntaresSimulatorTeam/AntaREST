@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 
 import numpy as np
-import pandas as pd
+import polars as pl
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
@@ -28,6 +28,9 @@ if TYPE_CHECKING:
 
 from typing_extensions import override
 
+from antarest.core.utils.polars import create_polars_dataframe
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
@@ -203,47 +206,47 @@ class FileStudyHydroDao(HydroDao):
         file_study.tree.save({"[allocation]": data}, url)
 
     @override
-    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "prepro", area_id, "energy"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "series", area_id, "ror"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "series", area_id, "mod"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"]
         return self.get_impl().get_matrix(url)
 
     @override
-    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "series", area_id, "mingen"]
         return self.get_impl().get_matrix(url)
 
@@ -291,3 +294,76 @@ class FileStudyHydroDao(HydroDao):
     def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
         file_study = self.get_file_study()
         file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mingen"])
+
+    @override
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
+        url = ["input", "hydro", "series", area_id, "maxHourlyGenPower"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
+        url = ["input", "hydro", "series", area_id, "maxHourlyPumpPower"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
+        url = ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"]
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyGenPower"])
+
+    @override
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
+
+    @override
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
+
+    @override
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
+
+    @override
+    def convert_hydro_pmax(
+        self,
+        hydro_pmax: HydroPmax,
+    ) -> None:
+        compatibility_data = self.get_impl().get_compatibility_parameters()
+        # If hydro-pmax isn't changed, we don't need to do anything
+        if compatibility_data.hydro_pmax == hydro_pmax:
+            return
+
+        matrix_service = self.get_impl()._generator_matrix_constants.matrix_service
+        file_study = self.get_file_study()
+        areas = file_study.config.areas.keys()
+
+        hourly_matrix_id = self.get_impl()._generator_matrix_constants.get_null_matrix()
+        daily_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
+
+        if hydro_pmax == HydroPmax.HOURLY:
+            for area_id in areas:
+                self.save_hydro_max_hourly_gen_power(area_id, hourly_matrix_id)
+                self.save_hydro_max_hourly_pump_power(area_id, hourly_matrix_id)
+                self.save_hydro_max_daily_gen_energy(area_id, daily_matrix_id)
+                self.save_hydro_max_daily_pump_energy(area_id, daily_matrix_id)
+        else:
+            for area_id in areas:
+                file_study.tree.delete(["input", "hydro", "series", area_id, "maxHourlyGenPower"])
+                file_study.tree.delete(["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
+                file_study.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
+                file_study.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
+        # Update compatibility_data object and save it
+        compatibility_data.hydro_pmax = hydro_pmax
+        self.get_impl().save_compatibility_parameters(compatibility_data)

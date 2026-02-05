@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,15 +13,16 @@ import copy
 import re
 
 import numpy as np
-import pandas as pd
 import pytest
 from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.variantstudy.model.command.common import CommandName, InnerMatrices
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -361,8 +362,8 @@ class TestCreateSTStorage:
         config = recent_study.tree.get(["input", "st-storage", "series", cmd.area_id])
         constants = command_context.generator_matrix_constants
         service = command_context.matrix_service
-        pmax_injection_id = service.create(pd.DataFrame(pmax_injection))
-        inflows_id = service.create(pd.DataFrame(inflows))
+        pmax_injection_id = service.create(create_polars_dataframe(pmax_injection))
+        inflows_id = service.create(create_polars_dataframe(inflows))
         expected = {
             "storage1": {
                 "pmax_injection": f"matrix://{pmax_injection_id}",
@@ -492,5 +493,7 @@ class TestCreateSTStorage:
             "cost_variation_withdrawal",
         ]
         # Checks more specifically the cost_injection matrix as it was given inside the command
-        cost_injection = study.tree.get(series_path + ["cost_injection"])
-        assert cost_injection["data"] == cost_injection_matrix
+        cost_injection_node = study.tree.get_node(series_path + ["cost_injection"])
+        assert isinstance(cost_injection_node, MatrixNode)
+        matrix = cost_injection_node.parse_as_dataframe()
+        assert matrix.to_numpy().tolist() == cost_injection_matrix

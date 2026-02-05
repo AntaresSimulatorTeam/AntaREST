@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 from enum import Enum
 from typing import Any, List, MutableMapping, Optional
 
-from pydantic import field_validator
+from pydantic import ConfigDict, field_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
@@ -23,21 +23,23 @@ class DistrictApplyFilter(Enum):
     remove_all = "remove-all"
 
 
+def _district_update_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+    schema["example"] = DistrictUpdate(comments="Some comment", areas=["z1", "z2", "z3"], output=True).model_dump(
+        mode="json"
+    )
+
+
 class DistrictUpdate(AntaresBaseModel):
     """
     Represents an update of a district.
     """
 
-    class Config:
-        alias_generator = to_camel
-        extra = "forbid"
-        populate_by_name = True
-
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = DistrictUpdate(
-                comments="Some comment", areas=["z1", "z2", "z3"], output=True
-            ).model_dump(mode="json")
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        extra="forbid",
+        populate_by_name=True,
+        json_schema_extra=_district_update_json_schema_extra,
+    )
 
     @field_validator("areas", mode="before")
     def validate_areas(cls, areas: Any) -> Optional[List[str]]:
@@ -59,21 +61,23 @@ class DistrictUpdate(AntaresBaseModel):
     apply_filter: Optional[DistrictApplyFilter] = None
 
 
+def _district_creation_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+    schema["example"] = DistrictCreation(
+        name="My District", comments="", areas=["z1", "z2", "z3"], output=True
+    ).model_dump(mode="json")
+
+
 class DistrictCreation(AntaresBaseModel):
     """
     Represents a creation of a district.
     """
 
-    class Config:
-        alias_generator = to_camel
-        extra = "forbid"
-        populate_by_name = True
-
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = DistrictCreation(
-                name="My District", comments="", areas=["z1", "z2", "z3"], output=True
-            ).model_dump(mode="json")
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        extra="forbid",
+        populate_by_name=True,
+        json_schema_extra=_district_creation_json_schema_extra,
+    )
 
     @field_validator("areas", mode="before")
     def validate_areas(cls, areas: Any) -> Optional[List[str]]:
@@ -97,21 +101,23 @@ class DistrictCreation(AntaresBaseModel):
     apply_filter: Optional[DistrictApplyFilter] = None
 
 
+def _district_dto_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+    schema["example"] = DistrictDTO(
+        id="my-cluster", name="My Cluster", comments="", areas=["z1", "z2", "z3"], output=True
+    ).model_dump(mode="json")
+
+
 class DistrictDTO(AntaresBaseModel):
     """
     District DTO.
     """
 
-    class Config:
-        alias_generator = to_camel
-        extra = "forbid"
-        populate_by_name = True
-
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = DistrictDTO(
-                id="my-cluster", name="My Cluster", comments="", areas=["z1", "z2", "z3"], output=True
-            ).model_dump(mode="json")
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        extra="forbid",
+        populate_by_name=True,
+        json_schema_extra=_district_dto_json_schema_extra,
+    )
 
     #: District identifier (based on the district name)
     id: str
@@ -126,26 +132,25 @@ class DistrictDTO(AntaresBaseModel):
     name: str
 
 
+def _district_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+    schema["example"] = District(
+        id="my-cluster",
+        name="My Cluster",
+        comments="",
+        add_areas=["z1", "z2", "z3"],
+        subtract_areas=[],
+        output=True,
+    ).model_dump(mode="json")
+
+
 class District(AntaresBaseModel):
     """
     District model.
     """
 
-    class Config:
-        alias_generator = to_camel
-        extra = "forbid"
-        populate_by_name = True
-
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = District(
-                id="my-cluster",
-                name="My Cluster",
-                comments="",
-                add_areas=["z1", "z2", "z3"],
-                subtract_areas=[],
-                output=True,
-            ).model_dump(mode="json")
+    model_config = ConfigDict(
+        alias_generator=to_camel, extra="forbid", populate_by_name=True, json_schema_extra=_district_json_schema_extra
+    )
 
     #: District identifier (based on the district name)
     id: str

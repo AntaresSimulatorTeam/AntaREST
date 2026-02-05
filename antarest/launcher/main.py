@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,18 +18,20 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
+from antarest.favorite.service import FavoriteService
 from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
 from antarest.login.service import LoginService
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
-from antarest.study.storage.output_service import OutputService
 
 
 def build_launcher(
     app_ctxt: Optional[AppBuildContext],
     config: Config,
     study_service: StudyService,
+    favorite_service: FavoriteService,
     output_service: OutputService,
     login_service: LoginService,
     file_transfer_manager: FileTransferManager,
@@ -46,6 +48,7 @@ def build_launcher(
         service_launcher = LauncherService(
             config=config,
             study_service=study_service,
+            favorite_service=favorite_service,
             output_service=output_service,
             login_service=login_service,
             job_result_repository=job_repository,

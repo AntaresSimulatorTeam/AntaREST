@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,7 +15,6 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
@@ -27,16 +26,11 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     Basic left which handle text file as like with any parsing / serialization
     """
 
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        LazyNode.__init__(self, config=config, matrix_mapper=matrix_mapper)
+    def __init__(self, config: FileStudyTreeConfig):
+        LazyNode.__init__(self, config=config)
 
     @override
-    def get_lazy_content(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> str:
+    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
         return f"file://{self.config.path.name}"
 
     @override
@@ -47,16 +41,13 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> bytes:
-        file_path, tmp_dir = self._get_real_file_path()
+        file_path = self.config.path
 
         if file_path.exists():
             bytes = file_path.read_bytes()
         else:
             logger.warning(f"Missing file {self.config.path}")
             bytes = b""
-
-        if tmp_dir:
-            tmp_dir.cleanup()
 
         return bytes
 

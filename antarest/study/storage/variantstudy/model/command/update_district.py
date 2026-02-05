@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 
 from typing import Any, Dict, Final, Optional
 
-from pydantic import ValidationInfo, model_validator
+from pydantic import ConfigDict, ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.district_model import DistrictUpdate, update_district
@@ -47,6 +47,8 @@ class UpdateDistrict(ICommand):
     # version 2: rename filter_items to areas, move all parameters under "parameters"
     _SERIALIZATION_VERSION: Final[int] = 2
 
+    model_config = ConfigDict(populate_by_name=True)
+
     @model_validator(mode="before")
     @classmethod
     def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
@@ -65,15 +67,12 @@ class UpdateDistrict(ICommand):
                 values["parameters"] = parameters
         return values
 
-    class Config:
-        populate_by_name = True
-
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if not study_data.district_exists(self.id):
             return command_failed(message=f"District '{self.id}' does not exist and should be created")
 
-        invalid_areas = study_data.get_invalid_areas_in_district(self.parameters.areas or [])
+        invalid_areas = study_data.get_invalid_area_ids(self.parameters.areas or [])
         if invalid_areas:
             return command_failed(message=f"District '{self.id}' has invalid areas: {invalid_areas}")
 

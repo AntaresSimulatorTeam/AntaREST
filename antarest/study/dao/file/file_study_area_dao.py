@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,7 +16,7 @@ import typing as t
 from abc import abstractmethod
 from typing import Any, Dict, List
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
@@ -47,6 +47,14 @@ class FileStudyAreaDao(AreaDao):
     @abstractmethod
     def get_impl(self) -> "FileStudyTreeDao":
         pass
+
+    @override
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+        """
+        study_data = self.get_file_study()
+        return list(study_data.config.areas)
 
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:
@@ -146,23 +154,34 @@ class FileStudyAreaDao(AreaDao):
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
 
     @override
-    def get_load(self, area_id: str) -> pd.DataFrame:
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study.
+        """
+        areas_set = set(areas)
+        study_data = self.get_file_study()
+        all_areas = set(study_data.config.areas)
+        invalid_areas = areas_set - all_areas
+        return list(invalid_areas)
+
+    @override
+    def get_load(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "load", "series", f"load_{area_id}"])
 
     @override
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "misc-gen", f"miscgen-{area_id}"])
 
     @override
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
+    def get_reserves(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "reserves", area_id])
 
     @override
-    def get_solar(self, area_id: str) -> pd.DataFrame:
+    def get_solar(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "solar", "series", f"solar_{area_id}"])
 
     @override
-    def get_wind(self, area_id: str) -> pd.DataFrame:
+    def get_wind(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "wind", "series", f"wind_{area_id}"])
 
     @override
@@ -196,8 +215,6 @@ class FileStudyAreaDao(AreaDao):
 
     def _build_area_data_structure(self, area_id: str, config: FileStudyTreeConfig) -> JSON:
         generator_matrix_constants = self.get_impl()._generator_matrix_constants
-        if generator_matrix_constants is None:
-            raise ValueError("Generator matrix constants not available in DAO")
         null_matrix = generator_matrix_constants.get_null_matrix()
         prepro_data = {
             area_id: {
@@ -331,6 +348,13 @@ class FileStudyAreaDao(AreaDao):
 
         if (study_data.tree.config.path / "user" / "ts-generator-output" / "thermal" / area_id).exists():
             study_data.tree.delete(["user", "ts-generator-output", "thermal", area_id])
+
+        if study_version >= STUDY_VERSION_9_2:
+            with contextlib.suppress(ChildNotFoundError):
+                study_data.tree.delete(["input", "hydro", "series", area_id, "maxHourlyGenPower"])
+                study_data.tree.delete(["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
+                study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
+                study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
 
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
@@ -475,7 +499,7 @@ class FileStudyAreaDao(AreaDao):
         # Verify that the layer exists
         layers = study_data.tree.get(["layers", "layers", "layers"])
         if layer_id not in [str(layer) for layer in list(layers.keys())]:
-            raise LayerNotFound
+            raise LayerNotFound(layer_id)
 
         # Get all areas UI configuration
         areas_ui = study_data.tree.get(["input", "areas", ",".join(study_data.config.areas), "ui"])

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -40,6 +40,7 @@ export interface UsePromiseParams<T> {
   resetErrorOnReload?: boolean;
   onDataChange?: (data: T | undefined) => void;
   deps?: React.DependencyList;
+  disabled?: boolean;
 }
 
 type DepsOrParams<T> = React.DependencyList | UsePromiseParams<T>;
@@ -49,7 +50,14 @@ function toParams<T>(value: DepsOrParams<T> = {}): UsePromiseParams<T> {
 }
 
 function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams<T>): UsePromiseResponse<T> {
-  const { deps = [], resetDataOnReload, resetErrorOnReload, onDataChange } = toParams(params);
+  const {
+    deps = [],
+    resetDataOnReload,
+    resetErrorOnReload,
+    onDataChange,
+    disabled,
+  } = toParams(params);
+
   const [data, setData] = useState<T>();
   const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
   const [error, setError] = useState<Error | undefined>();
@@ -61,14 +69,22 @@ function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams<T>): UsePromi
   } | null>(null);
 
   const reload = useCallback(() => {
+    if (disabled) {
+      return Promise.reject(new Error("usePromise: hook is disabled"));
+    }
+
     setReloadCount((prev) => prev + 1);
 
     return new Promise<T>((resolve, reject) => {
       reloadPromise.current = { resolve, reject };
     });
-  }, []);
+  }, [disabled]);
 
   useEffect(() => {
+    if (disabled) {
+      return;
+    }
+
     let active = true; // Prevent race condition
 
     setStatus(PromiseStatus.Pending);
@@ -108,7 +124,7 @@ function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams<T>): UsePromi
     return () => {
       active = false;
     };
-  }, [reloadCount, ...deps]);
+  }, [reloadCount, disabled, ...deps]);
 
   return {
     data,

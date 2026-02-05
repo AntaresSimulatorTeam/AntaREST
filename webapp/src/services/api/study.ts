@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
+import type {
+  FolderDTO,
+  WorkspaceDTO,
+} from "@/routes/_authenticated/studies/-components/StudyTree/types";
 import { compactSemanticVersion } from "@/utils/versionUtils";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";

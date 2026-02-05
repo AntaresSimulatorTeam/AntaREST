@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -145,6 +145,22 @@ class DbConfig:
 
 
 @dataclass(frozen=True)
+class StudyStorageConfig:
+    """
+    Sub config object dedicated to study storage configuration (from study.storage in YAML)
+    """
+
+    database_mode_enabled: bool = False
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "StudyStorageConfig":
+        defaults = cls()
+        return cls(
+            database_mode_enabled=data.get("database_mode_enabled", defaults.database_mode_enabled),
+        )
+
+
+@dataclass(frozen=True)
 class StorageConfig:
     """
     Sub config object dedicated to study module
@@ -164,14 +180,23 @@ class StorageConfig:
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
+    auto_archive_cron: str = "0 20-23,0-7 * * * "
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
     blobstore: Path = Path("./blobstore")
     blob_gc_sleeping_time: int = 86400
     blob_gc_dry_run: bool = False
+    variable_view_gc_sleeping_time: int = 3600
+    variable_view_gc_dry_run: bool = False
+    variable_view_gc_retention_days: int = 30
+    watcher_scan_sleeping_time: int = 900
+    watcher_scan_dry_run: bool = False
+    study_storage: StudyStorageConfig = StudyStorageConfig()
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
+        if data.get("auto_archive_sleeping_time") and data.get("auto_archive_cron"):
+            raise ValueError("auto_archive_sleeping_time and auto_archive_cron cannot be used together")
         defaults = cls()
         workspaces = (
             {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}
@@ -201,11 +226,22 @@ class StorageConfig:
             auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
             auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
+            auto_archive_cron=data.get("auto_archive_cron", defaults.auto_archive_cron),
             snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
             matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
             blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
             blob_gc_sleeping_time=data.get("blob_gc_sleeping_time", defaults.blob_gc_sleeping_time),
             blob_gc_dry_run=data.get("blob_gc_dry_run", defaults.blob_gc_dry_run),
+            variable_view_gc_sleeping_time=data.get(
+                "variable_view_gc_sleeping_time", defaults.variable_view_gc_sleeping_time
+            ),
+            variable_view_gc_dry_run=data.get("variable_view_gc_dry_run", defaults.variable_view_gc_dry_run),
+            variable_view_gc_retention_days=data.get(
+                "variable_view_gc_retention_days", defaults.variable_view_gc_retention_days
+            ),
+            watcher_scan_sleeping_time=data.get("watcher_scan_sleeping_time", defaults.watcher_scan_sleeping_time),
+            watcher_scan_dry_run=data.get("watcher_scan_dry_run", defaults.watcher_scan_dry_run),
+            study_storage=StudyStorageConfig.from_dict(data.get("study", {}).get("storage", {})),
         )
 
     @classmethod
@@ -636,6 +672,45 @@ class MetricsConfig:
 
 
 @dataclass(frozen=True)
+class CeleryConfig:
+    """
+    Sub config object dedicated to Celery technical configuration.
+
+    Attributes:
+        broker_url: URL of the message broker (built from RedisConfig)
+        result_backend: URL of the result backend (built from RedisConfig)
+        result_expires: Time in seconds before task results expire
+    """
+
+    # Redis database number for Celery (broker + results)
+    REDIS_DB: ClassVar[int] = 1
+
+    broker_url: str = ""
+    result_backend: str = ""
+    result_expires: int = 86400  # 24 hours
+
+    @staticmethod
+    def _build_redis_url(redis_config: RedisConfig, db: int) -> str:
+        password_part = f":{redis_config.password}@" if redis_config.password else ""
+        return f"redis://{password_part}{redis_config.host}:{redis_config.port}/{db}"
+
+    @classmethod
+    def from_dict(cls, data: JSON, redis_config: Optional[RedisConfig] = None) -> "CeleryConfig":
+        defaults = cls()
+
+        if redis_config:
+            redis_url = cls._build_redis_url(redis_config, cls.REDIS_DB)
+        else:
+            redis_url = ""
+
+        return cls(
+            broker_url=data.get("broker_url", redis_url),
+            result_backend=data.get("result_backend", redis_url),
+            result_expires=data.get("result_expires", defaults.result_expires),
+        )
+
+
+@dataclass(frozen=True)
 class Config:
     """
     Root server config
@@ -654,6 +729,7 @@ class Config:
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
     metrics: MetricsConfig = MetricsConfig()
+    celery: CeleryConfig = CeleryConfig()
     root_path: str = ""
     api_prefix: str = ""
     desktop_mode: bool = False
@@ -667,6 +743,7 @@ class Config:
             if "storage" in data
             else defaults.storage
         )
+        redis_config = RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis
         return cls(
             server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
             security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
@@ -676,10 +753,11 @@ class Config:
             logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
             debug=data.get("debug", defaults.debug),
             resources_path=data["resources_path"] if "resources_path" in data else defaults.resources_path,
-            redis=RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis,
+            redis=redis_config,
             eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
             cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
+            celery=CeleryConfig.from_dict(data.get("celery", {}), redis_config=redis_config),
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
             desktop_mode=desktop_mode,

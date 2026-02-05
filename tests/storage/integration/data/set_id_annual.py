@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -335,5 +335,4 @@ set_id_annual = {
             1.0,
         ]
     ],
-    "index": ["Annual"],
 }

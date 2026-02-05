@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -34,6 +34,7 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, current_time
+from antarest.favorite.service import FavoriteService
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
@@ -60,9 +61,9 @@ from antarest.launcher.model import (
 from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
+from antarest.study.output.output_service import OutputService
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,7 @@ class LauncherService:
         self,
         config: Config,
         study_service: StudyService,
+        favorite_service: FavoriteService,
         output_service: OutputService,
         login_service: LoginService,
         job_result_repository: JobResultRepository,
@@ -117,6 +119,7 @@ class LauncherService:
     ) -> None:
         self.config = config
         self.study_service = study_service
+        self.favorite_service = favorite_service
         self.output_service = output_service
         self.login_service = login_service
         self.job_result_repository = job_result_repository

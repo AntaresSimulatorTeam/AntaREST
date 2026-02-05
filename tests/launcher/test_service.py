@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -65,9 +65,9 @@ from antarest.launcher.service import (
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo, Study, StudyMetadataDTO
+from antarest.study.output.output_service import OutputService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -117,7 +117,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
-            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
+            favorite_service=Mock(),
+            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), Mock(), Mock(), event_bus),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -178,7 +179,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            favorite_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -218,7 +220,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            favorite_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -306,7 +309,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            favorite_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -555,6 +559,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=full_config,
             study_service=Mock(),
+            favorite_service=Mock(),
             output_service=Mock(),
             login_service=Mock(),
             job_result_repository=Mock(),
@@ -577,7 +582,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            favorite_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -611,7 +617,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            favorite_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -650,7 +657,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            favorite_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -710,6 +718,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            favorite_service=Mock(),
             output_service=output_service,
             login_service=Mock(),
             job_result_repository=Mock(),
@@ -829,7 +838,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            favorite_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -986,7 +996,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=config,
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            favorite_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=job_repository,
             solver_presets_repository=Mock(),
@@ -1035,6 +1046,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Mock(),
             study_service=Mock(),
+            favorite_service=Mock(),
             output_service=output_service,
             login_service=login_service,
             job_result_repository=job_repository,
@@ -1090,7 +1102,8 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
-            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
+            favorite_service=Mock(),
+            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), Mock(), Mock(), event_bus),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=solver_presets_repository,

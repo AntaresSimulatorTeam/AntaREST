@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,9 +13,8 @@ import contextlib
 import io
 import logging
 from abc import ABC, abstractmethod
-from enum import StrEnum
 from pathlib import Path
-from typing import List, Optional, TypeAlias, cast
+from typing import List, Optional, Self, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -24,33 +23,19 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde.np_array import NpArray
-from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
 
 
-class MatrixFrequency(StrEnum):
-    """
-    An enumeration of matrix frequencies.
-
-    Each frequency corresponds to a specific time interval for a matrix's data.
-    """
-
-    ANNUAL = "annual"
-    MONTHLY = "monthly"
-    WEEKLY = "weekly"
-    DAILY = "daily"
-    HOURLY = "hourly"
-
-
-def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
-    if df.empty and isinstance(path_or_buf, Path):
+def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
+    if df.is_empty() and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        pl.from_pandas(df).write_csv(path_or_buf, separator="\t", include_header=False)
+        df.write_csv(path_or_buf, separator="\t", include_header=False)
 
 
 def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
@@ -69,75 +54,41 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
 
 MatrixId: TypeAlias = str
 # Either raw content, or dictionary representation, or dataframe.
-MatrixContent: TypeAlias = bytes | JSON | pd.DataFrame
+MatrixContent: TypeAlias = bytes | JSON | pl.DataFrame
 
 
 class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        freq: MatrixFrequency,
-    ) -> None:
-        LazyNode.__init__(self, matrix_mapper, config)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, freq: MatrixFrequency) -> None:
+        LazyNode.__init__(self, config)
+        self.matrix_mapper = matrix_mapper
         self.freq = freq
 
     @override
-    def get_lazy_content(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-    ) -> str:
+    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
         link_content = self.matrix_mapper.get_link_content(self)
         if link_content is not None:
             return link_content
         return f"matrixfile://{self.config.path.name}"
 
     @override
-    def normalize(self) -> None:
-        # noinspection SpellCheckingInspection
+    def get_matrix_nodes_to_normalize(self) -> list[Self]:
         """
-        Normalize the matrix by creating a link to the normalized version.
-        The original matrix is then deleted.
-
-        Skips the normalization process if the link path already exists
-        or the matrix is zipped.
-
-        Raises:
-            DenormalizationException: if the original matrix retrieval fails.
+        Return a list of itself if the node is not in the matrix-store. Else, return an empty list.
         """
-        self.matrix_mapper.normalize(self)
+        return [] if self.matrix_mapper.has_link(self) else [self]
 
     @override
-    def denormalize(self) -> None:
+    def get_matrix_nodes_to_denormalize(self) -> list[Self]:
         """
-        Read the matrix ID from the matrix link, retrieve the original matrix
-        and write the matrix data to the file specified by `self.config.path`
-        before removing the link file.
+        Return a list of itself if the node is in the matrix-store. Else, return an empty list.
         """
-        self.matrix_mapper.denormalize(self)
+        return [self] if self.matrix_mapper.has_link(self) else []
 
     @override
     def load(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
+        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> JSON:
-        """
-        The only usage of formatted=False was via the R scripts inside the GET /raw endpoint.
-        Now we're using the `parse_as_dataframe` method so we can always return the value as if formatted was True.
-        """
-        file_path, _ = self._get_real_file_path()
-
-        df = self.parse_as_dataframe(file_path)
-
-        stopwatch = StopWatch()
-        data = cast(JSON, df.to_dict(orient="split"))
-        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
-        return data
+        raise NotImplementedError("Legacy method. We should use `parse_as_dataframe` from now on.")
 
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
@@ -146,11 +97,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         super().delete(url)
 
     @override
-    def dump(
-        self,
-        data: MatrixId | MatrixContent,
-        url: Optional[List[str]] = None,
-    ) -> None:
+    def dump(self, data: MatrixId | MatrixContent, url: Optional[List[str]] = None) -> None:
         """
         Write matrix data to file.
 
@@ -175,19 +122,26 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
             self.matrix_mapper.remove_link(self)
         else:
             if isinstance(data, dict):
-                df = pd.DataFrame(**data)
+                df = pl.DataFrame(np.array(data["data"]))
             else:
                 df = data
             self.write_dataframe(df)
             self.matrix_mapper.remove_link(self)
 
     @abstractmethod
-    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+    def parse_as_dataframe(self) -> pl.DataFrame:
         """
-        Parse the matrix content and return it as a DataFrame object
+        Parse the matrix content and return it as a DataFrame object.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def write_dataframe(self, df: pd.DataFrame) -> None:
+    def parse_content(self) -> pl.DataFrame:
+        """
+        Same behavior as `parse_as_dataframe` but does not return the Simulator default matrix if the file is empty.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_dataframe(self, df: pl.DataFrame) -> None:
         raise NotImplementedError()

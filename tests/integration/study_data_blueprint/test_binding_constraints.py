@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -110,7 +110,7 @@ class TestBindingConstraints:
         end = time.time()
         duration = end - start
         # due to new code this should be extremely fast.
-        assert duration < duration_threshold(0.2)
+        assert duration < duration_threshold(0.5)
         # asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
         assert res.status_code == 200

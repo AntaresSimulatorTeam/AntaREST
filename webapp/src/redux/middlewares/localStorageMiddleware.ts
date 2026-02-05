@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import type { UserInfo } from "@/types/types";
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
-import storage, { StorageKey } from "../../services/utils/localStorage";
-import type { UserInfo } from "../../types/types";
 import type { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
 import {
+  deleteStudy,
   setFavoriteStudies,
   updateStudiesFromLocalStorage,
   updateStudiesSortConf,
   updateStudyFilters,
-  deleteStudy,
 } from "../ducks/studies";
 import { setMenuOpen } from "../ducks/ui";
 

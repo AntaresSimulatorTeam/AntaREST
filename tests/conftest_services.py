@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -38,7 +38,7 @@ from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import MatrixService, SimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService, SimpleMatrixService
 from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository
 from antarest.study.service import StudyService
@@ -78,17 +78,6 @@ __all__ = (
 class SynchTaskService(ITaskService):
     def __init__(self) -> None:
         self._task_result: t.Optional[TaskResult] = None
-
-    @override
-    def add_worker_task(
-        self,
-        task_type: TaskType,
-        task_queue: str,
-        task_args: t.Dict[str, t.Union[int, float, bool, str]],
-        name: t.Optional[str],
-        ref_id: t.Optional[str],
-    ) -> t.Optional[str]:
-        raise NotImplementedError()
 
     @override
     def add_task(
@@ -372,6 +361,7 @@ def raw_study_service_fixture(
     core_config: Config,
     study_factory: StudyFactory,
     core_cache: ICache,
+    simple_matrix_service: ISimpleMatrixService,
 ) -> RawStudyService:
     """
     Fixture that creates a RawStudyService instance.
@@ -385,9 +375,7 @@ def raw_study_service_fixture(
         An instance of the RawStudyService class with the provided dependencies.
     """
     return RawStudyService(
-        config=core_config,
-        study_factory=study_factory,
-        cache=core_cache,
+        config=core_config, study_factory=study_factory, cache=core_cache, matrix_service=simple_matrix_service
     )
 
 
@@ -401,6 +389,7 @@ def variant_study_service_fixture(
     variant_study_repository: VariantStudyRepository,
     event_bus: IEventBus,
     core_config: Config,
+    simple_matrix_service: ISimpleMatrixService,
 ) -> VariantStudyService:
     """
     Fixture that creates a VariantStudyService instance.
@@ -427,6 +416,7 @@ def variant_study_service_fixture(
         repository=variant_study_repository,
         event_bus=event_bus,
         config=core_config,
+        matrix_service=simple_matrix_service,
     )
 
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -42,20 +42,21 @@ class PreparerProxy:
         self.user_access_token = user_access_token
         self.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-    def create_study(self, name: str, *, version: int = 870) -> str:
+    def create_study(self, name: str, *, version: int = 870, storage_mode: str = "filesystem") -> str:
         """
         Create a new study in the managed workspace.
 
         Args:
             name: The name of the study.
             version: The version of the study. Defaults to 870.
+            storage_mode: The storage mode for the study ("filesystem" or "database"). Defaults to "filesystem".
 
         Returns:
             The ID of the created study.
         """
         res = self.client.post(
             "/v1/studies",
-            params={"name": name, "version": version},
+            params={"name": name, "version": version, "storage_mode": storage_mode},
             headers=self.headers,
         )
         assert res.status_code == 201, res.json()

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,7 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pandas as pd
 
-data = pd.DataFrame([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0]] * 365)
-modulation = pd.DataFrame([[1.0, 1.0, 1.0, 0.0]] * 8760)
+import polars as pl
+
+from antarest.core.utils.polars import create_polars_dataframe
+
+
+def data() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0]] * 365)
+
+
+def modulation() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0, 1.0, 1.0, 0.0]] * 8760)

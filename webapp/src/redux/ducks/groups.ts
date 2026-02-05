@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import * as api from "@/services/api/user";
+import type { GroupDetailsDTO } from "@/types/types";
 import { createAsyncThunk, createEntityAdapter, createReducer } from "@reduxjs/toolkit";
-import type { GroupDetailsDTO } from "../../types/types";
-import { FetchStatus, makeActionName, type AsyncEntityState } from "../utils";
-import * as api from "../../services/api/user";
 import type { AppAsyncThunkConfig } from "../store";
+import { FetchStatus, makeActionName, type AsyncEntityState } from "../utils";
 
 const groupsAdapter = createEntityAdapter<GroupDetailsDTO>();
 

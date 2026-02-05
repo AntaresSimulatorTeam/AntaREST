@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -111,6 +111,8 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     yearly_weights: str = Field(default="", alias="yearly-weights")
     additional_constraints: str = Field(default="", alias="additional-constraints")
     timelimit: int = Field(default=172800, ge=0)  # 48 hours in seconds
+    master_solution_tolerance: float = Field(default=1e-4, ge=0, alias="masterSolutionTolerance")
+    cut_coefficient_tolerance: float = Field(default=5e-3, ge=0, alias="cutCoefficientTolerance")
     sensitivity_config: XpansionSensitivitySettings = XpansionSensitivitySettings()
 
 
@@ -137,6 +139,8 @@ class XpansionSettingsUpdate(AntaresBaseModel, extra="ignore", validate_assignme
     yearly_weights: str | None = Field(None, alias="yearly-weights")
     additional_constraints: str | None = Field(None, alias="additional-constraints")
     timelimit: int | None = Field(default=None, ge=0)
+    master_solution_tolerance: float | None = Field(default=None, alias="masterSolutionTolerance")
+    cut_coefficient_tolerance: float | None = Field(default=None, alias="cutCoefficientTolerance")
     sensitivity_config: XpansionSensitivitySettingsUpdate | None = None
 
 
@@ -183,8 +187,13 @@ XpansionLinkStr: TypeAlias = Annotated[
 ]
 
 
-def _validate_candidate_name(name: str) -> str:
-    # The name is written directly inside the ini file so a specific check is performed here
+def _validate_candidate_name(name: str | int | float) -> str:
+    """The name is written directly inside the ini file so a specific check is performed here"""
+
+    if not isinstance(name, str):
+        # Can happen if someone creates a candidate named `111` or `14.6`
+        name = str(name)
+
     if name.strip() == "":
         raise CandidateNameIsEmpty()
 

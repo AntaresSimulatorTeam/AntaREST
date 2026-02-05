@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -72,6 +72,7 @@ def test_get(tmp_path: str, project_path: Path) -> None:
         config=build_config(path_to_studies),
         repository=Mock(),
         event_bus=Mock(),
+        matrix_service=Mock(),
     )
 
     metadata = create_variant_study(id="study2.py", path=str(path_study), generation_task="1")
@@ -143,6 +144,7 @@ def test_get_cache(tmp_path: str) -> None:
         config=Mock(),
         repository=Mock(),
         event_bus=Mock(),
+        matrix_service=Mock(),
     )
 
     metadata = create_variant_study(id="study2.py", path=str(path_study))
@@ -182,6 +184,7 @@ def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
         config=build_config(path_to_studies),
         repository=Mock(),
         event_bus=Mock(),
+        matrix_service=Mock(),
     )
 
     metadata = create_variant_study(id=study_name, path=str(path_study2))
@@ -214,6 +217,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
         config=build_config(path_to_studies),
         repository=Mock(),
         event_bus=Mock(),
+        matrix_service=Mock(),
     )
 
     metadata = create_variant_study(id=study_name, path=str(path_study2))
@@ -242,6 +246,7 @@ def test_delete_study(tmp_path: Path) -> None:
         config=build_config(tmp_path),
         repository=Mock(),
         event_bus=Mock(),
+        matrix_service=Mock(),
     )
 
     md = create_variant_study(id=name, path=str(study_path))
@@ -282,6 +287,7 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
         config=build_config(tmp_path),
         repository=repo_mock,
         event_bus=Mock(),
+        matrix_service=Mock(),
     )
 
     parent = create_variant_study(

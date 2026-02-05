@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { Frequency } from "@/components/App/Singlestudy/explore/Results/ResultDetails/utils";
+import type { Frequency } from "@/routes/_authenticated/studies/$studyId/explore/outputs/$outputId/-utils";
 
 export interface ThermalClusterVariablesDTO {
   name: string;

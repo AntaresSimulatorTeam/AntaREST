@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,13 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import type { SetTimeSeriesConfigParams } from "@/services/api/studies/timeseries/types";
 import type { StudyMetadata } from "@/types/types";
-import client from "../../client";
-import type {
-  SetTimeSeriesConfigParams,
-  TimeSeriesTypeConfig,
-} from "@/services/api/studies/timeseries/types";
 import * as R from "ramda";
+import client from "../../client";
 
 /**
  * Launches time series generation task for the specified study.
@@ -42,10 +39,7 @@ export async function generateTimeSeries(params: {
 
 export async function setTimeSeriesConfig({ studyId, values }: SetTimeSeriesConfigParams) {
   // Extra fields not allowed by the API
-  const validDTO = R.map(
-    (config = {}) => R.pick(["number"] as Array<keyof TimeSeriesTypeConfig>, config),
-    values,
-  );
+  const validDTO = R.map((config = {}) => R.pick(["number"], config), values);
 
   await client.put(`/v1/studies/${studyId}/timeseries/config`, validDTO);
 }

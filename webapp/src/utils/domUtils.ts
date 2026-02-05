@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -62,4 +62,16 @@ export function measureTextWidth(text: string, font?: string) {
     return CANVAS_CONTEXT.measureText(text).width;
   }
   return 0;
+}
+
+/**
+ * Determines whether the text content of the given HTML element is truncated.
+ *
+ * @see https://css-tricks.com/snippets/css/truncate-string-with-ellipsis/
+ *
+ * @param element - The HTML element to check for text truncation.
+ * @returns `true` if the text content is truncated; `false` otherwise.
+ */
+export function isTextTruncated(element: HTMLElement) {
+  return element.scrollWidth > element.clientWidth;
 }

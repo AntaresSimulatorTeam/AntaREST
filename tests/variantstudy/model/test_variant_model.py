@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -312,7 +312,7 @@ class TestVariantStudyService:
         nb_queries = 0
         with current_user_context(jwt_user):
             variant_study_service.get_commands(variant_study.id)  # execute database query
-        assert nb_queries == 2  # Ensure only two queries were made (one for study, one for user)
+        assert nb_queries == 1  # Ensure only two queries were made (one for study, one for user)
 
     @with_admin_user
     @pytest.mark.parametrize("root_study_id", [False], indirect=True)

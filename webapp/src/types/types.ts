@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -308,6 +308,10 @@ export interface Area {
   filters_year: string[];
 }
 
+export interface AreaWithId extends Area {
+  id: string;
+}
+
 export interface District {
   id: string;
   name?: string;
@@ -340,7 +344,7 @@ export interface FileStudyTreeConfigDTO {
   bindings: string[];
   store_new_set: boolean;
   archive_input_series: string[];
-  enr_modelling: string;
+  enr_modelling: "aggregated" | "clusters";
 }
 
 export interface LinkElement {

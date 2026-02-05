@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,8 @@ from importlib.metadata import distributions
 from pathlib import Path
 from typing import Dict
 
+from pydantic import ConfigDict
+
 from antarest.core.serde import AntaresBaseModel
 
 
@@ -29,8 +31,8 @@ class VersionInfoDTO(AntaresBaseModel):
     gitcommit: str
     dependencies: Dict[str, str] = {}
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "AntaREST",
                 "version": "2.13.2",
@@ -44,6 +46,7 @@ class VersionInfoDTO(AntaresBaseModel):
                 },
             }
         }
+    )
 
 
 def get_commit_id(resources_dir: Path) -> str:

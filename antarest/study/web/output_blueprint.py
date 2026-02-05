@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,45 +12,51 @@
 import collections
 import logging
 from http import HTTPStatus
+from io import BytesIO
 from pathlib import Path
 from typing import Annotated, Any, Sequence
 
 import pandas as pd
-from fastapi import APIRouter, Depends, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, Query, UploadFile
+from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.output.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-)
-from antarest.study.model import ExportFormat, MatrixIndex, StudyDownloadDTO, StudyDownloadLevelDTO, StudySimResultDTO
-from antarest.study.storage.output_model import (
+from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO, StudySimResultDTO
+from antarest.study.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
-from antarest.study.storage.output_service import OutputService
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.output.output_service import OutputService
+from antarest.study.output.utils import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
+from antarest.study.output.variables_management import OutputItemId
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+
 download_expiration_time_query: Any = Query(
     gt=0,
     lt=1000,
     description="Expiration time for the download file (in minutes)",
 )
+
 DEFAULT_DOWNLOAD_EXPIRATION_TIME = 60  # in minutes
 
 
@@ -63,7 +69,36 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_output_routes(output_service: OutputService, config: Config) -> APIRouter:
+_ITEM_ID_TYPE_ADAPTER: TypeAdapter[OutputItemId] = TypeAdapter(OutputItemId)
+
+
+def _to_item_id(
+    type: OutputVariablesType,
+    area_id: str | None = None,
+    area_from_id: str | None = None,
+    area_to_id: str | None = None,
+    thermal_id: str | None = None,
+    renewable_id: str | None = None,
+    st_storage_id: str | None = None,
+) -> OutputItemId:
+    return _ITEM_ID_TYPE_ADAPTER.validate_python(
+        remove_nones(
+            {
+                "type": type,
+                "area_id": area_id,
+                "area_from_id": area_from_id,
+                "area_to_id": area_to_id,
+                "thermal_id": thermal_id,
+                "renewable_id": renewable_id,
+                "st_storage_id": st_storage_id,
+            }
+        )
+    )
+
+
+def create_output_routes(
+    output_service: OutputService, file_transfer_manager: FileTransferManager, config: Config
+) -> APIRouter:
     """
     Endpoint implementation for outputs management
 
@@ -116,8 +151,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     def get_output_time_index(
         uuid: str,
         output_id: str,
-        frequency: StudyDownloadLevelDTO = Query(
-            StudyDownloadLevelDTO.HOURLY,
+        frequency: MatrixFrequency = Query(
+            MatrixFrequency.HOURLY,
             description="Temporal frequency (hourly, daily, weekly, monthly, annual)",
         ),
     ) -> MatrixIndex:
@@ -138,34 +173,19 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
         return output_service.get_output_time_index(study_id, output_id, frequency)
 
-    @bp.post(
-        "/studies/{study_id}/outputs/{output_id}/download",
-        summary="Get outputs data",
-        response_model=None,  # only pydantic models are supported as response model
-    )
+    @bp.post("/studies/{study_id}/outputs/{output_id}/download", summary="Get outputs data")
     def output_download(
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
-        request: Request,
-        use_task: bool = False,
-        tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
-    ) -> Response | FileDownloadTaskDTO | FileResponse:
+        use_task: bool = Query(default=False, deprecated=True),
+        tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
+    ) -> FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
-        accept = request.headers["Accept"]
-        filetype = ExportFormat.from_dto(accept)
 
-        content = output_service.download_outputs(
-            study_id,
-            output_id,
-            data,
-            use_task,
-            filetype,
-            tmp_export_file,
-        )
-        return content
+        return output_service.download_outputs(study_id, output_id, data, tmp_export_file)
 
     @bp.delete(
         "/studies/{study_id}/outputs/{output_id}",
@@ -548,9 +568,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     def get_output_variables_view(
         uuid: str,
         output_id: str,
-        type: OutputVariablesType,
         variable_name: str,
         frequency: MatrixFrequency,
+        type: OutputVariablesType,
         area_id: str | None = None,
         area_from_id: str | None = None,
         area_to_id: str | None = None,
@@ -565,23 +585,65 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        view = output_service.get_output_variables_view(
-            uuid,
-            output_id,
-            type,
-            variable_name,
-            frequency,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
+
+        item_id = _to_item_id(
+            type=type,
+            area_id=area_id,
+            area_from_id=area_from_id,
+            area_to_id=area_to_id,
+            thermal_id=thermal_id,
+            renewable_id=renewable_id,
+            st_storage_id=st_storage_id,
         )
+        view = output_service.get_output_variables_view(uuid, output_id, item_id, variable_name, frequency)
         if isinstance(view, pd.DataFrame):
             content = view.to_dict(orient="split", index=False)
             return Response(content=to_json(content), media_type="application/json")
         return Response(status_code=404, content=to_json(view), media_type="application/json")
+
+    @bp.get(
+        "/studies/{uuid}/output/{output_id}/variables-views/export",
+        summary="Export the variables view for a given output and a given configuration in a given format",
+    )
+    def export_output_variables_view(
+        uuid: str,
+        output_id: str,
+        variable_name: str,
+        frequency: MatrixFrequency,
+        type: OutputVariablesType,
+        area_id: str | None = None,
+        area_from_id: str | None = None,
+        area_to_id: str | None = None,
+        thermal_id: str | None = None,
+        renewable_id: str | None = None,
+        st_storage_id: str | None = None,
+        export_format: TableExportFormat = TableExportFormat.CSV,
+        with_header: bool = Query(
+            True, alias="header", description="Whether to include the header or not", title="With Header"
+        ),
+        with_index: bool = Query(
+            True, alias="index", description="Whether to include the index or not", title="With Index"
+        ),
+    ) -> Response:
+        uuid = sanitize_uuid(uuid)
+        output_id = sanitize_string(output_id)
+
+        item_id = _to_item_id(
+            type=type,
+            area_id=area_id,
+            area_from_id=area_from_id,
+            area_to_id=area_to_id,
+            thermal_id=thermal_id,
+            renewable_id=renewable_id,
+            st_storage_id=st_storage_id,
+        )
+        view = output_service.get_output_variables_view(uuid, output_id, item_id, variable_name, frequency, with_index)
+        if not isinstance(view, pd.DataFrame):
+            return Response(status_code=HTTPStatus.NOT_FOUND, content=to_json(view), media_type="application/json")
+
+        buffer = BytesIO()
+        export_format.export_table(view, buffer, with_header=with_header, with_index=with_index)
+        return Response(status_code=HTTPStatus.OK, content=buffer.getvalue(), media_type=export_format.media_type)
 
     @bp.post(
         "/studies/{uuid}/output/{output_id}/variables-views/materialize",
@@ -590,9 +652,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     def materialize_output_variables_view(
         uuid: str,
         output_id: str,
-        type: OutputVariablesType,
         variable_name: str,
         frequency: MatrixFrequency,
+        type: OutputVariablesType,
         area_id: str | None = None,
         area_from_id: str | None = None,
         area_to_id: str | None = None,
@@ -607,18 +669,21 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         """
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
+        item_id = _to_item_id(
+            type=type,
+            area_id=area_id,
+            area_from_id=area_from_id,
+            area_to_id=area_to_id,
+            thermal_id=thermal_id,
+            renewable_id=renewable_id,
+            st_storage_id=st_storage_id,
+        )
         return output_service.materialize_output_variables_view(
             uuid,
             output_id,
-            type,
+            item_id,
             variable_name,
             frequency,
-            area_id,
-            area_from_id,
-            area_to_id,
-            thermal_id,
-            renewable_id,
-            st_storage_id,
         )
 
     return bp

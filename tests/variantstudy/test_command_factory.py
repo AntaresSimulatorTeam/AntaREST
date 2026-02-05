@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,7 @@ import pytest
 
 from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -1037,6 +1038,24 @@ COMMANDS = [
         ),
         None,
         id="replace_hydro_correlation",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CONVERT_HYDRO_PMAX.value,
+            args={"hydro_pmax": HydroPmax.HOURLY},
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="convert_hydro_pmax",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CONVERT_HYDRO_PMAX.value,
+            args={"hydro_pmax": HydroPmax.DAILY},
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="convert_hydro_pmax_daily",
     ),
 ]
 

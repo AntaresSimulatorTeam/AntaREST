@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,10 +12,12 @@
 
 import logging
 import shutil
+import time
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
+from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -24,19 +26,19 @@ from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.core.utils.utils import current_time
-from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
+from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
     create_new_empty_study,
-    export_study_flat,
     fix_study_root,
     is_managed,
     remove_from_cache,
@@ -81,21 +83,17 @@ class RawStudyService(AbstractStorageService):
     """
 
     def __init__(
-        self,
-        config: Config,
-        study_factory: StudyFactory,
-        cache: ICache,
+        self, config: Config, study_factory: StudyFactory, cache: ICache, matrix_service: ISimpleMatrixService
     ):
-        super().__init__(
-            config=config,
-            study_factory=study_factory,
-            cache=cache,
-        )
+        super().__init__(config=config, cache=cache)
 
-        RawStudyMatrixUsageProvider(
-            StudyMetadataRepository(cache_service=cache),
-            matrix_service=self.study_factory._matrix_mapper_factory._matrix_service,
-        )
+        self.study_factory = study_factory
+        self._matrix_service = matrix_service
+        RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
+
+    @property
+    def matrix_service(self) -> ISimpleMatrixService:
+        return self._matrix_service
 
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None
@@ -323,26 +321,6 @@ class RawStudyService(AbstractStorageService):
         else:
             raise StudyDeletionNotAllowed(metadata.id)
 
-    @override
-    def delete_output(self, metadata: Study, output_name: str) -> None:
-        """
-        Delete output folder
-        Args:
-            metadata: study
-            output_name: output simulation
-
-        Returns:
-
-        """
-        study_path = self.get_study_path(metadata)
-        output_path = study_path / "output" / output_name
-        if output_path.exists() and output_path.is_dir():
-            shutil.rmtree(output_path, ignore_errors=True)
-        else:
-            output_path = output_path.parent / f"{output_name}.zip"
-            output_path.unlink(missing_ok=True)
-        remove_from_cache(self.cache, metadata.id)
-
     def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
         """
         Import study in the directory of the study.
@@ -394,10 +372,9 @@ class RawStudyService(AbstractStorageService):
                 else:
                     raise TypeError(f"unarchive requires a RawStudy, got {type(metadata)}")
 
-            export_study_flat(
+            self.export_study_to_flat_directory(
                 Path(metadata.path),
                 dst_path,
-                self.study_factory,
                 outputs,
                 output_list_filter,
                 denormalize,
@@ -486,22 +463,95 @@ class RawStudyService(AbstractStorageService):
                 exc_info=e,
             )
 
-    @override
-    def get_output_path(self, study: Study, output_id: str) -> Path:
-        return self.get_study_path(study) / "output" / output_id
-
     @staticmethod
     def checks_antares_web_compatibility(study: Study) -> None:
         """
         A new compatibility section has been introduced with the Simulator version 9.2
-        For now AntaresWeb doesn't support the field `hydro-pmax` when it's set at `hourly`.
-        If we find this value, we want to raise an Exception
         """
-        if StudyVersion.parse(study.version) >= STUDY_VERSION_9_2:
-            general_data_path = Path(study.path) / "settings" / "generaldata.ini"
-            ini_content = read_ini(general_data_path)
-            # The section is optional and AntaresWeb supports the default Simulator value
-            if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
-                hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
-                if hydro_pmax_value == "hourly":
-                    raise NotImplementedError("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
+        pass
+
+    def normalize_study(self, study: Study | FileStudy) -> None:
+        """
+        Method used to normalize a study.
+        It will put every matrix in the study in the matrix-store.
+        """
+        if isinstance(study, Study):
+            study = self.get_raw(study)
+        matrix_nodes = study.tree.get_matrix_nodes_to_normalize()
+        if not matrix_nodes:
+            return
+
+        matrix_ids = self._matrix_service.create_batch((node.parse_content() for node in matrix_nodes))
+        for k, node in enumerate(matrix_nodes):
+            node.matrix_mapper.save_matrix(node, matrix_ids[k])
+
+    def denormalize_study(self, study: Study | FileStudy) -> None:
+        """
+        Method used to denormalize a study.
+        It will replace every `.link` file in the study with its content stored in the matrix-store.
+        """
+        if isinstance(study, Study):
+            study = self.get_raw(study)
+        matrix_nodes = study.tree.get_matrix_nodes_to_denormalize()
+        if not matrix_nodes:
+            return
+
+        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        for node in matrix_nodes:
+            link_content = node.matrix_mapper.get_link_content(node)
+            assert link_content is not None
+            matrices_mapping.setdefault(extract_matrix_id(link_content), []).append(node)
+
+        for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping.keys())):
+            for node in matrices_mapping[matrix_content.id]:
+                node.write_dataframe(matrix_content.data)
+
+    def export_study_to_flat_directory(
+        self,
+        study_dir: Path,
+        dest: Path,
+        outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
+        denormalize: bool = True,
+        output_src_path: Optional[Path] = None,
+        is_study_managed: bool = True,
+    ) -> None:
+        start_time = time.time()
+
+        output_src_path = output_src_path or study_dir / "output"
+        output_dest_path = dest / "output"
+
+        def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
+            return ["output"] if str(directory) == str(study_dir) else []
+
+        shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
+
+        if outputs and output_src_path.exists():
+            if output_list_filter is None:
+                # Retrieve all directories or ZIP files without duplicates
+                output_list_filter = list(
+                    {f.with_suffix("").name for f in output_src_path.iterdir() if f.is_dir() or f.suffix == ".zip"}
+                )
+            # Copy each folder or uncompress each ZIP file to the destination dir.
+            shutil.rmtree(output_dest_path, ignore_errors=True)
+            output_dest_path.mkdir()
+            for output in output_list_filter:
+                zip_path = output_src_path / f"{output}.zip"
+                if zip_path.exists():
+                    with ZipFile(zip_path) as zf:
+                        zf.extractall(output_dest_path / output)
+                else:
+                    shutil.copytree(
+                        src=output_src_path / output,
+                        dst=output_dest_path / output,
+                    )
+
+        stop_time = time.time()
+        duration = "{:.3f}".format(stop_time - start_time)
+        with_outputs = "with outputs" if outputs else "without outputs"
+        logger.info(f"Study '{study_dir}' exported ({with_outputs}, flat mode) in {duration}s")
+        if denormalize:
+            study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
+            self.denormalize_study(study)
+            duration = "{:.3f}".format(time.time() - stop_time)
+            logger.info(f"Study '{study_dir}' denormalized in {duration}s")

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import os
+import sys
 import textwrap
 import uuid
 from pathlib import Path
@@ -25,7 +26,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, SolverPresets
 
-SOLVER_NAME = "solver.bat" if os.name == "nt" else "solver.sh"
+SOLVER_NAME = "solver.bat" if sys.platform == "win32" else "solver.sh"
 
 
 @pytest.fixture
@@ -49,7 +50,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     # prepare a dummy executable to simulate Antares Solver
-    if os.name == "nt":
+    if sys.platform == "win32":
         solver_path = tmp_path.joinpath(SOLVER_NAME)
         solver_path.write_text(
             textwrap.dedent(
@@ -135,6 +136,10 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env: Any)
     launcher_parameters = LauncherParametersDTO(other_options="solver-logs")
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
     assert sim_args == ["--solver-logs"]
+
+    launcher_parameters = LauncherParametersDTO(other_options="export_mps")
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
+    assert sim_args == ["--named-mps-problems"]
 
     for solver in ["coin", "xpress"]:
         launcher_parameters = LauncherParametersDTO(other_options=solver)

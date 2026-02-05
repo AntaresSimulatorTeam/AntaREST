@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
+import configparser
 
 from checksumdir import dirhash
 
@@ -27,7 +29,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     TimeSeriesInterpretation,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_ruleset_update
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -287,3 +289,37 @@ class TestRemoveArea:
 
             actual_cfg = empty_study.tree.get(depth=999)
             assert actual_cfg == empty_study_cfg
+
+    def test_remove_area_cleans_hydro_pmax_matrices(
+        self, empty_study_920: FileStudy, command_context: CommandContext
+    ) -> None:
+        generaldata_path = empty_study_920.config.study_path / "settings" / "generaldata.ini"
+        config = configparser.ConfigParser()
+        config.read(generaldata_path)
+        config.setdefault("compatibility", {})
+        config["compatibility"]["hydro-pmax"] = "hourly"
+        with open(generaldata_path, "w") as f:
+            config.write(f)
+
+        empty_study, area_id = self._set_up(empty_study_920, command_context)
+        study_path = empty_study.config.study_path
+
+        daily_gen = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyGenEnergy_{area_id}.txt.link"
+        daily_pump = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyPumpEnergy_{area_id}.txt.link"
+        hourly_gen = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
+        hourly_pump = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
+
+        assert daily_gen.exists()
+        assert daily_pump.exists()
+        assert hourly_gen.exists()
+        assert hourly_pump.exists()
+
+        output = RemoveArea(id=area_id, command_context=command_context, study_version=STUDY_VERSION_9_2).apply(
+            study_data=empty_study
+        )
+        assert output.status, output.message
+
+        assert not daily_gen.exists()
+        assert not daily_pump.exists()
+        assert not hourly_gen.exists()
+        assert not hourly_pump.exists()

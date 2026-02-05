@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Iterator, Sequence
 
-import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
@@ -84,19 +84,19 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         return self.get_all_constraints()[constraint_id]
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "bindingconstraints", constraint_id])
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_lt"])
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_gt"])
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_eq"])
 
     @override
@@ -263,14 +263,14 @@ def generate_replacement_matrices(
             BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
             BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
             BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
-        }[new_time_step].tolist()
+        }[new_time_step]().tolist()
         yield target, matrix
     else:
         matrix = {
             BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
             BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
-        }[new_time_step].tolist()
+        }[new_time_step]().tolist()
         matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[current_operator]
         for matrix_name in matrices_to_replace:
             matrix_id = matrix_name.format(bc_id=bc_id)

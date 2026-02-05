@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,13 +10,16 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
+
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     parse_district,
     serialize_district,
@@ -29,6 +32,10 @@ DISTRICTS_PATH = ["input", "areas", "sets"]
 class FileStudyDistrictDao(DistrictDao):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override
@@ -83,7 +90,7 @@ class FileStudyDistrictDao(DistrictDao):
         If the district already exists, it will be overwritten.
         """
         study_data = self.get_file_study()
-        invalid_areas = self.get_invalid_areas_in_district(district.add_areas + district.subtract_areas)
+        invalid_areas = self.get_impl().get_invalid_area_ids(district.add_areas + district.subtract_areas)
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
@@ -107,21 +114,3 @@ class FileStudyDistrictDao(DistrictDao):
         study_data = self.get_file_study()
         study_data.tree.delete(["input", "areas", "sets", district_id])
         del study_data.config.districts[district_id]
-
-    @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
-        """
-        Check all areas exists in the study.
-
-        TODO this method should be moved to the area DAO when we'll implement it
-        """
-        areas_set = set(areas)
-        study_data = self.get_file_study()
-        all_areas = set(study_data.config.areas)
-        invalid_areas = areas_set - all_areas
-        return list(invalid_areas)
-
-    @override
-    def tmp_get_all_areas(self) -> list[str]:
-        study_data = self.get_file_study()
-        return list(study_data.config.areas)

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,10 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import numpy as np
+import polars as pl
+from polars.testing import assert_frame_equal
 
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
 from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
     CreateXpansionCapacity,
@@ -61,8 +64,11 @@ class TestCreateXpansionResource:
             resource_path = empty_study.config.study_path / "user" / "expansion" / "weights" / f"{file_name}.link"
             assert resource_path.exists()
             assert resource_path.read_text().startswith("matrix://")
-            content = empty_study.tree.get(["user", "expansion", "weights", file_name])
-            assert content == {"columns": [0, 1], "data": data, "index": [0, 1]}
+            matrix_node = empty_study.tree.get_node(["user", "expansion", "weights", file_name])
+            assert isinstance(matrix_node, MatrixNode)
+            matrix = matrix_node.parse_as_dataframe()
+            expected_matrix = pl.DataFrame(data=np.array(data), schema=["0", "1"])
+            assert_frame_equal(matrix, expected_matrix)
 
         # Capa
         for file_name in ["capa1.txt", "capa2.txt"]:
@@ -78,8 +84,11 @@ class TestCreateXpansionResource:
             resource_path = empty_study.config.study_path / "user" / "expansion" / "capa" / f"{file_name}.link"
             assert resource_path.exists()
             assert resource_path.read_text().startswith("matrix://")
-            content = empty_study.tree.get(["user", "expansion", "capa", file_name])
-            assert content == {"columns": [0, 1], "data": data, "index": [0, 1]}
+            matrix_node = empty_study.tree.get_node(["user", "expansion", "capa", file_name])
+            assert isinstance(matrix_node, MatrixNode)
+            matrix = matrix_node.parse_as_dataframe()
+            expected_matrix = pl.DataFrame(data=np.array(data), schema=["0", "1"])
+            assert_frame_equal(matrix, expected_matrix)
 
     def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870

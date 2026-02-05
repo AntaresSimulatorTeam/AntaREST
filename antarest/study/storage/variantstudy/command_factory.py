@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -21,6 +21,7 @@ from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
@@ -167,6 +168,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_TIMESERIES_CONFIG.value: UpdateTimeSeriesConfig,
     CommandName.REPLACE_HYDRO_ALLOCATION.value: ReplaceHydroAllocation,
     CommandName.REPLACE_HYDRO_CORRELATION.value: ReplaceHydroCorrelation,
+    CommandName.CONVERT_HYDRO_PMAX.value: ConvertHydroPmax,
     CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
 }

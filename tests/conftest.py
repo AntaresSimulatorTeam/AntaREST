@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,6 +18,8 @@ from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
 from antarest.blobstore.in_memory import InMemoryBlobService
+from antarest.favorite.repository import FavoriteRepository
+from antarest.favorite.service import FavoriteService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import MatrixService
@@ -66,6 +68,11 @@ def matrix_service_fixture() -> InMemorySimpleMatrixService:
 @pytest.fixture(name="blob_service")
 def blob_service_fixture() -> InMemoryBlobService:
     return InMemoryBlobService()
+
+
+@pytest.fixture(name="favorite_service")
+def favorite_service_fixture() -> FavoriteService:
+    return FavoriteService(FavoriteRepository())
 
 
 def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService, tmp_path: Path) -> FileStudy:

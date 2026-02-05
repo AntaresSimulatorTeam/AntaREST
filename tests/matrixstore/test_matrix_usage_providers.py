@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
-import pandas as pd
+import polars as pl
 import pytest
 from typing_extensions import override
 
@@ -32,12 +32,11 @@ from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO, Ma
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
-from antarest.study.business.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
-from antarest.study.model import RawStudy
+from antarest.study.model import MatrixFrequency, RawStudy
+from antarest.study.output.output_model import OutputVariablesType, OutputVariablesViewsModel
+from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.output_model import OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
@@ -319,8 +318,8 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
             groups=[group.name],
         )
 
-        matrix_a = matrix_service.create(pd.DataFrame([[0]]))
-        matrix_b = matrix_service.create(pd.DataFrame([[1]]))
+        matrix_a = matrix_service.create(pl.DataFrame([[0]]))
+        matrix_b = matrix_service.create(pl.DataFrame([[1]]))
         matrices = [MatrixInfoDTO(id=matrix_a, name="A"), MatrixInfoDTO(id=matrix_b, name="B")]
 
         with current_user_context(admin_user):
@@ -340,9 +339,10 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
             }
 
 
+@with_db_context
 def test_output_variables_matrix_usage_provider(matrix_service: MatrixService) -> None:
     # Create a matrix to avoid ForeignKey issue
-    matrix_id = matrix_service.create(pd.DataFrame([0]))
+    matrix_id = matrix_service.create(pl.DataFrame([0]))
 
     with db():
         # Create a study to avoid ForeignKey issue

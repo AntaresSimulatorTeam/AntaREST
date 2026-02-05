@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,11 +10,11 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Iterator, Protocol
+from typing import IO, Iterator, Protocol
 
-import numpy as np
 import pandas as pd
 import polars as pl
+from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from antarest.core.serde.parquet_writer import write_dataframes_stream_parquet
@@ -28,23 +28,23 @@ except ImportError:
     raise ImportError("The 'xlsxwriter', 'openpyxl' and 'tables' packages are required") from None
 
 
-def simplify_dataframe(dataframe: pd.DataFrame, np_type: type[np.int32] | type[np.int64] = np.int64) -> pd.DataFrame:
+def simplify_dataframe(dataframe: pl.DataFrame, np_type: type[pl.Int32] | type[pl.Int64] = pl.Int64) -> pl.DataFrame:
     """
     Checks if the dataFrame could be represented with integer values.
     If so, returns it this way as it will be quicker to write or to return.
     """
 
     try:
-        df_as_int = dataframe.astype(np_type)
-        pd.testing.assert_frame_equal(dataframe, df_as_int, check_dtype=False, check_exact=True)
+        df_as_int = dataframe.cast(np_type)
+        assert_frame_equal(dataframe, df_as_int, check_dtypes=False)
         return df_as_int
     except Exception:
         return dataframe
 
 
-def write_dataframe_in_tsv_format(df: pd.DataFrame, path: Path, headers: bool = False) -> None:
+def write_dataframe_in_tsv_format(df: pl.DataFrame, path: Path, headers: bool = False) -> None:
     df = simplify_dataframe(df)
-    pl.from_pandas(df).write_csv(path, separator="\t", include_header=headers)
+    df.write_csv(path, separator="\t", include_header=headers)
 
 
 class DataframeStreamWriter(Protocol):
@@ -152,7 +152,7 @@ class TableExportFormat(EnumIgnoreCase):
     def export_table(
         self,
         df: pd.DataFrame,
-        export_path: str | Path,
+        export_path: str | Path | IO[bytes],
         *,
         with_index: bool = True,
         with_header: bool = True,

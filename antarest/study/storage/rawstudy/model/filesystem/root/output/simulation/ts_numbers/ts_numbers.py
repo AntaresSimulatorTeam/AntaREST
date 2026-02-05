@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -81,13 +81,10 @@ class OutputSimulationTsNumbers(FolderNode):
                 )
         if (self.config.path / "bindingconstraints").exists():
             children["bindingconstraints"] = BindingConstraintMatrixList(
-                self.matrix_mapper, self.config.next_file("bindingconstraints"), matrix_class=TsNumbersVector
+                self.matrix_mapper, self.config.next_file("bindingconstraints")
             )
         if (self.config.path / "thermal").exists():
             children["thermal"] = AreaMultipleMatrixList(
-                self.matrix_mapper,
-                self.config.next_file("thermal"),
-                ThermalMatrixList,
-                TsNumbersVector,
+                self.matrix_mapper, self.config.next_file("thermal"), ThermalMatrixList, TsNumbersVector
             )
         return children

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,9 +13,9 @@
  */
 
 import { type SnackbarKey, useSnackbar } from "notistack";
-import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
-import { toError } from "../utils/fnUtils";
 import { useCallback } from "react";
+import { toError } from "../utils/fnUtils";
+import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
 import useUpdatedRef from "./useUpdatedRef";
 
 interface UsePromiseHandlerParams<T extends unknown[], U> {
@@ -77,7 +77,7 @@ function usePromiseHandler<T extends unknown[], U>(params: UsePromiseHandlerPara
         enqueueErrorSnackbar(errorMessage, toError(err));
       }
     },
-    [closeSnackbar, enqueueErrorSnackbar, enqueueSnackbar],
+    [closeSnackbar, enqueueErrorSnackbar, enqueueSnackbar, paramsRef],
   );
 
   return handlePromise;

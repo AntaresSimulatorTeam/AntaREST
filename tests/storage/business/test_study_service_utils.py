@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,80 +11,16 @@
 # This file is part of the Antares project.
 
 import datetime
-import tarfile
-from hashlib import md5
-from pathlib import Path
 from typing import Any, Dict
 from unittest.mock import Mock
-from zipfile import ZipFile
 
-import numpy as np
 import pytest
 
 from antarest.study.model import (
-    ExportFormat,
-    MatrixAggregationResultDTO,
+    MatrixFrequency,
     MatrixIndex,
-    StudyDownloadLevelDTO,
-    StudyDownloadType,
-    TimeSerie,
-    TimeSeriesData,
 )
-from antarest.study.storage.study_download_utils import StudyDownloader
 from antarest.study.storage.utils import DAY_NAMES, get_start_date
-
-
-def test_output_downloads_export(tmp_path: Path) -> None:
-    matrix = MatrixAggregationResultDTO(
-        index=MatrixIndex(start_date="2000-01-01 00:00:00"),
-        data=[
-            TimeSeriesData(
-                name="a1",
-                type=StudyDownloadType.AREA,
-                data={
-                    "1": [
-                        TimeSerie(name="A", unit="", data=np.array([1, 2, 3, 4], dtype=np.float64)),
-                        TimeSerie(name="B", unit="", data=np.array([5, 6, 7, 8], dtype=np.float64)),
-                    ],
-                    "2": [
-                        TimeSerie(name="A", unit="", data=np.array([10, 11, 12, 13], dtype=np.float64)),
-                        TimeSerie(name="B", unit="", data=np.array([14, None, None, 15], dtype=np.float64)),
-                    ],
-                },
-            ),
-            TimeSeriesData(
-                name="a2",
-                type=StudyDownloadType.AREA,
-                data={
-                    "1": [
-                        TimeSerie(name="A", unit="", data=np.array([16, 17, 18, 19], dtype=np.float64)),
-                        TimeSerie(name="B", unit="", data=np.array([20, 21, 22, 23], dtype=np.float64)),
-                    ],
-                    "2": [
-                        TimeSerie(name="A", unit="", data=np.array([24, None, 25, 26], dtype=np.float64)),
-                        TimeSerie(name="B", unit="", data=np.array([27, 28, 29, 30], dtype=np.float64)),
-                    ],
-                },
-            ),
-        ],
-        warnings=[],
-    )
-    zip_file = tmp_path / "output.zip"
-    StudyDownloader.export(matrix, ExportFormat.ZIP, zip_file)
-    with ZipFile(zip_file) as zip_input:
-        assert zip_input.namelist() == ["a1.csv", "a2.csv"]
-        print(zip_input.read("a1.csv"))
-        assert md5(zip_input.read("a1.csv")).hexdigest() == "e183e79f2184d6f6dacb8ad215cb056c"
-        assert md5(zip_input.read("a2.csv")).hexdigest() == "c007db83f2769e6128e0f8c6b04d43eb"
-
-    tar_file = tmp_path / "output.tar.gz"
-    StudyDownloader.export(matrix, ExportFormat.TAR_GZ, tar_file)
-    with tarfile.open(tar_file, mode="r:gz") as tar_input:
-        assert tar_input.getnames() == ["a1.csv", "a2.csv"]
-        data = tar_input.extractfile("a1.csv").read()
-        assert md5(data).hexdigest() == "e183e79f2184d6f6dacb8ad215cb056c"
-        data = tar_input.extractfile("a2.csv").read()
-        assert md5(data).hexdigest() == "c007db83f2769e6128e0f8c6b04d43eb"
 
 
 @pytest.mark.parametrize(
@@ -99,12 +35,12 @@ def test_output_downloads_export(tmp_path: Path) -> None:
                 "simulation.start": 1,
                 "simulation.end": 354,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2024, 1, 1)),
                 steps=51,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -116,12 +52,12 @@ def test_output_downloads_export(tmp_path: Path) -> None:
                 "simulation.start": 1,
                 "simulation.end": 354,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2018, 1, 1)),
                 steps=51,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -133,12 +69,12 @@ def test_output_downloads_export(tmp_path: Path) -> None:
                 "simulation.start": 5,
                 "simulation.end": 340,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 5)),
                 steps=48,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -150,12 +86,12 @@ def test_output_downloads_export(tmp_path: Path) -> None:
                 "simulation.start": 1,
                 "simulation.end": 200,
             },
-            StudyDownloadLevelDTO.MONTHLY,
+            MatrixFrequency.MONTHLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=7,
                 first_week_size=2,
-                level=StudyDownloadLevelDTO.MONTHLY,
+                level=MatrixFrequency.MONTHLY,
             ),
         ),
         (
@@ -167,12 +103,12 @@ def test_output_downloads_export(tmp_path: Path) -> None:
                 "simulation.start": 1,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.MONTHLY,
+            MatrixFrequency.MONTHLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=4,
                 first_week_size=2,
-                level=StudyDownloadLevelDTO.MONTHLY,
+                level=MatrixFrequency.MONTHLY,
             ),
         ),
         (
@@ -184,12 +120,12 @@ def test_output_downloads_export(tmp_path: Path) -> None:
                 "simulation.start": 5,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.HOURLY,
+            MatrixFrequency.HOURLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 3, 5)),
                 steps=2304,
                 first_week_size=1,
-                level=StudyDownloadLevelDTO.HOURLY,
+                level=MatrixFrequency.HOURLY,
             ),
         ),
         (
@@ -201,12 +137,12 @@ def test_output_downloads_export(tmp_path: Path) -> None:
                 "simulation.start": 5,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.ANNUAL,
+            MatrixFrequency.ANNUAL,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 3, 5)),
                 steps=1,
                 first_week_size=1,
-                level=StudyDownloadLevelDTO.ANNUAL,
+                level=MatrixFrequency.ANNUAL,
             ),
         ),
         (
@@ -218,19 +154,17 @@ def test_output_downloads_export(tmp_path: Path) -> None:
                 "simulation.start": 3,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.DAILY,
+            MatrixFrequency.DAILY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2022, 3, 3)),
                 steps=98,
                 first_week_size=1,
-                level=StudyDownloadLevelDTO.DAILY,
+                level=MatrixFrequency.DAILY,
             ),
         ),
     ],
 )
-def test_create_matrix_index_output(
-    config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex
-) -> None:
+def test_create_matrix_index_output(config: Dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
     config_mock = Mock()
     config_mock.archived = False
     output_id = "some output"
@@ -254,12 +188,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 1,
                 "simulation.end": 354,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2024, 1, 1)),
                 steps=53,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -271,12 +205,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 1,
                 "simulation.end": 354,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2018, 1, 1)),
                 steps=53,
                 first_week_size=7,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -288,12 +222,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 5,
                 "simulation.end": 340,
             },
-            StudyDownloadLevelDTO.WEEKLY,
+            MatrixFrequency.WEEKLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=53,
                 first_week_size=4,
-                level=StudyDownloadLevelDTO.WEEKLY,
+                level=MatrixFrequency.WEEKLY,
             ),
         ),
         (
@@ -305,12 +239,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 1,
                 "simulation.end": 200,
             },
-            StudyDownloadLevelDTO.MONTHLY,
+            MatrixFrequency.MONTHLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=12,
                 first_week_size=2,
-                level=StudyDownloadLevelDTO.MONTHLY,
+                level=MatrixFrequency.MONTHLY,
             ),
         ),
         (
@@ -322,12 +256,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 1,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.MONTHLY,
+            MatrixFrequency.MONTHLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 7, 1)),
                 steps=12,
                 first_week_size=2,
-                level=StudyDownloadLevelDTO.MONTHLY,
+                level=MatrixFrequency.MONTHLY,
             ),
         ),
         (
@@ -339,12 +273,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 5,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.HOURLY,
+            MatrixFrequency.HOURLY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 3, 1)),
                 steps=8760,
                 first_week_size=5,
-                level=StudyDownloadLevelDTO.HOURLY,
+                level=MatrixFrequency.HOURLY,
             ),
         ),
         (
@@ -356,12 +290,12 @@ def test_create_matrix_index_output(
                 "simulation.start": 5,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.ANNUAL,
+            MatrixFrequency.ANNUAL,
             MatrixIndex(
                 start_date=str(datetime.datetime(2028, 3, 1)),
                 steps=1,
                 first_week_size=5,
-                level=StudyDownloadLevelDTO.ANNUAL,
+                level=MatrixFrequency.ANNUAL,
             ),
         ),
         (
@@ -373,17 +307,17 @@ def test_create_matrix_index_output(
                 "simulation.start": 3,
                 "simulation.end": 100,
             },
-            StudyDownloadLevelDTO.DAILY,
+            MatrixFrequency.DAILY,
             MatrixIndex(
                 start_date=str(datetime.datetime(2022, 3, 1)),
                 steps=365,
                 first_week_size=3,
-                level=StudyDownloadLevelDTO.DAILY,
+                level=MatrixFrequency.DAILY,
             ),
         ),
     ],
 )
-def test_create_matrix_index_input(config: Dict[str, Any], level: StudyDownloadLevelDTO, expected: MatrixIndex) -> None:
+def test_create_matrix_index_input(config: Dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
     file_study = Mock()
     file_study.tree.get.return_value = {"general": config}
     # Asserts the content are the same

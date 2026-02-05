@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -129,7 +129,7 @@ class AreaUIFileData(IniProperties):
         # indexes must contain all the keys from the three sections
         indexes = set(layer_x_section) | set(layer_y_section) | set(layer_color_section)
         if indexes:
-            layer_styles = {index: values["style"].copy() for index in indexes}
+            layer_styles = {index: values["style"].model_copy() for index in indexes}
             for layer, x in layer_x_section.items():
                 layer_styles[layer].x = int(x)
             for layer, y in layer_y_section.items():

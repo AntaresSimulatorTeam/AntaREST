@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,15 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import { buildStudyTree } from "@/routes/_authenticated/studies/-components/StudyTree/utils";
 import { createLinkId } from "@/services/api/studies/links/utils";
+import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import { F } from "ts-toolbelt";
-import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
-import { isGroupAdmin, isUserAdmin } from "../services/utils";
+import { isGroupAdmin, isUserAdmin, nameToId, sortByName } from "../services/utils";
 import type {
   AllClustersAndLinks,
-  Area,
+  AreaWithId,
   Cluster,
+  FileStudyTreeConfigDTO,
   GroupDetailsDTO,
   LinkElement,
   StudyMetadata,
@@ -31,16 +33,10 @@ import type { AppState } from "./ducks";
 import type { AuthState } from "./ducks/auth";
 import type { GroupsState } from "./ducks/groups";
 import type { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
-import {
-  type StudyMapLink,
-  type StudyMapNode,
-  studyMapsAdapter,
-  type StudyMapsState,
-} from "./ducks/studyMaps";
-import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
+import type { StudyMap, StudyMapLink, StudyMapNode, StudyMapsState } from "./ducks/studyMaps";
+import type { StudySynthesesState } from "./ducks/studySyntheses";
 import type { UIState } from "./ducks/ui";
 import type { UsersState } from "./ducks/users";
-import { getHighestVersion } from "@/utils/versionUtils";
 
 // TODO resultEqualityCheck
 
@@ -218,7 +214,9 @@ export const getGroup = groupsSelectors.selectById;
 export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
-const studySynthesesSelectors = studySynthesesAdapter.getSelectors(getStudySynthesesState);
+const studySynthesesSelectors = createEntityAdapter<FileStudyTreeConfigDTO>({
+  selectId: (studyData) => studyData.study_id,
+}).getSelectors(getStudySynthesesState);
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
 
@@ -236,11 +234,14 @@ export const getCurrentStudySynthesis = createSelector(
 
 export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
   if (synthesis) {
-    return Object.keys(synthesis.areas).map((id) => ({
+    const areas: AreaWithId[] = Object.keys(synthesis.areas).map((id) => ({
       ...synthesis.areas[id],
       id,
-    })) as Array<Area & { id: string }>;
+    }));
+
+    return sortByName(areas);
   }
+
   return [];
 });
 
@@ -251,7 +252,7 @@ export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
         acc[id] = { ...synthesis.areas[id], id };
         return acc;
       },
-      {} as Record<string, Area & { id: string }>,
+      {} as Record<string, AreaWithId>,
     );
   }
   return {};
@@ -260,7 +261,8 @@ export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
 export const getArea = createSelector(
   getStudySynthesis,
   (state: AppState, studyId: StudyMetadata["id"], areaId: string) => areaId,
-  (synthesis, areaId) => synthesis?.areas[areaId],
+  (synthesis, areaId) =>
+    synthesis?.areas[areaId] && ({ ...synthesis.areas[areaId], id: areaId } as AreaWithId),
 );
 
 export const getCurrentAreaId = (state: AppState): StudySynthesesState["currentArea"] => {
@@ -272,9 +274,7 @@ export const getCurrentArea = createSelector(
   getCurrentAreaId,
   (synthesis, areaId) => {
     if (synthesis?.areas[areaId]) {
-      return { id: areaId, ...synthesis?.areas[areaId] } as Area & {
-        id: string;
-      };
+      return { id: areaId, ...synthesis?.areas[areaId] } as AreaWithId;
     }
   },
 );
@@ -358,7 +358,7 @@ export const getLinksAndClusters = createSelector(getStudySynthesis, (synthesis)
       acc.clusters.push({
         element: area,
         item_list: synthesis.areas[areaId].thermals.map((thermal) => ({
-          id: thermal.id,
+          id: nameToId(thermal.name),
           name: thermal.name,
         })),
       });
@@ -385,7 +385,9 @@ export const getStudyOutput = createSelector(
 
 export const getStudyMapsState = (state: AppState): StudyMapsState => state.studyMaps;
 
-const studyMapsSelectors = studyMapsAdapter.getSelectors(getStudyMapsState);
+const studyMapsSelectors = createEntityAdapter<StudyMap>({
+  selectId: (studyMap) => studyMap.studyId,
+}).getSelectors(getStudyMapsState);
 
 export const getStudyMapsById = studyMapsSelectors.selectEntities;
 
@@ -511,16 +513,4 @@ export const getMessageInfo = (state: AppState): UIState["messageInfo"] => {
 
 export const isMenuOpen = (state: AppState): UIState["menuOpen"] => {
   return getUIState(state).menuOpen;
-};
-
-export const getFormState = (state: AppState): UIState["form"] => {
-  return getUIState(state).form;
-};
-
-export const getFormStatus = (state: AppState): UIState["form"]["status"] => {
-  return getUIState(state).form.status;
-};
-
-export const getFormCloseDialogStatus = (state: AppState): UIState["form"]["closeDialogStatus"] => {
-  return getUIState(state).form.closeDialogStatus;
 };

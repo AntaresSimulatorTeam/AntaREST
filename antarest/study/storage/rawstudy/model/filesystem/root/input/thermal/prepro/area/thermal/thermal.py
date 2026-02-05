@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,16 +12,18 @@
 import numpy as np
 from typing_extensions import override
 
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-default_data_matrix = np.zeros((365, 6), dtype=np.float64)
-default_data_matrix.flags.writeable = False
 
-default_modulation_matrix = np.zeros((8760, 4), dtype=np.float64)
-default_modulation_matrix.flags.writeable = False
+def default_data_matrix() -> np.ndarray:
+    return np.zeros((365, 6), dtype=np.float64)
+
+
+def default_modulation_matrix() -> np.ndarray:
+    return np.zeros((8760, 4), dtype=np.float64)
 
 
 class InputThermalPreproAreaThermal(FolderNode):

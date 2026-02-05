@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,13 +18,14 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import pytest
 from numpy import typing as npt
-from pandas._testing import assert_frame_equal
+from polars.testing import assert_frame_equal
 from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
@@ -38,7 +39,7 @@ from antarest.matrixstore.repository import (
 )
 from antarest.matrixstore.service import LEGACY_MATRIX_VERSION, NEW_MATRIX_VERSION
 
-ArrayData = t.Union[t.List[t.List[float]], npt.NDArray[np.float64]]
+ArrayData = list[list[float]] | npt.NDArray[np.float64]
 
 
 class TestMatrixRepository:
@@ -65,11 +66,11 @@ class TestMatrixRepository:
         a: ArrayData = [[1, 2], [3, 4]]
         b: ArrayData = [[5, 6], [7, 8]]
 
-        matrix_content_a = pd.DataFrame(data=a, index=[0, 1], columns=[0, 1])
-        matrix_content_b = pd.DataFrame(data=b, index=[0, 1], columns=[0, 1])
+        matrix_content_a = create_polars_dataframe(a)
+        matrix_content_b = create_polars_dataframe(b)
 
-        aid = repo.save(pd.DataFrame(a)).hash
-        bid = repo.save(pd.DataFrame(b)).hash
+        aid = repo.save(matrix_content_a).hash
+        bid = repo.save(matrix_content_b).hash
         assert aid != bid
 
         assert_frame_equal(matrix_content_a, repo.get(aid, matrix_version=NEW_MATRIX_VERSION))
@@ -216,7 +217,7 @@ class TestMatrixContentRepository:
             bucket_dir = matrix_content_repo.bucket_dir
 
             # when the data is saved in the repo
-            data = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
+            data = pl.DataFrame([[1, 2, 3], [4, 5, 6]], schema=["0", "1", "2"])
             matrix_hash = matrix_content_repo.save(data).hash
             # then a file is created in the repo directory
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
@@ -225,23 +226,24 @@ class TestMatrixContentRepository:
             assert df.equals(data)
 
             # when other data is saved with different values
-            other_matrix_hash = matrix_content_repo.save(pd.DataFrame([[9.0, 2.0, 3.0], [10.0, 20.0, 30.0]])).hash
+            other_df = create_polars_dataframe([[9.0, 2.0, 3.0], [10.0, 20.0, 30.0]])
+            other_matrix_hash = matrix_content_repo.save(other_df).hash
             # then a new file is created
             matrix_files = list(bucket_dir.glob(f"*.{matrix_format}"))
             other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.{matrix_format}")
             assert set(matrix_files) == {matrix_file, other_matrix_file}
 
             # Test with an empty matrix
-            matrix_hash = matrix_content_repo.save(pd.DataFrame([])).hash
+            matrix_hash = matrix_content_repo.save(pl.DataFrame([])).hash
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
-            assert retrieved_matrix.empty
+            assert retrieved_matrix.is_empty()
 
             # Test with an empty 2D array
-            matrix_hash = matrix_content_repo.save(pd.DataFrame([[]])).hash
+            matrix_hash = matrix_content_repo.save(pl.DataFrame([[]])).hash
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
-            assert retrieved_matrix.empty
+            assert retrieved_matrix.is_empty()
 
-    def test_concurrent_save(self, tmp_path: str) -> None:
+    def test_concurrent_save(self, tmp_path: Path) -> None:
         """
         When 2 threads (or processes), want to create the same matrix, only one of them
         should actually create it.
@@ -250,12 +252,16 @@ class TestMatrixContentRepository:
         for more chances to generate problems.
         """
         trial_count = 10
+        # note: important to have different instances, which will be the case in real usage.
+        #       When using the same instance, polars may deadlock.
+        matrix1 = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
+        matrix2 = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
+
         matrix_content_repo: MatrixContentRepository
-        with matrix_repository(Path(tmp_path), matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:
+        with matrix_repository(tmp_path, matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:
             with multiprocessing.pool.ThreadPool(2) as tp:
                 for i in range(0, trial_count):
-                    matrix = pd.DataFrame(data=np.zeros(shape=(8760, 1)))
-                    results = tp.map(matrix_content_repo.save, [matrix, matrix])
+                    results = tp.map(matrix_content_repo.save, [matrix1, matrix2])
 
                     assert results[0].new or results[1].new
                     assert not (results[0].new and results[1].new)
@@ -272,7 +278,7 @@ class TestMatrixContentRepository:
         matrix_content_repo: MatrixContentRepository
         with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
             # when the data is saved in the repo
-            df_to_save = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
+            df_to_save = create_polars_dataframe([[1, 2, 3], [4, 5, 6]])
             matrix_hash = matrix_content_repo.save(df_to_save).hash
             # then the saved matrix object exists
             assert matrix_content_repo.exists(matrix_hash)
@@ -309,7 +315,7 @@ class TestMatrixContentRepository:
                 matrix_content_repo: MatrixContentRepository
                 with matrix_repository(tmp_path, repository_format) as matrix_content_repo:
                     data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-                    df = pd.DataFrame(data=data, columns=["A", "B", "C"])
+                    df = pl.DataFrame(data=data, schema=["A", "B", "C"])
                     associated_hash = matrix_content_repo.save(df).hash
                     matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{associated_hash}.{saved_format}")
 
@@ -342,7 +348,8 @@ class TestMatrixContentRepository:
         with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
             # Saves a matrix in the legacy format
             legacy_matrix = np.array([[1, 2, 3], [4, 5, 6]])
-            matrix_hash = compute_hash(pd.DataFrame(legacy_matrix))
+            df = create_polars_dataframe(legacy_matrix)
+            matrix_hash = compute_hash(df)
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             (matrix_path.parent / f"{matrix_hash}.tsv.lock").touch()
             np.savetxt(matrix_path, legacy_matrix, delimiter="\t")
@@ -350,7 +357,7 @@ class TestMatrixContentRepository:
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=LEGACY_MATRIX_VERSION)
             assert matrix.to_numpy().all() == legacy_matrix.all()
             # Ensures writing the same matrix in another format works
-            matrix_content_repo.save(pd.DataFrame(legacy_matrix))
+            matrix_content_repo.save(df)
             all_files = list(matrix_content_repo.bucket_dir.glob(f"*.{new_matrix_format}"))
             assert len(all_files) == 1
 
@@ -362,7 +369,7 @@ class TestMatrixContentRepository:
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             matrix_path.write_text("\n")
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=1)
-            assert matrix.empty
+            assert matrix.is_empty()
 
     @pytest.mark.parametrize("new_matrix_format", ["hdf", "parquet", "feather"])
     def test_null_matrix_mixed_formats(self, tmp_path: Path, new_matrix_format: str) -> None:
@@ -372,8 +379,8 @@ class TestMatrixContentRepository:
         with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             matrix_path.write_text("\n")
-            null_matrix = pd.DataFrame()
+            null_matrix = pl.DataFrame()
             matrix_id = matrix_content_repo.save(null_matrix).hash
             assert matrix_id == matrix_hash
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=2)
-            assert matrix.empty
+            assert matrix.is_empty()
