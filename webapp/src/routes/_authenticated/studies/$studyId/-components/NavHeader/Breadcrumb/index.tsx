@@ -12,13 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { updateStudyFilters } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import type { StudyMetadata } from "@/types/types";
 import HomeIcon from "@mui/icons-material/Home";
 import { Box, Breadcrumbs } from "@mui/material";
+import { getRouteApi } from "@tanstack/react-router";
+import { updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyFilters } from "@/redux/selectors";
+import type { StudyMetadata } from "@/types/types";
+import { buildKey } from "@/utils/reactUtils";
 import BreadcrumbLink from "./BreadcrumbLink";
-import { buildBreadcrumbPath } from "./utils";
+import { buildExternalBreadcrumbs, buildManagedBreadcrumbs } from "./utils";
+
+const routeApi = getRouteApi("/_authenticated/studies/$studyId");
 
 interface BreadcrumbProps {
   study: StudyMetadata;
@@ -26,12 +32,50 @@ interface BreadcrumbProps {
 
 function Breadcrumb({ study }: BreadcrumbProps) {
   const dispatch = useAppDispatch();
+  const filters = useAppSelector(getStudyFilters);
+  const directories = routeApi.useLoaderData();
 
-  const breadcrumbPath = buildBreadcrumbPath({
-    folderPath: study.folder,
-    workspaceName: study.workspace,
-    studyName: study.name,
-  });
+  // Build breadcrumbs based on study type (managed vs external)
+  const breadcrumbItems = study.managed
+    ? buildManagedBreadcrumbs({
+        directoryId: study.directoryId ?? null,
+        studyName: study.name,
+        directories,
+      })
+    : buildExternalBreadcrumbs({
+        folderPath: study.folder,
+        workspaceName: study.workspace,
+        studyName: study.name,
+      });
+
+  const handleBreadcrumbClick = (index: number) => {
+    const item = breadcrumbItems[index];
+    const isLastSegment = index === breadcrumbItems.length - 1;
+
+    // Last segment (study name) doesn't trigger filter updates - it just navigates
+    if (isLastSegment) {
+      return;
+    }
+
+    if (study.managed) {
+      dispatch(
+        updateStudyFilters({
+          activeTree: "managed",
+          managed: { directoryId: item.id },
+        }),
+      );
+    } else {
+      dispatch(
+        updateStudyFilters({
+          activeTree: "external",
+          external: {
+            path: item.path || "/",
+            strictPath: filters.external.strictPath,
+          },
+        }),
+      );
+    }
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -40,15 +84,14 @@ function Breadcrumb({ study }: BreadcrumbProps) {
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Breadcrumbs maxItems={5} sx={{ fontSize: 15 }}>
-        {breadcrumbPath.map((folderName, index) => {
-          const folderPath = `/${breadcrumbPath.slice(0, index + 1).join("/")}`;
+        {breadcrumbItems.map((item, index) => {
           const isFirstSegment = index === 0;
-          const isLastSegment = index === breadcrumbPath.length - 1;
+          const isLastSegment = index === breadcrumbItems.length - 1;
 
           return (
             <BreadcrumbLink
-              key={folderPath}
-              label={folderName}
+              key={buildKey(item.label, index)}
+              label={item.label}
               icon={isFirstSegment ? <HomeIcon fontSize="inherit" sx={{ mr: 1 }} /> : null}
               // Study names (last segment) are never truncated to prevent users from accidentally
               // working with the wrong study due to similar truncated names.
@@ -58,12 +101,7 @@ function Breadcrumb({ study }: BreadcrumbProps) {
                   ? { to: "/studies/$studyId", params: { studyId: study.id } }
                   : { to: "/studies" }
               }
-              onClick={() => {
-                if (!isLastSegment) {
-                  // This allows users to browse other studies in the same folder hierarchy
-                  dispatch(updateStudyFilters({ folder: folderPath }));
-                }
-              }}
+              onClick={() => handleBreadcrumbClick(index)}
             />
           );
         })}
