@@ -17,7 +17,7 @@ This module provides database-backed storage for hydro configuration when storag
 """
 
 from abc import abstractmethod
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 import polars as pl
@@ -26,6 +26,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    HydroAllocationNotFound,
     HydroConfigNotFound,
     HydroInflowStructureNotFound,
 )
@@ -38,7 +39,6 @@ from antarest.study.business.model.hydro_correlation_model import (
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.dao.database.common import validate_area_exists, validate_areas_exists
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
@@ -47,12 +47,12 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_MANAGEMENT_TABLE,
 )
 
+if TYPE_CHECKING:
+    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+
 
 class DatabaseHydroDao(HydroDao):
     """Database implementation of HydroDao"""
-
-    _study_id: str
-    _db_session: Session
 
     def __init__(self, study_id: str, db_session: Session) -> None:
         """
@@ -361,6 +361,9 @@ class DatabaseHydroDao(HydroDao):
         stmt = select(HYDRO_ALLOCATION_TABLE).where(HYDRO_ALLOCATION_TABLE.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
 
+        if not rows:
+            raise HydroAllocationNotFound("No hydro allocation data found for study")
+
         # Group by source area
         allocations_by_source: dict[str, list[HydroAllocationArea]] = {}
         for row in rows:
@@ -409,8 +412,7 @@ class DatabaseHydroDao(HydroDao):
             for alloc_area in allocation.allocation
         ]
 
-        if insert_values:
-            session.execute(insert(HYDRO_ALLOCATION_TABLE), insert_values)
+        session.execute(insert(HYDRO_ALLOCATION_TABLE), insert_values)
 
         session.commit()
 
@@ -446,6 +448,7 @@ class DatabaseHydroDao(HydroDao):
 
         # Get all area IDs from the study
         area_ids = self.get_impl().get_all_area_ids()
+        area_ids = sorted(area_ids)
 
         # Start with identity matrix (diagonal = 1, rest = 0)
         array = np.identity(len(area_ids))
@@ -492,12 +495,11 @@ class DatabaseHydroDao(HydroDao):
 
         # Get all area IDs for iterating the matrix
         area_ids = self.get_impl().get_all_area_ids()
+        area_ids = sorted(area_ids)
 
-        # Delete existing correlations involving this area
-        stmt_delete = delete(HYDRO_CORRELATION_TABLE).where(
-            (HYDRO_CORRELATION_TABLE.c.study_id == study_id)
-            & ((HYDRO_CORRELATION_TABLE.c.area_from == area_id) | (HYDRO_CORRELATION_TABLE.c.area_to == area_id))
-        )
+        # Delete existing correlations
+        # Delete all of them as the matrix is fully replaced
+        stmt_delete = delete(HYDRO_CORRELATION_TABLE).where((HYDRO_CORRELATION_TABLE.c.study_id == study_id))
         session.execute(stmt_delete)
 
         # Insert new correlations (only upper triangle: area_from < area_to)
@@ -526,7 +528,7 @@ class DatabaseHydroDao(HydroDao):
 
         session.commit()
 
-    # ==================== Matrix Methods (NotImplementedError stubs for Phase 3) ====================
+    # ==================== Matrix Methods (NotImplementedError) ====================
 
     @override
     def get_hydro_maxpower(self, _area_id: str) -> pl.DataFrame:
