@@ -45,7 +45,7 @@ class FavoriteStudy(Base):
     )
     study_id: Mapped[str] = mapped_column(
         String(255),
-        ForeignKey("study.id", name="fk_study_id", ondelete="CASCADE"),
+        ForeignKey("study.id", name="fk_study_id_favorite_study", ondelete="CASCADE"),
         nullable=False,
         primary_key=True,
     )
