@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.layer_model import Layer
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_TABLE, AREA_UI_TABLE
 
@@ -97,6 +98,8 @@ def test_get_all_areas_info_returns_areas(dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
     dao.save_area("London")
     dao.save_area("Berlin")
+    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermal("berlin", ThermalCluster(id="coal", name="Coal"))
 
     areas = dao.get_all_areas_info()
     assert len(areas) == 3
@@ -106,8 +109,10 @@ def test_get_all_areas_info_returns_areas(dao: DatabaseStudyDao) -> None:
     # Check original names are preserved
     area_names = {a.name for a in areas}
     assert area_names == {"Paris", "London", "Berlin"}
-    # All areas should have thermals=None for now
-    assert all(a.thermals is None for a in areas)
+    areas_by_id = {area.id: area for area in areas}
+    assert [thermal.id for thermal in areas_by_id["paris"].thermals] == ["gas"]
+    assert [thermal.id for thermal in areas_by_id["berlin"].thermals] == ["coal"]
+    assert areas_by_id["london"].thermals == []
 
 
 def test_get_area_ui_returns_ui_for_layer(dao: DatabaseStudyDao) -> None:
