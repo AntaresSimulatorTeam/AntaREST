@@ -93,7 +93,6 @@ class DatabaseAreaDao(AreaDao):
 
         Returns:
             The list of areas with their basic information.
-            Note: thermals field is None for now (will be implemented later)
         """
         study_id = self.get_study_id()
         session = self.get_session()
@@ -101,9 +100,12 @@ class DatabaseAreaDao(AreaDao):
         stmt = select(AREA_TABLE.c.area_id, AREA_TABLE.c.area_name).where(AREA_TABLE.c.study_id == study_id)
         result = session.execute(stmt)
 
+        thermal_clusters = self.get_impl().get_all_thermals()
         areas_info = []
         for row in result:
-            areas_info.append(AreaInfo(id=row.area_id, name=row.area_name, thermals=None))
+            area_id = row.area_id
+            area_thermal_clusters = list(thermal_clusters.get(row.area_id, {}).values())
+            areas_info.append(AreaInfo(id=area_id, name=row.area_name, thermals=area_thermal_clusters))
 
         return areas_info
 
