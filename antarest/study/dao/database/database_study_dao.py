@@ -27,7 +27,6 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -39,7 +38,6 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
-from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -117,10 +115,6 @@ class DatabaseStudyDao(
     @override
     def update_antares_file(self, editor: str, last_save: float) -> None:
         pass
-
-    @override
-    def initialize_study(self) -> None:
-        self.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
 
     @override
     def get_file_study(self) -> FileStudy:

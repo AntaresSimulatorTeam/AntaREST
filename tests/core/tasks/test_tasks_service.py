@@ -46,8 +46,10 @@ from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -399,6 +401,7 @@ def test_ts_generation_task(
     tmp_path: Path,
     core_config: Config,
     raw_study_service: RawStudyService,
+    study_factory: StudyFactory,
     command_factory: CommandFactory,
 ) -> None:
     # =======================
@@ -437,7 +440,7 @@ def test_ts_generation_task(
     db.session.commit()
 
     # Set up the Raw Study
-    raw_study_service.create(raw_study)
+    FileStudyDaoFactory(command_factory.command_context, study_factory).create_study_dao(raw_study)
     # Create an area
     areas_path = raw_study_path / "input" / "areas"
     areas_path.mkdir(parents=True, exist_ok=True)
@@ -496,6 +499,7 @@ nominalcapacity = 14.0
         event_bus=event_bus,
         variant_study_service=variant_study_service,
     )
+    raw_study_service.study_factory = study_factory
 
     # =======================
     #  TEST CASE
