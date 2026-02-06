@@ -114,7 +114,7 @@ class DatabaseLayerDao(LayerDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name or ""}
+        values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name}
         upsert_one(session, LAYER_TABLE, values)
 
         # Update area associations if areas are provided

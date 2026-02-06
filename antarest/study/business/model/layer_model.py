@@ -21,7 +21,7 @@ class Layer(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     id: str
-    name: str | None = None
+    name: str
     areas: List[str] | None = None
 
 
