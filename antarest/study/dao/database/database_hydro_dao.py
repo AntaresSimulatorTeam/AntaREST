@@ -77,8 +77,6 @@ class DatabaseHydroDao(HydroDao):
     def get_impl(self) -> "DatabaseStudyDao":
         pass
 
-    # ==================== Conversion Functions ====================
-
     @staticmethod
     def _convert_row_to_hydro_management(row: Row[Any]) -> HydroManagement:
         """Convert a database row to HydroManagement model."""
@@ -354,6 +352,10 @@ class DatabaseHydroDao(HydroDao):
 
         Returns:
             Dictionary mapping source area_id to HydroAllocation.
+
+        Raises:
+            HydroAllocationNotFound: If no hydro allocation data is found for the study.
+
         """
         study_id = self.get_study_id()
         session = self.get_session()
@@ -362,7 +364,7 @@ class DatabaseHydroDao(HydroDao):
         rows = session.execute(stmt).fetchall()
 
         if not rows:
-            raise HydroAllocationNotFound("No hydro allocation data found for study")
+            raise HydroAllocationNotFound("No hydro allocation data found for study. Inconsistent DB state.")
 
         # Group by source area
         allocations_by_source: dict[str, list[HydroAllocationArea]] = {}
