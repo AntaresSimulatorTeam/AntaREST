@@ -25,6 +25,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -160,7 +161,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
         study_service._check_study_exists(metadata)
 
 
-def test_create(tmp_path: Path, project_path: Path) -> None:
+def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
     study = Mock()
     data = {"antares": {"caption": None}}
     study.get.return_value = data
@@ -179,10 +180,10 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
         updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
         author="john.doe",
     )
-    md = study_service.create(metadata)
+    FileStudyDaoFactory(Mock(), study_service.study_factory).create_study_dao(metadata)
 
-    assert md.path == str(tmp_path / "study1")
-    path_study = tmp_path / md.id
+    assert metadata.path == str(tmp_path / "study1")
+    path_study = tmp_path / metadata.id
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"
@@ -211,7 +212,8 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
             updated_at=datetime.datetime.now(),
             author="john.doe",
         )
-        return study_service.create(metadata)
+        FileStudyDaoFactory(Mock(), study_service.study_factory).create_study_dao(metadata)
+        return metadata
 
     md700 = create_study("700")
     md710 = create_study("710")
