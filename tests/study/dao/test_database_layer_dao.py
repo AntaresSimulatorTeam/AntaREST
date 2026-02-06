@@ -95,7 +95,7 @@ class TestDatabaseLayerDao:
         dao.save_layer(Layer(id="1", name="Layer 1"))
         assert dao.layer_exists("1")
 
-        dao.delete_layer(Layer(id="1"))
+        dao.delete_layer(layer_id="1")
         assert not dao.layer_exists("1")
 
     def test_delete_layer_removes_area_associations(self, dao: DatabaseStudyDao, db_session: Session) -> None:
@@ -104,7 +104,7 @@ class TestDatabaseLayerDao:
         dao.save_area("London")
 
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris", "london"]))
-        dao.delete_layer(Layer(id="1"))
+        dao.delete_layer(layer_id="1")
 
         layers = dao.get_layers()
         assert len(layers) == 1
@@ -116,11 +116,11 @@ class TestDatabaseLayerDao:
 
     def test_delete_layer_raises_if_not_found(self, dao: DatabaseStudyDao) -> None:
         with pytest.raises(LayerNotFound):
-            dao.delete_layer(Layer(id="999"))
+            dao.delete_layer(layer_id="999")
 
     def test_delete_default_layer_raises(self, dao: DatabaseStudyDao) -> None:
         with pytest.raises(LayerNotAllowedToBeDeleted):
-            dao.delete_layer(Layer(id="0"))
+            dao.delete_layer(layer_id="0")
 
     def test_layer_exists_default_layer(self, dao: DatabaseStudyDao) -> None:
         assert dao.layer_exists("0")
