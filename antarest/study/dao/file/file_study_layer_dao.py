@@ -57,9 +57,7 @@ class FileStudyLayerDao(LayerDao, ABC):
         file_study.tree.save(layer.name, ["layers", "layers", "layers", layer.id])
 
     @override
-    def delete_layer(self, layer: Layer) -> None:
-        layer_id = layer.id
-
+    def delete_layer(self, layer_id: str) -> None:
         file_study = self.get_file_study()
 
         layers = file_study.tree.get(["layers", "layers", "layers"])
