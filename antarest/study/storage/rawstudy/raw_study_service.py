@@ -378,7 +378,10 @@ class RawStudyService(AbstractStorageService):
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         archive_path = self.find_archive_path(study)
-        study_path = Path(study.path)
+        study_path = Path(study.path).resolve()
+        workspace_path = self.config.get_workspace_path(workspace=study.workspace).resolve()
+        if not study_path.is_relative_to(workspace_path):
+            raise ValueError(f"Study path '{study_path}' is not within workspace '{workspace_path}'")
         study_path.mkdir()
         try:
             extract_archive_from_path(archive_path, study_path)
