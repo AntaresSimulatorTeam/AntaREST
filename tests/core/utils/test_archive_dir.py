@@ -17,9 +17,9 @@ from pathlib import Path
 import py7zr
 import pytest
 
-from antarest.core.exceptions import ShouldNotHappenException
+from antarest.core.exceptions import BadArchiveContent, ShouldNotHappenException
 from antarest.core.utils import archives
-from antarest.core.utils.archives import ArchiveFormat, archive_dir
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive_from_path, unzip
 
 
 def _create_sample_dir(base: Path) -> Path:
@@ -96,3 +96,123 @@ class TestArchiveDir:
 
         with pytest.raises(ShouldNotHappenException):
             archive_dir(src, archive_path)
+
+
+def _create_sample_archive_7z(base: Path) -> Path:
+    """Create a sample .7z archive using py7zr for testing."""
+    src = _create_sample_dir(base)
+    archive_path = base / "test.7z"
+    with py7zr.SevenZipFile(archive_path, mode="w") as szf:
+        szf.writeall(src, arcname="")
+    shutil.rmtree(src)
+    return archive_path
+
+
+def _create_sample_archive_zip(base: Path) -> Path:
+    """Create a sample .zip archive using zipfile for testing."""
+    src = _create_sample_dir(base)
+    archive_path = base / "test.zip"
+    with zipfile.ZipFile(archive_path, mode="w") as zf:
+        for root, _, files in __import__("os").walk(src):
+            for file in files:
+                file_path = Path(root) / file
+                zf.write(file_path, file_path.relative_to(src))
+    shutil.rmtree(src)
+    return archive_path
+
+
+def _assert_extracted_sample_files(target_dir: Path) -> None:
+    assert (target_dir / "input" / "data.txt").read_text() == "hello"
+    assert (target_dir / "settings.ini").read_text() == "key=value"
+
+
+class TestExtractArchiveFromPath:
+    def test_7z_calls_cli_when_available(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        archive_path = _create_sample_archive_7z(tmp_path)
+        target_dir = tmp_path / "output"
+        target_dir.mkdir()
+        run_calls = []
+
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/7z")
+        monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
+
+        extract_archive_from_path(archive_path, target_dir)
+
+        assert len(run_calls) == 1
+        args = run_calls[0][0][0]
+        assert args[0] == "7z"
+        assert args[1] == "x"
+        assert str(archive_path) in args[2]
+        assert f"-o{target_dir}" in args[3]
+
+    def test_7z_uses_py7zr_when_cli_unavailable(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        archive_path = _create_sample_archive_7z(tmp_path)
+        target_dir = tmp_path / "output"
+        target_dir.mkdir()
+
+        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+
+        extract_archive_from_path(archive_path, target_dir)
+
+        _assert_extracted_sample_files(target_dir)
+
+    def test_zip_calls_cli_when_available(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        archive_path = _create_sample_archive_zip(tmp_path)
+        target_dir = tmp_path / "output"
+        target_dir.mkdir()
+        run_calls = []
+
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/7z")
+        monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
+
+        extract_archive_from_path(archive_path, target_dir)
+
+        assert len(run_calls) == 1
+
+    def test_zip_uses_zipfile_when_cli_unavailable(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        archive_path = _create_sample_archive_zip(tmp_path)
+        target_dir = tmp_path / "output"
+        target_dir.mkdir()
+
+        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+
+        extract_archive_from_path(archive_path, target_dir)
+
+        _assert_extracted_sample_files(target_dir)
+
+    def test_unsupported_format_raises(self, tmp_path: Path) -> None:
+        archive_path = tmp_path / "test.tar.gz"
+        archive_path.write_bytes(b"dummy")
+        target_dir = tmp_path / "output"
+        target_dir.mkdir()
+
+        with pytest.raises(BadArchiveContent):
+            extract_archive_from_path(archive_path, target_dir)
+
+
+class TestUnzip:
+    def test_unzip_calls_cli_when_available(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        archive_path = _create_sample_archive_zip(tmp_path)
+        target_dir = tmp_path / "output"
+        target_dir.mkdir()
+        run_calls = []
+
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/7z")
+        monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
+
+        unzip(target_dir, archive_path)
+
+        assert len(run_calls) == 1
+        assert not archive_path.exists()
+
+    def test_unzip_uses_zipfile_when_cli_unavailable(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        archive_path = _create_sample_archive_zip(tmp_path)
+        target_dir = tmp_path / "output"
+        target_dir.mkdir()
+
+        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+
+        unzip(target_dir, archive_path)
+
+        _assert_extracted_sample_files(target_dir)
+        assert not archive_path.exists()

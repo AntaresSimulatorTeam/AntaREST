@@ -26,7 +26,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.utils.archives import ArchiveFormat, extract_archive
+from antarest.core.utils.archives import ArchiveFormat, extract_archive, extract_archive_from_path
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -368,7 +368,8 @@ class RawStudyService(AbstractStorageService):
     # noinspection SpellCheckingInspection
     def unarchive(self, study: RawStudy) -> None:
         """
-        Extract the archive of a study.
+        Extract the archive of a study directly from its archive path,
+        bypassing stream-based extraction for better performance.
 
         Args:
             study: The study to be unarchived.
@@ -376,8 +377,24 @@ class RawStudyService(AbstractStorageService):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        with open(self.find_archive_path(study), mode="rb") as fh:
-            self.import_study(study, fh)
+        archive_path = self.find_archive_path(study)
+        study_path = Path(study.path)
+        study_path.mkdir()
+        try:
+            extract_archive_from_path(archive_path, study_path)
+            fix_study_root(study_path)
+            self.update_from_raw_meta(study, study_path=study_path)
+        except Exception:
+            shutil.rmtree(study_path)
+            raise
+
+        try:
+            self.checks_antares_web_compatibility(study)
+        except NotImplementedError as e:
+            study_name = study.name or "Unknown Study"
+            raise StudyImportFailed(study_name, e.args[0])
+
+        study.path = str(study_path)
 
     def find_archive_path(self, study: Study) -> Path:
         """
