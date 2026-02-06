@@ -114,9 +114,9 @@ class DatabaseLayerDao(LayerDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Check if layer already exists
         values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name or ""}
         upsert_one(session, LAYER_TABLE, values)
+
         # Update area associations if areas are provided
         if layer.areas is not None:
             self.get_impl().save_layer_areas(layer.id, layer.areas)
