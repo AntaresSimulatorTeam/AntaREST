@@ -116,12 +116,8 @@ class DatabaseLayerDao(LayerDao):
 
         values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name}
         upsert_one(session, LAYER_TABLE, values)
-
-        # Update area associations if areas are provided
-        if layer.areas is not None:
-            self.get_impl().save_layer_areas(layer.id, layer.areas)
-        else:
-            session.commit()
+        self.get_impl().save_layer_areas(layer.id, layer.areas)
+        session.commit()
 
     @override
     def delete_layer(self, layer: Layer) -> None:

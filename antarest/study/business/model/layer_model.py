@@ -22,7 +22,7 @@ class Layer(AntaresBaseModel):
 
     id: str
     name: str
-    areas: List[str] | None = None
+    areas: List[str] = []
 
 
 class LayerCreation(AntaresBaseModel):
