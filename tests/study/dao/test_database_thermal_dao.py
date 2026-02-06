@@ -279,3 +279,16 @@ def test_save_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
             saver("paris", "gas", "missing-matrix-id")
         with pytest.raises(AreaNotFound):
             saver("nonexistent", "gas", "missing-matrix-id")
+
+
+def test_area_with_no_clusters_are_absent_from_clusters_dict(dao: DatabaseStudyDao) -> None:
+    dao.save_area("germany")
+    dao.save_area("italy")
+
+    dao.save_thermal("germany", ThermalCluster(id="gas", name="Gas"))
+
+    clusters = dao.get_all_thermals()
+
+    assert "italy" not in clusters
+    assert "germany" in clusters
+    assert "gas" in clusters["germany"]
