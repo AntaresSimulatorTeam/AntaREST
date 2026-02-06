@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import ButtonBack from "@/components/ButtonBack";
+import BackButton from "@/components/buttons/BackButton";
 import MatrixGrid from "@/components/Matrix/components/MatrixGrid";
 import { isNonEmptyMatrix } from "@/components/Matrix/shared/types";
 import { generateDataColumns } from "@/components/Matrix/shared/utils";
@@ -27,7 +27,7 @@ import { useTranslation } from "react-i18next";
 
 interface MatrixContentProps {
   matrixInfo: MatrixInfoDTO;
-  onBack: () => void;
+  onBack?: VoidFunction;
 }
 
 function MatrixContent({ matrixInfo, onBack }: MatrixContentProps) {
@@ -59,7 +59,7 @@ function MatrixContent({ matrixInfo, onBack }: MatrixContentProps) {
   return (
     <>
       <Box sx={{ display: "flex" }}>
-        <ButtonBack onClick={onBack} />
+        {onBack && <BackButton onClick={onBack} />}
         <Typography>{matrixInfo.name}</Typography>
       </Box>
       <Divider sx={{ mt: 1, mb: 2 }} />

@@ -148,12 +148,12 @@ def test_manage_binding_constraint(
         assert bd_config.get("1") == expected_bd_2
 
         if study_version < 870:
-            weekly_values = default_bc_weekly_daily.tolist()
+            weekly_values = default_bc_weekly_daily().tolist()
             values = weekly_values
             less_term_matrix = None
             greater_term_matrix = None
         else:
-            weekly_values = default_bc_weekly_daily_870.tolist()
+            weekly_values = default_bc_weekly_daily_870().tolist()
             values = None
             less_term_matrix = weekly_values
             greater_term_matrix = weekly_values

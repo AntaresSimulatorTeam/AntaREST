@@ -39,6 +39,9 @@ from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
+from antarest.favorite.repository import FavoriteRepository
+from antarest.favorite.service import FavoriteService
+from antarest.favorite.web import create_favorite_routes
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
 from antarest.login.main import build_login
@@ -50,6 +53,7 @@ from antarest.study.main import build_study_service
 from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
 from antarest.study.output.file_output_storage import FileOutputStorage
 from antarest.study.output.output_service import OutputService
+from antarest.study.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
@@ -83,6 +87,7 @@ class Module(StrEnum):
     ARCHIVE_WORKER = "archive_worker"
     AUTO_ARCHIVER = "auto_archiver"
     BLOB_GC = "blob_gc"
+    VARIABLE_VIEW_GC = "variable_view_gc"
 
 
 def init_db_engine(
@@ -150,6 +155,20 @@ class CoreServices:
     study_service: StudyService
     output_service: OutputService
     blob_service: BlobService
+    favorite_service: FavoriteService
+
+
+def build_favorite_service(
+    config: Config, app_ctxt: Optional[AppBuildContext] = None, service: Optional[FavoriteService] = None
+) -> FavoriteService:
+    if service is None:
+        favorite_repository = FavoriteRepository()
+        service = FavoriteService(favorite_repository=favorite_repository)
+
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_favorite_routes(service, config=config))
+
+    return service
 
 
 def build_output_service(
@@ -223,6 +242,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         matrix_service=matrix_service,
     )
 
+    favorite_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
@@ -236,6 +256,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         study_service=study_service,
         output_service=output_service,
         blob_service=blob_service,
+        favorite_service=favorite_service,
     )
 
 
@@ -253,6 +274,14 @@ def create_blob_gc(config: Config, blob_service: BlobService) -> BlobGarbageColl
         blob_service=blob_service,
         sleeping_time=config.storage.blob_gc_sleeping_time,
         dry_run=config.storage.blob_gc_dry_run,
+    )
+
+
+def create_variable_view_gc(config: Config) -> VariableViewGarbageCollector:
+    return VariableViewGarbageCollector(
+        sleeping_time=config.storage.variable_view_gc_sleeping_time,
+        dry_run=config.storage.variable_view_gc_dry_run,
+        retention_time=config.storage.variable_view_gc_retention_days,
     )
 
 
@@ -307,6 +336,7 @@ class Services:
     event_bus: IEventBus
     study: StudyService
     matrix: MatrixService
+    favorite: FavoriteService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
@@ -314,6 +344,7 @@ class Services:
     matrix_gc: Optional[MatrixGarbageCollector] = None
     auto_archiver: Optional[AutoArchiveService] = None
     blob_gc: Optional[BlobGarbageCollector] = None
+    variable_view_gc: Optional[VariableViewGarbageCollector] = None
 
 
 def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Services:
@@ -327,6 +358,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         app_ctxt,
         config,
         study_service=core_services.study_service,
+        favorite_service=core_services.favorite_service,
         output_service=core_services.output_service,
         login_service=core_services.login_service,
         event_bus=core_services.event_bus,
@@ -350,12 +382,17 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
         auto_archiver = AutoArchiveService(core_services.study_service, core_services.output_service, config)
 
+    variable_view_gc = None
+    if config.server.services and Module.VARIABLE_VIEW_GC.value in config.server.services or create_all:
+        variable_view_gc = create_variable_view_gc(config)
+
     return Services(
         watcher=watcher,
         explorer=explorer_service,
         event_bus=core_services.event_bus,
         study=core_services.study_service,
         matrix=core_services.matrix_service,
+        favorite=core_services.favorite_service,
         user=core_services.login_service,
         cache=core_services.cache,
         maintenance=maintenance_service,
@@ -363,4 +400,5 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,
         blob_gc=blob_garbage_collector,
+        variable_view_gc=variable_view_gc,
     )

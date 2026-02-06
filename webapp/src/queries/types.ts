@@ -17,4 +17,12 @@ export interface QueryListItemBase {
   name: string;
 }
 
-export type QueryList<T extends QueryListItemBase> = Array<T & { isOptimistic?: boolean }>;
+export interface QueryListItemMetadata {
+  isOptimistic?: boolean;
+}
+
+export type QueryListItem<T extends QueryListItemBase = QueryListItemBase> = T & {
+  _metadata?: QueryListItemMetadata;
+};
+
+export type QueryList<T extends QueryListItemBase> = Array<QueryListItem<T>>;

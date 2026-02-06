@@ -17,7 +17,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.maintenance.app import (
-    _configure_from_environment,
+    _configure_celery,
     _init_worker,
     _mask_url_credentials,
     _setup_periodic_tasks,
@@ -46,10 +46,17 @@ class TestCeleryAppConfig:
         assert "json" in celery_app.conf.accept_content
 
     def test_task_routing(self):
-        assert celery_app.conf.task_routes["antarest.maintenance.tasks.*"]["queue"] == "maintenance"
+        for task_name in [
+            "watcher_scan",
+            "matrices_cleaner",
+            "blobs_cleaner",
+            "auto_archiver",
+            "variable_view_cleaner",
+        ]:
+            assert celery_app.conf.task_routes[task_name]["queue"] == "maintenance"
 
     def test_timeouts(self):
-        assert celery_app.conf.task_soft_time_limit == 7000
+        assert celery_app.conf.task_soft_time_limit == 6600
         assert celery_app.conf.task_time_limit == 7200
 
     def test_worker_settings(self):
@@ -76,13 +83,13 @@ class TestConfigureFromEnvironment:
         monkeypatch.setattr("antarest.maintenance.app._load_config", lambda: mock_config)
         monkeypatch.setattr("antarest.maintenance.app.configure_logger", lambda x: None)
 
-        _configure_from_environment(sender="test", conf=celery_app.conf)
+        _configure_celery(sender="test", conf=celery_app.conf)
         assert celery_app.conf.antarest_config is mock_config
 
     def test_handles_no_config(self, celery_app_config_backup, monkeypatch):
         celery_app.conf.antarest_config = None
         monkeypatch.setattr("antarest.maintenance.app._load_config", lambda: None)
-        _configure_from_environment(sender="test", conf=celery_app.conf)
+        _configure_celery(sender="test", conf=celery_app.conf)
         assert celery_app.conf.antarest_config is None
 
 
@@ -104,32 +111,24 @@ class TestInitWorker:
         _init_worker(sender=Mock())
         mock_ctx_class.create.assert_not_called()
 
-    def test_creates_and_attaches_context(self, celery_app_config_backup, monkeypatch):
-        mock_ctx = Mock()
-        mock_ctx_class = Mock(create=Mock(return_value=mock_ctx))
-        mock_sender = Mock()
-        celery_app.conf.antarest_config = Mock()
-
-        monkeypatch.setattr("antarest.maintenance.app.MaintenanceContext", mock_ctx_class)
-        monkeypatch.setenv("ANTAREST_CONF", "/path/to/config.yaml")
-
-        _init_worker(sender=mock_sender)
-        assert mock_sender.conf.maintenance_ctx is mock_ctx
-
 
 class TestSetupPeriodicTasks:
     def test_uses_defaults_without_config(self, celery_app_config_backup):
+        from celery.schedules import crontab
+
         sender = Mock()
         celery_app.conf.antarest_config = None
 
         _setup_periodic_tasks(sender=sender)
 
-        assert sender.add_periodic_task.call_count == 4
+        assert sender.add_periodic_task.call_count == 5
         calls = sender.add_periodic_task.call_args_list
         assert calls[0][0][0] == 3600  # matrix GC default
         assert calls[1][0][0] == 86400  # blob GC default
-        assert calls[2][0][0] == 3600  # auto-archive default
-        assert calls[3][0][0] == 60  # watcher scan default
+        assert isinstance(calls[2][0][0], crontab)
+        assert str(calls[2][0][0]) == "<crontab: 0 20-23,0-7 * * * (m/h/dM/MY/d)>"
+        assert calls[3][0][0] == 900  # watcher scan default
+        assert calls[4][0][0] == 3600  # variable view GC default
 
     def test_uses_config_intervals(self, celery_app_config_backup):
         sender = Mock()
@@ -137,6 +136,7 @@ class TestSetupPeriodicTasks:
         config.storage.matrix_gc_sleeping_time = 7200
         config.storage.blob_gc_sleeping_time = 43200
         config.storage.auto_archive_sleeping_time = 1800
+        config.storage.auto_archive_cron = None
         config.storage.watcher_scan_sleeping_time = 120
         celery_app.conf.antarest_config = config
 
@@ -155,4 +155,4 @@ class TestSetupPeriodicTasks:
         _setup_periodic_tasks(sender=sender)
 
         names = [c[1]["name"] for c in sender.add_periodic_task.call_args_list]
-        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan"]
+        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan", "variable_view_cleaner"]

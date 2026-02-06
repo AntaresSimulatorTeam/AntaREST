@@ -17,7 +17,7 @@ import { createLinkId } from "@/services/api/studies/links/utils";
 import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import { F } from "ts-toolbelt";
-import { isGroupAdmin, isUserAdmin, sortByName } from "../services/utils";
+import { isGroupAdmin, isUserAdmin, nameToId, sortByName } from "../services/utils";
 import type {
   AllClustersAndLinks,
   AreaWithId,
@@ -358,7 +358,7 @@ export const getLinksAndClusters = createSelector(getStudySynthesis, (synthesis)
       acc.clusters.push({
         element: area,
         item_list: synthesis.areas[areaId].thermals.map((thermal) => ({
-          id: thermal.id,
+          id: nameToId(thermal.name),
           name: thermal.name,
         })),
       });

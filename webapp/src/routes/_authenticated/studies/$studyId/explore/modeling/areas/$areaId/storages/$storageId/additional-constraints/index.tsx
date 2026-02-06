@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { storageQueries } from "@/queries/storages";
+import { storageQueries } from "@/queries/storages/queries";
 import { sortByName } from "@/services/utils";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 

@@ -22,6 +22,7 @@ from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import Fil
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
 from antarest.study.dao.file.file_study_area_dao import FileStudyAreaDao
 from antarest.study.dao.file.file_study_area_properties_dao import FileStudyAreaPropertiesDao
+from antarest.study.dao.file.file_study_compatibility_parameters import FileStudyCompatibilityParametersDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
 from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
@@ -58,6 +59,7 @@ class FileStudyTreeDao(
     FileStudyGeneralConfigDao,
     FileStudyOptimizationPreferencesDao,
     FileStudyAdvancedParametersDao,
+    FileStudyCompatibilityParametersDao,
     FileStudyThematicTrimmingDao,
     FileStudyAdequacyPatchParametersDao,
     FileStudyTimeSeriesConfigDao,
@@ -104,6 +106,13 @@ class FileStudyTreeDao(
     @override
     def save_comments(self, comments: str) -> None:
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
+
+    @override
+    def update_antares_file(self, editor: str, last_save: float) -> None:
+        study_antares = self._file_study.tree.get(["study", "antares"])
+        study_antares["editor"] = editor
+        study_antares["lastsave"] = last_save
+        self._file_study.tree.save(study_antares, ["study", "antares"])
 
     def get_matrix(self, url: list[str]) -> pl.DataFrame:
         """

@@ -10,4 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from . import series  # noqa: F401
+from abc import ABC, abstractmethod
+
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import Study
+
+
+class StudyFactoryDao(ABC):
+    @abstractmethod
+    def create_study_dao(self, study: Study) -> StudyDao:
+        raise NotImplementedError()

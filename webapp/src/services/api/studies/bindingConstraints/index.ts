@@ -14,7 +14,10 @@
 
 import { format } from "@/utils/stringUtils";
 import client from "../../client";
-import { adaptBindingConstraintDtoToBindingConstraint } from "./adapters";
+import {
+  adaptBindingConstraintDtoToBindingConstraint,
+  adaptBindingConstraintOperationDtoToStudyVersion,
+} from "./adapters";
 import type {
   BindingConstraintDTO,
   CreateBindingConstraintsParams,
@@ -40,19 +43,30 @@ export async function getBindingConstraints({ studyId, filters }: GetBindingCons
   return data.map(adaptBindingConstraintDtoToBindingConstraint);
 }
 
-export async function createBindingConstraint({ studyId, values }: CreateBindingConstraintsParams) {
+export async function createBindingConstraint({
+  studyId,
+  studyVersion,
+  values,
+}: CreateBindingConstraintsParams) {
   const url = format(BASE_URL, { studyId });
-  const { data } = await client.post<BindingConstraintDTO>(url, values);
+  const adaptedValues = adaptBindingConstraintOperationDtoToStudyVersion(values, studyVersion);
+
+  const { data } = await client.post<BindingConstraintDTO>(url, adaptedValues);
+
   return adaptBindingConstraintDtoToBindingConstraint(data);
 }
 
 export async function updateBindingConstraint({
   studyId,
+  studyVersion,
   constraintId,
   values,
 }: UpdateBindingConstraintsParams) {
   const url = format(BINDING_CONSTRAINT_URL, { studyId, constraintId });
-  const { data } = await client.put<BindingConstraintDTO>(url, values);
+  const adaptedValues = adaptBindingConstraintOperationDtoToStudyVersion(values, studyVersion);
+
+  const { data } = await client.put<BindingConstraintDTO>(url, adaptedValues);
+
   return adaptBindingConstraintDtoToBindingConstraint(data);
 }
 

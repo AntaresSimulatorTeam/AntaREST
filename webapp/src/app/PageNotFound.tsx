@@ -25,7 +25,7 @@ function PageNotFound() {
 
   // In the root route, there is no menu to go back
   const actions = isRoot ? (
-    <RouterButton to={location.pathname.split("/").slice(0, -1).join("/")} variant="contained">
+    <RouterButton to="/" variant="contained">
       {t("global.home")}
     </RouterButton>
   ) : null;

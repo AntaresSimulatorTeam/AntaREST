@@ -33,6 +33,10 @@ export const HydroMatrixType = {
   HydroStorage: "HydroStorage",
   RunOfRiver: "RunOfRiver",
   MinGen: "MinGen",
+  MaxHourlyGenPower: "MaxHourlyGenPower",
+  MaxHourlyPumpPower: "MaxHourlyPumpPower",
+  MaxDailyGenEnergy: "MaxDailyGenEnergy",
+  MaxDailyPumpEnergy: "MaxDailyPumpEnergy",
   InflowPattern: "InflowPattern",
   OverallMonthlyHydro: "OverallMonthlyHydro",
   Allocation: "Allocation",
@@ -130,6 +134,22 @@ export const MATRICES: Matrices = {
   [HydroMatrixType.MinGen]: {
     title: "Min Gen",
     url: "input/hydro/series/{areaId}/mingen",
+  },
+  [HydroMatrixType.MaxHourlyGenPower]: {
+    title: "Max Hourly Gen Power",
+    url: "input/hydro/series/{areaId}/maxHourlyGenPower",
+  },
+  [HydroMatrixType.MaxHourlyPumpPower]: {
+    title: "Max Hourly Pump Power",
+    url: "input/hydro/series/{areaId}/maxHourlyPumpPower",
+  },
+  [HydroMatrixType.MaxDailyGenEnergy]: {
+    title: "Max Daily Gen Energy",
+    url: "input/hydro/common/capacity/maxDailyGenEnergy_{areaId}",
+  },
+  [HydroMatrixType.MaxDailyPumpEnergy]: {
+    title: "Max Daily Pump Energy",
+    url: "input/hydro/common/capacity/maxDailyPumpEnergy_{areaId}",
   },
   [HydroMatrixType.InflowPattern]: {
     title: "Inflow Pattern",

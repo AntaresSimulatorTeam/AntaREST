@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, cast
+from typing import List, Optional
 
 import polars as pl
 from pydantic import Field
@@ -18,7 +18,7 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.polars import convert_polars_dataframe_to_pandas, create_polars_dataframe
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 
 
@@ -88,10 +88,7 @@ class DigestSynthesis(OutputSynthesis):
         formatted: bool = True,
     ) -> JSON:
         df = self._parse_digest_file()
-
-        output = convert_polars_dataframe_to_pandas(df).to_dict(orient="split")
-        del output["index"]
-        return cast(JSON, output)
+        return df.to_pandas().to_dict(orient="split", index=False)
 
     def get_ui(self) -> DigestUI:
         """

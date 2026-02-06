@@ -12,8 +12,16 @@
  * This file is part of the Antares project.
  */
 
+<<<<<<<< HEAD:webapp/src/queries/areas.ts
+import { studyQueries } from "./studies";
+
+export const areaQueries = {
+  all: () => [...studyQueries.all(), "areas"] as const,
+};
+========
 import { voidFn } from "./fnUtils";
 
 export function unresolvedPromise<T>(): Promise<T> {
   return new Promise<T>(voidFn);
 }
+>>>>>>>> dev:webapp/src/utils/promiseUtils.ts

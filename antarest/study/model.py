@@ -240,6 +240,15 @@ class StudyContentStatus(enum.Enum):
     ERROR = "ERROR"
 
 
+class StorageMode(enum.StrEnum):
+    """
+    Storage mode for study data.
+    """
+
+    FILESYSTEM = "filesystem"
+    DATABASE = "database"
+
+
 class CommentsDto(AntaresBaseModel):
     comments: str
 
@@ -272,6 +281,8 @@ class Study(Base):
         archived: Whether the study is archived or not. Most operations are not allowed on archived studies.
                   The actual implementation of study archival may depend on the type of study. Currently,
                   only managed raw studies may be archived.
+        storage_mode: The storage mode for study data. Either FILESYSTEM (traditional file-based storage)
+                      or DATABASE. Defaults to FILESYSTEM.
     """
 
     __tablename__ = "study"
@@ -302,6 +313,9 @@ class Study(Base):
     public_mode: Mapped[PublicMode] = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived: Mapped[bool] = mapped_column(Boolean(), default=False, index=True)
+    storage_mode: Mapped[StorageMode] = mapped_column(
+        Enum(StorageMode), default=StorageMode.FILESYSTEM, nullable=False, index=True
+    )
 
     tags: Mapped[List[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
@@ -347,6 +361,7 @@ class Study(Base):
             and other.public_mode == self.public_mode
             and other.owner_id == self.owner_id
             and other.archived == self.archived
+            and other.storage_mode == self.storage_mode
         )
 
     def to_json_summary(self) -> Any:

@@ -142,7 +142,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
     [options, startCaseLabel, t],
   );
 
-  const groupsOfOptions = useMemo(() => {
+  const groupedOptions = useMemo(() => {
     const optionsByGroup = R.groupBy(R.propOr("", "group"), optionsFormatted);
 
     const groups = Object.entries(optionsByGroup).map(([group, options = []]) => ({
@@ -279,7 +279,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
         </MenuItem>
       ))}
       {/* Reason of using `flatMap`: https://github.com/mui/material-ui/issues/35403#issuecomment-2656136654 */}
-      {groupsOfOptions.flatMap((group) =>
+      {groupedOptions.flatMap((group) =>
         [
           group.name && (
             <ListSubheader

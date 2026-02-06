@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import ButtonBack from "@/components/ButtonBack";
+import BackButton from "@/components/buttons/BackButton";
 import PropertiesView from "@/components/PropertiesView";
 import { Box, Tab, Tabs } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -52,7 +52,7 @@ function ResultItemSelector({
       <PropertiesView
         topContent={
           <Box sx={{ width: 1, px: 1 }}>
-            <ButtonBack onClick={onNavigateBack} />
+            <BackButton linkOptions={{ to: ".." }} />
           </Box>
         }
         mainContent={

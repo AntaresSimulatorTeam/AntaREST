@@ -50,7 +50,7 @@ function OccurrencesFE({ control, onChange }: Props) {
 
   const {
     field,
-    formState: { isLoading, disabled },
+    formState: { isLoading, isSubmitting, disabled },
     fieldState: { invalid, error },
   } = useController({
     name: "occurrences",
@@ -60,6 +60,7 @@ function OccurrencesFE({ control, onChange }: Props) {
   });
 
   const occurrences = field.value;
+  const isDisabled = isSubmitting || disabled;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -82,7 +83,7 @@ function OccurrencesFE({ control, onChange }: Props) {
             <Typography color="textSecondary" sx={{ flex: 1 }}>
               {t("study.modeling.storages.additionalConstraints.occurrences")}
             </Typography>
-            <Button startIcon={<EditIcon />} onClick={toggleEditDialog} disabled={disabled}>
+            <Button startIcon={<EditIcon />} onClick={toggleEditDialog} disabled={isDisabled}>
               {t("global.edit")}
             </Button>
           </Box>

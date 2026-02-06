@@ -14,20 +14,21 @@
 
 import type { RouteListItem } from "@/components/page/ListView";
 import type { QueryList } from "@/queries/types";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
 import { sortByProp } from "@/services/utils";
 import { linkOptions } from "@tanstack/react-router";
 
 export function constraintsToList(constraints: QueryList<StorageConstraint>): RouteListItem[] {
-  const list = constraints.map(({ id, name, isOptimistic }) => ({
-    id,
-    label: name,
+  const list = constraints.map((constraint) => ({
+    id: constraint.id,
+    label: constraint.name,
     linkOptions: linkOptions({
       from: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints",
       to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId",
-      params: { constraintId: id },
+      params: { constraintId: constraint.id },
     }),
-    loading: isOptimistic,
+    loading: isQueryListItemOptimistic(constraint),
   }));
 
   return sortByProp("label", list);

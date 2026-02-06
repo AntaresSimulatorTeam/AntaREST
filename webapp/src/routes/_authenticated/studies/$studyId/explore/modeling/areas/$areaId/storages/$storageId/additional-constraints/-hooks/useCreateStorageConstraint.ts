@@ -14,8 +14,11 @@
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useSafeMemo from "@/hooks/useSafeMemo";
-import { storageMutations, storageQueries } from "@/queries/storages";
-import { useMutation } from "@tanstack/react-query";
+import { storageMutations } from "@/queries/storages/mutations";
+import { storageQueries } from "@/queries/storages/queries";
+import type { QueryListItem } from "@/queries/types";
+import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_CONSTRAINT_VALUES } from "../-constants";
@@ -25,6 +28,7 @@ function useCreateStorageConstraint() {
     from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
   });
   const router = useRouter();
+  const queryClient = useQueryClient();
   const tempConstraintId = useSafeMemo(() => crypto.randomUUID(), []);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
@@ -32,26 +36,23 @@ function useCreateStorageConstraint() {
   const { studyId, areaId, storageId } = params;
   const { queryKey: queryListKey } = storageQueries.constraintList(studyId, areaId, storageId);
 
-  const isRouterMatchConstraint = (constraintId: string) => {
+  const isRouterMatchTempConstraint = () => {
     return router.state.matches.some(
       (m) =>
         m.routeId ===
           "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId/" &&
-        m.params.constraintId === constraintId,
+        m.params.constraintId === tempConstraintId,
     );
   };
 
   const mutation = useMutation({
     ...storageMutations.createConstraint(studyId, areaId, storageId),
-    meta: { tempConstraintId },
-    onMutate: async (variables, context) => {
+    onMutate: async (variables) => {
       const { values } = variables;
 
-      await context.client.cancelQueries({ queryKey: queryListKey });
+      await queryClient.cancelQueries({ queryKey: queryListKey });
 
-      const prevConstraints = context.client.getQueryData(queryListKey);
-
-      context.client.setQueryData(queryListKey, (old = []) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
         return [
           ...old,
           {
@@ -59,57 +60,47 @@ function useCreateStorageConstraint() {
             ...values,
             id: tempConstraintId,
             name: values.name,
-            isOptimistic: true,
-          },
+            _metadata: { isOptimistic: true },
+          } satisfies QueryListItem<StorageConstraint>,
         ];
       });
 
       // Await navigation prevents `onError`/`onSuccess` to be called before navigation is done,
-      // causing `isRouterMatchConstraint(tempConstraintId)` to not work as expected
+      // causing `isRouterMatchTempConstraint()` to not work as expected
       await router.navigate({
         to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId",
         params: { ...params, constraintId: tempConstraintId },
       });
-
-      return { prevConstraints };
     },
-    onError: (error, variables, onMutateResult, context) => {
-      const { values } = variables;
-      const { prevConstraints } = onMutateResult || {};
-
-      context.client.setQueryData(queryListKey, prevConstraints);
+    onError: (error, variables) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.filter((constraint) => constraint.id !== tempConstraintId);
+      });
 
       enqueueErrorSnackbar(
-        t("study.modeling.storages.additionalConstraints.create.error", { name: values.name }),
+        t("study.modeling.storages.additionalConstraints.create.error", {
+          name: variables.values.name,
+        }),
         error,
       );
 
-      if (isRouterMatchConstraint(tempConstraintId)) {
+      if (isRouterMatchTempConstraint()) {
         router.navigate({ to: "..", replace: true });
       }
     },
-    onSuccess: (newConstraint, variables, onMutateResult, context) => {
-      context.client.setQueryData(queryListKey, (old = []) => {
+    onSuccess: (newConstraint) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((constraint) =>
           constraint.id === tempConstraintId ? newConstraint : constraint,
         );
       });
 
-      if (isRouterMatchConstraint(tempConstraintId)) {
+      if (isRouterMatchTempConstraint()) {
         router.navigate({
           to: ".",
           params: { ...params, constraintId: newConstraint.id },
           replace: true,
         });
-      }
-    },
-    onSettled: (data, error, variables, onMutateResult, context) => {
-      const mutationNb = context.client.isMutating({
-        mutationKey: storageMutations.constraintList(studyId, areaId, storageId),
-      });
-
-      if (mutationNb === 1) {
-        context.client.invalidateQueries({ queryKey: queryListKey });
       }
     },
   });

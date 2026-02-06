@@ -37,7 +37,13 @@ if (import.meta.env.DEV) {
   };
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+    },
+  },
+});
 
 const router = createRouter({
   routeTree,

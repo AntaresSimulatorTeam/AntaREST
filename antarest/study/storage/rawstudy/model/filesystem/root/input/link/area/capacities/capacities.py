@@ -15,8 +15,10 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_hourly_ones
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_scenario_hourly,
+)
 
 
 class InputLinkAreaCapacities(FolderNode):
@@ -36,12 +38,12 @@ class InputLinkAreaCapacities(FolderNode):
             children[f"{area_to}_direct"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file(f"{area_to}_direct.txt"),
-                default_empty=default_scenario_hourly_ones,
+                default_empty=default_scenario_hourly,
             )
             children[f"{area_to}_indirect"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file(f"{area_to}_indirect.txt"),
-                default_empty=default_scenario_hourly_ones,
+                default_empty=default_scenario_hourly,
             )
 
         return children

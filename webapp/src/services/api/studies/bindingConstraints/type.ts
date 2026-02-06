@@ -56,8 +56,8 @@ export interface BindingConstraintDTO {
   comments: string;
   terms: BindingConstraintTerm[];
   // Since v8.3
-  filterYearByYear?: string;
-  filterSynthesis?: string;
+  filterYearByYear?: string | null; // For versions < v8.3, this field may be null instead of undefined
+  filterSynthesis?: string | null; // For versions < v8.3, this field may be null instead of undefined
   // Since v8.7
   group?: string;
 }
@@ -87,8 +87,8 @@ export interface BindingConstraintCreationDTO
     >,
     BindingConstraintMatrices {
   // Since v8.3
-  filterYearByYear?: BindingConstraintOutputFilter[] | string;
-  filterSynthesis?: BindingConstraintOutputFilter[] | string;
+  filterYearByYear?: BindingConstraintOutputFilter[]; // String type not included for convenience
+  filterSynthesis?: BindingConstraintOutputFilter[]; // String type not included for convenience
 }
 
 export type BindingConstraintUpdateDTO = Omit<BindingConstraintCreationDTO, "name">;
@@ -115,11 +115,13 @@ export interface GetBindingConstraintsParams {
 
 export interface CreateBindingConstraintsParams {
   studyId: StudyMetadata["id"];
+  studyVersion: StudyMetadata["version"];
   values: BindingConstraintCreationDTO;
 }
 
 export interface UpdateBindingConstraintsParams {
   studyId: StudyMetadata["id"];
+  studyVersion: StudyMetadata["version"];
   constraintId: BindingConstraintDTO["id"];
   values: BindingConstraintUpdateDTO;
 }

@@ -15,7 +15,7 @@
 import FormDialog from "@/components/dialogs/FormDialog";
 import StringFE from "@/components/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { bindingConstraintQueries } from "@/queries/bindingConstraints";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { getNames } from "@/services/utils";

@@ -13,15 +13,22 @@
  */
 
 import * as R from "ramda";
+import semver from "semver";
 import type {
   BindingConstraint,
+  BindingConstraintCreationDTO,
   BindingConstraintDTO,
   BindingConstraintOutputFilter,
+  BindingConstraintUpdateDTO,
 } from "./type";
 
-export function adaptBindingConstraintOutputFilterStringToArray(
-  value: string,
+function adaptBindingConstraintOutputFilterStringToArray(
+  value: BindingConstraintDTO["filterYearByYear"] | BindingConstraintDTO["filterSynthesis"],
 ): BindingConstraintOutputFilter[] {
+  if (!value?.trim()) {
+    return [];
+  }
+
   return value
     .split(",")
     .map((item) => item.trim())
@@ -37,4 +44,20 @@ export function adaptBindingConstraintDtoToBindingConstraint(
   };
 
   return R.evolve(transformations, dto);
+}
+
+export function adaptBindingConstraintOperationDtoToStudyVersion<
+  T extends BindingConstraintCreationDTO | BindingConstraintUpdateDTO,
+>(dto: T, studyVersion: string): T {
+  let adaptedDto = { ...dto };
+
+  if (semver.lt(studyVersion, "8.7.0")) {
+    adaptedDto = R.omit(["group"], adaptedDto) as T;
+  }
+
+  if (semver.lt(studyVersion, "8.3.0")) {
+    adaptedDto = R.omit(["filterYearByYear", "filterSynthesis"], adaptedDto) as T;
+  }
+
+  return adaptedDto;
 }

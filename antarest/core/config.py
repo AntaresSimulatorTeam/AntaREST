@@ -145,6 +145,22 @@ class DbConfig:
 
 
 @dataclass(frozen=True)
+class StudyStorageConfig:
+    """
+    Sub config object dedicated to study storage configuration (from study.storage in YAML)
+    """
+
+    database_mode_enabled: bool = False
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "StudyStorageConfig":
+        defaults = cls()
+        return cls(
+            database_mode_enabled=data.get("database_mode_enabled", defaults.database_mode_enabled),
+        )
+
+
+@dataclass(frozen=True)
 class StorageConfig:
     """
     Sub config object dedicated to study module
@@ -164,16 +180,23 @@ class StorageConfig:
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
+    auto_archive_cron: str = "0 20-23,0-7 * * * "
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
     blobstore: Path = Path("./blobstore")
     blob_gc_sleeping_time: int = 86400
     blob_gc_dry_run: bool = False
-    watcher_scan_sleeping_time: int = 60
+    variable_view_gc_sleeping_time: int = 3600
+    variable_view_gc_dry_run: bool = False
+    variable_view_gc_retention_days: int = 30
+    watcher_scan_sleeping_time: int = 900
     watcher_scan_dry_run: bool = False
+    study_storage: StudyStorageConfig = StudyStorageConfig()
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
+        if data.get("auto_archive_sleeping_time") and data.get("auto_archive_cron"):
+            raise ValueError("auto_archive_sleeping_time and auto_archive_cron cannot be used together")
         defaults = cls()
         workspaces = (
             {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}
@@ -203,13 +226,22 @@ class StorageConfig:
             auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
             auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
+            auto_archive_cron=data.get("auto_archive_cron", defaults.auto_archive_cron),
             snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
             matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
             blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
             blob_gc_sleeping_time=data.get("blob_gc_sleeping_time", defaults.blob_gc_sleeping_time),
             blob_gc_dry_run=data.get("blob_gc_dry_run", defaults.blob_gc_dry_run),
+            variable_view_gc_sleeping_time=data.get(
+                "variable_view_gc_sleeping_time", defaults.variable_view_gc_sleeping_time
+            ),
+            variable_view_gc_dry_run=data.get("variable_view_gc_dry_run", defaults.variable_view_gc_dry_run),
+            variable_view_gc_retention_days=data.get(
+                "variable_view_gc_retention_days", defaults.variable_view_gc_retention_days
+            ),
             watcher_scan_sleeping_time=data.get("watcher_scan_sleeping_time", defaults.watcher_scan_sleeping_time),
             watcher_scan_dry_run=data.get("watcher_scan_dry_run", defaults.watcher_scan_dry_run),
+            study_storage=StudyStorageConfig.from_dict(data.get("study", {}).get("storage", {})),
         )
 
     @classmethod

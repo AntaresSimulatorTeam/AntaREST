@@ -18,13 +18,14 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { bindingConstraintQueries } from "@/queries/bindingConstraints";
+import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { BindingConstraintCreationDTO } from "@/services/api/studies/bindingConstraints/type";
 import { getNames } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import useCreateBindingConstraint from "../-hooks/useCreateBindingConstraint";
@@ -33,6 +34,11 @@ import { DEFAULT_CONSTRAINT_VALUES, OPERATOR_OPTIONS, TIME_STEPS_OPTIONS } from 
 interface Props {
   onCancel: VoidFunction;
 }
+
+const defaultValues = R.pick(
+  ["enabled", "name", "group", "comments", "timeStep", "operator"],
+  DEFAULT_CONSTRAINT_VALUES,
+);
 
 function AddConstraintDialog({ onCancel }: Props) {
   const study = useStudy();
@@ -44,17 +50,12 @@ function AddConstraintDialog({ onCancel }: Props) {
     select: getNames,
   });
 
-  const defaultValues: BindingConstraintCreationDTO = {
-    ...DEFAULT_CONSTRAINT_VALUES,
-    group: semver.gte(study.version, "8.7.0") ? "default" : "",
-  };
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraintCreationDTO>) => {
-    createConstraint.mutate({ studyId: study.id, values });
+    createConstraint.mutate({ studyId: study.id, studyVersion: study.version, values });
   };
 
   ////////////////////////////////////////////////////////////////

@@ -19,11 +19,8 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import {
-  getBindingConstraint,
-  updateBindingConstraint,
-} from "@/services/api/studies/bindingConstraints";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { unresolvedPromise } from "@/utils/promiseUtils";
 import { validateString } from "@/utils/validation/string";
@@ -32,6 +29,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import useBindingConstraint from "../-hooks/useBindingConstraint";
+import useUpdateBindingConstraint from "../../-hooks/useUpdateBindingConstraint";
 import { OPERATOR_OPTIONS, OUTPUT_FILTERS_OPTIONS, TIME_STEPS_OPTIONS } from "../../-utils";
 import TermsFE from "./-components/TermsFE";
 
@@ -44,17 +42,20 @@ export const Route = createFileRoute(
 function Parameters() {
   const study = useStudy();
   const constraint = useBindingConstraint();
+  const updateConstraint = useUpdateBindingConstraint();
+  const isOptimistic = isQueryListItemOptimistic(constraint);
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values }: SubmitHandlerPlus<BindingConstraint>) => {
-    const { id, name, ...updatedConstraint } = values;
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<BindingConstraint>) => {
+    const { id, name, ...updatedConstraint } = dirtyValues;
 
-    return updateBindingConstraint({
+    return updateConstraint.mutateAsync({
       studyId: study.id,
+      studyVersion: study.version,
       constraintId: constraint.id,
       values: updatedConstraint,
     });
@@ -65,93 +66,88 @@ function Parameters() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <Form
-        key={constraint.id}
-        config={{
-          defaultValues: () =>
-            constraint.isOptimistic
-              ? unresolvedPromise<BindingConstraint>()
-              : getBindingConstraint({ studyId: study.id, constraintId: constraint.id }),
-        }}
-        onSubmit={handleSubmit}
-        enableUndoRedo
-      >
-        {({ control }) => (
-          <Stack direction="column" sx={{ height: 1 }}>
-            <Fieldset>
-              <SwitchFE
-                name="enabled"
-                label={t("study.modeling.bindingConst.enabled")}
+    <Form
+      key={constraint.id}
+      config={{
+        defaultValues: isOptimistic ? unresolvedPromise<BindingConstraint> : constraint,
+      }}
+      onSubmit={handleSubmit}
+      enableUndoRedo
+    >
+      {({ control }) => (
+        <Stack direction="column" sx={{ height: 1 }}>
+          <Fieldset>
+            <SwitchFE
+              name="enabled"
+              label={t("study.modeling.bindingConst.enabled")}
+              control={control}
+            />
+            <StringFE disabled name="name" label={t("global.name")} control={control} />
+            {semver.gte(study.version, "8.7.0") && (
+              <StringFE
+                name="group"
+                label={t("global.group")}
                 control={control}
+                rules={{
+                  validate: (v) => {
+                    if (typeof v === "string") {
+                      return validateString(v, {
+                        maxLength: 20,
+                        specialChars: "-",
+                      });
+                    }
+                  },
+                }}
               />
-              <StringFE disabled name="name" label={t("global.name")} control={control} />
-              {semver.gte(study.version, "8.7.0") && (
-                <StringFE
-                  name="group"
-                  label={t("global.group")}
+            )}
+            <SelectFE
+              name="timeStep"
+              label={t("study.modeling.bindingConst.type")}
+              options={TIME_STEPS_OPTIONS}
+              control={control}
+            />
+            <SelectFE
+              name="operator"
+              label={t("study.modeling.bindingConst.operator")}
+              options={OPERATOR_OPTIONS}
+              control={control}
+            />
+            <Fieldset.Break />
+            {semver.gte(study.version, "8.3.0") && (
+              <>
+                <SelectFE
+                  name="filterYearByYear"
+                  label={t("study.outputFilters.filterByYear")}
+                  options={OUTPUT_FILTERS_OPTIONS}
+                  multiple
                   control={control}
-                  rules={{
-                    validate: (v) => {
-                      if (typeof v === "string") {
-                        return validateString(v, {
-                          maxLength: 20,
-                          specialChars: "-",
-                        });
-                      }
-                    },
+                  sx={{
+                    width: "auto !important",
+                    minWidth: 200,
                   }}
                 />
-              )}
-              <SelectFE
-                name="timeStep"
-                label={t("study.modeling.bindingConst.type")}
-                options={TIME_STEPS_OPTIONS}
-                control={control}
-              />
-              <SelectFE
-                name="operator"
-                label={t("study.modeling.bindingConst.operator")}
-                options={OPERATOR_OPTIONS}
-                control={control}
-              />
-              <Fieldset.Break />
-              {semver.gte(study.version, "8.3.0") && (
-                <>
-                  <SelectFE
-                    name="filterYearByYear"
-                    label={t("study.outputFilters.filterByYear")}
-                    options={OUTPUT_FILTERS_OPTIONS}
-                    multiple
-                    control={control}
-                    sx={{
-                      width: "auto !important",
-                      minWidth: 200,
-                    }}
-                  />
-                  <SelectFE
-                    name="filterSynthesis"
-                    label={t("study.outputFilters.filterSynthesis")}
-                    options={OUTPUT_FILTERS_OPTIONS}
-                    multiple
-                    control={control}
-                    sx={{
-                      width: "auto !important",
-                      minWidth: 200,
-                    }}
-                  />
-                </>
-              )}
-              <StringFE
-                name="comments"
-                label={t("study.modeling.bindingConst.comments")}
-                control={control}
-              />
-            </Fieldset>
-            <TermsFE />
-          </Stack>
-        )}
-      </Form>
-    </>
+                <SelectFE
+                  name="filterSynthesis"
+                  label={t("study.outputFilters.filterSynthesis")}
+                  options={OUTPUT_FILTERS_OPTIONS}
+                  multiple
+                  control={control}
+                  sx={{
+                    width: "auto !important",
+                    minWidth: 200,
+                  }}
+                />
+              </>
+            )}
+            <StringFE
+              name="comments"
+              label={t("study.modeling.bindingConst.comments")}
+              control={control}
+            />
+          </Fieldset>
+          <TermsFE />
+        </Stack>
+      )}
+    </Form>
   );
 }

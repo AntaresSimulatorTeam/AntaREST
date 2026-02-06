@@ -12,8 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import type { QueryList, QueryListItemBase } from "./types";
+import type { QueryList, QueryListItem, QueryListItemBase, QueryListItemMetadata } from "./types";
+
+const DEFAULT_LIST_ITEM_METADATA = {
+  isOptimistic: false,
+} as const satisfies QueryListItemMetadata;
 
 export function queryList<T extends QueryListItemBase>(list: T[]): QueryList<T> {
   return list;
+}
+
+export function getQueryListItemMetadata(item: QueryListItem) {
+  return item._metadata || DEFAULT_LIST_ITEM_METADATA;
+}
+
+export function isQueryListItemOptimistic(item: QueryListItem) {
+  return getQueryListItemMetadata(item).isOptimistic;
+}
+
+export function isQueryListMutating<T extends QueryListItemBase>(list: QueryList<T>) {
+  return list.some(isQueryListItemOptimistic);
 }

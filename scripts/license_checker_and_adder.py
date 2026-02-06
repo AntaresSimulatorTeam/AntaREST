@@ -58,11 +58,14 @@ def check_dir(
     dir_path: Path,
     action: str,
     invalid_files: List[Path],
-    suffixes: List[str],
+    last_suffixes: List[str],
+    ignored_suffixes: List[str],
+    ignored_dirnames: List[str],
     license_as_list: List[str],
     license_to_save: List[str],
 ) -> None:
     _, dirnames, filenames = next(os.walk(dir_path))
+
     for f in filenames:
         if dir_path != cwd and is_license_file(f):
             click.echo(f"Found third party license file, skipping folder: {dir_path / f}")
@@ -71,14 +74,20 @@ def check_dir(
     for f in filenames:
         file_path = dir_path / f
 
-        if file_path.suffix not in suffixes:
+        if file_path.suffix not in last_suffixes:
+            continue
+
+        if any(suffix in ignored_suffixes for suffix in file_path.suffixes):
             continue
 
         if not check_file(file_path, action, license_as_list, license_to_save):
             invalid_files.append(file_path)
 
     for d in dirnames:
-        check_dir(cwd, dir_path / d, action, invalid_files, suffixes, license_as_list, license_to_save)
+        if d in ignored_dirnames:
+            continue
+
+        check_dir(cwd, dir_path / d, action, invalid_files, last_suffixes, ignored_suffixes, ignored_dirnames, license_as_list, license_to_save)
 
 
 @click.command("license_checker_and_adder")
@@ -104,15 +113,18 @@ def cli(path: Path, action: str) -> None:
     invalid_files = []
     cwd = Path.cwd()
     # --------- infer which files to check and which license to add
-    suffixes = [".ts", ".tsx"]
+    last_suffixes = [".ts", ".tsx"]
+    ignored_suffixes = [".gen"]
+    ignored_dirnames = ["node_modules", "dist"]
     license_header = FRONTEND_LICENSE_HEADER
     if path.name in ["antarest", "tests"]:
-        suffixes = [".py"]
+        last_suffixes = [".py"]
+        ignored_dirnames = []
         license_header = BACKEND_LICENSE_HEADER
     license_as_list = license_header.splitlines()
     license_to_save = [header + "\n" for header in license_as_list] + ["\n"]
     # --------
-    check_dir(cwd, path, action, invalid_files, suffixes, license_as_list, license_to_save)
+    check_dir(cwd, path, action, invalid_files, last_suffixes, ignored_suffixes, ignored_dirnames, license_as_list, license_to_save)
     file_count = len(invalid_files)
     if file_count > 0:
         if action == "fix":

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import BinaryIO, Callable, Iterator, Optional, Sequence
 from uuid import uuid4
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
@@ -334,7 +334,7 @@ class FileOutputStorage(IOutputStorage):
         columns_names: Sequence[str],
         transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         aggregator_manager = AggregatorManager(
             study_outputs.outputs_path / output_id,

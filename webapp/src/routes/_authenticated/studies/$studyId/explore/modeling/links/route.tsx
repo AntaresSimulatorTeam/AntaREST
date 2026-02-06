@@ -33,6 +33,7 @@ function LinksLayout() {
   const { t } = useTranslation();
 
   // Redirect to first link if none is selected
+  // TODO: Refactor to use `redirect()` in `beforeLoad` (index.tsx) after replacing Redux with Tanstack Query
   useEffect(() => {
     const { data } = response;
 

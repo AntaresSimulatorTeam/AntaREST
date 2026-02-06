@@ -11,15 +11,14 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from unittest.mock import Mock
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.matrix.head_writer import AreaHeadWriter
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 
 MATRIX_DAILY_DATA = """\
@@ -48,58 +47,39 @@ class TestOutputSeriesMatrix:
             version=800,
         )
 
-    def test_load(self, my_study_config: FileStudyTreeConfig) -> None:
-        file = my_study_config.path
-        file.write_text("\n\n\n\nmock\tfile\ndummy\tdummy\ndummy\tdummy\ndummy\tdummy")
+    def test_parse_dataframe(self, my_study_config: FileStudyTreeConfig) -> None:
+        # The content corresponds to a real `values-annual.txt` file.
+        content = b"AT\tarea\tva\tannual\n\tVARIABLES\tBEGIN\tEND\n\t9\t1\t1\n\nAT\tannual\tOV. COST\tMRG. PRICE\tBattery_injection\tBattery_withdrawal\tBattery_level\tUNSP. ENRG\tSPIL. ENRG\tLOLD\tLOLP\n\t\tEuro\tEuro\tMW\tMW\tMWh\tMWh\tMWh\tHours\t%\n\t\t\t\t\t\t\t\t\t\t\n\tAnnual\t3573604931\t87.1175\t0\t0\t0\t0\t0\t0\t100.00\n"
+        my_study_config.path.write_bytes(content)
 
-        serializer = Mock()
-        serializer.extract_date.return_value = (
-            pd.Index(["01/02", "01/01"]),
-            pd.DataFrame(
-                data={
-                    ("01_solar", "MWh", "EXP"): [27000, 48000],
-                    ("02_wind_on", "MWh", "EXP"): [600, 34400],
-                }
-            ),
+        data = np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0]])
+        columns = pd.Index(
+            [
+                ("Battery_injection", "MW", ""),
+                ("Battery_withdrawal", "MW", ""),
+                ("Battery_level", "MWh", ""),
+                ("UNSP. ENRG", "MWh", ""),
+                ("SPIL. ENRG", "MWh", ""),
+                ("LOLD", "Hours", ""),
+                ("LOLP", "%", ""),
+            ],
         )
+        expected_result = pd.DataFrame(data, columns=columns)
 
-        matrix = pd.DataFrame(
-            data={
-                ("01_solar", "MWh", "EXP"): [27000, 48000],
-                ("02_wind_on", "MWh", "EXP"): [600, 34400],
-            },
-            index=["01/02", "01/01"],
-        )
+        node = OutputSeriesMatrix(config=my_study_config, freq=MatrixFrequency.DAILY)
+        pd.testing.assert_frame_equal(node.parse_dataframe(), expected_result, check_dtype=False)
 
-        node = OutputSeriesMatrix(
-            config=my_study_config,
-            freq=MatrixFrequency.DAILY,
-            date_serializer=serializer,
-            head_writer=AreaHeadWriter(area="", data_type="", freq=""),
-        )
-        assert node.load() == matrix.to_dict(orient="split")
-
-    def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
-        node = OutputSeriesMatrix(
-            config=my_study_config,
-            freq=MatrixFrequency.DAILY,
-            date_serializer=Mock(),
-            head_writer=AreaHeadWriter(area="", data_type="", freq=""),
-        )
+    def test_parse_dataframe_file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
+        node = OutputSeriesMatrix(config=my_study_config, freq=MatrixFrequency.DAILY)
         with pytest.raises(ChildNotFoundError) as ctx:
-            node.load()
+            node.parse_dataframe()
         err_msg = str(ctx.value)
         assert "'matrix-daily.txt" in err_msg
         assert my_study_config.study_id in err_msg
         assert "not found" in err_msg.lower()
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
-        node = OutputSeriesMatrix(
-            config=my_study_config,
-            freq=MatrixFrequency.DAILY,
-            date_serializer=Mock(),
-            head_writer=AreaHeadWriter(area="de", data_type="va", freq="hourly"),
-        )
+        node = OutputSeriesMatrix(config=my_study_config, freq=MatrixFrequency.DAILY)
 
         with pytest.raises(MustNotModifyOutputException, match="Should not modify output file"):
             node.dump(data={})

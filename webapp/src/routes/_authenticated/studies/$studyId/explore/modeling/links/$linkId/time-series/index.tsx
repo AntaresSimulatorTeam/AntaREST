@@ -33,19 +33,19 @@ function TimeSeries() {
   const study = useStudy();
   const { t } = useTranslation();
   const [area1, area2] = parseLinkId(linkId);
-  const isLegacy = semver.lt(study.version, TABS_VIEW_MIN_VERSION);
+  const isTabsView = semver.gte(study.version, TABS_VIEW_MIN_VERSION);
 
   useEffect(() => {
-    if (!isLegacy) {
+    if (isTabsView) {
       navigate({
         from: Route.fullPath,
         to: "parameters",
         replace: true,
       });
     }
-  }, [isLegacy, linkId, navigate, study.id, study.version]);
+  }, [isTabsView, linkId, navigate, study.id, study.version]);
 
-  if (isLegacy) {
+  if (!isTabsView) {
     return (
       <Matrix
         studyId={study.id}
