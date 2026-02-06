@@ -21,6 +21,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.utils import remove_first_match
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
@@ -915,8 +916,8 @@ class InMemoryStudyDao(StudyDao):
         return self._layers
 
     @override
-    def delete_layer(self, layer: Layer) -> None:
-        self._layers.remove(layer)
+    def delete_layer(self, layer_id: str) -> None:
+        remove_first_match(self._layers, lambda layer: layer.id == layer_id)
 
     @override
     def layer_exists(self, layer_id: str) -> bool:

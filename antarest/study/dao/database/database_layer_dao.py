@@ -114,34 +114,30 @@ class DatabaseLayerDao(LayerDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name or ""}
+        values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name}
         upsert_one(session, LAYER_TABLE, values)
-
-        # Update area associations if areas are provided
-        if layer.areas is not None:
-            self.get_impl().save_layer_areas(layer.id, layer.areas)
-        else:
-            session.commit()
+        self.get_impl().save_layer_areas(layer.id, layer.areas)
+        session.commit()
 
     @override
-    def delete_layer(self, layer: Layer) -> None:
+    def delete_layer(self, layer_id: str) -> None:
         """
         Delete a layer from a study.
 
         The default layer (id="0") cannot be deleted.
         Area-layer associations are automatically deleted via FK CASCADE.
         """
-        if layer.id == DEFAULT_LAYER_ID:
+        if layer_id == DEFAULT_LAYER_ID:
             raise LayerNotAllowedToBeDeleted()
 
-        if not self.layer_exists(layer.id):
-            raise LayerNotFound(layer.id)
+        if not self.layer_exists(layer_id):
+            raise LayerNotFound(layer_id)
 
         study_id = self.get_study_id()
         session = self.get_session()
 
         session.execute(
-            delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer.id))
+            delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer_id))
         )
 
         session.commit()
