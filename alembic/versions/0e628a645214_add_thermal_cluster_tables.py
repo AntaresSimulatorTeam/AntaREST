@@ -1,7 +1,7 @@
 """add_thermal_cluster_tables
 
 Revision ID: 0e628a645214
-Revises: 6a6d36e3c6ed
+Revises: 124274d80f2e
 Create Date: 2026-02-02 00:00:00.000000
 
 """
