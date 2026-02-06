@@ -83,9 +83,9 @@ class IFileOutputsProvider(ABC):
     def get_outputs(self, study_id: str) -> FileStudyOutputs: ...
 
 
-class FileOutputStorage(IOutputStorage):
+class InStudyFileOutputStorage(IOutputStorage):
     """
-    Implementation based on outputs stored in antares-solver file format.
+    Implementation based on outputs stored in antares-solver file format, inside a study.
     """
 
     def __init__(self, outputs_provider: IFileOutputsProvider, cache: ICache, remote_executor: IRemoteExecutor) -> None:
@@ -96,7 +96,7 @@ class FileOutputStorage(IOutputStorage):
     @override
     @property
     def storage_type(self) -> OutputStorageType:
-        return OutputStorageType.FILE_TREE
+        return OutputStorageType.IN_STUDY_FILE_TREE
 
     @override
     def import_output(

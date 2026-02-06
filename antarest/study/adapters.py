@@ -14,16 +14,16 @@ from pathlib import Path
 from typing_extensions import override
 
 from antarest.study.output.output_service import OutputService
-from antarest.study.service import IOutputServiceAccess
+from antarest.study.service import IOutputsAccess
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 
 
-def adapt_output_service_to_study_service(output_service: OutputService) -> IOutputServiceAccess:
+def adapt_output_service_to_study_service(output_service: OutputService) -> IOutputsAccess:
     """
     Creates a small wrapper of the output service to provides basic operations on outputs to study service.
     """
 
-    class OutputServiceAdapter(IOutputServiceAccess):
+    class OutputServiceAdapter(IOutputsAccess):
         @override
         def list_outputs(self, study_id: str) -> dict[str, Simulation]:
             return output_service.get_simulations(study_id)

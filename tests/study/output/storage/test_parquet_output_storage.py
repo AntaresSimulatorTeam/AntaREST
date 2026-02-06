@@ -23,7 +23,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import Study
 from antarest.study.output.lfs.dir_lfs import DirLargeFileStorage
 from antarest.study.output.lfs.lfs import ILargeFileStorage
-from antarest.study.output.storage.parquet_output_storage import ParquetOutputStorage
+from antarest.study.output.storage.parquet_output_storage import V2OutputStorage
 from antarest.study.output.storage.repository import OutputMetadataRepository
 from antarest.study.repository import StudyMetadataRepository
 
@@ -73,15 +73,15 @@ def lfs(tmp_path: Path) -> ILargeFileStorage:
 @pytest.fixture
 def storage(
     tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputMetadataRepository, lfs: ILargeFileStorage
-) -> ParquetOutputStorage:
+) -> V2OutputStorage:
     storage_tmp_dir = tmp_path / "storage" / "tmp"
-    storage = ParquetOutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, metadata_repository=output_repo)
+    storage = V2OutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, metadata_repository=output_repo)
     return storage
 
 
 def test_storage(
     tmp_path: Path,
-    storage: ParquetOutputStorage,
+    storage: V2OutputStorage,
     lfs: ILargeFileStorage,
     study_id: str,
     output_path: Path,
@@ -146,7 +146,7 @@ def create_archive(archive_format: ArchiveFormat, nested: bool, output_path: Pat
 @pytest.mark.parametrize("nested", [False, True])
 @pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
 def test_import_archive(
-    storage: ParquetOutputStorage,
+    storage: V2OutputStorage,
     study_id: str,
     output_path: Path,
     archive_format: ArchiveFormat,
@@ -166,7 +166,7 @@ def test_import_archive(
 @pytest.mark.parametrize("nested", [False, True])
 @pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
 def test_import_archive_stream(
-    storage: ParquetOutputStorage,
+    storage: V2OutputStorage,
     study_id: str,
     output_path: Path,
     archive_format: ArchiveFormat,

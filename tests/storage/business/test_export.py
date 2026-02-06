@@ -27,7 +27,7 @@ from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepos
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
-from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
+from antarest.study.output.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -219,7 +219,7 @@ def test_export_output(tmp_path: Path) -> None:
                 study_workspace=DEFAULT_WORKSPACE_NAME,
             )
 
-    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+    output_storage = InStudyFileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
 
     output_storage.export_output(study.id, output_id, export_path)
     zipf = ZipFile(export_path)

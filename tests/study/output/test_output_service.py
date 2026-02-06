@@ -25,7 +25,7 @@ from antarest.study.model import (
     RawStudy,
     Study,
 )
-from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
+from antarest.study.output.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
 from antarest.study.output.output_service import IStudyMetadataProvider, OutputService, StudyMetadata
 from antarest.study.storage.utils import is_output_archived
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -102,7 +102,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     # the end
     remote_executor: IRemoteExecutor = Mock(spec=IRemoteExecutor)
     file_outputs_provider = _file_outputs_provider(study_mock)
-    output_storage = FileOutputStorage(
+    output_storage = InStudyFileOutputStorage(
         cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=remote_executor
     )
 
@@ -155,7 +155,9 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     cache_mock = Mock()
     task_service = Mock(spec=ITaskService)
     file_outputs_provider = _file_outputs_provider(study_mock)
-    output_storage = FileOutputStorage(cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock())
+    output_storage = InStudyFileOutputStorage(
+        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock()
+    )
 
     studies_metadata_repository = _studies_repository(study_mock)
     output_service = OutputService(

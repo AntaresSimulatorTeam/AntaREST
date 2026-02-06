@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class OutputStorageType(StrEnum):
-    FILE_TREE = "FILE_TREE"
-    PARQUET = "PARQUET"
+    IN_STUDY_FILE_TREE = "IN_STUDY_FILE_TREE"
+    V2 = "V2"
 
 
 class IOutputStorage(ABC):

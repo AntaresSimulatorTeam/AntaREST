@@ -99,7 +99,7 @@ def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path
     return archive_path, dir_path
 
 
-class ParquetOutputStorage(IOutputStorage):
+class V2OutputStorage(IOutputStorage):
     """
     The implementation will be based on a few sub-components:
     - archives will be stored in an LFS
@@ -128,7 +128,7 @@ class ParquetOutputStorage(IOutputStorage):
     @override
     @property
     def storage_type(self) -> OutputStorageType:
-        return OutputStorageType.PARQUET
+        return OutputStorageType.V2
 
     @override
     def import_output(

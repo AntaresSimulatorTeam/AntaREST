@@ -486,12 +486,15 @@ class VariantStudyInterface(StudyInterface):
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
 
-class IOutputServiceAccess(ABC):
+class IOutputsAccess(ABC):
     """
-    Access to data from the output service.
+    Access to outputs data.
+
+    The abstraction is quite leaky: the behaviour for outputs stored in-study is kept
+    unchanched for backward compat, and stays mainly implemented in raw study service.
 
     Lightweight interface to the output service, with only a few methods that are legitimate to
-    use by studies being an aggregate of study data and output data.
+    use by studies being an aggregate of study input data and output data.
     """
 
     @abstractmethod
@@ -499,17 +502,17 @@ class IOutputServiceAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy_outputs(
-        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
+    def copy_out_of_study_outputs(self, src_study_id: str, target_study_id: str, output_ids: list[str]) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_out_of_study_outputs(self, study_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_out_of_study_outputs_to_dir(
+        self, study_id: str, outputs_dir: Path, outputs: list[str] | None = None
     ) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def delete_outputs(self, study_id: str) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def write_outputs_to_dir(self, study_id: str, outputs_dir: Path, outputs: list[str] | None = None) -> None:
         raise NotImplementedError()
 
 
@@ -573,16 +576,16 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
-        self._output_service: IOutputServiceAccess | None = None
+        self._output_service: IOutputsAccess | None = None
 
-    def register_output_service(self, output_service: IOutputServiceAccess) -> None:
+    def register_output_service(self, output_service: IOutputsAccess) -> None:
         """
         Study and output features have some dependencies on each other, therefore we need to
         register one of them after construction.
         """
         self._output_service = output_service
 
-    def _get_output_service(self) -> IOutputServiceAccess:
+    def _get_output_service(self) -> IOutputsAccess:
         if not self._output_service:
             raise RuntimeError("Output service not registered")
         return self._output_service
