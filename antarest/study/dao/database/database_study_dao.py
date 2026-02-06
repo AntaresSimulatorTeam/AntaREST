@@ -46,7 +46,6 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -61,12 +60,19 @@ from antarest.study.dao.database.database_area_properties_dao import DatabaseAre
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
+from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 class DatabaseStudyDao(
-    StudyDao, DatabaseAreaDao, DatabaseAreaPropertiesDao, DatabaseDistrictDao, DatabaseLinkDao, DatabaseLayerDao
+    StudyDao,
+    DatabaseAreaDao,
+    DatabaseAreaPropertiesDao,
+    DatabaseDistrictDao,
+    DatabaseLinkDao,
+    DatabaseLayerDao,
+    DatabaseThermalDao,
 ):
     """
     Database implementation of StudyDao.
@@ -85,6 +91,8 @@ class DatabaseStudyDao(
         DatabaseDistrictDao.__init__(self, study_id, db_session)
         DatabaseLinkDao.__init__(self, study_id, db_session)
         DatabaseLayerDao.__init__(self, study_id, db_session)
+        DatabaseThermalDao.__init__(self, study_id, db_session)
+
         self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
@@ -132,74 +140,6 @@ class DatabaseStudyDao(
 
     def get_matrix(self, matrix_id: str) -> pl.DataFrame:
         return self._matrix_service.get(matrix_id)
-
-    @override
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
