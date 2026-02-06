@@ -13,6 +13,7 @@
  */
 
 import DownloadMatrixButton from "@/components/buttons/DownloadMatrixButton";
+import DownloadVariableViewButton from "@/components/buttons/DownloadVariableViewButton";
 import CustomScrollbar from "@/components/CustomScrollbar";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import NumberFE from "@/components/fieldEditors/NumberFE";
@@ -20,6 +21,7 @@ import SearchFE from "@/components/fieldEditors/SearchFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
 import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
+import type { AreaWithId, LinkElement } from "@/types/types";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { Box, IconButton, Tooltip } from "@mui/material";
@@ -28,6 +30,7 @@ import * as R from "ramda";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  buildVariableViewParams,
   matchesSearchTerm,
   type DataType,
   type Frequency,
@@ -74,6 +77,7 @@ interface Props {
   setFrequency: (frequency: Frequency) => void;
   maxYear: number;
   studyId: string;
+  outputId: string;
   path: string;
   colHeaders: string[][];
   onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
@@ -81,10 +85,12 @@ interface Props {
   variablesMetadata: VariablesListDTO | null;
   itemType: OutputItemType;
   selectedItemId: string;
+  selectedItem: AreaWithId | LinkElement | undefined;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   selectedClusterId: string;
   onClusterSelect: (clusterId: string) => void;
+  canExportVariableView: boolean;
 }
 
 function ResultFilters({
@@ -98,6 +104,7 @@ function ResultFilters({
   setFrequency,
   maxYear,
   studyId,
+  outputId,
   path,
   colHeaders,
   onColHeadersChange,
@@ -105,10 +112,12 @@ function ResultFilters({
   variablesMetadata,
   itemType,
   selectedItemId,
+  selectedItem,
   selectedVariable,
   onVariableSelect,
   selectedClusterId,
   onClusterSelect,
+  canExportVariableView,
 }: Props) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -399,8 +408,24 @@ function ResultFilters({
                 <FilterListIcon />
               </IconButton>
             </Tooltip>
-            {/* TODO: Export functionality for variable per variable mode will be implemented later */}
-            {!isVariablePerVariable && <DownloadMatrixButton studyId={studyId} path={path} />}
+            {isVariablePerVariable && selectedItem ? (
+              <DownloadVariableViewButton
+                studyId={studyId}
+                outputId={outputId}
+                params={buildVariableViewParams(
+                  itemType,
+                  dataType,
+                  selectedClusterId,
+                  selectedItemId,
+                  selectedItem,
+                  selectedVariable,
+                  frequency,
+                )}
+                disabled={!canExportVariableView}
+              />
+            ) : (
+              <DownloadMatrixButton studyId={studyId} path={path} />
+            )}
           </Box>
         </Box>
       </CustomScrollbar>

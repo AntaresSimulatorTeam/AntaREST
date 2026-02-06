@@ -12,57 +12,46 @@
  * This file is part of the Antares project.
  */
 
-import { getMatrixFile, getRawFile } from "@/services/api/studies/raw";
-import { downloadFile } from "@/utils/fileUtils";
+import { exportVariableViewData } from "@/services/api/studies/outputs/variableViews";
+import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
 import type { StudyMetadata } from "@/types/types";
+import { downloadFile } from "@/utils/fileUtils";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
 import {
   EXPORT_FORMAT_OPTIONS,
   EXPORT_FORMAT_TO_OPTIONS,
   type ExportFormat,
-  type Options,
 } from "../utils/buttonOptions";
 
-export interface DownloadMatrixButtonProps {
+export interface DownloadVariableViewButtonProps {
   studyId: StudyMetadata["id"];
-  path: string;
+  outputId: string;
+  params: VariableViewParams;
   disabled?: boolean;
   label?: string;
 }
 
-const OPTIONS: Readonly<Options<ExportFormat | "raw">> = [
-  ...EXPORT_FORMAT_OPTIONS,
-  { label: (t) => t("matrix.export.format.raw"), value: "raw" },
-];
-
-function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
+function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
   const { t } = useTranslation();
-  const { studyId, path, disabled, label = t("global.export") } = props;
+  const { studyId, outputId, params, disabled, label = t("global.export") } = props;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async (format: ExportFormat | "raw") => {
-    if (!path) {
-      return;
-    }
-
-    if (format === "raw") {
-      const file = await getRawFile({ studyId, path });
-      return downloadFile(file, file.name);
-    }
-
+  const handleDownload = async (format: ExportFormat) => {
     const { extension, ...options } = EXPORT_FORMAT_TO_OPTIONS[format];
 
-    const matrixFile = await getMatrixFile({
-      ...options,
+    const blob = await exportVariableViewData({
       studyId,
-      path,
+      outputId,
+      params,
+      ...options,
     });
 
-    return downloadFile(matrixFile, `matrix_${studyId}_${path.replace("/", "_")}.${extension}`);
+    const filename = `variable_${params.variableName}_${params.frequency}.${extension}`;
+    downloadFile(blob, filename);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -70,10 +59,10 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DownloadButton options={OPTIONS} onClick={handleDownload} disabled={!path || disabled}>
+    <DownloadButton options={EXPORT_FORMAT_OPTIONS} onClick={handleDownload} disabled={disabled}>
       {label}
     </DownloadButton>
   );
 }
 
-export default DownloadMatrixButton;
+export default DownloadVariableViewButton;
