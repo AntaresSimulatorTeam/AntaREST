@@ -52,7 +52,7 @@ class TestArchiveDir:
         archive_path = tmp_path / "output.7z"
         run_calls = []
 
-        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/7z")
+        monkeypatch.setattr(archives, "_has_7z", lambda: True)
         monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
 
         archive_dir(src, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
@@ -64,7 +64,7 @@ class TestArchiveDir:
         archive_path = tmp_path / "output.7z"
         run_calls = []
 
-        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+        monkeypatch.setattr(archives, "_has_7z", lambda: False)
         monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
 
         archive_dir(src, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
@@ -133,7 +133,7 @@ class TestExtractArchiveFromPath:
         target_dir.mkdir()
         run_calls = []
 
-        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/7z")
+        monkeypatch.setattr(archives, "_has_7z", lambda: True)
         monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
 
         extract_archive_from_path(archive_path, target_dir)
@@ -150,7 +150,7 @@ class TestExtractArchiveFromPath:
         target_dir = tmp_path / "output"
         target_dir.mkdir()
 
-        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+        monkeypatch.setattr(archives, "_has_7z", lambda: False)
 
         extract_archive_from_path(archive_path, target_dir)
 
@@ -162,7 +162,7 @@ class TestExtractArchiveFromPath:
         target_dir.mkdir()
         run_calls = []
 
-        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/7z")
+        monkeypatch.setattr(archives, "_has_7z", lambda: True)
         monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
 
         extract_archive_from_path(archive_path, target_dir)
@@ -174,7 +174,7 @@ class TestExtractArchiveFromPath:
         target_dir = tmp_path / "output"
         target_dir.mkdir()
 
-        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+        monkeypatch.setattr(archives, "_has_7z", lambda: False)
 
         extract_archive_from_path(archive_path, target_dir)
 
@@ -197,7 +197,7 @@ class TestUnzip:
         target_dir.mkdir()
         run_calls = []
 
-        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/7z")
+        monkeypatch.setattr(archives, "_has_7z", lambda: True)
         monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
 
         unzip(target_dir, archive_path)
@@ -210,7 +210,7 @@ class TestUnzip:
         target_dir = tmp_path / "output"
         target_dir.mkdir()
 
-        monkeypatch.setattr(shutil, "which", lambda cmd: None)
+        monkeypatch.setattr(archives, "_has_7z", lambda: False)
 
         unzip(target_dir, archive_path)
 

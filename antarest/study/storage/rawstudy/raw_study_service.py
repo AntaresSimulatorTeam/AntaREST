@@ -26,7 +26,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.utils.archives import ArchiveFormat, extract_archive, extract_archive_from_path
+from antarest.core.utils.archives import ArchiveFormat, extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -293,6 +293,24 @@ class RawStudyService(AbstractStorageService):
         else:
             raise StudyDeletionNotAllowed(metadata.id)
 
+    def _extract_and_setup(self, study: RawStudy, study_path: Path, source: Path | BinaryIO) -> None:
+        study_path.mkdir()
+        try:
+            if isinstance(source, Path):
+                extract_archive_from_path(source, study_path)
+            else:
+                extract_archive_from_stream(source, study_path)
+            fix_study_root(study_path)
+            self.update_from_raw_meta(study, study_path=study_path)
+        except Exception:
+            shutil.rmtree(study_path)
+            raise
+        try:
+            self.checks_antares_web_compatibility(study)
+        except NotImplementedError as e:
+            raise StudyImportFailed(study.name or "Unknown Study", e.args[0])
+        study.path = str(study_path)
+
     def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
         """
         Import study in the directory of the study.
@@ -308,24 +326,7 @@ class RawStudyService(AbstractStorageService):
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         study_path = Path(metadata.path)
-        study_path.mkdir()
-
-        try:
-            extract_archive(stream, study_path)
-            fix_study_root(study_path)
-            self.update_from_raw_meta(metadata, study_path=study_path)
-
-        except Exception:
-            shutil.rmtree(study_path)
-            raise
-
-        try:
-            self.checks_antares_web_compatibility(metadata)
-        except NotImplementedError as e:
-            study_name = metadata.name or "Unknown Study"
-            raise StudyImportFailed(study_name, e.args[0])
-
-        metadata.path = str(study_path)
+        self._extract_and_setup(metadata, study_path, stream)
         return metadata
 
     @override
@@ -382,22 +383,7 @@ class RawStudyService(AbstractStorageService):
         workspace_path = self.config.get_workspace_path(workspace=study.workspace).resolve()
         if not study_path.is_relative_to(workspace_path):
             raise ValueError(f"Study path '{study_path}' is not within workspace '{workspace_path}'")
-        study_path.mkdir()
-        try:
-            extract_archive_from_path(archive_path, study_path)
-            fix_study_root(study_path)
-            self.update_from_raw_meta(study, study_path=study_path)
-        except Exception:
-            shutil.rmtree(study_path)
-            raise
-
-        try:
-            self.checks_antares_web_compatibility(study)
-        except NotImplementedError as e:
-            study_name = study.name or "Unknown Study"
-            raise StudyImportFailed(study_name, e.args[0])
-
-        study.path = str(study_path)
+        self._extract_and_setup(study, study_path, archive_path)
 
     def find_archive_path(self, study: Study) -> Path:
         """

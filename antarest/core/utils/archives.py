@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import functools
 import logging
 import os
 import shutil
@@ -24,6 +25,11 @@ import py7zr
 from antarest.core.exceptions import BadArchiveContent, ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
+
+
+@functools.cache
+def _has_7z() -> bool:
+    return shutil.which("7z") is not None
 
 
 class ArchiveFormat(StrEnum):
@@ -47,7 +53,7 @@ def archive_dir(
         )
     if target_archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
         # if 7z is available on the machine, uses it
-        if shutil.which("7z") is not None:
+        if _has_7z():
             logger.info("Using 7z to create archive")
             target_archive_path.unlink(missing_ok=True)
             try:
@@ -88,7 +94,7 @@ def extract_archive_from_path(archive_path: Path, target_dir: Path) -> None:
     if suffix not in {ArchiveFormat.SEVEN_ZIP, ArchiveFormat.ZIP}:
         raise BadArchiveContent(f"Unsupported archive format: {suffix}")
 
-    if shutil.which("7z") is not None:
+    if _has_7z():
         logger.info("Using 7z CLI to extract archive %s", archive_path)
         try:
             run(["7z", "x", str(archive_path), f"-o{target_dir}", "-y"], check=True)
@@ -112,15 +118,8 @@ def extract_archive_from_path(archive_path: Path, target_dir: Path) -> None:
 
 
 def unzip(dir_path: Path, zip_path: Path) -> None:
-    if shutil.which("7z") is not None:
-        logger.info("Using 7z CLI to unzip %s", zip_path)
-        try:
-            run(["7z", "x", str(zip_path), f"-o{dir_path}", "-y"], check=True)
-        except CalledProcessError as e:
-            raise BadArchiveContent(f"7z extraction failed for {zip_path}") from e
-    else:
-        with zipfile.ZipFile(zip_path, mode="r") as zipf:
-            zipf.extractall(dir_path)
+    """Extract an archive to ``dir_path`` and delete the archive file afterwards."""
+    extract_archive_from_path(zip_path, dir_path)
     zip_path.unlink()
 
 
@@ -145,12 +144,13 @@ def read_in_zip(
             tmp_dir.cleanup()
 
 
-def extract_archive(stream: BinaryIO, target_dir: Path) -> None:
+def extract_archive_from_stream(stream: BinaryIO, target_dir: Path) -> None:
     """
     Extract an archive from a stream to a given destination.
 
-    The stream is written to a temporary file, then extracted using
-    ``extract_archive_from_path`` (which uses native 7z CLI when available).
+    ZIP archives are extracted directly from the stream.
+    7z archives are written to a temporary file first, then extracted
+    using ``extract_archive_from_path`` (which uses native 7z CLI when available).
 
     Args:
         stream: The stream containing the archive.
@@ -165,19 +165,21 @@ def extract_archive(stream: BinaryIO, target_dir: Path) -> None:
     stream.seek(0)
 
     if file_format[:4] == b"PK\x03\x04":
-        suffix = ArchiveFormat.ZIP
+        try:
+            with zipfile.ZipFile(stream, mode="r") as zf:
+                zf.extractall(target_dir)
+        except zipfile.BadZipFile as e:
+            raise BadArchiveContent("Unsupported ZIP format") from e
     elif file_format[:2] == b"7z":
-        suffix = ArchiveFormat.SEVEN_ZIP
+        with tempfile.NamedTemporaryFile(suffix=ArchiveFormat.SEVEN_ZIP, delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+            shutil.copyfileobj(stream, tmp)
+        try:
+            extract_archive_from_path(tmp_path, target_dir)
+        finally:
+            tmp_path.unlink(missing_ok=True)
     else:
         raise BadArchiveContent
-
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        tmp_path = Path(tmp.name)
-        shutil.copyfileobj(stream, tmp)
-    try:
-        extract_archive_from_path(tmp_path, target_dir)
-    finally:
-        tmp_path.unlink(missing_ok=True)
 
 
 def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> Tuple[Path, Any]:

@@ -23,7 +23,7 @@ from typing_extensions import override
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive_from_stream, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -117,7 +117,7 @@ class FileOutputStorage(IOutputStorage):
                     path_output = Path(str(path_output) + f"{ArchiveFormat.ZIP}")
                     shutil.copyfile(output, path_output)
             else:
-                extract_archive(output, path_output)
+                extract_archive_from_stream(output, path_output)
 
             stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
             fix_study_root(path_output)
