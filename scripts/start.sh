@@ -48,7 +48,7 @@ fi
 
 if [ -z "$1" ] ; then
   sh $CUR_DIR/pre-start.sh
-  uv run gunicorn --config $BASE_DIR/conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
+  gunicorn --config $BASE_DIR/conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 elif [ "$use_uvicorn" = true ]; then
   sh $CUR_DIR/pre-start.sh
   pids=() # Initialize empty array to store background process IDs
@@ -56,7 +56,7 @@ elif [ "$use_uvicorn" = true ]; then
   do
     # we still use gunicorn in that case to restart workers in case they are killed,
     # although each gunicorn instance has only one worker
-    uv run gunicorn --worker-class=uvicorn.workers.UvicornWorker \
+    gunicorn --worker-class=uvicorn.workers.UvicornWorker \
              --bind=0.0.0.0:$((5000 + $i)) \
              --workers=1 \
              --log-level info \
@@ -76,7 +76,7 @@ else
   case "$1" in
     celery-beat)
       echo "Starting Celery Beat scheduler..."
-      exec uv run celery -A antarest.maintenance.app:celery_app beat \
+      exec celery -A antarest.maintenance.app:celery_app beat \
         --loglevel=info \
         --pidfile=/tmp/celerybeat.pid
       ;;
@@ -84,7 +84,7 @@ else
       echo "Starting Celery Worker..."
       CONCURRENCY="${CELERY_CONCURRENCY:-1}"
       POOL="${CELERY_POOL:-solo}"
-      exec uv run celery -A antarest.maintenance.app:celery_app worker \
+      exec celery -A antarest.maintenance.app:celery_app worker \
         --loglevel=info \
         --concurrency=$CONCURRENCY \
         --pool=$POOL \
@@ -93,7 +93,7 @@ else
       ;;
     *)
       # Default: run antarest module (watcher, auto_archiver, etc.)
-      uv run python $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
+      python $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
       ;;
   esac
 fi

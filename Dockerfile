@@ -19,5 +19,6 @@ COPY ./alembic.ini /alembic.ini
 
 # Install dependencies using uv
 RUN uv sync --frozen --no-dev
+ENV PATH="/.venv/bin:$PATH"
 
 ENTRYPOINT ["./scripts/start.sh"]
