@@ -165,7 +165,7 @@ dev = [
     "pyinstaller-hooks-contrib==2025.10",
     # Extra requirements installed by `mypy --install-types`.
     # IMPORTANT: Make sure the versions of these typing libraries match the versions
-    # of the corresponding implementation libraries used in production (in `requirements.txt`).
+    # of the corresponding implementation libraries used in production (in `pyproject.toml`).
     "pandas-stubs~=2.3.3",
     "pyarrow-stubs~=20.0.0",
     "types-openpyxl~=3.1.5",

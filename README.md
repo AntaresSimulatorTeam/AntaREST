@@ -83,19 +83,10 @@ Optional (for specific deployment modes):
    cd AntaREST
    ```
 
-2. **Set up Python environment**
+2. **Install Python dependencies**
 
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   python3 -m pip install --upgrade pip
-   ```
-
-3. **Install Python dependencies**
-
-   ```bash
-   pip install -e .                     # Install package in editable mode
-   pip install -r requirements-dev.txt  # Install development dependencies
+   uv sync  # Install all dependencies including dev
    ```
 
 4. **Install frontend dependencies**
