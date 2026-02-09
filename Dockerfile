@@ -18,7 +18,9 @@ COPY ./alembic /alembic
 COPY ./alembic.ini /alembic.ini
 
 # Install dependencies using uv
-RUN uv sync --frozen --no-dev
+ENV UV_HTTP_TIMEOUT=120
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 ENV PATH="/.venv/bin:$PATH"
 
 ENTRYPOINT ["./scripts/start.sh"]
