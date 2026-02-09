@@ -1,7 +1,8 @@
 FROM python:3.11-slim-bullseye
 
-# RUN apt update && apt install -y procps gdb
-RUN dnf install -y p7zip p7zip-plugins && dnf clean all
+# RUN apt-get update && apt-get install -y procps gdb
+RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full \
+    && rm -rf /var/lib/apt/lists/*
 
 # Add the `ls` alias to simplify debugging
 RUN echo "alias ll='/bin/ls -l --color=auto'" >> /root/.bashrc
