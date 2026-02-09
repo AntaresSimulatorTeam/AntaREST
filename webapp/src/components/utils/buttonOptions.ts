@@ -13,6 +13,7 @@
  */
 
 import type { TableExportFormatValue } from "@/services/api/studies/raw/types";
+import type { Options } from "../buttons/SplitButton";
 
 export type ExportFormat =
   | "csv"

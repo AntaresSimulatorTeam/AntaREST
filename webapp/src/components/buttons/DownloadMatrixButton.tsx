@@ -21,8 +21,8 @@ import {
   EXPORT_FORMAT_OPTIONS,
   EXPORT_FORMAT_TO_OPTIONS,
   type ExportFormat,
-  type Options,
 } from "../utils/buttonOptions";
+import type { Options } from "./SplitButton";
 
 export interface DownloadMatrixButtonProps {
   studyId: StudyMetadata["id"];
