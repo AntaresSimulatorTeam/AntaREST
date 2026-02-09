@@ -9,7 +9,7 @@ ENV ANTAREST_CONF /resources/application.yaml
 
 RUN mkdir -p examples/studies
 
-COPY ./pyproject.toml ./uv.lock ./LICENSE /
+COPY ./pyproject.toml ./uv.lock ./LICENSE ./README.md /
 COPY ./conf/* /conf/
 COPY ./antarest /antarest
 COPY ./resources /resources
