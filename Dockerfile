@@ -19,9 +19,8 @@ COPY ./alembic.ini /alembic.ini
 
 # Install dependencies using uv
 ENV UV_HTTP_TIMEOUT=120
-ENV UV_CONCURRENT_DOWNLOADS=4
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+ENV UV_INDEX_URL=https://devin-depot.rte-france.com/repository/pypi-all/simple/
+RUN uv sync --frozen --no-dev
 ENV PATH="/.venv/bin:$PATH"
 
 ENTRYPOINT ["./scripts/start.sh"]
