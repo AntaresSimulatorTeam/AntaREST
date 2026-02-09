@@ -57,6 +57,7 @@ interface ResultMatrixViewerProps {
   setFrequency: (frequency: Frequency) => void;
   output: PartialStudyOutput | undefined;
   studyId: string;
+  outputId: string;
   path: string;
   onColHeadersChange: (headers: string[][], indices: number[]) => void;
   onToggleFilter: () => void;
@@ -94,6 +95,7 @@ function ResultMatrixViewer({
   setFrequency,
   output,
   studyId,
+  outputId,
   path,
   onColHeadersChange,
   onToggleFilter,
@@ -131,6 +133,7 @@ function ResultMatrixViewer({
             setFrequency={setFrequency}
             maxYear={output?.nbyears || MAX_YEAR}
             studyId={studyId}
+            outputId={outputId}
             path={path}
             colHeaders={matrixRes.data?.columns ?? resultColHeaders}
             onColHeadersChange={onColHeadersChange}
@@ -138,10 +141,14 @@ function ResultMatrixViewer({
             variablesMetadata={variablesMetadata}
             itemType={itemType}
             selectedItemId={selectedItemId}
+            selectedItem={selectedItem}
             selectedVariable={selectedVariable}
             onVariableSelect={onVariableSelect}
             selectedClusterId={selectedClusterId}
             onClusterSelect={onClusterSelect}
+            canExportVariableView={
+              variableViewDataRes.status === "fulfilled" && !!variableViewDataRes.data
+            }
           />
         </Box>
         <Box
