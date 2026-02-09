@@ -25,7 +25,7 @@ from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO
 from antarest.study.output.filestudy.extract_metadata import extract_metadata
 from antarest.study.output.lfs.lfs import ILargeFileStorage
 from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.output_storage import IOutputStorage, OutputStorageType
+from antarest.study.output.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
 from antarest.study.output.storage.repository import OutputMetadata, OutputMetadataRepository
 from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
@@ -170,14 +170,18 @@ class V2OutputStorage(IOutputStorage):
         return [_metadata_to_sim_result(m) for m in outputs]
 
     @override
+    def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+        return [
+            BasicOutputMetadata(id=o.output_name, in_study=False) for o in self._metadata_repository.get_all(study_id)
+        ]
+
+    @override
     def get_simulations(self, study_id: str) -> dict[str, Simulation]:
         # TODO
         return {}
 
     @override
-    def copy_outputs(
-        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
-    ) -> None:
+    def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
         # TODO
         pass
 

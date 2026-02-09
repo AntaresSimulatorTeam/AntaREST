@@ -9,16 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import dataclasses
 import logging
 import shutil
 import tempfile
 import time
-from dataclasses import dataclass
 from datetime import datetime, timezone
-from enum import Enum
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, List, Optional, Sequence, Literal, TypeAlias
+from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -26,7 +23,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
+from antarest.core.exceptions import StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
@@ -53,42 +50,6 @@ from antarest.study.storage.utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def _find_archived_output(outputs_root: Path, output_name: str) -> Path | None:
-    possible_paths = [outputs_root / f"{output_name}{ext}" for ext in ArchiveFormat]
-    return next((path.exists() for path in possible_paths), None)
-
-
-def _copy_output(src_outputs_root: Path, output_name: str, dest_outputs_root: Path) -> None:
-    """
-    Copies one output from one "outputs" dir to another, keeping the archived state unchanged.
-    """
-    src_folder = src_outputs_root / output_name
-
-    if src_folder.exists():
-        shutil.copytree(src_folder, dest_outputs_root / output_name)
-    elif archive_path := _find_archived_output(src_outputs_root, output_name):
-        # The src output could be archived
-        dest_outputs_root.mkdir(exist_ok=True)
-        dest_path = dest_outputs_root
-        shutil.copy(archive_path, dest_path)
-    else:
-        raise IncorrectArgumentsForCopy(f"Output folder {output_name} not found in {src_outputs_root}")
-
-
-OutputSelection: TypeAlias = Literal["all", "none"] | list[str]
-
-
-def copy_output_folders(src_output_path: Path, dest_output_path: Path, selection: OutputSelection) -> None:
-    match selection:
-        case "all":
-            shutil.copytree(src_output_path, dest_output_path)
-        case "none":
-            return
-        case selected_outputs:
-            for output_name in selected_outputs:
-                _copy_output(src_output_path, output_name, dest_output_path)
 
 
 class RawStudyService(AbstractStorageService):
@@ -259,7 +220,6 @@ class RawStudyService(AbstractStorageService):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        outputs: OutputSelection,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -269,7 +229,6 @@ class RawStudyService(AbstractStorageService):
             dest_study_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
-            outputs: Defines outputs to be copied.
 
         Returns:
             The newly created study.
@@ -282,8 +241,6 @@ class RawStudyService(AbstractStorageService):
         dest_path = self.get_study_path(dest_study)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
-
-        copy_output_folders(src_path / "output", dest_path / "output", outputs)
 
         # TODO: now we create the config too early without the outputs, maybe ?
         study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
@@ -372,8 +329,6 @@ class RawStudyService(AbstractStorageService):
         self,
         metadata: Study,
         dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         try:

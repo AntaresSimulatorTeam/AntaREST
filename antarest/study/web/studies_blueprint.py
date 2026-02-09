@@ -350,7 +350,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             group_ids=group_ids,
             use_task=use_task,
             destination_folder=PurePosixPath(destination_folder),
-            outputs=output_selection,
+            outputs_selection=output_selection,
         )
 
         return task_id

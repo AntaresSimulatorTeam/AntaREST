@@ -20,7 +20,7 @@ from uuid import uuid4
 import pandas as pd
 from typing_extensions import override
 
-from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
+from antarest.core.exceptions import BadOutputError, IncorrectArgumentsForCopy, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unarchive, unzip
@@ -34,7 +34,7 @@ from antarest.study.model import (
 )
 from antarest.study.output.aggregator_management import AggregatorManager
 from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.output_storage import IOutputStorage, OutputStorageType
+from antarest.study.output.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
 from antarest.study.output.utils import QueryFileType
 from antarest.study.output.variables_management import extract_variables_list
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
@@ -45,7 +45,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.rawstudy.raw_study_service import copy_output_folders
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -81,6 +80,28 @@ class IFileOutputsProvider(ABC):
 
     @abstractmethod
     def get_outputs(self, study_id: str) -> FileStudyOutputs: ...
+
+
+def _find_archived_output(outputs_root: Path, output_name: str) -> Path | None:
+    possible_paths = [outputs_root / f"{output_name}{ext}" for ext in ArchiveFormat]
+    return next((path for path in possible_paths if path.exists()), None)
+
+
+def _copy_output(src_outputs_root: Path, output_name: str, dest_outputs_root: Path) -> None:
+    """
+    Copies one output from one "outputs" dir to another, keeping the archived state unchanged.
+    """
+    src_folder = src_outputs_root / output_name
+
+    if src_folder.exists():
+        shutil.copytree(src_folder, dest_outputs_root / output_name)
+    elif archive_path := _find_archived_output(src_outputs_root, output_name):
+        # The src output could be archived
+        dest_outputs_root.mkdir(exist_ok=True)
+        dest_path = dest_outputs_root
+        shutil.copy(archive_path, dest_path)
+    else:
+        raise IncorrectArgumentsForCopy(f"Output folder {output_name} not found in {src_outputs_root}")
 
 
 class InStudyFileOutputStorage(IOutputStorage):
@@ -203,14 +224,21 @@ class InStudyFileOutputStorage(IOutputStorage):
         return study_outputs.get_file_study().config.outputs
 
     @override
-    def copy_outputs(
-        self,
-        src_study_id: str,
-        target_study_id: str,
-    ) -> None:
+    def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+        """
+        Get the list of output for a study.
+        """
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        return [
+            BasicOutputMetadata(id=o.name, in_study=True)
+            for o in study_outputs.get_file_study().config.outputs.values()
+        ]
+
+    @override
+    def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
         src_outputs_dir = self._outputs_provider.get_outputs(src_study_id).outputs_path
         target_outputs_dir = self._outputs_provider.get_outputs(target_study_id).outputs_path
-        copy_output_folders(src_outputs_dir, target_outputs_dir, with_outputs, output_ids)
+        _copy_output(src_outputs_dir, output_id, target_outputs_dir)
 
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:

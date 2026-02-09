@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import itertools
 import logging
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, Optional, Sequence
+from typing import Any, BinaryIO, Callable, Iterable, Optional, Sequence
 
 import pandas as pd
 from fastapi import HTTPException
@@ -62,7 +63,7 @@ from antarest.study.output.output_model import (
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
-from antarest.study.output.output_storage import IOutputStorage, OutputStorageType
+from antarest.study.output.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
 from antarest.study.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
@@ -844,14 +845,17 @@ class OutputService:
             custom_event_messages=None,
         )
 
-    def copy_outputs(
-        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
-    ) -> None:
+    def copy_output(self, src_study_id: str, target_study_id: str, output_name: str) -> None:
+        """
+        Copies one output from src_study_id to target_study_id.
+        """
         self._studies_repository.assert_permission(src_study_id, StudyPermissionType.READ)
         self._studies_repository.assert_permission(target_study_id, StudyPermissionType.WRITE)
-        for s in self._storages:
-            s.copy_outputs(src_study_id, target_study_id, with_outputs, output_ids)
+        self._find_output_storage(src_study_id, output_name).copy_output(src_study_id, target_study_id, output_name)
 
     def write_output_to_dir(self, study_id: str, output_id: str, outputs_dir: Path) -> None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         self._find_output_storage(study_id, output_id).write_output_to_dir(study_id, output_id, outputs_dir)
+
+    def list_outputs(self, study_id: str) -> Iterable[BasicOutputMetadata]:
+        return itertools.chain((s.list_outputs(study_id) for s in self._storages))

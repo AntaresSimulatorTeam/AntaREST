@@ -11,9 +11,10 @@
 # This file is part of the Antares project.
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import BinaryIO, Iterator, List, Optional, Sequence
+from typing import BinaryIO, Iterator, Optional, Sequence
 
 import pandas as pd
 
@@ -22,7 +23,6 @@ from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
-from antarest.study.storage.study_storage import OutputSelection
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,21 @@ logger = logging.getLogger(__name__)
 class OutputStorageType(StrEnum):
     IN_STUDY_FILE_TREE = "IN_STUDY_FILE_TREE"
     V2 = "V2"
+
+
+@dataclass(frozen=True)
+class BasicOutputMetadata:
+    """
+    Simplest form of metadata for a study output.
+
+    Attributes:
+        id:       unique identifier of the output
+        in_study: whether the output is stored in the study file tree. Here the abstraction is clearly leaky,
+                  but we need it for compatibility with existing file studies.
+    """
+
+    id: str
+    in_study: bool
 
 
 class IOutputStorage(ABC):
@@ -68,21 +83,27 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_study_sim_result(self, study_id: str) -> List[StudySimResultDTO]:
+    def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+        """
+        Get the list of outputs for a study.
+        """
+
+    @abstractmethod
+    def get_study_sim_result(self, study_id: str) -> list[StudySimResultDTO]:
         """
         Get the list of output for a study
         """
 
     @abstractmethod
-    def copy_outputs(self, src_study_id: str, target_study_id: str, outputs: OutputSelection) -> None:
+    def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
         """
-        Copies outputs to another study.
+        Copies one output to another study. Note that the copied output will be created in this storage.
         """
 
     @abstractmethod
     def get_simulations(self, study_id: str) -> dict[str, Simulation]:
         """
-        Get the list of output for a study.
+        Get the list of outputs for a study.
         TODO: More or less a duplicate of get_study_sim_result ...
         """
 
