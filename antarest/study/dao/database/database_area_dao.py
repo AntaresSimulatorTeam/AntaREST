@@ -40,6 +40,7 @@ from antarest.study.dao.database.models.area import (
     WIND_TABLE,
 )
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
+from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -92,7 +93,6 @@ class DatabaseAreaDao(AreaDao):
 
         Returns:
             The list of areas with their basic information.
-            Note: thermals field is None for now (will be implemented later)
         """
         study_id = self.get_study_id()
         session = self.get_session()
@@ -100,9 +100,12 @@ class DatabaseAreaDao(AreaDao):
         stmt = select(AREA_TABLE.c.area_id, AREA_TABLE.c.area_name).where(AREA_TABLE.c.study_id == study_id)
         result = session.execute(stmt)
 
+        thermal_clusters = self.get_impl().get_all_thermals()
         areas_info = []
         for row in result:
-            areas_info.append(AreaInfo(id=row.area_id, name=row.area_name, thermals=None))
+            area_id = row.area_id
+            area_thermal_clusters = list(thermal_clusters.get(row.area_id, {}).values())
+            areas_info.append(AreaInfo(id=area_id, name=row.area_name, thermals=area_thermal_clusters))
 
         return areas_info
 
@@ -305,29 +308,18 @@ class DatabaseAreaDao(AreaDao):
 
         r, g, b = area_ui_data.color_rgb
 
-        # Check if UI for this layer already exists
-        stmt_check = select(AREA_UI_TABLE.c.layer_id).where(
-            (AREA_UI_TABLE.c.study_id == study_id)
-            & (AREA_UI_TABLE.c.area_id == area_id)
-            & (AREA_UI_TABLE.c.layer_id == layer)
-        )
-        existing_ui = session.execute(stmt_check).fetchone()
-
-        if existing_ui:
-            # Update existing UI
-            stmt_update = (
-                update(AREA_UI_TABLE)
-                .where(
-                    (AREA_UI_TABLE.c.study_id == study_id)
-                    & (AREA_UI_TABLE.c.area_id == area_id)
-                    & (AREA_UI_TABLE.c.layer_id == layer)
-                )
-                .values(x=area_ui_data.x, y=area_ui_data.y, color_r=r, color_g=g, color_b=b)
-            )
-            session.execute(stmt_update)
-            session.commit()
-        else:
-            self._create_new_ui(area_id, layer, area_ui_data)
+        values = {
+            "study_id": study_id,
+            "area_id": area_id,
+            "layer_id": layer,
+            "x": area_ui_data.x,
+            "y": area_ui_data.y,
+            "color_r": r,
+            "color_g": g,
+            "color_b": b,
+        }
+        upsert_one(session, AREA_UI_TABLE, values)
+        session.commit()
 
     @override
     def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
@@ -462,21 +454,16 @@ class DatabaseAreaDao(AreaDao):
         return session.execute(stmt).fetchone()
 
     def _save_matrix(self, area_id: str, table: Table, matrix_id: str) -> None:
-        row = self._get_matrix_row(area_id, table)
         session = self.get_session()
         study_id = self.get_study_id()
-        if not row:
-            # We must check if the area exist or not
-            validate_area_exists(session, study_id, area_id)
-            stmt_insert = insert(table).values(study_id=self.get_study_id(), area_id=area_id, matrix_id=matrix_id)
-            session.execute(stmt_insert)
-        else:
-            stmt_update = (
-                update(table)
-                .where((table.c.study_id == study_id) & (table.c.area_id == area_id))
-                .values(matrix_id=matrix_id)
-            )
-            session.execute(stmt_update)
+
+        validate_area_exists(session, study_id, area_id)
+        values = {
+            "study_id": study_id,
+            "area_id": area_id,
+            "matrix_id": matrix_id,
+        }
+        upsert_one(session, table, values)
         session.commit()
 
     @override

@@ -180,3 +180,12 @@ def suppress_exception(
 
 def current_time() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+
+def remove_first_match(elements: list[T], predicate: Callable[[T], bool]) -> None:
+    """
+    Removes 1st element matching the predicate
+    """
+    elt = next((elt for elt in elements if predicate(elt)), None)
+    if elt:
+        elements.remove(elt)

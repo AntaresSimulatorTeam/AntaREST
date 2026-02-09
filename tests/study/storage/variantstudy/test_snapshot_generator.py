@@ -34,6 +34,7 @@ from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.service import VariantStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -774,7 +775,8 @@ class TestSnapshotGenerator:
         )
 
         # Create the study in database
-        root_study = raw_study_service.create(root_study)
+        context = variant_study_service.command_factory.command_context
+        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(root_study)
 
         # Create some outputs with a "simulation.log" file
         for output_name in ["20230802-1425eco", "20230802-1628eco"]:
