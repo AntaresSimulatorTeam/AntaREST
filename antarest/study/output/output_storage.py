@@ -22,6 +22,7 @@ from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
+from antarest.study.storage.study_storage import OutputSelection
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +74,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def copy_outputs(
-        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
-    ) -> None:
+    def copy_outputs(self, src_study_id: str, target_study_id: str, outputs: OutputSelection) -> None:
         """
         Copies outputs to another study.
         """

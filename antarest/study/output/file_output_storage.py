@@ -204,7 +204,9 @@ class InStudyFileOutputStorage(IOutputStorage):
 
     @override
     def copy_outputs(
-        self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
+        self,
+        src_study_id: str,
+        target_study_id: str,
     ) -> None:
         src_outputs_dir = self._outputs_provider.get_outputs(src_study_id).outputs_path
         target_outputs_dir = self._outputs_provider.get_outputs(target_study_id).outputs_path

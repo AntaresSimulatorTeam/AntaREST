@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
-from typing import Optional, Sequence
+from typing import Optional, Sequence, TypeAlias, Literal
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -20,6 +20,9 @@ from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
+
+
+OutputSelection: TypeAlias = Literal["all", "none"] | list[str]
 
 
 class IStudyStorage(ABC):
@@ -68,6 +71,7 @@ class IStudyStorage(ABC):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
+        outputs: OutputSelection,
     ) -> Study:
         """
         Create a new study by copying a reference study.
@@ -150,6 +154,8 @@ class IStudyStorage(ABC):
         self,
         metadata: Study,
         dst_path: Path,
+        outputs: bool = True,
+        output_list_filter: list[str] | None = None,
         denormalize: bool = True,
     ) -> None:
         """

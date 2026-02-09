@@ -16,6 +16,7 @@ from typing_extensions import override
 from antarest.study.output.output_service import OutputService
 from antarest.study.service import IOutputsAccess
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
+from antarest.study.storage.study_storage import OutputSelection
 
 
 def adapt_output_service_to_study_service(output_service: OutputService) -> IOutputsAccess:
@@ -29,18 +30,18 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
             return output_service.get_simulations(study_id)
 
         @override
-        def copy_outputs(
-            self, src_study_id: str, target_study_id: str, with_outputs: bool | None, output_ids: list[str]
-        ) -> None:
-            return output_service.copy_outputs(src_study_id, target_study_id, with_outputs, output_ids)
+        def copy_out_of_study_outputs(self, src_study_id: str, target_study_id: str, outputs: OutputSelection) -> None:
+            return output_service.copy_outputs(src_study_id, target_study_id, outputs)
 
         @override
-        def delete_outputs(self, study_id: str) -> None:
+        def delete_out_of_study_outputs(self, study_id: str) -> None:
             for output in output_service.get_study_sim_result(study_id):
                 output_service.delete_output(study_id, output.name)
 
         @override
-        def write_outputs_to_dir(self, study_id: str, parent_dir: Path, outputs: list[str] | None = None) -> None:
+        def write_out_of_study_outputs_to_dir(
+            self, study_id: str, parent_dir: Path, outputs: list[str] | None = None
+        ) -> None:
             if outputs is None:
                 outputs = [o.name for o in output_service.get_study_sim_result(study_id)]
             for output in outputs:

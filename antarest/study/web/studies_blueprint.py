@@ -38,6 +38,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
+from antarest.study.storage.study_storage import OutputSelection
 
 logger = logging.getLogger(__name__)
 
@@ -277,6 +278,30 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         # returns the task ID
         return study_service.upgrade_study(uuid, target_version)
 
+    def _output_selection(with_outputs: bool | None, output_ids: list[str]) -> OutputSelection:
+        """
+        Translates API input to OutputSelection type.
+
+        Output copy behavior:
+            - If `with_outputs` is True and `output_ids` are specified: only the specified outputs are copied.
+            - If `with_outputs` is True and `output_ids` is empty: all outputs are copied.
+            - If `with_outputs` is False and `output_ids` are specified: an error is raised (incoherent configuration).
+            - If `with_outputs` is False: no outputs are copied
+            - If `with_outputs` is None and `output_ids` are specified: outputs will be copied; behaves like `with_outputs=True`.
+            - If `with_outputs` is None and `output_ids` is empty: no outputs are copied.
+        """
+        if with_outputs is False and output_ids:
+            raise ValueError("Cannot specify output IDs when copying outputs is disabled.")
+        if with_outputs:
+            if output_ids:
+                return output_ids
+            else:
+                return "all"
+        elif with_outputs is None:
+            return output_ids if output_ids else "none"
+        else:
+            return "none"
+
     @bp.post(
         "/studies/{uuid}/copy",
         status_code=HTTPStatus.CREATED,
@@ -317,14 +342,15 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = validate_study_name(escape(study_name))
 
+        output_selection = _output_selection(with_outputs, output_ids)
+
         task_id = study_service.copy_study(
             src_uuid=uuid_sanitized,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
-            with_outputs=with_outputs,
             use_task=use_task,
             destination_folder=PurePosixPath(destination_folder),
-            output_ids=output_ids,
+            outputs=output_selection,
         )
 
         return task_id

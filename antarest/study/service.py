@@ -140,6 +140,7 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.study_storage import OutputSelection
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
@@ -502,7 +503,7 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy_out_of_study_outputs(self, src_study_id: str, target_study_id: str, output_ids: list[str]) -> None:
+    def copy_out_of_study_outputs(self, src_study_id: str, target_study_id: str, outputs: OutputSelection) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -510,9 +511,7 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def write_out_of_study_outputs_to_dir(
-        self, study_id: str, outputs_dir: Path, outputs: list[str] | None = None
-    ) -> None:
+    def write_out_of_study_outputs_to_dir(self, study_id: str, outputs_dir: Path, outputs: OutputSelection) -> None:
         raise NotImplementedError()
 
 
@@ -576,19 +575,19 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
-        self._output_service: IOutputsAccess | None = None
+        self._output_access: IOutputsAccess | None = None
 
-    def register_output_service(self, output_service: IOutputsAccess) -> None:
+    def register_output_access(self, output_access: IOutputsAccess) -> None:
         """
         Study and output features have some dependencies on each other, therefore we need to
         register one of them after construction.
         """
-        self._output_service = output_service
+        self._output_access = output_access
 
     def _get_output_service(self) -> IOutputsAccess:
-        if not self._output_service:
+        if not self._output_access:
             raise RuntimeError("Output service not registered")
-        return self._output_service
+        return self._output_access
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -1190,8 +1189,7 @@ class StudyService:
         group_ids: List[str],
         use_task: bool,
         destination_folder: PurePosixPath,
-        output_ids: List[str],
-        with_outputs: bool | None,
+        outputs: OutputSelection,
     ) -> str:
         """
         Create a new study by copying a reference study.
@@ -1212,14 +1210,10 @@ class StudyService:
             group_ids: A list of groups to assign to the destination study.
             use_task: indicate if the task job service should be used
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
-            output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether to copy the outputs as well.
-
+            outputs: selection of outputs to copy
         Returns:
             The newly created study.
         """
-        if output_ids and with_outputs is False:
-            raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
 
         src_study = self.get_study(src_uuid)
         assert_permission(src_study, StudyPermissionType.READ)
@@ -1234,6 +1228,7 @@ class StudyService:
                 dest_study_name,
                 group_ids,
                 destination_folder,
+                outputs,
             )
 
             study.owner = owner
@@ -1242,14 +1237,13 @@ class StudyService:
             self._save_study(study)
             self.storage_service.raw_study_service.normalize_study(study)
 
-            self._get_output_service().copy_outputs(origin_study.id, study.id, with_outputs, output_ids)
+            self._get_output_service().copy_out_of_study_outputs(origin_study.id, study.id, outputs)
 
             # Copying all jobs associated with the study
-            jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
-
-            new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
-
-            if new_jobs:
+            # TODO: this actually never worked when copying all outputs ?
+            if isinstance(outputs, list):
+                jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, outputs)
+                new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
                 self.job_result_repository.save_all(new_jobs)
 
             self.event_bus.push(

@@ -207,7 +207,7 @@ def build_output_service(
         cache=cache,
     )
 
-    study_service.register_output_service(adapt_output_service_to_study_service(output_service))
+    study_service.register_output_access(adapt_output_service_to_study_service(output_service))
 
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))

@@ -57,7 +57,8 @@ from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService, copy_output_folders
+from antarest.study.storage.study_storage import OutputSelection
 from antarest.study.storage.utils import (
     assert_permission,
     is_managed,
@@ -775,6 +776,7 @@ class VariantStudyService(AbstractStorageService):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
+        outputs: OutputSelection,
     ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
@@ -799,6 +801,12 @@ class VariantStudyService(AbstractStorageService):
         src_path = file_study.config.path
         dest_path = dest_study.path
         shutil.copytree(src_path, dest_path)
+
+        src_path = file_study.config.output_path
+        if src_path.exists():
+            dest_output_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
+            copy_output_folders(src_path, dest_output_path, outputs)
+
         update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study
 

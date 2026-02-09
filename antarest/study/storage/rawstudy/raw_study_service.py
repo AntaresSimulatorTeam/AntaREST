@@ -9,15 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import dataclasses
 import logging
 import shutil
 import tempfile
 import time
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from enum import Enum
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, List, Optional, Sequence
+from typing import BinaryIO, List, Optional, Sequence, Literal, TypeAlias
 from uuid import uuid4
+from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -52,31 +55,40 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
-def copy_output_folders(
-    src_output_path: Path, dest_output_path: Path, with_outputs: bool | None, selected_outputs: List[str]
-) -> None:
-    if with_outputs or (with_outputs is None and selected_outputs):
-        if selected_outputs:  # if some outputs are selected, we copy only them
-            for file_name in selected_outputs:
-                src_folder = src_output_path / file_name
+def _find_archived_output(outputs_root: Path, output_name: str) -> Path | None:
+    possible_paths = [outputs_root / f"{output_name}{ext}" for ext in ArchiveFormat]
+    return next((path.exists() for path in possible_paths), None)
 
-                if src_folder.exists():
-                    shutil.copytree(src_folder, dest_output_path / file_name)
-                else:
-                    # The src output could be archived
-                    zip_path = src_output_path / f"{file_name}.zip"
-                    seven_zip_path = src_output_path / f"{file_name}.7z"
-                    for archive_path in [zip_path, seven_zip_path]:
-                        if archive_path.exists():
-                            dest_output_path.mkdir(exist_ok=True)
-                            dest_path = dest_output_path / f"{file_name}{archive_path.suffix}"
-                            shutil.copy(archive_path, dest_path)
-                            return
 
-                    raise IncorrectArgumentsForCopy(f"Output folder {file_name} not found in {src_output_path}")
+def _copy_output(src_outputs_root: Path, output_name: str, dest_outputs_root: Path) -> None:
+    """
+    Copies one output from one "outputs" dir to another, keeping the archived state unchanged.
+    """
+    src_folder = src_outputs_root / output_name
 
-        else:  # we copy all the outputs if none is selected
+    if src_folder.exists():
+        shutil.copytree(src_folder, dest_outputs_root / output_name)
+    elif archive_path := _find_archived_output(src_outputs_root, output_name):
+        # The src output could be archived
+        dest_outputs_root.mkdir(exist_ok=True)
+        dest_path = dest_outputs_root
+        shutil.copy(archive_path, dest_path)
+    else:
+        raise IncorrectArgumentsForCopy(f"Output folder {output_name} not found in {src_outputs_root}")
+
+
+OutputSelection: TypeAlias = Literal["all", "none"] | list[str]
+
+
+def copy_output_folders(src_output_path: Path, dest_output_path: Path, selection: OutputSelection) -> None:
+    match selection:
+        case "all":
             shutil.copytree(src_output_path, dest_output_path)
+        case "none":
+            return
+        case selected_outputs:
+            for output_name in selected_outputs:
+                _copy_output(src_output_path, output_name, dest_output_path)
 
 
 class RawStudyService(AbstractStorageService):
@@ -247,6 +259,7 @@ class RawStudyService(AbstractStorageService):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
+        outputs: OutputSelection,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -256,8 +269,7 @@ class RawStudyService(AbstractStorageService):
             dest_study_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
-            output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether to copy the outputs as well.
+            outputs: Defines outputs to be copied.
 
         Returns:
             The newly created study.
@@ -270,6 +282,8 @@ class RawStudyService(AbstractStorageService):
         dest_path = self.get_study_path(dest_study)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
+
+        copy_output_folders(src_path / "output", dest_path / "output", outputs)
 
         # TODO: now we create the config too early without the outputs, maybe ?
         study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
@@ -358,6 +372,8 @@ class RawStudyService(AbstractStorageService):
         self,
         metadata: Study,
         dst_path: Path,
+        outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         try:
@@ -370,6 +386,8 @@ class RawStudyService(AbstractStorageService):
             self.export_study_to_flat_directory(
                 Path(metadata.path),
                 dst_path,
+                outputs,
+                output_list_filter,
                 denormalize,
                 is_study_managed=is_managed(metadata),
             )
@@ -523,18 +541,46 @@ class RawStudyService(AbstractStorageService):
         self,
         study_dir: Path,
         dest: Path,
+        outputs: bool = True,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
+        output_src_path: Optional[Path] = None,
         is_study_managed: bool = True,
     ) -> None:
         start_time = time.time()
+
+        output_src_path = output_src_path or study_dir / "output"
+        output_dest_path = dest / "output"
 
         def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
             return ["output"] if str(directory) == str(study_dir) else []
 
         shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
+
+        if outputs and output_src_path.exists():
+            if output_list_filter is None:
+                # Retrieve all directories or ZIP files without duplicates
+                output_list_filter = list(
+                    {f.with_suffix("").name for f in output_src_path.iterdir() if f.is_dir() or f.suffix == ".zip"}
+                )
+            # Copy each folder or uncompress each ZIP file to the destination dir.
+            shutil.rmtree(output_dest_path, ignore_errors=True)
+            output_dest_path.mkdir()
+            for output in output_list_filter:
+                zip_path = output_src_path / f"{output}.zip"
+                if zip_path.exists():
+                    with ZipFile(zip_path) as zf:
+                        zf.extractall(output_dest_path / output)
+                else:
+                    shutil.copytree(
+                        src=output_src_path / output,
+                        dst=output_dest_path / output,
+                    )
+
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
-        logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
+        with_outputs = "with outputs" if outputs else "without outputs"
+        logger.info(f"Study '{study_dir}' exported ({with_outputs}, flat mode) in {duration}s")
         if denormalize:
             study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
             self.denormalize_study(study)

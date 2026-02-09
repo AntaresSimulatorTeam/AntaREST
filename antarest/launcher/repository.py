@@ -40,6 +40,8 @@ class JobResultRepository:
 
     def save_all(self, jobs: List[JobResult]) -> None:
         logger.debug(f"Saving {len(jobs)} new JobResults")
+        if not jobs:
+            return
         db.session.add_all(jobs)
         db.session.commit()
 
