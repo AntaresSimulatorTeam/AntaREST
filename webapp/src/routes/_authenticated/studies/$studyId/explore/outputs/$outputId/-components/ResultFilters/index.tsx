@@ -13,7 +13,6 @@
  */
 
 import DownloadMatrixButton from "@/components/buttons/DownloadMatrixButton";
-import DownloadVariableViewButton from "@/components/buttons/DownloadVariableViewButton";
 import CustomScrollbar from "@/components/CustomScrollbar";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import NumberFE from "@/components/fieldEditors/NumberFE";
@@ -40,6 +39,7 @@ import {
 import ClusterSelector from "./ClusterSelector";
 import MonteCarloModeSelector from "./MonteCarloModeSelector";
 import VariableSelector from "./VariableSelector";
+import DownloadVariableViewButton from "./DownloadVariableViewButton";
 
 interface ColumnHeader {
   variable: string;

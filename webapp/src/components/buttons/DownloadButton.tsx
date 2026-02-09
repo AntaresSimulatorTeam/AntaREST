@@ -19,8 +19,7 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { Button } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import SplitButton from "./SplitButton";
-import type { Options } from "../utils/buttonOptions";
+import SplitButton, { type Options } from "./SplitButton";
 
 export type DownloadButtonProps<OptionValue extends string> = {
   children?: React.ReactNode;

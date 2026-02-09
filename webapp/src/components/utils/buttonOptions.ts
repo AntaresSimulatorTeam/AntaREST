@@ -13,17 +13,6 @@
  */
 
 import type { TableExportFormatValue } from "@/services/api/studies/raw/types";
-import type { TFunction } from "i18next";
-
-interface Option<T extends string = string> {
-  value: T;
-  label?: string | ((t: TFunction) => string);
-  disabled?: boolean;
-}
-
-export type Options<T extends string = string> =
-  | Array<T | Option<T>>
-  | ReadonlyArray<T | Option<T>>;
 
 export type ExportFormat =
   | "csv"

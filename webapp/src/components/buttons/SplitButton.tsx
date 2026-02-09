@@ -27,7 +27,17 @@ import {
 } from "@mui/material";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Options } from "../utils/buttonOptions";
+import type { TFunction } from "i18next";
+
+interface Option<T extends string = string> {
+  value: T;
+  label?: string | ((t: TFunction) => string);
+  disabled?: boolean;
+}
+
+export type Options<T extends string = string> =
+  | Array<T | Option<T>>
+  | ReadonlyArray<T | Option<T>>;
 
 export interface SplitButtonProps<OptionValue extends string = string>
   extends Omit<ButtonGroupProps, "onClick"> {
