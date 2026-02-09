@@ -144,7 +144,7 @@ def read_in_zip(
             tmp_dir.cleanup()
 
 
-def extract_archive_from_stream(stream: BinaryIO, target_dir: Path) -> None:
+def extract_archive_from_stream(stream: BinaryIO, target_dir: Path, tmp_dir: Optional[Path] = None) -> None:
     """
     Extract an archive from a stream to a given destination.
 
@@ -171,7 +171,7 @@ def extract_archive_from_stream(stream: BinaryIO, target_dir: Path) -> None:
         except zipfile.BadZipFile as e:
             raise BadArchiveContent("Unsupported ZIP format") from e
     elif file_format[:2] == b"7z":
-        with tempfile.NamedTemporaryFile(suffix=ArchiveFormat.SEVEN_ZIP, delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(suffix=ArchiveFormat.SEVEN_ZIP, delete=False, dir=tmp_dir) as tmp:
             tmp_path = Path(tmp.name)
             shutil.copyfileobj(stream, tmp)
         try:

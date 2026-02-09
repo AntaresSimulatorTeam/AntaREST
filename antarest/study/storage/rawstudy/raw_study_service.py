@@ -299,7 +299,7 @@ class RawStudyService(AbstractStorageService):
             if isinstance(source, Path):
                 extract_archive_from_path(source, study_path)
             else:
-                extract_archive_from_stream(source, study_path)
+                extract_archive_from_stream(source, study_path, tmp_dir=self.config.storage.tmp_dir)
             fix_study_root(study_path)
             self.update_from_raw_meta(study, study_path=study_path)
         except Exception:
