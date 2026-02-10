@@ -27,4 +27,3 @@ def test_initialize_study(dao: DatabaseStudyDao) -> None:
     assert dao.get_adequacy_patch_parameters() == AdequacyPatchParameters()
     assert dao.get_playlist_config() == Playlist()
     assert dao.get_timeseries_config() == TimeSeriesConfiguration()
-    # The study is created in v8.8 so we don't test the `CompatibilityParameters`
