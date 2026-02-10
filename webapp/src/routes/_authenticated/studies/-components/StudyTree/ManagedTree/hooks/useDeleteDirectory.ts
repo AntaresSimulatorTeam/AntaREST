@@ -13,11 +13,12 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { directoryKeys } from "@/queries/directories/keys";
 import { updateDirectory, deleteDirectory } from "@/services/api/directories";
 import type { Directory } from "@/services/api/directories/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
 
 interface UseDeleteDirectoryOptions {
   onSuccess?: () => void;
@@ -105,7 +106,7 @@ function updateDirectoriesOptimistically(
 
 export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
   return useMutation({
@@ -165,7 +166,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
           : allDirectories.filter((dir) => dir.parentId === directoryId),
       };
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
       // Rollback optimistic updates
       if (context?.previousDirectories) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
@@ -178,13 +179,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
         });
       }
 
-      // TODO: Use errorSnackbar
-      enqueueSnackbar(
-        t("studies.deleteFolder.error", {
-          defaultValue: "Failed to delete directory. Please try again.",
-        }),
-        { variant: "error" },
-      );
+      enqueueErrorSnackbar(t("studies.deleteFolder.error"), toError(error));
     },
     onSuccess: (_data, _variables, context) => {
       // Remove deleted directories from detail cache

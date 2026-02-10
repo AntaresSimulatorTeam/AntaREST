@@ -13,11 +13,12 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { directoryKeys } from "@/queries/directories/keys";
 import { directoryMutations } from "@/queries/directories/mutations";
 import type { Directory } from "@/services/api/directories/types";
+import { toError } from "@/utils/fnUtils";
 
 interface UseUpdateDirectoryOptions {
   onSuccess?: () => void;
@@ -30,7 +31,7 @@ interface UpdateDirectoryContext {
 
 export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
   return useMutation({
@@ -59,7 +60,7 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
 
       return { previousDirectories, previousDetail };
     },
-    onError: (_error, { id }, context) => {
+    onError: (error, { id }, context) => {
       // Rollback optimistic updates
       if (context?.previousDirectories) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
@@ -68,8 +69,7 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
         queryClient.setQueryData(directoryKeys.detail(id), context.previousDetail);
       }
 
-      // TODO: Use errorSnackbar
-      enqueueSnackbar(t("studies.updateFolder.error"), { variant: "error" });
+      enqueueErrorSnackbar(t("studies.updateFolder.error"), toError(error));
     },
     onSuccess: (data, { id }) => {
       // Update cache with server response to ensure consistency

@@ -13,11 +13,12 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { directoryKeys } from "@/queries/directories/keys";
 import { directoryMutations } from "@/queries/directories/mutations";
 import type { Directory } from "@/services/api/directories/types";
+import { toError } from "@/utils/fnUtils";
 
 interface UseCreateDirectoryOptions {
   onSuccess?: (directory: Directory) => void;
@@ -30,7 +31,7 @@ interface CreateDirectoryContext {
 
 export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
   const queryClient = useQueryClient();
-  const { enqueueSnackbar } = useSnackbar();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
   return useMutation({
@@ -61,14 +62,13 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
 
       return { previousDirectories, tempId };
     },
-    onError: (_error, _newDirectory, context) => {
+    onError: (error, _newDirectory, context) => {
       // Rollback optimistic update
       if (context?.previousDirectories) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
       }
 
-      // TODO: Use errorSnackbar
-      enqueueSnackbar(t("studies.createFolder.error"), { variant: "error" });
+      enqueueErrorSnackbar(t("studies.createFolder.error"), toError(error));
     },
     onSuccess: (data, _variables, context) => {
       // Add the new directory to the detail cache
