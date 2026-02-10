@@ -57,6 +57,12 @@ class FavoriteStudyRepository:
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
+    def get(self, study_id: str) -> Optional[Study]:
+        stmt = select(Study).where(Study.id == study_id)
+        result = self.session.execute(stmt)
+
+        return result.unique().scalar()
+
     def delete(self, study_id: str) -> None:
         """
         Delete a favorite study from the current user list / database
@@ -98,6 +104,12 @@ class FavoriteDirectoryRepository:
         )
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
+
+    def get(self, directory_uuid: str) -> Optional[Directory]:
+        stmt = select(Directory).where(Directory.id == directory_uuid)
+        result = self.session.execute(stmt)
+
+        return result.unique().scalar()
 
     def delete(self, directory_id: str) -> None:
         """

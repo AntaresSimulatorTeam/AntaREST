@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import http
+
+from fastapi import HTTPException
 
 from antarest.favorite.model import FavoriteDirectory, FavoriteDirectoryDTO, FavoriteStudy, FavoriteStudyDTO
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
@@ -36,9 +39,15 @@ class FavoriteStudyService:
             study_uuid: the selected study id
         Returns: the saved FavoriteStudyDTO, made from the user_impersonator and the study id
         """
-        favorite_study = self.favorite_repository.save(
-            FavoriteStudy(user_id=get_user_impersonator(), study_id=study_uuid)
-        )
+        study = self.favorite_repository.get(study_uuid)
+        if study:
+            favorite_study = self.favorite_repository.save(
+                FavoriteStudy(user_id=get_user_impersonator(), study_id=study_uuid)
+            )
+        else:
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND, detail=f"Study with id {study_uuid} not found"
+            ) from None
         return favorite_study.to_dto()
 
     def delete_favorite(self, study_uuid: str) -> None:
@@ -47,7 +56,13 @@ class FavoriteStudyService:
         Args:
             study_uuid: the selected study id
         """
-        self.favorite_repository.delete(study_uuid)
+        study = self.favorite_repository.get(study_uuid)
+        if study:
+            self.favorite_repository.delete(study_uuid)
+        else:
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND, detail=f"Study with id {study_uuid} not found"
+            ) from None
 
 
 class FavoriteDirectoryService:
@@ -71,10 +86,16 @@ class FavoriteDirectoryService:
             directory_uuid: the selected directory id
         Returns: the saved FavoriteDirectoryDTO, made from the user_impersonator and the study id
         """
-        favorite_directory = self.favorite_directory_repository.save(
-            FavoriteDirectory(user_id=get_user_impersonator(), directory_id=directory_uuid)
-        )
-        return favorite_directory.to_dto()
+        study = self.favorite_directory_repository.get(directory_uuid)
+        if study:
+            favorite_directory = self.favorite_directory_repository.save(
+                FavoriteDirectory(user_id=get_user_impersonator(), directory_id=directory_uuid)
+            )
+            return favorite_directory.to_dto()
+        else:
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND, detail=f"Directory with id {directory_uuid} not found"
+            ) from None
 
     def delete_favorite(self, directory_uuid: str) -> None:
         """
@@ -82,4 +103,10 @@ class FavoriteDirectoryService:
         Args:
             directory_uuid: the selected directory id
         """
-        self.favorite_directory_repository.delete(directory_uuid)
+        study = self.favorite_directory_repository.get(directory_uuid)
+        if study:
+            self.favorite_directory_repository.delete(directory_uuid)
+        else:
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND, detail=f"Directory with id {directory_uuid} not found"
+            ) from None

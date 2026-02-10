@@ -13,6 +13,7 @@ import uuid
 from unittest.mock import Mock
 
 import pytest
+from fastapi import HTTPException
 
 from antarest.core.jwt import JWTUser
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -41,7 +42,9 @@ def test_add_favorite_directory(favorite_directory_service: FavoriteDirectorySer
     directory_2 = Directory(id=str(uuid.uuid4()), name="directory_test_2", parent_id=None)
 
     db.session.add(directory_1)
+    db.session.commit()
     db.session.add(directory_2)
+    db.session.commit()
 
     with current_user_context(admin_user):
         directory_dto_1 = favorite_directory_service.add_favorite(directory_1.id)
@@ -60,7 +63,9 @@ def test_delete_favorite_directory(favorite_directory_service: FavoriteDirectory
     directory_2 = Directory(id=str(uuid.uuid4()), name="directory_test_2", parent_id=None)
 
     db.session.add(directory_1)
+    db.session.commit()
     db.session.add(directory_2)
+    db.session.commit()
 
     with current_user_context(admin_user):
         directory_dto_1 = favorite_directory_service.add_favorite(directory_1.id)
@@ -74,3 +79,24 @@ def test_delete_favorite_directory(favorite_directory_service: FavoriteDirectory
 
         favorite_directory_service.delete_favorite(directory_dto_2.directory_id)
         assert favorite_directory_service.list_favorites() == []
+
+
+@with_db_context
+def test_add_favorite_directory_failure(
+    favorite_directory_service: FavoriteDirectoryService, admin_user: JWTUser
+) -> None:
+    non_existing_directory_id = "not_existing_directory"
+
+    with current_user_context(admin_user):
+        with pytest.raises(HTTPException, match=f"404: Directory with id {non_existing_directory_id} not found"):
+            favorite_directory_service.add_favorite(non_existing_directory_id)
+
+
+@with_db_context
+def test_delete_favorite_directory_failure(
+    favorite_directory_service: FavoriteDirectoryService, admin_user: JWTUser
+) -> None:
+    non_existing_directory_id = "not_existing_directory"
+    with current_user_context(admin_user):
+        with pytest.raises(HTTPException, match=f"404: Directory with id {non_existing_directory_id} not found"):
+            favorite_directory_service.delete_favorite(non_existing_directory_id)

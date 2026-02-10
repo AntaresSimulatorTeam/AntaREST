@@ -162,18 +162,12 @@ class CoreServices:
 def build_favorite_service(
     config: Config,
     app_ctxt: Optional[AppBuildContext] = None,
-    favorite_study_service: Optional[FavoriteStudyService] = None,
-    favorite_directory_service: Optional[FavoriteDirectoryService] = None,
 ) -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
-    if favorite_study_service is None:
-        favorite_repository = FavoriteStudyRepository()
-        favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
+    favorite_repository = FavoriteStudyRepository()
+    favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
 
-    if favorite_directory_service is None:
-        favorite_directory_repository = FavoriteDirectoryRepository()
-        favorite_directory_service = FavoriteDirectoryService(
-            favorite_directory_repository=favorite_directory_repository
-        )
+    favorite_directory_repository = FavoriteDirectoryRepository()
+    favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
 
     if app_ctxt:
         app_ctxt.api_root.include_router(
@@ -350,7 +344,8 @@ class Services:
     event_bus: IEventBus
     study: StudyService
     matrix: MatrixService
-    favorite: FavoriteStudyService
+    favorite_study: FavoriteStudyService
+    favorite_directory: FavoriteDirectoryService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
@@ -372,7 +367,6 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         app_ctxt,
         config,
         study_service=core_services.study_service,
-        favorite_service=core_services.favorite_study_service,
         output_service=core_services.output_service,
         login_service=core_services.login_service,
         event_bus=core_services.event_bus,
@@ -406,7 +400,8 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         event_bus=core_services.event_bus,
         study=core_services.study_service,
         matrix=core_services.matrix_service,
-        favorite=core_services.favorite_study_service,
+        favorite_study=core_services.favorite_study_service,
+        favorite_directory=core_services.favorite_directory_service,
         user=core_services.login_service,
         cache=core_services.cache,
         maintenance=maintenance_service,
