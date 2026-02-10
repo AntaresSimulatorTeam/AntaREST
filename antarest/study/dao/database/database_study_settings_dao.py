@@ -32,6 +32,7 @@ from antarest.study.dao.api.optimization_preferences_dao import OptimizationPref
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
 from antarest.study.dao.database.models.settings import (
+    ADEQUACY_PATCH_PARAMETERS_TABLE,
     ADVANCED_PARAMETERS_TABLE,
     COMPATIBILITY_PARAMETERS_TABLE,
     GENERAL_CONFIG_TABLE,
@@ -247,11 +248,42 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        values = dict(
+            study_id=self.get_study_id(),
+            enable_adequacy_patch=parameters.enable_adequacy_patch,
+            ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch=parameters.ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch,
+            price_taking_order=parameters.price_taking_order,
+            include_hurdle_cost_csr=parameters.include_hurdle_cost_csr,
+            check_csr_cost_function=parameters.check_csr_cost_function,
+            threshold_initiate_curtailment_sharing_rule=parameters.threshold_initiate_curtailment_sharing_rule,
+            threshold_display_local_matching_rule_violations=parameters.threshold_display_local_matching_rule_violations,
+            threshold_csr_variable_bounds_relaxation=parameters.threshold_csr_variable_bounds_relaxation,
+            ntc_between_physical_areas_out_adequacy_patch=parameters.ntc_between_physical_areas_out_adequacy_patch,
+            redispatch=parameters.redispatch,
+        )
+        session = self.get_session()
+        upsert_one(session, ADEQUACY_PATCH_PARAMETERS_TABLE, values)
+        session.commit()
 
     @override
     def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        stmt = select(ADEQUACY_PATCH_PARAMETERS_TABLE).where((ADEQUACY_PATCH_PARAMETERS_TABLE.c.study_id == study_id))
+        row = self.get_session().execute(stmt).fetchone()
+        if not row:
+            raise StudyNotFoundError(study_id)
+        return AdequacyPatchParameters(
+            enable_adequacy_patch=row.enable_adequacy_patch,
+            ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch=row.ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch,
+            price_taking_order=row.price_taking_order,
+            include_hurdle_cost_csr=row.include_hurdle_cost_csr,
+            check_csr_cost_function=row.check_csr_cost_function,
+            threshold_initiate_curtailment_sharing_rule=row.threshold_initiate_curtailment_sharing_rule,
+            threshold_display_local_matching_rule_violations=row.threshold_display_local_matching_rule_violations,
+            threshold_csr_variable_bounds_relaxation=row.threshold_csr_variable_bounds_relaxation,
+            ntc_between_physical_areas_out_adequacy_patch=row.ntc_between_physical_areas_out_adequacy_patch,
+            redispatch=row.redispatch,
+        )
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
