@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import pytest
-from checksumdir import dirhash
+from tests.helpers import dirhash
 from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini

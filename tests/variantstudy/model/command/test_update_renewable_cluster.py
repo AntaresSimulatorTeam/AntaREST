@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from checksumdir import dirhash
+from tests.helpers import dirhash
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

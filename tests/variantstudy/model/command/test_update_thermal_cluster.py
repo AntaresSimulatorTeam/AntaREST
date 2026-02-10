@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import pytest
-from checksumdir import dirhash
+from tests.helpers import dirhash
 from pydantic import ValidationError
 
 from antarest.study.business.model.thermal_cluster_model import (

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from antares.study.version import StudyVersion
-from checksumdir import dirhash
+from tests.helpers import dirhash
 
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterCreation, TimeSeriesInterpretation
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id

@@ -12,7 +12,7 @@
 
 import configparser
 
-from checksumdir import dirhash
+from tests.helpers import dirhash
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.binding_constraint_model import (

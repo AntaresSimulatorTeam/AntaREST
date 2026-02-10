@@ -15,7 +15,7 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
-from checksumdir import dirhash
+from tests.helpers import dirhash
 from py7zr import SevenZipFile, py7zr
 
 from antarest.blobstore.service import BlobService

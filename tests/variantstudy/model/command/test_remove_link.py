@@ -18,7 +18,7 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
-from checksumdir import dirhash
+from tests.helpers import dirhash
 from pydantic import ValidationError
 
 from antarest.study.business.model.scenario_builder_model import RulesetUpdate

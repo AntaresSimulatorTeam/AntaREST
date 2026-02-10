@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import numpy as np
-from checksumdir import dirhash
+from tests.helpers import dirhash
 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
