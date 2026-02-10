@@ -16,6 +16,7 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
+from antarest.core.utils.utils import remove_first_match
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -156,9 +157,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
         study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
         study_data = self.get_file_study()
-        cluster_id = thermal.id.lower()
+        cluster_id = thermal_id.lower()
         paths = [
             ["input", "thermal", "clusters", area_id, "list", cluster_id],
             ["input", "thermal", "prepro", area_id, cluster_id],
@@ -176,7 +177,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
-        study_data.config.areas[area_id].thermals.remove(thermal)
+        remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
 
     @staticmethod
     def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:

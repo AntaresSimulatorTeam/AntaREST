@@ -21,6 +21,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.utils import remove_first_match
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
@@ -233,10 +234,6 @@ class InMemoryStudyDao(StudyDao):
         pass
 
     @override
-    def initialize_study(self) -> None:
-        pass
-
-    @override
     def get_version(self) -> StudyVersion:
         return self._version
 
@@ -364,8 +361,8 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        del self._thermals[cluster_key(area_id, thermal.id)]
+    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
+        del self._thermals[cluster_key(area_id, thermal_id)]
 
     @override
     def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
@@ -919,8 +916,8 @@ class InMemoryStudyDao(StudyDao):
         return self._layers
 
     @override
-    def delete_layer(self, layer: Layer) -> None:
-        self._layers.remove(layer)
+    def delete_layer(self, layer_id: str) -> None:
+        remove_first_match(self._layers, lambda layer: layer.id == layer_id)
 
     @override
     def layer_exists(self, layer_id: str) -> bool:

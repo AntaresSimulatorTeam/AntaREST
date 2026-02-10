@@ -16,24 +16,22 @@ from sqlalchemy.orm import Session
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.model import StorageMode
 from tests.helpers import create_study
 
 
 @pytest.fixture
-def study_id(db_session: Session, matrix_service: ISimpleMatrixService) -> str:
-    """Create a test study in database mode and return its ID."""
+def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    """
+    Create a test study in database mode and create a DatabaseStudyDao instance for testing.
+    """
     study_id = str(uuid.uuid4())
     with db_session:
         study = create_study(id=study_id, name="Test Study")
         study.storage_mode = StorageMode.DATABASE
         db_session.add(study)
         db_session.commit()
-    DatabaseStudyDao(study_id, db_session, matrix_service).initialize_study()
-    return study_id
-
-
-@pytest.fixture
-def dao(db_session: Session, study_id: str, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    """Create a DatabaseStudyDao instance for testing."""
-    return DatabaseStudyDao(study_id, db_session, matrix_service)
+        factory = DatabaseStudyDaoFactory(matrix_service, db_session)
+        dao = factory.create_study_dao(study)
+    return dao

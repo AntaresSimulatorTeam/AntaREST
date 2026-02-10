@@ -12,7 +12,6 @@
 
 from typing_extensions import override
 
-from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -37,7 +36,7 @@ class RemoveLayer(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput:
-        study_data.delete_layer(Layer(id=self.layer_id))
+        study_data.delete_layer(self.layer_id)
         return command_succeeded(f"Layer {self.layer_id} deleted successfully.")
 
     @override

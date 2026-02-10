@@ -25,9 +25,9 @@ import {
   type ButtonGroupProps,
   type ButtonProps,
 } from "@mui/material";
-import type { TFunction } from "i18next";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 interface Option<T extends string = string> {
   value: T;
