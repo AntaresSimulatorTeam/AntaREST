@@ -17,16 +17,12 @@ import { downloadFile } from "@/utils/fileUtils";
 import type { StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
-import type { TableExportFormatValue } from "@/services/api/studies/raw/types";
+import {
+  EXPORT_FORMAT_OPTIONS,
+  EXPORT_FORMAT_TO_OPTIONS,
+  type ExportFormat,
+} from "../utils/buttonOptions";
 import type { Options } from "./SplitButton";
-
-type ExportFormat =
-  | "csv"
-  | "csv (semicolon)"
-  | "csv (header)"
-  | "csv (semicolon header)"
-  | "xlsx"
-  | "raw";
 
 export interface DownloadMatrixButtonProps {
   studyId: StudyMetadata["id"];
@@ -35,36 +31,10 @@ export interface DownloadMatrixButtonProps {
   label?: string;
 }
 
-const OPTIONS: Readonly<Options<ExportFormat>> = [
-  { label: (t) => t("matrix.export.format.csv"), value: "csv" },
-  { label: (t) => t("matrix.export.format.csvWithHeader"), value: "csv (header)" },
-  {
-    label: (t) => t("matrix.export.format.csvSemicolon"),
-    value: "csv (semicolon)",
-  },
-  {
-    label: (t) => t("matrix.export.format.csvSemicolonWithHeader"),
-    value: "csv (semicolon header)",
-  },
-  { label: (t) => t("matrix.export.format.xlsx"), value: "xlsx" },
+const OPTIONS: Readonly<Options<ExportFormat | "raw">> = [
+  ...EXPORT_FORMAT_OPTIONS,
   { label: (t) => t("matrix.export.format.raw"), value: "raw" },
 ];
-
-const formatToOptions: Record<
-  Exclude<ExportFormat, "raw">,
-  { format: TableExportFormatValue; header: boolean; index: boolean; extension: string }
-> = {
-  csv: { format: "csv", header: false, index: false, extension: "csv" },
-  "csv (header)": { format: "csv", header: true, index: false, extension: "csv" },
-  "csv (semicolon)": { format: "csv (semicolon)", header: false, index: false, extension: "csv" },
-  "csv (semicolon header)": {
-    format: "csv (semicolon)",
-    header: true,
-    index: false,
-    extension: "csv",
-  },
-  xlsx: { format: "xlsx", header: true, index: true, extension: "xlsx" },
-} as const;
 
 function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   const { t } = useTranslation();
@@ -74,7 +44,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async (format: ExportFormat) => {
+  const handleDownload = async (format: ExportFormat | "raw") => {
     if (!path) {
       return;
     }
@@ -84,7 +54,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
       return downloadFile(file, file.name);
     }
 
-    const { extension, ...options } = formatToOptions[format];
+    const { extension, ...options } = EXPORT_FORMAT_TO_OPTIONS[format];
 
     const matrixFile = await getMatrixFile({
       ...options,
