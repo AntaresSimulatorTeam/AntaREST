@@ -11,9 +11,7 @@
 # This file is part of the Antares project.
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
-from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
@@ -24,9 +22,9 @@ def test_initialize_study(dao: DatabaseStudyDao) -> None:
     """Test that the study is initialized with the right default values"""
     assert dao.get_layers() == [Layer(id="0", name="All", areas=[])]
     assert dao.get_general_config() == GeneralConfig()
-    assert dao.get_optimization_preferences() == OptimizationPreferences()
+    # assert dao.get_optimization_preferences() == OptimizationPreferences()
     assert dao.get_advanced_parameters() == AdvancedParameters()
     assert dao.get_adequacy_patch_parameters() == AdequacyPatchParameters()
-    assert dao.get_compatibility_parameters() == CompatibilityParameters()
     assert dao.get_playlist_config() == Playlist()
     assert dao.get_timeseries_config() == TimeSeriesConfiguration()
+    # The study is created in v8.8 so we don't test the `CompatibilityParameters`

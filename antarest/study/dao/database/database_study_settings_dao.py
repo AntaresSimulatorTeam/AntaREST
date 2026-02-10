@@ -24,7 +24,7 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
-from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.api.adequacy_patch_parameters_dao import AdequacyPatchParametersDao
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao
 from antarest.study.dao.api.compatibility_parameters_dao import CompatibilityParametersDao
@@ -302,7 +302,7 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return TimeSeriesConfiguration(thermal=row.thermal_number)
+        return TimeSeriesConfiguration(thermal=TimeSeriesType(number=row.thermal_number))
 
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
