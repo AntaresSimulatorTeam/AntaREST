@@ -507,15 +507,19 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy_output(self, src_study_id: str, target_study_id: str, output_name: str) -> None:
+    def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_output(self, study_id: str, output_name: str) -> None:
+    def delete_output(self, study_id: str, output_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def write_outputs_to_dir(self, study_id: str, outputs_dir: Path, outputs: OutputSelection) -> None:
+    def archive_output(self, study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
         raise NotImplementedError()
 
 
@@ -1389,7 +1393,11 @@ class StudyService:
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.storage_service.get_storage(metadata).export_study_flat(metadata, tmp_study_path, outputs)
             if outputs:
-                self._get_outputs_access().write_outputs_to_dir(metadata.id, tmp_study_path / "output")
+                outputs_access = self._get_outputs_access()
+                for output_metadata in outputs_access.list_outputs(metadata.id):
+                    self._get_outputs_access().write_output_to_dir(
+                        metadata.id, output_metadata.id, tmp_study_path / "output"
+                    )
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, target, archive_format=archive_format)
             stopwatch.log_elapsed(
@@ -1409,7 +1417,8 @@ class StudyService:
 
         self.storage_service.get_storage(study).export_study_flat(study, dest)
         if output_list:
-            self._get_outputs_access().write_outputs_to_dir(study.id, dest / "output")
+            for output_id in output_list:
+                self._get_outputs_access().write_output_to_dir(study.id, output_id, dest / "output")
 
     def delete_study(self, uuid: str, children: bool) -> None:
         """
@@ -1989,12 +1998,12 @@ class StudyService:
             study_to_archive = self.get_study(uuid)
             study_to_archive = assert_raw(study_to_archive)
 
-            # TODO: proposition to keep current behaviour but with any kind of output:
-            #       1. create the temp dir
-            #       2. write study without outputs to the temp dir
-            #       3. write outputs to the temp dir, using output service
-            #       4. zip the temp dir, mark as archived
-            #       5. delete outputs
+            # 1 - first archive related outputs that are not already archived, and not stored in-study
+            for output in self._get_outputs_access().list_outputs(study_to_archive.id):
+                if not output.in_study and not output.archived:
+                    self._get_outputs_access().archive_output(study_to_archive.id, output.id)
+
+            # 2 - then proceed to archive the study itself
             self.storage_service.raw_study_service.archive(study_to_archive)
 
             study_to_archive.archived = True

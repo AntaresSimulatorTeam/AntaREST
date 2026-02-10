@@ -858,4 +858,4 @@ class OutputService:
         self._find_output_storage(study_id, output_id).write_output_to_dir(study_id, output_id, outputs_dir)
 
     def list_outputs(self, study_id: str) -> Iterable[BasicOutputMetadata]:
-        return itertools.chain((s.list_outputs(study_id) for s in self._storages))
+        return itertools.chain(*(s.list_outputs(study_id) for s in self._storages))

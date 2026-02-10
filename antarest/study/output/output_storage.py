@@ -35,7 +35,7 @@ class OutputStorageType(StrEnum):
 @dataclass(frozen=True)
 class BasicOutputMetadata:
     """
-    Simplest form of metadata for a study output.
+    Simplest metadata for a study output.
 
     Attributes:
         id:       unique identifier of the output
@@ -45,6 +45,7 @@ class BasicOutputMetadata:
 
     id: str
     in_study: bool
+    archived: bool
 
 
 class IOutputStorage(ABC):
@@ -116,13 +117,13 @@ class IOutputStorage(ABC):
     @abstractmethod
     def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
         """
-        Writes outputs in filestudy format into parent directory
+        Writes outputs in filestudy format into the specified parent directory.
         """
 
     @abstractmethod
     def export_output(self, study_id: str, output_id: str, target: Path) -> None:
         """
-        Export and compresses study inside zip
+        Export and compresses study inside zip.
         """
 
     @abstractmethod

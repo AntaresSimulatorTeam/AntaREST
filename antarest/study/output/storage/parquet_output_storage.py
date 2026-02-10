@@ -172,7 +172,8 @@ class V2OutputStorage(IOutputStorage):
     @override
     def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
         return [
-            BasicOutputMetadata(id=o.output_name, in_study=False) for o in self._metadata_repository.get_all(study_id)
+            BasicOutputMetadata(id=o.output_name, in_study=False, archived=o.archived)
+            for o in self._metadata_repository.get_all(study_id)
         ]
 
     @override
@@ -254,4 +255,4 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
-        pass  # TODO
+        raise NotImplementedError()

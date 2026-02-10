@@ -230,7 +230,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
         return [
-            BasicOutputMetadata(id=o.name, in_study=True)
+            BasicOutputMetadata(id=o.name, in_study=True, archived=o.archived)
             for o in study_outputs.get_file_study().config.outputs.values()
         ]
 

@@ -34,18 +34,19 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
             return output_service.get_simulations(study_id)
 
         @override
-        def copy_output(self, src_study_id: str, target_study_id: str, output_name: str) -> None:
-            return output_service.copy_output(src_study_id, target_study_id, output_name)
+        def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
+            return output_service.copy_output(src_study_id, target_study_id, output_id)
 
         @override
-        def delete_output(self, study_id: str, output_name: str) -> None:
-            output_service.delete_output(study_id, output_name)
+        def delete_output(self, study_id: str, output_id: str) -> None:
+            output_service.delete_output(study_id, output_id)
 
         @override
-        def write_outputs_to_dir(self, study_id: str, parent_dir: Path, outputs: list[str] | None = None) -> None:
-            if outputs is None:
-                outputs = [o.name for o in output_service.get_study_sim_result(study_id)]
-            for output in outputs:
-                output_service.write_output_to_dir(study_id, output, parent_dir)
+        def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
+            output_service.write_output_to_dir(study_id, output_id, parent_dir)
+
+        @override
+        def archive_output(self, study_id: str, output_id: str) -> None:
+            output_service.archive_output(study_id, output_id)
 
     return OutputServiceAdapter()
