@@ -37,7 +37,7 @@ metadata = Base.metadata
 # Relations: One to one with `Study`
 
 
-def get_study_id_col() -> Column:
+def get_study_id_col() -> Column[str]:
     return Column("study_id", String(length=36), nullable=False, primary_key=True)
 
 
