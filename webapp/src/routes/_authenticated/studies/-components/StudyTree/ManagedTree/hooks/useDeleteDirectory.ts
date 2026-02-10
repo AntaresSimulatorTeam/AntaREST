@@ -16,7 +16,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { directoryKeys } from "@/queries/directories/keys";
-import { directoriesApi } from "@/services/api/directories";
+import { updateDirectory, deleteDirectory } from "@/services/api/directories";
 import type { Directory } from "@/services/api/directories/types";
 
 interface UseDeleteDirectoryOptions {
@@ -67,7 +67,7 @@ async function moveChildrenToParent(
 
   await Promise.all(
     children.map((child) =>
-      directoriesApi.update(child.id, {
+      updateDirectory(child.id, {
         name: child.name,
         parentId: newParentId,
       }),
@@ -117,7 +117,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
       }
 
       // Delete the directory
-      return directoriesApi.delete(directoryId);
+      return deleteDirectory(directoryId);
     },
     onMutate: async ({ directoryId, cascade, allDirectories }): Promise<DeleteDirectoryContext> => {
       // Cancel only the queries we're about to update

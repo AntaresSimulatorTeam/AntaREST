@@ -13,7 +13,7 @@
  */
 
 import { queryOptions } from "@tanstack/react-query";
-import { directoriesApi } from "@/services/api/directories";
+import { getAllDirectories } from "@/services/api/directories";
 import type { DirectoryFilters } from "@/services/api/directories/types";
 import { directoryKeys } from "./keys";
 
@@ -21,7 +21,7 @@ export const directoryQueries = {
   list: (filters?: DirectoryFilters) => {
     return queryOptions({
       queryKey: directoryKeys.list(filters),
-      queryFn: () => directoriesApi.getAll(),
+      queryFn: () => getAllDirectories(),
     });
   },
 };
