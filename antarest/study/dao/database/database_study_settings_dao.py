@@ -113,7 +113,7 @@ class DatabaseStudySettingsDao(
             last_day=row.last_day,
             horizon=row.horizon,
             first_month=row.first_month,
-            first_week_day=row.first_weekday,
+            first_week_day=row.first_week_day,
             first_january=row.first_january,
             leap_year=row.leap_year,
             nb_years=row.nb_years,
