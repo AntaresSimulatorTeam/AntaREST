@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 import polars as pl
-from sqlalchemy import Row, delete, insert, select, update
+from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -46,6 +46,7 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_INFLOW_STRUCTURE_TABLE,
     HYDRO_MANAGEMENT_TABLE,
 )
+from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -173,26 +174,10 @@ class DatabaseHydroDao(HydroDao):
 
         validate_area_exists(session, study_id, area_id)
 
-        # Check if record exists
-        stmt_check = select(HYDRO_MANAGEMENT_TABLE.c.area_id).where(
-            (HYDRO_MANAGEMENT_TABLE.c.study_id == study_id) & (HYDRO_MANAGEMENT_TABLE.c.area_id == area_id)
-        )
-        existing = session.execute(stmt_check).fetchone()
-
         values = self._hydro_management_to_dict(hydro_management)
-
-        if existing:
-            stmt_update = (
-                update(HYDRO_MANAGEMENT_TABLE)
-                .where((HYDRO_MANAGEMENT_TABLE.c.study_id == study_id) & (HYDRO_MANAGEMENT_TABLE.c.area_id == area_id))
-                .values(**values)
-            )
-            session.execute(stmt_update)
-        else:
-            values["study_id"] = study_id
-            values["area_id"] = area_id
-            stmt_insert = insert(HYDRO_MANAGEMENT_TABLE).values(**values)
-            session.execute(stmt_insert)
+        values["study_id"] = study_id
+        values["area_id"] = area_id
+        upsert_one(session, HYDRO_MANAGEMENT_TABLE, values)
 
         session.commit()
 
@@ -243,29 +228,12 @@ class DatabaseHydroDao(HydroDao):
 
         validate_area_exists(session, study_id, area_id)
 
-        # Check if record exists
-        stmt_check = select(HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id).where(
-            (HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id == study_id) & (HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id == area_id)
-        )
-        existing = session.execute(stmt_check).fetchone()
-
-        if existing:
-            stmt_update = (
-                update(HYDRO_INFLOW_STRUCTURE_TABLE)
-                .where(
-                    (HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id == study_id)
-                    & (HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id == area_id)
-                )
-                .values(inter_monthly_correlation=inflow_structure.inter_monthly_correlation)
-            )
-            session.execute(stmt_update)
-        else:
-            stmt_insert = insert(HYDRO_INFLOW_STRUCTURE_TABLE).values(
-                study_id=study_id,
-                area_id=area_id,
-                inter_monthly_correlation=inflow_structure.inter_monthly_correlation,
-            )
-            session.execute(stmt_insert)
+        values = {
+            "study_id": study_id,
+            "area_id": area_id,
+            "inter_monthly_correlation": inflow_structure.inter_monthly_correlation,
+        }
+        upsert_one(session, HYDRO_INFLOW_STRUCTURE_TABLE, values)
 
         session.commit()
 
