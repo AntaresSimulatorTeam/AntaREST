@@ -137,7 +137,7 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
 )
 
 TIMESERIES_CONFIG_TABLE = Table(
-    "compatibility_parameters",
+    "timeseries_config",
     metadata,
     study_id_col,
     Column("thermal_number", Integer(), nullable=False),
@@ -145,7 +145,7 @@ TIMESERIES_CONFIG_TABLE = Table(
 )
 
 PLAYLIST_TABLE = Table(
-    "compatibility_parameters",
+    "playlist",
     metadata,
     study_id_col,
     Column("years", String(), nullable=False),

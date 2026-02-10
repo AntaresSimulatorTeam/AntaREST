@@ -37,6 +37,7 @@ from antarest.study.dao.database.models.settings import (
     COMPATIBILITY_PARAMETERS_TABLE,
     GENERAL_CONFIG_TABLE,
     OPTIMIZATION_PREFERENCES_TABLE,
+    TIMESERIES_CONFIG_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_one
 
@@ -287,11 +288,19 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        values = dict(study_id=self.get_study_id(), thermal_number=config.thermal.number)
+        session = self.get_session()
+        upsert_one(session, TIMESERIES_CONFIG_TABLE, values)
+        session.commit()
 
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        stmt = select(TIMESERIES_CONFIG_TABLE).where((TIMESERIES_CONFIG_TABLE.c.study_id == study_id))
+        row = self.get_session().execute(stmt).fetchone()
+        if not row:
+            raise StudyNotFoundError(study_id)
+        return TimeSeriesConfiguration(thermal=row.thermal_number)
 
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
