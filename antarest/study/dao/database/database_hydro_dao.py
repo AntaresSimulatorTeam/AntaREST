@@ -332,7 +332,7 @@ class DatabaseHydroDao(HydroDao):
         rows = session.execute(stmt).fetchall()
 
         if not rows:
-            raise HydroAllocationNotFound("No hydro allocation data found for study. Inconsistent DB state.")
+            raise HydroAllocationNotFound(study_id)
 
         # Group by source area
         allocations_by_source: dict[str, list[HydroAllocationArea]] = {}

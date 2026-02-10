@@ -95,7 +95,7 @@ HYDRO_CORRELATION_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_from", String(255), nullable=False, primary_key=True),
     Column("area_to", String(255), nullable=False, primary_key=True),
-    # Stored as -1 to 1 (model uses -100 to 100)
+    # Stored as -1 to 1
     Column("coefficient", Float, nullable=False),
     ForeignKeyConstraint(
         ["study_id", "area_from"],

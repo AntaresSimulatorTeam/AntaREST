@@ -582,13 +582,8 @@ class HydroInflowStructureNotFound(HTTPException):
 
 
 class HydroAllocationNotFound(HTTPException):
-    def __init__(self, area_id: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, f"Hydro allocation not found for area '{area_id}'")
-
-
-class HydroCorrelationNotFound(HTTPException):
-    def __init__(self, area_id: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, f"Hydro correlation not found for area '{area_id}'")
+    def __init__(self, study_id: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, f"Hydro allocation not found for study '{study_id}'")
 
 
 class InvalidHydroCorrelation(HTTPException):
