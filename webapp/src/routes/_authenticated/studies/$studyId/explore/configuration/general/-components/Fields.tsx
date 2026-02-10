@@ -19,14 +19,13 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import type { StudyMetadata } from "@/types/types";
 import { WEEK_OPTIONS, YEAR_OPTIONS } from "@/utils/date/constants";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { Box, Button, Divider } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { useEffect, useState } from "react";
-import type { Validate } from "react-hook-form";
+import { useFormContext, type Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   BUILDING_MODE_OPTIONS,
@@ -54,7 +53,7 @@ function Fields({ study }: Props) {
     setValue,
     watch,
     formState: { defaultValues, dirtyFields },
-  } = useFormContextPlus<GeneralFormFields>();
+  } = useFormContext<GeneralFormFields>();
 
   const [buildingMode, selectionMode, firstDay, lastDay, filtering, thematicTrimming] = watch([
     "buildingMode",

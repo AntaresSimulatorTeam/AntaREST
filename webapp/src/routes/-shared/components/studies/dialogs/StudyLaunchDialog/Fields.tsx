@@ -17,11 +17,11 @@ import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/Se
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import { validateNumber } from "@/utils/validation/number";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import { useEffect, useMemo } from "react";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   isXpressAvailableForVersion,
@@ -31,7 +31,7 @@ import {
 } from "./utils";
 
 function Fields() {
-  const { control, setValue, setValues, getValues, watch } = useFormContextPlus<FormValues>();
+  const { control, setValue, getValues, watch } = useFormContext<FormValues>();
   const { t } = useTranslation();
 
   const {
@@ -141,20 +141,16 @@ function Fields() {
 
   const handleXpansionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.checked) {
-      setValues({
-        adequacyCriterion: false,
-        sensitivityMode: false,
-        output: "",
-      });
+      setValue("adequacyCriterion", false);
+      setValue("sensitivityMode", false);
+      setValue("output", "");
     }
   };
 
   const handleAdequacyCriterionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked && getValues("sensitivityMode")) {
-      setValues({
-        sensitivityMode: false,
-        output: "",
-      });
+      setValue("sensitivityMode", false);
+      setValue("output", "");
     }
   };
 
@@ -175,10 +171,8 @@ function Fields() {
     const launchersById = getValues("_data.launchersById");
     const newLauncher = launchersById[launcherId];
 
-    setValues({
-      nbCores: newLauncher.nbCores.default,
-      timeLimit: newLauncher.timeLimit.default,
-    });
+    setValue("nbCores", newLauncher.nbCores.default);
+    setValue("timeLimit", newLauncher.timeLimit.default);
   };
 
   ////////////////////////////////////////////////////////////////
