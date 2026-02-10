@@ -12,20 +12,10 @@
  * This file is part of the Antares project.
  */
 
-/**
- * Query keys factory for explorer (workspaces and folders)
- * Provides centralized query key management for consistent cache handling
- *
- * Key hierarchy:
- * - ['explorer'] - All explorer-related queries
- * - ['explorer', 'workspaces'] - All workspace queries
- * - ['explorer', 'folders'] - All folder queries
- * - ['explorer', 'folders', workspace, path] - Folders for specific workspace and path
- */
 export const explorerKeys = {
   all: ["explorer"] as const,
   workspaces: () => [...explorerKeys.all, "workspaces"] as const,
   folders: () => [...explorerKeys.all, "folders"] as const,
-  foldersByPath: (workspace: string, path: string) =>
-    [...explorerKeys.folders(), workspace, path] as const,
+  folderDetail: (workspace: string, path: string) =>
+    [...explorerKeys.folders(), "detail", { workspace, path }] as const,
 };

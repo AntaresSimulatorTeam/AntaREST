@@ -30,7 +30,7 @@ export const explorerQueries = {
 
   folders: (workspace: string, path: string) => {
     return queryOptions({
-      queryKey: explorerKeys.foldersByPath(workspace, path),
+      queryKey: explorerKeys.folderDetail(workspace, path),
       queryFn: async () => {
         const data = await api.getFolders(workspace, path);
         return foldersSchema.parse(data);

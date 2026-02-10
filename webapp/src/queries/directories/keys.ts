@@ -14,17 +14,6 @@
 
 import type { DirectoryFilters } from "@/services/api/directories/types";
 
-/**
- * Query keys factory for directories
- * Provides centralized query key management for consistent cache handling
- *
- * Key hierarchy:
- * - ['directories'] - All directory-related queries
- * - ['directories', 'list'] - All list queries
- * - ['directories', 'list', filters] - List with specific filters
- * - ['directories', 'detail'] - All detail queries
- * - ['directories', 'detail', id] - Specific directory detail
- */
 export const directoryKeys = {
   all: ["directories"] as const,
   lists: () => [...directoryKeys.all, "list"] as const,
