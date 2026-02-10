@@ -140,10 +140,16 @@ class DatabaseStudySettingsDao(
             primary_reserve=config.primary_reserve,
             strategic_reserve=config.strategic_reserve,
             spinning_reserve=config.spinning_reserve,
-            export_mps=config.export_mps,
             unfeasible_problem_behavior=config.unfeasible_problem_behavior,
             simplex_optimization_range=config.simplex_optimization_range,
         )
+        # Handle `export_mps` differently as it can either be a string or a boolean but will be stored as String in DB.
+        if isinstance(config.export_mps, bool):
+            mps = str(config.export_mps)
+        else:
+            mps = config.export_mps
+        values["export_mps"] = mps
+
         session = self.get_session()
         upsert_one(session, OPTIMIZATION_PREFERENCES_TABLE, values)
         session.commit()
@@ -155,6 +161,16 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
+
+        # Handle `export_mps` differently as it is stored as String in DB, but it can either be a string or a boolean.
+        mps: bool | str
+        if row.export_mps.lower() == "true":
+            mps = True
+        elif row.export_mps.lower() == "false":
+            mps = False
+        else:
+            mps = row.export_mps
+
         return OptimizationPreferences(
             binding_constraints=row.binding_constraints,
             hurdle_costs=row.hurdle_costs,
@@ -165,7 +181,7 @@ class DatabaseStudySettingsDao(
             primary_reserve=row.primary_reserve,
             strategic_reserve=row.strategic_reserve,
             spinning_reserve=row.spinning_reserve,
-            export_mps=row.export_mps,
+            export_mps=mps,
             unfeasible_problem_behavior=row.unfeasible_problem_behavior,
             simplex_optimization_range=row.simplex_optimization_range,
         )
