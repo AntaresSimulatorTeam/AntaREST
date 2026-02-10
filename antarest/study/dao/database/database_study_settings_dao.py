@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.serde.json import from_json, to_json_string
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
@@ -37,6 +38,7 @@ from antarest.study.dao.database.models.settings import (
     COMPATIBILITY_PARAMETERS_TABLE,
     GENERAL_CONFIG_TABLE,
     OPTIMIZATION_PREFERENCES_TABLE,
+    PLAYLIST_TABLE,
     TIMESERIES_CONFIG_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_one
@@ -304,8 +306,16 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        values = dict(study_id=self.get_study_id(), years=to_json_string(playlist.years))
+        session = self.get_session()
+        upsert_one(session, PLAYLIST_TABLE, values)
+        session.commit()
 
     @override
     def get_playlist_config(self) -> Playlist:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        stmt = select(PLAYLIST_TABLE).where((PLAYLIST_TABLE.c.study_id == study_id))
+        row = self.get_session().execute(stmt).fetchone()
+        if not row:
+            raise StudyNotFoundError(study_id)
+        return Playlist(years=from_json(row.years))
