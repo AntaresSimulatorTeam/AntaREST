@@ -179,7 +179,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
         });
       }
 
-      enqueueErrorSnackbar(t("studies.deleteFolder.error"), toError(error));
+      enqueueErrorSnackbar(t("studies.deleteDirectory.error"), toError(error));
     },
     onSuccess: (_data, _variables, context) => {
       // Remove deleted directories from detail cache

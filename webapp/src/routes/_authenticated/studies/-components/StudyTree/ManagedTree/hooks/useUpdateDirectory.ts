@@ -69,7 +69,7 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
         queryClient.setQueryData(directoryKeys.detail(id), context.previousDetail);
       }
 
-      enqueueErrorSnackbar(t("studies.updateFolder.error"), toError(error));
+      enqueueErrorSnackbar(t("studies.updateDirectory.error"), toError(error));
     },
     onSuccess: (data, { id }) => {
       // Update cache with server response to ensure consistency

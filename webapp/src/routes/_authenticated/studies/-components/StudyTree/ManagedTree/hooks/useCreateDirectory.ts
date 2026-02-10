@@ -68,7 +68,7 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
         queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
       }
 
-      enqueueErrorSnackbar(t("studies.createFolder.error"), toError(error));
+      enqueueErrorSnackbar(t("studies.createDirectory.error"), toError(error));
     },
     onSuccess: (data, _variables, context) => {
       // Add the new directory to the detail cache
