@@ -44,6 +44,7 @@ class TestStudySynthesis:
 
     - GET /v1/studies/{study_id}/synthesis
     """
+
     @pytest.mark.flaky(reruns=3)
     def test_raw_study(
         self,
