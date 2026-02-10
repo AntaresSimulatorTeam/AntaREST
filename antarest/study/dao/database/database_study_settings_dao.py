@@ -12,9 +12,11 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
@@ -29,6 +31,8 @@ from antarest.study.dao.api.general_config_dao import GeneralConfigDao
 from antarest.study.dao.api.optimization_preferences_dao import OptimizationPreferencesDao
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
+from antarest.study.dao.database.models.settings import GENERAL_CONFIG_TABLE
+from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -63,11 +67,56 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        values = dict(
+            study_id=self.get_study_id(),
+            mode=config.mode,
+            first_day=config.first_day,
+            last_day=config.last_day,
+            horizon=config.horizon,
+            first_month=config.first_month,
+            first_week_day=config.first_week_day,
+            first_january=config.first_january,
+            leap_year=config.leap_year,
+            nb_years=config.nb_years,
+            building_mode=config.building_mode,
+            selection_mode=config.selection_mode,
+            year_by_year=config.year_by_year,
+            simulation_synthesis=config.simulation_synthesis,
+            mc_scenario=config.mc_scenario,
+            filtering=config.filtering,
+            geographic_trimming=config.geographic_trimming,
+            thematic_trimming=config.thematic_trimming,
+        )
+        session = self.get_session()
+        upsert_one(session, GENERAL_CONFIG_TABLE, values)
+        session.commit()
 
     @override
     def get_general_config(self) -> GeneralConfig:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        stmt = select(GENERAL_CONFIG_TABLE).where((GENERAL_CONFIG_TABLE.c.study_id == study_id))
+        row = self.get_session().execute(stmt).fetchone()
+        if not row:
+            raise StudyNotFoundError(study_id)
+        return GeneralConfig(
+            mode=row.mode,
+            first_day=row.first_day,
+            last_day=row.last_day,
+            horizon=row.horizon,
+            first_month=row.first_month,
+            first_week_day=row.first_weekday,
+            first_january=row.first_january,
+            leap_year=row.leap_year,
+            nb_years=row.nb_years,
+            building_mode=row.building_mode,
+            selection_mode=row.selection_mode,
+            year_by_year=row.year_by_year,
+            simulation_synthesis=row.simulation_synthesis,
+            mc_scenario=row.mc_scenario,
+            filtering=row.filtering,
+            geographic_trimming=row.geographic_trimming,
+            thematic_trimming=row.thematic_trimming,
+        )
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
