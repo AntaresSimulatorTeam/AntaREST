@@ -14,49 +14,28 @@
 
 import { z } from "zod";
 
-/**
- * Zod schemas for directories API validation and transformation
- * Schemas are the single source of truth - types are inferred using z.infer<>
- */
-
 ////////////////////////////////////////////////////////////////
 // Response Schemas
 ////////////////////////////////////////////////////////////////
 
-const baseDirectorySchema = z.object({
-  name: z.string(),
-  parentId: z.string().nullable(),
-});
-
-export const directorySchema = baseDirectorySchema.extend({
+export const directorySchema = z.object({
   id: z.string(),
+  name: z.string().min(1),
+  parentId: z.string().nullable(), // null for root directories
 });
 
-export const directoriesListResponseSchema = z.array(directorySchema);
-
-export const updateDirectoryResponseSchema = baseDirectorySchema;
+export const directoriesResponseSchema = z.array(directorySchema);
 
 ////////////////////////////////////////////////////////////////
 // Input Schemas
 ////////////////////////////////////////////////////////////////
 
-export const createDirectoryInputSchema = z.object({
-  name: z.string().min(1),
-  parentId: z.string().nullable(), // ID is null for root directory creation
-});
+// Derived from response schema — single source of truth for field definitions
+export const createDirectoryInputSchema = directorySchema.omit({ id: true });
 
-export const updateDirectoryInputSchema = z.object({
-  name: z.string().min(1),
-  parentId: z.string().nullable(), // ID is null for root directory update
-});
-
-////////////////////////////////////////////////////////////////
-// Filter Schemas
-////////////////////////////////////////////////////////////////
-
-// TODO: Not implemented yet
-export const directoryFiltersSchema = z.object({
-  search: z.string().optional(),
-  sortBy: z.enum(["name"]).optional(),
-  sortOrder: z.enum(["asc", "desc"]).optional(),
-});
+// PATCH allows partial updates — at least one field must be provided
+export const updateDirectoryInputSchema = createDirectoryInputSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided for update",
+  });

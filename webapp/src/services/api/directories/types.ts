@@ -15,16 +15,10 @@
 import type { z } from "zod";
 import type {
   createDirectoryInputSchema,
-  directoriesListResponseSchema,
-  directoryFiltersSchema,
   directorySchema,
   updateDirectoryInputSchema,
-  updateDirectoryResponseSchema,
 } from "./schemas";
 
 export type Directory = z.infer<typeof directorySchema>;
-export type DirectoriesListResponse = z.infer<typeof directoriesListResponseSchema>;
 export type CreateDirectoryInput = z.infer<typeof createDirectoryInputSchema>;
 export type UpdateDirectoryInput = z.infer<typeof updateDirectoryInputSchema>;
-export type UpdateDirectoryResponse = z.infer<typeof updateDirectoryResponseSchema>;
-export type DirectoryFilters = z.infer<typeof directoryFiltersSchema>;

@@ -12,12 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { DirectoryFilters } from "@/services/api/directories/types";
-
 export const directoryKeys = {
   all: ["directories"] as const,
   lists: () => [...directoryKeys.all, "list"] as const,
-  list: (filters?: DirectoryFilters) => [...directoryKeys.lists(), filters] as const,
+  list: () => [...directoryKeys.lists()] as const,
   details: () => [...directoryKeys.all, "detail"] as const,
   detail: (id: string) => [...directoryKeys.details(), id] as const,
 };

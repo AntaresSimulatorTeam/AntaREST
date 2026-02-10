@@ -73,14 +73,11 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
     },
     onSuccess: (data, { id }) => {
       // Update cache with server response to ensure consistency
-      queryClient.setQueryData<Directory>(directoryKeys.detail(id), {
-        id,
-        ...data,
-      });
+      queryClient.setQueryData<Directory>(directoryKeys.detail(id), data);
 
       // Update the directory in the list with server response
       queryClient.setQueryData<Directory[]>(directoryKeys.list(), (old) =>
-        old?.map((dir) => (dir.id === id ? { id, ...data } : dir)),
+        old?.map((dir) => (dir.id === id ? data : dir)),
       );
 
       // No need to invalidate since we're updating the cache directly
