@@ -24,7 +24,6 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2, Study
@@ -55,7 +54,8 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
         dao.save_timeseries_config(TimeSeriesConfiguration())
         dao.save_advanced_parameters(AdvancedParameters())
         dao.save_optimization_preferences(OptimizationPreferences())
-        dao.save_thematic_trimming(ThematicTrimming())
+        # todo: uncomment this when method is implemented
+        # dao.save_thematic_trimming(ThematicTrimming())
         study_version = StudyVersion.parse(study.version)
         if study_version > STUDY_VERSION_8_3:
             dao.save_adequacy_patch_parameters(AdequacyPatchParameters())
