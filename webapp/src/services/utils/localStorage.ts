@@ -17,10 +17,9 @@ import type { FolderDTO } from "@/queries/explorer/schemas";
 import type { StudiesState, StudyFilters } from "@/redux/ducks/studies";
 import type { UIState } from "@/redux/ducks/ui";
 import type { TableTemplate } from "@/routes/_authenticated/studies/$studyId/explore/tablemode/-utils";
-import type { UserInfo } from "@/types/types";
+import type { StudySortConfig, UserInfo } from "@/types/types";
 import packages from "../../../package.json";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
-import type { StudySortConfig } from "@/utils/sorting/studySortUtils";
 
 export const StorageKey = {
   AuthUser: "authUser",

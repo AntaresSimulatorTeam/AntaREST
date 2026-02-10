@@ -61,9 +61,9 @@ function DeleteDirectoryDialog({
 
   return (
     <BasicDialog
-      title={t("studies.deleteFolder.title")}
+      title={t("studies.deleteDirectory.title")}
       onClose={handleClose}
-      alert="warning"
+      alert="error"
       maxWidth="sm"
       fullWidth
       {...basicDialogProps}
@@ -72,7 +72,7 @@ function DeleteDirectoryDialog({
           <Button onClick={onCancel} color="inherit">
             {t("global.cancel")}
           </Button>
-          <Button onClick={handleConfirm} variant="contained" color="warning">
+          <Button onClick={handleConfirm} variant="contained" color="error">
             {t("global.delete")}
           </Button>
         </>
@@ -81,14 +81,9 @@ function DeleteDirectoryDialog({
       <Typography variant="body2" sx={{ mb: 2 }}>
         {hasChildren
           ? t("studies.deleteFolder.messageWithChildren", {
-              // TODO add key
-              defaultValue:
-                'You are about to delete the directory "{{directoryName}}". How would you like to proceed?',
               directoryName,
             })
           : t("studies.deleteFolder.messageNoChildren", {
-              // TODO add key
-              defaultValue: 'Are you sure you want to delete the directory "{{directoryName}}"?',
               directoryName,
             })}
       </Typography>
@@ -100,12 +95,7 @@ function DeleteDirectoryDialog({
               value={true}
               control={<Radio />}
               label={
-                <Typography variant="body2">
-                  {t("studies.deleteFolder.cascadeOption", {
-                    // TODO add key
-                    defaultValue: "Delete directory and all subdirectories",
-                  })}
-                </Typography>
+                <Typography variant="body2">{t("studies.deleteFolder.cascadeOption")}</Typography>
               }
             />
             <FormControlLabel
@@ -113,11 +103,7 @@ function DeleteDirectoryDialog({
               control={<Radio />}
               label={
                 <Typography variant="body2">
-                  {t("studies.deleteFolder.folderOnlyOption", {
-                    // TODO add key
-                    defaultValue:
-                      "Delete only this directory (subdirectories will be moved to parent)",
-                  })}
+                  {t("studies.deleteFolder.folderOnlyOption")}
                 </Typography>
               }
             />

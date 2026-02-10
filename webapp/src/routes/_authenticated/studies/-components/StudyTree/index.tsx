@@ -73,7 +73,7 @@ function StudyTree() {
     <Box>
       <TreeSection
         variant="managed"
-        title={t("studies.tree.managed", { defaultValue: "Managed Studies" })} // TODO: add key
+        title={t("studies.tree.managed")}
         icon={<AccountTreeIcon />}
         onRootClick={handleManagedRootClick}
         onAddDirectory={handleAddDirectoryClick}
@@ -90,8 +90,7 @@ function StudyTree() {
 
       <TreeSection
         variant="external"
-        title={t("studies.tree.external", { defaultValue: "Disk Studies" })} // TODO: add key
-        //subtitle={t("studies.tree.readOnly", { defaultValue: "(read-only)" })}
+        title={t("studies.tree.external")}
         icon={<StorageIcon />}
         onRootClick={handleExternalRootClick}
       >

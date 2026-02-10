@@ -18,7 +18,7 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import { compareAsc } from "date-fns";
 import * as R from "ramda";
 import { z } from "zod";
-import type { StudyMetadata } from "@/types/types";
+import type { StudyMetadata, StudySortConfig } from "@/types/types";
 
 ////////////////////////////////////////////////////////////////
 // Schema
@@ -48,7 +48,6 @@ export const StudySortOptionIdSchema = z.enum(["name-asc", "name-desc", "date-as
 
 export type SortProperty = z.infer<typeof SortPropertySchema>;
 export type SortOrder = z.infer<typeof SortOrderSchema>;
-export type StudySortConfig = z.infer<typeof StudySortConfigSchema>;
 export type StudySortOption = z.infer<typeof StudySortOptionSchema>;
 export type StudySortOptionId = z.infer<typeof StudySortOptionIdSchema>;
 

@@ -14,11 +14,11 @@
 
 import type { z } from "zod";
 import type {
-  createDirectoryInputSchema,
+  createDirectoryParamsSchema,
   directorySchema,
-  updateDirectoryInputSchema,
+  updateDirectoryParamsSchema,
 } from "./schemas";
 
 export type Directory = z.infer<typeof directorySchema>;
-export type CreateDirectoryInput = z.infer<typeof createDirectoryInputSchema>;
-export type UpdateDirectoryInput = z.infer<typeof updateDirectoryInputSchema>;
+export type CreateDirectoryParams = z.infer<typeof createDirectoryParamsSchema>;
+export type UpdateDirectoryParams = z.infer<typeof updateDirectoryParamsSchema>;

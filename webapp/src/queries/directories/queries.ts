@@ -13,14 +13,14 @@
  */
 
 import { queryOptions } from "@tanstack/react-query";
-import { getAllDirectories } from "@/services/api/directories";
+import { getDirectories } from "@/services/api/directories";
 import { directoryKeys } from "./keys";
 
 export const directoryQueries = {
   list: () => {
     return queryOptions({
       queryKey: directoryKeys.list(),
-      queryFn: () => getAllDirectories(),
+      queryFn: getDirectories,
     });
   },
 };

@@ -15,6 +15,7 @@
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import HomeIcon from "@mui/icons-material/Home";
 import {
+  alpha,
   Box,
   IconButton,
   Stack,
@@ -53,6 +54,8 @@ const variantStyles: Record<
       p: 0.5,
     },
     icon: {
+      display: "flex",
+      alignItems: "center",
       color: "info.main",
       fontSize: 18,
     },
@@ -65,11 +68,13 @@ const variantStyles: Record<
   },
   external: {
     container: {
-      backgroundColor: "action.hover",
+      backgroundColor: (theme) => alpha(theme.palette.action.disabled, 0.05),
       borderLeft: (theme) => `3px solid ${theme.palette.action.disabled}`,
       p: 0.5,
     },
     icon: {
+      display: "flex",
+      alignItems: "center",
       color: "text.secondary",
       fontSize: 18,
     },

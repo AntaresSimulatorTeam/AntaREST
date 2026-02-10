@@ -13,30 +13,30 @@
  */
 
 import { mutationOptions } from "@tanstack/react-query";
-import { createDirectory, updateDirectory, deleteDirectory } from "@/services/api/directories";
-import type { CreateDirectoryInput, UpdateDirectoryInput } from "@/services/api/directories/types";
+import { createDirectory, deleteDirectory, updateDirectory } from "@/services/api/directories";
+import type { UpdateDirectoryParams } from "@/services/api/directories/types";
 import { directoryKeys } from "./keys";
 
 export const directoryMutations = {
   create: () => {
     return mutationOptions({
-      mutationKey: [...directoryKeys.all, "createDirectory"],
-      mutationFn: (directoryData: CreateDirectoryInput) => createDirectory(directoryData),
+      mutationKey: directoryKeys.create(),
+      mutationFn: createDirectory,
     });
   },
 
   update: () => {
     return mutationOptions({
-      mutationKey: [...directoryKeys.all, "updateDirectory"],
-      mutationFn: ({ id, data }: { id: string; data: UpdateDirectoryInput }) =>
-        updateDirectory(id, data),
+      mutationKey: directoryKeys.update(),
+      mutationFn: ({ id, data }: { id: string; data: UpdateDirectoryParams }) =>
+        updateDirectory({ directoryId: id, directoryData: data }),
     });
   },
 
   delete: () => {
     return mutationOptions({
-      mutationKey: [...directoryKeys.all, "deleteDirectory"],
-      mutationFn: (directoryId: string) => deleteDirectory(directoryId),
+      mutationKey: directoryKeys.delete(),
+      mutationFn: deleteDirectory,
     });
   },
 };

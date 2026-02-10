@@ -68,9 +68,12 @@ async function moveChildrenToParent(
 
   await Promise.all(
     children.map((child) =>
-      updateDirectory(child.id, {
-        name: child.name,
-        parentId: newParentId,
+      updateDirectory({
+        directoryId: child.id,
+        directoryData: {
+          name: child.name,
+          parentId: newParentId,
+        },
       }),
     ),
   );

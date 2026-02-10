@@ -22,12 +22,12 @@ import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters, getStudySortConfig } from "@/redux/selectors";
 import { scanFolder } from "@/services/api/study";
+import type { StudySortConfig } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import BatchActions from "./BatchActions";
 import FilterControls from "./FilterControls";
 import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
 import ScanFolderDialog from "./ScanFolderDialog";
-import type { StudySortConfig } from "@/utils/sorting/studySortUtils";
 import type { BreadcrumbItem, HeaderProps } from "./types";
 import { useBreadcrumbs } from "./useBreadcrumbs";
 

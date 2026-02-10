@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type z from "zod";
+import type { StudySortConfigSchema } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -127,6 +129,8 @@ export interface StudyLayer {
   id: string;
   name: string;
 }
+
+export type StudySortConfig = z.infer<typeof StudySortConfigSchema>;
 
 export interface VariantTreeDTO {
   node: StudyMetadataDTO;

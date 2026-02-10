@@ -14,6 +14,7 @@
 
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import type { F } from "ts-toolbelt";
+import { sortStudies } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import { createLinkId } from "@/services/api/studies/links/utils";
 import { getHighestVersion } from "@/utils/versionUtils";
 import { isGroupAdmin, isUserAdmin, nameToId, sortByName } from "../services/utils";
@@ -25,6 +26,7 @@ import type {
   GroupDetailsDTO,
   LinkElement,
   StudyMetadata,
+  StudySortConfig,
   UserDetailsDTO,
 } from "../types/types";
 import { filterStudies } from "../utils/studiesUtils";
@@ -36,7 +38,6 @@ import type { StudyMap, StudyMapLink, StudyMapNode, StudyMapsState } from "./duc
 import type { StudySynthesesState } from "./ducks/studySyntheses";
 import type { UIState } from "./ducks/ui";
 import type { UsersState } from "./ducks/users";
-import { sortStudies, type StudySortConfig } from "@/utils/sorting/studySortUtils";
 
 ////////////////////////////////////////////////////////////////
 // Auth

@@ -14,6 +14,13 @@
 
 import { z } from "zod";
 
+/**
+ * ⚠️ Temporary schemas - migration pending
+ *
+ * TODO: Migrate to `services/api/explorer/` when refactoring `services/api/study.ts`
+ * These schemas should be colocated with their API methods following TanStack Query + Zod pattern.
+ */
+
 export const workspaceSchema = z.object({
   name: z.string(),
   diskName: z.string(),

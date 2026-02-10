@@ -16,7 +16,13 @@ import { getStudyVersions } from "@/services/api/studies";
 import * as api from "@/services/api/study";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyEventPayload } from "@/services/webSocket/types";
-import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "@/types/types";
+import type {
+  GroupDTO,
+  StudyMetadata,
+  StudyPublicMode,
+  StudySortConfig,
+  UserDTO,
+} from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
@@ -28,7 +34,7 @@ import { getFavoriteStudyIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
-import { DEFAULT_STUDY_SORT_CONFIG, type StudySortConfig } from "@/utils/sorting/studySortUtils";
+import { DEFAULT_STUDY_SORT_CONFIG } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 

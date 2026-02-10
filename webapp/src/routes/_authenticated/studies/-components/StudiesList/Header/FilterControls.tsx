@@ -25,10 +25,10 @@ import {
   findStudySortOptionId,
   getStudySortOption,
   STUDY_SORT_OPTIONS,
-  toStudySortConfig,
-  type StudySortConfig,
   type StudySortOptionId,
-} from "@/utils/sorting/studySortUtils";
+  toStudySortConfig,
+} from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
+import type { StudySortConfig } from "@/types/types";
 
 interface FilterControlsProps {
   activeTree: "managed" | "external";

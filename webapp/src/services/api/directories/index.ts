@@ -14,12 +14,12 @@
 
 import client from "../client";
 import {
-  createDirectoryInputSchema,
+  createDirectoryParamsSchema,
   directoriesResponseSchema,
   directorySchema,
-  updateDirectoryInputSchema,
+  updateDirectoryParamsSchema,
 } from "./schemas";
-import type { CreateDirectoryInput, Directory, UpdateDirectoryInput } from "./types";
+import type { CreateDirectoryParams, Directory, UpdateDirectoryParams } from "./types";
 
 /**
  * GET /v1/directories - List all directories
@@ -27,7 +27,7 @@ import type { CreateDirectoryInput, Directory, UpdateDirectoryInput } from "./ty
  * @returns Promise<Directory[]> - List of directories
  * @throws {ZodError} If the response doesn't match the expected schema
  */
-export async function getAllDirectories(): Promise<Directory[]> {
+export async function getDirectories(): Promise<Directory[]> {
   const { data } = await client.get("/v1/directories");
   return directoriesResponseSchema.parse(data);
 }
@@ -37,10 +37,10 @@ export async function getAllDirectories(): Promise<Directory[]> {
  *
  * @param directoryData - Directory data to create
  * @returns Promise<Directory> - Created directory data
- * @throws {ZodError} If the input or response doesn't match the expected schema
+ * @throws {ZodError} If the params or response doesn't match the expected schema
  */
-export async function createDirectory(directoryData: CreateDirectoryInput): Promise<Directory> {
-  const validatedInput = createDirectoryInputSchema.parse(directoryData);
+export async function createDirectory(directoryData: CreateDirectoryParams): Promise<Directory> {
+  const validatedInput = createDirectoryParamsSchema.parse(directoryData);
   const { data } = await client.post("/v1/directories", validatedInput);
   return directorySchema.parse(data);
 }
@@ -48,16 +48,20 @@ export async function createDirectory(directoryData: CreateDirectoryInput): Prom
 /**
  * PATCH /v1/directories/{directoryId} - Update directory
  *
- * @param directoryId - ID of the directory to update
- * @param directoryData - Partial directory data to update
+ * @param params - Update parameters
+ * @param params.directoryId - ID of the directory to update
+ * @param params.directoryData - Partial directory data to update
  * @returns Promise<Directory> - Updated directory data
- * @throws {ZodError} If the input or response doesn't match the expected schema
+ * @throws {ZodError} If the params or response doesn't match the expected schema
  */
-export async function updateDirectory(
-  directoryId: string,
-  directoryData: UpdateDirectoryInput,
-): Promise<Directory> {
-  const validatedInput = updateDirectoryInputSchema.parse(directoryData);
+export async function updateDirectory({
+  directoryId,
+  directoryData,
+}: {
+  directoryId: string;
+  directoryData: UpdateDirectoryParams;
+}): Promise<Directory> {
+  const validatedInput = updateDirectoryParamsSchema.parse(directoryData);
   const { data } = await client.patch(`/v1/directories/${directoryId}`, validatedInput);
   return directorySchema.parse(data);
 }

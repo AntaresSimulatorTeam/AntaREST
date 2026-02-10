@@ -31,10 +31,10 @@ export const directoriesResponseSchema = z.array(directorySchema);
 ////////////////////////////////////////////////////////////////
 
 // Derived from response schema — single source of truth for field definitions
-export const createDirectoryInputSchema = directorySchema.omit({ id: true });
+export const createDirectoryParamsSchema = directorySchema.omit({ id: true });
 
 // PATCH allows partial updates — at least one field must be provided
-export const updateDirectoryInputSchema = createDirectoryInputSchema
+export const updateDirectoryParamsSchema = createDirectoryParamsSchema
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided for update",
