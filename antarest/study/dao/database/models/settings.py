@@ -36,12 +36,15 @@ metadata = Base.metadata
 
 # Relations: One to one with `Study`
 
-study_id_col = Column("study_id", String(length=36), nullable=False, primary_key=True)
+
+def get_study_id_col() -> Column:
+    return Column("study_id", String(length=36), nullable=False, primary_key=True)
+
 
 GENERAL_CONFIG_TABLE = Table(
     "general_config",
     metadata,
-    study_id_col,
+    get_study_id_col(),
     Column("mode", Enum(Mode), nullable=False),
     Column("first_day", Integer(), nullable=False),
     Column("last_day", Integer(), nullable=False),
@@ -65,7 +68,7 @@ GENERAL_CONFIG_TABLE = Table(
 ADVANCED_PARAMETERS_TABLE = Table(
     "advanced_parameters",
     metadata,
-    study_id_col,
+    get_study_id_col(),
     Column("accuracy_on_correlation", String(), nullable=False),
     Column("power_fluctuations", Enum(PowerFluctuation), nullable=False),
     Column("shedding_policy", Enum(SheddingPolicy), nullable=False),
@@ -94,7 +97,7 @@ ADVANCED_PARAMETERS_TABLE = Table(
 ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
     "adequacy_patch_parameters",
     metadata,
-    study_id_col,
+    get_study_id_col(),
     Column("enable_adequacy_patch", Boolean(), nullable=False),
     Column("ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch", Boolean(), nullable=False),
     Column("price_taking_order", Enum(PriceTakingOrder), nullable=True),
@@ -112,7 +115,7 @@ ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
 COMPATIBILITY_PARAMETERS_TABLE = Table(
     "compatibility_parameters",
     metadata,
-    study_id_col,
+    get_study_id_col(),
     Column("hydro_pmax", Enum(HydroPmax), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_parameters_study_id", ondelete="CASCADE"),
 )
@@ -120,7 +123,7 @@ COMPATIBILITY_PARAMETERS_TABLE = Table(
 OPTIMIZATION_PREFERENCES_TABLE = Table(
     "optimization_preferences",
     metadata,
-    study_id_col,
+    get_study_id_col(),
     Column("binding_constraints", Boolean(), nullable=False),
     Column("hurdle_costs", Boolean(), nullable=False),
     Column("transmission_capacities", String(), nullable=False),
@@ -139,7 +142,7 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
 TIMESERIES_CONFIG_TABLE = Table(
     "timeseries_config",
     metadata,
-    study_id_col,
+    get_study_id_col(),
     Column("thermal_number", Integer(), nullable=False),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_timeseries_config_study_id", ondelete="CASCADE"),
 )
@@ -147,7 +150,7 @@ TIMESERIES_CONFIG_TABLE = Table(
 PLAYLIST_TABLE = Table(
     "playlist",
     metadata,
-    study_id_col,
+    get_study_id_col(),
     Column("years", String(), nullable=False),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_playlist_study_id", ondelete="CASCADE"),
 )
