@@ -14,6 +14,8 @@ from antarest.study.business.model.config.advanced_parameters_model import Advan
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
@@ -26,3 +28,5 @@ def test_initialize_study(dao: DatabaseStudyDao) -> None:
     assert dao.get_advanced_parameters() == AdvancedParameters()
     assert dao.get_adequacy_patch_parameters() == AdequacyPatchParameters()
     assert dao.get_compatibility_parameters() == CompatibilityParameters()
+    assert dao.get_playlist_config() == Playlist()
+    assert dao.get_timeseries_config() == TimeSeriesConfiguration()
