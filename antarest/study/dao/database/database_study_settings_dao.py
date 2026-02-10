@@ -31,7 +31,11 @@ from antarest.study.dao.api.general_config_dao import GeneralConfigDao
 from antarest.study.dao.api.optimization_preferences_dao import OptimizationPreferencesDao
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
-from antarest.study.dao.database.models.settings import GENERAL_CONFIG_TABLE, OPTIMIZATION_PREFERENCES_TABLE
+from antarest.study.dao.database.models.settings import (
+    ADVANCED_PARAMETERS_TABLE,
+    GENERAL_CONFIG_TABLE,
+    OPTIMIZATION_PREFERENCES_TABLE,
+)
 from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
@@ -163,11 +167,66 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        values = dict(
+            study_id=self.get_study_id(),
+            accuracy_on_correlation=parameters.accuracy_on_correlation,
+            power_fluctuations=parameters.power_fluctuations,
+            shedding_policy=parameters.shedding_policy,
+            hydro_pricing_mode=parameters.hydro_pricing_mode,
+            hydro_heuristic_policy=parameters.hydro_heuristic_policy,
+            unit_commitment_mode=parameters.unit_commitment_mode,
+            number_of_cores_mode=parameters.number_of_cores_mode,
+            day_ahead_reserve_management=parameters.day_ahead_reserve_management,
+            renewable_generation_modelling=parameters.renewable_generation_modelling,
+            seed_tsgen_wind=parameters.seed_tsgen_wind,
+            seed_tsgen_load=parameters.seed_tsgen_load,
+            seed_tsgen_hydro=parameters.seed_tsgen_hydro,
+            seed_tsgen_thermal=parameters.seed_tsgen_thermal,
+            seed_tsgen_solar=parameters.seed_tsgen_solar,
+            seed_tsnumbers=parameters.seed_tsnumbers,
+            seed_unsupplied_energy_costs=parameters.seed_unsupplied_energy_costs,
+            seed_spilled_energy_costs=parameters.seed_spilled_energy_costs,
+            seed_thermal_costs=parameters.seed_thermal_costs,
+            seed_hydro_costs=parameters.seed_hydro_costs,
+            seed_initial_reservoir_levels=parameters.seed_initial_reservoir_levels,
+            initial_reservoir_levels=parameters.initial_reservoir_levels,
+            accurate_shave_peaks_include_short_term_storage=parameters.accurate_shave_peaks_include_short_term_storage,
+        )
+        session = self.get_session()
+        upsert_one(session, ADVANCED_PARAMETERS_TABLE, values)
+        session.commit()
 
     @override
     def get_advanced_parameters(self) -> AdvancedParameters:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        stmt = select(ADVANCED_PARAMETERS_TABLE).where((ADVANCED_PARAMETERS_TABLE.c.study_id == study_id))
+        row = self.get_session().execute(stmt).fetchone()
+        if not row:
+            raise StudyNotFoundError(study_id)
+        return AdvancedParameters(
+            accuracy_on_correlation=row.accuracy_on_correlation,
+            power_fluctuations=row.power_fluctuations,
+            shedding_policy=row.shedding_policy,
+            hydro_pricing_mode=row.hydro_pricing_mode,
+            hydro_heuristic_policy=row.hydro_heuristic_policy,
+            unit_commitment_mode=row.unit_commitment_mode,
+            number_of_cores_mode=row.number_of_cores_mode,
+            day_ahead_reserve_management=row.day_ahead_reserve_management,
+            renewable_generation_modelling=row.renewable_generation_modelling,
+            seed_tsgen_wind=row.seed_tsgen_wind,
+            seed_tsgen_load=row.seed_tsgen_load,
+            seed_tsgen_hydro=row.seed_tsgen_hydro,
+            seed_tsgen_thermal=row.seed_tsgen_thermal,
+            seed_tsgen_solar=row.seed_tsgen_solar,
+            seed_tsnumbers=row.seed_tsnumbers,
+            seed_unsupplied_energy_costs=row.seed_unsupplied_energy_costs,
+            seed_spilled_energy_costs=row.seed_spilled_energy_costs,
+            seed_thermal_costs=row.seed_thermal_costs,
+            seed_hydro_costs=row.seed_hydro_costs,
+            seed_initial_reservoir_levels=row.seed_initial_reservoir_levels,
+            initial_reservoir_levels=row.initial_reservoir_levels,
+            accurate_shave_peaks_include_short_term_storage=row.accurate_shave_peaks_include_short_term_storage,
+        )
 
     @override
     def get_compatibility_parameters(self) -> CompatibilityParameters:
