@@ -33,6 +33,7 @@ from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
 from antarest.study.dao.database.models.settings import (
     ADVANCED_PARAMETERS_TABLE,
+    COMPATIBILITY_PARAMETERS_TABLE,
     GENERAL_CONFIG_TABLE,
     OPTIMIZATION_PREFERENCES_TABLE,
 )
@@ -230,11 +231,19 @@ class DatabaseStudySettingsDao(
 
     @override
     def get_compatibility_parameters(self) -> CompatibilityParameters:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        stmt = select(COMPATIBILITY_PARAMETERS_TABLE).where((COMPATIBILITY_PARAMETERS_TABLE.c.study_id == study_id))
+        row = self.get_session().execute(stmt).fetchone()
+        if not row:
+            raise StudyNotFoundError(study_id)
+        return CompatibilityParameters(hydro_pmax=row.hydro_pmax)
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        values = dict(study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax)
+        session = self.get_session()
+        upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
+        session.commit()
 
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
