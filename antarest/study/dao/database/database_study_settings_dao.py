@@ -31,7 +31,7 @@ from antarest.study.dao.api.general_config_dao import GeneralConfigDao
 from antarest.study.dao.api.optimization_preferences_dao import OptimizationPreferencesDao
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
-from antarest.study.dao.database.models.settings import GENERAL_CONFIG_TABLE
+from antarest.study.dao.database.models.settings import GENERAL_CONFIG_TABLE, OPTIMIZATION_PREFERENCES_TABLE
 from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
@@ -120,11 +120,46 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        values = dict(
+            study_id=self.get_study_id(),
+            binding_constraints=config.binding_constraints,
+            hurdle_costs=config.hurdle_costs,
+            transmission_capacities=config.transmission_capacities,
+            thermal_clusters_min_stable_power=config.thermal_clusters_min_stable_power,
+            thermal_clusters_min_ud_time=config.thermal_clusters_min_ud_time,
+            day_ahead_reserve=config.day_ahead_reserve,
+            primary_reserve=config.primary_reserve,
+            strategic_reserve=config.strategic_reserve,
+            spinning_reserve=config.spinning_reserve,
+            export_mps=config.export_mps,
+            unfeasible_problem_behavior=config.unfeasible_problem_behavior,
+            simplex_optimization_range=config.simplex_optimization_range,
+        )
+        session = self.get_session()
+        upsert_one(session, OPTIMIZATION_PREFERENCES_TABLE, values)
+        session.commit()
 
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        stmt = select(OPTIMIZATION_PREFERENCES_TABLE).where((OPTIMIZATION_PREFERENCES_TABLE.c.study_id == study_id))
+        row = self.get_session().execute(stmt).fetchone()
+        if not row:
+            raise StudyNotFoundError(study_id)
+        return OptimizationPreferences(
+            binding_constraints=row.binding_constraints,
+            hurdle_costs=row.hurdle_costs,
+            transmission_capacities=row.transmission_capacities,
+            thermal_clusters_min_stable_power=row.thermal_clusters_min_stable_power,
+            thermal_clusters_min_ud_time=row.thermal_clusters_min_ud_time,
+            day_ahead_reserve=row.day_ahead_reserve,
+            primary_reserve=row.primary_reserve,
+            strategic_reserve=row.strategic_reserve,
+            spinning_reserve=row.spinning_reserve,
+            export_mps=row.export_mps,
+            unfeasible_problem_behavior=row.unfeasible_problem_behavior,
+            simplex_optimization_range=row.simplex_optimization_range,
+        )
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
