@@ -31,5 +31,5 @@ class LayerDao(ReadOnlyLayerDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_layer(self, layer: Layer) -> None:
+    def delete_layer(self, layer_id: str) -> None:
         raise NotImplementedError()

@@ -106,9 +106,12 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
@@ -573,7 +576,12 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
-        StudyDatabaseMatrixUsageProvider(command_context.matrix_service)
+        matrix_service = command_context.matrix_service
+        StudyDatabaseMatrixUsageProvider(matrix_service)
+        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
+        }
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -954,13 +962,9 @@ class StudyService:
             groups=groups,
         )
 
-        raw = self.storage_service.raw_study_service.create(raw)
-
-        self._save_study(raw)
-
-        dao = self._create_study_dao(raw)
-
-        dao.initialize_study()
+        raw.content_status = StudyContentStatus.VALID
+        self.repository.save(raw)
+        self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
 
         self.event_bus.push(
             Event(
@@ -972,12 +976,6 @@ class StudyService:
 
         logger.info("study %s created by user %s with storage_mode=%s", raw.id, get_user_id(), storage_mode)
         return str(raw.id)
-
-    def _create_study_dao(self, raw: RawStudy) -> StudyDao:
-        if raw.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(raw.id, db.session, self.storage_service.raw_study_service.matrix_service)
-        context = self.storage_service.variant_study_service.command_factory.command_context
-        return FileStudyTreeDao(self.get_file_study(raw), context.generator_matrix_constants, context.blob_service)
 
     def get_user_name(self) -> str:
         """

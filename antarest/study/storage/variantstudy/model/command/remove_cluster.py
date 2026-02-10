@@ -64,7 +64,7 @@ class RemoveCluster(ICommand):
             raise ReferencedObjectDeletionNotAllowed(lowered_id, binding_ids, object_type="Cluster")
 
         # Delete the cluster
-        study_data.delete_thermal(self.area_id, thermal)
+        study_data.delete_thermal(self.area_id, thermal.id)
         return command_succeeded(f"Thermal cluster '{self.cluster_id}' inside area '{self.area_id}' deleted")
 
     @override

@@ -28,6 +28,7 @@ from antarest.study.dao.database.models.link import (
     LINK_SERIES_TABLE,
     LINK_TABLE,
 )
+from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -83,6 +84,9 @@ class DatabaseLinkDao(LinkDao):
         session = self.get_session()
 
         values = {
+            "study_id": self.get_study_id(),
+            "area1": link.area1,
+            "area2": link.area2,
             "hurdles_cost": link.hurdles_cost,
             "loop_flow": link.loop_flow,
             "use_phase_shifter": link.use_phase_shifter,
@@ -99,30 +103,12 @@ class DatabaseLinkDao(LinkDao):
             "filter_year_by_year": _join_with_comma(link.filter_year_by_year),
         }
 
-        if self.link_exists(link.area1, link.area2):
-            stmt_update = (
-                update(LINK_TABLE)
-                .where(
-                    (LINK_TABLE.c.study_id == self.get_study_id())
-                    & (LINK_TABLE.c.area1 == link.area1)
-                    & (LINK_TABLE.c.area2 == link.area2)
-                )
-                .values(values)
-            )
-
-            session.execute(stmt_update)
-        else:
-            values["study_id"] = self.get_study_id()
-            values["area1"] = link.area1
-            values["area2"] = link.area2
-            stmt_insert = insert(LINK_TABLE).values(values)
-
-            try:
-                session.execute(stmt_insert)
-            except IntegrityError:
-                # Happens if the link's areas did not existed -> ForeignKey constraint fails
-                session.rollback()
-                raise AreaNotFound(*[link.area1, link.area2])
+        try:
+            upsert_one(session, LINK_TABLE, values)
+        except IntegrityError:
+            # Happens if the link's areas did not existed -> ForeignKey constraint fails
+            session.rollback()
+            raise AreaNotFound(*[link.area1, link.area2])
 
         session.commit()
 
