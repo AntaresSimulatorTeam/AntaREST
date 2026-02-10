@@ -9,12 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import uuid
+
+from sqlalchemy.orm import Session
+
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters, PriceTakingOrder
 from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
     SheddingPolicy,
     UnitCommitmentMode,
 )
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode, Month
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
@@ -22,6 +28,9 @@ from antarest.study.business.model.config.optimization_config_model import (
 from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.model import StorageMode
+from tests.helpers import create_study
 
 
 def test_nominal_case(dao: DatabaseStudyDao) -> None:
@@ -56,3 +65,20 @@ def test_nominal_case(dao: DatabaseStudyDao) -> None:
     preferences = OptimizationPreferences(binding_constraints=False, export_mps="optim-1")
     dao.save_optimization_preferences(preferences)
     assert dao.get_optimization_preferences() == preferences
+
+
+def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    # Create a study in version 9.3 to test the compatibility parameters
+    study_id = str(uuid.uuid4())
+    with db_session:
+        study = create_study(id=study_id, name="Test Study", version="9.3")
+        study.storage_mode = StorageMode.DATABASE
+        db_session.add(study)
+        db_session.commit()
+        factory = DatabaseStudyDaoFactory(matrix_service, db_session)
+        dao = factory.create_study_dao(study)
+
+    assert dao.get_compatibility_parameters() == CompatibilityParameters()
+    new_parameters = CompatibilityParameters(hydro_pmax=HydroPmax.HOURLY)
+    dao.save_compatibility_parameters(new_parameters)
+    assert dao.get_compatibility_parameters() == new_parameters
