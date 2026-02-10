@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import pytest
-from tests.helpers import dirhash
 from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
@@ -23,6 +22,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import dirhash
 
 
 class TestUpdateShortTermSorage:

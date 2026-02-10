@@ -15,7 +15,6 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
-from tests.helpers import dirhash
 from py7zr import SevenZipFile, py7zr
 
 from antarest.blobstore.service import BlobService
@@ -36,7 +35,7 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import empty_study_fixture
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import create_raw_study, with_db_context
+from tests.helpers import create_raw_study, dirhash, with_db_context
 
 
 def test_export(

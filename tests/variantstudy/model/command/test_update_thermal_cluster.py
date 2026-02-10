@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import pytest
-from tests.helpers import dirhash
 from pydantic import ValidationError
 
 from antarest.study.business.model.thermal_cluster_model import (
@@ -29,6 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import dirhash
 
 
 class TestUpdateThermalCluster:
