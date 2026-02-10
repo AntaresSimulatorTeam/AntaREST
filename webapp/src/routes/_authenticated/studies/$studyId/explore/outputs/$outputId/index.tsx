@@ -363,6 +363,7 @@ function Output() {
           setFrequency={setFrequency}
           output={output}
           studyId={studyId}
+          outputId={outputId}
           path={path}
           onColHeadersChange={handleColHeadersChange}
           onToggleFilter={handleToggleFilter}
