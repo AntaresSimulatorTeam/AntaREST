@@ -30,7 +30,7 @@
     "@tanstack/react-query-devtools": "5.91.1",
     "@tanstack/react-router": "1.139.12",
     "@tanstack/react-router-devtools": "1.139.12",
-    "axios": "1.7.7",
+    "axios": "1.13.5",
     "clsx": "2.1.1",
     "d3": "5.16.0",
     "date-fns": "4.1.0",
