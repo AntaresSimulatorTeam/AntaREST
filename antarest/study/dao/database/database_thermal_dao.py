@@ -79,47 +79,9 @@ class DatabaseThermalDao(ThermalDao):
         return cluster
 
     def _convert_thermal_cluster_to_row(self, area_id: str, cluster: ThermalCluster) -> dict[str, Any]:
-        return dict(
-            study_id=self._study_id,
-            area_id=area_id,
-            thermal_id=cluster.id,
-            name=cluster.name,
-            unit_count=cluster.unit_count,
-            nominal_capacity=cluster.nominal_capacity,
-            enabled=cluster.enabled,
-            group=cluster.group,
-            gen_ts=cluster.gen_ts,
-            min_stable_power=cluster.min_stable_power,
-            min_up_time=cluster.min_up_time,
-            min_down_time=cluster.min_down_time,
-            must_run=cluster.must_run,
-            spinning=cluster.spinning,
-            volatility_forced=cluster.volatility_forced,
-            volatility_planned=cluster.volatility_planned,
-            law_forced=cluster.law_forced,
-            law_planned=cluster.law_planned,
-            marginal_cost=cluster.marginal_cost,
-            spread_cost=cluster.spread_cost,
-            fixed_cost=cluster.fixed_cost,
-            startup_cost=cluster.startup_cost,
-            market_bid_cost=cluster.market_bid_cost,
-            co2=cluster.co2,
-            nh3=cluster.nh3,
-            so2=cluster.so2,
-            nox=cluster.nox,
-            pm2_5=cluster.pm2_5,
-            pm5=cluster.pm5,
-            pm10=cluster.pm10,
-            nmvoc=cluster.nmvoc,
-            op1=cluster.op1,
-            op2=cluster.op2,
-            op3=cluster.op3,
-            op4=cluster.op4,
-            op5=cluster.op5,
-            cost_generation=cluster.cost_generation,
-            efficiency=cluster.efficiency,
-            variable_o_m_cost=cluster.variable_o_m_cost,
-        )
+        values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
+        values["thermal_id"] = values.pop("id")
+        return values
 
     def _get_thermal_matrix_row(self, area_id: str, thermal_id: str, table: Table) -> Row[Any] | None:
         study_id = self._study_id
