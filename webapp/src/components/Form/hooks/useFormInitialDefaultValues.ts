@@ -31,12 +31,12 @@ function useFormInitialDefaultValues<TFieldValues extends FieldValues, TContext>
   formApi: UseFormReturn<TFieldValues, TContext>,
 ) {
   const {
-    control,
     formState: { isLoading, defaultValues },
+    getValues,
   } = formApi;
 
   const getDefaultValues = (): TFieldValues => ({
-    ...(control._formValues as TFieldValues), // Because `formState.defaultValues` can be partial
+    ...getValues(), // Because `formState.defaultValues` can be partial
     ...defaultValues,
   });
 
