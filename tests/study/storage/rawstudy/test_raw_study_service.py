@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import datetime
-import typing as t
 import zipfile
 from pathlib import Path
 
@@ -38,24 +37,6 @@ for each test method (the fixture has `autouse=True`).
 
 
 @pytest.mark.parametrize(
-    "outputs",
-    [
-        pytest.param(True, id="outputs_yes"),
-        pytest.param(False, id="no_outputs"),
-    ],
-)
-@pytest.mark.parametrize(
-    "output_filter",
-    [
-        # fmt:off
-        pytest.param(None, id="no_filter"),
-        pytest.param(["20230802-1425eco"], id="folder"),
-        pytest.param(["20230802-1628eco"], id="zipped"),
-        pytest.param(["20230802-1425eco", "20230802-1628eco"], id="both"),
-        # fmt:on
-    ],
-)
-@pytest.mark.parametrize(
     "denormalize",
     [
         pytest.param(True, id="denormalize_yes"),
@@ -65,14 +46,11 @@ for each test method (the fixture has `autouse=True`).
 @with_db_context
 @with_admin_user
 def test_export_study_flat(
-    self,
     tmp_path: Path,
     raw_study_service: RawStudyService,
     command_factory: CommandFactory,
     study_service: StudyService,
     # pytest parameters
-    outputs: bool,
-    output_filter: t.Optional[t.List[str]],
     denormalize: bool,
 ) -> None:
     # Prepare database objects
@@ -172,21 +150,20 @@ def test_export_study_flat(
     raw_study_service.export_study_flat(
         raw_study,
         target_path,
-        outputs=outputs,
-        output_list_filter=output_filter,
         denormalize=denormalize,
     )
 
     # Collect the resulting files
     res_study_files = set()
     res_matrices = set()
-    res_outputs = set()
     for study_file in target_path.rglob("*.*"):
         relpath = study_file.relative_to(target_path).as_posix()
+
+        # we should not export outputs
+        assert not relpath.startswith("output")
+
         if study_file.suffixes == [".txt", ".link"]:
             res_matrices.add(relpath.replace(".link", ""))
-        elif relpath.startswith("output/"):
-            res_outputs.add(relpath)
         else:
             res_study_files.add(relpath)
 
@@ -200,20 +177,6 @@ def test_export_study_flat(
         res_matrices = {f for f in res_study_files if f in src_matrices}
         res_study_files -= res_matrices
     assert res_matrices == src_matrices
-
-    # Check the outputs
-    if outputs:
-        # If `outputs` is True the filtering can occurs
-        if output_filter is None:
-            expected_filter = {f.replace(".zip", "") for f in my_solver_outputs}
-        else:
-            expected_filter = set(output_filter)
-        expected = {f"output/{output_name}/simulation.log" for output_name in expected_filter}
-        assert res_outputs == expected
-    else:
-        # If `outputs` is False, no output must be exported
-        # whatever the value of the `output_list_filter` is
-        assert not res_outputs
 
     # Check the study files
     assert res_study_files == src_study_files
