@@ -16,6 +16,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { directoryKeys } from "@/queries/directories/keys";
+import { directoryQueries } from "@/queries/directories/queries";
 import { deleteDirectory } from "@/services/api/directories";
 import type { Directory } from "@/services/api/directories/types";
 import { toError } from "@/utils/fnUtils";
@@ -65,7 +66,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
       await queryClient.cancelQueries({ queryKey: directoryKeys.details() });
 
       // Snapshot the previous state for rollback
-      const previousDirectories = queryClient.getQueryData<Directory[]>(directoryKeys.list());
+      const previousDirectories = queryClient.getQueryData(directoryQueries.list().queryKey);
 
       // Track affected directories for cache cleanup (directory + all descendants)
       const affectedDirectoryIds = [
@@ -79,7 +80,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
           (dir) => !affectedDirectoryIds.includes(dir.id),
         );
 
-        queryClient.setQueryData<Directory[]>(directoryKeys.list(), updatedDirectories);
+        queryClient.setQueryData(directoryQueries.list().queryKey, updatedDirectories);
       }
 
       return {
@@ -90,7 +91,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
     onError: (error, _variables, context) => {
       // Rollback optimistic updates
       if (context?.previousDirectories) {
-        queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
+        queryClient.setQueryData(directoryQueries.list().queryKey, context.previousDirectories);
       }
 
       enqueueErrorSnackbar(t("studies.deleteDirectory.error"), toError(error));

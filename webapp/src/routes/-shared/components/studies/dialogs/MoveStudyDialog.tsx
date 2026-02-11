@@ -75,7 +75,7 @@ function MoveStudyDialog(props: Props) {
     onClose();
 
     // Refresh directory list to reflect the move (creates directory if it doesn't exist)
-    queryClient.invalidateQueries({ queryKey: directoryKeys.list() });
+    queryClient.invalidateQueries({ queryKey: directoryKeys.lists() });
 
     enqueueSnackbar(
       t("studies.success.moveStudy", {

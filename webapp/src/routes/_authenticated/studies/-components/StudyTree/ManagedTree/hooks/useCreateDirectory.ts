@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { directoryKeys } from "@/queries/directories/keys";
 import { directoryMutations } from "@/queries/directories/mutations";
+import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
 import { toError } from "@/utils/fnUtils";
 
@@ -38,13 +39,13 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
     ...directoryMutations.create(),
     onMutate: async (newDirectory): Promise<CreateDirectoryContext> => {
       // Generate a temporary ID for optimistic update
-      const tempId = `temp-${Date.now()}-${Math.random()}`;
+      const tempId = `temp-${Date.now()}`;
 
       // Cancel only the list queries we're about to update
       await queryClient.cancelQueries({ queryKey: directoryKeys.lists() });
 
       // Snapshot the previous state for rollback
-      const previousDirectories = queryClient.getQueryData<Directory[]>(directoryKeys.list());
+      const previousDirectories = queryClient.getQueryData(directoryQueries.list().queryKey);
 
       // Optimistically add the new directory to the list
       if (previousDirectories) {
@@ -54,18 +55,19 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
           parentId: newDirectory.parentId,
         };
 
-        queryClient.setQueryData<Directory[]>(directoryKeys.list(), [
+        queryClient.setQueryData(directoryQueries.list().queryKey, [
           ...previousDirectories,
           tempDirectory,
         ]);
       }
 
+      // use previous directories in onError and filter instead
       return { previousDirectories, tempId };
     },
     onError: (error, _newDirectory, context) => {
       // Rollback optimistic update
       if (context?.previousDirectories) {
-        queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
+        queryClient.setQueryData(directoryQueries.list().queryKey, context.previousDirectories);
       }
 
       enqueueErrorSnackbar(t("studies.createDirectory.error"), toError(error));
@@ -75,7 +77,7 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
       queryClient.setQueryData<Directory>(directoryKeys.detail(data.id), data);
 
       // Update the list cache: replace temp directory with the real one
-      queryClient.setQueryData<Directory[]>(directoryKeys.list(), (old) => {
+      queryClient.setQueryData(directoryQueries.list().queryKey, (old) => {
         if (!old) {
           return [data];
         }

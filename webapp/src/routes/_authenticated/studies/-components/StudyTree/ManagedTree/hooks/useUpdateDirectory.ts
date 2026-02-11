@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { directoryKeys } from "@/queries/directories/keys";
 import { directoryMutations } from "@/queries/directories/mutations";
+import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
 import { toError } from "@/utils/fnUtils";
 
@@ -42,11 +43,11 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
       await queryClient.cancelQueries({ queryKey: directoryKeys.detail(id) });
 
       // Snapshot the previous state for rollback
-      const previousDirectories = queryClient.getQueryData<Directory[]>(directoryKeys.list());
+      const previousDirectories = queryClient.getQueryData(directoryQueries.list().queryKey);
       const previousDetail = queryClient.getQueryData<Directory>(directoryKeys.detail(id));
 
       // Optimistically update the directory list
-      queryClient.setQueryData<Directory[]>(directoryKeys.list(), (old) =>
+      queryClient.setQueryData(directoryQueries.list().queryKey, (old) =>
         old?.map((dir) => (dir.id === id ? { ...dir, ...updateData } : dir)),
       );
 
@@ -63,7 +64,7 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
     onError: (error, { id }, context) => {
       // Rollback optimistic updates
       if (context?.previousDirectories) {
-        queryClient.setQueryData(directoryKeys.list(), context.previousDirectories);
+        queryClient.setQueryData(directoryQueries.list().queryKey, context.previousDirectories);
       }
       if (context?.previousDetail) {
         queryClient.setQueryData(directoryKeys.detail(id), context.previousDetail);
@@ -76,7 +77,7 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
       queryClient.setQueryData<Directory>(directoryKeys.detail(id), data);
 
       // Update the directory in the list with server response
-      queryClient.setQueryData<Directory[]>(directoryKeys.list(), (old) =>
+      queryClient.setQueryData(directoryQueries.list().queryKey, (old) =>
         old?.map((dir) => (dir.id === id ? data : dir)),
       );
 

@@ -19,7 +19,7 @@ import { directoryKeys } from "./keys";
 export const directoryQueries = {
   list: () => {
     return queryOptions({
-      queryKey: directoryKeys.list(),
+      queryKey: directoryKeys.lists(),
       queryFn: getDirectories,
     });
   },
