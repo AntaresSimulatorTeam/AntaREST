@@ -22,10 +22,12 @@ from typing import TYPE_CHECKING, Any, Dict
 import numpy as np
 import polars as pl
 from sqlalchemy import Row, delete, insert, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    AreaNotFound,
     HydroAllocationNotFound,
     HydroConfigNotFound,
     HydroInflowStructureNotFound,
@@ -38,7 +40,7 @@ from antarest.study.business.model.hydro_correlation_model import (
 )
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
-from antarest.study.dao.database.common import validate_area_exists, validate_areas_exists
+from antarest.study.dao.database.common import validate_area_exists
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
     HYDRO_CORRELATION_TABLE,
@@ -149,14 +151,16 @@ class DatabaseHydroDao(HydroDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        validate_area_exists(session, study_id, area_id)
-
         values = hydro_management.model_dump()
         values["study_id"] = study_id
         values["area_id"] = area_id
-        upsert_one(session, HYDRO_MANAGEMENT_TABLE, values)
-
-        session.commit()
+        try:
+            upsert_one(session, HYDRO_MANAGEMENT_TABLE, values)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            invalid = self.get_impl().get_invalid_area_ids([area_id])
+            raise AreaNotFound(*invalid) from e
 
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
@@ -203,16 +207,18 @@ class DatabaseHydroDao(HydroDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        validate_area_exists(session, study_id, area_id)
-
         values = {
             "study_id": study_id,
             "area_id": area_id,
             "inter_monthly_correlation": inflow_structure.inter_monthly_correlation,
         }
-        upsert_one(session, HYDRO_INFLOW_STRUCTURE_TABLE, values)
-
-        session.commit()
+        try:
+            upsert_one(session, HYDRO_INFLOW_STRUCTURE_TABLE, values)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            invalid = self.get_impl().get_invalid_area_ids([area_id])
+            raise AreaNotFound(*invalid) from e
 
     @override
     def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
@@ -336,13 +342,6 @@ class DatabaseHydroDao(HydroDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Validate source area exists
-        validate_area_exists(session, study_id, area_id)
-
-        # Validate all target areas exist
-        target_area_ids = {a.area_id for a in allocation.allocation}
-        validate_areas_exists(session, study_id, target_area_ids)
-
         # Delete existing allocations for this source area
         stmt_delete = delete(HYDRO_ALLOCATION_TABLE).where(
             (HYDRO_ALLOCATION_TABLE.c.study_id == study_id) & (HYDRO_ALLOCATION_TABLE.c.source_area_id == area_id)
@@ -360,9 +359,14 @@ class DatabaseHydroDao(HydroDao):
             for alloc_area in allocation.allocation
         ]
 
-        session.execute(insert(HYDRO_ALLOCATION_TABLE), insert_values)
-
-        session.commit()
+        try:
+            session.execute(insert(HYDRO_ALLOCATION_TABLE), insert_values)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            all_area_ids = [area_id] + [a.area_id for a in allocation.allocation]
+            invalid = self.get_impl().get_invalid_area_ids(all_area_ids)
+            raise AreaNotFound(*invalid) from e
 
     @override
     def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
@@ -431,49 +435,55 @@ class DatabaseHydroDao(HydroDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Validate all areas exist (source area + correlated areas)
-        all_input_area_ids = {corr_area.area_id for corr_area in correlation.correlation}
-        all_input_area_ids.add(area_id)
-        validate_areas_exists(session, study_id, all_input_area_ids)
+        try:
+            # Get current matrix and apply changes (validates diagonal = 1, symmetry, etc.)
+            # set_correlation raises ValueError if any area_id is not in the matrix
+            current_correlation_matrix = self.get_hydro_correlation_matrix()
+            current_correlation_matrix.set_correlation(area_id, correlation)
 
-        # Get current matrix and apply changes (validates diagonal = 1, symmetry, etc.)
-        current_correlation_matrix = self.get_hydro_correlation_matrix()
-        current_correlation_matrix.set_correlation(area_id, correlation)
+            # Get all area IDs for iterating the matrix
+            study_area_ids = self.get_impl().get_all_area_ids()
+            study_area_ids = sorted(study_area_ids)
 
-        # Get all area IDs for iterating the matrix
-        study_area_ids = self.get_impl().get_all_area_ids()
-        study_area_ids = sorted(study_area_ids)
+            # Delete existing correlations
+            # Delete all of them as the matrix is fully replaced
+            stmt_delete = delete(HYDRO_CORRELATION_TABLE).where((HYDRO_CORRELATION_TABLE.c.study_id == study_id))
+            session.execute(stmt_delete)
 
-        # Delete existing correlations
-        # Delete all of them as the matrix is fully replaced
-        stmt_delete = delete(HYDRO_CORRELATION_TABLE).where((HYDRO_CORRELATION_TABLE.c.study_id == study_id))
-        session.execute(stmt_delete)
+            # Insert new correlations (only upper triangle: area_from < area_to)
+            # Diagonal is implicit, not stored
+            insert_values = []
+            for i in range(len(study_area_ids)):
+                # not saved: values from the diagonal are always == 1.0
+                for j in range(i + 1, len(study_area_ids)):
+                    coefficient = current_correlation_matrix.data[i][j]
+                    if not coefficient:
+                        # null values are not saved
+                        continue
+                    area_from = study_area_ids[i]
+                    area_to = study_area_ids[j]
+                    insert_values.append(
+                        {
+                            "study_id": study_id,
+                            "area_from": area_from,
+                            "area_to": area_to,
+                            "coefficient": coefficient,
+                        }
+                    )
 
-        # Insert new correlations (only upper triangle: area_from < area_to)
-        # Diagonal is implicit, not stored
-        insert_values = []
-        for i in range(len(study_area_ids)):
-            # not saved: values from the diagonal are always == 1.0
-            for j in range(i + 1, len(study_area_ids)):
-                coefficient = current_correlation_matrix.data[i][j]
-                if not coefficient:
-                    # null values are not saved
-                    continue
-                area_from = study_area_ids[i]
-                area_to = study_area_ids[j]
-                insert_values.append(
-                    {
-                        "study_id": study_id,
-                        "area_from": area_from,
-                        "area_to": area_to,
-                        "coefficient": coefficient,
-                    }
-                )
-
-        if insert_values:
-            session.execute(insert(HYDRO_CORRELATION_TABLE), insert_values)
-
-        session.commit()
+            if insert_values:
+                session.execute(insert(HYDRO_CORRELATION_TABLE), insert_values)
+            session.commit()
+        except (IntegrityError, ValueError) as e:
+            # IntegrityError: FK constraint violation on insert (area doesn't exist in DB)
+            # ValueError: set_correlation fails if an area_id is not in the matrix index
+            session.rollback()
+            all_area_ids = [area_id] + [corr_area.area_id for corr_area in correlation.correlation]
+            invalid = self.get_impl().get_invalid_area_ids(all_area_ids)
+            if invalid:
+                raise AreaNotFound(*invalid) from e
+            else:
+                raise e
 
     # ==================== Matrix Methods (NotImplementedError) ====================
 
