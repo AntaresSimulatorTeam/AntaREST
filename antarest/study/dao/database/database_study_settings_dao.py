@@ -32,6 +32,7 @@ from antarest.study.dao.api.general_config_dao import GeneralConfigDao
 from antarest.study.dao.api.optimization_preferences_dao import OptimizationPreferencesDao
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
+from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.settings import (
     ADEQUACY_PATCH_PARAMETERS_TABLE,
     ADVANCED_PARAMETERS_TABLE,
@@ -88,25 +89,9 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return GeneralConfig(
-            mode=row.mode,
-            first_day=row.first_day,
-            last_day=row.last_day,
-            horizon=row.horizon,
-            first_month=row.first_month,
-            first_week_day=row.first_week_day,
-            first_january=row.first_january,
-            leap_year=row.leap_year,
-            nb_years=row.nb_years,
-            building_mode=row.building_mode,
-            selection_mode=row.selection_mode,
-            year_by_year=row.year_by_year,
-            simulation_synthesis=row.simulation_synthesis,
-            mc_scenario=row.mc_scenario,
-            filtering=row.filtering,
-            geographic_trimming=row.geographic_trimming,
-            thematic_trimming=row.thematic_trimming,
-        )
+        data = get_row_representation_as_dict(row)
+        del data["study_id"]
+        return GeneralConfig(**data)
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
@@ -130,6 +115,8 @@ class DatabaseStudySettingsDao(
         if not row:
             raise StudyNotFoundError(study_id)
 
+        data = get_row_representation_as_dict(row)
+        del data["study_id"]
         # Handle `export_mps` differently as it is stored as String in DB, but it can either be a string or a boolean.
         mps: bool | str
         if row.export_mps.lower() == "true":
@@ -138,21 +125,9 @@ class DatabaseStudySettingsDao(
             mps = False
         else:
             mps = row.export_mps
+        data["export_mps"] = mps
 
-        return OptimizationPreferences(
-            binding_constraints=row.binding_constraints,
-            hurdle_costs=row.hurdle_costs,
-            transmission_capacities=row.transmission_capacities,
-            thermal_clusters_min_stable_power=row.thermal_clusters_min_stable_power,
-            thermal_clusters_min_ud_time=row.thermal_clusters_min_ud_time,
-            day_ahead_reserve=row.day_ahead_reserve,
-            primary_reserve=row.primary_reserve,
-            strategic_reserve=row.strategic_reserve,
-            spinning_reserve=row.spinning_reserve,
-            export_mps=mps,
-            unfeasible_problem_behavior=row.unfeasible_problem_behavior,
-            simplex_optimization_range=row.simplex_optimization_range,
-        )
+        return OptimizationPreferences(**data)
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
@@ -168,30 +143,10 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return AdvancedParameters(
-            accuracy_on_correlation=row.accuracy_on_correlation,
-            power_fluctuations=row.power_fluctuations,
-            shedding_policy=row.shedding_policy,
-            hydro_pricing_mode=row.hydro_pricing_mode,
-            hydro_heuristic_policy=row.hydro_heuristic_policy,
-            unit_commitment_mode=row.unit_commitment_mode,
-            number_of_cores_mode=row.number_of_cores_mode,
-            day_ahead_reserve_management=row.day_ahead_reserve_management,
-            renewable_generation_modelling=row.renewable_generation_modelling,
-            seed_tsgen_wind=row.seed_tsgen_wind,
-            seed_tsgen_load=row.seed_tsgen_load,
-            seed_tsgen_hydro=row.seed_tsgen_hydro,
-            seed_tsgen_thermal=row.seed_tsgen_thermal,
-            seed_tsgen_solar=row.seed_tsgen_solar,
-            seed_tsnumbers=row.seed_tsnumbers,
-            seed_unsupplied_energy_costs=row.seed_unsupplied_energy_costs,
-            seed_spilled_energy_costs=row.seed_spilled_energy_costs,
-            seed_thermal_costs=row.seed_thermal_costs,
-            seed_hydro_costs=row.seed_hydro_costs,
-            seed_initial_reservoir_levels=row.seed_initial_reservoir_levels,
-            initial_reservoir_levels=row.initial_reservoir_levels,
-            accurate_shave_peaks_include_short_term_storage=row.accurate_shave_peaks_include_short_term_storage,
-        )
+
+        data = get_row_representation_as_dict(row)
+        del data["study_id"]
+        return AdvancedParameters(**data)
 
     @override
     def get_compatibility_parameters(self) -> CompatibilityParameters:
@@ -223,18 +178,10 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return AdequacyPatchParameters(
-            enable_adequacy_patch=row.enable_adequacy_patch,
-            ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch=row.ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch,
-            price_taking_order=row.price_taking_order,
-            include_hurdle_cost_csr=row.include_hurdle_cost_csr,
-            check_csr_cost_function=row.check_csr_cost_function,
-            threshold_initiate_curtailment_sharing_rule=row.threshold_initiate_curtailment_sharing_rule,
-            threshold_display_local_matching_rule_violations=row.threshold_display_local_matching_rule_violations,
-            threshold_csr_variable_bounds_relaxation=row.threshold_csr_variable_bounds_relaxation,
-            ntc_between_physical_areas_out_adequacy_patch=row.ntc_between_physical_areas_out_adequacy_patch,
-            redispatch=row.redispatch,
-        )
+
+        data = get_row_representation_as_dict(row)
+        del data["study_id"]
+        return AdequacyPatchParameters(**data)
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
