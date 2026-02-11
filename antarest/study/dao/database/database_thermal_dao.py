@@ -15,7 +15,7 @@ Database implementation of ThermalDao.
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, NoReturn, Sequence
 
 import polars as pl
 from sqlalchemy import Row, Select, Table, delete, select
@@ -95,9 +95,7 @@ class DatabaseThermalDao(ThermalDao):
     def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> pl.DataFrame:
         row = self._get_thermal_matrix_row(area_id, thermal_id, table)
         if not row:
-            # Could be because area does not exist or the thermal does not exist
-            validate_area_exists(self._db_session, self._study_id, area_id)
-            raise ThermalClusterNotFound(area_id, thermal_id)
+            self._raise_the_right_exception(area_id, thermal_id)
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_thermal_matrix(self, area_id: str, thermal_id: str, table: Table, matrix_id: str) -> None:
@@ -109,20 +107,28 @@ class DatabaseThermalDao(ThermalDao):
             upsert_one(session, table, values)
         except IntegrityError as e:
             session.rollback()
-            # Could be because area does not exist or the thermal does not exist
-            validate_area_exists(self._db_session, self._study_id, area_id)
-            raise ThermalClusterNotFound(area_id, thermal_id) from e
+            self._raise_the_right_exception(area_id, thermal_id, e)
 
         session.commit()
 
+    def _raise_the_right_exception(self, area_id: str, thermal_id: str, exc: IntegrityError | None = None) -> NoReturn:
+        # Could be because area does not exist or the thermal does not exist
+        validate_area_exists(self._db_session, self._study_id, area_id)
+        if exc:
+            raise ThermalClusterNotFound(area_id, thermal_id) from exc
+        raise ThermalClusterNotFound(area_id, thermal_id)
+
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        study_id = self._study_id
         session = self._db_session
 
-        validate_area_exists(session, study_id, area_id)
         values = self._convert_thermal_cluster_to_row(area_id, thermal)
-        upsert_one(session, THERMAL_CLUSTER_TABLE, values)
+        try:
+            upsert_one(session, THERMAL_CLUSTER_TABLE, values)
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_exception(area_id, thermal.id, e)
+
         session.commit()
 
     @override
@@ -131,16 +137,19 @@ class DatabaseThermalDao(ThermalDao):
             return
 
         session = self._db_session
-        study_id = self._study_id
-        validate_area_exists(session, study_id, area_id)
-
         values = [self._convert_thermal_cluster_to_row(area_id, thermal) for thermal in thermals]
 
-        upsert_multiple(
-            session=session,
-            table=THERMAL_CLUSTER_TABLE,
-            values=values,
-        )
+        try:
+            upsert_multiple(session=session, table=THERMAL_CLUSTER_TABLE, values=values)
+        except IntegrityError as e:
+            session.rollback()
+            validate_area_exists(session, self._study_id, area_id)
+            # We have to find which thermal does not exist
+            existing_thermal_ids = {th.id for th in self.get_all_thermals_for_area(area_id)}
+            for thermal in thermals:
+                if thermal.id not in existing_thermal_ids:
+                    self._raise_the_right_exception(area_id, thermal.id, e)
+
         session.commit()
 
     @override
