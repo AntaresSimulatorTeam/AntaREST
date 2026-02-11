@@ -188,7 +188,7 @@ class DatabaseThermalDao(ThermalDao):
         if result.rowcount == 0:
             # Means the DELETE had no effect so the thermal did not exist
             session.rollback()
-            raise ThermalClusterNotFound(area_id, thermal_id)
+            self._raise_the_right_exception(area_id, thermal_id)
 
         # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
         session.commit()
