@@ -20,7 +20,6 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound
-from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.database.common import get_row_representation_as_dict
@@ -34,11 +33,6 @@ from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-
-
-def _join_with_comma(values: list[FilterOption]) -> str:
-    """Serialize filtering values for DB format"""
-    return ", ".join(value.name.lower() for value in values)
 
 
 def _convert_db_rows_to_model(db_row: Any) -> Link:
