@@ -20,7 +20,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from typing import TYPE_CHECKING, Sequence
 
-from sqlalchemy import delete, select
+from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -130,15 +130,17 @@ class DatabaseLayerDao(LayerDao):
         if layer_id == DEFAULT_LAYER_ID:
             raise LayerNotAllowedToBeDeleted()
 
-        if not self.layer_exists(layer_id):
-            raise LayerNotFound(layer_id)
-
         study_id = self.get_study_id()
         session = self.get_session()
 
-        session.execute(
+        result = session.execute(
             delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer_id))
         )
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect so the district did not exist
+            session.rollback()
+            raise LayerNotFound(layer_id)
 
         session.commit()
 

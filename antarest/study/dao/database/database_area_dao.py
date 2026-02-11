@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 
 import polars as pl
 from sqlalchemy import Row, Table, case, delete, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -302,12 +303,8 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        validate_area_exists(session, study_id, area_id)
-        if not self.get_impl().layer_exists(layer):
-            raise LayerNotFound(layer)
-
+        # Set values
         r, g, b = area_ui_data.color_rgb
-
         values = {
             "study_id": study_id,
             "area_id": area_id,
@@ -318,7 +315,16 @@ class DatabaseAreaDao(AreaDao):
             "color_g": g,
             "color_b": b,
         }
-        upsert_one(session, AREA_UI_TABLE, values)
+        # Performs the DB request
+        try:
+            upsert_one(session, AREA_UI_TABLE, values)
+        except IntegrityError as e:
+            # Could raise for area not found or layer not found.
+            session.rollback()
+            if not self.get_impl().layer_exists(layer):
+                raise LayerNotFound(layer) from e
+            else:
+                raise AreaNotFound(area_id) from e
         session.commit()
 
     @override
@@ -457,13 +463,15 @@ class DatabaseAreaDao(AreaDao):
         session = self.get_session()
         study_id = self.get_study_id()
 
-        validate_area_exists(session, study_id, area_id)
         values = {
             "study_id": study_id,
             "area_id": area_id,
             "matrix_id": matrix_id,
         }
-        upsert_one(session, table, values)
+        try:
+            upsert_one(session, table, values)
+        except IntegrityError as e:
+            raise AreaNotFound(area_id) from e
         session.commit()
 
     @override

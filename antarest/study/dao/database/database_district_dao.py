@@ -20,7 +20,7 @@ import json
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
-from sqlalchemy import delete, select
+from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -110,14 +110,16 @@ class DatabaseDistrictDao(DistrictDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        if not self.district_exists(district_id):
-            raise DistrictConfigNotFound(f"District '{district_id}' does not exist in study '{study_id}'")
-
-        session.execute(
+        result = session.execute(
             delete(DISTRICT_TABLE).where(
                 (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
             )
         )
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect so the district did not exist
+            session.rollback()
+            raise DistrictConfigNotFound(f"District '{district_id}' does not exist in study '{study_id}'")
         session.commit()
 
     @override
