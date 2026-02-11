@@ -28,11 +28,11 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_REFERENCE_TEMPLATES, STUDY_VERSION_8_3, STUDY_VERSION_9_2
 from tests.study.dao.conftest import build_dao
 
 
-@pytest.mark.parametrize("version", ["600", "650", "810", "830", "860", "880", "9.2", "9.3"])
+@pytest.mark.parametrize("version", STUDY_REFERENCE_TEMPLATES)
 def test_initialize_study(db_session: Session, matrix_service: ISimpleMatrixService, version: str) -> None:
     """Test that the study is initialized with the right default values"""
     study_version = StudyVersion.parse(version)
