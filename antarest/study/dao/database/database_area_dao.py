@@ -463,11 +463,7 @@ class DatabaseAreaDao(AreaDao):
         session = self.get_session()
         study_id = self.get_study_id()
 
-        values = {
-            "study_id": study_id,
-            "area_id": area_id,
-            "matrix_id": matrix_id,
-        }
+        values = {"study_id": study_id, "area_id": area_id, "matrix_id": matrix_id}
         try:
             upsert_one(session, table, values)
         except IntegrityError as e:

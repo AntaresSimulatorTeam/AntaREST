@@ -13,7 +13,8 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from sqlalchemy import Insert, Row, Table, Update, delete, insert, select, update
+from sqlalchemy import Row, Table, delete, select
+from sqlalchemy.engine.cursor import CursorResult
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -81,9 +82,6 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def delete_link(self, link: Link) -> None:
-        if not self.link_exists(link.area1, link.area2):
-            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
-
         study_id = self.get_study_id()
         session = self.get_session()
         stmt = delete(LINK_TABLE).where(
@@ -91,7 +89,12 @@ class DatabaseLinkDao(LinkDao):
             & (LINK_TABLE.c.area1 == link.area1)
             & (LINK_TABLE.c.area2 == link.area2)
         )
-        session.execute(stmt)
+        result = session.execute(stmt)
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect so the link did not exist
+            session.rollback()
+            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
         session.commit()
 
     @override
@@ -129,23 +132,14 @@ class DatabaseLinkDao(LinkDao):
 
     def _save_link_matrix(self, area_from_id: str, area_to_id: str, table: Table, matrix_id: str) -> None:
         area1, area2 = sorted((area_from_id, area_to_id))
-        row = self._get_row(area1, area2, table)
         session = self.get_session()
         study_id = self.get_study_id()
-        stmt: Insert | Update
-        if not row:
-            # We must check if the link exist or not
-            if not self.link_exists(area1, area2):
-                raise LinkNotFound(f"The link {area1} -> {area2} is not present in the study")
-            stmt = insert(table).values(study_id=study_id, area1=area1, area2=area2, matrix_id=matrix_id)
-        else:
-            stmt = (
-                update(table)
-                .where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
-                .values(matrix_id=matrix_id)
-            )
 
-        session.execute(stmt)
+        values = {"study_id": study_id, "area1": area1, "area2": area2, "matrix_id": matrix_id}
+        try:
+            upsert_one(session, table, values)
+        except IntegrityError as e:
+            raise LinkNotFound(f"The link {area_from_id} -> {area_to_id} is not present in the study") from e
         session.commit()
 
     @override
