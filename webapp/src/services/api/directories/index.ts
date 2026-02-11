@@ -27,43 +27,37 @@ import type { CreateDirectoryParams, Directory, UpdateDirectoryParams } from "./
  * @returns Promise<Directory[]> - List of directories
  * @throws {ZodError} If the response doesn't match the expected schema
  */
-export async function getDirectories(): Promise<Directory[]> {
-  const { data } = await client.get("/v1/directories");
-  return directoriesResponseSchema.parse(data);
+export async function getDirectories() {
+  const res = await client.get<Directory[]>("/v1/directories");
+  return directoriesResponseSchema.parse(res.data);
 }
 
 /**
  * POST /v1/directories - Create a new directory
  *
- * @param directoryData - Directory data to create
+ * @param data - Directory data to create
  * @returns Promise<Directory> - Created directory data
  * @throws {ZodError} If the params or response doesn't match the expected schema
  */
-export async function createDirectory(directoryData: CreateDirectoryParams): Promise<Directory> {
-  const validatedInput = createDirectoryParamsSchema.parse(directoryData);
-  const { data } = await client.post("/v1/directories", validatedInput);
-  return directorySchema.parse(data);
+export async function createDirectory(data: CreateDirectoryParams) {
+  const params = createDirectoryParamsSchema.parse(data);
+  const res = await client.post<Directory>("/v1/directories", params);
+  return directorySchema.parse(res.data);
 }
 
 /**
  * PATCH /v1/directories/{directoryId} - Update directory
  *
  * @param params - Update parameters
- * @param params.directoryId - ID of the directory to update
- * @param params.directoryData - Partial directory data to update
+ * @param params.id - ID of the directory to update
+ * @param params.data - Partial directory data to update
  * @returns Promise<Directory> - Updated directory data
  * @throws {ZodError} If the params or response doesn't match the expected schema
  */
-export async function updateDirectory({
-  directoryId,
-  directoryData,
-}: {
-  directoryId: string;
-  directoryData: UpdateDirectoryParams;
-}): Promise<Directory> {
-  const validatedInput = updateDirectoryParamsSchema.parse(directoryData);
-  const { data } = await client.patch(`/v1/directories/${directoryId}`, validatedInput);
-  return directorySchema.parse(data);
+export async function updateDirectory({ id, data }: UpdateDirectoryParams) {
+  const params = updateDirectoryParamsSchema.parse({ id, data });
+  const res = await client.patch<Directory>(`/v1/directories/${params.id}`, params.data);
+  return directorySchema.parse(res.data);
 }
 
 /**
@@ -72,6 +66,6 @@ export async function updateDirectory({
  * @param directoryId - ID of the directory to delete
  * @returns Promise<void>
  */
-export async function deleteDirectory(directoryId: string): Promise<void> {
+export async function deleteDirectory(directoryId: string) {
   await client.delete(`/v1/directories/${directoryId}`);
 }

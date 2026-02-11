@@ -14,7 +14,6 @@
 
 import { mutationOptions } from "@tanstack/react-query";
 import { createDirectory, deleteDirectory, updateDirectory } from "@/services/api/directories";
-import type { UpdateDirectoryParams } from "@/services/api/directories/types";
 import { directoryKeys } from "./keys";
 
 export const directoryMutations = {
@@ -28,8 +27,7 @@ export const directoryMutations = {
   update: () => {
     return mutationOptions({
       mutationKey: directoryKeys.update(),
-      mutationFn: ({ id, data }: { id: string; data: UpdateDirectoryParams }) =>
-        updateDirectory({ directoryId: id, directoryData: data }),
+      mutationFn: updateDirectory,
     });
   },
 
