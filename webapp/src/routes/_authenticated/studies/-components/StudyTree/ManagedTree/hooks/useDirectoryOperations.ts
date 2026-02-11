@@ -198,11 +198,10 @@ export function useDirectoryOperations(options?: UseDirectoryOperationsOptions) 
    * This is typically called when the user confirms deletion in a dialog.
    *
    * @param directoryId - ID of the directory to delete
-   * @param cascade - If true, deletes all child directories; if false, moves children to parent
-   * @param allDirectories - Complete list of directories (used for cascading logic)
+   * @param allDirectories - Complete list of directories (used for optimistic updates)
    */
-  const deleteDirectory = (directoryId: string, cascade: boolean, allDirectories: Directory[]) => {
-    deleteMutation.mutate({ directoryId, cascade, allDirectories });
+  const deleteDirectory = (directoryId: string, allDirectories: Directory[]) => {
+    deleteMutation.mutate({ directoryId, allDirectories });
   };
 
   /**

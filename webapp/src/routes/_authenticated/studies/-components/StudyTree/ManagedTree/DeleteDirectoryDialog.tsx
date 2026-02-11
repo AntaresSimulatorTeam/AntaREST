@@ -12,22 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Button,
-  FormControl,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  Typography,
-} from "@mui/material";
-import { useState } from "react";
+import { Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { type BasicDialogProps } from "@/components/dialogs/BasicDialog";
 
 export interface DeleteDirectoryDialogProps extends Omit<BasicDialogProps, "actions"> {
   directoryName: string;
   hasChildren: boolean;
-  onConfirm: (cascade: boolean) => void;
+  onConfirm: VoidFunction;
   onCancel: VoidFunction;
 }
 
@@ -40,7 +32,6 @@ function DeleteDirectoryDialog({
   ...basicDialogProps
 }: DeleteDirectoryDialogProps) {
   const { t } = useTranslation();
-  const [cascade, setCascade] = useState(true);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -49,10 +40,6 @@ function DeleteDirectoryDialog({
   const handleClose = (...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>) => {
     onCancel();
     onClose?.(...args);
-  };
-
-  const handleConfirm = () => {
-    onConfirm(cascade);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -72,7 +59,7 @@ function DeleteDirectoryDialog({
           <Button onClick={onCancel} color="inherit">
             {t("global.cancel")}
           </Button>
-          <Button onClick={handleConfirm} variant="contained" color="error">
+          <Button onClick={onConfirm} variant="contained" color="error">
             {t("global.delete")}
           </Button>
         </>
@@ -87,29 +74,6 @@ function DeleteDirectoryDialog({
               directoryName,
             })}
       </Typography>
-
-      {hasChildren && (
-        <FormControl component="fieldset" sx={{ mt: 2 }}>
-          <RadioGroup value={cascade} onChange={(e) => setCascade(e.target.value === "true")}>
-            <FormControlLabel
-              value={true}
-              control={<Radio />}
-              label={
-                <Typography variant="body2">{t("studies.deleteFolder.cascadeOption")}</Typography>
-              }
-            />
-            <FormControlLabel
-              value={false}
-              control={<Radio />}
-              label={
-                <Typography variant="body2">
-                  {t("studies.deleteFolder.folderOnlyOption")}
-                </Typography>
-              }
-            />
-          </RadioGroup>
-        </FormControl>
-      )}
     </BasicDialog>
   );
 }

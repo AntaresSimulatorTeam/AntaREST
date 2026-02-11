@@ -103,12 +103,12 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
     deleteDialog.openDialog(directoryId);
   };
 
-  const handleDeleteConfirm = (cascade: boolean) => {
+  const handleDeleteConfirm = () => {
     if (!deleteDialog.state.directoryId) {
       return;
     }
 
-    operations.delete.execute(deleteDialog.state.directoryId, cascade, directories);
+    operations.delete.execute(deleteDialog.state.directoryId, directories);
     deleteDialog.closeDialog();
   };
 
