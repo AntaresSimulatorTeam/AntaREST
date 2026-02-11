@@ -30,7 +30,7 @@ from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.database.common import serialize_frequency_filters, validate_area_exists
 from antarest.study.dao.database.models.area import (
     AREA_TABLE,
     AREA_UI_TABLE,
@@ -219,9 +219,6 @@ class DatabaseAreaDao(AreaDao):
 
         area_id = transform_name_to_id(area_name)
 
-        if area_exists(session, study_id, area_id):
-            raise ValueError(f"Area '{area_name}' already exists and could not be created")
-
         # Insert new area
         area_properties = AreaProperties()
         stmt_area = insert(AREA_TABLE).values(
@@ -239,7 +236,11 @@ class DatabaseAreaDao(AreaDao):
             filter_by_year=serialize_frequency_filters(area_properties.filter_by_year),
             adequacy_patch_mode=area_properties.adequacy_patch_mode,
         )
-        session.execute(stmt_area)
+        try:
+            session.execute(stmt_area)
+        except IntegrityError as e:
+            session.rollback()
+            raise ValueError(f"Area '{area_name}' already exists and could not be created") from e
 
         # The commit is handled inside the next method.
         self._create_new_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
