@@ -160,6 +160,7 @@ class DatabaseHydroDao(HydroDao):
         except IntegrityError as e:
             session.rollback()
             invalid = self.get_impl().get_invalid_area_ids([area_id])
+            # IntegrityError occurred can only mean that an area_id is invalid
             raise AreaNotFound(*invalid) from e
 
     @override
@@ -218,6 +219,7 @@ class DatabaseHydroDao(HydroDao):
         except IntegrityError as e:
             session.rollback()
             invalid = self.get_impl().get_invalid_area_ids([area_id])
+            # IntegrityError occurred can only mean that an area_id is invalid
             raise AreaNotFound(*invalid) from e
 
     @override
@@ -275,10 +277,10 @@ class DatabaseHydroDao(HydroDao):
 
         Returns:
             HydroAllocation containing the allocation coefficients.
-            Returns empty allocation if no allocation data exists.
 
         Raises:
             AreaNotFound: If the area does not exist.
+            ValueError: If the allocation data is invalid (db state corrupt).
         """
         study_id = self.get_study_id()
         session = self.get_session()
@@ -305,7 +307,6 @@ class DatabaseHydroDao(HydroDao):
 
         Raises:
             HydroAllocationNotFound: If no hydro allocation data is found for the study.
-
         """
         study_id = self.get_study_id()
         session = self.get_session()
@@ -366,6 +367,7 @@ class DatabaseHydroDao(HydroDao):
             session.rollback()
             all_area_ids = [area_id] + [a.area_id for a in allocation.allocation]
             invalid = self.get_impl().get_invalid_area_ids(all_area_ids)
+            # IntegrityError occurred can only mean that an area_id is invalid
             raise AreaNotFound(*invalid) from e
 
     @override
@@ -409,9 +411,10 @@ class DatabaseHydroDao(HydroDao):
         stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
 
+        area_index = {area_id: i for i, area_id in enumerate(area_ids)}
         for row in rows:
-            i = area_ids.index(row.area_from)
-            j = area_ids.index(row.area_to)
+            i = area_index[row.area_from]
+            j = area_index[row.area_to]
             array[i][j] = row.coefficient
             array[j][i] = row.coefficient
 
@@ -441,9 +444,8 @@ class DatabaseHydroDao(HydroDao):
             current_correlation_matrix = self.get_hydro_correlation_matrix()
             current_correlation_matrix.set_correlation(area_id, correlation)
 
-            # Get all area IDs for iterating the matrix
-            study_area_ids = self.get_impl().get_all_area_ids()
-            study_area_ids = sorted(study_area_ids)
+            # Use area IDs from the matrix (already sorted)
+            study_area_ids = current_correlation_matrix.index
 
             # Delete existing correlations
             # Delete all of them as the matrix is fully replaced
@@ -458,7 +460,7 @@ class DatabaseHydroDao(HydroDao):
                 for j in range(i + 1, len(study_area_ids)):
                     coefficient = current_correlation_matrix.data[i][j]
                     if not coefficient:
-                        # null values are not saved
+                        # zero values are not saved
                         continue
                     area_from = study_area_ids[i]
                     area_to = study_area_ids[j]
@@ -483,7 +485,7 @@ class DatabaseHydroDao(HydroDao):
             if invalid:
                 raise AreaNotFound(*invalid) from e
             else:
-                raise e
+                raise
 
     # ==================== Matrix Methods (NotImplementedError) ====================
 

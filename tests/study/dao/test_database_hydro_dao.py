@@ -81,11 +81,17 @@ class TestHydroManagement:
         """Test that overflow_spilled_cost_difference (v9.2+) is handled correctly."""
         dao.save_area("Paris")
 
-        hydro_mgmt = HydroManagement(overflow_spilled_cost_difference=5.5)
-        dao.save_hydro_management(hydro_mgmt, "paris")
+        # Defaults to None when not provided
+        dao.save_hydro_management(HydroManagement(), "paris")
+        assert dao.get_hydro_management("paris").overflow_spilled_cost_difference is None
 
-        result = dao.get_hydro_management("paris")
-        assert result.overflow_spilled_cost_difference == 5.5
+        # Can be set to a value
+        dao.save_hydro_management(HydroManagement(overflow_spilled_cost_difference=5.5), "paris")
+        assert dao.get_hydro_management("paris").overflow_spilled_cost_difference == 5.5
+
+        # Can be set back to None
+        dao.save_hydro_management(HydroManagement(overflow_spilled_cost_difference=None), "paris")
+        assert dao.get_hydro_management("paris").overflow_spilled_cost_difference is None
 
 
 class TestInflowStructure:
@@ -338,6 +344,7 @@ class TestHydroCorrelation:
         """Test that save_hydro_correlation raises AreaNotFound with the invalid area ID."""
         dao.save_area("Paris")
 
+        # Nonexistent correlated area
         correlation = HydroCorrelation(
             correlation=[
                 HydroCorrelationArea(area_id="paris", coefficient=100.0),
@@ -346,6 +353,15 @@ class TestHydroCorrelation:
         )
         with pytest.raises(AreaNotFound, match="nonexistent"):
             dao.save_hydro_correlation("paris", correlation)
+
+        # Nonexistent source area
+        correlation = HydroCorrelation(
+            correlation=[
+                HydroCorrelationArea(area_id="nonexistent", coefficient=100.0),
+            ]
+        )
+        with pytest.raises(AreaNotFound, match="nonexistent"):
+            dao.save_hydro_correlation("nonexistent", correlation)
 
     def test_get_hydro_correlation_matrix(self, dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_correlation_matrix returns the full matrix."""
@@ -440,7 +456,7 @@ class TestCascadeDelete:
             assert row is None
 
     def test_cascade_delete_hydro_allocation(self, db_session: Session, dao: DatabaseStudyDao) -> None:
-        """Test that hydro allocation is deleted when source area is deleted."""
+        """Test that hydro allocation is deleted when source or target area is deleted."""
         dao.save_area("Paris")
         dao.save_area("London")
         dao.save_hydro_allocation(
@@ -453,10 +469,31 @@ class TestCascadeDelete:
             ),
         )
 
-        # Delete source area
+        # Delete target area — allocation row referencing it should be cascade-deleted
+        dao.delete_area("london")
+
+        with db_session:
+            stmt = select(HYDRO_ALLOCATION_TABLE).where(
+                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                & (HYDRO_ALLOCATION_TABLE.c.target_area_id == "london")
+            )
+            rows = db_session.execute(stmt).fetchall()
+            assert len(rows) == 0
+
+        dao.save_area("London")
+        dao.save_hydro_allocation(
+            "paris",
+            HydroAllocation(
+                allocation=[
+                    HydroAllocationArea(area_id="paris", coefficient=0.6),
+                    HydroAllocationArea(area_id="london", coefficient=0.4),
+                ]
+            ),
+        )
+
+        # Delete source area — remaining allocation rows should be cascade-deleted
         dao.delete_area("paris")
 
-        # Verify allocation is also deleted
         with db_session:
             stmt = select(HYDRO_ALLOCATION_TABLE).where(
                 (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
