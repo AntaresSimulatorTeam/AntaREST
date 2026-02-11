@@ -53,7 +53,7 @@ const convertVariantTreeToStudyTree = (tree: VariantTree): StudyTree => {
       1 + Math.max(...nodeDatum.children.map((elm) => elm.drawOptions.depth));
     nodeDatum.drawOptions.nbAllChildrens = nodeDatum.children
       .map((elm) => 1 + elm.drawOptions.nbAllChildrens)
-      .reduce((acc, curr) => acc + curr);
+      .reduce((acc, curr) => acc + curr, 0);
   }
 
   return nodeDatum;
