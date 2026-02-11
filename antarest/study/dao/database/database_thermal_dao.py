@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
 from sqlalchemy import Row, Select, Table, delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -92,9 +93,10 @@ class DatabaseThermalDao(ThermalDao):
         return session.execute(stmt).fetchone()
 
     def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> pl.DataFrame:
-        validate_area_exists(self._db_session, self._study_id, area_id)
         row = self._get_thermal_matrix_row(area_id, thermal_id, table)
         if not row:
+            # Could be because area does not exist or the thermal does not exist
+            validate_area_exists(self._db_session, self._study_id, area_id)
             raise ThermalClusterNotFound(area_id, thermal_id)
         return self.get_impl().get_matrix(row.matrix_id)
 
@@ -102,12 +104,15 @@ class DatabaseThermalDao(ThermalDao):
         study_id = self._study_id
         session = self._db_session
 
-        if not self.thermal_exists(area_id, thermal_id):
-            raise ThermalClusterNotFound(area_id, thermal_id)
+        try:
+            values = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
+            upsert_one(session, table, values)
+        except IntegrityError as e:
+            session.rollback()
+            # Could be because area does not exist or the thermal does not exist
+            validate_area_exists(self._db_session, self._study_id, area_id)
+            raise ThermalClusterNotFound(area_id, thermal_id) from e
 
-        upsert_one(
-            session, table, {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
-        )
         session.commit()
 
     @override
