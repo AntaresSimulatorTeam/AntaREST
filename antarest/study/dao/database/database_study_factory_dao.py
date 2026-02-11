@@ -61,7 +61,7 @@ def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
         initialize_adequacy_patch_parameters(adequacy_patch_parameters, study_version)
         dao.save_adequacy_patch_parameters(adequacy_patch_parameters)
 
-    if study_version > STUDY_VERSION_9_2:
+    if study_version >= STUDY_VERSION_9_2:
         dao.save_compatibility_parameters(CompatibilityParameters())
 
 

@@ -22,12 +22,13 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
     initialize_advanced_parameters_against_version,
 )
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
-from antarest.study.model import STUDY_VERSION_8_3
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2
 from tests.study.dao.conftest import build_dao
 
 
@@ -53,3 +54,6 @@ def test_initialize_study(db_session: Session, matrix_service: ISimpleMatrixServ
         expected_adequacy_patch_parameters = AdequacyPatchParameters()
         initialize_adequacy_patch_parameters(expected_adequacy_patch_parameters, study_version)
         assert dao.get_adequacy_patch_parameters() == expected_adequacy_patch_parameters
+
+    if study_version >= STUDY_VERSION_9_2:
+        assert dao.get_compatibility_parameters() == CompatibilityParameters()
