@@ -20,7 +20,13 @@ from uuid import uuid4
 import pandas as pd
 from typing_extensions import override
 
-from antarest.core.exceptions import BadOutputError, IncorrectArgumentsForCopy, StudyOutputNotFoundError
+from antarest.core.exceptions import (
+    BadOutputError,
+    OutputAlreadyArchived,
+    OutputAlreadyExists,
+    OutputAlreadyUnarchived,
+    OutputNotFound,
+)
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unarchive, unzip
@@ -49,7 +55,6 @@ from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
     get_start_date,
-    is_output_archived,
     remove_from_cache,
 )
 from antarest.worker.archive_worker import ArchiveTaskArgs
@@ -87,21 +92,40 @@ def _find_archived_output(outputs_root: Path, output_name: str) -> Path | None:
     return next((path for path in possible_paths if path.exists()), None)
 
 
-def _copy_output(src_outputs_root: Path, output_name: str, dest_outputs_root: Path) -> None:
+def _copy_output(src_outputs_root: Path, output_id: str, dest_outputs_root: Path) -> None:
     """
     Copies one output from one "outputs" dir to another, keeping the archived state unchanged.
     """
-    src_folder = src_outputs_root / output_name
+    src_folder = src_outputs_root / output_id
+
+    if _output_exists(dest_outputs_root, output_id):
+        raise OutputAlreadyExists(output_id)
 
     if src_folder.exists():
-        shutil.copytree(src_folder, dest_outputs_root / output_name)
-    elif archive_path := _find_archived_output(src_outputs_root, output_name):
+        shutil.copytree(src_folder, dest_outputs_root / output_id)
+    elif archive_path := _find_archived_output(src_outputs_root, output_id):
         # The src output could be archived
         dest_outputs_root.mkdir(exist_ok=True)
         dest_path = dest_outputs_root
         shutil.copy(archive_path, dest_path)
     else:
-        raise IncorrectArgumentsForCopy(f"Output folder {output_name} not found in {src_outputs_root}")
+        raise OutputNotFound(output_id)
+
+
+def _is_output_archived(outputs_root: Path, output_id: str) -> bool:
+    output_path = outputs_root / output_id
+    if output_path.is_dir():
+        return False
+    zip_path = outputs_root / f"{output_id}{ArchiveFormat.ZIP}"
+    if zip_path.is_file():
+        return True
+    raise OutputNotFound(output_id)
+
+
+def _output_exists(outputs_root: Path, output_id: str) -> bool:
+    output_path = outputs_root / output_id
+    zip_path = outputs_root / f"{output_id}{ArchiveFormat.ZIP}"
+    return output_path.is_dir() or zip_path.is_file()
 
 
 class InStudyFileOutputStorage(IOutputStorage):
@@ -230,8 +254,8 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
         return [
-            BasicOutputMetadata(id=o.name, in_study=True, archived=o.archived)
-            for o in study_outputs.get_file_study().config.outputs.values()
+            BasicOutputMetadata(id=output_id, in_study=True, archived=output.archived)
+            for output_id, output in study_outputs.get_file_study().config.outputs.items()
         ]
 
     @override
@@ -250,8 +274,11 @@ class InStudyFileOutputStorage(IOutputStorage):
         if output_path.exists() and output_path.is_dir():
             shutil.rmtree(output_path, ignore_errors=True)
         else:
-            output_path = study_outputs.outputs_path / f"{output_id}.zip"
-            output_path.unlink(missing_ok=True)
+            archived_output_path = study_outputs.outputs_path / f"{output_id}.zip"
+            if archived_output_path.exists():
+                archived_output_path.unlink()
+            else:
+                raise OutputNotFound(output_id)
         remove_from_cache(self._cache, study_id)
 
     @override
@@ -267,9 +294,9 @@ class InStudyFileOutputStorage(IOutputStorage):
         if path_output.is_dir():
             shutil.copytree(path_output, parent / output_id, dirs_exist_ok=False)
         elif path_output_zip.is_file():
-            unarchive(path_output_zip, path_output)
+            unarchive(path_output_zip, parent / output_id)
         else:
-            raise StudyOutputNotFoundError()
+            raise OutputNotFound(output_id)
 
     @override
     def export_output(self, study_id: str, output_id: str, target: Path) -> None:
@@ -293,7 +320,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             return None
 
         if not path_output.exists() and not path_output_zip.exists():
-            raise StudyOutputNotFoundError()
+            raise OutputNotFound(output_id)
 
         stopwatch = StopWatch()
         if not path_output_zip.exists():
@@ -304,38 +331,28 @@ class InStudyFileOutputStorage(IOutputStorage):
     def output_exists(self, study_id: str, output_id: str) -> bool:
         """Check if a study output exists."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        if self.is_output_archived(study_id, output_id):
-            output_path = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
-            return output_path.exists()
-        else:
-            output_path = study_outputs.outputs_path / output_id
-            return output_path.is_dir()
+        return _output_exists(study_outputs.outputs_path, output_id)
 
     @override
     def is_output_archived(self, study_id: str, output_id: str) -> bool:
         """Check if a study output is archived."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        output_path = study_outputs.outputs_path / output_id
-        return is_output_archived(output_path)
+        return _is_output_archived(study_outputs.outputs_path, output_id)
 
     @override
     def archive_study_output(self, study_id: str, output_id: str) -> None:
         """Archive a study output."""
-        try:
-            study_outputs = self._outputs_provider.get_outputs(study_id)
-            archive_dir(
-                study_outputs.outputs_path / output_id,
-                study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}",
-                remove_source_dir=True,
-                archive_format=ArchiveFormat.ZIP,
-            )
-            remove_from_cache(self._cache, study_id)
-        except Exception as e:
-            # TODO: we should probably raise here
-            logger.warning(
-                f"Failed to archive study {study_id} output {output_id}",
-                exc_info=e,
-            )
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        if _is_output_archived(study_outputs.outputs_path, output_id):
+            raise OutputAlreadyArchived(output_id)
+
+        archive_dir(
+            study_outputs.outputs_path / output_id,
+            study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}",
+            remove_source_dir=True,
+            archive_format=ArchiveFormat.ZIP,
+        )
+        remove_from_cache(self._cache, study_id)
 
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest = study_outputs.outputs_path / output_id
@@ -351,6 +368,9 @@ class InStudyFileOutputStorage(IOutputStorage):
         """Un-archive a study output."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
 
+        if not _is_output_archived(study_outputs.outputs_path, output_id):
+            raise OutputAlreadyUnarchived(output_id)
+
         # Specific logic for "external" workspaces: we ask for unarchiving to the remote executor ...
         workspace = study_outputs.study_workspace
         if workspace != DEFAULT_WORKSPACE_NAME:
@@ -358,12 +378,8 @@ class InStudyFileOutputStorage(IOutputStorage):
         else:
             study_outputs = self._outputs_provider.get_outputs(study_id)
             outputs_path = study_outputs.outputs_path
-            if not (outputs_path / f"{output_id}{ArchiveFormat.ZIP}").exists():
-                logger.warning(
-                    f"Failed to archive study {study_id} output {output_id}. Maybe it's already unarchived",
-                )
-                return
             try:
+                # TODO: should remove the zip ?
                 unzip(outputs_path / output_id, outputs_path / f"{output_id}{ArchiveFormat.ZIP}")
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
