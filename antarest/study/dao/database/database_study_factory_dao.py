@@ -56,7 +56,7 @@ def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
     # todo: uncomment this when method is implemented
     # dao.save_thematic_trimming(ThematicTrimming())
 
-    if study_version > STUDY_VERSION_8_3:
+    if study_version >= STUDY_VERSION_8_3:
         adequacy_patch_parameters = AdequacyPatchParameters()
         initialize_adequacy_patch_parameters(adequacy_patch_parameters, study_version)
         dao.save_adequacy_patch_parameters(adequacy_patch_parameters)

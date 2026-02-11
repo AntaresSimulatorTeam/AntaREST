@@ -86,7 +86,7 @@ class StudyConverter:
         self._new_dao.save_advanced_parameters(self._source_dao.get_advanced_parameters())
         self._new_dao.save_optimization_preferences(self._source_dao.get_optimization_preferences())
         self._new_dao.save_thematic_trimming(self._source_dao.get_thematic_trimming())
-        if self._study_version > STUDY_VERSION_8_3:
+        if self._study_version >= STUDY_VERSION_8_3:
             self._new_dao.save_adequacy_patch_parameters(self._source_dao.get_adequacy_patch_parameters())
         if self._study_version > STUDY_VERSION_9_2:
             self._new_dao.save_compatibility_parameters(self._source_dao.get_compatibility_parameters())
