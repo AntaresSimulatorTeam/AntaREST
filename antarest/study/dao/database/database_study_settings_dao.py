@@ -76,26 +76,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
-        values = dict(
-            study_id=self.get_study_id(),
-            mode=config.mode,
-            first_day=config.first_day,
-            last_day=config.last_day,
-            horizon=config.horizon,
-            first_month=config.first_month,
-            first_week_day=config.first_week_day,
-            first_january=config.first_january,
-            leap_year=config.leap_year,
-            nb_years=config.nb_years,
-            building_mode=config.building_mode,
-            selection_mode=config.selection_mode,
-            year_by_year=config.year_by_year,
-            simulation_synthesis=config.simulation_synthesis,
-            mc_scenario=config.mc_scenario,
-            filtering=config.filtering,
-            geographic_trimming=config.geographic_trimming,
-            thematic_trimming=config.thematic_trimming,
-        )
+        values = dict(study_id=self.get_study_id(), **config.model_dump())
         session = self.get_session()
         upsert_one(session, GENERAL_CONFIG_TABLE, values)
         session.commit()
