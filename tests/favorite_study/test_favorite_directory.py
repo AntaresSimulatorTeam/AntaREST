@@ -100,3 +100,25 @@ def test_delete_favorite_directory_failure(
     with current_user_context(admin_user):
         with pytest.raises(HTTPException, match=f"404: Directory with id {non_existing_directory_id} not found"):
             favorite_directory_service.delete_favorite(non_existing_directory_id)
+
+
+@with_db_context
+def test_list_favorite_directory_already_existing(
+    favorite_directory_service: FavoriteDirectoryService, admin_user: JWTUser
+) -> None:
+    directory_1 = Directory(id=str(uuid.uuid4()), name="directory_test_1", parent_id=None)
+
+    db.session.add(directory_1)
+    db.session.commit()
+
+    with current_user_context(admin_user):
+        fav_dto_test = favorite_directory_service.add_favorite(directory_1.id)
+
+        favorite_directory_service.add_favorite(directory_1.id)
+        actual_favorite_list = favorite_directory_service.list_favorites()
+        assert actual_favorite_list == [fav_dto_test]
+
+        # adding the same directory again should not change the list or the favorite
+        favorite_directory_service.add_favorite(directory_1.id)
+        actual_favorite_list = favorite_directory_service.list_favorites()
+        assert actual_favorite_list == [fav_dto_test]

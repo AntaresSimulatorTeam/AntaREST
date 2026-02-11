@@ -94,3 +94,20 @@ def test_delete_favorite_study_failure_not_found(client: TestClient, admin_acces
     resp = client.delete(f"/v1/favorites/studies/{inexisting_study_id}")
     assert resp.status_code == 404
     assert resp.json()["description"] == f"Study with id {inexisting_study_id} not found"
+
+
+def test_add_favorite_study_already_existing(client: TestClient, admin_access_token: str):
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    study_test_1 = client.post("/v1/studies?name=study_test").json()
+    dto_test = {"study_id": study_test_1, "study_name": "study_test"}
+
+    resp = client.post(f"/v1/favorites/studies/{study_test_1}")
+    assert resp.status_code == 200
+    resp_list = client.get("/v1/favorites/studies").json()
+    assert resp_list == [dto_test]
+
+    resp = client.post(f"/v1/favorites/studies/{study_test_1}")
+    assert resp.status_code == 200
+    resp_list = client.get("/v1/favorites/studies").json()
+    assert resp_list == [dto_test]

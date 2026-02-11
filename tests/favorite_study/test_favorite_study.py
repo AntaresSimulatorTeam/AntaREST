@@ -92,3 +92,25 @@ def test_add_favorite_study_failure_not_existing(favorite_service: FavoriteStudy
             match=f"404: Study with id {non_existing_study_id} not found",
         ):
             favorite_service.add_favorite(non_existing_study_id)
+
+
+@with_db_context
+def test_add_favorite_study_already_existing(favorite_service: FavoriteStudyService, admin_user: JWTUser) -> None:
+    study_1 = create_study("study_A", "study_A")
+
+    db.session.add(study_1)
+    db.session.commit()
+
+    with current_user_context(admin_user):
+        favorite_service.add_favorite(study_1.id)
+        test_fav_dto = FavoriteStudyDTO(study_id=study_1.id, study_name="study_A")
+
+        actual_favorite_list = favorite_service.list_favorites()
+
+        assert actual_favorite_list == [test_fav_dto]
+
+        # checking that the favorite is not added twice and remains the same
+        favorite_service.add_favorite(study_1.id)
+        actual_favorite_list = favorite_service.list_favorites()
+
+        assert actual_favorite_list == [test_fav_dto]

@@ -116,3 +116,23 @@ def test_delete_inexisting_directory_failure(client: TestClient, admin_access_to
     resp_delete = client.delete(f"/v1/favorite/directories/{inexisting_directory_id}")
     assert resp_delete.status_code == 404
     assert resp_delete.json()["description"] == f"Directory with id {inexisting_directory_id} not found"
+
+
+def test_add_favorite_directory_already_existing(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    directory_test_1 = client.post("/v1/directories", json={"name": "directory_test_1"}).json()
+    dt_1_id = directory_test_1["id"]
+
+    dto_test = {"directory_id": dt_1_id, "directory_name": "directory_test_1"}
+
+    resp = client.post(f"/v1/favorite/directories/{dt_1_id}")
+    assert resp.status_code == 200
+    resp_list = client.get("/v1/favorite/directories").json()
+    assert resp_list == [dto_test]
+
+    # adding the same directory to the favorite to see if it remains the same
+    resp = client.post(f"/v1/favorite/directories/{dt_1_id}")
+    assert resp.status_code == 200
+    resp_list = client.get("/v1/favorite/directories").json()
+    assert resp_list == [dto_test]
