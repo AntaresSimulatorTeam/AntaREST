@@ -12,33 +12,26 @@
  * This file is part of the Antares project.
  */
 
-export interface StudyTreeNodeMetadata {
+import type { StudyMetadata } from "@/types/types";
+
+export interface ExternalTreeNodeMetadata {
   name: string;
   path: string;
-  children: StudyTreeNodeMetadata[];
+  children: ExternalTreeNodeMetadata[];
   hasChildren?: boolean;
   isStudyFolder?: boolean;
   isScannedStudy?: boolean;
   alias?: string;
 }
 
-export interface FolderDTO {
-  name: string;
-  path: string;
-  workspace: string;
-  parentPath: string;
-  hasChildren?: boolean;
-  isStudyFolder?: boolean;
-}
-
-export interface WorkspaceDTO {
-  name: string;
-  diskName: string;
-}
-
-export interface StudyTreeNodeProps {
-  node: StudyTreeNodeMetadata;
+export interface ExternalTreeNodeProps {
+  node: ExternalTreeNodeMetadata;
   itemsLoading: string[];
   onNodeClick: (id: string) => void;
   exploredFolders: string[];
+}
+
+export interface ExternalTreeProps {
+  studies: StudyMetadata[];
+  onRootClick: () => void;
 }
