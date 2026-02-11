@@ -855,3 +855,6 @@ def test_write_output_to_dir(file_output_storage: InStudyFileOutputStorage, tmp_
         file_output_storage.write_output_to_dir("non-existent", "20201014-1427eco", export_path)
     with pytest.raises(OutputNotFound):
         file_output_storage.write_output_to_dir("STA-mini", "non-existent", export_path)
+
+
+# TODO: add tests for aggregation, time index
