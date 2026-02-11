@@ -39,7 +39,6 @@ from antarest.study.business.model.hydro_correlation_model import (
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.dao.database.common import validate_area_exists, validate_areas_exists
-from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
     HYDRO_CORRELATION_TABLE,
@@ -105,28 +104,6 @@ class DatabaseHydroDao(HydroDao):
         """Convert a database row to InflowStructure model."""
         return InflowStructure(inter_monthly_correlation=row.inter_monthly_correlation)
 
-    @staticmethod
-    def _hydro_management_to_dict(hydro_management: HydroManagement) -> dict[str, Any]:
-        """Convert HydroManagement model to dict for database insert/update."""
-        return {
-            "inter_daily_breakdown": hydro_management.inter_daily_breakdown,
-            "intra_daily_modulation": hydro_management.intra_daily_modulation,
-            "inter_monthly_breakdown": hydro_management.inter_monthly_breakdown,
-            "reservoir": hydro_management.reservoir,
-            "reservoir_capacity": hydro_management.reservoir_capacity,
-            "follow_load": hydro_management.follow_load,
-            "use_water": hydro_management.use_water,
-            "hard_bounds": hydro_management.hard_bounds,
-            "initialize_reservoir_date": hydro_management.initialize_reservoir_date,
-            "use_heuristic": hydro_management.use_heuristic,
-            "power_to_level": hydro_management.power_to_level,
-            "use_leeway": hydro_management.use_leeway,
-            "leeway_low": hydro_management.leeway_low,
-            "leeway_up": hydro_management.leeway_up,
-            "pumping_efficiency": hydro_management.pumping_efficiency,
-            "overflow_spilled_cost_difference": hydro_management.overflow_spilled_cost_difference,
-        }
-
     @override
     def get_hydro_management(self, area_id: str) -> HydroManagement:
         """
@@ -174,7 +151,7 @@ class DatabaseHydroDao(HydroDao):
 
         validate_area_exists(session, study_id, area_id)
 
-        values = self._hydro_management_to_dict(hydro_management)
+        values = hydro_management.model_dump()
         values["study_id"] = study_id
         values["area_id"] = area_id
         upsert_one(session, HYDRO_MANAGEMENT_TABLE, values)
@@ -253,8 +230,7 @@ class DatabaseHydroDao(HydroDao):
         session = self.get_session()
 
         # Get ALL areas in the study
-        stmt_areas = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_id == study_id)
-        all_area_ids = [row.area_id for row in session.execute(stmt_areas)]
+        all_area_ids = self.get_impl().get_all_area_ids()
 
         # Get all hydro management records for all areas
         stmt_management = select(HYDRO_MANAGEMENT_TABLE).where(HYDRO_MANAGEMENT_TABLE.c.study_id == study_id)
@@ -348,6 +324,8 @@ class DatabaseHydroDao(HydroDao):
         """
         Save hydro allocation for a specific area.
 
+        This will replace any existing allocation for the area.
+
         Args:
             area_id: The source area identifier.
             allocation: The HydroAllocation to save.
@@ -440,6 +418,8 @@ class DatabaseHydroDao(HydroDao):
         """
         Save hydro correlation for a specific area.
 
+        This will replace any existing correlation for the area.
+
         Args:
             area_id: The area identifier.
             correlation: The HydroCorrelation to save.
@@ -451,21 +431,18 @@ class DatabaseHydroDao(HydroDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Validate area exists
-        validate_area_exists(session, study_id, area_id)
-
-        # Validate all correlated areas exist
-        for corr_area in correlation.correlation:
-            if corr_area.area_id != area_id:
-                validate_area_exists(session, study_id, corr_area.area_id)
+        # Validate all areas exist (source area + correlated areas)
+        all_input_area_ids = {corr_area.area_id for corr_area in correlation.correlation}
+        all_input_area_ids.add(area_id)
+        validate_areas_exists(session, study_id, all_input_area_ids)
 
         # Get current matrix and apply changes (validates diagonal = 1, symmetry, etc.)
         current_correlation_matrix = self.get_hydro_correlation_matrix()
         current_correlation_matrix.set_correlation(area_id, correlation)
 
         # Get all area IDs for iterating the matrix
-        area_ids = self.get_impl().get_all_area_ids()
-        area_ids = sorted(area_ids)
+        study_area_ids = self.get_impl().get_all_area_ids()
+        study_area_ids = sorted(study_area_ids)
 
         # Delete existing correlations
         # Delete all of them as the matrix is fully replaced
@@ -475,15 +452,15 @@ class DatabaseHydroDao(HydroDao):
         # Insert new correlations (only upper triangle: area_from < area_to)
         # Diagonal is implicit, not stored
         insert_values = []
-        for i in range(len(area_ids)):
+        for i in range(len(study_area_ids)):
             # not saved: values from the diagonal are always == 1.0
-            for j in range(i + 1, len(area_ids)):
+            for j in range(i + 1, len(study_area_ids)):
                 coefficient = current_correlation_matrix.data[i][j]
                 if not coefficient:
                     # null values are not saved
                     continue
-                area_from = area_ids[i]
-                area_to = area_ids[j]
+                area_from = study_area_ids[i]
+                area_to = study_area_ids[j]
                 insert_values.append(
                     {
                         "study_id": study_id,
