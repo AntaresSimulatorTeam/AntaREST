@@ -15,7 +15,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { directoryKeys } from "@/queries/directories/keys";
 import { directoryMutations } from "@/queries/directories/mutations";
 import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
@@ -27,7 +26,6 @@ interface UseUpdateDirectoryOptions {
 
 interface UpdateDirectoryContext {
   previousDirectories?: Directory[];
-  previousDetail?: Directory;
 }
 
 export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
@@ -39,43 +37,27 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
     ...directoryMutations.update(),
     onMutate: async ({ id, data: updateData }): Promise<UpdateDirectoryContext> => {
       // Cancel only the queries we're about to update
-      await queryClient.cancelQueries({ queryKey: directoryKeys.lists() });
-      await queryClient.cancelQueries({ queryKey: directoryKeys.detail(id) });
+      await queryClient.cancelQueries({ queryKey: directoryQueries.list().queryKey });
 
       // Snapshot the previous state for rollback
       const previousDirectories = queryClient.getQueryData(directoryQueries.list().queryKey);
-      const previousDetail = queryClient.getQueryData<Directory>(directoryKeys.detail(id));
 
       // Optimistically update the directory list
       queryClient.setQueryData(directoryQueries.list().queryKey, (old) =>
         old?.map((dir) => (dir.id === id ? { ...dir, ...updateData } : dir)),
       );
 
-      // Optimistically update the directory detail if cached
-      if (previousDetail) {
-        queryClient.setQueryData<Directory>(directoryKeys.detail(id), {
-          ...previousDetail,
-          ...updateData,
-        });
-      }
-
-      return { previousDirectories, previousDetail };
+      return { previousDirectories };
     },
-    onError: (error, { id }, context) => {
+    onError: (error, _variables, context) => {
       // Rollback optimistic updates
       if (context?.previousDirectories) {
         queryClient.setQueryData(directoryQueries.list().queryKey, context.previousDirectories);
-      }
-      if (context?.previousDetail) {
-        queryClient.setQueryData(directoryKeys.detail(id), context.previousDetail);
       }
 
       enqueueErrorSnackbar(t("studies.updateDirectory.error"), toError(error));
     },
     onSuccess: (data, { id }) => {
-      // Update cache with server response to ensure consistency
-      queryClient.setQueryData<Directory>(directoryKeys.detail(id), data);
-
       // Update the directory in the list with server response
       queryClient.setQueryData(directoryQueries.list().queryKey, (old) =>
         old?.map((dir) => (dir.id === id ? data : dir)),

@@ -15,7 +15,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { directoryKeys } from "@/queries/directories/keys";
 import { directoryMutations } from "@/queries/directories/mutations";
 import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
@@ -42,7 +41,7 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
       const tempId = `temp-${Date.now()}`;
 
       // Cancel only the list queries we're about to update
-      await queryClient.cancelQueries({ queryKey: directoryKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: directoryQueries.list().queryKey });
 
       // Snapshot the previous state for rollback
       const previousDirectories = queryClient.getQueryData(directoryQueries.list().queryKey);
@@ -73,9 +72,6 @@ export function useCreateDirectory(options?: UseCreateDirectoryOptions) {
       enqueueErrorSnackbar(t("studies.createDirectory.error"), toError(error));
     },
     onSuccess: (data, _variables, context) => {
-      // Add the new directory to the detail cache
-      queryClient.setQueryData<Directory>(directoryKeys.detail(data.id), data);
-
       // Update the list cache: replace temp directory with the real one
       queryClient.setQueryData(directoryQueries.list().queryKey, (old) => {
         if (!old) {

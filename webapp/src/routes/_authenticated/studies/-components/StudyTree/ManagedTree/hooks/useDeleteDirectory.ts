@@ -15,7 +15,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { directoryKeys } from "@/queries/directories/keys";
 import { directoryQueries } from "@/queries/directories/queries";
 import { deleteDirectory } from "@/services/api/directories";
 import type { Directory } from "@/services/api/directories/types";
@@ -62,8 +61,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
     },
     onMutate: async ({ directoryId, allDirectories }): Promise<DeleteDirectoryContext> => {
       // Cancel only the queries we're about to update
-      await queryClient.cancelQueries({ queryKey: directoryKeys.lists() });
-      await queryClient.cancelQueries({ queryKey: directoryKeys.details() });
+      await queryClient.cancelQueries({ queryKey: directoryQueries.list().queryKey });
 
       // Snapshot the previous state for rollback
       const previousDirectories = queryClient.getQueryData(directoryQueries.list().queryKey);
@@ -96,13 +94,8 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
 
       enqueueErrorSnackbar(t("studies.deleteDirectory.error"), toError(error));
     },
-    onSuccess: (_data, _variables, context) => {
-      // Remove deleted directories from detail cache
-      context.affectedDirectoryIds.forEach((id) => {
-        queryClient.removeQueries({ queryKey: directoryKeys.detail(id) });
-      });
-
-      queryClient.invalidateQueries({ queryKey: directoryKeys.lists() });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
 
       options?.onSuccess?.();
     },
