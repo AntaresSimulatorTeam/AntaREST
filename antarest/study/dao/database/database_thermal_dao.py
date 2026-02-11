@@ -18,7 +18,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, NoReturn, Sequence
 
 import polars as pl
-from sqlalchemy import Row, Select, Table, delete, select
+from sqlalchemy import CursorResult, Row, Select, Table, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -177,16 +177,18 @@ class DatabaseThermalDao(ThermalDao):
         study_id = self._study_id
         session = self._db_session
 
-        if not self.thermal_exists(area_id, thermal_id):
-            raise ThermalClusterNotFound(area_id, thermal_id)
-
-        session.execute(
+        result = session.execute(
             delete(THERMAL_CLUSTER_TABLE).where(
                 (THERMAL_CLUSTER_TABLE.c.study_id == study_id)
                 & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
                 & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
             )
         )
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect so the thermal did not exist
+            session.rollback()
+            raise ThermalClusterNotFound(area_id, thermal_id)
 
         # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
         session.commit()
