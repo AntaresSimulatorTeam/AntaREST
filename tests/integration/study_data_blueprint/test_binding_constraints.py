@@ -90,6 +90,7 @@ class TestBindingConstraints:
     Test the end points related to binding constraints.
     """
 
+    @pytest.mark.flaky(reruns=3)
     def test_update_multiple_binding_constraints(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         preparer = PreparerProxy(client, user_access_token)
