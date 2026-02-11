@@ -22,6 +22,7 @@ from antarest.core.exceptions import AreaNotFound, LinkNotFound
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
+from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.link import (
     LINK_DIRECT_CAPACITY_TABLE,
     LINK_INDIRECT_CAPACITY_TABLE,
@@ -40,24 +41,9 @@ def _join_with_comma(values: list[FilterOption]) -> str:
 
 
 def _convert_db_rows_to_model(db_row: Any) -> Link:
-    return Link(
-        area1=db_row.area1,
-        area2=db_row.area2,
-        hurdles_cost=db_row.hurdles_cost,
-        loop_flow=db_row.loop_flow,
-        use_phase_shifter=db_row.use_phase_shifter,
-        transmission_capacities=db_row.transmission_capacities,
-        asset_type=db_row.asset_type,
-        display_comments=db_row.display_comments,
-        comments=db_row.comments,
-        colorr=db_row.colorr,
-        colorb=db_row.colorb,
-        colorg=db_row.colorg,
-        link_width=db_row.link_width,
-        link_style=db_row.link_style,
-        filter_synthesis=db_row.filter_synthesis,
-        filter_year_by_year=db_row.filter_year_by_year,
-    )
+    data = get_row_representation_as_dict(db_row)
+    del data["study_id"]
+    return Link(**data)
 
 
 class DatabaseLinkDao(LinkDao):
@@ -82,26 +68,7 @@ class DatabaseLinkDao(LinkDao):
     @override
     def save_link(self, link: Link) -> None:
         session = self.get_session()
-
-        values = {
-            "study_id": self.get_study_id(),
-            "area1": link.area1,
-            "area2": link.area2,
-            "hurdles_cost": link.hurdles_cost,
-            "loop_flow": link.loop_flow,
-            "use_phase_shifter": link.use_phase_shifter,
-            "transmission_capacities": link.transmission_capacities,
-            "asset_type": link.asset_type,
-            "display_comments": link.display_comments,
-            "comments": link.comments,
-            "colorr": link.colorr,
-            "colorb": link.colorb,
-            "colorg": link.colorg,
-            "link_width": link.link_width,
-            "link_style": link.link_style,
-            "filter_synthesis": _join_with_comma(link.filter_synthesis),
-            "filter_year_by_year": _join_with_comma(link.filter_year_by_year),
-        }
+        values = dict(study_id=self.get_study_id(), **link.model_dump())
 
         try:
             upsert_one(session, LINK_TABLE, values)
