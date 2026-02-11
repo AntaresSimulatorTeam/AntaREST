@@ -16,13 +16,22 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters, PriceTakingOrder
 from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
+    HydroHeuristicPolicy,
+    HydroPricingMode,
+    InitialReservoirLevel,
+    PowerFluctuation,
+    RenewableGenerationModeling,
     SheddingPolicy,
+    SimulationCore,
     UnitCommitmentMode,
 )
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
-from antarest.study.business.model.config.general_model import GeneralConfig, Mode, Month
+from antarest.study.business.model.config.general_model import BuildingMode, GeneralConfig, Mode, Month, WeekDay
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
+    SimplexOptimizationRange,
+    TransmissionCapacities,
+    UnfeasibleProblemBehavior,
 )
 from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
@@ -33,19 +42,66 @@ from tests.study.dao.conftest import build_dao
 
 def test_nominal_case(dao: DatabaseStudyDao) -> None:
     # General Config
-    new_general_config = GeneralConfig(first_month=Month.OCTOBER, geographic_trimming=True, mode=Mode.ADEQUACY)
+    new_general_config = GeneralConfig(
+        mode=Mode.ECONOMY,
+        first_day=4,
+        last_day=5,
+        horizon="2039",
+        first_month=Month.APRIL,
+        first_week_day=WeekDay.TUESDAY,
+        first_january=WeekDay.SUNDAY,
+        leap_year=True,
+        nb_years=4,
+        building_mode=BuildingMode.CUSTOM,
+        selection_mode=True,
+        year_by_year=True,
+        simulation_synthesis=False,
+        mc_scenario=True,
+        geographic_trimming=True,
+        thematic_trimming=False,
+    )
     dao.save_general_config(new_general_config)
     assert dao.get_general_config() == new_general_config
 
     # Advanced Parameters
     new_parameters = AdvancedParameters(
-        unit_commitment_mode=UnitCommitmentMode.MILP, shedding_policy=SheddingPolicy.MINIMIZE_DURATION
+        accuracy_on_correlation="solar",
+        power_fluctuations=PowerFluctuation.MINIMIZE_EXCURSIONS,
+        shedding_policy=SheddingPolicy.MINIMIZE_DURATION,
+        hydro_pricing_mode=HydroPricingMode.ACCURATE,
+        hydro_heuristic_policy=HydroHeuristicPolicy.MAXIMIZE_GENERATION,
+        unit_commitment_mode=UnitCommitmentMode.MILP,
+        number_of_cores_mode=SimulationCore.MAXIMUM,
+        renewable_generation_modelling=RenewableGenerationModeling.AGGREGATED,
+        seed_tsgen_wind=1,
+        seed_tsgen_load=1,
+        seed_tsgen_hydro=1,
+        seed_tsgen_thermal=1,
+        seed_tsgen_solar=1,
+        seed_tsnumbers=1,
+        seed_unsupplied_energy_costs=1,
+        seed_spilled_energy_costs=1,
+        seed_thermal_costs=1,
+        seed_hydro_costs=1,
+        seed_initial_reservoir_levels=1,
+        initial_reservoir_levels=InitialReservoirLevel.HOT_START,
     )
     dao.save_advanced_parameters(new_parameters)
     assert dao.get_advanced_parameters() == new_parameters
 
     # AdequacyPatch Parameters
-    params = AdequacyPatchParameters(enable_adequacy_patch=True, price_taking_order=PriceTakingOrder.LOAD)
+    params = AdequacyPatchParameters(
+        enable_adequacy_patch=True,
+        ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch=False,
+        price_taking_order=PriceTakingOrder.LOAD,
+        include_hurdle_cost_csr=True,
+        check_csr_cost_function=True,
+        threshold_initiate_curtailment_sharing_rule=4.2,
+        threshold_display_local_matching_rule_violations=3.14,
+        threshold_csr_variable_bounds_relaxation=144,
+        # Appeared in v8.3 and removed in v9.2
+        ntc_between_physical_areas_out_adequacy_patch=True,
+    )
     dao.save_adequacy_patch_parameters(params)
     assert dao.get_adequacy_patch_parameters() == params
 
@@ -60,7 +116,20 @@ def test_nominal_case(dao: DatabaseStudyDao) -> None:
     assert dao.get_playlist_config() == playlist
 
     # Optimization preferences
-    preferences = OptimizationPreferences(binding_constraints=False, export_mps="optim-1")
+    preferences = OptimizationPreferences(
+        binding_constraints=False,
+        hurdle_costs=False,
+        transmission_capacities=TransmissionCapacities.INFINITE_FOR_ALL_LINKS,
+        thermal_clusters_min_stable_power=False,
+        thermal_clusters_min_ud_time=False,
+        day_ahead_reserve=False,
+        primary_reserve=False,
+        strategic_reserve=False,
+        spinning_reserve=False,
+        export_mps="optim-1",
+        unfeasible_problem_behavior=UnfeasibleProblemBehavior.ERROR_DRY,
+        simplex_optimization_range=SimplexOptimizationRange.DAY,
+    )
     dao.save_optimization_preferences(preferences)
     assert dao.get_optimization_preferences() == preferences
 
