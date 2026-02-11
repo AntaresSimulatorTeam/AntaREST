@@ -110,20 +110,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
-        values = dict(
-            study_id=self.get_study_id(),
-            binding_constraints=config.binding_constraints,
-            hurdle_costs=config.hurdle_costs,
-            transmission_capacities=config.transmission_capacities,
-            thermal_clusters_min_stable_power=config.thermal_clusters_min_stable_power,
-            thermal_clusters_min_ud_time=config.thermal_clusters_min_ud_time,
-            day_ahead_reserve=config.day_ahead_reserve,
-            primary_reserve=config.primary_reserve,
-            strategic_reserve=config.strategic_reserve,
-            spinning_reserve=config.spinning_reserve,
-            unfeasible_problem_behavior=config.unfeasible_problem_behavior,
-            simplex_optimization_range=config.simplex_optimization_range,
-        )
+        values = dict(study_id=self.get_study_id(), **config.model_dump(exclude={"export_mps"}))
         # Handle `export_mps` differently as it can either be a string or a boolean but will be stored as String in DB.
         if isinstance(config.export_mps, bool):
             mps = str(config.export_mps)
@@ -169,31 +156,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
-        values = dict(
-            study_id=self.get_study_id(),
-            accuracy_on_correlation=parameters.accuracy_on_correlation,
-            power_fluctuations=parameters.power_fluctuations,
-            shedding_policy=parameters.shedding_policy,
-            hydro_pricing_mode=parameters.hydro_pricing_mode,
-            hydro_heuristic_policy=parameters.hydro_heuristic_policy,
-            unit_commitment_mode=parameters.unit_commitment_mode,
-            number_of_cores_mode=parameters.number_of_cores_mode,
-            day_ahead_reserve_management=parameters.day_ahead_reserve_management,
-            renewable_generation_modelling=parameters.renewable_generation_modelling,
-            seed_tsgen_wind=parameters.seed_tsgen_wind,
-            seed_tsgen_load=parameters.seed_tsgen_load,
-            seed_tsgen_hydro=parameters.seed_tsgen_hydro,
-            seed_tsgen_thermal=parameters.seed_tsgen_thermal,
-            seed_tsgen_solar=parameters.seed_tsgen_solar,
-            seed_tsnumbers=parameters.seed_tsnumbers,
-            seed_unsupplied_energy_costs=parameters.seed_unsupplied_energy_costs,
-            seed_spilled_energy_costs=parameters.seed_spilled_energy_costs,
-            seed_thermal_costs=parameters.seed_thermal_costs,
-            seed_hydro_costs=parameters.seed_hydro_costs,
-            seed_initial_reservoir_levels=parameters.seed_initial_reservoir_levels,
-            initial_reservoir_levels=parameters.initial_reservoir_levels,
-            accurate_shave_peaks_include_short_term_storage=parameters.accurate_shave_peaks_include_short_term_storage,
-        )
+        values = dict(study_id=self.get_study_id(), **parameters.model_dump())
         session = self.get_session()
         upsert_one(session, ADVANCED_PARAMETERS_TABLE, values)
         session.commit()
@@ -248,19 +211,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
-        values = dict(
-            study_id=self.get_study_id(),
-            enable_adequacy_patch=parameters.enable_adequacy_patch,
-            ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch=parameters.ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch,
-            price_taking_order=parameters.price_taking_order,
-            include_hurdle_cost_csr=parameters.include_hurdle_cost_csr,
-            check_csr_cost_function=parameters.check_csr_cost_function,
-            threshold_initiate_curtailment_sharing_rule=parameters.threshold_initiate_curtailment_sharing_rule,
-            threshold_display_local_matching_rule_violations=parameters.threshold_display_local_matching_rule_violations,
-            threshold_csr_variable_bounds_relaxation=parameters.threshold_csr_variable_bounds_relaxation,
-            ntc_between_physical_areas_out_adequacy_patch=parameters.ntc_between_physical_areas_out_adequacy_patch,
-            redispatch=parameters.redispatch,
-        )
+        values = dict(study_id=self.get_study_id(), **parameters.model_dump())
         session = self.get_session()
         upsert_one(session, ADEQUACY_PATCH_PARAMETERS_TABLE, values)
         session.commit()
