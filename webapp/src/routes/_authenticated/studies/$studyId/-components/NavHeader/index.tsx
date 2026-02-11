@@ -12,37 +12,68 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/types/types";
-import { Box } from "@mui/material";
+import usePromise from "@/hooks/usePromise";
+import { getVariantParents, getVariantTree } from "@/services/api/variant";
+import { countDescendants, findNodeInTree } from "@/services/utils";
+import { WsEventType } from "@/services/webSocket/constants";
+import type { WsEvent } from "@/services/webSocket/types";
+import { addWsEventListener } from "@/services/webSocket/ws";
+import { Stack } from "@mui/material";
+import { useMatch } from "@tanstack/react-router";
+import { useEffect } from "react";
+import useStudy from "../../-hooks/useStudy";
 import Actions from "./Actions";
+import Breadcrumb from "./Breadcrumb";
+import Details from "./Details";
 
-interface Props {
-  study: StudyMetadata;
-  parentStudy?: StudyMetadata;
-  variantNb: number;
-  isExplorer?: boolean;
-}
+function NavHeader() {
+  const study = useStudy();
+  const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
+  const isExplorer = !!match;
 
-function NavHeader({ study, parentStudy, variantNb, isExplorer }: Props) {
+  const { data: { parentStudy, variantNb } = {}, reload: reloadStudyMetadata } =
+    usePromise(async () => {
+      const parents = await getVariantParents(study.id);
+      const parentStudy = parents.length > 0 ? parents[0] : undefined;
+
+      const root = parents.length > 0 ? parents[parents.length - 1] : study;
+      const variantTree = await getVariantTree(root.id);
+
+      const tree = findNodeInTree(study.id, variantTree);
+      const variantNb = tree ? countDescendants(tree) : 0;
+
+      return { parentStudy, variantNb };
+    }, [study]);
+
+  // Reload the promise when the study is edited
+  useEffect(() => {
+    const listener = (event: WsEvent) => {
+      if (event.type === WsEventType.StudyEdited || event.type === WsEventType.StudyDataEdited) {
+        if (event.payload.id === study.id) {
+          reloadStudyMetadata();
+        }
+      }
+    };
+
+    return addWsEventListener(listener);
+  }, [study.id, reloadStudyMetadata]);
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        width: 1,
-        py: 1,
-        px: 2,
-        overflow: "hidden",
-        gap: 1,
-      }}
+    <Stack
+      spacing={1}
+      sx={[
+        { px: 1 },
+        !isExplorer && { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+      ]}
     >
-      <Actions
-        study={study}
-        parentStudy={parentStudy}
-        variantNb={variantNb}
-        isExplorer={isExplorer}
-      />
-    </Box>
+      <Breadcrumb />
+      <Details parentStudy={parentStudy} variantNb={variantNb} />
+      <Actions isExplorer={isExplorer} parentStudy={parentStudy} variantNb={variantNb} />
+    </Stack>
   );
 }
 
