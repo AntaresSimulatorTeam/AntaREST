@@ -164,7 +164,9 @@ export function insertFoldersIfNotExist(
   folders: FolderDTO[],
 ): StudyTreeNodeMetadata {
   const sortedFolders = [...folders].sort((a, b) => a.path.localeCompare(b.path));
-  return sortedFolders.reduce(insertFolderIfNotExist, { ...studiesTree });
+  return sortedFolders.reduce((acc, folder) => insertFolderIfNotExist(acc, folder), {
+    ...studiesTree,
+  });
 }
 
 /**

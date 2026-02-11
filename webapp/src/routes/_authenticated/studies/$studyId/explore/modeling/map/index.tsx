@@ -51,10 +51,10 @@ import { MapContainer } from "./-components/style";
 import { getUpdatedNode, INITIAL_ZOOM, NODE_COLOR } from "./-utils";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/modeling/map/")({
-  component: Map,
+  component: MapPage,
 });
 
-function Map() {
+function MapPage() {
   const study = useStudy();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
