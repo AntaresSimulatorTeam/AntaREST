@@ -22,7 +22,7 @@ from antarest.study.business.model.config.general_model import (
     Mode,
     Month,
     WeekDay,
-    initialize_default_values,
+    initialize_general_config_against_version,
     validate_general_config_version,
 )
 from antarest.study.model import STUDY_VERSION_8
@@ -80,7 +80,7 @@ def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> General
     config_data.update(data["output"])
     config = GeneralFileData.model_validate(config_data).to_model()
     validate_general_config_version(config, version)
-    initialize_default_values(config, version)
+    initialize_general_config_against_version(config, version)
     return config
 
 

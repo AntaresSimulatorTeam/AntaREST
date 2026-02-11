@@ -179,7 +179,7 @@ def validate_general_config_version(config: GeneralConfig | GeneralConfigUpdate,
                 raise InvalidFieldForVersionError(f"Field '{field}' is not a valid field for study version {version}")
 
 
-def initialize_default_values(config: GeneralConfig, version: StudyVersion) -> None:
+def initialize_general_config_against_version(config: GeneralConfig, version: StudyVersion) -> None:
     if version < STUDY_VERSION_7_1:
         _initialize_field_default(config, "filtering", False)
 
