@@ -12,13 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { getRouteApi } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
 import { buildDirectoryTree, getDirectoryPath } from "../../StudyTree/ManagedTree/utils";
 import type { BreadcrumbItem } from "./types";
-
-const routeApi = getRouteApi("/_authenticated/studies/");
 
 interface UseBreadcrumbsParams {
   activeTree: "managed" | "external";
@@ -31,7 +30,7 @@ export function useBreadcrumbs({
   managedDirectoryId,
   externalPath,
 }: UseBreadcrumbsParams): BreadcrumbItem[] {
-  const directories = routeApi.useLoaderData();
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   return useMemo((): BreadcrumbItem[] => {
     const homeItem: BreadcrumbItem = {

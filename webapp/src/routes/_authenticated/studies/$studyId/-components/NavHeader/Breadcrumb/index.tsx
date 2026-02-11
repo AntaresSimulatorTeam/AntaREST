@@ -14,17 +14,16 @@
 
 import HomeIcon from "@mui/icons-material/Home";
 import { Box, Breadcrumbs } from "@mui/material";
-import { getRouteApi } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
+import { directoryQueries } from "@/queries/directories/queries";
 import type { StudyMetadata } from "@/types/types";
 import { buildKey } from "@/utils/reactUtils";
 import BreadcrumbLink from "./BreadcrumbLink";
 import { buildExternalBreadcrumbs, buildManagedBreadcrumbs } from "./utils";
-
-const routeApi = getRouteApi("/_authenticated/studies/$studyId");
 
 interface BreadcrumbProps {
   study: StudyMetadata;
@@ -33,7 +32,7 @@ interface BreadcrumbProps {
 function Breadcrumb({ study }: BreadcrumbProps) {
   const dispatch = useAppDispatch();
   const filters = useAppSelector(getStudyFilters);
-  const directories = routeApi.useLoaderData();
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   // Build breadcrumbs based on study type (managed vs external)
   const breadcrumbItems = study.managed

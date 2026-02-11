@@ -34,8 +34,8 @@ import StudyTree from "./-components/StudyTree";
 
 export const Route = createFileRoute("/_authenticated/studies/")({
   component: Studies,
-  loader: ({ context }) => {
-    return context.queryClient.ensureQueryData(directoryQueries.list());
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(directoryQueries.list());
   },
 });
 

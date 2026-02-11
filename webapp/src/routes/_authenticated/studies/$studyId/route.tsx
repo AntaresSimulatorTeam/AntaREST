@@ -35,8 +35,8 @@ import NavHeader from "./-components/NavHeader";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId")({
   component: StudyHomeLayout,
-  loader: ({ context }) => {
-    return context.queryClient.ensureQueryData(directoryQueries.list());
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(directoryQueries.list());
   },
 });
 
