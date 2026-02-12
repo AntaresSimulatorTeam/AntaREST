@@ -14,20 +14,19 @@
 
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "@/redux/selectors";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { isBindingConstraintLinkTerm } from "@/services/api/studies/bindingConstraints/utils";
-import { useWatch } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import TermDataFieldSkeleton from "./TermDataFieldSkeleton";
 
 function LinkTermDataFE({ index }: { index: number }) {
   const study = useStudy();
   const { t } = useTranslation();
-  const { control, setValue } = useFormContextPlus<BindingConstraint>();
+  const { control, setValue } = useFormContext<BindingConstraint>();
   const currentArea1 = useWatch({ control, name: `terms.${index}.data.area1` });
   const currentArea2 = useWatch({ control, name: `terms.${index}.data.area2` });
 

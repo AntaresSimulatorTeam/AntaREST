@@ -15,9 +15,9 @@
 import useUpdatedRef from "@/hooks/useUpdatedRef";
 import * as R from "ramda";
 import { useCallback, useEffect, useRef } from "react";
-import type { FieldValues } from "react-hook-form";
+import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
 import useUndo, { type Actions } from "use-undo";
-import type { UseFormReturnPlus } from "./types";
+import useFormInitialDefaultValues from "./useFormInitialDefaultValues";
 
 enum ActionType {
   Undo = "UNDO",
@@ -26,24 +26,25 @@ enum ActionType {
 }
 
 function useFormUndoRedo<TFieldValues extends FieldValues, TContext>(
-  api: UseFormReturnPlus<TFieldValues, TContext>,
+  formApi: UseFormReturn<TFieldValues, TContext>,
 ): Actions<TFieldValues> {
-  const {
-    setValues,
-    _internal: { initialDefaultValues },
-  } = api;
-  const [state, { undo, redo, set, ...rest }] = useUndo(initialDefaultValues);
+  const [state, { undo, redo, set, ...rest }] = useUndo<TFieldValues | undefined>(undefined);
+  const getInitialDefaultValues = useFormInitialDefaultValues(formApi);
   const lastAction = useRef<ActionType | "">("");
-  const dataRef = useUpdatedRef({ state, initialDefaultValues });
+  const dataRef = useUpdatedRef({ state, getInitialDefaultValues });
 
   useEffect(
     () => {
       if (lastAction.current === ActionType.Undo || lastAction.current === ActionType.Redo) {
-        const newValues = state.present || initialDefaultValues;
+        const newValues = state.present || getInitialDefaultValues();
+
         if (newValues) {
-          setValues(newValues);
+          Object.entries(newValues).forEach(([name, value]) => {
+            formApi.setValue(name as Path<TFieldValues>, value, { shouldDirty: true });
+          });
         }
       }
+
       lastAction.current = "";
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,7 +63,8 @@ function useFormUndoRedo<TFieldValues extends FieldValues, TContext>(
 
   const setWrapper = useCallback<Actions<TFieldValues>["set"]>(
     (newPresent, checkpoint) => {
-      const currentPresent = dataRef.current.state.present || dataRef.current.initialDefaultValues;
+      const currentPresent =
+        dataRef.current.state.present || dataRef.current.getInitialDefaultValues();
 
       // Don't set after an undo or redo without changes.
       // * Don't use shallow equality, because it can be a deep object.

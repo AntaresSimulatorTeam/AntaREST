@@ -13,9 +13,8 @@
  */
 
 import DynamicList from "@/components/DynamicList";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import { useFieldArray } from "react-hook-form";
+import { useFieldArray, useFormContext } from "react-hook-form";
 import type { CorrelationFormFields } from "../-utils";
 import { useAreasOptions } from "../../-hooks/useAreasOptions";
 import useArea from "../../../-hooks/useArea";
@@ -28,7 +27,7 @@ function Fields() {
   const area = useArea();
   const areasById = useAppSelector((state) => getAreasById(state, study.id));
 
-  const { control } = useFormContextPlus<CorrelationFormFields>();
+  const { control } = useFormContext<CorrelationFormFields>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "correlation",
