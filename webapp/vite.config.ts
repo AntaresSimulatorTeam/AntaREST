@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import path from "node:path";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
 import { defineConfig } from "vite";
 
 //! Keep '0.0.0.0', because 'localhost' may not working on Mac
