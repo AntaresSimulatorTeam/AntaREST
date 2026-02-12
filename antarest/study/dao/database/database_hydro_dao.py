@@ -45,6 +45,8 @@ from antarest.study.dao.database.models.hydro import (
 )
 from antarest.study.dao.database.sql_utils import upsert_one
 
+_MANAGEMENT_COLS = [c for c in HYDRO_MANAGEMENT_TABLE.c if c.name not in ("study_id", "area_id")]
+
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
@@ -78,24 +80,7 @@ class DatabaseHydroDao(HydroDao):
     @staticmethod
     def _convert_row_to_hydro_management(row: Row[Any]) -> HydroManagement:
         """Convert a database row to HydroManagement model."""
-        return HydroManagement(
-            inter_daily_breakdown=row.inter_daily_breakdown,
-            intra_daily_modulation=row.intra_daily_modulation,
-            inter_monthly_breakdown=row.inter_monthly_breakdown,
-            reservoir=row.reservoir,
-            reservoir_capacity=row.reservoir_capacity,
-            follow_load=row.follow_load,
-            use_water=row.use_water,
-            hard_bounds=row.hard_bounds,
-            initialize_reservoir_date=row.initialize_reservoir_date,
-            use_heuristic=row.use_heuristic,
-            power_to_level=row.power_to_level,
-            use_leeway=row.use_leeway,
-            leeway_low=row.leeway_low,
-            leeway_up=row.leeway_up,
-            pumping_efficiency=row.pumping_efficiency,
-            overflow_spilled_cost_difference=row.overflow_spilled_cost_difference,
-        )
+        return HydroManagement(**{c.name: row._mapping[c.name] for c in _MANAGEMENT_COLS})
 
     @staticmethod
     def _convert_row_to_inflow_structure(row: Row[Any]) -> InflowStructure:
@@ -225,11 +210,10 @@ class DatabaseHydroDao(HydroDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        management_cols = [c for c in HYDRO_MANAGEMENT_TABLE.c if c.name not in ("study_id", "area_id")]
         stmt = (
             select(
                 AREA_TABLE.c.area_id,
-                *management_cols,
+                *_MANAGEMENT_COLS,
                 HYDRO_INFLOW_STRUCTURE_TABLE.c.inter_monthly_correlation,
             )
             .join(
@@ -450,7 +434,7 @@ class DatabaseHydroDao(HydroDao):
                 # not saved: values from the diagonal are always == 1.0
                 for j in range(i + 1, len(study_area_ids)):
                     coefficient = current_correlation_matrix.data[i][j]
-                    if not coefficient:
+                    if coefficient == 0:
                         # zero values are not saved
                         continue
                     area_from = study_area_ids[i]
