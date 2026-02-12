@@ -15,9 +15,13 @@ Celery app for maintenance tasks.
 
 Architecture:
 - Import time: Create Celery app + apply broker config (required for Beat/Worker to connect)
-- celeryd_init signal: Full config loading
+- setup_logging: Applies our logging configuration insetad of celery's default
 - on_after_configure signal: Register periodic tasks (Beat only)
 - worker_init signal: Create MaintenanceContext (Worker only)
+
+The loading of the configuration from ANTAREST_CONF env var is imported from another module
+so that it can be mocked in tests.
+For real use, we raise at import time when the config is not available, to fail fast.
 """
 
 import logging
@@ -26,7 +30,7 @@ from enum import StrEnum
 from typing import Any
 
 from celery import Celery, Task
-from celery.signals import celeryd_init, setup_logging, task_failure, worker_init
+from celery.signals import setup_logging, task_failure, worker_init
 
 from antarest.core.config import CeleryConfig
 from antarest.core.logging.utils import configure_logger
@@ -90,12 +94,6 @@ def _setup_logging(**_: Any) -> None:
     It's important to use that celery signal, otherwise celery overrides some of our logging configuration.
     """
     configure_logger(get_config())
-
-
-@celeryd_init.connect
-def _configure_celery(sender: str, **_: Any) -> None:
-    """Full initialization when Celery worker starts."""
-    logger.info(f"Broker: {_mask_url_credentials(celery_app.conf.broker_url or '')}")
 
 
 @celery_app.on_after_configure.connect
