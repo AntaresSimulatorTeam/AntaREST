@@ -1,8 +1,8 @@
 """add_hydro_tables
 
-Revision ID: 9e96cc5d95de
-Revises: 0e628a645214
-Create Date: 2026-02-10 11:28:30.653492
+Revision ID: ae838d5fd166
+Revises: e61f6bcf304c
+Create Date: 2026-02-12 15:43:51.852134
 
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "9e96cc5d95de"
-down_revision = "0e628a645214"
+revision = "ae838d5fd166"
+down_revision = "e61f6bcf304c"
 branch_labels = None
 depends_on = None
 
