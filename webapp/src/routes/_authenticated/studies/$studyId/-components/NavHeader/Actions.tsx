@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/CustomScrollbar";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import FavoriteStudyToggle from "@/routes/-shared/components/studies/FavoriteStudyToggle";
 import StudyActionsMenu from "@/routes/-shared/components/studies/StudyActionsMenu";
@@ -23,30 +22,28 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
-import { Box, Button, Chip, Divider, IconButton, Tooltip } from "@mui/material";
+import { Button, Divider, IconButton, Stack, Tooltip } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import Breadcrumb from "./Breadcrumb";
+import useStudy from "../../-hooks/useStudy";
 import CommandsDrawer from "./CommandsDrawer";
-import Details from "./Details";
 
 export type DialogType = "commands";
 
 interface Props {
-  study: StudyMetadata;
   parentStudy?: StudyMetadata;
-  variantNb: number;
+  variantNb?: number;
   isExplorer?: boolean;
 }
 
-function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
+function Actions({ parentStudy, variantNb, isExplorer }: Props) {
+  const study = useStudy();
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
 
-  const isManaged = study.managed;
   const isArchived = study.archived;
   const isVariant = study.type === "variantstudy";
 
@@ -85,48 +82,13 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
 
   return (
     <>
-      <Box
-        sx={{
-          width: 1,
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "flex-start",
-          alignItems: "center",
-          boxSizing: "border-box",
-          gap: 1,
-        }}
-      >
-        <Box
-          sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}
-        >
-          <Breadcrumb study={study} />
-          <Details study={study} parentStudy={parentStudy} variantNb={variantNb} />
-        </Box>
-        <Box sx={{ overflow: "auto" }}>
-          <CustomScrollbar>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-                flexWrap: "nowrap",
-              }}
-            >
-              <FavoriteStudyToggle studyId={study.id} />
-              <Tooltip title={t("study.copyId")}>
-                <IconButton onClick={handleCopyId}>
-                  <ContentCopyIcon />
-                </IconButton>
-              </Tooltip>
-              {isManaged ? (
-                <Chip label={t("study.managedStudy")} color="info" />
-              ) : (
-                <Chip label={study.workspace} />
-              )}
-              {study.tags?.map((tag) => <Chip key={tag} label={tag} />)}
-            </Box>
-          </CustomScrollbar>
-        </Box>
+      <Stack spacing={1}>
+        <FavoriteStudyToggle studyId={study.id} />
+        <Tooltip title={t("study.copyId")}>
+          <IconButton onClick={handleCopyId}>
+            <ContentCopyIcon />
+          </IconButton>
+        </Tooltip>
         <Divider flexItem orientation="vertical" />
         {isVariant && (
           <IconButton color="primary" onClick={() => setOpenDialog("commands")}>
@@ -139,7 +101,6 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
             startIcon={<UnarchiveOutlinedIcon />}
             variant="contained"
             size="extra-small"
-            sx={{ px: 1 }}
           >
             {t("global.unarchive")}
           </Button>
@@ -151,7 +112,7 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
         >
           <MoreVertIcon />
         </Button>
-      </Box>
+      </Stack>
       <StudyActionsMenu
         open={!!anchorEl}
         anchorEl={anchorEl}
