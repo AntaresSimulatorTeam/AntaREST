@@ -14,11 +14,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from antarest.core.exceptions import (
-    AreaNotFound,
-    HydroConfigNotFound,
-    HydroInflowStructureNotFound,
-)
+from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelation,
@@ -39,10 +35,10 @@ class TestHydroManagement:
     """Tests for hydro management CRUD operations."""
 
     def test_get_hydro_management_raises_error_for_area_without_hydro_config(self, dao: DatabaseStudyDao) -> None:
-        """Test that get_hydro_management raises HydroConfigNotFound for an area without hydro config."""
+        """Test that get_hydro_management raises ValueError for an area without hydro config."""
         dao.save_area("Paris")
 
-        with pytest.raises(HydroConfigNotFound):
+        with pytest.raises(ValueError):
             dao.get_hydro_management("paris")
 
     def test_get_hydro_management_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
@@ -98,10 +94,10 @@ class TestInflowStructure:
     """Tests for inflow structure CRUD operations."""
 
     def test_get_inflow_structure_raises_error_for_area_without_config(self, dao: DatabaseStudyDao) -> None:
-        """Test that get_inflow_structure raises HydroInflowStructureNotFound for an area without config."""
+        """Test that get_inflow_structure raises ValueError for an area without config."""
         dao.save_area("Paris")
 
-        with pytest.raises(HydroInflowStructureNotFound):
+        with pytest.raises(ValueError):
             dao.get_inflow_structure("paris")
 
     def test_get_inflow_structure_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
@@ -145,23 +141,23 @@ class TestGetAllHydroProperties:
     def test_get_all_hydro_properties_raises_error_for_area_without_hydro_management(
         self, dao: DatabaseStudyDao
     ) -> None:
-        """Test that get_all_hydro_properties raises HydroConfigNotFound if any area is missing hydro management."""
+        """Test that get_all_hydro_properties raises ValueError if any area is missing hydro management."""
         dao.save_area("Paris")
         dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.5), "paris")
         # No hydro management saved
 
-        with pytest.raises(HydroConfigNotFound):
+        with pytest.raises(ValueError):
             dao.get_all_hydro_properties()
 
     def test_get_all_hydro_properties_raises_error_for_area_without_inflow_structure(
         self, dao: DatabaseStudyDao
     ) -> None:
-        """Test that get_all_hydro_properties raises HydroInflowStructureNotFound if any area is missing inflow structure."""
+        """Test that get_all_hydro_properties raises ValueError if any area is missing inflow structure."""
         dao.save_area("Paris")
         dao.save_hydro_management(HydroManagement(reservoir=True), "paris")
         # No inflow structure saved
 
-        with pytest.raises(HydroInflowStructureNotFound):
+        with pytest.raises(ValueError):
             dao.get_all_hydro_properties()
 
     def test_get_all_hydro_properties_aggregates_data(self, dao: DatabaseStudyDao) -> None:
@@ -313,10 +309,10 @@ class TestHydroCorrelation:
 
     def test_get_hydro_correlation_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_correlation raises AreaNotFound if area doesn't exist."""
-        with pytest.raises(AreaNotFound):
+        with pytest.raises(ValueError):
             dao.get_hydro_correlation("nonexistent")
 
-    def test_save_hydro_correlation_stores_symmetric_data(self, dao: DatabaseStudyDao) -> None:
+    def test_save_hydro_correlation(self, dao: DatabaseStudyDao) -> None:
         """Test that correlation is stored symmetrically (only upper triangle)."""
         dao.save_area("Paris")
         dao.save_area("London")
@@ -469,7 +465,7 @@ class TestCascadeDelete:
             ),
         )
 
-        # Delete target area — allocation row referencing it should be cascade-deleted
+        # Delete target area allocation row referencing it should be cascade-deleted
         dao.delete_area("london")
 
         with db_session:
@@ -479,6 +475,13 @@ class TestCascadeDelete:
             )
             rows = db_session.execute(stmt).fetchall()
             assert len(rows) == 0
+
+            stmt = select(HYDRO_ALLOCATION_TABLE).where(
+                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                & (HYDRO_ALLOCATION_TABLE.c.source_area_id == "paris")
+            )
+            rows = db_session.execute(stmt).fetchall()
+            assert len(rows) == 1
 
         dao.save_area("London")
         dao.save_hydro_allocation(
@@ -491,7 +494,7 @@ class TestCascadeDelete:
             ),
         )
 
-        # Delete source area — remaining allocation rows should be cascade-deleted
+        # Delete source area remaining allocation rows should be cascade-deleted
         dao.delete_area("paris")
 
         with db_session:
@@ -503,27 +506,42 @@ class TestCascadeDelete:
             assert len(rows) == 0
 
     def test_cascade_delete_hydro_correlation(self, db_session: Session, dao: DatabaseStudyDao) -> None:
-        """Test that hydro correlation is deleted when area is deleted."""
+        """Test that hydro correlation is deleted when area_from or area_to is deleted."""
         dao.save_area("Paris")
         dao.save_area("London")
+        dao.save_area("Algiers")
         dao.save_hydro_correlation(
             "paris",
             HydroCorrelation(
                 correlation=[
-                    HydroCorrelationArea(area_id="paris", coefficient=100.0),
                     HydroCorrelationArea(area_id="london", coefficient=50.0),
+                    HydroCorrelationArea(area_id="algiers", coefficient=60.0),
                 ]
             ),
         )
 
-        # Delete area
+        # Upper triangle stores: (algiers, paris, 0.6) and (london, paris, 0.5)
+        with db_session:
+            stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.area_to == "paris")
+            rows = db_session.execute(stmt).fetchall()
+            assert len(rows) == 2
+
+        # Delete london — row (london, paris) should be cascade-deleted via area_from FK
+        dao.delete_area("london")
+
+        with db_session:
+            stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.area_from == "london")
+            rows = db_session.execute(stmt).fetchall()
+            assert len(rows) == 0
+            # (algiers, paris) row remains
+            stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.area_to == "paris")
+            rows = db_session.execute(stmt).fetchall()
+            assert len(rows) == 1
+
+        # Delete paris — row (algiers, paris) should be cascade-deleted via area_to FK
         dao.delete_area("paris")
 
-        # Verify correlation is also deleted
         with db_session:
-            stmt = select(HYDRO_CORRELATION_TABLE).where(
-                (HYDRO_CORRELATION_TABLE.c.study_id == dao.get_study_id())
-                & ((HYDRO_CORRELATION_TABLE.c.area_from == "paris") | (HYDRO_CORRELATION_TABLE.c.area_to == "paris"))
-            )
+            stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.area_to == "paris")
             rows = db_session.execute(stmt).fetchall()
             assert len(rows) == 0

@@ -571,21 +571,6 @@ class AreaNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
-class HydroConfigNotFound(HTTPException):
-    def __init__(self, area_id: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, f"Hydro configuration not found for area '{area_id}'")
-
-
-class HydroInflowStructureNotFound(HTTPException):
-    def __init__(self, area_id: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, f"Hydro inflow structure not found for area '{area_id}'")
-
-
-class HydroAllocationNotFound(HTTPException):
-    def __init__(self, study_id: str) -> None:
-        super().__init__(HTTPStatus.NOT_FOUND, f"Hydro allocation not found for study '{study_id}'")
-
-
 class DuplicateAreaName(HTTPException):
     """Exception raised when trying to create an area with an already existing name."""
 
