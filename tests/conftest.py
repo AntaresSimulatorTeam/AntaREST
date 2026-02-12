@@ -18,8 +18,8 @@ from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
 from antarest.blobstore.in_memory import InMemoryBlobService
-from antarest.favorite.repository import FavoriteRepository
-from antarest.favorite.service import FavoriteService
+from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
+from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import MatrixService
@@ -71,8 +71,13 @@ def blob_service_fixture() -> InMemoryBlobService:
 
 
 @pytest.fixture(name="favorite_service")
-def favorite_service_fixture() -> FavoriteService:
-    return FavoriteService(FavoriteRepository())
+def favorite_service_fixture() -> FavoriteStudyService:
+    return FavoriteStudyService(FavoriteStudyRepository())
+
+
+@pytest.fixture(name="favorite_directory_service")
+def favorite_directory_service_fixture() -> FavoriteDirectoryService:
+    return FavoriteDirectoryService(FavoriteDirectoryRepository())
 
 
 def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
