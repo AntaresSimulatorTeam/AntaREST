@@ -28,13 +28,13 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
-from antarest.study.business.model.config.playlist_model import Playlist
-from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.hydro_allocation_model import HydroAllocation
+from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
+from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -58,6 +58,7 @@ from antarest.study.dao.database.database_district_dao import DatabaseDistrictDa
 from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
+from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -72,6 +73,7 @@ class DatabaseStudyDao(
     DatabaseLayerDao,
     DatabaseHydroDao,
     DatabaseThermalDao,
+    DatabaseStudySettingsDao,
 ):
     """
     Database implementation of StudyDao.
@@ -92,7 +94,7 @@ class DatabaseStudyDao(
         DatabaseLayerDao.__init__(self, study_id, db_session)
         DatabaseHydroDao.__init__(self, study_id, db_session)
         DatabaseThermalDao.__init__(self, study_id, db_session)
-
+        DatabaseStudySettingsDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
@@ -392,6 +394,50 @@ class DatabaseStudyDao(
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
+    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_management(self, area_id: str) -> HydroManagement:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_inflow_structure(self, area_id: str) -> InflowStructure:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_allocation_matrix(self) -> dict[str, HydroAllocation]:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
+    def get_hydro_correlation_matrix(self) -> HydroCorrelationMatrix:
+        raise NotImplementedError("This method is not yet implemented for database storage mode")
+
+    @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
@@ -477,30 +523,6 @@ class DatabaseStudyDao(
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_timeseries_config(self) -> TimeSeriesConfiguration:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_playlist_config(self, playlist: Playlist) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_playlist_config(self) -> Playlist:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override

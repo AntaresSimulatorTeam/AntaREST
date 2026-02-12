@@ -9,17 +9,60 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
+from antarest.study.business.model.config.adequacy_patch_model import (
+    AdequacyPatchParameters,
+    initialize_adequacy_patch_parameters,
+)
+from antarest.study.business.model.config.advanced_parameters_model import (
+    AdvancedParameters,
+    initialize_advanced_parameters_against_version,
+)
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2, Study
+
+
+def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
+    """Saves default settings at study creation. Modifies the `dao` parameter in place"""
+    study_version = StudyVersion.parse(study.version)
+
+    general_config = GeneralConfig()
+    initialize_general_config_against_version(general_config, study_version)
+    dao.save_general_config(general_config)
+
+    dao.save_playlist_config(Playlist())
+
+    dao.save_timeseries_config(TimeSeriesConfiguration())
+
+    advanced_parameters = AdvancedParameters()
+    initialize_advanced_parameters_against_version(advanced_parameters, study_version)
+    dao.save_advanced_parameters(advanced_parameters)
+
+    dao.save_optimization_preferences(OptimizationPreferences())
+
+    # todo: uncomment this when method is implemented
+    # dao.save_thematic_trimming(ThematicTrimming())
+
+    if study_version >= STUDY_VERSION_8_3:
+        adequacy_patch_parameters = AdequacyPatchParameters()
+        initialize_adequacy_patch_parameters(adequacy_patch_parameters, study_version)
+        dao.save_adequacy_patch_parameters(adequacy_patch_parameters)
+
+    if study_version >= STUDY_VERSION_9_2:
+        dao.save_compatibility_parameters(CompatibilityParameters())
 
 
 class DatabaseStudyDaoFactory(StudyFactoryDao):
@@ -42,4 +85,5 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
     def create_study_dao(self, study: Study) -> DatabaseStudyDao:
         dao = DatabaseStudyDao(study.id, self.session, self._matrix_service)
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
+        _create_default_settings(dao, study)
         return dao
