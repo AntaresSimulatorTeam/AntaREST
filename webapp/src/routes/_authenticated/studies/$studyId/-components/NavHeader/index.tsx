@@ -31,19 +31,18 @@ function NavHeader() {
   const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
   const isExplorer = !!match;
 
-  const { data: { parentStudy, variantNb } = {}, reload: reloadStudyMetadata } =
-    usePromise(async () => {
-      const parents = await getVariantParents(study.id);
-      const parentStudy = parents.length > 0 ? parents[0] : undefined;
+  const { data: studyMetadata, reload: reloadStudyMetadata } = usePromise(async () => {
+    const parents = await getVariantParents(study.id);
+    const parentStudy = parents.length > 0 ? parents[0] : undefined;
 
-      const root = parents.length > 0 ? parents[parents.length - 1] : study;
-      const variantTree = await getVariantTree(root.id);
+    const root = parents.length > 0 ? parents[parents.length - 1] : study;
+    const variantTree = await getVariantTree(root.id);
 
-      const tree = findNodeInTree(study.id, variantTree);
-      const variantNb = tree ? countDescendants(tree) : 0;
+    const tree = findNodeInTree(study.id, variantTree);
+    const variantNb = tree ? countDescendants(tree) : 0;
 
-      return { parentStudy, variantNb };
-    }, [study]);
+    return { parentStudy, variantNb };
+  }, [study]);
 
   // Reload the promise when the study is edited
   useEffect(() => {
@@ -57,6 +56,8 @@ function NavHeader() {
 
     return addWsEventListener(listener);
   }, [study.id, reloadStudyMetadata]);
+
+  const { parentStudy, variantNb } = studyMetadata || {};
 
   ////////////////////////////////////////////////////////////////
   // JSX
