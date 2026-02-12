@@ -15,6 +15,7 @@
 import ErrorView from "@/components/page/ErrorView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
+import { directoryQueries } from "@/queries/directories/queries";
 import { setCurrentStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { getStudyMetadata } from "@/services/api/study";
@@ -34,6 +35,9 @@ import NavHeader from "./-components/NavHeader";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId")({
   component: StudyHomeLayout,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(directoryQueries.list());
+  },
 });
 
 function StudyHomeLayout() {

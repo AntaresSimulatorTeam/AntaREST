@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { Box, Tooltip } from "@mui/material";
+import type { ToOptions } from "@tanstack/react-router";
+import { useLayoutEffect, useRef, useState } from "react";
 import RouterLink from "@/components/router/RouterLink";
 import { isTextTruncated } from "@/utils/domUtils";
 import { truncateTextSx } from "@/utils/muiUtils";
-import { Box, Tooltip } from "@mui/material";
-import { type ToOptions } from "@tanstack/react-router";
-import React, { useLayoutEffect, useRef, useState } from "react";
 
 interface BreadcrumbLinkProps {
   label: string;

@@ -51,6 +51,7 @@ export const convertStudyDtoToMetadata = (
     horizon: metadata.horizon,
     tags: metadata.tags,
     parentId: metadata.parent_id,
+    directoryId: metadata.directory_id,
   };
 };
 

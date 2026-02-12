@@ -20,6 +20,7 @@
     "@fontsource/roboto": "5.1.1",
     "@glideapps/glide-data-grid": "6.0.3",
     "@handsontable/react": "14.5.0",
+    "@hookform/resolvers": "5.2.2",
     "@mui/icons-material": "6.4.1",
     "@mui/lab": "6.0.0-beta.26",
     "@mui/material": "6.4.3",
@@ -78,7 +79,8 @@
     "ts-toolbelt": "9.6.0",
     "use-undo": "1.1.1",
     "uuid": "10.0.0",
-    "xml-js": "1.6.11"
+    "xml-js": "1.6.11",
+    "zod": "4.3.5"
   },
   "devDependencies": {
     "@eslint/js": "9.18.0",
