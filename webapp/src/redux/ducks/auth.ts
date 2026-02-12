@@ -88,7 +88,7 @@ export const login = createAsyncThunk<
   LoginArg | UserInfo | undefined,
   AppAsyncThunkConfig
 >(n("LOGIN"), async (arg, { dispatch, rejectWithValue }) => {
-  let user;
+  let user: UserInfo | undefined;
 
   // Authentication not required or login from localStorage
   if (!arg || "id" in arg) {
