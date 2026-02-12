@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import uuid
+import zipfile
 from pathlib import Path
 from unittest.mock import ANY, Mock
 
@@ -118,8 +119,11 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     )
 
     output_id = "some-output"
-    remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")  # type: ignore
-    (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
+    remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")
+    output_dir = Path(study_mock.path) / "output"
+    output_dir.mkdir()
+    with zipfile.ZipFile(tmp_path / "output" / f"{output_id}.zip", "w") as zf:
+        zf.writestr("fake-file", "")
 
     # Asks for unarchive
     output_service.unarchive_output(study_id, output_id)
