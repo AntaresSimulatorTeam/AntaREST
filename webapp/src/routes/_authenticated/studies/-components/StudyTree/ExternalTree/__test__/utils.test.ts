@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { FIXTURES } from "./fixtures";
+import type { FolderDTO } from "@/queries/explorer/schemas";
+import type { ExternalTreeNodeMetadata } from "../types";
 import { insertFoldersIfNotExist } from "../utils";
-import type { FolderDTO, StudyTreeNodeMetadata } from "../types";
+import { FIXTURES } from "./fixtures";
 
 describe("StudyTree Utils", () => {
   describe("mergeStudyTreeAndFolders", () => {
@@ -24,7 +25,7 @@ describe("StudyTree Utils", () => {
     });
 
     test("should handle empty study tree", () => {
-      const emptyTree: StudyTreeNodeMetadata = {
+      const emptyTree: ExternalTreeNodeMetadata = {
         name: "Root",
         path: "/",
         children: [],
@@ -34,7 +35,7 @@ describe("StudyTree Utils", () => {
     });
 
     test("should handle empty folders array", () => {
-      const tree: StudyTreeNodeMetadata = {
+      const tree: ExternalTreeNodeMetadata = {
         name: "Root",
         path: "/",
         children: [{ name: "a", path: "/a", children: [] }],
@@ -44,7 +45,7 @@ describe("StudyTree Utils", () => {
     });
 
     test("should handle invalid parent paths", () => {
-      const tree: StudyTreeNodeMetadata = {
+      const tree: ExternalTreeNodeMetadata = {
         name: "Root",
         path: "/",
         children: [{ name: "a", path: "/a", children: [] }],

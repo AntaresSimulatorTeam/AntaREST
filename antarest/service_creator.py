@@ -39,8 +39,8 @@ from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
-from antarest.favorite.repository import FavoriteRepository
-from antarest.favorite.service import FavoriteService
+from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
+from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.favorite.web import create_favorite_routes
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
@@ -155,20 +155,26 @@ class CoreServices:
     study_service: StudyService
     output_service: OutputService
     blob_service: BlobService
-    favorite_service: FavoriteService
+    favorite_study_service: FavoriteStudyService
+    favorite_directory_service: FavoriteDirectoryService
 
 
 def build_favorite_service(
-    config: Config, app_ctxt: Optional[AppBuildContext] = None, service: Optional[FavoriteService] = None
-) -> FavoriteService:
-    if service is None:
-        favorite_repository = FavoriteRepository()
-        service = FavoriteService(favorite_repository=favorite_repository)
+    config: Config,
+    app_ctxt: Optional[AppBuildContext] = None,
+) -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
+    favorite_repository = FavoriteStudyRepository()
+    favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
+
+    favorite_directory_repository = FavoriteDirectoryRepository()
+    favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
 
     if app_ctxt:
-        app_ctxt.api_root.include_router(create_favorite_routes(service, config=config))
+        app_ctxt.api_root.include_router(
+            create_favorite_routes(favorite_study_service, favorite_directory_service, config=config)
+        )
 
-    return service
+    return favorite_study_service, favorite_directory_service
 
 
 def build_output_service(
@@ -242,7 +248,8 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         matrix_service=matrix_service,
     )
 
-    favorite_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
+    favorite_study_service, favorite_directory_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
+
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
@@ -256,7 +263,8 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         study_service=study_service,
         output_service=output_service,
         blob_service=blob_service,
-        favorite_service=favorite_service,
+        favorite_study_service=favorite_study_service,
+        favorite_directory_service=favorite_directory_service,
     )
 
 
@@ -336,7 +344,8 @@ class Services:
     event_bus: IEventBus
     study: StudyService
     matrix: MatrixService
-    favorite: FavoriteService
+    favorite_study: FavoriteStudyService
+    favorite_directory: FavoriteDirectoryService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
@@ -358,7 +367,6 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         app_ctxt,
         config,
         study_service=core_services.study_service,
-        favorite_service=core_services.favorite_service,
         output_service=core_services.output_service,
         login_service=core_services.login_service,
         event_bus=core_services.event_bus,
@@ -392,7 +400,8 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         event_bus=core_services.event_bus,
         study=core_services.study_service,
         matrix=core_services.matrix_service,
-        favorite=core_services.favorite_service,
+        favorite_study=core_services.favorite_study_service,
+        favorite_directory=core_services.favorite_directory_service,
         user=core_services.login_service,
         cache=core_services.cache,
         maintenance=maintenance_service,

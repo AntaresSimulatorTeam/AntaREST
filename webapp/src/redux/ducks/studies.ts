@@ -16,7 +16,13 @@ import { getStudyVersions } from "@/services/api/studies";
 import * as api from "@/services/api/study";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyEventPayload } from "@/services/webSocket/types";
-import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "@/types/types";
+import type {
+  GroupDTO,
+  StudyMetadata,
+  StudyPublicMode,
+  StudySortConfig,
+  UserDTO,
+} from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
@@ -28,13 +34,20 @@ import { getFavoriteStudyIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
+import { DEFAULT_STUDY_SORT_CONFIG } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
 export interface StudyFilters {
   search: string;
-  folder: string;
-  strictFolder: boolean;
+  activeTree: "managed" | "external";
+  managed: {
+    directoryId: string | null;
+  };
+  external: {
+    path: string;
+    strictPath: boolean;
+  };
   type: "all" | "references" | "variants";
   management: "all" | "managed" | "unmanaged";
   archive: "all" | "archived" | "unarchived";
@@ -44,11 +57,6 @@ export interface StudyFilters {
   tags: string[];
 }
 
-export interface StudiesSortConf {
-  property: keyof StudyMetadata;
-  order: "ascend" | "descend";
-}
-
 export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   current: string;
   prevStudyId: string;
@@ -56,7 +64,7 @@ export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   versionList: string[];
   favorites: Array<StudyMetadata["id"]>;
   filters: StudyFilters;
-  sort: StudiesSortConf;
+  sort: StudySortConfig;
 }
 
 interface StudyCreator {
@@ -84,8 +92,14 @@ const initialState = studiesAdapter.getInitialState({
   favorites: [],
   filters: {
     search: "",
-    folder: "",
-    strictFolder: false,
+    activeTree: "managed",
+    managed: {
+      directoryId: null,
+    },
+    external: {
+      path: "",
+      strictPath: false,
+    },
     type: "references",
     management: "all",
     archive: "all",
@@ -95,10 +109,7 @@ const initialState = studiesAdapter.getInitialState({
     tags: [],
     ...(storage.getItem(StorageKey.StudiesFilters) || {}),
   } satisfies StudyFilters,
-  sort: {
-    property: "name",
-    order: "ascend",
-  },
+  sort: DEFAULT_STUDY_SORT_CONFIG,
 }) as StudiesState;
 
 const n = makeActionName("study");
@@ -125,14 +136,14 @@ export const updateStudyFilters = createAction<Partial<StudiesState["filters"]>>
   n("UPDATE_FILTERS"),
 );
 
-export const updateStudiesSortConf = createAction<Partial<StudiesState["sort"]>>(
-  n("UPDATE_SORT_CONF"),
+export const updateStudySortConfig = createAction<Partial<StudySortConfig>>(
+  n("UPDATE_SORT_CONFIG"),
 );
 
 export const updateStudiesFromLocalStorage = createAction<
   O.Nullable<{
     favorites: StudiesState["favorites"];
-    sort: Partial<StudiesSortConf>;
+    sort: Partial<StudySortConfig>;
   }>
 >(n("UPDATE_FROM_LOCAL_STORAGE"));
 
@@ -289,7 +300,7 @@ export default createReducer(initialState, (builder) => {
       Object.assign(draftState.filters, action.payload);
       draftState.scrollPosition = 0;
     })
-    .addCase(updateStudiesSortConf, (draftState, action) => {
+    .addCase(updateStudySortConfig, (draftState, action) => {
       Object.assign(draftState.sort, action.payload);
       draftState.scrollPosition = 0;
     })
