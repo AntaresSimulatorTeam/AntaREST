@@ -221,9 +221,6 @@ class DatabaseHydroDao(HydroDao):
 
         Returns:
             Dictionary mapping area_id to HydroProperties (management_options + inflow_structure).
-
-        Raises:
-            ValueError: If any area is missing hydro management or inflow structure configuration.
         """
         study_id = self.get_study_id()
         session = self.get_session()
@@ -235,33 +232,27 @@ class DatabaseHydroDao(HydroDao):
                 *management_cols,
                 HYDRO_INFLOW_STRUCTURE_TABLE.c.inter_monthly_correlation,
             )
-            .select_from(
-                AREA_TABLE.outerjoin(
-                    HYDRO_MANAGEMENT_TABLE,
-                    (AREA_TABLE.c.study_id == HYDRO_MANAGEMENT_TABLE.c.study_id)
-                    & (AREA_TABLE.c.area_id == HYDRO_MANAGEMENT_TABLE.c.area_id),
-                ).outerjoin(
-                    HYDRO_INFLOW_STRUCTURE_TABLE,
-                    (AREA_TABLE.c.study_id == HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id)
-                    & (AREA_TABLE.c.area_id == HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id),
-                )
+            .join(
+                HYDRO_MANAGEMENT_TABLE,
+                (AREA_TABLE.c.study_id == HYDRO_MANAGEMENT_TABLE.c.study_id)
+                & (AREA_TABLE.c.area_id == HYDRO_MANAGEMENT_TABLE.c.area_id),
+            )
+            .join(
+                HYDRO_INFLOW_STRUCTURE_TABLE,
+                (AREA_TABLE.c.study_id == HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id)
+                & (AREA_TABLE.c.area_id == HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id),
             )
             .where(AREA_TABLE.c.study_id == study_id)
         )
         rows = session.execute(stmt).fetchall()
 
-        result: dict[str, HydroProperties] = {}
-        for row in rows:
-            if row.inter_daily_breakdown is None:
-                raise ValueError(f"Hydro management not found for area '{row.area_id}'")
-            if row.inter_monthly_correlation is None:
-                raise ValueError(f"Inflow structure not found for area '{row.area_id}'")
-            result[row.area_id] = HydroProperties(
+        return {
+            row.area_id: HydroProperties(
                 management_options=self._convert_row_to_hydro_management(row),
                 inflow_structure=self._convert_row_to_inflow_structure(row),
             )
-
-        return result
+            for row in rows
+        }
 
     @override
     def get_hydro_allocation(self, area_id: str) -> HydroAllocation:
@@ -381,11 +372,11 @@ class DatabaseHydroDao(HydroDao):
             Self-correlation is always 100%, missing correlations default to 0%.
 
         Raises:
-            AreaNotFound: If the area does not exist.
+            ValueError: If the area does not exist.
         """
         correlations = self.get_hydro_correlation_matrix().to_hydro_correlations()
         if area_id not in correlations:
-            raise AreaNotFound(area_id)
+            raise ValueError(f"Area '{area_id}' not found in correlation matrix")
         return correlations[area_id]
 
     @override

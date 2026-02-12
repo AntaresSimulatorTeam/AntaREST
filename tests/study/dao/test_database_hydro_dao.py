@@ -138,27 +138,17 @@ class TestGetAllHydroProperties:
         result = dao.get_all_hydro_properties()
         assert result == {}
 
-    def test_get_all_hydro_properties_raises_error_for_area_without_hydro_management(
-        self, dao: DatabaseStudyDao
-    ) -> None:
-        """Test that get_all_hydro_properties raises ValueError if any area is missing hydro management."""
+    def test_get_all_hydro_properties_excludes_areas_with_incomplete_data(self, dao: DatabaseStudyDao) -> None:
+        """Test that areas missing management or inflow structure are excluded from results."""
         dao.save_area("Paris")
+        dao.save_area("London")
+
+        # Paris has only inflow, London has only management — neither is complete
         dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.5), "paris")
-        # No hydro management saved
+        dao.save_hydro_management(HydroManagement(reservoir=True), "london")
 
-        with pytest.raises(ValueError):
-            dao.get_all_hydro_properties()
-
-    def test_get_all_hydro_properties_raises_error_for_area_without_inflow_structure(
-        self, dao: DatabaseStudyDao
-    ) -> None:
-        """Test that get_all_hydro_properties raises ValueError if any area is missing inflow structure."""
-        dao.save_area("Paris")
-        dao.save_hydro_management(HydroManagement(reservoir=True), "paris")
-        # No inflow structure saved
-
-        with pytest.raises(ValueError):
-            dao.get_all_hydro_properties()
+        result = dao.get_all_hydro_properties()
+        assert result == {}
 
     def test_get_all_hydro_properties_aggregates_data(self, dao: DatabaseStudyDao) -> None:
         """Test that get_all_hydro_properties correctly aggregates hydro data for all areas."""
@@ -308,7 +298,7 @@ class TestHydroCorrelation:
         assert correlation.correlation[1].coefficient == 100.0  # Diagonal = 100%
 
     def test_get_hydro_correlation_raises_error_for_nonexistent_area(self, dao: DatabaseStudyDao) -> None:
-        """Test that get_hydro_correlation raises AreaNotFound if area doesn't exist."""
+        """Test that get_hydro_correlation raises ValueError if area doesn't exist."""
         with pytest.raises(ValueError):
             dao.get_hydro_correlation("nonexistent")
 
