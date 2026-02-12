@@ -30,7 +30,7 @@ class HydroPmax(StrEnum):
 class CompatibilityParameters(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    hydro_pmax: HydroPmax | None = HydroPmax.DAILY
+    hydro_pmax: HydroPmax = HydroPmax.DAILY
 
 
 class CompatibilityParametersUpdate(AntaresBaseModel):
