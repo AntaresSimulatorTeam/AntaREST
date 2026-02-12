@@ -17,7 +17,7 @@ from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from fastapi import APIRouter, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -423,6 +423,20 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         uuid_sanitized = sanitize_uuid(uuid)
 
         study_service.delete_study(uuid_sanitized, children)
+
+    @bp.delete(
+        "/studies",
+        status_code=HTTPStatus.OK,
+        summary="Delete Multiple Studies",
+    )
+    def delete_studies(
+        study_ids: list[str] = Body(description="List of study UUIDs to delete"),
+        children: bool = False,
+    ) -> None:
+        logger.info(f"Deleting multiple studies: {study_ids}")
+        sanitized_ids = [sanitize_uuid(sid) for sid in study_ids]
+        for uuid in sanitized_ids:
+            study_service.delete_study(uuid, children)
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",
