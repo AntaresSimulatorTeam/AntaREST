@@ -19,7 +19,7 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import select, update
+from sqlalchemy import CursorResult, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -97,11 +97,6 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        stmt_check = select(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
-        existing_properties = session.execute(stmt_check).fetchone()
-        if not existing_properties:
-            raise AreaNotFound(area_id)
-
         stmt_update = (
             update(AREA_TABLE)
             .where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
@@ -118,5 +113,9 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
                 adequacy_patch_mode=area_properties.adequacy_patch_mode,
             )
         )
-        session.execute(stmt_update)
+        result = session.execute(stmt_update)
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the update had no effect so the area did not exist
+            raise AreaNotFound(area_id)
         session.commit()

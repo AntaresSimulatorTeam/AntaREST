@@ -13,10 +13,10 @@
  */
 
 import NumberFE from "@/components/fieldEditors/NumberFE";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import type { TimeSeriesTypeValue } from "@/services/api/studies/timeseries/types";
 import { validateNumber } from "@/utils/validation/number";
 import { TableCell } from "@mui/material";
+import { useFormContext } from "react-hook-form";
 import type { TimeSeriesConfigValues } from "../-utils";
 
 interface Props {
@@ -24,7 +24,7 @@ interface Props {
 }
 
 function TypeConfigFields({ type }: Props) {
-  const { control } = useFormContextPlus<TimeSeriesConfigValues>();
+  const { control } = useFormContext<TimeSeriesConfigValues>();
 
   return (
     <TableCell align="center">

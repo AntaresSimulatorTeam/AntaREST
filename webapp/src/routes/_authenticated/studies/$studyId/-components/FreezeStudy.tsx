@@ -25,7 +25,6 @@ import {
   subscribeWsChannels,
   unsubscribeWsChannels,
 } from "@/services/webSocket/ws";
-import type { StudyMetadata } from "@/types/types";
 import {
   Backdrop,
   Button,
@@ -38,16 +37,13 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useStudy from "../-hooks/useStudy";
 
 interface BlockingTask {
   id: TaskDTO["id"];
   type: TaskTypeValue;
   progress?: number;
   error?: string;
-}
-
-interface FreezeStudyProps {
-  studyId: StudyMetadata["id"];
 }
 
 const BLOCKING_TASK_TYPES = [
@@ -65,7 +61,8 @@ function isLoadingTask(task: BlockingTask) {
   return task.progress !== PROGRESS_COMPLETE && task.error === undefined;
 }
 
-function FreezeStudy({ studyId }: FreezeStudyProps) {
+function FreezeStudy() {
+  const study = useStudy();
   const [blockingTasks, setBlockingTasks] = useState<BlockingTask[]>([]);
   const { t } = useTranslation();
   const hasLoadingTask = !!blockingTasks.find(isLoadingTask);
@@ -77,7 +74,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
     let active = true; // Prevent race condition
 
     getTasks({
-      studyId,
+      studyId: study.id,
       type: [TaskType.UpgradeStudy, TaskType.ThermalClusterSeriesGeneration],
       status: [TaskStatus.Pending, TaskStatus.Running],
     }).then((tasks) => {
@@ -97,7 +94,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
       active = false;
       unsubscribeWsChannels();
     };
-  }, [studyId]);
+  }, [study.id]);
 
   // WebSockets listener
   useEffect(() => {
@@ -106,7 +103,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
         case WsEventType.TaskAdded: {
           const { id, type, study_id: taskStudyId } = event.payload;
 
-          if (taskStudyId === studyId && BLOCKING_TASK_TYPES.includes(type)) {
+          if (taskStudyId === study.id && BLOCKING_TASK_TYPES.includes(type)) {
             setBlockingTasks((tasks) => [...tasks, event.payload]);
 
             // For getting other events
@@ -194,7 +191,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
       unsubscribeWsChannels();
       window.clearInterval(intervalId);
     };
-  }, [blockingTasksRef, studyId]);
+  }, [blockingTasksRef, study.id]);
 
   return (
     <Backdrop
