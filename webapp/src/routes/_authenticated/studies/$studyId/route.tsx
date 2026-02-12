@@ -17,7 +17,8 @@ import { directoryQueries } from "@/queries/directories/queries";
 import { setCurrentStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudiesStatus, getStudy } from "@/redux/selectors";
+import { getStudiesError, getStudiesStatus, getStudy } from "@/redux/selectors";
+import { appendColon } from "@/utils/i18nUtils";
 import { Box, Stack } from "@mui/material";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -36,6 +37,7 @@ function StudyHomeLayout() {
   const { studyId } = Route.useParams();
   const dispatch = useAppDispatch();
   const studiesStatus = useAppSelector(getStudiesStatus);
+  const studiesError = useAppSelector(getStudiesError);
   const study = useAppSelector((state) => getStudy(state, studyId));
   const { t } = useTranslation();
 
@@ -66,7 +68,7 @@ function StudyHomeLayout() {
   }
 
   if (studiesStatus === "failed") {
-    throw new Error(t("studies.error.loadStudies"));
+    throw new Error(`${appendColon(t("studies.error.loadStudies"))} ${studiesError}`);
   }
 
   return (
