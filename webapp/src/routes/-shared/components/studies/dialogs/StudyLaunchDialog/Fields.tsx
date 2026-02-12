@@ -141,16 +141,16 @@ function Fields() {
 
   const handleXpansionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.checked) {
-      setValue("adequacyCriterion", false);
-      setValue("sensitivityMode", false);
-      setValue("output", "");
+      setValue("adequacyCriterion", false, { shouldDirty: true });
+      setValue("sensitivityMode", false, { shouldDirty: true });
+      setValue("output", "", { shouldDirty: true });
     }
   };
 
   const handleAdequacyCriterionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked && getValues("sensitivityMode")) {
-      setValue("sensitivityMode", false);
-      setValue("output", "");
+      setValue("sensitivityMode", false, { shouldDirty: true });
+      setValue("output", "", { shouldDirty: true });
     }
   };
 
@@ -171,8 +171,8 @@ function Fields() {
     const launchersById = getValues("_data.launchersById");
     const newLauncher = launchersById[launcherId];
 
-    setValue("nbCores", newLauncher.nbCores.default);
-    setValue("timeLimit", newLauncher.timeLimit.default);
+    setValue("nbCores", newLauncher.nbCores.default, { shouldDirty: true });
+    setValue("timeLimit", newLauncher.timeLimit.default, { shouldDirty: true });
   };
 
   ////////////////////////////////////////////////////////////////

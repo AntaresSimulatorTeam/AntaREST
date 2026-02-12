@@ -69,7 +69,7 @@ function Fields({ study }: Props) {
 
   useEffect(() => {
     if (buildingMode === BuildingMode.Derated) {
-      setValue("nbYears", 1);
+      setValue("nbYears", 1, { shouldDirty: true });
     }
   }, [buildingMode, setValue]);
 
