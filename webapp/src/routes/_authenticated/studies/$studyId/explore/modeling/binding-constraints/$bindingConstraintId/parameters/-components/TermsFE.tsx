@@ -14,7 +14,6 @@
 
 import CustomScrollbar from "@/components/CustomScrollbar";
 import NumberFE from "@/components/fieldEditors/NumberFE";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import type {
   BindingConstraint,
   BindingConstraintClusterTermData,
@@ -48,7 +47,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Fragment, useRef } from "react";
-import { useController, useFieldArray } from "react-hook-form";
+import { useController, useFieldArray, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import ClusterTermDataFE from "./ClusterTermDataFE";
 import LinkTermDataFE from "./LinkTermDataFE";
@@ -73,7 +72,7 @@ const TYPE_OPTIONS = [
 
 function TermsFE() {
   const { t } = useTranslation();
-  const { control } = useFormContextPlus<BindingConstraint>();
+  const { control } = useFormContext<BindingConstraint>();
   const newTermTypeRef = useRef<BindingConstraintTermType>();
 
   const { fields, append, update, remove } = useFieldArray({

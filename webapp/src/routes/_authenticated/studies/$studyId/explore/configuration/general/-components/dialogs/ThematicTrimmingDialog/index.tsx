@@ -15,7 +15,7 @@
 import FormDialog from "@/components/dialogs/FormDialog";
 import SearchFE from "@/components/fieldEditors/SearchFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/Form/types";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import {
   getThematicTrimmingConfig,
   setThematicTrimmingConfig,
@@ -36,6 +36,7 @@ import {
 import * as R from "ramda";
 import type * as RA from "ramda-adjunct";
 import { useState } from "react";
+import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   THEMATIC_TRIMMING_GROUPS,
@@ -73,11 +74,11 @@ function ThematicTrimmingDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleUpdateConfig =
-    (api: UseFormReturnPlus<ThematicTrimmingConfig>, fn: RA.Pred) => () => {
-      R.toPairs(api.getValues())
+    (formApi: UseFormReturn<ThematicTrimmingConfig>, fn: RA.Pred) => () => {
+      R.toPairs(formApi.getValues())
         .filter(Boolean)
         .forEach(([key, val]) => {
-          api.setValue(key, fn(val));
+          formApi.setValue(key, fn(val), { shouldDirty: true });
         });
     };
 
