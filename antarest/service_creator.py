@@ -91,11 +91,13 @@ class Module(StrEnum):
 
 
 def init_db_engine(
-    config_file: Path,
     config: Config,
     auto_upgrade_db: bool,
+    config_file: Path | None = None,
 ) -> Engine:
     if auto_upgrade_db:
+        if not config_file:
+            raise ValueError("config_file must be provided when auto_upgrade_db is True")
         upgrade_db(config_file)
     connect_args: Dict[str, Any] = {}
     if config.db.db_url.startswith("sqlite"):

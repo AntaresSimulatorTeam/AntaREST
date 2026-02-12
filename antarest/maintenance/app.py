@@ -28,9 +28,10 @@ from pathlib import Path
 from typing import Any
 
 from celery import Celery
-from celery.signals import celeryd_init, task_failure, worker_init
+from celery.signals import celeryd_init, setup_logging, task_failure, worker_init
 
 from antarest.core.config import CeleryConfig, Config
+from antarest.core.exceptions import ConfigurationError
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.utils import get_local_path
 from antarest.maintenance.context import MaintenanceContext
@@ -53,18 +54,18 @@ def _mask_url_credentials(url: str) -> str:
     return re.sub(r"(://[^:]*:)[^@]+(@)", r"\1***\2", url)
 
 
-def _load_config() -> Config | None:
-    """Load config from ANTAREST_CONF env var, or return None."""
+def _load_config() -> Config:
+    """
+    Load config from ANTAREST_CONF env var, else we abort the startup.
+    """
     config_path_str = os.environ.get("ANTAREST_CONF")
-    if not config_path_str:
-        logger.warning("ANTAREST_CONF not set, using defaults")
-        return None
 
+    if not config_path_str or not Path(config_path_str).exists():
+        raise ConfigurationError(
+            "You must provide a path to the YAML configuration file through the ANTAREST_CONF env variable the to "
+            "start celery app."
+        )
     config_path = Path(config_path_str)
-    if not config_path.exists():
-        logger.error(f"Config file not found: {config_path}")
-        return None
-
     res = get_local_path() / "resources"
     return Config.from_yaml_file(res=res, file=config_path)
 
@@ -97,40 +98,35 @@ celery_app.conf.update(
 
 celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
 
-_startup_config = _load_config()
-if _startup_config and _startup_config.celery:
-    _apply_celery_config(celery_app, _startup_config.celery)
+_config = _load_config()
+_apply_celery_config(celery_app, _config.celery)
+
+
+@setup_logging.connect
+def _setup_logging(**_: Any) -> None:
+    """
+    It's important to use that celery signal, otherwise celery overrides some of our logging configuration.
+    """
+    configure_logger(_config)
 
 
 @celeryd_init.connect
 def _configure_celery(sender: str, **_: Any) -> None:
-    """Full initialization when Celery process starts (Beat or Worker)."""
-    config = _load_config()
-    if not config:
-        logger.warning("No config loaded, using defaults")
-        return
-
-    if config.celery:
-        _apply_celery_config(celery_app, config.celery)
-        logger.info(f"Broker: {_mask_url_credentials(celery_app.conf.broker_url or '')}")
-
-    configure_logger(config)
-    celery_app.conf.antarest_config = config
-    logger.info("Celery configured")
+    """Full initialization when Celery worker starts."""
+    logger.info(f"Broker: {_mask_url_credentials(celery_app.conf.broker_url or '')}")
+    celery_app.conf.antarest_config = _config
 
 
 @celery_app.on_after_configure.connect
 def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     """Register periodic maintenance tasks (called by Beat on startup)."""
-    from antarest.core.config import StorageConfig
     from antarest.maintenance.tasks.auto_archive_task import setup_auto_archive_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
     from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
     from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
-    config: Config | None = getattr(celery_app.conf, "antarest_config", None)
-    storage = config.storage if config else StorageConfig()
+    storage = _config.storage
 
     sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name=TaskName.MATRICES_CLEANER)
     sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name=TaskName.BLOBS_CLEANER)
@@ -150,14 +146,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
 @worker_init.connect
 def _init_worker(**_: Any) -> None:
     """Create MaintenanceContext (Worker only, not Beat)."""
-    config_path_str = os.environ.get("ANTAREST_CONF")
-    config: Config | None = getattr(celery_app.conf, "antarest_config", None)
-
-    if not config or not config_path_str:
-        logger.warning("No config, worker services won't be available")
-        return
-
-    ctx = MaintenanceContext.create(config, Path(config_path_str))
+    ctx = MaintenanceContext.create(_config)
     celery_app.conf.maintenance_ctx = ctx
     logger.info("Worker ready")
 
