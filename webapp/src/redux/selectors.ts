@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { buildStudyTree } from "@/routes/_authenticated/studies/-components/StudyTree/utils";
+import { sortStudies } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import { createLinkId } from "@/services/api/studies/links/utils";
 import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import { F } from "ts-toolbelt";
+import type { F } from "ts-toolbelt";
 import { isGroupAdmin, isUserAdmin, nameToId, sortByName } from "../services/utils";
 import type {
   AllClustersAndLinks,
@@ -26,19 +26,18 @@ import type {
   GroupDetailsDTO,
   LinkElement,
   StudyMetadata,
+  StudySortConfig,
   UserDetailsDTO,
 } from "../types/types";
-import { filterStudies, sortStudies } from "../utils/studiesUtils";
+import { filterStudies } from "../utils/studiesUtils";
 import type { AppState } from "./ducks";
 import type { AuthState } from "./ducks/auth";
 import type { GroupsState } from "./ducks/groups";
-import type { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
+import type { StudiesState, StudyFilters } from "./ducks/studies";
 import type { StudyMap, StudyMapLink, StudyMapNode, StudyMapsState } from "./ducks/studyMaps";
 import type { StudySynthesesState } from "./ducks/studySyntheses";
 import type { UIState } from "./ducks/ui";
 import type { UsersState } from "./ducks/users";
-
-// TODO resultEqualityCheck
 
 ////////////////////////////////////////////////////////////////
 // Auth
@@ -60,6 +59,10 @@ export const getStudiesState = (state: AppState): StudiesState => state.studies;
 
 export const getStudiesStatus = (state: AppState): StudiesState["status"] => {
   return getStudiesState(state).status;
+};
+
+export const getStudiesError = (state: AppState): StudiesState["error"] => {
+  return getStudiesState(state).error;
 };
 
 export const getStudiesScrollPosition = (state: AppState): StudiesState["scrollPosition"] => {
@@ -98,16 +101,16 @@ export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
 };
 
-export const getStudiesSortConf = (state: AppState): StudiesSortConf => {
+export const getStudySortConfig = (state: AppState): StudySortConfig => {
   return getStudiesState(state).sort;
 };
 
 export const getStudiesFilteredAndSorted = createSelector(
   getStudies,
   getStudyFilters,
-  getStudiesSortConf,
-  (studies, filters, sortConf) => {
-    const sorted = sortStudies(sortConf, studies);
+  getStudySortConfig,
+  (studies, filters, sortConfig) => {
+    const sorted = sortStudies(sortConfig, studies);
     return filterStudies(filters, sorted);
   },
 );
@@ -115,8 +118,6 @@ export const getStudiesFilteredAndSorted = createSelector(
 export const getStudyIdsFilteredAndSorted = createSelector(getStudiesFilteredAndSorted, (studies) =>
   studies.map((study) => study.id),
 );
-
-export const getStudiesTree = createSelector(getStudies, (studies) => buildStudyTree(studies));
 
 export const getStudyVersions = (state: AppState): StudiesState["versionList"] => {
   return getStudiesState(state).versionList;

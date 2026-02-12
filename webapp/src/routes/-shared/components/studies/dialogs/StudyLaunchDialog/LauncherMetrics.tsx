@@ -14,18 +14,19 @@
 
 import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getLauncherMetrics } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";
 import { Box, Skeleton, Typography } from "@mui/material";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useInterval } from "react-use";
+import type { FormValues } from "./utils";
 
 function LauncherMetrics() {
   const { t } = useTranslation();
-  const { watch } = useFormContextPlus();
-  const currentLauncherId = watch("launcher");
+  const { control } = useFormContext<FormValues>();
+  const currentLauncherId = useWatch({ control, name: "launcher" });
 
   const launcherMetricsRes = usePromiseWithSnackbarError(
     () => getLauncherMetrics(currentLauncherId || undefined),

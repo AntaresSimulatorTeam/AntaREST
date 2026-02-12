@@ -13,10 +13,9 @@
  */
 
 import NumberFE from "@/components/fieldEditors/NumberFE";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import { validateNumber } from "@/utils/validation/number";
 import { Grid, Typography } from "@mui/material";
-import type { FieldArrayWithId } from "react-hook-form";
+import { useFormContext, type FieldArrayWithId } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { CorrelationFormFields } from "../-utils";
 import useArea from "../../../-hooks/useArea";
@@ -29,7 +28,7 @@ interface Props {
 
 // TODO merge with AllocationField
 function CorrelationField({ field, index, label }: Props) {
-  const { control } = useFormContextPlus<CorrelationFormFields>();
+  const { control } = useFormContext<CorrelationFormFields>();
   const area = useArea();
   const { t } = useTranslation();
 
