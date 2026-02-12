@@ -32,31 +32,25 @@ export interface DownloadVariableViewButtonProps {
   label?: string;
 }
 
+const variableViewParamsToFilenameSuffix = (params: VariableViewParams): string => {
+  switch (params.type) {
+    case "area":
+      return `area_${params.areaId}`;
+    case "link":
+      return `link_${params.areaFromId}_${params.areaToId}`;
+    case "thermal":
+    case "renewable":
+    case "st_storage":
+      return `${params.type}_${params.areaId}_${params.clusterId}`;
+    default: {
+      return "";
+    }
+  }
+};
+
 function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
   const { t } = useTranslation();
   const { studyId, outputId, params, disabled, label = t("global.export") } = props;
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const variableViewParamsToFilenameSuffix = (params: VariableViewParams): string => {
-    switch (params.type) {
-      case "area":
-        return `area_${params.areaId}`;
-      case "link":
-        return `link_${params.areaFromId}_${params.areaToId}`;
-      case "thermal":
-        return `thermal_${params.areaId}_${params.clusterId}`;
-      case "renewable":
-        return `renewable_${params.areaId}_${params.clusterId}`;
-      case "st_storage":
-        return `st_storage_${params.areaId}_${params.clusterId}`;
-      default: {
-        return "";
-      }
-    }
-  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -73,7 +67,7 @@ function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
     });
 
     const outputArea = variableViewParamsToFilenameSuffix(params);
-    const filename = `matrice_${studyId}_output_${outputId}_${outputArea}_${params.variableName}_${params.frequency}.${extension}`;
+    const filename = `matrix_${studyId}_output_${outputId}_${outputArea}_${params.variableName}_${params.frequency}.${extension}`;
     downloadFile(blob, filename);
   };
 
