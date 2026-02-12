@@ -50,7 +50,7 @@ function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
       ...options,
     });
 
-    const filename = `variable_${studyId}_${params.variableName}_${params.frequency}.${extension}`;
+    const filename = `matrice_${studyId}_output_${outputId}_${params.variableName}_${params.frequency}.${extension}`;
     downloadFile(blob, filename);
   };
 
