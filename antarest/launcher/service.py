@@ -34,7 +34,6 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, current_time
-from antarest.favorite.service import FavoriteService
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
@@ -106,7 +105,6 @@ class LauncherService:
         self,
         config: Config,
         study_service: StudyService,
-        favorite_service: FavoriteService,
         output_service: OutputService,
         login_service: LoginService,
         job_result_repository: JobResultRepository,
@@ -119,7 +117,6 @@ class LauncherService:
     ) -> None:
         self.config = config
         self.study_service = study_service
-        self.favorite_service = favorite_service
         self.output_service = output_service
         self.login_service = login_service
         self.job_result_repository = job_result_repository
