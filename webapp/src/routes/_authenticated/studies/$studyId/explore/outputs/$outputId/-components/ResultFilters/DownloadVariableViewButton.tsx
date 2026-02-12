@@ -37,6 +37,28 @@ function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
   const { studyId, outputId, params, disabled, label = t("global.export") } = props;
 
   ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const variableViewParamsToFilenameSuffix = (params: VariableViewParams): string => {
+    switch (params.type) {
+      case "area":
+        return `area_${params.areaId}`;
+      case "link":
+        return `link_${params.areaFromId}_${params.areaToId}`;
+      case "thermal":
+        return `thermal_${params.areaId}_${params.clusterId}`;
+      case "renewable":
+        return `renewable_${params.areaId}_${params.clusterId}`;
+      case "st_storage":
+        return `st_storage_${params.areaId}_${params.clusterId}`;
+      default: {
+        return "";
+      }
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
@@ -50,7 +72,8 @@ function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
       ...options,
     });
 
-    const filename = `matrice_${studyId}_output_${outputId}_${params.variableName}_${params.frequency}.${extension}`;
+    const outputArea = variableViewParamsToFilenameSuffix(params);
+    const filename = `matrice_${studyId}_output_${outputId}_${outputArea}_${params.variableName}_${params.frequency}.${extension}`;
     downloadFile(blob, filename);
   };
 
