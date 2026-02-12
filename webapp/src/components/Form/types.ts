@@ -12,23 +12,9 @@
  * This file is part of the Antares project.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { DeepPartial, FieldValues, SetValueConfig, UseFormReturn } from "react-hook-form";
+import type { FieldValues } from "react-hook-form";
 
 export interface SubmitHandlerPlus<TFieldValues extends FieldValues = FieldValues> {
   values: TFieldValues;
   dirtyValues: Partial<TFieldValues>;
-}
-
-export type UseFormSetValues<TFieldValues extends FieldValues> = (
-  values: DeepPartial<TFieldValues> | TFieldValues,
-  options?: SetValueConfig,
-) => void;
-
-export interface UseFormReturnPlus<TFieldValues extends FieldValues = FieldValues, TContext = any>
-  extends UseFormReturn<TFieldValues, TContext> {
-  setValues: UseFormSetValues<TFieldValues>;
-  _internal: {
-    initialDefaultValues: Readonly<TFieldValues> | undefined;
-  };
 }

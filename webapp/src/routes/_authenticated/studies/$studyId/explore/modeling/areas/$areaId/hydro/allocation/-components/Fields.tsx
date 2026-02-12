@@ -13,9 +13,8 @@
  */
 
 import DynamicList from "@/components/DynamicList";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import { useFieldArray } from "react-hook-form";
+import { useFieldArray, useFormContext } from "react-hook-form";
 import type { AllocationFormFields } from "../-utils";
 import { useAreasOptions } from "../../-hooks/useAreasOptions";
 import useAppSelector from "../../../../../../../../../../../redux/hooks/useAppSelector";
@@ -25,7 +24,7 @@ import AllocationField from "./AllocationField";
 function Fields() {
   const study = useStudy();
   const areasById = useAppSelector((state) => getAreasById(state, study.id));
-  const { control } = useFormContextPlus<AllocationFormFields>();
+  const { control } = useFormContext<AllocationFormFields>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "allocation",
