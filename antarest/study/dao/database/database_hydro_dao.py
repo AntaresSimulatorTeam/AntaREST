@@ -35,7 +35,7 @@ from antarest.study.business.model.hydro_correlation_model import (
 )
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
-from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
@@ -80,7 +80,8 @@ class DatabaseHydroDao(HydroDao):
     @staticmethod
     def _convert_row_to_hydro_management(row: Row[Any]) -> HydroManagement:
         """Convert a database row to HydroManagement model."""
-        return HydroManagement(**{c.name: row._mapping[c.name] for c in _MANAGEMENT_COLS})
+        data = get_row_representation_as_dict(row)
+        return HydroManagement(**{c.name: data[c.name] for c in _MANAGEMENT_COLS})
 
     @staticmethod
     def _convert_row_to_inflow_structure(row: Row[Any]) -> InflowStructure:

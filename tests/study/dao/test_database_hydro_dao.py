@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import numpy as np
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -19,7 +20,6 @@ from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelation,
     HydroCorrelationArea,
-    HydroCorrelationMatrix,
 )
 from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -218,6 +218,10 @@ class TestHydroAllocation:
         result = dao.get_hydro_allocation("paris")
         assert len(result.allocation) == 2
 
+        # Check content regardless of ordering
+        coeffs_by_area = {a.area_id: a.coefficient for a in result.allocation}
+        assert coeffs_by_area == {"paris": 0.6, "london": 0.4}
+
     def test_save_hydro_allocation_raises_error_for_nonexistent_source_area(self, dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_allocation raises AreaNotFound when source area doesn't exist."""
         dao.save_area("Paris")
@@ -363,44 +367,23 @@ class TestHydroCorrelation:
                 ]
             ),
         )
-
         result = dao.get_hydro_correlation_matrix()
 
-        assert result.data[0][0] == 1.0
-        assert result.data[0][1] == 0.6
-        assert result.data[1][0] == 0.6
-        assert result.data[1][1] == 1.0
-
-        def matrix_sanity_checks(matrix: HydroCorrelationMatrix, expected_size: int) -> None:
-            # Check matrix properties
-            assert len(matrix.index) == expected_size
-            assert len(matrix.columns) == expected_size
-            assert matrix.index == matrix.columns  # Square matrix
-
-            # Check diagonal is 1.0
-            for i in range(len(matrix.index)):
-                assert matrix.data[i][i] == 1.0
-
-            # Check symmetry
-            for i in range(len(matrix.index)):
-                for j in range(len(matrix.columns)):
-                    assert matrix.data[i][j] == matrix.data[j][i]
-
-        matrix_sanity_checks(result, expected_size=2)
+        expected_matrix = [
+            [1.0, 0.6],
+            [0.6, 1.0],
+        ]
+        np.testing.assert_allclose(result.data, expected_matrix)
 
         # New area preserves matrix properties
         dao.save_area("Algiers")
         result = dao.get_hydro_correlation_matrix()
-        matrix_sanity_checks(result, expected_size=3)
-        assert result.data[0][0] == 1.0
-        assert result.data[0][1] == 0.0
-        assert result.data[0][2] == 0.0
-        assert result.data[1][0] == 0.0
-        assert result.data[1][1] == 1.0
-        assert result.data[1][2] == 0.6
-        assert result.data[2][0] == 0.0
-        assert result.data[2][1] == 0.6
-        assert result.data[2][2] == 1.0
+        expected_matrix = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.6],
+            [0.0, 0.6, 1.0],
+        ]
+        np.testing.assert_allclose(result.data, expected_matrix)
 
 
 class TestCascadeDelete:
