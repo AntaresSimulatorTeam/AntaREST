@@ -22,6 +22,7 @@ export const THEMATIC_TRIMMING_GROUPS = [
   "generationRenewables",
   "generationStStorages",
   "generationThermals",
+  "generationThermalsOtherEmis",
   "links",
   "bindingConstraints",
 ] as const;
@@ -131,6 +132,8 @@ const fieldLabelsByGroup: Record<
     dispatchGen: "DISPATCH. GEN.",
     lmrViol: "LMR VIOL.",
     dtgMrgCsr: "DTG MRG CSR",
+  },
+  generationThermalsOtherEmis: {
     nh3Emis: "NH3 EMIS.",
     noxEmis: "NOX EMIS.",
     pm25Emis: "PM2_5 EMIS.",
@@ -179,4 +182,8 @@ export function getFieldLabelsForGroup(
   const pairs = R.toPairs(labelsByName).filter(Boolean);
 
   return R.sortBy(R.propOr("", "1"), pairs);
+}
+
+export function getValuesForGroup(config: ThematicTrimmingConfig, group: ThematicTrimmingGroup) {
+  return R.pick(R.keys(fieldLabelsByGroup[group]), config);
 }

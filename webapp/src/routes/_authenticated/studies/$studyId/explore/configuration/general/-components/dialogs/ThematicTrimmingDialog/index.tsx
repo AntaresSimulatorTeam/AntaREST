@@ -33,6 +33,7 @@ import {
   ButtonGroup,
   Grid2 as Grid,
   Stack,
+  Typography,
 } from "@mui/material";
 import * as R from "ramda";
 import type * as RA from "ramda-adjunct";
@@ -42,6 +43,7 @@ import { useTranslation } from "react-i18next";
 import {
   THEMATIC_TRIMMING_GROUPS,
   getFieldLabelsForGroup,
+  getValuesForGroup,
   type ThematicTrimmingGroup,
 } from "./utils";
 
@@ -71,16 +73,34 @@ function ThematicTrimmingDialog(props: Props) {
   } as const;
 
   ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const setGroupExpanded = (group: ThematicTrimmingGroup, isExpanded: boolean) => {
+    setExpanded((prev) => ({ ...prev, [group]: isExpanded }));
+  };
+
+  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleUpdateConfig =
-    (formApi: UseFormReturn<ThematicTrimmingConfig>, fn: RA.Pred) => () => {
-      R.toPairs(formApi.getValues())
+    (fn: RA.Pred, formApi: UseFormReturn<ThematicTrimmingConfig>, group?: ThematicTrimmingGroup) =>
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      R.toPairs(group ? getValuesForGroup(formApi.getValues(), group) : formApi.getValues())
         .filter(Boolean)
         .forEach(([key, val]) => {
           formApi.setValue(key, fn(val), { shouldDirty: true });
         });
+
+      if (group) {
+        // Prevent accordion collapse when clicking the buttons
+        event.stopPropagation();
+
+        if (!expanded[group]) {
+          setGroupExpanded(group, true);
+        }
+      }
     };
 
   const handleSubmit = (data: SubmitHandlerPlus<ThematicTrimmingConfig>) => {
@@ -104,21 +124,10 @@ function ThematicTrimmingDialog(props: Props) {
       }}
       onSubmit={handleSubmit}
       onCancel={onClose}
-      PaperProps={{
-        // TODO: add `maxHeight` and `fullHeight` in BasicDialog`
-        sx: { height: "calc(100% - 64px)", maxHeight: "900px" },
-      }}
-      sx={{
-        ".Form": {
-          display: "flex",
-          flexDirection: "column",
-          overflow: "auto",
-        },
-      }}
       maxWidth="md"
       fullWidth
     >
-      {(api) => (
+      {(formApi) => (
         <Stack direction="column" sx={{ height: 1 }}>
           <Stack justifyContent="space-between" sx={{ pb: 2 }}>
             <SearchFE
@@ -128,13 +137,13 @@ function ThematicTrimmingDialog(props: Props) {
               size="extra-small"
             />
             <ButtonGroup color="secondary">
-              <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.T)}>
+              <Button {...commonBtnProps} onClick={handleUpdateConfig(R.T, formApi)}>
                 {t("study.configuration.general.thematicTrimming.action.enableAll")}
               </Button>
-              <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.F)}>
+              <Button {...commonBtnProps} onClick={handleUpdateConfig(R.F, formApi)}>
                 {t("study.configuration.general.thematicTrimming.action.disableAll")}
               </Button>
-              <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.not)}>
+              <Button {...commonBtnProps} onClick={handleUpdateConfig(R.not, formApi)}>
                 {t("global.reverse")}
               </Button>
               <Button {...commonBtnProps} onClick={() => setExpanded({})}>
@@ -142,13 +151,14 @@ function ThematicTrimmingDialog(props: Props) {
               </Button>
             </ButtonGroup>
           </Stack>
+
           <Box sx={{ overflow: "auto" }}>
             {THEMATIC_TRIMMING_GROUPS.map((group) => {
-              const fields = getFieldLabelsForGroup(api.getValues(), group)
+              const fields = getFieldLabelsForGroup(formApi.getValues(), group)
                 .filter(([, label]) => isSearchMatching(search, label))
                 .map(([name, label]) => (
                   <Grid key={name} size={{ xs: 4 }}>
-                    <SwitchFE name={name} label={label} control={api.control} />
+                    <SwitchFE name={name} label={label} control={formApi.control} />
                   </Grid>
                 ));
 
@@ -156,13 +166,27 @@ function ThematicTrimmingDialog(props: Props) {
                 <Accordion
                   key={group}
                   expanded={expanded[group] || !!search}
-                  onChange={(event, isExpanded) => {
-                    setExpanded((prev) => ({ ...prev, [group]: isExpanded }));
-                  }}
+                  onChange={(event, isExpanded) => setGroupExpanded(group, isExpanded)}
                   disableGutters
                 >
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    {t(`study.configuration.general.thematicTrimming.group.${group}`)}
+                    <Typography sx={{ flex: 1 }}>
+                      {t(`study.configuration.general.thematicTrimming.group.${group}`)}
+                    </Typography>
+                    <ButtonGroup variant="text" color="secondary" size="extra-small" sx={{ mr: 2 }}>
+                      <Button {...commonBtnProps} onClick={handleUpdateConfig(R.T, formApi, group)}>
+                        {t("study.configuration.general.thematicTrimming.action.enableAll")}
+                      </Button>
+                      <Button {...commonBtnProps} onClick={handleUpdateConfig(R.F, formApi, group)}>
+                        {t("study.configuration.general.thematicTrimming.action.disableAll")}
+                      </Button>
+                      <Button
+                        {...commonBtnProps}
+                        onClick={handleUpdateConfig(R.not, formApi, group)}
+                      >
+                        {t("global.reverse")}
+                      </Button>
+                    </ButtonGroup>
                   </AccordionSummary>
                   <AccordionDetails>
                     <Grid container spacing={1} sx={{ overflow: "auto", p: 1 }}>

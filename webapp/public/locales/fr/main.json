@@ -461,6 +461,7 @@
   "study.configuration.general.thematicTrimming.group.generationRenewables": "Génération / Renouvelables",
   "study.configuration.general.thematicTrimming.group.generationStStorages": "Génération / Stockages court terme",
   "study.configuration.general.thematicTrimming.group.generationThermals": "Génération / Thermiques",
+  "study.configuration.general.thematicTrimming.group.generationThermalsOtherEmis": "Génération / Thermiques / Autres Émissions",
   "study.configuration.general.thematicTrimming.group.links": "Liens",
   "study.configuration.general.thematicTrimming.group.bindingConstraints": "Contraintes couplantes",
   "study.configuration.general.filtering": "Filtering",
