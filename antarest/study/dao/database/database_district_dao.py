@@ -118,7 +118,6 @@ class DatabaseDistrictDao(DistrictDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the district did not exist
-            session.rollback()
             raise DistrictConfigNotFound(f"District '{district_id}' does not exist in study '{study_id}'")
         session.commit()
 

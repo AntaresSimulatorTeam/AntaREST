@@ -139,7 +139,6 @@ class DatabaseLayerDao(LayerDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the layer did not exist
-            session.rollback()
             raise LayerNotFound(layer_id)
 
         session.commit()

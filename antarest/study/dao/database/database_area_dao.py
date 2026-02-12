@@ -239,7 +239,6 @@ class DatabaseAreaDao(AreaDao):
         try:
             session.execute(stmt_area)
         except IntegrityError as e:
-            session.rollback()
             raise ValueError(f"Area '{area_name}' already exists and could not be created") from e
 
         # The commit is handled inside the next method.
@@ -321,7 +320,6 @@ class DatabaseAreaDao(AreaDao):
             upsert_one(session, AREA_UI_TABLE, values)
         except IntegrityError as e:
             # Could raise for area not found or layer not found.
-            session.rollback()
             if not self.get_impl().layer_exists(layer):
                 raise LayerNotFound(layer) from e
             else:

@@ -106,7 +106,6 @@ class DatabaseThermalDao(ThermalDao):
             values = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
             upsert_one(session, table, values)
         except IntegrityError as e:
-            session.rollback()
             self._raise_the_right_exception(area_id, thermal_id, e)
 
         session.commit()
@@ -126,7 +125,6 @@ class DatabaseThermalDao(ThermalDao):
         try:
             upsert_one(session, THERMAL_CLUSTER_TABLE, values)
         except IntegrityError as e:
-            session.rollback()
             self._raise_the_right_exception(area_id, thermal.id, e)
 
         session.commit()
@@ -142,7 +140,6 @@ class DatabaseThermalDao(ThermalDao):
         try:
             upsert_multiple(session=session, table=THERMAL_CLUSTER_TABLE, values=values)
         except IntegrityError as e:
-            session.rollback()
             validate_area_exists(session, self._study_id, area_id)
             # We have to find which thermal does not exist
             existing_thermal_ids = {th.id for th in self.get_all_thermals_for_area(area_id)}
@@ -187,7 +184,6 @@ class DatabaseThermalDao(ThermalDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the thermal did not exist
-            session.rollback()
             self._raise_the_right_exception(area_id, thermal_id)
 
         # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here

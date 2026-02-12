@@ -117,6 +117,5 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the update had no effect so the area did not exist
-            session.rollback()
             raise AreaNotFound(area_id)
         session.commit()

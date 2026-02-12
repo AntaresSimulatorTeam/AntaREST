@@ -63,13 +63,12 @@ class DatabaseLinkDao(LinkDao):
     @override
     def save_link(self, link: Link) -> None:
         session = self.get_session()
-        values = dict(study_id=self.get_study_id(), **link.model_dump())
+        values = {"study_id": self.get_study_id(), **link.model_dump()}
 
         try:
             upsert_one(session, LINK_TABLE, values)
         except IntegrityError:
-            # Happens if the link's areas did not existed -> ForeignKey constraint fails
-            session.rollback()
+            # Happens if the link's areas did not exist -> ForeignKey constraint fails
             raise AreaNotFound(*[link.area1, link.area2])
 
         session.commit()
@@ -87,7 +86,6 @@ class DatabaseLinkDao(LinkDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the link did not exist
-            session.rollback()
             raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
         session.commit()
 
