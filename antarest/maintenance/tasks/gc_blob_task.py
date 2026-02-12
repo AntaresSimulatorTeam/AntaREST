@@ -16,12 +16,10 @@ import logging
 
 from celery import Task
 
-from antarest.maintenance.app import TaskName, celery_app
-from antarest.maintenance.context import MaintenanceContext
+from antarest.maintenance.app import TaskName, celery_app, get_maintenance_context
 from antarest.maintenance.tasks.common import (
     TRANSIENT_ERRORS,
     GarbageCollectorTaskResult,
-    MaintenanceContextNotFoundError,
 )
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 
@@ -52,8 +50,5 @@ def clean_blobs_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[
     if self.request.retries > 0:
         logger.warning(f"Blob GC retry attempt {self.request.retries}/3")
 
-    ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
-    if not ctx:
-        raise MaintenanceContextNotFoundError()
-
+    ctx = get_maintenance_context(self)
     return clean_blobs(ctx.blob_service, ctx.config.storage.blob_gc_dry_run)

@@ -12,9 +12,9 @@
 
 """Fixtures for maintenance tests."""
 
-import pytest
+from unittest import mock
 
-from antarest.maintenance.app import celery_app
+import pytest
 
 
 @pytest.fixture
@@ -25,6 +25,10 @@ def with_no_maintenance_ctx():
     Celery's Settings object doesn't work well with standard mocking,
     so we directly manipulate and restore the global state.
     """
+    mock.patch("antarest.maintenance.app._load_config", lambda x: None)
+
+    from antarest.maintenance.app import celery_app
+
     original_ctx = getattr(celery_app.conf, "maintenance_ctx", None)
     celery_app.conf.maintenance_ctx = None
     yield

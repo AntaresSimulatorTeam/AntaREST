@@ -19,13 +19,11 @@ from celery import Celery, Task
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.login.utils import current_user_context
-from antarest.maintenance.app import TaskName, celery_app
-from antarest.maintenance.context import MaintenanceContext
+from antarest.maintenance.app import TaskName, celery_app, get_maintenance_context
 from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, archive_old_studies
 from antarest.maintenance.tasks.common import (
     TRANSIENT_ERRORS,
     CronParseError,
-    MaintenanceContextNotFoundError,
     parse_cron_string,
 )
 
@@ -61,10 +59,7 @@ def auto_archive_task(self: Task) -> AutoArchiveTaskResult:  # type: ignore[type
     if self.request.retries > 0:
         logger.warning(f"Auto-archive retry attempt {self.request.retries}/5")
 
-    ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
-    if not ctx:
-        raise MaintenanceContextNotFoundError()
-
+    ctx = get_maintenance_context(self)
     with current_user_context(DEFAULT_ADMIN_USER):
         return archive_old_studies(
             ctx.study_service,

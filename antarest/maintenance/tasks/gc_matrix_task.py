@@ -14,19 +14,15 @@
 
 from celery import Task
 
-from antarest.maintenance.app import TaskName, celery_app
-from antarest.maintenance.context import MaintenanceContext
-from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, MaintenanceContextNotFoundError
+from antarest.maintenance.app import TaskName, celery_app, get_maintenance_context
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 
 
 @celery_app.task(bind=True, name=TaskName.MATRICES_CLEANER, pydantic=True)
 def clean_matrices_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
     """Celery wrapper that delegates to clean_matrices()."""
-    ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
-    if not ctx:
-        raise MaintenanceContextNotFoundError()
-
+    ctx = get_maintenance_context(self)
     return clean_matrices(
         ctx.matrix_service,
         ctx.config.storage.matrix_gc_dry_run,
