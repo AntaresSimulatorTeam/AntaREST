@@ -23,31 +23,8 @@ import pytest
 
 from antarest.core.config import Config
 from antarest.core.exceptions import ConfigurationError
+from antarest.maintenance.app import _mask_url_credentials, _setup_periodic_tasks, celery_app
 from antarest.maintenance.config import get_config, load_config
-
-
-def load_config_mock() -> None:
-    pass
-
-
-def get_config_mock() -> Config:
-    return Config()
-
-
-# Explanation:
-#   The Celery app setup requires to initialize it at the module level.
-#   Here in tests, we override the initialization functions used in prod, otherwise they will raise because
-#   they require the env var ANTARES_CONF to be filled with a path to a working configuration.
-#
-with (
-    mock.patch("antarest.maintenance.config.load_config", load_config_mock),
-    mock.patch("antarest.maintenance.config.get_config", get_config_mock),
-):
-    from antarest.maintenance.app import (
-        _mask_url_credentials,
-        _setup_periodic_tasks,
-        celery_app,
-    )
 
 
 class TestMaskUrlCredentials:

@@ -140,7 +140,7 @@ def _log_critical_task_failure(sender: Any, task_id: str, exception: Exception, 
         )
 
 
-def get_maintenance_context(task: Task[Any, Any]) -> MaintenanceContext:
+def get_maintenance_context(task: "Task[Any, Any]") -> MaintenanceContext:
     ctx: MaintenanceContext | None = task.app.conf.get("maintenance_ctx")
     if not ctx:
         raise MaintenanceContextNotFoundError()
