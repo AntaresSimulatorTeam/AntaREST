@@ -60,7 +60,10 @@ function ThematicTrimmingDialog(props: Props) {
 
   const [expanded, setExpanded] = useState(() =>
     THEMATIC_TRIMMING_GROUPS.reduce(
-      (acc, group) => ({ ...acc, [group]: true }),
+      (acc, group) => {
+        acc[group] = true;
+        return acc;
+      },
       {} as Partial<Record<ThematicTrimmingGroup, boolean>>,
     ),
   );
