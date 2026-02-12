@@ -408,59 +408,50 @@ class DatabaseHydroDao(HydroDao):
 
         Raises:
             AreaNotFound: If the area or any correlated area does not exist.
-            ValueError: If the correlation matrix is invalid (via set_correlation validation).
+            ValueError: If self-correlation is provided and is not 100%.
         """
         study_id = self.get_study_id()
         session = self.get_session()
 
+        # Validate self-correlation if provided
+        for corr_area in correlation.correlation:
+            if corr_area.area_id == area_id and corr_area.coefficient != 100.0:
+                raise ValueError(f"Self-correlation for area '{area_id}' must be 100%, got {corr_area.coefficient}%")
+
+        # Delete existing correlations involving this area
+        stmt_delete = delete(HYDRO_CORRELATION_TABLE).where(
+            (HYDRO_CORRELATION_TABLE.c.study_id == study_id)
+            & ((HYDRO_CORRELATION_TABLE.c.area_from == area_id) | (HYDRO_CORRELATION_TABLE.c.area_to == area_id))
+        )
+        session.execute(stmt_delete)
+
+        # Insert new correlations
+        insert_values = []
+        for corr_area in correlation.correlation:
+            if corr_area.area_id == area_id:
+                continue
+            coefficient = corr_area.coefficient / 100
+            if coefficient == 0:
+                continue
+            area_from, area_to = sorted([area_id, corr_area.area_id])
+            insert_values.append(
+                {
+                    "study_id": study_id,
+                    "area_from": area_from,
+                    "area_to": area_to,
+                    "coefficient": coefficient,
+                }
+            )
+
         try:
-            # Get current matrix and apply changes (validates diagonal = 1, symmetry, etc.)
-            # set_correlation raises ValueError if any area_id is not in the matrix
-            current_correlation_matrix = self.get_hydro_correlation_matrix()
-            current_correlation_matrix.set_correlation(area_id, correlation)
-
-            # Use area IDs from the matrix (already sorted)
-            study_area_ids = current_correlation_matrix.index
-
-            # Delete existing correlations
-            # Delete all of them as the matrix is fully replaced
-            stmt_delete = delete(HYDRO_CORRELATION_TABLE).where((HYDRO_CORRELATION_TABLE.c.study_id == study_id))
-            session.execute(stmt_delete)
-
-            # Insert new correlations (only upper triangle: area_from < area_to)
-            # Diagonal is implicit, not stored
-            insert_values = []
-            for i in range(len(study_area_ids)):
-                # not saved: values from the diagonal are always == 1.0
-                for j in range(i + 1, len(study_area_ids)):
-                    coefficient = current_correlation_matrix.data[i][j]
-                    if coefficient == 0:
-                        # zero values are not saved
-                        continue
-                    area_from = study_area_ids[i]
-                    area_to = study_area_ids[j]
-                    insert_values.append(
-                        {
-                            "study_id": study_id,
-                            "area_from": area_from,
-                            "area_to": area_to,
-                            "coefficient": coefficient,
-                        }
-                    )
-
             if insert_values:
                 session.execute(insert(HYDRO_CORRELATION_TABLE), insert_values)
             session.commit()
-        except (IntegrityError, ValueError) as e:
-            # IntegrityError: FK constraint violation on insert (area doesn't exist in DB)
-            # ValueError: set_correlation fails if an area_id is not in the matrix index
+        except IntegrityError as e:
             session.rollback()
             all_area_ids = [area_id] + [corr_area.area_id for corr_area in correlation.correlation]
             invalid = self.get_impl().get_invalid_area_ids(all_area_ids)
-            if invalid:
-                raise AreaNotFound(*invalid) from e
-            else:
-                raise
+            raise AreaNotFound(*invalid) from e
 
     # ==================== Matrix Methods (NotImplementedError) ====================
 

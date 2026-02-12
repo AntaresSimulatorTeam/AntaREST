@@ -333,7 +333,6 @@ class TestHydroCorrelation:
         # Nonexistent correlated area
         correlation = HydroCorrelation(
             correlation=[
-                HydroCorrelationArea(area_id="paris", coefficient=100.0),
                 HydroCorrelationArea(area_id="nonexistent", coefficient=50.0),
             ]
         )
@@ -343,7 +342,7 @@ class TestHydroCorrelation:
         # Nonexistent source area
         correlation = HydroCorrelation(
             correlation=[
-                HydroCorrelationArea(area_id="nonexistent", coefficient=100.0),
+                HydroCorrelationArea(area_id="paris", coefficient=60.0),
             ]
         )
         with pytest.raises(AreaNotFound, match="nonexistent"):
