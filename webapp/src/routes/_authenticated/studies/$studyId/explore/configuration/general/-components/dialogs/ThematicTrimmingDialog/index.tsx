@@ -126,10 +126,15 @@ function ThematicTrimmingDialog(props: Props) {
       onCancel={onClose}
       maxWidth="md"
       fullWidth
+      slotProps={{
+        paper: {
+          sx: { height: 1 },
+        },
+      }}
     >
       {(formApi) => (
-        <Stack direction="column" sx={{ height: 1 }}>
-          <Stack justifyContent="space-between" sx={{ pb: 2 }}>
+        <Stack spacing={2} direction="column" sx={{ height: 1 }}>
+          <Stack justifyContent="space-between">
             <SearchFE
               sx={{ m: 0 }}
               value={search}
@@ -166,7 +171,7 @@ function ThematicTrimmingDialog(props: Props) {
                 <Accordion
                   key={group}
                   expanded={expanded[group] || !!search}
-                  onChange={(event, isExpanded) => setGroupExpanded(group, isExpanded)}
+                  onChange={(_, isExpanded) => setGroupExpanded(group, isExpanded)}
                   disableGutters
                 >
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
