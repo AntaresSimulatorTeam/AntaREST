@@ -429,17 +429,14 @@ class DatabaseHydroDao(HydroDao):
         # Insert new correlations
         insert_values = []
         for corr_area in correlation.correlation:
-            if corr_area.area_id == area_id:
+            if corr_area.area_id == area_id or corr_area.coefficient == 0:
                 continue
             coefficient = corr_area.coefficient / 100
-            if coefficient == 0:
-                continue
-            area_from, area_to = sorted([area_id, corr_area.area_id])
             insert_values.append(
                 {
                     "study_id": study_id,
-                    "area_from": area_from,
-                    "area_to": area_to,
+                    "area_from": area_id,
+                    "area_to": corr_area.area_id,
                     "coefficient": coefficient,
                 }
             )
