@@ -14,23 +14,23 @@
 
 import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { Button, IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 interface BatchActionsProps {
   selectedCount: number;
   onLaunch: () => void;
+  onDelete: () => void;
   onDeselectAll: () => void;
 }
 
-function BatchActions({ selectedCount, onLaunch, onDeselectAll }: BatchActionsProps) {
+function BatchActions({ selectedCount, onLaunch, onDelete, onDeselectAll }: BatchActionsProps) {
   const { t } = useTranslation();
 
   if (selectedCount === 0) {
     return null;
   }
-
-  // TODO: Implement deleteAllStudies
 
   return (
     <>
@@ -38,6 +38,12 @@ function BatchActions({ selectedCount, onLaunch, onDeselectAll }: BatchActionsPr
         <Button onClick={onLaunch} color="primary">
           <BoltIcon />
           {t("global.launch")} ({selectedCount})
+        </Button>
+      </Tooltip>
+      <Tooltip title={t("global.delete")}>
+        <Button onClick={onDelete} color="error">
+          <DeleteIcon />
+          {t("global.delete")} ({selectedCount})
         </Button>
       </Tooltip>
       <Tooltip title={t("studies.deselectAll")}>

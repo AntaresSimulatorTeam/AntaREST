@@ -786,6 +786,7 @@
   "study.area.storage.additionalConstraint.notFound": "No additional constraint found with ID: {{id}}",
   "studies.question.delete": "Are you sure you want to delete the study: {{studyName}}?",
   "studies.question.deleteWithVariants": "Are you sure you want to delete the study '{{studyName}}' and its {{variantNb}} sub-variant(s)?",
+  "studies.question.deleteMultiple": "Are you sure you want to delete {{count}} study(ies)?",
   "studies.error.retrieveData": "Failed to retrieve data",
   "studies.error.deleteStudy": "Failed to delete study",
   "studies.error.loadStudies": "Failed to load studies",

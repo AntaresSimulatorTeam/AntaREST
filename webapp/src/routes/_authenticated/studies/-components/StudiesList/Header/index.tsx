@@ -25,6 +25,7 @@ import { scanFolder } from "@/services/api/study";
 import type { StudySortConfig } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import BatchActions from "./BatchActions";
+import DeleteStudiesDialog from "./DeleteStudiesDialog";
 import FilterControls from "./FilterControls";
 import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
 import ScanFolderDialog from "./ScanFolderDialog";
@@ -49,6 +50,7 @@ function Header({
   // Local state
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
+  const [confirmDeleteStudies, setConfirmDeleteStudies] = useState(false);
 
   // Derived state
   const isDesktopMode = import.meta.env.MODE === "desktop";
@@ -104,6 +106,15 @@ function Header({
 
   const handleLaunchStudies = () => {
     setStudiesToLaunch(selectedStudyIds);
+  };
+
+  const handleDeleteStudies = () => {
+    setConfirmDeleteStudies(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setConfirmDeleteStudies(false);
+    setSelectedStudyIds([]);
   };
 
   const handleDeselectAll = () => {
@@ -163,6 +174,7 @@ function Header({
           <BatchActions
             selectedCount={selectedStudyIds.length}
             onLaunch={handleLaunchStudies}
+            onDelete={handleDeleteStudies}
             onDeselectAll={handleDeselectAll}
           />
 
@@ -188,6 +200,12 @@ function Header({
         onConfirm={handleConfirmScan}
         onCancel={handleCloseScanDialog}
         onToggleRecursive={handleToggleRecursiveScan}
+      />
+
+      <DeleteStudiesDialog
+        studyIds={selectedStudyIds}
+        open={confirmDeleteStudies}
+        onClose={handleCloseDeleteDialog}
       />
     </>
   );
