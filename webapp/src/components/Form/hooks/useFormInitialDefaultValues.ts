@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 import type { FieldValues, UseFormReturn } from "react-hook-form";
+import { useUpdateEffect } from "react-use";
 
 /**
  * Captures a stable snapshot of the form's original default values and exposes
@@ -43,7 +44,8 @@ function useFormInitialDefaultValues<TFieldValues extends FieldValues, TContext>
   const initialDefaultValues = useRef(isLoading ? undefined : getDefaultValues());
 
   // In case async default values has been given to the form.
-  useEffect(
+  // `isLoading` is `true` until the async defaults are loaded, then becomes `false`.
+  useUpdateEffect(
     () => {
       initialDefaultValues.current = getDefaultValues();
     },
