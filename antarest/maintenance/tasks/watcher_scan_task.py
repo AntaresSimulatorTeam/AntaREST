@@ -12,24 +12,22 @@
 
 """Celery task for watcher scan."""
 
-from celery import Task
-
-from antarest.maintenance.app import TaskName, celery_app, get_maintenance_context
+from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app
 from antarest.maintenance.tasks.common import WatcherScanTaskResult
 from antarest.maintenance.tasks.watcher_scan import scan_workspaces
 
 
 @celery_app.task(
+    base=MaintenanceTask,
     bind=True,
     name=TaskName.WATCHER_SCAN,
     pydantic=True,
 )
-def watcher_scan_task(self: Task) -> WatcherScanTaskResult:  # type: ignore[type-arg]
+def watcher_scan_task(self: MaintenanceTask) -> WatcherScanTaskResult:
     """
     Celery wrapper that delegates to scan_workspaces().
     """
-    ctx = get_maintenance_context(self)
-
+    ctx = self.context
     return scan_workspaces(
         ctx.config,
         ctx.study_service,

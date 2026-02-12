@@ -14,9 +14,7 @@
 
 import logging
 
-from celery import Task
-
-from antarest.maintenance.app import TaskName, celery_app, get_maintenance_context
+from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app
 from antarest.maintenance.tasks.common import (
     TRANSIENT_ERRORS,
     GarbageCollectorTaskResult,
@@ -27,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(
+    base=MaintenanceTask,
     bind=True,
     name=TaskName.BLOBS_CLEANER,
     pydantic=True,
@@ -36,7 +35,7 @@ logger = logging.getLogger(__name__)
     retry_backoff_max=3600,
     retry_jitter=True,
 )
-def clean_blobs_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
+def clean_blobs_task(self: MaintenanceTask) -> GarbageCollectorTaskResult:
     """
     Celery wrapper that delegates to clean_blobs().
 
@@ -50,5 +49,5 @@ def clean_blobs_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[
     if self.request.retries > 0:
         logger.warning(f"Blob GC retry attempt {self.request.retries}/3")
 
-    ctx = get_maintenance_context(self)
+    ctx = self.context
     return clean_blobs(ctx.blob_service, ctx.config.storage.blob_gc_dry_run)

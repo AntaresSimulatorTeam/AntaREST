@@ -29,7 +29,8 @@ import re
 from enum import StrEnum
 from typing import Any
 
-from celery import Celery, Task
+import celery
+from celery import Celery
 from celery.signals import setup_logging, task_failure, worker_init
 
 from antarest.core.config import CeleryConfig
@@ -140,8 +141,10 @@ def _log_critical_task_failure(sender: Any, task_id: str, exception: Exception, 
         )
 
 
-def get_maintenance_context(task: "Task[Any, Any]") -> MaintenanceContext:
-    ctx: MaintenanceContext | None = task.app.conf.get("maintenance_ctx")
-    if not ctx:
-        raise MaintenanceContextNotFoundError()
-    return ctx
+class MaintenanceTask(celery.Task):  # type: ignore[type-arg]
+    @property
+    def context(self) -> MaintenanceContext:
+        ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
+        if not ctx:
+            raise MaintenanceContextNotFoundError()
+        return ctx

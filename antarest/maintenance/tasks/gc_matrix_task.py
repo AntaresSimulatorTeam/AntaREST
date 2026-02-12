@@ -12,17 +12,15 @@
 
 """Celery task for matrix garbage collection."""
 
-from celery import Task
-
-from antarest.maintenance.app import TaskName, celery_app, get_maintenance_context
+from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app
 from antarest.maintenance.tasks.common import GarbageCollectorTaskResult
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 
 
-@celery_app.task(bind=True, name=TaskName.MATRICES_CLEANER, pydantic=True)
-def clean_matrices_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
+@celery_app.task(base=MaintenanceTask, bind=True, name=TaskName.MATRICES_CLEANER, pydantic=True)
+def clean_matrices_task(self: MaintenanceTask) -> GarbageCollectorTaskResult:
     """Celery wrapper that delegates to clean_matrices()."""
-    ctx = get_maintenance_context(self)
+    ctx = self.context
     return clean_matrices(
         ctx.matrix_service,
         ctx.config.storage.matrix_gc_dry_run,
