@@ -94,7 +94,8 @@ def initialize_hydro_management(hydro_management: HydroManagement, version: Stud
 
 
 def initialize_inflow_structure(inflow_structure: InflowStructure) -> None:
-    inflow_structure.inter_monthly_correlation = 0.5
+    if inflow_structure.inter_monthly_correlation is None:
+        inflow_structure.inter_monthly_correlation = 0.5
 
 
 def _check_attributes_coherence(data: Any, field: str, version: StudyVersion) -> None:
