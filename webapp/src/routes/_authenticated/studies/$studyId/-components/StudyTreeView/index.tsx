@@ -15,7 +15,7 @@
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type { StudyMetadata, VariantTree } from "@/types/types";
 import { Box, styled } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CIRCLE_RADIUS,
   colors,
@@ -59,9 +59,25 @@ interface Props {
 export default function StudyTreeView({ study, variantTree, onClick }: Props) {
   const [studyTree, setStudyTree] = useState<StudyTree>();
   const [hoverId, setHoverId] = useState<string>("");
+  const [containerWidth, setContainerWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useThemeColorScheme();
 
-  const rectWidth = useMemo(() => {
+  // Track container width so we can expand the SVG to fill it
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) {
+      return;
+    }
+    const observer = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Base rect width derived from tree depth (the "tree lines" area)
+  const baseRectWidth = useMemo(() => {
     if (studyTree === undefined) {
       return 0;
     }
@@ -70,7 +86,7 @@ export default function StudyTreeView({ study, variantTree, onClick }: Props) {
     return Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH);
   }, [studyTree]);
 
-  const treeWidth = rectWidth + RECT_TEXT_WIDTH + RECT_X_SPACING;
+  const baseTreeWidth = baseRectWidth + RECT_TEXT_WIDTH + RECT_X_SPACING;
 
   const treeHeight = useMemo(() => {
     if (studyTree === undefined) {
@@ -81,13 +97,27 @@ export default function StudyTreeView({ study, variantTree, onClick }: Props) {
     return TILE_SIZE_Y * (nbAllChildrens + 1) + TILE_SIZE_Y_2;
   }, [studyTree]);
 
-  const onMouseOver = (hId: string) => {
-    setHoverId(hId);
-  };
+  // The viewBox width is chosen so that when the SVG scales uniformly
+  // by 1/ZOOM_OUT, its pixel width equals the container width.
+  // viewBoxWidth / ZOOM_OUT = containerWidth  =>  viewBoxWidth = containerWidth * ZOOM_OUT
+  // We floor it at the natural tree width so it never clips content.
+  const viewBoxWidth = useMemo(() => {
+    if (containerWidth > 0) {
+      return Math.max(baseTreeWidth, containerWidth * ZOOM_OUT);
+    }
+    return baseTreeWidth;
+  }, [baseTreeWidth, containerWidth]);
 
-  const onMouseOut = () => {
+  // The text label area expands to absorb extra horizontal space
+  const effectiveTextWidth = viewBoxWidth - baseRectWidth - RECT_X_SPACING;
+
+  const onMouseOver = useCallback((hId: string) => {
+    setHoverId(hId);
+  }, []);
+
+  const onMouseOut = useCallback(() => {
     setHoverId("");
-  };
+  }, []);
 
   const buildRecursiveTree = (tree: StudyTree, i = 0, j = 0): React.ReactNode[] => {
     const { drawOptions, name, attributes, children } = tree;
@@ -113,27 +143,27 @@ export default function StudyTreeView({ study, variantTree, onClick }: Props) {
         key={`rect-${i}-${j}`}
         x="0"
         y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2}
-        width={rectWidth}
+        width={baseRectWidth}
         height={TILE_SIZE_Y - RECT_Y_SPACING}
         fill={hoverId === id || study.id === id ? rectHoverColor : rectColor}
         onClick={() => onClick(id)}
-        onMouseOver={(e) => onMouseOver(id)}
+        onMouseOver={() => onMouseOver(id)}
         onMouseOut={onMouseOut}
       />,
       <SVGRect
         key={`rect-for-name-${i}-${j}`}
-        x={rectWidth + RECT_X_SPACING}
+        x={baseRectWidth + RECT_X_SPACING}
         y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2}
-        width={RECT_TEXT_WIDTH}
+        width={effectiveTextWidth}
         height={TILE_SIZE_Y - RECT_Y_SPACING}
         fill={hoverId === id || study.id === id ? hoverColor : rectColor}
         onClick={() => onClick(id)}
-        onMouseOver={(e) => onMouseOver(id)}
+        onMouseOver={() => onMouseOver(id)}
         onMouseOut={onMouseOut}
       />,
       <SVGRect
         key={`rect-for-name-deco-${i}-${j}`}
-        x={rectWidth + RECT_X_SPACING}
+        x={baseRectWidth + RECT_X_SPACING}
         y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2}
         width={RECT_DECORATION}
         height={TILE_SIZE_Y - RECT_Y_SPACING}
@@ -141,12 +171,12 @@ export default function StudyTreeView({ study, variantTree, onClick }: Props) {
       />,
       <SVGText
         key={`name-${i}-${j}`}
-        x={rectWidth + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING}
+        x={baseRectWidth + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING}
         y={cy + RECT_Y_SPACING_2}
         fill={isDarkMode ? (hoverId === id || study.id === id ? "black" : "white") : "black"}
         fontSize={TEXT_SIZE}
         onClick={() => onClick(id)}
-        onMouseOver={(e) => onMouseOver(id)}
+        onMouseOver={() => onMouseOver(id)}
       >
         {name}
       </SVGText>,
@@ -193,15 +223,12 @@ export default function StudyTreeView({ study, variantTree, onClick }: Props) {
   };
 
   const renderTree = (tree: StudyTree): React.ReactNode => {
-    const { drawOptions } = tree;
-    const { depth, nbAllChildrens } = drawOptions;
     return (
       <svg
-        viewBox={`0 0 ${
-          Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH) +
-          RECT_TEXT_WIDTH +
-          RECT_X_SPACING
-        } ${TILE_SIZE_Y * (nbAllChildrens + 1) + TILE_SIZE_Y_2}`}
+        width="100%"
+        height={treeHeight / ZOOM_OUT}
+        preserveAspectRatio="xMinYMin meet"
+        viewBox={`0 0 ${viewBoxWidth} ${treeHeight}`}
       >
         {buildRecursiveTree(tree, 0, 0)}
       </svg>
@@ -213,11 +240,13 @@ export default function StudyTreeView({ study, variantTree, onClick }: Props) {
       const tmp = await getTreeNodes(variantTree);
       setStudyTree(tmp);
     };
+
     buildStudyTree();
-  }, [study, variantTree]);
+  }, [variantTree]);
 
   return (
     <Box
+      ref={containerRef}
       display="flex"
       flexDirection="column"
       justifyContent="flex-start"
@@ -229,7 +258,8 @@ export default function StudyTreeView({ study, variantTree, onClick }: Props) {
       }}
     >
       <Box
-        minWidth={treeWidth / ZOOM_OUT}
+        width="100%"
+        minWidth={baseTreeWidth / ZOOM_OUT}
         minHeight={treeHeight / ZOOM_OUT}
         display="flex"
         flexDirection="column"
